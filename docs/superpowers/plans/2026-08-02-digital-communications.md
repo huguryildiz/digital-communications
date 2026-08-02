@@ -88,7 +88,7 @@ The engine must be proven to work before any content depends on it.
 **Interfaces:**
 - Produces: `dist/Digital_Communications.html`, a valid artifact with exactly one scene.
 
-- [ ] **Step 1: Copy the engine files**
+- [x] **Step 1: Copy the engine files**
 
 ```bash
 cd ~/Documents/GitHub/digital-communications
@@ -101,12 +101,12 @@ cp $S/notes/src/{render.js,notes.css} notes/src/
 cp $S/tools/rule_check.py tools/
 ```
 
-- [ ] **Step 2: Rename the artifact output**
+- [x] **Step 2: Rename the artifact output**
 
 In `build/build.js`, change the output filename from `Signals_and_Systems.html` to
 `Digital_Communications.html`. This is the only edit to `build.js`.
 
-- [ ] **Step 3: Adapt the palette to this course's signal semantics**
+- [x] **Step 3: Adapt the palette to this course's signal semantics**
 
 The five signal colours keep their values and change their meanings (spec §3): cyan is the
 transmitted signal or source symbol, amber the channel or filter, green the received or detected
@@ -126,29 +126,29 @@ palette change that skips it makes the gate report on colours the artifact no lo
 stays green while measuring nothing. The new noise and decision-region tones belong in the fill
 lists, not the content list: they are background, and a label crossing them is not a collision.
 
-- [ ] **Step 4: Write the minimal content core**
+- [x] **Step 4: Write the minimal content core**
 
 Create `build/src/80_content_core.js` with `CONTENT.META` set to `{course:'EE 413', title:'Digital
 Communications', version:'0.1'}`, and `CONTENT.BOOKICON` copied verbatim from the source repository
 — the inline SVG open book the `PS` chip uses.
 
-- [ ] **Step 5: Write one placeholder scene**
+- [x] **Step 5: Write one placeholder scene**
 
 Create `build/src/81_scenes_m0.js` defining `window.SCENES_M0 = [...]` with a single title scene
 carrying one heading and one paragraph. No mathematics, no figure.
 
-- [ ] **Step 6: Declare its address**
+- [x] **Step 6: Declare its address**
 
 Create `build/src/89_sections.js` declaring chapter 0 with one section and one scene, no `PS`
 anchor. The title scene is the one scene allowed to have no address — follow the source
 repository's convention for marking it.
 
-- [ ] **Step 7: Register the array**
+- [x] **Step 7: Register the array**
 
 In `build/src/99_tail.html`, remove every `SCENES_M*` and `DRILL_M*` reference from the source
 course and leave only `window.SCENES_M0`.
 
-- [ ] **Step 8: Build and check it parses**
+- [x] **Step 8: Build and check it parses**
 
 ```bash
 node --check build/src/8*.js build/src/9*.js
@@ -157,7 +157,7 @@ cd build && node build.js
 
 Expected: silence from `node --check`, and `dist/Digital_Communications.html` written.
 
-- [ ] **Step 9: Open it and confirm the scene renders**
+- [x] **Step 9: Open it and confirm the scene renders**
 
 ```bash
 cd build && node pw.js shot.js
@@ -166,7 +166,7 @@ cd build && node pw.js shot.js
 If `shot.js` was not copied, open `dist/Digital_Communications.html` in a browser. Expected: the
 title scene draws, no console error.
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
 
 ```bash
 git add -A && git commit -m "Copy the rendering engine and prove it builds on one scene"
