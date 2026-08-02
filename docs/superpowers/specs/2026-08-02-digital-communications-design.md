@@ -21,8 +21,9 @@ Four deliverables, the same set the Signals and Systems project produces:
 
 The design system, the block schema and the editorial rules R1–R9 are inherited from the Signals
 and Systems project unchanged. They are not re-derived here. What this document specifies is the
-material that is new: the sources, the module structure, the numbering, the laboratories, the
-question sections, and the one verification gate that project does not have.
+material that is new: the sources, the module structure, the numbering, the laboratories and where
+their numerical core comes from, the question sections, and the one kind of verification a
+probabilistic course needs and a deterministic one does not.
 
 ---
 
@@ -207,7 +208,60 @@ so the figure is the same on every render, which is also what makes it measurabl
 
 ---
 
-## 7. Question sections
+## 7. Simulation code: `commsyslab`
+
+`github.com/huguryildiz/commsyslab`, cloned at `~/Documents/GitHub/commsyslab`, is the author's own
+public React and TypeScript project covering the same material as interactive browser simulations.
+Under `src/lib/dsp/` it carries about 9,750 lines of **pure, framework-free** numerical code, with a
+test suite beside it in `tests/`. That code is a source for the laboratories here.
+
+The correspondence is close, because the two projects teach the same course:
+
+| `commsyslab/src/lib/dsp/` | Used by |
+| --- | --- |
+| `gram-schmidt.ts` | M3, laboratory F |
+| `multidim.ts` | M4, M5 |
+| `eye.ts` | laboratory E |
+| `probability.ts`, `math.ts` | the `Q` function and the tail bounds, everywhere |
+| `random.ts` (`makeRng`) | every seeded figure |
+| `awgn.ts` | every noise figure |
+| `entropy.ts` | M6, laboratory I |
+| `dpcm.ts`, `sigmadelta.ts` | M1, laboratory B |
+| `linecode.ts` | M2 |
+| `modulation.ts`, `dpsk.ts` | M5, laboratory H |
+
+Two conventions already agree with what §10 fixes, which is why the reuse is worth having:
+`qfunc(x) = ½ erfc(x/√2)` is exactly the `Q` this course defines, and `makeRng` is a deterministic
+mulberry32 generator, so a seeded figure renders identically on every machine.
+
+**How it is used.** The numerical core of a laboratory is ported — TypeScript to vanilla JavaScript,
+type annotations dropped, React untouched. It is **not** a dependency: the artifact stays one
+offline-capable file with no npm install and no network fetch, so nothing is imported, only copied
+and adapted. The repository has no LICENSE file, but the code is the author's own, so there is no
+restriction on reuse.
+
+**Two constraints, and both matter.**
+
+1. **`verify_ber.py` may not be derived from this code.** If the artifact and the gate that checks
+   it come from one implementation, the gate verifies itself and a shared error passes silently. The
+   Monte Carlo simulation is written independently in Python against scipy, without reading the
+   TypeScript. Where `commsyslab` has a test for the same quantity, it serves as a *third* opinion:
+   two independent implementations and one existing test agreeing on a number is strong evidence;
+   one implementation agreeing with itself is none.
+
+2. **Equation references may not be carried across.** The comments in `commsyslab` anchor to
+   Proakis and Salehi, but not everywhere to *this* edition. A verified example: `gram-schmidt.ts`
+   is headed "Proakis & Salehi §7.1, Eq. 7.1.1–7.1.11", while in `source/Book.pdf` §7.1 is
+   "Sampling of Signals and Signal Reconstruction from Samples" and Gram-Schmidt is **§8.1**. That
+   comment belongs to the authors' other book, *Communication Systems Engineering*. By contrast the
+   "§5.1" heading `probability.ts` carries is correct for this edition. Every equation reference
+   that comes across with ported code is re-checked against `source/Book.pdf` and none is accepted
+   on the strength of having been written down already. This is precisely the class of error the
+   `PS` anchor of §5 exists to prevent, arriving through a different door.
+
+---
+
+## 8. Question sections
 
 **Twenty questions a module, 140 in all.** Each of M1 to M6 opens with a taxonomy of the question
 types that keep coming back and closes with twenty open-ended questions modelled on them, each
@@ -268,7 +322,7 @@ edition only.
 
 ---
 
-## 8. Verification gates
+## 9. Verification gates
 
 Eleven gates. Nothing is done until all eleven pass, and a run reports the numbers it printed.
 
@@ -309,7 +363,7 @@ Signals and Systems project and is what supplies `erfc`, the Gaussian tail and t
 
 ---
 
-## 9. Editorial rules
+## 10. Editorial rules
 
 R1 through R9 are inherited verbatim and are binding on every deliverable: write as lecture notes
 and not as a report about them; never mention a source, a page, an audit or a process; plain
@@ -330,7 +384,7 @@ needed:
 
 ---
 
-## 10. Build order
+## 11. Build order
 
 1. **Skeleton.** Repository, engine copy, `.gitignore`, one placeholder scene, all eleven gates
    running and green on nothing. Establishes that the copied engine works before any content
@@ -350,9 +404,9 @@ is a third lower, and one new gate has to be written. The scale is comparable.
 
 ---
 
-## 11. Known risks
+## 12. Known risks
 
-- **M3 to M5 rest on a weaker source for their question taxonomies** (§7). The mitigation is to
+- **M3 to M5 rest on a weaker source for their question taxonomies** (§8). The mitigation is to
   derive them from the worked examples in the slides and to state in the design record that they
   are so derived — not to pretend the papers cover CH9.
 - **The `PS` anchor map is one-to-many** for M2 and M5, and one course chapter maps to two textbook
@@ -362,6 +416,11 @@ is a third lower, and one new gate has to be written. The scale is comparable.
   too wide, turns the gate green without checking anything. The trial count per claim is chosen
   from the required interval width and recorded beside the claim, so a later loosening is visible
   in the diff.
+- **Ported `commsyslab` code can smuggle in a wrong equation reference** (§7). One such reference
+  is already confirmed: `gram-schmidt.ts` cites §7.1 for a result that is §8.1 in this edition. The
+  mitigation is mechanical — every anchor that arrives with ported code is looked up in
+  `source/Book.pdf` before it reaches a scene, and `rule_check.py` cannot catch this because a
+  wrong `PS` anchor is well-formed.
 - **The handwritten notes and the slides may disagree.** Where they do, the disagreement is
   recorded in the ambiguity ledger and resolved against `Book.pdf`, and the resolution is stated in
   the artifact at the point it occurs. Nothing is corrected silently.
