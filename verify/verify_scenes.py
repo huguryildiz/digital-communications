@@ -140,6 +140,53 @@ def _pcm_code_index(n):
     return int(min(7, math.floor(_pcm_sample(n))))
 
 
+
+# ── Module 2 ────────────────────────────────────────────────────────────────
+# Baseband transmission: the matched filter, the threshold, the error
+# probability, and the bandwidth the pulse needs.
+
+from scipy.special import erfc as _erfc
+
+
+def _Q(x):
+    return 0.5 * _erfc(x / math.sqrt(2.0))
+
+
+def _m2_threshold(eb, n0, p0):
+    return (n0 / (4 * math.sqrt(eb))) * math.log(p0 / (1 - p0))
+
+
+def _m2_example():
+    """The unequal-prior example of scene 2.3.4, computed from the definitions.
+
+    The scene reaches the two conditional errors through the Gaussian tail; this
+    reaches them the same way but with the threshold recomputed from the priors
+    rather than copied, so a slip in the threshold shows up in every part.
+    """
+    eb, n0, p1 = 1.0, 0.1, 0.3
+    p0 = 1 - p1
+    lam = _m2_threshold(eb, n0, p0)
+    sig = math.sqrt(n0 / 2)
+    a = math.sqrt(eb)
+    e0 = float(_Q((lam + a) / sig))
+    e1 = float(_Q((a - lam) / sig))
+    return {"lam": lam, "e0": e0, "e1": e1, "pe": p0 * e0 + p1 * e1,
+            "pe0": float(_Q(math.sqrt(2 * eb / n0)))}
+
+
+def _raised_cosine(t, alpha, w=0.5):
+    """p(t) = sinc(2Wt) cos(2 pi alpha W t) / (1 - 16 alpha^2 W^2 t^2).
+
+    The `t` inside the cosine is the correction recorded as A-04: both sources
+    write cos(2 pi alpha W) and the zero crossings they claim do not follow from
+    that form.
+    """
+    den = 1 - 16 * alpha ** 2 * w ** 2 * t ** 2
+    if abs(den) < 1e-9:
+        return float(np.sinc(2 * w * t) * math.pi / 4)
+    return float(np.sinc(2 * w * t) * math.cos(2 * math.pi * alpha * w * t) / den)
+
+
 # Each entry:
 #   name    -- the scene and the quantity, as a reader would name them
 #   stated  -- the number the scene prints
@@ -222,6 +269,39 @@ CHECKS: list[dict] = [
      "derive": lambda: int("".join(format(_pcm_code_index(n), "03b")
                                    for n in range(7)), 2)},
     {"name": "1.6.3 bit rate", "stated": 5.0, "derive": lambda: 3 * (1 / 0.6)},
+
+    # ---- 2.1, the matched filter ----------------------------------------
+    {"name": "2.1.4 the matched-filter bound for a unit-energy pulse",
+     "stated": 2.0, "derive": lambda: 2 * 1.0 / 1.0},
+
+    # ---- 2.3.4, the unequal-prior example -------------------------------
+    {"name": "2.3.4 optimal threshold", "stated": 0.0212,
+     "derive": lambda: _m2_example()["lam"], "tol": 2e-3},
+    {"name": "2.3.4 P(error | s0)", "stated": 2.475e-6,
+     "derive": lambda: _m2_example()["e0"], "tol": 5e-4},
+    {"name": "2.3.4 P(error | s1)", "stated": 6.005e-6,
+     "derive": lambda: _m2_example()["e1"], "tol": 5e-4},
+    {"name": "2.3.4 average error probability", "stated": 3.534e-6,
+     "derive": lambda: _m2_example()["pe"], "tol": 5e-4},
+    {"name": "2.3.4 error probability with the threshold left at zero",
+     "stated": 3.872e-6, "derive": lambda: _m2_example()["pe0"], "tol": 5e-4},
+
+    # ---- 2.5, Nyquist and the raised cosine ------------------------------
+    # The raised cosine must vanish at every non-zero multiple of T_b for every
+    # roll-off. Five roll-offs and eight instants are checked at once: the
+    # largest magnitude found, shifted by one so a relative test means something.
+    {"name": "2.5.2 the raised cosine vanishes at every non-zero sampling instant",
+     "stated": 1.0,
+     "derive": lambda: 1.0 + max(abs(_raised_cosine(float(k), a))
+                                 for a in (0.0, 0.25, 0.5, 0.75, 1.0)
+                                 for k in range(1, 9)),
+     "tol": 1e-9},
+    {"name": "2.5.2 the raised cosine is one at the origin", "stated": 1.0,
+     "derive": lambda: _raised_cosine(0.0, 0.5)},
+    {"name": "2.5.1 Nyquist bandwidth for 20 kbit/s", "stated": 10e3,
+     "derive": lambda: 20e3 / 2},
+    {"name": "2.5.2 transmission bandwidth at alpha = 0.5", "stated": 15e3,
+     "derive": lambda: (1 + 0.5) * 10e3},
 ]
 
 DEFAULT_TOL = 5e-3

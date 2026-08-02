@@ -98,6 +98,55 @@ def _bits_differing(a, b):
     return bin(a ^ b).count("1")
 
 
+
+# ── Module 2 ────────────────────────────────────────────────────────────────
+
+from scipy.special import erfc as _erfc, erfcinv as _erfcinv
+
+
+def _Q(x):
+    return float(0.5 * _erfc(x / math.sqrt(2.0)))
+
+
+def _Qinv(p):
+    return float(math.sqrt(2.0) * _erfcinv(2.0 * p))
+
+
+def _pb_antipodal(ebn0):
+    return _Q(math.sqrt(2.0 * ebn0))
+
+
+def _threshold(eb, n0, p0):
+    return (n0 / (4.0 * math.sqrt(eb))) * math.log(p0 / (1.0 - p0))
+
+
+def _pe_unequal(eb, n0, p1):
+    """Threshold, both conditional errors and the average, from the definitions."""
+    p0 = 1.0 - p1
+    a = math.sqrt(eb)
+    sig = math.sqrt(n0 / 2.0)
+    lam = _threshold(eb, n0, p0)
+    e0 = _Q((lam + a) / sig)
+    e1 = _Q((a - lam) / sig)
+    return {"lam": lam, "e0": e0, "e1": e1, "pe": p0 * e0 + p1 * e1}
+
+
+def _pe_two_gaussians(s0, s1, sigma, p0):
+    """The general equal-variance case: midpoint plus a prior term."""
+    lam = (s0 + s1) / 2.0 + sigma ** 2 / (s1 - s0) * math.log(p0 / (1.0 - p0))
+    e0 = _Q((lam - s0) / sigma)
+    e1 = _Q((s1 - lam) / sigma)
+    return {"lam": lam, "e0": e0, "e1": e1, "pe": p0 * e0 + (1 - p0) * e1}
+
+
+def _triangular_tail(edge, half_base):
+    """P(N > edge) for a symmetric triangular density on [-half_base, half_base],
+    integrated rather than looked up."""
+    c = 1.0 / half_base
+    val, _ = integrate.quad(lambda n: c * (1 - abs(n) / half_base), edge, half_base)
+    return val
+
+
 # Each entry:
 #   name    -- the question and the part, as the reader sees them numbered
 #   stated  -- the number the worked solution prints
@@ -313,6 +362,114 @@ CHECKS: list[dict] = [
      "derive": lambda: max(abs(_d20_sample(n)
                                - (min(7, int(_d20_sample(n) / 0.75)) + 0.5) * 0.75)
                            for n in range(6)), "tol": 1e-9},
+
+    # ---- D2-01 to D2-03, the matched filter ------------------------------
+    {"name": "D2-01(b) pulse energy", "stated": 0.016, "derive": lambda: 4.0 * 0.004},
+    {"name": "D2-01(c) peak SNR", "stated": 32.0, "derive": lambda: 2 * 0.016 / 1e-3},
+    {"name": "D2-01(c) peak SNR in dB", "stated": 15.05,
+     "derive": lambda: 10 * math.log10(32.0), "tol": 2e-4},
+    {"name": "D2-02(a) energy of a ramp, in units of A^2 T", "stated": 1 / 3,
+     "derive": lambda: float(sp.integrate((_x) ** 2, (_x, 0, 1)))},
+    {"name": "D2-02(c) loss against a rectangle of the same peak", "stated": 4.77,
+     "derive": lambda: 10 * math.log10(3.0), "tol": 1e-3},
+    {"name": "D2-03(a) energy of a half sine, in units of B^2 T", "stated": 0.5,
+     "derive": lambda: float(sp.integrate(sp.sin(sp.pi * _x) ** 2, (_x, 0, 1)))},
+    {"name": "D2-03(b) peak the half sine needs", "stated": 1.41421,
+     "derive": lambda: math.sqrt(2.0), "tol": 1e-5},
+
+    # ---- D2-04 to D2-07, error probability against energy ----------------
+    {"name": "D2-04(a) Eb/N0 in dB", "stated": 6.02,
+     "derive": lambda: 10 * math.log10(4.0), "tol": 2e-4},
+    {"name": "D2-04(b) bit error probability", "stated": 2.34e-3,
+     "derive": lambda: _pb_antipodal(4.0), "tol": 3e-3},
+    {"name": "D2-05(a) the Q argument for 1e-5", "stated": 4.265,
+     "derive": lambda: _Qinv(1e-5), "tol": 3e-4},
+    {"name": "D2-05(b) required Eb/N0", "stated": 9.09,
+     "derive": lambda: _Qinv(1e-5) ** 2 / 2, "tol": 1e-3},
+    {"name": "D2-05(b) required Eb/N0 in dB", "stated": 9.59,
+     "derive": lambda: 10 * math.log10(_Qinv(1e-5) ** 2 / 2), "tol": 3e-3},
+    {"name": "D2-06(a) optimal threshold", "stated": 0.0693,
+     "derive": lambda: _threshold(1.0, 0.2, 0.8), "tol": 1e-3},
+    {"name": "D2-07(a) Eb/N0 after quadrupling the rate", "stated": 2.98,
+     "derive": lambda: 9 - 10 * math.log10(4.0), "tol": 2e-3},
+    {"name": "D2-07(b) error probability before", "stated": 3.36e-5,
+     "derive": lambda: _pb_antipodal(10 ** 0.9), "tol": 3e-3},
+    {"name": "D2-07(b) error probability after", "stated": 2.31e-2,
+     "derive": lambda: _pb_antipodal(10 ** 0.9 / 4), "tol": 3e-3},
+
+    # ---- D2-08, Laplacian noise ------------------------------------------
+    {"name": "D2-08(a) Laplacian tail beyond one", "stated": 0.1839,
+     "derive": lambda: float(integrate.quad(lambda n: 0.5 * math.exp(-abs(n)),
+                                            1, 60)[0]), "tol": 3e-4},
+    {"name": "D2-08(b) the Gaussian of the same variance", "stated": 0.2398,
+     "derive": lambda: _Q(1 / math.sqrt(2.0)), "tol": 3e-4},
+
+    # ---- D2-09 to D2-11, bandwidth ---------------------------------------
+    {"name": "D2-09(a) Nyquist bandwidth", "stated": 10e3, "derive": lambda: 20e3 / 2},
+    {"name": "D2-09(b) transmission bandwidth", "stated": 13.5e3,
+     "derive": lambda: 1.35 * 10e3},
+    {"name": "D2-10(a) Nyquist bandwidth that fits", "stated": 16e3,
+     "derive": lambda: 24e3 / 1.5},
+    {"name": "D2-10(b) largest bit rate", "stated": 32e3, "derive": lambda: 2 * 24e3 / 1.5},
+
+    # ---- D2-13 and D2-14, the full-length matched-filter questions --------
+    {"name": "D2-13(b) energy per bit", "stated": 18.0, "derive": lambda: 9.0 * 2.0},
+    {"name": "D2-13(b) signal point", "stated": 4.243,
+     "derive": lambda: math.sqrt(18.0), "tol": 2e-4},
+    {"name": "D2-13(d) bit error probability", "stated": 0.0786,
+     "derive": lambda: _pb_antipodal(1.0), "tol": 2e-3},
+    {"name": "D2-14(c) on-off is 3 dB worse than antipodal", "stated": 3.0103,
+     "derive": lambda: 10 * math.log10(2.0), "tol": 1e-4},
+
+    # ---- D2-15 and D2-16, non-Gaussian noise ------------------------------
+    {"name": "D2-15(a) normalising constant", "stated": 0.1,
+     "derive": lambda: 1.0 / 10.0},
+    {"name": "D2-15(b) conditional error", "stated": 0.18,
+     "derive": lambda: _triangular_tail(4.0, 10.0), "tol": 1e-6},
+    {"name": "D2-15 check, the Gaussian of the same variance", "stated": 0.164,
+     "derive": lambda: _Q(4.0 / math.sqrt(100.0 / 6.0)), "tol": 5e-3},
+    {"name": "D2-16(c) average error probability", "stated": 0.1839,
+     "derive": lambda: 0.5 * math.exp(-1.0), "tol": 3e-4},
+    {"name": "D2-16 check, the error at a threshold of three", "stated": 0.2539,
+     "derive": lambda: 0.5 * (math.exp(-5 / 4) + 1 - math.exp(-1 / 4)), "tol": 1e-3},
+
+    # ---- D2-17 and D2-18, unequal priors ---------------------------------
+    {"name": "D2-17(a) optimal threshold", "stated": 0.0777,
+     "derive": lambda: _pe_unequal(2.0, 0.4, 0.25)["lam"], "tol": 2e-3},
+    {"name": "D2-17(b) P(error | s0)", "stated": 4.250e-4,
+     "derive": lambda: _pe_unequal(2.0, 0.4, 0.25)["e0"], "tol": 5e-4},
+    {"name": "D2-17(b) P(error | s1)", "stated": 1.401e-3,
+     "derive": lambda: _pe_unequal(2.0, 0.4, 0.25)["e1"], "tol": 5e-4},
+    {"name": "D2-17(c) average error probability", "stated": 6.691e-4,
+     "derive": lambda: _pe_unequal(2.0, 0.4, 0.25)["pe"], "tol": 5e-4},
+    {"name": "D2-17(d) error probability at a threshold of zero", "stated": 7.827e-4,
+     "derive": lambda: _pb_antipodal(2.0 / 0.4), "tol": 5e-4},
+    {"name": "D2-18(a) optimal threshold", "stated": 2.405,
+     "derive": lambda: _pe_two_gaussians(0.0, 4.0, 2.0, 0.6)["lam"], "tol": 3e-4},
+    {"name": "D2-18(b) P(error | s0)", "stated": 0.1145,
+     "derive": lambda: _pe_two_gaussians(0.0, 4.0, 2.0, 0.6)["e0"], "tol": 1e-3},
+    {"name": "D2-18(b) P(error | s1)", "stated": 0.2127,
+     "derive": lambda: _pe_two_gaussians(0.0, 4.0, 2.0, 0.6)["e1"], "tol": 1e-3},
+    {"name": "D2-18(c) average error probability", "stated": 0.1538,
+     "derive": lambda: _pe_two_gaussians(0.0, 4.0, 2.0, 0.6)["pe"], "tol": 1e-3},
+    {"name": "D2-18(d) error probability at the midpoint", "stated": 0.1587,
+     "derive": lambda: _Q(1.0), "tol": 5e-4},
+
+    # ---- D2-19 and D2-20 --------------------------------------------------
+    {"name": "D2-19(a) Nyquist bandwidth", "stated": 32e3, "derive": lambda: 64e3 / 2},
+    {"name": "D2-19(b) largest roll-off that fits", "stated": 0.5,
+     "derive": lambda: 48e3 / 32e3 - 1},
+    {"name": "D2-19(c) excess bandwidth", "stated": 16e3, "derive": lambda: 0.5 * 32e3},
+    {"name": "D2-20(a) worst-case interference", "stated": 0.28,
+     "derive": lambda: 2 * (0.10 + 0.04)},
+    {"name": "D2-20(b) eye opening", "stated": 1.44,
+     "derive": lambda: 2 * (1 - 2 * (0.10 + 0.04))},
+    {"name": "D2-20(c) margin in standard deviations", "stated": 4.8,
+     "derive": lambda: (1 - 2 * (0.10 + 0.04)) / 0.15, "tol": 1e-6},
+    {"name": "D2-20(d) error probability with the interference", "stated": 7.9e-7,
+     "derive": lambda: _Q(4.8), "tol": 5e-3},
+    {"name": "D2-20(d) error probability without it", "stated": 1.3e-11,
+     "derive": lambda: _Q(1 / 0.15), "tol": 3e-2},
 ]
 
 DEFAULT_TOL = 5e-3

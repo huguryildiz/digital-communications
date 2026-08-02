@@ -30,7 +30,8 @@
    would be an empty frame. */
 CONTENT.CHAPTERS = [
   { n:'0', module:'M0', title:'The frame of the course', flat:true },
-  { n:'1', module:'M1', title:'The transition from analog to digital' }
+  { n:'1', module:'M1', title:'The transition from analog to digital' },
+  { n:'2', module:'M2', title:'Baseband transmission of digital signals' }
 ];
 
 /* ---- sections ----------------------------------------------------------
@@ -62,6 +63,18 @@ CONTENT.SECTIONS = {
     { n:'1.6', title:'Pulse code modulation',          ids:[
         'm1-encode','m1-linecodes','m1-ex-pcm','m1-lab-b'] },
     { n:'1.7', title:'Summary',                        ids:['m1-synth'] }
+  ],
+
+  M2: [
+    { n:'2.0', title:'Opening',                        ids:['m2-open'] },
+    { n:'2.1', title:'The matched filter',             ids:[
+        'm2-model','m2-schwarz','m2-matched','m2-props','m2-lab-c'] },
+    { n:'2.2', title:'The demodulator',                ids:['m2-basis','m2-correlator'] },
+    { n:'2.3', title:'The decision and its error',     ids:[
+        'm2-stat','m2-threshold','m2-pe','m2-ex-pe','m2-lab-d'] },
+    { n:'2.4', title:'Intersymbol interference',       ids:['m2-isi','m2-eye','m2-lab-e'] },
+    { n:'2.5', title:'Nyquist and the raised cosine',  ids:['m2-nyquist','m2-rcos'] },
+    { n:'2.6', title:'Summary',                        ids:['m2-synth'] }
   ]
 
 };
@@ -89,7 +102,26 @@ CONTENT.BOOK = {
   'm1-ex-cos':'7.2.1', 'm1-ex-unif':'7.2.1', 'm1-ex-gauss':'7.2.1',
   'm1-nonuniform':'7.2.1', 'm1-companding':'7.2.1',
   'm1-encode':'7.3', 'm1-ex-pcm':'7.4.1', 'm1-lab-b':'7.4',
-  'm1-synth':'7.4.1'
+  'm1-synth':'7.4.1',
+
+  /* Module 2 spans two chapters of the book, and that is not an accident of
+     this course's numbering: the matched filter, the demodulators and the error
+     probability are chapter 8, while intersymbol interference, the Nyquist
+     criterion and the raised cosine are developed in chapter 10. Each was read
+     in the book before it was written here.
+
+     The eye-pattern scene carries no anchor. The book does describe the eye
+     pattern, but not under a heading this module can point at without guessing,
+     and a well-formed wrong anchor is the one failure the marker cannot catch. */
+  'm2-open':'8.3',
+  'm2-model':'8.3.2', 'm2-schwarz':'8.3.2', 'm2-matched':'8.3.2', 'm2-props':'8.3.2',
+  'm2-lab-c':'8.3.2',
+  'm2-basis':'8.2.1', 'm2-correlator':'8.3.1',
+  'm2-stat':'8.3.3', 'm2-threshold':'8.3.3', 'm2-pe':'8.3.3', 'm2-ex-pe':'8.3.3',
+  'm2-lab-d':'8.3.3',
+  'm2-isi':'10.1.1', 'm2-lab-e':'10.1.1',
+  'm2-nyquist':'10.3.1', 'm2-rcos':'10.3.1',
+  'm2-synth':'8.3, 10.3.1'
 };
 
 /* ---- derivation --------------------------------------------------------
