@@ -770,15 +770,15 @@ git add -A && git commit -m "Set twenty practice questions on sampling and quant
 - Modify: `verify/verify_drills.py`
 - Modify: `verify/ber_claims.py` if any M1 solution states an error probability
 
-- [ ] **Step 1: Re-derive every number in every `Check` step**
+- [x] **Step 1: Re-derive every number in every `Check` step**
 
 Twenty solutions.
 
-- [ ] **Step 2: Add any error-probability claim to `ber_claims.py`**
+- [x] **Step 2: Add any error-probability claim to `ber_claims.py`**
 
 With a trial count sized so a factor-of-two slip falls outside the interval.
 
-- [ ] **Step 3: Run both numerical gates**
+- [x] **Step 3: Run both numerical gates**
 
 ```bash
 cd verify && ../.venv/bin/python verify_drills.py && ../.venv/bin/python verify_ber.py
@@ -786,7 +786,7 @@ cd verify && ../.venv/bin/python verify_drills.py && ../.venv/bin/python verify_
 
 Expected: `N passed, 0 failed` from each.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add -A && git commit -m "Re-derive every number the sampling solutions state"
