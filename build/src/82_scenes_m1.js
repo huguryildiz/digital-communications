@@ -85,8 +85,7 @@ function figInterp(){
   a.curve(t=>{ let s=0; for(let n=-6;n<=14;n++) s += g(n*Ts)*sinc((t-n*Ts)/Ts); return s; },
           {color:C.out,width:2.6});
   for(let n=0;n<=8;n++) a.point(n*Ts, g(n*Ts), {color:C.in, r:3.6});
-  a.note(0.15,1.34,'\\text{one shifted }\\operatorname{sinc}\\text{ per sample}',
-         {tex:true,fs:13,color:C.mid});
+  a.note(0.15,1.34,'\\text{one shifted }\\operatorname{sinc}\\text{ per sample}',{tex:true,fs:13,color:C.mid});
   return a.svg();
 }
 
