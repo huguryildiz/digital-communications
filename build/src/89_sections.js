@@ -33,7 +33,8 @@ CONTENT.CHAPTERS = [
   { n:'1', module:'M1', title:'The transition from analog to digital' },
   { n:'2', module:'M2', title:'Baseband transmission of digital signals' },
   { n:'3', module:'M3', title:'Geometric representation of signal waveforms' },
-  { n:'4', module:'M4', title:'The optimal receiver in AWGN' }
+  { n:'4', module:'M4', title:'The optimal receiver in AWGN' },
+  { n:'5', module:'M5', title:'Digital modulation methods' }
 ];
 
 /* ---- sections ----------------------------------------------------------
@@ -96,6 +97,15 @@ CONTENT.SECTIONS = {
     { n:'4.4', title:'The union bound',                ids:[
         'm4-pe','m4-union','m4-dmin','m4-ex-union','m4-ex-union-b'] },
     { n:'4.5', title:'Summary',                        ids:['m4-synth'] }
+  ],
+
+  M5: [
+    { n:'5.0', title:'Opening',                        ids:['m5-open'] },
+    { n:'5.1', title:'The binary schemes',             ids:['m5-bpsk','m5-bfsk','m5-bask'] },
+    { n:'5.2', title:'Phase-shift keying',             ids:['m5-mpsk','m5-mpsk-pe'] },
+    { n:'5.3', title:'Amplitude and quadrature',       ids:['m5-mask','m5-qam','m5-lab-h'] },
+    { n:'5.4', title:'Frequency-shift keying',         ids:['m5-mfsk','m5-compare'] },
+    { n:'5.5', title:'Summary',                        ids:['m5-synth'] }
   ]
 
 };
@@ -159,7 +169,16 @@ CONTENT.BOOK = {
   'm4-map':'8.4.1', 'm4-mindist':'8.4.1', 'm4-metric':'8.4.1',
   'm4-regions':'8.4.1', 'm4-binary':'8.3.3', 'm4-lab-g':'8.4.1',
   'm4-pe':'8.4.1', 'm4-union':'8.4.2', 'm4-dmin':'8.4.2', 'm4-ex-union':'8.4.2', 'm4-ex-union-b':'8.4.2',
-  'm4-synth':'8.4'
+  'm4-synth':'8.4',
+
+  /* Module 5 spans four sections of the book, each read there: 8.5 for M-ary
+     PAM, 8.6 for phase-shift keying, 8.7 for quadrature amplitude modulation,
+     and 9.5 for frequency-shift keying. The last is in a different chapter
+     because the book groups FSK with the other multidimensional signal sets. */
+  'm5-open':'8.5', 'm5-bpsk':'8.6.1', 'm5-bfsk':'9.5', 'm5-bask':'8.5.1',
+  'm5-mpsk':'8.6.1', 'm5-mpsk-pe':'8.6.3',
+  'm5-mask':'8.5.3', 'm5-qam':'8.7.1', 'm5-lab-h':'8.6.3, 8.7.1',
+  'm5-mfsk':'9.5', 'm5-compare':'9.7', 'm5-synth':'8.5, 8.6, 8.7'
 };
 
 /* ---- derivation --------------------------------------------------------
