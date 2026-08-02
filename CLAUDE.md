@@ -26,6 +26,33 @@ question, and it outranks completeness, elegance and rigour-for-its-own-sake.
 - **One idea a scene.** A scene that needs a scale factor below 0.90 to fit is a scene carrying two
   ideas. `qa.js` prints those under `dense`; split them.
 
+## How every note is written
+
+**Every note in this repository is written clean and plain, at the level an undergraduate can
+follow.** This binds the exposition, not only the sentences: one idea a paragraph, the steps of a
+derivation in order with none of them left for the reader to supply, and no aside that the result
+does not need. A passage that only a reader who already knows the material can follow has failed
+this rule, however correct it is.
+
+**The English is simple English.** The reader is an engineering student who may be reading in a
+second language, so the vocabulary stays common and the grammar stays direct: everyday words, active
+voice, subject and verb close together, no idiom and no figure of speech. The only hard words on the
+page are the technical ones, and each of those is defined where it first appears. Difficulty belongs
+to the mathematics, never to the English carrying it.
+
+**A note teaches; it does not record.** Say what the idea is for before developing it, and name the
+move each step makes — "take the transform of both sides", "split the integral at the point where
+the pulse ends" — so the reader learns a method and not one result. Where a step is the one students
+get wrong, say so and say why. Where a definition looks arbitrary, show the case it was made to
+handle.
+
+**The worked solutions are held to the same standard.** A solution is teaching material, not an
+answer key: it carries the reasoning that reaches the answer, in the Given, Find, Method, Solution,
+Check form of R7, and it states why the method fits this question. A solution that only shows the
+arithmetic, or that arrives at the answer by a step the reader cannot see the reason for, is
+unfinished. This covers the worked solution behind every practice question in the artifact, the
+worked examples in the lecture notes, and the instructor solutions.
+
 ## Where the project stands
 
 | Phase | Content | State |
@@ -33,7 +60,7 @@ question, and it outranks completeness, elegance and rigour-for-its-own-sake.
 | 0 | Engine, gates, `verify/` | done |
 | 1 | M1 · Sampling, quantization, PCM · labs A, B · 20 questions · notes ch. 1 | done |
 | 2 | M2 · Baseband transmission · labs C, D, E · 20 questions · notes ch. 2 | done |
-| 3 | M3 · Geometric representation · lab F | not started |
+| 3 | M3 · Geometric representation · lab F · 20 questions · notes ch. 3 | done |
 | 4 | M4 · Optimal receiver, decision regions, union bound · lab G | not started |
 | 5 | M5 · Modulation methods · lab H | not started |
 | 6 | M6 · Information theory · labs I, J | not started |

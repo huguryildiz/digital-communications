@@ -14,7 +14,7 @@ window.C1 = [
 /* ---------------- title ---------------- */
 {t:'title', kicker:'EE 413 · Communication Systems II', text:'Digital Communications',
  sub:'Lecture notes for the whole course: how a waveform becomes a finite alphabet of symbols, how those symbols are carried across a channel that adds noise to everything, how a receiver decides which one was sent, and how often it is wrong.',
- meta:[['Covers','Chapters 1 and 2'],['Level','Undergraduate'],
+ meta:[['Covers','Chapters 1 to 3'],['Level','Undergraduate'],
        ['Assumed background','Fourier analysis, probability, random processes']]},
 
 {t:'h3', text:'How to read these notes'},
@@ -24,7 +24,8 @@ window.C1 = [
 
 {t:'toc', items:[
  ['1','The transition from analog to digital','Impulse-train sampling and the replication of the spectrum. The sampling theorem. Reconstruction and sinc interpolation. Uniform quantization, the error it makes, and the signal-to-quantization-noise ratio. Companding. Encoding, line codes and pulse code modulation.','PS CH7.1&ndash;7.4'],
- ['2','Baseband transmission of digital signals','The matched filter and what it achieves. Correlator and matched-filter demodulators. The decision statistic, the optimal threshold and the bit error probability. Intersymbol interference and the eye pattern. Nyquist\'s criterion and the raised cosine.','PS CH8.2&ndash;8.3, PS CH10.1, PS CH10.3']
+ ['2','Baseband transmission of digital signals','The matched filter and what it achieves. Correlator and matched-filter demodulators. The decision statistic, the optimal threshold and the bit error probability. Intersymbol interference and the eye pattern. Nyquist\'s criterion and the raised cosine.','PS CH8.2&ndash;8.3, PS CH10.1, PS CH10.3'],
+ ['3','Geometric representation of signal waveforms','Signals as vectors. Orthonormal bases, coordinates, energy and distance. The constellation diagram. The Gram&ndash;Schmidt procedure.','PS CH8.1']
 ]},
 
 {t:'page'},

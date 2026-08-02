@@ -31,7 +31,8 @@
 CONTENT.CHAPTERS = [
   { n:'0', module:'M0', title:'The frame of the course', flat:true },
   { n:'1', module:'M1', title:'The transition from analog to digital' },
-  { n:'2', module:'M2', title:'Baseband transmission of digital signals' }
+  { n:'2', module:'M2', title:'Baseband transmission of digital signals' },
+  { n:'3', module:'M3', title:'Geometric representation of signal waveforms' }
 ];
 
 /* ---- sections ----------------------------------------------------------
@@ -75,6 +76,15 @@ CONTENT.SECTIONS = {
     { n:'2.4', title:'Intersymbol interference',       ids:['m2-isi','m2-eye','m2-lab-e'] },
     { n:'2.5', title:'Nyquist and the raised cosine',  ids:['m2-nyquist','m2-rcos'] },
     { n:'2.6', title:'Summary',                        ids:['m2-synth'] }
+  ],
+
+  M3: [
+    { n:'3.0', title:'Opening',                        ids:['m3-open'] },
+    { n:'3.1', title:'Signals as vectors',             ids:[
+        'm3-ortho','m3-project','m3-energy'] },
+    { n:'3.2', title:'Constellations',                 ids:['m3-constellation','m3-remarks'] },
+    { n:'3.3', title:'The Gram–Schmidt procedure',     ids:['m3-gs','m3-ex-gs','m3-lab-f'] },
+    { n:'3.4', title:'Summary',                        ids:['m3-synth'] }
   ]
 
 };
@@ -121,7 +131,15 @@ CONTENT.BOOK = {
   'm2-lab-d':'8.3.3',
   'm2-isi':'10.1.1', 'm2-lab-e':'10.1.1',
   'm2-nyquist':'10.3.1', 'm2-rcos':'10.3.1',
-  'm2-synth':'8.3, 10.3.1'
+  'm2-synth':'8.3, 10.3.1',
+
+  /* All of Module 3 is section 8.1 of the book, "Geometric Representation of
+     Signal Waveforms", p. 348 — read there rather than inferred. This is also
+     the anchor the ported Gram-Schmidt code got wrong: its comments cite 7.1,
+     which in this edition is the sampling theorem. */
+  'm3-open':'8.1', 'm3-ortho':'8.1', 'm3-project':'8.1', 'm3-energy':'8.1',
+  'm3-constellation':'8.1', 'm3-remarks':'8.1',
+  'm3-gs':'8.1', 'm3-ex-gs':'8.1', 'm3-lab-f':'8.1', 'm3-synth':'8.1'
 };
 
 /* ---- derivation --------------------------------------------------------
