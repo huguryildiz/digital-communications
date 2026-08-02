@@ -77,7 +77,7 @@ scene to the last.** Concretely:
 | 1 | M1 · Sampling, quantization, PCM · labs A, B · 20 questions · notes ch. 1 | done |
 | 2 | M2 · Baseband transmission · labs C, D, E · 20 questions · notes ch. 2 | done |
 | 3 | M3 · Geometric representation · lab F · 20 questions · notes ch. 3 | done |
-| 4 | M4 · Optimal receiver, decision regions, union bound · lab G · 20 questions · notes ch. 4 | done |
+| 4 | M4 · Optimal receiver, decision regions, union bound · lab G | not started |
 | 5 | M5 · Modulation methods · lab H | not started |
 | 6 | M6 · Information theory · labs I, J | not started |
 | 7 | M0, the five editions, the close | not started |
@@ -97,7 +97,7 @@ scene to the last.** Concretely:
 | `notes/build.js` `topdf.js` `editions.js` `src/cN.js` | the lecture-notes pipeline |
 | `verify/*.py` | the numerical gates |
 | `tools/rule_check.py` | banned phrases, figure-label rules, the `PS` mark |
-| `.claude/notes/mN_inventory.md` | per-module source inventory and ambiguity ledger (gitignored) |
+| `.Codex/notes/mN_inventory.md` | per-module source inventory and ambiguity ledger (gitignored) |
 
 ## Building
 
