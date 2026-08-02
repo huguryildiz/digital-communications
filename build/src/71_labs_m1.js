@@ -250,7 +250,7 @@ Object.assign(LABS, (function(){
 
       const bx = P.Axes({w:820,h:160,xr:[0,N],yr:[-0.42,0.42],
         xlabel:'n',ylabel:'m[n]-\\hat{m}[n]',pad:{l:56,r:26,t:26,b:40},xtarget:6,ytarget:3});
-      bx.poly(err.map((s,i)=>[i,s]),{color:P.COL.err,width:1.5});
+      bx.poly(err.slice(0, 4*st.phase).map((s,i)=>[i,s]),{color:P.COL.err,width:1.5});
 
       root.querySelector('.plots').innerHTML = ax.svg() + bx.svg();
       root.querySelector('.ro').innerHTML = `
