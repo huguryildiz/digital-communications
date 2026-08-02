@@ -22,7 +22,7 @@ const GRID = ['#E5E1D8', '#223040', '#DCD7CC', '#C2BCB0', '#27333F', '#3A4754',
 const AXIS = ['#8A939C', '#7C858F'];
 
 (async () => {
-  const file = 'file://' + path.resolve(__dirname, '..', 'dist', 'Signals_and_Systems.html');
+  const file = 'file://' + path.resolve(__dirname, '..', 'dist', 'Digital_Communications.html');
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
   await page.goto(file, { waitUntil: 'load' });

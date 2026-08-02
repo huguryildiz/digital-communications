@@ -133,13 +133,16 @@ def figure_labels(path):
 
 # ---------------------------------------------------------------------------
 # The textbook anchor. This course's chapter numbers and the textbook's do not
-# agree — chapter 5 is the continuous-time transform here and the discrete-time
-# one there — so an anchor never reaches a reader as a bare address.
+# agree, and in one place they disagree dangerously: this course reaches
+# information theory in its chapter 10, and the textbook's chapter 10 is about
+# transmission through bandlimited channels. A reader who follows a bare "CH10"
+# into the book lands somewhere unrelated. So an anchor never reaches a reader
+# as a bare address.
 #
 # Two shapes are wrong. A section mark of any kind is wrong outright: the
-# artifact draws an open book instead and the notes spell `OW`, so a `§` on the
+# artifact draws an open book instead and the notes spell `PS`, so a `§` on the
 # page is left over from neither. A `CH` followed by a digit is wrong unless the
-# `OW` marker stands in front of it, because this course numbers its own
+# `PS` marker stands in front of it, because this course numbers its own
 # chapters the same way. Both render without complaint and read as this course's
 # own address — the same class of damage as a lost backslash: silent, and wrong.
 #
@@ -148,7 +151,7 @@ def figure_labels(path):
 # ---------------------------------------------------------------------------
 MARK    = re.compile(r'(?:§|&sect;)')
 CHREF   = re.compile(r'\bCH\s?\d')
-ANCHOR_EXEMPT = 'such as <b>CH'
+ANCHOR_EXEMPT = 'such as <b>PS CH'
 
 def bare_section_marks(path):
     hits, in_block = [], False
@@ -159,8 +162,8 @@ def bare_section_marks(path):
             hits.append((i, 'section mark — the anchor is a book and "CH x.y"', raw.strip()[:110]))
             continue
         for m in CHREF.finditer(line):
-            if not re.search(r'\bOW\b(?:</b>)?\s*$', line[:m.start()]):
-                hits.append((i, 'textbook reference without its "OW" marker', raw.strip()[:110]))
+            if not re.search(r'\bPS\b(?:</b>)?\s*$', line[:m.start()]):
+                hits.append((i, 'textbook reference without its "PS" marker', raw.strip()[:110]))
                 break
     return hits
 

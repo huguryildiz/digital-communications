@@ -31,7 +31,7 @@ const ATTRS = ['data-case', 'data-wave', 'data-fac', 'data-cls', 'data-prop', 'd
 const MAX_COMBOS = 60;      /* per laboratory; a breach is reported, never silent */
 
 (async () => {
-  const file = 'file://' + path.resolve(__dirname, '..', 'dist', 'Signals_and_Systems.html');
+  const file = 'file://' + path.resolve(__dirname, '..', 'dist', 'Digital_Communications.html');
   const b = await chromium.launch();
   const p = await b.newPage({ viewport: { width: 1920, height: 1080 } });
   const errs = [];
