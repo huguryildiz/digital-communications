@@ -230,6 +230,58 @@ def _pair_d2(pts):
     return _dist(pts[0], pts[1]) ** 2
 
 
+# ── Module 6: entropy and Huffman ───────────────────────────────────────────
+# The Huffman code below is built with a heap and a tie key, which is a
+# different implementation from the list-and-insert one the laboratory uses.
+# Two implementations that agree are worth more than one that is checked
+# against itself.
+
+import heapq
+
+
+def _H(ps):
+    return -sum(p * math.log2(p) for p in ps if p > 0)
+
+
+def _huffman_lengths(ps, minvar=True):
+    """Codeword lengths, one per input probability.
+
+    The tie key is the count of leaves already merged into a node. Preferring
+    the node with MORE leaves when probabilities tie is what "place the merged
+    symbol as high as possible" comes to, and it is what gives the
+    minimum-variance code.
+    """
+    heap = [(p, 1 if minvar else -1, i, (i,)) for i, p in enumerate(ps)]
+    heapq.heapify(heap)
+    depth = [0] * len(ps)
+    nxt = len(ps)
+    while len(heap) > 1:
+        pa, _, _, la = heapq.heappop(heap)
+        pb, _, _, lb = heapq.heappop(heap)
+        for i in la + lb:
+            depth[i] += 1
+        n = len(la) + len(lb)
+        heapq.heappush(heap, (pa + pb, (n if minvar else -n), nxt, la + lb))
+        nxt += 1
+    return depth
+
+
+def _abar(ps, minvar=True):
+    return sum(p * l for p, l in zip(ps, _huffman_lengths(ps, minvar)))
+
+
+def _var(ps, minvar=True):
+    ls = _huffman_lengths(ps, minvar)
+    L = sum(p * l for p, l in zip(ps, ls))
+    return sum(p * (l - L) ** 2 for p, l in zip(ps, ls))
+
+
+_S3 = [0.7, 0.2, 0.1]
+_DYADIC = [0.5, 0.25, 0.125, 0.125]
+_FIVE = [0.4, 0.2, 0.2, 0.1, 0.1]
+_SIX = [0.3, 0.25, 0.2, 0.12, 0.08, 0.05]
+
+
 CHECKS: list[dict] = [
     # ---- D1-01 ----------------------------------------------------------
     {"name": "D1-01(a) Nyquist rate", "stated": 24e3, "derive": lambda: 2 * 12e3},
@@ -788,6 +840,96 @@ CHECKS: list[dict] = [
      "derive": lambda: _pe(_psk(8), 10 + 10 * math.log10(3)), "tol": 5e-3},
     {"name": "D5-20(c) 16-QAM at 10 dB per bit", "stated": 7.03e-3,
      "derive": lambda: _pe(_qam(16), 10 + 10 * math.log10(4)), "tol": 5e-3},
+    # ── Module 6 ────────────────────────────────────────────────────────────
+
+    {"name": "D6-01 information in p=1/4 and p=1/32", "stated": 7.0,
+     "derive": lambda: -math.log2(0.25) - math.log2(1/32), "tol": 1e-9},
+    {"name": "D6-01 the same from the joint probability", "stated": 7.0,
+     "derive": lambda: -math.log2(0.25 * (1/32)), "tol": 1e-9},
+    {"name": "D6-02 probability carrying three bits", "stated": 0.125,
+     "derive": lambda: 2.0 ** -3, "tol": 1e-9},
+    {"name": "D6-03 entropy of a dyadic source", "stated": 1.75,
+     "derive": lambda: _H(_DYADIC), "tol": 1e-9},
+    {"name": "D6-04 entropy of 0.6, 0.3, 0.1", "stated": 1.2955,
+     "derive": lambda: _H([0.6, 0.3, 0.1]), "tol": 1e-4},
+    {"name": "D6-04 what plain numbering wastes", "stated": 0.70,
+     "derive": lambda: 2 - _H([0.6, 0.3, 0.1]), "tol": 8e-3},
+    {"name": "D6-05 binary entropy at p=0.9", "stated": 0.4690,
+     "derive": lambda: _H([0.9, 0.1]), "tol": 1e-4},
+    {"name": "D6-05 binary entropy at p=0.6", "stated": 0.971,
+     "derive": lambda: _H([0.6, 0.4]), "tol": 1e-3},
+    {"name": "D6-06 efficiency of numbering eight symbols at H=2.5",
+     "stated": 0.833, "derive": lambda: 2.5 / math.log2(8), "tol": 1e-3},
+    {"name": "D6-07 entropy of the third extension", "stated": 3.4703,
+     "derive": lambda: _H([a*b*c for a in _S3 for b in _S3 for c in _S3]),
+     "tol": 1e-4},
+    {"name": "D6-07 that divided by three", "stated": 1.1568,
+     "derive": lambda: _H([a*b*c for a in _S3 for b in _S3 for c in _S3])/3,
+     "tol": 1e-4},
+    {"name": "D6-08 entropy of a uniform source extended by two", "stated": 4.0,
+     "derive": lambda: _H([0.0625]*16), "tol": 1e-9},
+    {"name": "D6-09 average length of the dyadic code", "stated": 1.75,
+     "derive": lambda: sum(p*l for p, l in zip(_DYADIC, [1, 2, 3, 3])), "tol": 1e-9},
+    {"name": "D6-09 its efficiency", "stated": 1.0,
+     "derive": lambda: _H(_DYADIC)/sum(p*l for p, l in zip(_DYADIC, [1, 2, 3, 3])),
+     "tol": 1e-9},
+    {"name": "D6-11 Kraft sum for lengths 1,2,3,3", "stated": 1.0,
+     "derive": lambda: sum(2.0**-l for l in [1, 2, 3, 3]), "tol": 1e-9},
+    {"name": "D6-11 Kraft sum for lengths 1,2,2,3", "stated": 1.125,
+     "derive": lambda: sum(2.0**-l for l in [1, 2, 2, 3]), "tol": 1e-9},
+    {"name": "D6-12 Kraft budget left after 1,2,3", "stated": 0.125,
+     "derive": lambda: 1 - sum(2.0**-l for l in [1, 2, 3]), "tol": 1e-9},
+    {"name": "D6-12 shortest equal pair that fits it", "stated": 4.0,
+     "derive": lambda: math.ceil(-math.log2((1 - sum(2.0**-l for l in [1,2,3]))/2)),
+     "tol": 1e-9},
+    {"name": "D6-13 upper end of the prefix-code band at H=2.35", "stated": 3.35,
+     "derive": lambda: 2.35 + 1, "tol": 1e-9},
+    {"name": "D6-14 block length for a gap of 0.05", "stated": 20.0,
+     "derive": lambda: math.ceil(1/0.05), "tol": 1e-9},
+    {"name": "D6-14 codebook size for three symbols", "stated": 3.4868e9,
+     "derive": lambda: 3.0 ** 20, "tol": 1e-3},
+    {"name": "D6-15 Huffman average length on a dyadic source", "stated": 1.75,
+     "derive": lambda: _abar(_DYADIC), "tol": 1e-9},
+    {"name": "D6-16 entropy of 0.4, 0.3, 0.2, 0.1", "stated": 1.8464,
+     "derive": lambda: _H([0.4, 0.3, 0.2, 0.1]), "tol": 1e-4},
+    {"name": "D6-16 Huffman average length", "stated": 1.9,
+     "derive": lambda: _abar([0.4, 0.3, 0.2, 0.1]), "tol": 1e-9},
+    {"name": "D6-16 efficiency", "stated": 0.9718,
+     "derive": lambda: _H([0.4, 0.3, 0.2, 0.1])/_abar([0.4, 0.3, 0.2, 0.1]),
+     "tol": 1e-4},
+    {"name": "D6-17 variance of the minimum-variance code", "stated": 0.16,
+     "derive": lambda: _var(_FIVE, True), "tol": 1e-9},
+    {"name": "D6-17 variance of the other one", "stated": 1.36,
+     "derive": lambda: _var(_FIVE, False), "tol": 1e-9},
+    {"name": "D6-17 both average the same", "stated": 2.2,
+     "derive": lambda: _abar(_FIVE, False), "tol": 1e-9},
+    {"name": "D6-18 entropy of the five-symbol source", "stated": 2.1219,
+     "derive": lambda: _H(_FIVE), "tol": 1e-4},
+    {"name": "D6-18 its Huffman average length", "stated": 2.2,
+     "derive": lambda: _abar(_FIVE), "tol": 1e-9},
+    {"name": "D6-18 its efficiency", "stated": 0.9645,
+     "derive": lambda: _H(_FIVE)/_abar(_FIVE), "tol": 1e-4},
+    {"name": "D6-18 how far the average exceeds the entropy, per cent",
+     "stated": 3.68,
+     "derive": lambda: (_abar(_FIVE)-_H(_FIVE))/_H(_FIVE)*100, "tol": 3e-3},
+    {"name": "D6-19 entropy of the six-symbol source", "stated": 2.3601,
+     "derive": lambda: _H(_SIX), "tol": 1e-4},
+    {"name": "D6-19 its Huffman average length", "stated": 2.38,
+     "derive": lambda: _abar(_SIX), "tol": 1e-9},
+    {"name": "D6-19 its efficiency", "stated": 0.9917,
+     "derive": lambda: _H(_SIX)/_abar(_SIX), "tol": 1e-4},
+    {"name": "D6-19 its variance", "stated": 0.4956,
+     "derive": lambda: _var(_SIX), "tol": 1e-4},
+    {"name": "D6-20 entropy of the 0.8/0.2 source", "stated": 0.7219,
+     "derive": lambda: _H([0.8, 0.2]), "tol": 1e-4},
+    {"name": "D6-20 average length on pairs, per original symbol",
+     "stated": 0.78,
+     "derive": lambda: _abar([a*b for a in [0.8, 0.2] for b in [0.8, 0.2]])/2,
+     "tol": 1e-9},
+    {"name": "D6-20 efficiency after blocking by two", "stated": 0.9255,
+     "derive": lambda: _H([0.8, 0.2]) /
+         (_abar([a*b for a in [0.8, 0.2] for b in [0.8, 0.2]])/2), "tol": 1e-4},
+
     {"name": "D5-20 teach: dB that would rescue 8-PSK", "stated": 0.9,
      "derive": lambda: 10 * math.log10(
          _Qinv(1e-3 / _nmin(_psk(8))) ** 2
