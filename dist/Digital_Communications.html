@@ -2468,7 +2468,7 @@ Object.assign(LABS, (function(){
      ======================================================================= */
   const B = (() => {
     const N = 256, MMAX = 1;
-    let st = { method:'pcm', bits:3, step:8 };
+    let st = { method:'pcm', bits:3, step:8, phase:64 };
 
     /* One source for all three coders, so that what changes between them is the
        coder and nothing else. It is smooth enough that a predictor has
@@ -2549,10 +2549,16 @@ Object.assign(LABS, (function(){
       const err = src.map((s,i)=>s-rec[i]);
       const snr = 10*Math.log10(meanSq(src)/meanSq(err));
 
+      /* The readouts describe the whole run and not the part drawn so far. An
+         SQNR that changed as the trace grew would be measuring the length of
+         the prefix, which is a fact about the animation and not about the
+         coder. */
+      const shown = rec.slice(0, 4*st.phase);
+
       const ax = P.Axes({w:820,h:250,xr:[0,N],yr:[-1.35,1.35],
         xlabel:'n',ylabel:'m[n],\\;\\hat{m}[n]',pad:{l:56,r:26,t:26,b:40},xtarget:6,ytarget:4});
       ax.poly(src.map((s,i)=>[i,s]),{color:P.COL.in});
-      ax.poly(rec.map((s,i)=>[i,s]),{color:P.COL.out,width:1.8});
+      ax.poly(shown.map((s,i)=>[i,s]),{color:P.COL.out,width:1.8});
 
       const bx = P.Axes({w:820,h:160,xr:[0,N],yr:[-0.42,0.42],
         xlabel:'n',ylabel:'m[n]-\\hat{m}[n]',pad:{l:56,r:26,t:26,b:40},xtarget:6,ytarget:3});
@@ -2589,6 +2595,9 @@ Object.assign(LABS, (function(){
                 <input type="range" data-v="bits" min="1" max="8" step="1" value="3"></div>
               <div class="ctrl"><label>Delta step, % of full scale <span class="val" data-out="step">8</span></label>
                 <input type="range" data-v="step" min="1" max="30" step="1" value="8"></div>
+              <div class="ctrl"><label>Samples coded <span class="val" data-out="phase">64</span></label>
+                <input type="range" data-v="phase" min="0" max="64" step="1" value="64"></div>
+              ${LABS.KIT.runbar()}
             </div>
             <dl class="readout ro"></dl>
             <div class="verdict"></div>
@@ -2598,6 +2607,8 @@ Object.assign(LABS, (function(){
       root.addEventListener('click', e=>{ const b=e.target.closest('[data-seg=method]'); if(!b) return;
         st.method = b.dataset.val; draw(root); });
       draw(root);
+      LABS.KIT.transport(root, { key:'phase', max:64, ms:55,
+        get:()=>st.phase, set:v=>{ st.phase=v; }, redraw:()=>draw(root) });
     }};
   })();
 
