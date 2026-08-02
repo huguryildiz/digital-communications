@@ -97,6 +97,7 @@ const MAX_COMBOS = 60;      /* per laboratory; a breach is reported, never silen
         sliders: [...new Set([...lab.querySelectorAll('[data-v]')].map(e => e.getAttribute('data-v')))],
         hasNav: !!lab.querySelector('[data-nav]'),
         hasReveal: !!lab.querySelector('[data-reveal]'),
+        hasRun: !!lab.querySelector('[data-run]'),
         figures: lab.querySelectorAll('svg').length > 0
       };
     }, ATTRS);
@@ -193,6 +194,22 @@ const MAX_COMBOS = 60;      /* per laboratory; a breach is reported, never silen
           if (!await click('[data-nav="1"]')) break;
         }
         if (await click('[data-nav="-1"]')) await probe(`${theme} ${lab} back one item`, d.figures);
+      }
+
+      /* The transport. `step` and `reset` are discrete: they move the phase axis
+         by a whole stage and then the page is still, so a probe after them reads
+         the same thing every run. `play` is never pressed, and must never be —
+         it is the one control whose result depends on when it is read, and every
+         gate on this artifact reads at a fixed delay after navigating. */
+      if (d.hasRun) {
+        await click('[data-run="reset"]');
+        await p.waitForTimeout(60);
+        await probe(`${lab}: transport reset`, d.figures);
+        await click('[data-run="step"]');
+        await p.waitForTimeout(60);
+        await probe(`${lab}: transport step`, d.figures);
+        await click('[data-run="reset"]');
+        await p.waitForTimeout(60);
       }
     }
   }
