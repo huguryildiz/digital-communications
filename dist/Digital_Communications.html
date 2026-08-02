@@ -3720,6 +3720,9 @@ function figMap(){
     const x = R*Math.cos(th), y = R*Math.sin(th);
     a.poly([[0,0],[x*0.74,y*0.74]], {color:C.grid, width:1.2});
     a.point(x, y, {color:it[2], r:15});
+    /* The number, so the ring and the cards beside it can be matched without
+       reading a label twice. */
+    a.note(x, y - 0.055, it[0], {fs:15, color:C.paper, anchor:'middle'});
     const out = 1.26;
     a.note(x*out, y*out + (Math.abs(y) < 0.2 ? 0 : (y > 0 ? 0.17 : -0.17)), it[1],
       {fs:12.5, color:C.dim, anchor: Math.abs(x) < 0.2 ? 'middle' : (x > 0 ? 'start' : 'end')});
