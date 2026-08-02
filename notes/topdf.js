@@ -6,10 +6,10 @@ const {chromium}=require('/home/claude/.npm-global/lib/node_modules/playwright')
 const path=require('path');
 
 const EDITIONS = [
-  ['Lecture_Notes',        'Signals and Systems — Lecture Notes'],
-  ['Student_Workbook',     'Signals and Systems — Student Workbook'],
-  ['Instructor_Solutions', 'Signals and Systems — Instructor Solutions'],
-  ['Formula_Reference',    'Signals and Systems — Formula and Notation Reference']
+  ['Lecture_Notes',        'Digital Communications — Lecture Notes'],
+  ['Student_Workbook',     'Digital Communications — Student Workbook'],
+  ['Instructor_Solutions', 'Digital Communications — Instructor Solutions'],
+  ['Formula_Reference',    'Digital Communications — Formula and Notation Reference']
 ];
 
 (async()=>{ const b=await chromium.launch(); let bad=0;

@@ -501,7 +501,7 @@ git add tools/rule_check.py && git commit -m "Mark textbook anchors PS, since th
 **Interfaces:**
 - Produces: eleven gates running and reporting zero failures on a one-scene artifact.
 
-- [ ] **Step 1: Run each gate and record what it prints**
+- [x] **Step 1: Run each gate and record what it prints**
 
 ```bash
 node --check build/src/8*.js build/src/9*.js
@@ -519,23 +519,23 @@ cd verify && ../.venv/bin/python verify_ber.py
         "build/src/91_*.js" "build/src/70_labs.js" "notes/src/*.js"
 ```
 
-- [ ] **Step 2: Create the two missing verify files as empty-but-valid gates**
+- [x] **Step 2: Create the two missing verify files as empty-but-valid gates**
 
 `verify_scenes.py` and `verify_drills.py` do not exist yet. Create each with an empty `CHECKS`
 list and the same PASS/FAIL-per-line and `N passed, M failed` output shape as `verify_ber.py`, so
 that a module can add checks to them without touching the runner.
 
-- [ ] **Step 3: Fix every gate that names the old course**
+- [x] **Step 3: Fix every gate that names the old course**
 
 A gate that hardcodes `Signals_and_Systems.html`, a scene count, or a module list will fail. Change
 the filename; make counts read from the artifact rather than from a constant.
 
-- [ ] **Step 4: Re-run all eleven and record the numbers**
+- [x] **Step 4: Re-run all eleven and record the numbers**
 
 Expected: no failures anywhere. Report the numbers each run printed, never a summary in place of a
 run.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add -A && git commit -m "Bring all eleven gates up on the skeleton"

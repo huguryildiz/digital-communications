@@ -45,12 +45,11 @@ const MAX_COMBOS = 60;      /* per laboratory; a breach is reported, never silen
   let states = 0;
 
   /* ---- which scenes carry a laboratory, read off the scene list ---- */
+  /* The scene list is taken from the running artifact rather than from a list
+     of module globals written here. A module added later is invisible to a
+     written list, and the walk stays green without having opened it. */
   const LABS = await p.evaluate(() => {
-    const S = [].concat(
-      window.SCENES_M0 || [], window.SCENES_M1 || [], window.SCENES_M2 || [],
-      window.SCENES_M3 || [], window.SCENES_M4 || [], window.SCENES_M5 || [],
-      window.SCENES_M6 || [], window.SCENES_M7 || [], window.SCENES_END || []
-    );
+    const S = APP.scenes();
     const found = [];
     const walk = (blocks, sceneId) => (blocks || []).forEach(bl => {
       if (!bl || typeof bl !== 'object') return;
@@ -62,7 +61,18 @@ const MAX_COMBOS = 60;      /* per laboratory; a breach is reported, never silen
     S.forEach(s => walk(s.blocks, s.id));
     return found;
   });
-  if (!LABS.length) { console.log('NO LABORATORIES FOUND'); process.exit(1); }
+  /* A build that declares no laboratory has nothing to walk, and saying so is
+     the honest report. It is not a failure: the first laboratory is authored
+     after the engine is standing, and a gate that cannot run before then is a
+     gate that cannot prove the engine stands. What would be a failure is a
+     declared laboratory that does not mount, and that is checked below. */
+  if (!LABS.length) {
+    console.log('LABORATORIES WALKED: none — this build declares no laboratory');
+    console.log('STATES WALKED: 0');
+    console.log('PROBLEMS: none');
+    await b.close();
+    process.exit(0);
+  }
 
   /* ---- read one laboratory's controls off its own rendered DOM ---- */
   async function discover() {

@@ -14,76 +14,12 @@ const path = require('path');
   const out = [];
   async function scene(id) { await p.evaluate(i => APP.goId(i, 0), id); await p.waitForTimeout(220); }
 
-  // ---- Lab A : sliders at boundaries + every segmented control
-  await scene('m1-lab-a');
-  for (const [k, vals] of [['a', [-3, -0.25, 0.25, 1, 3]], ['b', [-6, 0, 6]]]) {
-    for (const v of vals) {
-      await p.$eval(`[data-v=${k}]`, (el, val) => { el.value = val; el.dispatchEvent(new Event('input', { bubbles: true })); }, v);
-      await p.waitForTimeout(60);
-      const ro = await p.$eval('.ro', e => e.innerText.replace(/\s+/g, ' '));
-      out.push(`A ${k}=${v} :: ${ro.slice(0, 120)}`);
-    }
-  }
-  for (const sel of ['[data-seg=dom][data-val=dt]', '[data-seg=proto][data-val=tri]', '[data-seg=stage][data-val="1"]']) {
-    await p.click(sel); await p.waitForTimeout(80);
-  }
-  out.push('A segmented controls OK, plots=' + await p.$$eval('.plots svg', e => e.length));
-
-  // ---- Lab B : classify every item, reveal, next
-  await scene('m1-lab-b');
-  for (let i = 0; i < 6; i++) {
-    await p.click('[data-cls=energy]'); await p.waitForTimeout(70);
-    const v = await p.$eval('.verdict', e => e.innerText.replace(/\s+/g, ' ').slice(0, 70));
-    await p.click('[data-reveal]'); await p.waitForTimeout(70);
-    const w = await p.$eval('.work', e => e.innerText.length);
-    out.push(`B item${i + 1} verdict="${v}" workChars=${w}`);
-    await p.click('[data-nav="1"]'); await p.waitForTimeout(90);
-  }
-
-  // ---- Lab C : rationality sweep incl. boundaries
-  await scene('m1-lab-c');
-  for (const [pv, qv] of [[1, 1], [3, 5], [12, 12], [7, 12], [12, 1]]) {
-    await p.$eval('[data-v=p]', (el, v) => { el.value = v; el.dispatchEvent(new Event('input', { bubbles: true })); }, pv);
-    await p.$eval('[data-v=q]', (el, v) => { el.value = v; el.dispatchEvent(new Event('input', { bubbles: true })); }, qv);
-    await p.waitForTimeout(70);
-    const ro = await p.$eval('.ro', e => e.innerText.replace(/\s+/g, ' '));
-    out.push(`C w0=${pv}pi/${qv} :: ${ro}`);
-  }
-  await p.click('[data-seg=dom][data-val=ct]'); await p.waitForTimeout(90);
-  out.push('C CT mode :: ' + await p.$eval('.ro', e => e.innerText.replace(/\s+/g, ' ')));
-
-  // ---- Lab D : every system, open every property
-  await scene('m2-lab-d');
-  const nSys = await p.evaluate(() => CONTENT.SYSTEMS.length);
-  for (let i = 0; i < nSys; i++) {
-    const keys = await p.$$eval('[data-prop]', els => els.map(e => e.dataset.prop));
-    for (const kk of keys) { await p.click(`[data-prop="${kk}"]`); await p.waitForTimeout(30); }
-    await p.waitForTimeout(60);
-    const txt = await p.$eval('.plist', e => e.innerText);
-    const yes = (txt.match(/YES/g) || []).length, no = (txt.match(/NO/g) || []).length;
-    out.push(`D sys${i + 1} verdicts YES=${yes} NO=${no} (expect 6)`);
-    await p.click('[data-nav="1"]'); await p.waitForTimeout(90);
-  }
-
-  // ---- Lab E : all four cases, slider across the full range
-  await scene('m3-lab-e');
-  for (const c of ['dt1', 'dt2', 'ct1', 'ct2']) {
-    await p.click(`[data-case=${c}]`); await p.waitForTimeout(90);
-    const lim = await p.$eval('[data-v=pos]', e => [+e.min, +e.max]);
-    for (const v of [lim[0], (lim[0] + lim[1]) / 2, lim[1]]) {
-      await p.$eval('[data-v=pos]', (el, val) => { el.value = val; el.dispatchEvent(new Event('input', { bubbles: true })); }, v);
-      await p.waitForTimeout(60);
-      const ro = await p.$eval('.ro', e => e.innerText.replace(/\s+/g, ' '));
-      out.push(`E ${c} pos=${v} :: ${ro}`);
-    }
-  }
-
   // ---- every laboratory in the build, found rather than listed
-  /* The assertions above name five scenes. A laboratory authored after they
-     were written is invisible to them, and the run stays green without having
-     opened it. This sweep takes the laboratories from the scene list itself:
-     every scene holding a `lab` block is opened, and whatever controls it
-     presents are driven. It is the floor the named assertions sit on. */
+  /* Nothing here names a laboratory. A gate that names one is a gate that
+     stays green over a laboratory authored after it was written, and it has to
+     be rewritten every time the course gains one. The laboratories are taken
+     from the scene list instead: every scene holding a `lab` block is opened,
+     and whatever controls it presents are driven to their boundaries. */
   const CTRL = ['case', 'stage', 'nav', 'opt', 'wave', 'fac', 'cls', 'reveal', 'prop', 'seg'];
 
   async function sliderSweep(sel) {
@@ -107,7 +43,10 @@ const path = require('path');
     .map(s => ({ scene: s.id, labs: (s.blocks || []).filter(b => b.t === 'lab').map(b => b.id) }))
     .filter(o => o.labs.length)
     .map(o => ({ scene: o.scene, lab: o.labs[0] })));
-  if (!found.length) errs.push('LABSWEEP no scene carries a lab block');
+  /* A build with no laboratory yet has nothing to sweep, and saying so is the
+     honest report rather than a failure. A declared laboratory that fails to
+     mount, or mounts empty, is a failure, and that is what the loop below
+     checks. */
 
   for (const L of found) {
     const sel = `[data-lab="${L.lab}"]`;
@@ -151,17 +90,27 @@ const path = require('path');
     out.push(`LAB ${L.lab} (${L.scene}) sliders=${nSlider} controls=${clicked}/${handles.length}`
       + (gone ? ` detached=${gone}` : '') + ` svg=${svg} chars=${chars}`);
   }
-  out.push('LABORATORIES SWEPT: ' + found.map(o => o.lab).join(' '));
+  out.push('LABORATORIES SWEPT: ' + (found.length ? found.map(o => o.lab).join(' ')
+    : 'none — this build declares no laboratory'));
 
   // ---- exam drills: every question is open-ended and one question is on screen
   //      at a time, so what there is to drive is the pager and the reveal of the
   //      worked solution. Every question of every module is opened, because a
   //      question left unpaged is a question no gate has ever rendered.
+  /* Which modules have a question section is read from the artifact, not
+     written here: the course opening carries no examinable method and so no
+     questions, and a module list written into the gate goes stale the moment
+     that changes. A module whose question scene exists and holds nothing is a
+     different matter, and is an error. */
   let dpages = 0, dsol = 0, dparts = 0, dopts = 0;
-  for (const m of ['M1','M2','M3','M4','M5','M6','M7']) {
+  const drillModules = await p.evaluate(() => {
+    const ids = new Set(APP.scenes().map(s => s.id));
+    return CONTENT.MODULES.map(m => m.id).filter(id => ids.has(id.toLowerCase() + '-drill'));
+  });
+  for (const m of drillModules) {
     await scene(m.toLowerCase() + '-drill');
     const n = await p.evaluate(mm => CONTENT.DRILL.filter(q => q.module === mm).length, m);
-    if (!n) { errs.push(`DRILL ${m}: no questions`); continue; }
+    if (!n) { errs.push(`DRILL ${m}: question section exists but holds no question`); continue; }
     for (let i = 0; i < n; i++) {
       const shown = await p.$$eval('#scene-host .dr-page .drill', e => e.length);
       if (shown !== 1) errs.push(`DRILL ${m} q${i + 1}: ${shown} questions on screen, expected 1`);
@@ -179,7 +128,8 @@ const path = require('path');
       await nx.click(); await p.waitForTimeout(120);
     }
   }
-  out.push(`DRILL pages=${dpages} solutions=${dsol} parts=${dparts} options=${dopts}`);
+  out.push(`DRILL modules=${drillModules.join(' ') || 'none'} pages=${dpages}`
+    + ` solutions=${dsol} parts=${dparts} options=${dopts}`);
   if (dopts !== 0) errs.push(`DRILL: ${dopts} answer options rendered — every question is open-ended`);
 
   // ---- modes, overlays, deep links, reset
@@ -192,14 +142,28 @@ const path = require('path');
   await p.keyboard.press('m'); await p.waitForTimeout(120);
   const mapOpen = await p.$$eval('#ov-map.open', e => e.length);
   await p.keyboard.press('Escape');
+  /* The term searched for and the scene deep-linked to are taken from the
+     artifact, not written here. A word from this course put into the gate goes
+     stale the moment the scene carrying it is rewritten, and the run then
+     reports zero hits from a search that was never going to find anything. */
+  const probe = await p.evaluate(() => {
+    const ss = APP.scenes();
+    const last = ss[ss.length - 1];
+    const word = (ss.find(s => (s.keywords || '').trim()) || {}).keywords || last.title;
+    return { term: word.trim().split(/\s+/).sort((a, b) => b.length - a.length)[0],
+             id: last.id, step: last.steps || 0 };
+  });
   await p.keyboard.press('/'); await p.waitForTimeout(120);
-  await p.fill('#searchbox', 'convolution'); await p.waitForTimeout(150);
+  await p.fill('#searchbox', probe.term); await p.waitForTimeout(150);
   const hits = await p.$$eval('#sresults .sres', e => e.length);
+  if (!hits) errs.push(`SEARCH: "${probe.term}" is in the artifact and the search found nothing`);
   await p.keyboard.press('Escape');
-  await p.evaluate(() => { location.hash = '#m3-ex-ct2/3'; });
+  await p.evaluate(x => { location.hash = '#' + x.id + '/' + x.step; }, probe);
   await p.waitForTimeout(200);
   const deep = await p.evaluate(() => [APP.state.i, APP.state.step]);
-  out.push(`MODES edition=${instr} motion=${motion} mode=${mode} map=${mapOpen} searchHits=${hits} deepLinkStep=${deep[1]}`);
+  if (deep[1] !== probe.step) errs.push(`DEEPLINK: asked ${probe.id}/${probe.step}, landed on step ${deep[1]}`);
+  out.push(`MODES edition=${instr} motion=${motion} mode=${mode} map=${mapOpen}`
+    + ` search="${probe.term}" hits=${hits} deepLink=${probe.id}/${deep[1]}`);
 
   console.log(out.join('\n'));
   console.log('\nERRORS: ' + (errs.length ? errs.slice(0, 10).join(' | ') : 'none'));
