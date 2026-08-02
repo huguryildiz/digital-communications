@@ -185,7 +185,7 @@ git add -A && git commit -m "Copy the rendering engine and prove it builds on on
 - Produces: `consistent(p_claimed: float, k: int, n: int, z: float = 3.0) -> bool`, true when
   `p_claimed` lies inside that interval.
 
-- [ ] **Step 1: Create the arm64 virtualenv**
+- [x] **Step 1: Create the arm64 virtualenv**
 
 ```bash
 /opt/homebrew/bin/python3.12 -m venv .venv
@@ -195,7 +195,7 @@ git add -A && git commit -m "Copy the rendering engine and prove it builds on on
 
 Expected: `arm64`. Anything else means the wrong interpreter — stop and fix it.
 
-- [ ] **Step 2: Write the failing test**
+- [x] **Step 2: Write the failing test**
 
 Create `verify/test_wilson.py`:
 
@@ -224,7 +224,7 @@ def test_a_factor_of_two_error_is_rejected():
     assert not consistent(0.025, 500, 10000)
 ```
 
-- [ ] **Step 3: Run it and watch it fail**
+- [x] **Step 3: Run it and watch it fail**
 
 ```bash
 cd verify && ../.venv/bin/python -m pytest test_wilson.py -v
@@ -232,7 +232,7 @@ cd verify && ../.venv/bin/python -m pytest test_wilson.py -v
 
 Expected: FAIL, `ModuleNotFoundError: No module named 'wilson'`.
 
-- [ ] **Step 4: Implement it**
+- [x] **Step 4: Implement it**
 
 Create `verify/wilson.py`:
 
@@ -268,7 +268,7 @@ def consistent(p_claimed: float, k: int, n: int, z: float = 3.0) -> bool:
     return lo <= p_claimed <= hi
 ```
 
-- [ ] **Step 5: Run the tests and watch them pass**
+- [x] **Step 5: Run the tests and watch them pass**
 
 ```bash
 cd verify && ../.venv/bin/python -m pytest test_wilson.py -v
@@ -276,7 +276,7 @@ cd verify && ../.venv/bin/python -m pytest test_wilson.py -v
 
 Expected: `4 passed`.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add verify/wilson.py verify/test_wilson.py && \

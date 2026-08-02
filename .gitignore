@@ -19,5 +19,7 @@ node_modules/
 shots/
 pages/
 textclash.json
+__pycache__/
+.pytest_cache/
 
 .DS_Store
