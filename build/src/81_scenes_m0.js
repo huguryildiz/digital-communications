@@ -68,7 +68,7 @@ const SC = [
 { id:'title', module:'M0', nav:'Title', title:'Digital Communications',
   keywords:'title cover version', steps:0, blocks:[
   {t:'stack', style:'justify-content:center;flex:1;align-items:flex-start', items:[
-    {t:'eyebrow', text:'EE 413 · Communication Systems II'},
+    {t:'eyebrow', text:'Digital Communications'},
     {t:'title', level:1, text:'Digital Communications'},
     {t:'lede', text:'A digital communication system carries a finite alphabet of symbols across a channel that adds noise to everything it carries. The course is the study of how those symbols are chosen, how they are recovered, and how often the recovery is wrong.'},
     {t:'small', html:'Seven modules, ten laboratories and one hundred and twenty practice questions with worked solutions. Every figure is drawn from the mathematics beside it, and every number is checked by a program that computes it a second way.'}

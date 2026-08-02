@@ -12,7 +12,7 @@ const sinc=x=>Math.abs(x)<1e-12?1:Math.sin(Math.PI*x)/(Math.PI*x);
 window.C1 = [
 
 /* ---------------- title ---------------- */
-{t:'title', kicker:'EE 413 · Communication Systems II', text:'Digital Communications',
+{t:'title', kicker:'Digital Communications', text:'Digital Communications',
  sub:'Lecture notes for the whole course: how a waveform becomes a finite alphabet of symbols, how those symbols are carried across a channel that adds noise to everything, how a receiver decides which one was sent, and how often it is wrong.',
  meta:[['Covers','Chapters 1 to 6, and appendix A'],['Level','Undergraduate'],
        ['Assumed background','Fourier analysis, probability, random processes']]},

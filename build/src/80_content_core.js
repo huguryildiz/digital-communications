@@ -12,7 +12,7 @@
 const CONTENT = {
 
   META: {
-    course:'EE 413',
+    course:'Digital Communications',
     title:'Digital Communications',
     version:'1.0',
     language:'Academic English',

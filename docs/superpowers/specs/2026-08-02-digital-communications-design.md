@@ -4,14 +4,14 @@ Date: 2026-08-02
 Status: approved, not yet implemented
 Repository: `~/Documents/GitHub/digital-communications`
 
-This document specifies the teaching artifact for EE 413 Communication Systems II. It is the
+This document specifies the teaching artifact for this Digital Communications course. It is the
 design record; the implementation plan is written separately.
 
 ---
 
 ## 1. What is being built
 
-Four deliverables, the same set the Signals and Systems project produces:
+Four deliverables, the same set the source course produces:
 
 1. **`dist/Digital_Communications.html`** — one offline-capable file carrying the whole course:
    teaching scenes, laboratories, and a practice-question section in every module.
@@ -35,16 +35,16 @@ copied in before anything can be rebuilt or re-read.
 
 | Source | Extent | Character |
 | --- | --- | --- |
-| `source/Slides/EE413-CH7.pdf` | 37 slides | digital text, extractable |
-| `source/Slides/EE413-CH8.pdf` | 48 slides | digital text, extractable |
-| `source/Slides/EE413-CH9.pdf` | 101 slides | digital text, extractable |
-| `source/Slides/EE413-CH10.pdf` | 22 slides | digital text, extractable |
+| `source/Slides`, chapter 7 | 37 slides | digital text, extractable |
+| `source/Slides`, chapter 8 | 48 slides | digital text, extractable |
+| `source/Slides`, chapter 9 | 101 slides | digital text, extractable |
+| `source/Slides`, chapter 10 | 22 slides | digital text, extractable |
 | `source/Lecture Notes.pdf` | 80 pages, 42 MB | handwritten scan, week-by-week |
 | `source/Book.pdf` | 924 pages, 15 MB | Proakis and Salehi, *Fundamentals of Communication Systems*, 2nd edition, ISBN 978-0-13-335485-0 |
 | `source/Exams/MT - Analysis.pdf` | 1 populated page | midterm question table, three years × four questions |
 | `source/Exams/Final - Analysis.pdf` | 1 page | final question table, three years × four questions |
 
-**The slides are the primary source and this is the material difference from Signals and Systems.**
+**The slides are the primary source and this is the material difference from the source course.**
 There, the only source was an 88-page handwritten scan, and every page had to be rendered at
 160 dpi and read by eye before anything could be authored. Here `pdftotext -layout` returns clean
 text for all 208 slides, and each slide carries its own topic in the footer. The handwritten notes
@@ -68,7 +68,7 @@ because 42 MB does not belong in git history.
 
 ## 3. Repository and engine inheritance
 
-The course-agnostic engine is copied from `~/Documents/GitHub/signals-and-systems` once, at the
+The course-agnostic engine is copied from the source course once, at the
 start, and evolves independently from that point. Measured against that repository, the engine is
 about 2,000 lines and the course content about 15,200 — the engine is twelve percent of the work,
 so copying it is cheap and sharing it is not worth the coupling.
@@ -95,7 +95,7 @@ KaTeX stays vendored and font-inlined. No network fetch, ever.
 
 ### Colour semantics
 
-The five signal colours of the Signals and Systems project carry over with the meanings adapted:
+The five signal colours of the source course carry over with the meanings adapted:
 
 | Colour | Meaning here |
 | --- | --- |
@@ -155,7 +155,7 @@ result it never stated.
 
 ## 5. Numbering and textbook anchoring
 
-The mechanism is the one already built for Signals and Systems: a three-level hierarchy of chapter,
+The mechanism is the one already built for the source course: a three-level hierarchy of chapter,
 section and scene; every address declared once in `build/src/89_sections.js` and derived onto the
 scenes at load time; no scene file carrying an address of its own. A renumbering is an edit to one
 file.
@@ -273,8 +273,8 @@ reader moves with a pager. M0 has no question section — it carries no examinab
 
 Of the twenty, **twelve are single-skill questions** with two or three parts and **eight are
 full-length**, carrying one statement and three to four lettered parts in the form the papers use.
-This is a higher proportion of full-length questions than the Signals and Systems project uses,
-and the reason is that the EE 413 papers are built differently: four questions of 25 points each,
+This is a higher proportion of full-length questions than the source course uses,
+and the reason is that this course's papers are built differently: four questions of 25 points each,
 every one of them already carrying lettered parts. A mostly-single-skill drill would misrepresent
 what the reader is preparing for.
 
@@ -359,7 +359,7 @@ each claim is stated at.
 `verify_ber.py` also covers laboratory H, which draws the same comparison for the reader.
 
 The `.venv` is a local arm64 virtualenv with numpy, scipy and sympy — scipy is new relative to the
-Signals and Systems project and is what supplies `erfc`, the Gaussian tail and the Wilson interval.
+source course and is what supplies `erfc`, the Gaussian tail and the Wilson interval.
 
 ---
 
@@ -398,7 +398,7 @@ needed:
 5. **The five editions**, `CLAUDE.md`, and a final sweep: `pdftotext -layout` over every page of
    every PDF, failing on a `$...$` pair or a bare TeX macro reaching the page.
 
-Measured against the Signals and Systems project, which reached this state in five active days and
+Measured against the source course, which reached this state in five active days and
 59 commits: the source reading here is cheaper because the slides are digital, the question count
 is a third lower, and one new gate has to be written. The scale is comparable.
 
@@ -410,7 +410,7 @@ is a third lower, and one new gate has to be written. The scale is comparable.
   derive them from the worked examples in the slides and to state in the design record that they
   are so derived — not to pretend the papers cover CH9.
 - **The `PS` anchor map is one-to-many** for M2 and M5, and one course chapter maps to two textbook
-  chapters. The anchor field must accept a range and a list, which the Signals and Systems
+  chapters. The anchor field must accept a range and a list, which the source course
   implementation already does.
 - **`verify_ber.py` can be made to pass by loosening it.** A trial count too low, or an interval
   too wide, turns the gate green without checking anything. The trial count per claim is chosen

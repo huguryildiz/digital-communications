@@ -1,5 +1,5 @@
 /* ==========================================================================
-   EE 413 · Digital Communications — the page in front of the course.
+   Digital Communications — the page in front of the course.
 
    Dark, because the two things on it that move are instruments and an
    instrument is read off a dark screen. The three accent colours are the three
@@ -67,13 +67,11 @@ h1,h2,h3{ font-family:var(--serif); font-weight:600; line-height:1.15;
 }
 .brand{ display:flex; align-items:center; gap:11px; text-decoration:none; }
 .brand__name{ font-family:var(--mono); font-size:14px; letter-spacing:.1em; font-weight:600; }
-.brand__sub{ color:var(--faint); font-size:13px; }
 .bar__nav{ display:flex; align-items:center; gap:26px; font-size:14px; }
 .bar__nav a{ color:var(--muted); text-decoration:none; transition:color .18s var(--ease); }
 .bar__nav a:hover{ color:var(--ink); }
 
 @media (max-width:760px){
-  .brand__sub{ display:none; }
   .bar__nav a:not(.btn){ display:none; }
 }
 

@@ -1,4 +1,4 @@
-# EE 413 Digital Communications Implementation Plan
+# Digital Communications Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development
 > (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use
@@ -8,11 +8,11 @@
 > below, does it, ticks it, and commits. Run it again to continue. It is the only entry point;
 > nothing here needs to be started by hand.
 
-**Goal:** Build the EE 413 Communication Systems II teaching artifact — one offline HTML file
+**Goal:** Build the Digital Communications teaching artifact — one offline HTML file
 carrying seven modules, ten laboratories and 140 practice questions, plus a lecture-notes PDF and
 three derived editions — all of it passing eleven verification gates.
 
-**Architecture:** The course-agnostic rendering engine is copied once from `signals-and-systems`
+**Architecture:** The course-agnostic rendering engine is copied once from the source course
 and never redesigned. Content is written into numbered scene files that `build/build.js`
 concatenates into a single artifact. Every numerical claim is re-derived by a Python gate, and
 every closed-form error probability is additionally checked against an independent Monte Carlo
@@ -33,7 +33,7 @@ Copied verbatim from the spec. Every task's requirements implicitly include this
 - **One file, no network.** The artifact makes no network request and needs no install step. KaTeX
   is vendored and font-inlined. No `npm install` at any point in the build.
 - **Editorial rules R1–R9 are binding** on every student-facing string, inherited unchanged from
-  `signals-and-systems/CLAUDE.md` §6. Never name a source, a page, an audit or a process.
+  the source course's own working notes, §6. Never name a source, a page, an audit or a process.
 - **Turkish to the user, plain academic English in every file.** Deliverables and internal records
   alike.
 - **`Q(x)` is the Gaussian tail**, `Q(x) = ½ erfc(x/√2)`. Noise is white and Gaussian with
@@ -81,7 +81,7 @@ The engine must be proven to work before any content depends on it.
 ### Task 1: Copy the engine and prove it builds
 
 **Files:**
-- Create: `build/`, `notes/`, `verify/`, `tools/`, `dist/` by copying from `signals-and-systems`
+- Create: `build/`, `notes/`, `verify/`, `tools/`, `dist/` by copying from the source course
 - Create: `build/src/80_content_core.js`, `build/src/89_sections.js`, `build/src/81_scenes_m0.js`
 - Create: `build/src/99_tail.html` (edited copy)
 
@@ -92,7 +92,7 @@ The engine must be proven to work before any content depends on it.
 
 ```bash
 cd ~/Documents/GitHub/digital-communications
-S=~/Documents/GitHub/signals-and-systems
+S=<the source course repository>
 mkdir -p build/src notes/src verify tools dist
 cp $S/build/src/{00_head.html,10_style.css,20_katex.css,30_katex.js,40_core.js,60_plot.js,90_app.js} build/src/
 cp $S/build/{build.js,qa.js,labtest.js,textclash.js,mathscan.js,seccheck.js,labwalk.js,domcheck.js,pw.js} build/
@@ -128,7 +128,7 @@ lists, not the content list: they are background, and a label crossing them is n
 
 - [x] **Step 4: Write the minimal content core**
 
-Create `build/src/80_content_core.js` with `CONTENT.META` set to `{course:'EE 413', title:'Digital
+Create `build/src/80_content_core.js` with `CONTENT.META` set to `{course:'Digital Communications', title:'Digital
 Communications', version:'0.1'}`, and `CONTENT.BOOKICON` copied verbatim from the source repository
 — the inline SVG open book the `PS` chip uses.
 
@@ -557,7 +557,7 @@ because the figure vocabulary, the scene rhythm and the question format are all 
 - [x] **Step 1: Extract the slide text**
 
 ```bash
-pdftotext -layout source/Slides/EE413-CH7.pdf .claude/notes/ch7.txt
+pdftotext -layout "source/Slides/chapter 7.pdf" .claude/notes/ch7.txt
 ```
 
 - [x] **Step 2: Render the handwritten pages for M1**
