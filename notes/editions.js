@@ -70,7 +70,7 @@ const GROUP = `const BY = {};
 const workbook = `
 ${MODULE_TITLE}${KIND}${GROUP}
 const B = [
- {t:'title', kicker:'Signals and Systems', text:'Student Workbook',
+ {t:'title', kicker:'Digital Communications', text:'Student Workbook',
   sub:'Every question in the course, with no answer and no solution. Work each one on the page, then check it against the artifact or against the instructor edition.',
   meta:[['Contains', CONTENT.DRILL.length + ' questions across ' + MODS.length + ' modules'],
         ['Level','Undergraduate'],
@@ -99,7 +99,7 @@ renderNotes(B, document.getElementById('doc'));`;
 const solutions = `
 ${MODULE_TITLE}${KIND}${GROUP}
 const B = [
- {t:'title', kicker:'Signals and Systems', text:'Instructor Solutions',
+ {t:'title', kicker:'Digital Communications', text:'Instructor Solutions',
   sub:'Every question with its worked solution, the error it is built to catch, and a teaching note. Not for distribution to students.',
   meta:[['Contains', CONTENT.DRILL.length + ' questions, fully worked'],
         ['Edition', CONTENT.META.version],
@@ -130,7 +130,7 @@ renderNotes(B, document.getElementById('doc'));`;
 /* -------------------------------------------------------- formula reference */
 const reference = `
 const B = [
- {t:'title', kicker:'Signals and Systems', text:'Formula and Notation Reference',
+ {t:'title', kicker:'Digital Communications', text:'Formula and Notation Reference',
   sub:'The conventions used throughout the course, every formula it establishes, and every symbol it defines. Nothing here is derived; the derivations are in the lecture notes.',
   meta:[['Contains','Conventions, formulas, notation'],
         ['Edition','v1.0'],
@@ -179,7 +179,7 @@ const write = (name, html) => {
   fs.writeFileSync(path.join(OUT, name), html);
   console.log(name.padEnd(30), (html.length / 1048576).toFixed(2) + ' MB');
 };
-write('Student_Workbook.html', doc('Signals and Systems — Student Workbook', workbook));
-write('Instructor_Solutions.html', doc('Signals and Systems — Instructor Solutions', solutions));
-write('Formula_Reference.html', doc('Signals and Systems — Formula and Notation Reference', reference,
+write('Student_Workbook.html', doc('Digital Communications — Student Workbook', workbook));
+write('Instructor_Solutions.html', doc('Digital Communications — Instructor Solutions', solutions));
+write('Formula_Reference.html', doc('Digital Communications — Formula and Notation Reference', reference,
   `<script>${g(S('src/ca.js'))}</script>`));
