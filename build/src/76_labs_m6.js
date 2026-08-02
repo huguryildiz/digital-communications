@@ -106,7 +106,7 @@ Object.assign(LABS, (function(){
 
   /* ---- J · Building a Huffman code -------------------------------------- */
   const J = (() => {
-    let st = { w1:40, w2:20, w3:20, w4:10, w5:10, step:4, high:1 };
+    let st = { w1:40, w2:20, w3:20, w4:10, w5:10, phase:4, high:1 };
 
     /* The algorithm itself. Each merge takes the two least likely entries,
        labels them 0 and 1, and puts the combination back into the list. Where
@@ -156,7 +156,7 @@ Object.assign(LABS, (function(){
       const K = ps.length;
       const B = build(ps, st.high === 1);
       const { pos, leaves } = layout(B.root);
-      const done = st.step;                       /* merges revealed so far */
+      const done = st.phase;                       /* merges revealed so far */
 
       const depth = Math.max(...B.code.map(c=>c.length));
       const span = Math.max(1, leaves-1);
@@ -248,8 +248,9 @@ Object.assign(LABS, (function(){
                 [40,20,20,10,10][i-1]}</span></label>
                 <input type="range" data-v="w${i}" min="1" max="100" step="1" value="${
                   [40,20,20,10,10][i-1]}"></div>`).join('')}
-              <div class="ctrl"><label>Merges shown <span class="val" data-out="step">4</span></label>
-                <input type="range" data-v="step" min="0" max="4" step="1" value="4"></div>
+              <div class="ctrl"><label>Merges shown <span class="val" data-out="phase">4</span></label>
+                <input type="range" data-v="phase" min="0" max="4" step="1" value="4"></div>
+              ${LABS.KIT.runbar()}
               <div class="ctrl"><label>On a tie, put the merged symbol <span class="seg">
                 <button data-seg="high" data-val="1">high</button>
                 <button data-seg="high" data-val="0">low</button></span></label></div>
@@ -266,6 +267,8 @@ Object.assign(LABS, (function(){
       root.addEventListener('click', e=>{ const b=e.target.closest('[data-seg=high]'); if(!b) return;
         st.high=parseInt(b.dataset.val,10); draw(root); });
       draw(root);
+      LABS.KIT.transport(root, { key:'phase', max:4, ms:700,
+        get:()=>st.phase, set:v=>{ st.phase=v; }, redraw:()=>draw(root) });
     }};
   })();
 
