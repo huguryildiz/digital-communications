@@ -13,7 +13,12 @@ const g=s=>s.replace(/<\/script>/gi,'<\\/script>');
    course ever grows one, does not sort between 1 and 2. */
 const chapters = fs.readdirSync(path.join(__dirname,'src'))
   .filter(f=>/^c\d+\.js$/.test(f))
-  .sort((a,b)=>parseInt(a.slice(1),10)-parseInt(b.slice(1),10));
+  .sort((a,b)=>parseInt(a.slice(1),10)-parseInt(b.slice(1),10))
+  /* The appendices follow the numbered chapters, in letter order. `editions.js`
+     slices the formula summary out of `ca.js`, so it has to be the same file
+     the notes carry rather than a second copy. */
+  .concat(fs.readdirSync(path.join(__dirname,'src'))
+    .filter(f=>/^c[a-z]\.js$/.test(f)).sort());
 const globals = chapters.map(f=>f.replace(/\.js$/,'').toUpperCase());
 
 const html=`<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">

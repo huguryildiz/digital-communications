@@ -907,15 +907,15 @@ This scene shows the `PS CH` form it describes and is the single exemption in `r
 **Files:**
 - Modify: `notes/editions.js`
 
-- [ ] **Step 1: Point `editions.js` at this course's drill data**
+- [x] **Step 1: Point `editions.js` at this course's drill data**
 
-- [ ] **Step 2: Render**
+- [x] **Step 2: Render**
 
 ```bash
 cd notes && node editions.js && node ../build/pw.js topdf.js
 ```
 
-- [ ] **Step 3: Sweep every page of every PDF**
+- [x] **Step 3: Sweep every page of every PDF**
 
 ```bash
 for f in dist/*.pdf; do
@@ -927,7 +927,7 @@ Expected: no output from any file. In the other course this sweep caught a quest
 mathematics was interpolated raw — `$X(j\omega)$` printed on the page and the uppercase frame
 turned it into `J\OMEGA`. No gate reads the editions.
 
-- [ ] **Step 4: Look at pages**
+- [x] **Step 4: Look at pages**
 
 Render every page to an image and look at it.
 

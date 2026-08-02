@@ -68,7 +68,7 @@ const SC = [
     {t:'eyebrow', text:'EE 413 · Communication Systems II'},
     {t:'title', level:1, text:'Digital Communications'},
     {t:'lede', text:'A digital communication system carries a finite alphabet of symbols across a channel that adds noise to everything it carries. The course is the study of how those symbols are chosen, how they are recovered, and how often the recovery is wrong.'},
-    {t:'small', html:'Seven modules, ten laboratories and one hundred and forty practice questions with worked solutions. Every figure is drawn from the mathematics beside it, and every number is checked by a program that computes it a second way.'}
+    {t:'small', html:'Seven modules, ten laboratories and one hundred and twenty practice questions with worked solutions. Every figure is drawn from the mathematics beside it, and every number is checked by a program that computes it a second way.'}
   ]}
 ]},
 
@@ -158,7 +158,7 @@ const SC = [
       {t:'note', kind:'def', head:'What depends on what', html:'Modules 1 and 2 stand on their own. Module 3 is needed for 4, and 4 for 5 — those three should be read in order and not sampled. Module 6 depends on nothing else here and can be read at any point.'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'ok', head:'Ten laboratories and a hundred and forty questions', html:'Each module carries one or two laboratories, where every control changes the mathematics rather than the picture, and twenty practice questions whose solutions are worked rather than stated. The questions follow the shapes the papers actually set, and each module names those shapes before it starts.'}
+      {t:'note', kind:'ok', head:'Ten laboratories and a hundred and twenty questions', html:'Each module carries one or two laboratories, where every control changes the mathematics rather than the picture, and twenty practice questions whose solutions are worked rather than stated. The questions follow the shapes the papers actually set, and each module names those shapes before it starts.'}
     ]}
   ]}
 ]},

@@ -71,11 +71,48 @@ const CONTENT = {
   /* ---- notation glossary; every symbol defined once, linked from prose ----
      `go` names the scene where the symbol is introduced. An entry with no `go`
      is one whose scene is not written yet. */
+  /* Every symbol the course defines, in the order the course defines them. A
+     symbol is never reused for a second meaning, and where two courses would
+     disagree — sinc, the noise density, the base of a logarithm — the entry
+     says which convention is in force. */
   GLOSS: {
-    N0:{ s:'N_0', d:'Noise power spectral density parameter. The two-sided density is N₀/2 watts per hertz.' },
-    Q:{ s:'Q(x)', d:'The Gaussian tail: the probability that a standard normal variable exceeds x.' },
-    Eb:{ s:'E_b,\\;E_s', d:'Energy per information bit and energy per transmitted symbol.' },
-    Pb:{ s:'P_b,\\;P_e', d:'Bit error probability and symbol error probability.' }
+    /* Chapter 1 */
+    fs:{ s:'f_s,\\;T_s', d:'Sampling rate in hertz and the interval between samples, $T_s=1/f_s$.' },
+    W:{ s:'W', d:'The highest frequency present in a message. The sampling theorem asks for $f_s>2W$.' },
+    sinc:{ s:'\\operatorname{sinc}(x)', d:'Normalised: $\\sin(\\pi x)/(\\pi x)$, with zeros at every non-zero integer.' },
+    Delta:{ s:'\\Delta,\\;L,\\;n', d:'Quantizer step, number of levels and bits a sample, with $L=2^{n}$ and $\\Delta=2V/L$ over a range $\\pm V$.' },
+    sq:{ s:'\\sigma_q^{2}', d:'Quantization noise power, $\\Delta^{2}/12$ for a uniform quantizer.' },
+
+    /* Chapter 2 */
+    T:{ s:'T,\\;R', d:'Symbol interval and the rate that follows from it. A bit interval is written $T_b$ and a bit rate $R_b$.' },
+    p:{ s:'p(t),\\;h(t)', d:'The transmitted pulse and the impulse response of the receive filter. The matched filter is $h(t)=p(T-t)$.' },
+    alpha:{ s:'\\alpha', d:'Roll-off of a raised-cosine pulse, from $0$ to $1$. Bandwidth is $(1+\\alpha)/2T$.' },
+
+    /* Chapter 3 */
+    psi:{ s:'\\psi_k(t)', d:'The $k$-th orthonormal basis function, from the Gram–Schmidt procedure applied to the signal set.' },
+    si:{ s:'s_i(t),\\;\\mathbf{s}_i', d:'The $i$-th transmitted waveform, and the point in signal space whose coordinates are its projections onto the basis.' },
+    E:{ s:'E,\\;E_i', d:'Signal energy, normalised so that no resistance appears: $E_i=\\|\\mathbf{s}_i\\|^{2}$.' },
+    d:{ s:'d_{ij},\\;d_{\\min}', d:'Distance between two signal points, and the smallest such distance in a constellation.' },
+
+    /* Chapter 4 */
+    r:{ s:'r(t),\\;\\mathbf{r}', d:'The received waveform and the observation vector it produces, $\\mathbf{r}=\\mathbf{s}_i+\\mathbf{n}$.' },
+    N0:{ s:'N_0', d:'Noise power spectral density parameter. The two-sided density is $N_0/2$ watts per hertz, and each noise component is $\\mathcal{N}(0,N_0/2)$.' },
+    Q:{ s:'Q(x)', d:'The Gaussian tail: the probability that a standard normal variable exceeds $x$. Equal to $\\tfrac12\\operatorname{erfc}(x/\\sqrt2)$.' },
+    M:{ s:'M,\\;N', d:'The number of signals in the set, and the number of basis functions they need. $M$ signals carry $\\log_2 M$ bits a symbol.' },
+    Nmin:{ s:'N_{\\min}', d:'The average number of signal points at the minimum distance. An average, so not usually a whole number.' },
+    Pb:{ s:'P_b,\\;P_e,\\;P_s', d:'Bit error probability, error probability in general, and symbol error probability.' },
+
+    /* Chapter 5 */
+    Eb:{ s:'E_b,\\;E_s', d:'Energy per information bit and energy per transmitted symbol, with $E_s=(\\log_2 M)E_b$.' },
+    fc:{ s:'f_c', d:'Carrier frequency. Every scheme in Chapter 5 changes the amplitude, the phase or the frequency of $\\cos(2\\pi f_ct)$.' },
+
+    /* Chapter 6 */
+    S:{ s:'S,\\;K,\\;p_k', d:'The source alphabet, how many symbols it has, and the probability of the $k$-th.' },
+    I:{ s:'I(s_k)', d:'Self-information of one symbol, $-\\log_2 p_k$ bits.' },
+    H:{ s:'H(S)', d:'Entropy: the average information a symbol carries, in bits a symbol. Bounded by $0$ and $\\log_2 K$.' },
+    Lbar:{ s:'\\bar{L},\\;l_k', d:'Average codeword length and the length of the codeword for symbol $k$.' },
+    eta:{ s:'\\eta', d:'Coding efficiency, $H(S)/\\bar{L}$. Never above one.' },
+    sig2:{ s:'\\sigma^{2}', d:'Variance of the codeword length about $\\bar{L}$. Separates two Huffman codes that share an average.' }
   },
 
   /* ---- practice questions: open-ended, in the form they are asked in ----
