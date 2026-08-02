@@ -450,7 +450,8 @@ const SC = [
     ]},
     {t:'reveal', at:3, items:[
       {t:'body', html:'Substituting $\\Delta=2m_{\\max}/L$ and $L=2^{R}$ gives the form used for the rest of the module:'},
-      {t:'eq', key:true, tex:'E[Q^{2}]=\\frac{1}{12}\\left(\\frac{2m_{\\max}}{L}\\right)^{2}=\\frac{1}{3}\\frac{m_{\\max}^{2}}{L^{2}}=\\frac{m_{\\max}^{2}}{3\\cdot 2^{2R}}'}
+      {t:'eq', key:true, tex:'E[Q^{2}]=\\frac{1}{12}\\left(\\frac{2m_{\\max}}{L}\\right)^{2}=\\frac{1}{3}\\frac{m_{\\max}^{2}}{L^{2}}=\\frac{m_{\\max}^{2}}{3\\cdot 2^{2R}}'},
+      {t:'note', kind:'def', head:'What this says, in plain words', html:'Rounding to the nearest level adds a small random amount to every sample, and that amount is never more than half a step. Its power is one twelfth of the step squared. The last form says the same thing about bits: every extra bit halves the step, so it divides the noise power by four. That factor of four is the $6$ dB the next scene is about.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figQuantError().top, caption:'A sinusoid of amplitude $5$ through an eight-level uniform quantizer, so $\\Delta=1.25$.'},
@@ -750,7 +751,8 @@ const SC = [
       {t:'body', html:'<p>Every bit per sample buys $6.02$ dB and costs $f_s$ bits per second. Module 2 takes that bit stream and asks what the channel does to it.</p>'},
       {t:'eq', plain:true, tex:'\\mathrm{SQNR}=\\alpha+6.02R,\\qquad R_b=Rf_s'}
     ]}]
-  ]}
+  ]},
+  {t:'note', kind:'ok', head:'The module in one sentence', html:'Turning a signal into bits costs two things and nothing else: you must sample fast enough, or the spectrum folds and cannot be unfolded, and you must round, which adds a small noise whose power falls by a factor of four with every extra bit.'}
 ]}
 
 ];
