@@ -76,6 +76,13 @@ const AXIS = ['#8A939C', '#7C858F'];
             if (GRID.includes(st)) return 'grid';
             if (AXIS.includes(st) || AXIS.includes(fl)) return 'axis';
             if (st === 'NONE' && (fl === 'NONE' || fl === '')) return 'grid';
+            /* An unstroked shape filled with a translucent wash is a plate: a
+               decision region, a noise cloud, a highlighted overlap. It is
+               painted behind everything else and a label crossing it is by
+               design, exactly as for a box interior. Without this the decision
+               regions of Module 4 make every axis name a collision. */
+            const a = /RGBA\([^)]*,\s*([\d.]+)\s*\)/.exec(fl);
+            if (st === 'NONE' && a && parseFloat(a[1]) < 0.35) return 'grid';
             return 'content';
           };
           /* a light fill is a background plate (box interior, node disc): a label
