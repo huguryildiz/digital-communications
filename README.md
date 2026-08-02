@@ -9,7 +9,7 @@
 
 <p align="center">
   <strong>Interactive Lecture Artifact, Laboratories and Lecture Notes</strong><br>
-  <sub>EE 413 · Communication Systems II — a single offline HTML file for an undergraduate digital communications course. Step through a scene and watch the error probability build itself.</sub>
+  <sub>A single offline HTML file for an undergraduate digital communications course. Step through a scene and watch the error probability build itself.</sub>
 </p>
 
 <p align="center">
@@ -421,6 +421,6 @@ scene of Module 2 — because no section of the text states those results in the
 ---
 
 <p align="center">
-  <strong>Digital Communications · EE 413</strong><br>
+  <strong>Digital Communications</strong><br>
   <sub>📡 One file, offline, and readable on the first pass.</sub>
 </p>

@@ -18,21 +18,33 @@ import re, sys, glob, os
 # extension, or the word "file" or "document" beside it. A gate that fires on
 # the abbreviation would be turned off within a module, and a gate that is
 # turned off checks nothing.
+#
+# Two more were narrowed for the same reason once Module 6 was written. "the
+# source" is the thing that emits symbols — an entropy is computed *from the
+# source*, so only the two prepositions that can carry a claim about a document
+# are kept. "ambiguity" is what a code has when it cannot be decoded uniquely,
+# so only the provenance phrases are banned and the technical word is free.
 BANNED = [
  r'\.pdf\b', r'\bpdf (?:file|document|page)\b', r'in this file', r'this document', r'the document shows',
  r'source notes', r'the source (?:material|document|text|file|notes|slides?|pages?)\b',
- r'(?:in|from|per|according to) the source\b', r'the source (?:says|states|shows|gives)\b',
+ r'(?:per|according to) the source\b', r'the source (?:says|states|shows|gives)\b',
  r'original notes', r'the lecture notes (state|say|show)',
  r'uploaded document', r'provided material', r'\bredrawn\b',
  r'reconstructed from', r'based on the original', r'verified against',
  # "Check:" and "Cross-check:" are legitimate steps of a worked example (R7).
  # Only the provenance sense is banned, which is the one that names a source.
  r'cross-check\w*\s+(?:against|with)\b',
- r'the audit', r'editorial enhancement', r'\(source\)', r'\bprovenance\b', r'editorially developed', r'ambiguity',
+ r'the audit', r'editorial enhancement', r'\(source\)', r'\bprovenance\b', r'editorially developed',
+ r'\bambiguit(?:y|ies)\s+(?:ledger|in the (?:source|material|notes|slides))\b',
  r'\bledger\b', r'phase 1\b', r'phase 2\b', r'\bv0\.9\b',
  # A page reference is provenance wherever a student can read it: "p. 15",
  # "pp. 6-7", "page 15", "pages 6 and 7".
  r'\bpp?\.\s*\d', r'\bpages?\s+\d',
+ # The course code and the name of the course this engine came from are both
+ # off every page. Neither is anything a student needs, and either one ties
+ # this material to something outside it. Comments are exempt already, so a
+ # note to whoever is building this can still say what it means.
+ r'\bee ?413\b', r'\bsignals[- ]and[- ]systems\b',
 ]
 # strings that are legitimately instructor-only or internal are marked with these markers
 EXEMPT_MARKERS = ['data-instr', "t:'instr'", 'instr-panel', 'INSTRUCTOR-ONLY']
