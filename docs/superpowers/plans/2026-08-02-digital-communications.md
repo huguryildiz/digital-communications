@@ -800,19 +800,19 @@ git add -A && git commit -m "Re-derive every number the sampling solutions state
 - Create: `notes/src/c1.js`
 - Modify: `notes/build.js` chapter list
 
-- [ ] **Step 1: Write chapter 1**
+- [x] **Step 1: Write chapter 1**
 
 The same material as the scenes, in the notes block schema. **The block-type key is `t`, and a
 worked example's heading key is `hd` — never `t`.** Two `t` keys in one object literal silently
 drop the whole block.
 
-- [ ] **Step 2: Build the notes and the PDF**
+- [x] **Step 2: Build the notes and the PDF**
 
 ```bash
 cd notes && node build.js && node topdf.js
 ```
 
-- [ ] **Step 3: Run the notes mathematics gate**
+- [x] **Step 3: Run the notes mathematics gate**
 
 ```bash
 cd build && node pw.js ../notes/mathscan.js
@@ -820,7 +820,7 @@ cd build && node pw.js ../notes/mathscan.js
 
 Expected: `LITERAL MATH IN NOTES: 0`, `KATEX ERRORS: 0`.
 
-- [ ] **Step 4: Sweep the PDF for source text**
+- [x] **Step 4: Sweep the PDF for source text**
 
 ```bash
 pdftotext -layout dist/Lecture_Notes.pdf - | grep -nE '\$[^$]+\$|\\\\[a-zA-Z]+'
@@ -828,9 +828,9 @@ pdftotext -layout dist/Lecture_Notes.pdf - | grep -nE '\$[^$]+\$|\\\\[a-zA-Z]+'
 
 Expected: no output. This is not a gate — it is the step that catches the R8 class no gate can see.
 
-- [ ] **Step 5: Run all eleven gates and record every number**
+- [x] **Step 5: Run all eleven gates and record every number**
 
-- [ ] **Step 6: Commit sources and `dist/` together**
+- [x] **Step 6: Commit sources and `dist/` together**
 
 ```bash
 git add -A && git commit -m "Put sampling and quantization into the lecture notes"
