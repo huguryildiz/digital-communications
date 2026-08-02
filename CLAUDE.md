@@ -71,6 +71,8 @@ scene to the last.** Concretely:
 
 ## Where the project stands
 
+**Version 1.0. Complete.** All eleven gates green, four PDFs rendered and swept.
+
 | Phase | Content | State |
 | --- | --- | --- |
 | 0 | Engine, gates, `verify/` | done |
@@ -78,9 +80,33 @@ scene to the last.** Concretely:
 | 2 | M2 · Baseband transmission · labs C, D, E · 20 questions · notes ch. 2 | done |
 | 3 | M3 · Geometric representation · lab F · 20 questions · notes ch. 3 | done |
 | 4 | M4 · Optimal receiver, decision regions, union bound · lab G · 20 questions · notes ch. 4 | done |
-| 5 | M5 · Modulation methods · lab H | not started |
-| 6 | M6 · Information theory · labs I, J | not started |
-| 7 | M0, the five editions, the close | not started |
+| 5 | M5 · Modulation methods · lab H · 20 questions · notes ch. 5 | done |
+| 6 | M6 · Information theory · labs I, J · 20 questions · notes ch. 6 | done |
+| 7 | M0, appendix A, the three editions, the close | done |
+
+What a run printed on the last full sweep:
+
+| Gate | Printed |
+| --- | --- |
+| `qa.js` | 109 scenes, 0 errors, 0 overflow, nothing dense |
+| `labtest.js` | laboratories A–J, 120 questions, 120 solutions, 342 parts, ERRORS: none |
+| `textclash.js` | TOTAL COLLISIONS: 0 (88 flagged, 86 accepted haloed tick labels) |
+| `mathscan.js` | SCENES WITH MATH DAMAGE: 0 / 109 |
+| `notes/mathscan.js` | LITERAL MATH IN NOTES: 0, KATEX ERRORS: 0 |
+| `labwalk.js` | 396 states walked, PROBLEMS: none |
+| `seccheck.js` | 109 scenes, 108 addressed, 90 anchored, PROBLEMS: none |
+| `verify_scenes.py` | 68 passed, 0 failed |
+| `verify_drills.py` | 276 passed, 0 failed |
+| `verify_ber.py` | 12 passed, 0 failed |
+| `rule_check.py` | TOTAL VIOLATIONS: 0 |
+
+Two scenes carry no textbook anchor on purpose (`m1-linecodes`, `m2-eye`), and the cover
+carries no address, which is why 108 of 109 are addressed.
+
+**What the plan promised and what was delivered.** The plan's goal line says 140 practice
+questions. Its own allocation is twenty to each of six modules, and Task 13 states that Module 0
+carries no question section, so the number is 120. Everything else in the goal was delivered as
+written.
 
 ## Repository layout
 
