@@ -128,8 +128,8 @@ window.C5 = [
 {t:'box', kind:'ok', hd:'The trade, stated plainly', html:'PSK and QAM hold the bandwidth fixed as $M$ grows and pay in energy, because the points crowd together. FSK holds the distance fixed and pays in bandwidth. A deep-space link, with bandwidth to spare and no power, chooses FSK; a mobile phone, with the opposite problem, chooses QAM. Neither is better in the abstract — it depends entirely on which resource is scarce.'},
 
 {t:'fig', svg:()=>{
-  const a=ax({w:640,h:320,xr:[0,20],yr:[-6,0.3],
-    xlabel:'E_b/N_0\\;(\\mathrm{dB})',ylabel:'\\log_{10}P_e',
+  const a=ax({w:640,h:320,xr:[0,20],yr:[-6,-0.02],
+    xlabel:'E_b/N_0\\;(\\mathrm{dB})',ylabel:'P_e',ytickfmt:P.decade,yticksOverride:P.decades(-6,-1),zeroAxes:false,
     pad:{l:58,r:24,t:22,b:40},xtarget:5,ytarget:6});
   const L=v=>Math.log10(Math.max(1e-12,v));
   [[2,C.in],[4,C.out],[8,C.h],[16,C.err]].forEach(([M,col])=>{

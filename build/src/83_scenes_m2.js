@@ -86,10 +86,10 @@ function figPe(){
   /* The curve is stopped half a decade above the bottom of the range. Run to
      the edge it crosses the axis name, and an axis name a curve runs through
      is the one thing the label sweep holds to a stricter standard. */
-  const a = P.Axes({w:640,h:300,xr:[0,12],yr:[-7,0.3],
-    xlabel:'E_b/N_0\\;(\\mathrm{dB})',ylabel:'\\log_{10}P_b',
+  const a = P.Axes({w:640,h:300,xr:[0,12],yr:[-7,-0.02],
+    xlabel:'E_b/N_0\\;(\\mathrm{dB})',ylabel:'P_b',ytickfmt:P.decade,yticksOverride:P.decades(-7,-1),zeroAxes:false,
     pad:{l:60,r:26,t:26,b:44},xtarget:6,ytarget:6});
-  a.curve(d=>Math.max(-6.4,Math.log10(Math.max(1e-12,Qf(Math.sqrt(2*Math.pow(10,d/10)))))),
+  a.curve(d=>Math.log10(Math.max(1e-12,Qf(Math.sqrt(2*Math.pow(10,d/10))))),
     {color:C.in,width:2.4});
   return a.svg();
 }

@@ -431,5 +431,21 @@ const PLOT = (() => {
     return `<svg viewBox="0 0 ${w} ${h}" xmlns="${NS}" role="img" font-family="Inter,-apple-system,sans-serif">${g.join('')}</svg>`;
   }
 
-  return { Axes, blocks, texName, COL, ticks, fmt, niceStep, setTheme };
+  /* An error probability is read on a logarithmic scale, so the curve is
+     plotted against log10 of it and the axis is labelled in decades. Tick
+     labels are drawn as plain text, so the exponent is written with Unicode
+     superscripts rather than markup — "10⁻³" and not "log10 Pe = -3", which is
+     what an engineer expects to see on this axis. */
+  const SUP = {'-':'⁻','0':'⁰','1':'¹','2':'²','3':'³','4':'⁴',
+               '5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹'};
+  const decade = v => '10' + String(Math.round(v)).split('')
+    .map(c => SUP[c] || c).join('');
+  /* The integer decades inside [lo, hi], for yticksOverride. */
+  const decades = (lo, hi) => {
+    const out = [];
+    for(let k = Math.ceil(lo - 1e-9); k <= Math.floor(hi + 1e-9); k++) out.push(k);
+    return out;
+  };
+
+  return { Axes, blocks, texName, COL, ticks, fmt, niceStep, setTheme, decade, decades };
 })();

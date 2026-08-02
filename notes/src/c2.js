@@ -87,9 +87,9 @@ window.C2 = [
 {t:'box', kind:'warn', hd:'The factor of two that lives here', html:'$Q\\!\\left(\\sqrt{E_b/N_0}\\right)$, the same expression without the two, is the error probability of on-off or orthogonal signalling, and it is $3$ dB worse. Which one applies depends on whether the two waveforms are opposites or merely different. For on-off signalling half the bits carry no energy at all, so the average energy per bit is half the peak — and forgetting that is how on-off comes out looking as good as antipodal.'},
 
 {t:'fig', svg:()=>{
-  const a=ax({w:560,h:250,xr:[0,12],yr:[-7,0.3],xlabel:'E_b/N_0\\;(\\mathrm{dB})',
-    ylabel:'\\log_{10}P_b',xtarget:6,ytarget:6,pad:{l:56,r:22,t:20,b:38}});
-  a.curve(d=>Math.max(-6.4,Math.log10(Math.max(1e-12,Q(Math.sqrt(2*Math.pow(10,d/10)))))),
+  const a=ax({w:560,h:250,xr:[0,12],yr:[-7,-0.02],xlabel:'E_b/N_0\\;(\\mathrm{dB})',
+    ylabel:'P_b',ytickfmt:P.decade,yticksOverride:P.decades(-7,-1),zeroAxes:false,xtarget:6,ytarget:6,pad:{l:56,r:22,t:20,b:38}});
+  a.curve(d=>Math.log10(Math.max(1e-12,Q(Math.sqrt(2*Math.pow(10,d/10))))),
     {color:C.in,width:2.3});
   return a.svg();
 }, cap:'Bit error probability against $E_b/N_0$. Past about $8$ dB every extra decibel is worth roughly an order of magnitude in error rate.'},
