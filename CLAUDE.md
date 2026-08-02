@@ -103,6 +103,32 @@ What a run printed on the last full sweep:
 Two scenes carry no textbook anchor on purpose (`m1-linecodes`, `m2-eye`), and the cover
 carries no address, which is why 108 of 109 are addressed.
 
+## The public page
+
+`site/` is a landing page for the course and is not part of the artifact. It touches no scene, no
+laboratory and no question, so **none of the eleven gates reads it** — a change there is checked by
+looking at it, not by running a gate. Two things move on it and both are honest instruments rather
+than ornament:
+
+- **the hero mesh** (`site/grid.js`) is Paul Bakaus's *Kinetic Grid* from Radiant Shaders, MIT, with
+  the tension ramp recoloured to the mark's green and blue and the injection flash left amber,
+  which is the colour this course gives a channel. The physics models nothing in the syllabus and
+  does not pretend to.
+- **the instrument** (`site/scope.js`) is the laboratory oscilloscope with the framework taken out.
+  Its noise, its readout and its error probability come from one drifting `Eb/N0`, and the error
+  probability is `Q(√(2 Eb/N0))` computed on the page, so the picture and the number cannot drift
+  apart. The bit feed in the corner is the same ring the trace draws. If either is edited, they are
+  edited together.
+
+Both stop when the tab is hidden or the canvas scrolls out of view, and both settle to one still
+frame under `prefers-reduced-motion`.
+
+**What the host serves.** `.vercelignore` replaces `.gitignore` for the upload rather than adding to
+it, so anything that must stay off the host is named there even when git already ignores it.
+`dist/Instructor_Solutions.*` is the one that matters. Three of the four documents the page links
+are not tracked in git by design, so a deploy runs from a working tree in which the editions have
+been rebuilt — a clone alone is not enough.
+
 **What the plan promised and what was delivered.** The plan's goal line says 140 practice
 questions. Its own allocation is twenty to each of six modules, and Task 13 states that Module 0
 carries no question section, so the number is 120. Everything else in the goal was delivered as
@@ -115,6 +141,8 @@ written.
 | `build/build.js` | concatenates `build/src/*` into `dist/Digital_Communications.html` |
 | `build/src/00…60`, `90_app.js` | the engine, copied from `signals-and-systems`, not redesigned |
 | `assets/icon.svg` | **the only copy of the mark** — favicon, header logo and every PDF title page are inlined from it |
+| `site/` | the public page in front of the course: `index.html`, `site.css`, `grid.js`, `scope.js` |
+| `vercel.json` `.vercelignore` | what the host serves, and what is kept off it |
 | `build/src/80_content_core.js` | `CONTENT.META`, the module list, the glossary, the `PS` mark |
 | `build/src/89_sections.js` | **the one place** chapters, sections, addresses and anchors are declared |
 | `build/src/8N_scenes_mM.js` | teaching scenes, one file per module |

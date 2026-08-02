@@ -1,0 +1,34 @@
+# What is deployed is the page in `site/`, the mark in `assets/`, and the
+# student-facing documents in `dist/`. Everything that makes those is left
+# behind: the build, the gates and the notes pipeline have no business on a
+# web host.
+#
+# A `.vercelignore` replaces `.gitignore` for the upload rather than adding to
+# it, so anything that must stay off the host is named here even if git already
+# ignores it. `dist/Instructor_Solutions.*` is the one that matters.
+
+build/
+notes/
+verify/
+tools/
+docs/
+source/
+shots/
+pages/
+.venv/
+node_modules/
+.claude/
+__pycache__/
+.pytest_cache/
+.DS_Store
+*.md
+textclash.json
+
+# Instructor material is not published.
+dist/Instructor_Solutions.*
+
+# The three HTML editions duplicate the PDFs beside them and nothing links to
+# them, so they are not carried.
+dist/Lecture_Notes.html
+dist/Student_Workbook.html
+dist/Formula_Reference.html
