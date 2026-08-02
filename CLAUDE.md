@@ -114,7 +114,7 @@ written.
 | --- | --- |
 | `build/build.js` | concatenates `build/src/*` into `dist/Digital_Communications.html` |
 | `build/src/00…60`, `90_app.js` | the engine, copied from `signals-and-systems`, not redesigned |
-| `build/src/icon.svg` | **the only copy of the mark** — favicon, header logo and every PDF title page are inlined from it |
+| `assets/icon.svg` | **the only copy of the mark** — favicon, header logo and every PDF title page are inlined from it |
 | `build/src/80_content_core.js` | `CONTENT.META`, the module list, the glossary, the `PS` mark |
 | `build/src/89_sections.js` | **the one place** chapters, sections, addresses and anchors are declared |
 | `build/src/8N_scenes_mM.js` | teaching scenes, one file per module |
@@ -209,7 +209,7 @@ The ones that get broken:
   JavaScript and another inside a TeX string.
 - **The build is byte-reproducible.** Building twice from unchanged sources leaves `git status`
   clean. A diff nobody authored means something is wrong.
-- **The mark has one source.** `build/src/icon.svg` reaches the artifact through two
+- **The mark has one source.** `assets/icon.svg` reaches the artifact through two
   placeholders in `00_head.html` and the four documents through `window.ICON_SVG`, which both
   notes builders inject. Editing the artwork anywhere else leaves two marks that drift apart.
 - **Look at screenshots.** Two of the four bugs found in the source course were invisible to all
