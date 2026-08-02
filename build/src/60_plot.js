@@ -286,7 +286,7 @@ const PLOT = (() => {
         const dir = Y1<Y0 ? -1 : 1;
         parts.push(`<line x1="${X.toFixed(2)}" y1="${Y0.toFixed(2)}" x2="${X.toFixed(2)}" y2="${(Y1-dir*0).toFixed(2)}"
           stroke="${col}" stroke-width="${(opts.width||2.1)*STRW}"/>`);
-        parts.push(`<path d="M${X.toFixed(2)},${Y1.toFixed(2)} l${(-5.2*STRW).toFixed(2)},${(dir*9*STRW).toFixed(2)} l${(10.4*STRW).toFixed(2)},0 Z" fill="${col}"/>`);
+        parts.push(`<path d="M${X.toFixed(2)},${Y1.toFixed(2)} l${(-5.2*STRW).toFixed(2)},${(-dir*9*STRW).toFixed(2)} l${(10.4*STRW).toFixed(2)},0 Z" fill="${col}"/>`);
         if(opts.label!==false)
           parts.push(`<text x="${(X+8).toFixed(2)}" y="${(Y1+(dir<0?-4:14)).toFixed(2)}" ${halo()}
             font-family="var(--sans)" font-size="${(opts.fs||13)*LBLS}" fill="${col}">(${opts.labelText||fmt(weight,3)})</text>`);

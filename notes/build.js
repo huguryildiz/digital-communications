@@ -21,12 +21,22 @@ const chapters = fs.readdirSync(path.join(__dirname,'src'))
     .filter(f=>/^c[a-z]\.js$/.test(f)).sort());
 const globals = chapters.map(f=>f.replace(/\.js$/,'').toUpperCase());
 
+/* The mark is `build/src/icon.svg` and nothing else. It is read here, given
+   the class the stylesheet sizes it by, and handed to `render.js` as a global,
+   so the artifact, the lecture notes and the three editions all draw the same
+   file. */
+const MARK = JSON.stringify(
+  fs.readFileSync(path.join(B, 'icon.svg'), 'utf8').trim()
+    .replace(/^<svg /, '<svg class="eelogo" aria-hidden="true" focusable="false" ')
+    .replace(/\swidth="\d+"\sheight="\d+"/, ''));
+
 const html=`<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
 <title>Digital Communications — Lecture Notes</title>
 <style>${fs.readFileSync(path.join(B,'20_katex.css'),'utf8')}</style>
 <style>${S('src/notes.css')}</style></head><body><div id="doc"></div>
 <script>${g(fs.readFileSync(path.join(B,'30_katex.js'),'utf8'))}</script>
 <script>${g(fs.readFileSync(path.join(B,'60_plot.js'),'utf8'))}</script>
+<script>window.ICON_SVG=${MARK};</script>
 <script>${g(S('src/render.js'))}</script>
 ${chapters.map(f=>`<script>${g(S('src/'+f))}</script>`).join('\n')}
 <script>renderNotes([].concat(${globals.join(',') || ''}), document.getElementById('doc')); document.title=document.title;</script>

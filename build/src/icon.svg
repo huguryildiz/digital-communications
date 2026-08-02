@@ -1,0 +1,13 @@
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="CommSysLab">
+  <defs>
+    <linearGradient id="csl-wave" x1="9" y1="24" x2="39" y2="24" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#39ff85"/><stop offset="0.55" stop-color="#5b8cff"/><stop offset="1" stop-color="#ff9f45"/>
+    </linearGradient>
+    <linearGradient id="csl-border" x1="2" y1="2" x2="46" y2="46" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#39ff85" stop-opacity="0.75"/><stop offset="0.5" stop-color="#5b8cff" stop-opacity="0.5"/><stop offset="1" stop-color="#ff9f45" stop-opacity="0.75"/>
+    </linearGradient>
+  </defs>
+  <rect x="2.5" y="2.5" width="43" height="43" rx="12" fill="#04050f" stroke="url(#csl-border)" stroke-width="1.6"/>
+  <path d="M9 24 C 10.8 14.5, 13.7 14.5, 15.5 24 C 17.3 33.5, 20.2 33.5, 22 24" stroke="url(#csl-wave)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M22 24 H 25 V 15 H 31 V 33 H 37 V 24 H 39" stroke="url(#csl-wave)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

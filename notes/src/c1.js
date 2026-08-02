@@ -14,7 +14,7 @@ window.C1 = [
 /* ---------------- title ---------------- */
 {t:'title', kicker:'EE 413 · Communication Systems II', text:'Digital Communications',
  sub:'Lecture notes for the whole course: how a waveform becomes a finite alphabet of symbols, how those symbols are carried across a channel that adds noise to everything, how a receiver decides which one was sent, and how often it is wrong.',
- meta:[['Covers','Chapters 1 to 4'],['Level','Undergraduate'],
+ meta:[['Covers','Chapters 1 to 6, and appendix A'],['Level','Undergraduate'],
        ['Assumed background','Fourier analysis, probability, random processes']]},
 
 {t:'h3', text:'How to read these notes'},
@@ -26,7 +26,10 @@ window.C1 = [
  ['1','The transition from analog to digital','Impulse-train sampling and the replication of the spectrum. The sampling theorem. Reconstruction and sinc interpolation. Uniform quantization, the error it makes, and the signal-to-quantization-noise ratio. Companding. Encoding, line codes and pulse code modulation.','PS CH7.1&ndash;7.4'],
  ['2','Baseband transmission of digital signals','The matched filter and what it achieves. Correlator and matched-filter demodulators. The decision statistic, the optimal threshold and the bit error probability. Intersymbol interference and the eye pattern. Nyquist\'s criterion and the raised cosine.','PS CH8.2&ndash;8.3, PS CH10.1, PS CH10.3'],
  ['3','Geometric representation of signal waveforms','Signals as vectors. Orthonormal bases, coordinates, energy and distance. The constellation diagram. The Gram&ndash;Schmidt procedure.','PS CH8.1'],
- ['4','The optimal receiver in additive white Gaussian noise','What the correlator bank keeps. The MAP and ML rules. Minimum-distance detection and the receiver that computes it. Decision regions. The union bound and the nearest-neighbour approximation.','PS CH8.3&ndash;8.4']
+ ['4','The optimal receiver in additive white Gaussian noise','What the correlator bank keeps. The MAP and ML rules. Minimum-distance detection and the receiver that computes it. Decision regions. The union bound and the nearest-neighbour approximation.','PS CH8.3&ndash;8.4'],
+ ['5','Digital modulation methods','The three binary schemes and the three decibels between them. M-ary phase-shift keying and what each extra bit costs. Amplitude-shift keying on a line, quadrature amplitude modulation on a grid, and frequency-shift keying in M dimensions.','PS CH8.5&ndash;8.7, PS CH9.5'],
+ ['6','An introduction to information theory','Self-information and entropy. Extended sources. Average codeword length and coding efficiency. Uniquely decodable and prefix codes, the Kraft inequality, and how close to the entropy a code can get. Huffman coding, its ties and its variance.','PS CH12.1&ndash;12.3'],
+ ['A','Summary of formulas','Everything the course establishes, in the order it establishes it, with no derivations.','&mdash;']
 ]},
 
 {t:'page'},
