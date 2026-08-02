@@ -634,6 +634,16 @@ input[type=range]:focus-visible::-webkit-slider-thumb{ box-shadow:0 0 0 4px rgba
 .seg button[aria-pressed=true]{ background:var(--coral); color:#FCF9F3; }
 .seg button:hover:not([aria-pressed=true]){ background:var(--paper-3); color:var(--ink); }
 
+.runbar{ display:flex; gap:8px; }
+.runbar button{
+  font-family:var(--mono); font-size:calc(13px * var(--ts)); letter-spacing:.06em; padding:8px 14px;
+  background:transparent; border:1px solid var(--rule-strong); border-radius:var(--radius);
+  color:var(--muted); cursor:pointer; transition:background 140ms var(--ease),color 140ms var(--ease);
+}
+.runbar button:hover:not(:disabled){ background:var(--paper-3); color:var(--ink); }
+.runbar button[aria-pressed=true]{ background:var(--coral); color:#FCF9F3; border-color:var(--coral); }
+.runbar button:disabled{ opacity:.4; cursor:default; }
+
 .btn{
   font-family:var(--sans); font-size:calc(15px * var(--ts)); font-weight:550; padding:10px 18px;
   background:transparent; color:var(--slate-deep);
