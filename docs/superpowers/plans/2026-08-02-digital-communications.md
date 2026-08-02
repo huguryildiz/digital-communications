@@ -554,13 +554,13 @@ because the figure vocabulary, the scene rhythm and the question format are all 
 **Files:**
 - Create: `.claude/notes/m1_inventory.md` (gitignored)
 
-- [ ] **Step 1: Extract the slide text**
+- [x] **Step 1: Extract the slide text**
 
 ```bash
 pdftotext -layout source/Slides/EE413-CH7.pdf .claude/notes/ch7.txt
 ```
 
-- [ ] **Step 2: Render the handwritten pages for M1**
+- [x] **Step 2: Render the handwritten pages for M1**
 
 ```bash
 mkdir -p pages && pdftoppm -r 160 -png -f 2 -l 12 "source/Lecture Notes.pdf" pages/m1
@@ -569,18 +569,18 @@ mkdir -p pages && pdftoppm -r 160 -png -f 2 -l 12 "source/Lecture Notes.pdf" pag
 160 dpi, not lower. Read every rendered page by eye — this is the source that carries the
 derivations as they were taught.
 
-- [ ] **Step 3: Write the inventory**
+- [x] **Step 3: Write the inventory**
 
 One row per teachable item: what it is, which slide, which note page, whether the two agree. Where
 they disagree, resolve against `source/Book.pdf` and record the resolution in the ambiguity ledger
 format, numbered from A-01. **Never correct a source silently.**
 
-- [ ] **Step 4: Look up every `PS` anchor in the book**
+- [x] **Step 4: Look up every `PS` anchor in the book**
 
 For each item, find its section in `source/Book.pdf` and write the anchor down. Do not infer an
 anchor from a chapter number, and do not carry one over from `commsyslab` — see §7 of the spec.
 
-- [ ] **Step 5: Commit** (the inventory is gitignored; commit only if a source resolution changed a
+- [x] **Step 5: Commit** (the inventory is gitignored; commit only if a source resolution changed a
       tracked file)
 
 ---
@@ -594,28 +594,28 @@ anchor from a chapter number, and do not carry one over from `commsyslab` — se
 **Interfaces:**
 - Produces: `window.SCENES_M1`, an array of scene objects in the schema `90_app.js` renders.
 
-- [ ] **Step 1: Write the scenes**
+- [x] **Step 1: Write the scenes**
 
 Follow the inventory order. Every figure obeys R7: axis names outside the data area, typeset with
 KaTeX, no Unicode substitutes, every label with a halo. Continuous-time signals are curves,
 discrete-time signals are stems, impulses are arrows whose height is the weight.
 
-- [ ] **Step 2: Declare the addresses in `89_sections.js`**
+- [x] **Step 2: Declare the addresses in `89_sections.js`**
 
 Chapter 1, its sections, every scene ordinal, and the `PS` anchor from Task 6 step 4. **No scene
 file carries an address of its own.**
 
-- [ ] **Step 3: Register the array in `99_tail.html`**
+- [x] **Step 3: Register the array in `99_tail.html`**
 
 `window.SCENES_M1` after `window.SCENES_M0`. A new array not registered here never appears.
 
-- [ ] **Step 4: Check it parses, then build**
+- [x] **Step 4: Check it parses, then build**
 
 ```bash
 node --check build/src/8*.js && cd build && node build.js
 ```
 
-- [ ] **Step 5: Run the layout gate**
+- [x] **Step 5: Run the layout gate**
 
 ```bash
 cd build && node qa.js
@@ -625,7 +625,7 @@ Expected: `0 errors, 0 overflow`. The run also prints `dense` — every scene he
 scale factor below 0.90. A scene in that list is **split**, not shipped. That is the mechanical
 reading of the one-page rule.
 
-- [ ] **Step 6: Run the label and mathematics gates**
+- [x] **Step 6: Run the label and mathematics gates**
 
 ```bash
 cd build && node textclash.js && node mathscan.js
@@ -633,7 +633,7 @@ cd build && node textclash.js && node mathscan.js
 
 Expected: `TOTAL COLLISIONS: 0` and `SCENES WITH MATH DAMAGE: 0 / N`.
 
-- [ ] **Step 7: Look at a screenshot**
+- [x] **Step 7: Look at a screenshot**
 
 ```bash
 cd build && node pw.js shot.js
@@ -642,7 +642,7 @@ cd build && node pw.js shot.js
 No gate reads a rendering. The 136 px key-column bug in the other course shipped through every gate
 and was found by looking. Look.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add -A && git commit -m "Teach sampling, quantization and PCM"

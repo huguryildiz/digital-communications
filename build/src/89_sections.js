@@ -29,7 +29,8 @@
    two-part. Chapter 0 is the course opening, short enough that a section level
    would be an empty frame. */
 CONTENT.CHAPTERS = [
-  { n:'0', module:'M0', title:'The frame of the course', flat:true }
+  { n:'0', module:'M0', title:'The frame of the course', flat:true },
+  { n:'1', module:'M1', title:'The transition from analog to digital' }
 ];
 
 /* ---- sections ----------------------------------------------------------
@@ -44,6 +45,23 @@ CONTENT.SECTIONS = {
 
   M0: [
     { n:'0', ids:['m0-open'] }
+  ],
+
+  M1: [
+    { n:'1.0', title:'Opening',                        ids:['m1-open'] },
+    { n:'1.1', title:'The sampling theorem',           ids:[
+        'm1-sampler','m1-spectrum','m1-cases','m1-theorem'] },
+    { n:'1.2', title:'Reconstruction',                 ids:[
+        'm1-lpf','m1-interp','m1-ex-nyquist'] },
+    { n:'1.3', title:'Quantization',                   ids:[
+        'm1-quant','m1-lloydmax','m1-lab-a'] },
+    { n:'1.4', title:'Quantization noise and SQNR',    ids:[
+        'm1-qnoise','m1-sqnr','m1-ex-cos','m1-ex-unif','m1-ex-gauss'] },
+    { n:'1.5', title:'Non-uniform quantization',       ids:[
+        'm1-nonuniform','m1-companding'] },
+    { n:'1.6', title:'Pulse code modulation',          ids:[
+        'm1-encode','m1-linecodes','m1-ex-pcm','m1-lab-b'] },
+    { n:'1.7', title:'Summary',                        ids:['m1-synth'] }
   ]
 
 };
@@ -54,6 +72,24 @@ CONTENT.SECTIONS = {
    opening, the concept map, the closing material — is simply absent from this
    table and renders no anchor. */
 CONTENT.BOOK = {
+  /* Chapter 7 of the book and CH7 of this course cover the same ground, so the
+     numbers happen to agree here. Every one of these was read in the book
+     before it was written down; none was inferred from the chapter number, and
+     the agreement in this chapter is not a licence to infer the next one.
+
+     The line-code scene carries no anchor. This book does not develop line
+     codes, and an anchor pointing at the nearest-looking section would be worse
+     than none: it would be well formed and wrong, which is the one failure the
+     marker cannot catch. */
+  'm1-open':'7.1',
+  'm1-sampler':'7.1.1', 'm1-spectrum':'7.1.1', 'm1-cases':'7.1.1', 'm1-theorem':'7.1.1',
+  'm1-lpf':'7.1.1', 'm1-interp':'7.1.1', 'm1-ex-nyquist':'7.1.1',
+  'm1-quant':'7.2.1', 'm1-lloydmax':'7.2.1', 'm1-lab-a':'7.2.1',
+  'm1-qnoise':'7.2.1', 'm1-sqnr':'7.2.1',
+  'm1-ex-cos':'7.2.1', 'm1-ex-unif':'7.2.1', 'm1-ex-gauss':'7.2.1',
+  'm1-nonuniform':'7.2.1', 'm1-companding':'7.2.1',
+  'm1-encode':'7.3', 'm1-ex-pcm':'7.4.1', 'm1-lab-b':'7.4',
+  'm1-synth':'7.4.1'
 };
 
 /* ---- derivation --------------------------------------------------------
