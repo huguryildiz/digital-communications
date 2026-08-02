@@ -847,7 +847,7 @@ Per-module specifics:
 
 | Phase | Module | Slides | Note pages | Laboratories | Taxonomy source |
 | --- | --- | --- | --- | --- | --- |
-| 2 | M2 baseband transmission | CH8, all 48 | 13–27 | C, D, E | MT Q3, MT Q4, Final Q2 |
+| 2 | M2 baseband transmission ✔ done | CH8, all 48 | 13–27 | C, D, E | MT Q3, MT Q4, Final Q2 |
 | 3 | M3 signal-space representation | CH9 s.3–21 | 28–~40 | F | slides only — no exam type |
 | 4 | M4 optimal receiver, decision regions, union bound | CH9 s.23–65 | ~40–58 | G | Final Q3 in part |
 | 5 | M5 modulation families | CH9 s.66–101 | ~58–66 | H | Final Q3 in part |

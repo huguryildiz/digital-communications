@@ -2476,6 +2476,330 @@ Object.assign(LABS, (function(){
 
 </script>
 <script>
+/* ==== 72_labs_m2.js ==== */
+/* ==========================================================================
+   Module 2 laboratories.
+
+   C · The matched filter — the pulse, the noise and the sampling instant
+       against the bound 2E/N0.
+   D · Threshold and error probability — the threshold placed by hand against
+       the one the derivation gives.
+   E · The eye diagram — the roll-off, the timing and the noise, closing an eye
+       three different ways.
+   ========================================================================== */
+Object.assign(LABS, (function(){
+  const T = LABS.KIT.T, M = LABS.KIT.M, fmt = LABS.KIT.F;
+  const P = PLOT;
+
+  function rng(seed){ let a=seed>>>0; return function(){
+    a=(a+0x6D2B79F5)>>>0; let t=Math.imul(a^(a>>>15),1|a);
+    t=(t+Math.imul(t^(t>>>7),61|t))^t; return ((t^(t>>>14))>>>0)/4294967296; }; }
+  function gauss(seed,n,s){ const r=rng(seed),o=[]; for(let i=0;i<n;i++){
+    const u=Math.max(1e-12,r()), v=r();
+    o.push(s*Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)); } return o; }
+
+  /* The Gaussian tail. A figure and a readout need about seven digits, and the
+     closed forms they draw are checked against a simulation in the numerical
+     gate rather than against this approximation. */
+  function Q(x){
+    const t = 1/(1+0.2316419*Math.abs(x));
+    const d = 0.3989422804014327*Math.exp(-x*x/2);
+    const p = d*t*(0.319381530+t*(-0.356563782+t*(1.781477937+t*(-1.821255978+t*1.330274429))));
+    return x>=0 ? p : 1-p;
+  }
+  const sinc = x => Math.abs(x)<1e-12 ? 1 : Math.sin(Math.PI*x)/(Math.PI*x);
+
+  /* =======================================================================
+     C · THE MATCHED FILTER
+     ======================================================================= */
+  const C = (() => {
+    const N = 512, TB = 1;
+    let st = { shape:'rect', noise:30, samp:100 };
+
+    /* Three pulses, each normalised to unit energy over [0,1], so that what
+       changes between them is the shape and not the energy the bound depends
+       on. That is the point the laboratory exists to make. */
+    const SHAPES = {
+      rect: t => (t>=0 && t<=TB) ? 1 : 0,
+      sine: t => (t>=0 && t<=TB) ? Math.SQRT2*Math.sin(Math.PI*t/TB) : 0,
+      tri:  t => (t>=0 && t<=TB) ? Math.sqrt(3)*(1-Math.abs(2*t/TB-1))*2/Math.sqrt(3)*Math.sqrt(3)/2 : 0
+    };
+    function pulse(t){
+      if(st.shape==='tri'){ const u=2*t/TB;
+        return (t>=0&&t<=TB) ? Math.sqrt(3)*(u<1?u:2-u) : 0; }
+      return SHAPES[st.shape](t);
+    }
+
+    function draw(root){
+      const dt = TB/N;
+      const sig = [], mf = [];
+      for(let i=0;i<N;i++) sig.push(pulse(i*dt));
+      const E = sig.reduce((s,v)=>s+v*v,0)*dt;
+      const N0 = Math.pow(10, -st.noise/10);
+
+      /* The matched filter output is the correlation of the pulse with itself,
+         which peaks at t = T and nowhere else. */
+      const out = [];
+      for(let k=0;k<=N;k++){
+        let s=0;
+        for(let i=0;i<N;i++){ const j=i-(N-k); if(j>=0&&j<N) s += sig[i]*sig[j]; }
+        out.push(s*dt);
+      }
+      const idx = Math.round(st.samp/100*N);
+      const peak = out[Math.min(N,idx)];
+      const snrMax = 2*E/N0;
+      /* Sampling away from the peak keeps the same noise power and loses signal,
+         so the ratio falls as the square of what is left. */
+      const snrHere = snrMax*Math.pow(peak/out[N], 2);
+      const lossDb = 10*Math.log10(Math.max(1e-12, snrHere/snrMax));
+
+      const ax = P.Axes({w:780,h:220,xr:[-0.15,1.15],yr:[-0.4,2.1],
+        xlabel:'t/T',ylabel:'s(t),\\;h_{\\mathrm{opt}}(t)',pad:{l:58,r:26,t:26,b:40},
+        xtarget:5,ytarget:4});
+      ax.curve(t=>pulse(t*TB),{color:P.COL.in,width:2.2,n:600});
+      ax.curve(t=>pulse(TB-t*TB),{color:P.COL.h,width:1.9,dash:'6 4',n:600});
+
+      const bx = P.Axes({w:780,h:220,xr:[0,1],yr:[-0.15*out[N],1.25*out[N]],
+        xlabel:'\\text{sampling instant},\\;t/T',ylabel:'\\text{filter output}',
+        pad:{l:60,r:26,t:26,b:44},xtarget:5,ytarget:4});
+      bx.poly(out.map((v,k)=>[k/N,v]),{color:P.COL.out,width:2.3});
+      bx.vline(st.samp/100,{color:P.COL.err,width:1.6,dash:'5 4'});
+      bx.point(st.samp/100, peak, {color:P.COL.err, r:4.5});
+
+      root.querySelector('.plots').innerHTML = ax.svg() + bx.svg();
+      root.querySelector('.ro').innerHTML = `
+        <div><dt>Pulse energy E</dt><dd>${fmt(E,4)}</dd></div>
+        <div><dt>Noise density N₀</dt><dd>${fmt(N0,5)}</dd></div>
+        <div><dt>Bound 2E/N₀</dt><dd>${fmt(10*Math.log10(snrMax),4)} dB</dd></div>
+        <div><dt>Sampled at</dt><dd>${st.samp}% of T</dd></div>
+        <div><dt>SNR at that instant</dt><dd class="${lossDb<-0.5?'warnv':'okv'}">${fmt(10*Math.log10(Math.max(1e-12,snrHere)),4)} dB</dd></div>
+        <div><dt>Loss against the bound</dt><dd class="${lossDb<-0.5?'warnv':'okv'}">${fmt(lossDb,3)} dB</dd></div>`;
+
+      root.querySelector('.verdict').innerHTML = st.samp===100
+        ? `<div class="note ok"><span class="note-h">At the peak</span>
+             The output signal-to-noise ratio is ${T('2E/N_0',false)} exactly, and it is the same
+             for all three pulses because all three carry the same energy. Change the shape and
+             watch the number stay where it is.</div>`
+        : `<div class="note err"><span class="note-h">Sampling early or late</span>
+             The noise power at the output does not depend on when the sample is taken, but the
+             signal does. Losing ${T(fmt(-lossDb,2),false)} dB here is losing it for nothing —
+             no amount of transmit power buys back a mistimed sample.</div>`;
+
+      root.querySelectorAll('[data-out]').forEach(o=>{ o.textContent = String(st[o.dataset.out]); });
+      root.querySelectorAll('[data-seg=shape]').forEach(b=>
+        b.setAttribute('aria-pressed', String(b.dataset.val===st.shape)));
+    }
+
+    return { mount(root){
+      root.innerHTML = `
+        <div class="cols c-7-5" style="gap:40px">
+          <div class="col stack"><div class="plots"></div></div>
+          <div class="col stack">
+            <div class="ctrls one">
+              <div class="ctrl"><label>Pulse <span class="seg">
+                <button data-seg="shape" data-val="rect">rectangular</button>
+                <button data-seg="shape" data-val="sine">half sine</button>
+                <button data-seg="shape" data-val="tri">triangular</button></span></label></div>
+              <div class="ctrl"><label>Noise, 10log₁₀(1/N₀) in dB <span class="val" data-out="noise">30</span></label>
+                <input type="range" data-v="noise" min="0" max="40" step="2" value="30"></div>
+              <div class="ctrl"><label>Sampling instant, % of T <span class="val" data-out="samp">100</span></label>
+                <input type="range" data-v="samp" min="20" max="100" step="5" value="100"></div>
+            </div>
+            <dl class="readout ro"></dl>
+            <div class="verdict"></div>
+          </div></div>`;
+      root.addEventListener('input', e=>{ const k=e.target.dataset.v; if(!k) return;
+        st[k]=parseInt(e.target.value,10); draw(root); });
+      root.addEventListener('click', e=>{ const b=e.target.closest('[data-seg=shape]'); if(!b) return;
+        st.shape=b.dataset.val; draw(root); });
+      draw(root);
+    }};
+  })();
+
+  /* =======================================================================
+     D · THRESHOLD AND ERROR PROBABILITY
+     ======================================================================= */
+  const D = (() => {
+    let st = { lam:0, prior:50, ebn0:6 };
+
+    function draw(root){
+      const p0 = st.prior/100, p1 = 1-p0;
+      const ebn0 = Math.pow(10, st.ebn0/10);
+      const Eb = 1, N0 = Eb/ebn0, sig = Math.sqrt(N0/2), A = Math.sqrt(Eb);
+      const lam = st.lam/100*2*A;                       /* the slider spans ±2A */
+      const lamOpt = (N0/(4*A))*Math.log(p0/p1);
+
+      const e0 = Q((lam+A)/sig), e1 = Q((A-lam)/sig);
+      const pe = p0*e0 + p1*e1;
+      const eo0 = Q((lamOpt+A)/sig), eo1 = Q((A-lamOpt)/sig);
+      const peOpt = p0*eo0 + p1*eo1;
+
+      const g=(y,m)=>Math.exp(-(y-m)*(y-m)/(2*sig*sig))/(sig*Math.sqrt(2*Math.PI));
+      const top = Math.max(p0,p1)/(sig*Math.sqrt(2*Math.PI));
+      const ax = P.Axes({w:800,h:300,xr:[-3*A,3*A],yr:[-0.05*top,1.25*top],
+        xlabel:'y',ylabel:'P(s_m)\\,f_Y(y\\mid s_m)',pad:{l:60,r:26,t:26,b:44},
+        xtarget:6,ytarget:4});
+      ax.rect(-3*A,0,lam,1.2*top,{fill:P.COL.dec.err});
+      ax.rect(lam,0,3*A,1.2*top,{fill:P.COL.dec.out});
+      ax.curve(y=>p0*g(y,-A),{color:P.COL.err,width:2.2});
+      ax.curve(y=>p1*g(y, A),{color:P.COL.out,width:2.2});
+      ax.vline(lam,{color:P.COL.ink,dash:'5 4',width:1.8});
+      ax.vline(lamOpt,{color:P.COL.h,dash:'2 4',width:1.6});
+
+      const bx = P.Axes({w:800,h:200,xr:[-1,1],yr:[Math.log10(Math.max(1e-12,peOpt))-0.6,
+                                                  Math.log10(Math.max(1e-12,peOpt))+1.6],
+        xlabel:'\\lambda/(2\\sqrt{E_b})',ylabel:'\\log_{10}P_e',pad:{l:60,r:26,t:26,b:44},
+        xtarget:5,ytarget:4});
+      bx.curve(u=>{ const L=u*2*A;
+        return Math.log10(Math.max(1e-12, p0*Q((L+A)/sig)+p1*Q((A-L)/sig))); },
+        {color:P.COL.in,width:2.3});
+      bx.vline(st.lam/100,{color:P.COL.ink,dash:'5 4',width:1.6});
+      bx.vline(lamOpt/(2*A),{color:P.COL.h,dash:'2 4',width:1.6});
+
+      root.querySelector('.plots').innerHTML = ax.svg() + bx.svg();
+      root.querySelector('.ro').innerHTML = `
+        <div><dt>P(s₀)</dt><dd>${fmt(p0,3)}</dd></div>
+        <div><dt>E_b/N₀</dt><dd>${st.ebn0} dB</dd></div>
+        <div><dt>Threshold set</dt><dd>${fmt(lam,4)}</dd></div>
+        <div><dt>Optimal threshold</dt><dd class="okv">${fmt(lamOpt,4)}</dd></div>
+        <div><dt>P(error | s₀)</dt><dd>${fmt(e0,5)}</dd></div>
+        <div><dt>P(error | s₁)</dt><dd>${fmt(e1,5)}</dd></div>
+        <div><dt>Average P_e</dt><dd class="${pe>peOpt*1.02?'warnv':'okv'}">${fmt(pe,5)}</dd></div>
+        <div><dt>P_e at the optimum</dt><dd>${fmt(peOpt,5)}</dd></div>`;
+
+      const near = Math.abs(lam-lamOpt) < 0.02*A;
+      root.querySelector('.verdict').innerHTML = near
+        ? `<div class="note ok"><span class="note-h">At the optimum</span>
+             The two weighted densities cross exactly at the threshold. That is the condition
+             ${T('P(s_1)f_Y(\\lambda\\mid s_1)=P(s_0)f_Y(\\lambda\\mid s_0)',false)} the derivation
+             produces, read off the picture rather than solved.</div>`
+        : `<div class="note warn"><span class="note-h">Off the optimum</span>
+             The threshold is ${T(fmt(lam-lamOpt,3),false)} away from where it belongs, and the
+             error probability is ${T(fmt(pe/peOpt,3),false)} times its smallest value. Notice how
+             flat the curve is near its minimum: a threshold in roughly the right place costs
+             almost nothing, which is why an equal-prior receiver is usable on unequal priors.</div>`;
+
+      root.querySelectorAll('[data-out]').forEach(o=>{ o.textContent = String(st[o.dataset.out]); });
+    }
+
+    return { mount(root){
+      root.innerHTML = `
+        <div class="cols c-7-5" style="gap:40px">
+          <div class="col stack"><div class="plots"></div></div>
+          <div class="col stack">
+            <div class="ctrls one">
+              <div class="ctrl"><label>Threshold, % of 2√E_b <span class="val" data-out="lam">0</span></label>
+                <input type="range" data-v="lam" min="-60" max="60" step="2" value="0"></div>
+              <div class="ctrl"><label>Prior P(s₀), % <span class="val" data-out="prior">50</span></label>
+                <input type="range" data-v="prior" min="10" max="90" step="5" value="50"></div>
+              <div class="ctrl"><label>E_b/N₀ in dB <span class="val" data-out="ebn0">6</span></label>
+                <input type="range" data-v="ebn0" min="0" max="12" step="1" value="6"></div>
+            </div>
+            <dl class="readout ro"></dl>
+            <div class="verdict"></div>
+          </div></div>`;
+      root.addEventListener('input', e=>{ const k=e.target.dataset.v; if(!k) return;
+        st[k]=parseInt(e.target.value,10); draw(root); });
+      draw(root);
+    }};
+  })();
+
+  /* =======================================================================
+     E · THE EYE DIAGRAM
+     ======================================================================= */
+  const E = (() => {
+    let st = { alpha:50, offset:0, noise:5 };
+
+    function draw(root){
+      const al = st.alpha/100, off = st.offset/100, nz = st.noise/100;
+      const p = t => { const den = 1-4*al*al*t*t;
+        if(Math.abs(den) < 1e-6) return sinc(t)*Math.PI/4;
+        return sinc(t)*Math.cos(Math.PI*al*t)/den; };
+
+      const noise = gauss(20260802, 4096, nz);
+      const ax = P.Axes({w:640,h:320,xr:[-1,1],yr:[-2.1,2.1],
+        xlabel:'t/T_b',ylabel:'y(t)',pad:{l:54,r:26,t:26,b:44},xtarget:4,ytarget:4});
+      let ni = 0;
+      for(let pat=0;pat<64;pat++){
+        const b=[]; for(let k=0;k<6;k++) b.push(((pat>>k)&1)?1:-1);
+        const pts=[];
+        for(let i=0;i<=100;i++){
+          const t=-1+2*i/100;
+          let s=0; for(let k=0;k<6;k++) s += b[k]*p(t-(k-2.5));
+          pts.push([t, s + noise[(ni++)%4096]]);
+        }
+        ax.poly(pts,{color:P.COL.in,width:0.85,opacity:0.45});
+      }
+      ax.vline(off,{color:P.COL.h,width:1.8,dash:'5 4'});
+
+      /* The opening is the worst case over every pattern at the chosen instant,
+         computed without the noise so that the two effects stay separable. */
+      let best = Infinity, worstIsi = 0;
+      for(let pat=0;pat<64;pat++){
+        const b=[]; for(let k=0;k<6;k++) b.push(((pat>>k)&1)?1:-1);
+        let s=0; for(let k=0;k<6;k++) s += b[k]*p(off-(k-2.5));
+        const wanted = b[2] || b[3];
+        const isi = Math.abs(s) - Math.abs(b[2]*p(off+0.5));
+        if(Math.abs(s) < best) best = Math.abs(s);
+        worstIsi = Math.max(worstIsi, Math.abs(isi));
+      }
+      const opening = 2*best;
+
+      root.querySelector('.plots').innerHTML = ax.svg();
+      root.querySelector('.ro').innerHTML = `
+        <div><dt>Roll-off α</dt><dd>${fmt(al,2)}</dd></div>
+        <div><dt>Transmission bandwidth</dt><dd>${fmt(1+al,3)} × W</dd></div>
+        <div><dt>Sampling offset</dt><dd>${fmt(off,3)} T_b</dd></div>
+        <div><dt>Noise, standard deviation</dt><dd>${fmt(nz,3)}</dd></div>
+        <div><dt>Eye opening, no noise</dt><dd class="${opening<0.6?'warnv':'okv'}">${fmt(opening,4)}</dd></div>
+        <div><dt>Worst-case interference</dt><dd class="${worstIsi>0.3?'warnv':''}">${fmt(worstIsi,4)}</dd></div>
+        <div><dt>Margin over noise</dt><dd class="${opening/2<3*nz?'warnv':'okv'}">${fmt(opening/2/Math.max(1e-6,nz),3)} σ</dd></div>`;
+
+      root.querySelector('.verdict').innerHTML = opening/2 < 3*nz
+        ? `<div class="note err"><span class="note-h">The eye is closing</span>
+             The half-opening is ${T(fmt(opening/2/Math.max(1e-6,nz),2),false)} standard deviations
+             of the noise. Errors are no longer rare events at the tail of a Gaussian; they are
+             ordinary. Reduce the timing offset or raise the roll-off before adding power.</div>`
+        : off !== 0
+        ? `<div class="note warn"><span class="note-h">Off the centre</span>
+             Moving the sampling instant closes the eye even with the noise unchanged, because the
+             neighbouring pulses are no longer at their zero crossings. This is the interference
+             the Nyquist criterion removes only at the exact instants.</div>`
+        : `<div class="note ok"><span class="note-h">Open</span>
+             Sampling at the centre and with this roll-off, every pattern passes close to
+             ${T('\\pm1',false)}. Lower the roll-off and the tails of the neighbours reach further,
+             which is the bandwidth-for-decay trade made visible.</div>`;
+
+      root.querySelectorAll('[data-out]').forEach(o=>{ o.textContent = String(st[o.dataset.out]); });
+    }
+
+    return { mount(root){
+      root.innerHTML = `
+        <div class="cols c-6-6" style="gap:40px">
+          <div class="col stack"><div class="plots"></div></div>
+          <div class="col stack">
+            <div class="ctrls one">
+              <div class="ctrl"><label>Roll-off α, % <span class="val" data-out="alpha">50</span></label>
+                <input type="range" data-v="alpha" min="0" max="100" step="5" value="50"></div>
+              <div class="ctrl"><label>Sampling offset, % of T_b <span class="val" data-out="offset">0</span></label>
+                <input type="range" data-v="offset" min="-40" max="40" step="5" value="0"></div>
+              <div class="ctrl"><label>Noise σ, % <span class="val" data-out="noise">5</span></label>
+                <input type="range" data-v="noise" min="0" max="30" step="1" value="5"></div>
+            </div>
+            <dl class="readout ro"></dl>
+            <div class="verdict"></div>
+          </div></div>`;
+      root.addEventListener('input', e=>{ const k=e.target.dataset.v; if(!k) return;
+        st[k]=parseInt(e.target.value,10); draw(root); });
+      draw(root);
+    }};
+  })();
+
+  return { C, D, E };
+})());
+
+</script>
+<script>
 /* ==== 81_scenes_m0.js ==== */
 /* ==========================================================================
    Module 0 — The frame of the course.
@@ -3278,6 +3602,662 @@ window.SCENES_M1 = SC;
 
 </script>
 <script>
+/* ==== 83_scenes_m2.js ==== */
+/* ==========================================================================
+   Module 2 — Baseband transmission of digital signals.
+
+   One bit is sent as one waveform; the channel adds noise; the receiver has to
+   decide. The module answers three questions in order. What filter should the
+   receiver use? Where should the threshold go? And what happens when the
+   channel is bandlimited and the pulses start to overlap?
+
+   Colour: cyan is the transmitted waveform, amber the filter, green the
+   detected output, violet the decision statistic, red an error or the
+   interference that causes one. Noise is the hairline tone.
+   ========================================================================== */
+(function(){
+const P = PLOT, C = P.COL;
+const sinc = x => Math.abs(x)<1e-12 ? 1 : Math.sin(Math.PI*x)/(Math.PI*x);
+
+/* A seeded generator, so every noise figure is the same figure on every
+   machine and in every render. */
+function rng(seed){ let a=seed>>>0; return function(){
+  a=(a+0x6D2B79F5)>>>0; let t=Math.imul(a^(a>>>15),1|a);
+  t=(t+Math.imul(t^(t>>>7),61|t))^t; return ((t^(t>>>14))>>>0)/4294967296; }; }
+function gauss(seed,n,s){ const r=rng(seed),o=[]; for(let i=0;i<n;i++){
+  const u=Math.max(1e-12,r()), v=r();
+  o.push(s*Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)); } return o; }
+
+/* The Gaussian tail, by a rational approximation good to about 1e-7 — enough
+   for a figure and for a readout, and the closed forms it draws are checked
+   against a simulation in the numerical gate rather than against this. */
+function Qf(x){
+  const t = 1/(1+0.2316419*Math.abs(x));
+  const d = 0.3989422804014327*Math.exp(-x*x/2);
+  const p = d*t*(0.319381530+t*(-0.356563782+t*(1.781477937+t*(-1.821255978+t*1.330274429))));
+  return x>=0 ? p : 1-p;
+}
+
+function figReceiver(){
+  return P.blocks({w:720,h:210,items:[
+    {t:'arrow',x1:20,y1:70,x2:110,y2:70},
+    {t:'sum',x:140,y:70},
+    {t:'arrow',x1:100,y1:130,x2:140,y2:92},
+    {t:'arrow',x1:158,y1:70,x2:250,y2:70},
+    {t:'box',x:250,y:36,w:190,h:68,label:'h(t)',tex:true},
+    {t:'arrow',x1:440,y1:70,x2:540,y2:70},
+    {t:'text',x:60,y:52,label:'g(t)',tex:true,fs:16},
+    {t:'text',x:100,y:150,label:'w(t)',tex:true,fs:15},
+    {t:'text',x:200,y:52,label:'x(t)',tex:true,fs:16},
+    {t:'text',x:492,y:52,label:'y(t)',tex:true,fs:16},
+    {t:'text',x:632,y:44,label:'y(T)',tex:true,fs:16},
+    {t:'line',d:'M540,70 h34'},
+    {t:'line',d:'M574,70 l22,-14'},
+    {t:'text',x:585,y:110,label:'\\text{sample at }t=T',tex:true,fs:13},
+    {t:'text',x:345,y:140,label:'linear time-invariant filter',fs:12.5}
+  ]});
+}
+
+function figMatched(){
+  const T = 1;
+  const a = P.Axes({w:640,h:210,xr:[-0.3,2.3],yr:[-0.3,1.35],
+    xlabel:'t',ylabel:'s(t),\\;h_{\\mathrm{opt}}(t),\\;y(t)',pad:{l:60,r:26,t:26,b:40},
+    xtarget:5,ytarget:3});
+  a.poly([[-0.3,0],[0,0],[0,1],[T,1],[T,0],[2.3,0]],{color:C.in,width:2.2});
+  a.poly([[-0.3,0],[0,0],[0,0.55],[T,0.55],[T,0],[2.3,0]],{color:C.h,width:2.0,dash:'6 4'});
+  a.curve(t=>t<0?0:t<T?t:t<2*T?2*T-t:0,{color:C.out,width:2.4});
+  a.vline(T,{color:C.muted});
+  a.note(1.02,1.16,'y(T)=E_s',{tex:true,fs:14,color:C.out});
+  return a.svg();
+}
+
+function figDensities(lam){
+  const s = Math.sqrt(0.5), A = 1;
+  const g = (y,m) => Math.exp(-(y-m)*(y-m)/(2*s*s))/(s*Math.sqrt(2*Math.PI));
+  const a = P.Axes({w:660,h:260,xr:[-3.2,3.2],yr:[-0.05,0.72],
+    xlabel:'y',ylabel:'f_Y(y\\mid s_m)',pad:{l:56,r:26,t:26,b:42},xtarget:6,ytarget:4});
+  /* The decision regions are the colour of the symbol they decide for, at the
+     opacity a region takes throughout this course. */
+  a.rect(-3.2,0,lam,0.70,{fill:C.dec.err});
+  a.rect(lam,0,3.2,0.70,{fill:C.dec.out});
+  a.curve(y=>0.7*g(y,-A),{color:C.err,width:2.2});
+  a.curve(y=>0.3*g(y, A),{color:C.out,width:2.2});
+  a.vline(lam,{color:C.ink,dash:'5 4',width:1.6});
+  a.note(lam,0.66,'\\lambda',{tex:true,fs:15,color:C.ink,anchor:'middle'});
+  return a.svg();
+}
+
+function figPe(){
+  /* The curve is stopped half a decade above the bottom of the range. Run to
+     the edge it crosses the axis name, and an axis name a curve runs through
+     is the one thing the label sweep holds to a stricter standard. */
+  const a = P.Axes({w:640,h:300,xr:[0,12],yr:[-7,0.3],
+    xlabel:'E_b/N_0\\;(\\mathrm{dB})',ylabel:'\\log_{10}P_b',
+    pad:{l:60,r:26,t:26,b:44},xtarget:6,ytarget:6});
+  a.curve(d=>Math.max(-6.4,Math.log10(Math.max(1e-12,Qf(Math.sqrt(2*Math.pow(10,d/10)))))),
+    {color:C.in,width:2.4});
+  return a.svg();
+}
+
+function figIsi(alpha){
+  const Tb = 1, W = 1/(2*Tb);
+  const p = t => {
+    const den = 1-16*alpha*alpha*W*W*t*t;
+    if(Math.abs(den) < 1e-6) return sinc(2*W*t)*Math.PI/4;
+    return sinc(2*W*t)*Math.cos(2*Math.PI*alpha*W*t)/den;
+  };
+  const bits = [1,-1,1,1,-1,-1,1,-1];
+  const a = P.Axes({w:660,h:230,xr:[-1,8],yr:[-1.8,1.8],
+    xlabel:'t/T_b',ylabel:'\\text{received pulse train}',pad:{l:60,r:26,t:26,b:42},
+    xtarget:6,ytarget:4});
+  bits.forEach((b,k)=>a.curve(t=>b*p(t-k),{color:C.mid,width:1,opacity:0.55,dash:'3 3'}));
+  a.curve(t=>{let s=0;bits.forEach((b,k)=>{s+=b*p(t-k);});return s;},{color:C.in,width:2.3});
+  bits.forEach((b,k)=>a.point(k,(()=>{let s=0;bits.forEach((c,j)=>{s+=c*p(k-j);});return s;})(),
+    {color:C.out,r:3.6}));
+  return a.svg();
+}
+
+function figEye(alpha, jitter){
+  const Tb=1, W=1/(2*Tb);
+  const p = t => { const den=1-16*alpha*alpha*W*W*t*t;
+    if(Math.abs(den)<1e-6) return sinc(2*W*t)*Math.PI/4;
+    return sinc(2*W*t)*Math.cos(2*Math.PI*alpha*W*t)/den; };
+  const a = P.Axes({w:470,h:200,xr:[-1,1],yr:[-1.9,1.9],
+    xlabel:'t/T_b',ylabel:'y(t)',pad:{l:50,r:22,t:24,b:40},xtarget:4,ytarget:3});
+  const noise = gauss(20260802, 512, jitter);
+  for(let pat=0;pat<32;pat++){
+    const b=[]; for(let k=0;k<5;k++) b.push(((pat>>k)&1)?1:-1);
+    const pts=[];
+    for(let i=0;i<=120;i++){
+      const t=-1+2*i/120;
+      let s=0; for(let k=0;k<5;k++) s += b[k]*p(t-(k-2));
+      pts.push([t, s + noise[(pat*121+i)%512]]);
+    }
+    a.poly(pts,{color:C.in,width:0.9,opacity:0.5});
+  }
+  a.vline(0,{color:C.h,dash:'5 4'});
+  return a.svg();
+}
+
+const SC = [
+
+/* ---------------------------------------------------------------- 2.0 ---- */
+{ id:'m2-open', module:'M2', nav:'The receiver problem', title:'One bit, one waveform, one decision',
+  objective:'Frame the three questions the module answers.',
+  keywords:'baseband receiver matched filter threshold intersymbol interference opening',
+  src:'CH8 s.2–3', steps:2, blocks:[
+  {t:'eyebrow', text:'Module 2 · Opening'},
+  {t:'title', text:'Three questions in order'},
+  {t:'lede', text:'Module 1 produced a bit stream. A transmitter now sends one waveform per bit, a channel adds noise to it, and a receiver has to say which waveform was sent. Everything in this module is one of three questions about that receiver.'},
+  {t:'cols', ratio:'c-6-6', vcenter:true, left:[
+    {t:'body', html:'<p><b>What filter?</b> The receiver observes the waveform for one bit interval and has to compress it to a single number. Some filters make that number more reliable than others, and one of them is best.</p>'},
+    {t:'reveal', at:1, items:[
+      {t:'body', html:'<p><b>Where is the threshold?</b> The number is compared against a threshold. Where the threshold goes depends on how likely the two symbols were before anything was received.</p>'}
+    ]},
+    {t:'reveal', at:2, items:[
+      {t:'body', html:'<p><b>What if the pulses overlap?</b> A channel of finite bandwidth spreads each pulse in time, so a pulse meant for one interval leaks into the next. That is intersymbol interference, and it is the only error in this module that noise did not cause.</p>'},
+      {t:'note', kind:'ok', head:'What carries into Module 3', html:'The answer to the first question turns out not to depend on the shape of the waveform, only on its energy. That observation is what makes the geometric view of Module 3 possible.'}
+    ]}
+  ], right:[
+    {t:'fig', frame:true, svg:figReceiver, caption:'The receiver model: the transmitted waveform, the noise added to it, one linear filter, and one sample taken at the end of the bit interval. Everything the detector knows is that sample.'}
+  ]}
+]},
+
+/* ---------------------------------------------------------------- 2.1 ---- */
+{ id:'m2-model', module:'M2', nav:'The peak pulse SNR', title:'What the filter is being asked to do',
+  objective:'Define the quantity the filter is chosen to maximise.',
+  keywords:'received signal white gaussian noise peak pulse signal to noise ratio filter output',
+  src:'CH8 s.3–6', steps:2, blocks:[
+  {t:'eyebrow', text:'Module 2 · The matched filter'},
+  {t:'title', text:'The peak pulse signal-to-noise ratio'},
+  {t:'cols', ratio:'c-6-6', vcenter:true, left:[
+    {t:'body', html:'The received signal over one bit interval is'},
+    {t:'eq', tex:'x(t)=g(t)+w(t),\\qquad 0<t<T'},
+    {t:'small', html:'with $g$ the waveform carrying the symbol and $w$ white Gaussian noise of two-sided power spectral density $N_0/2$. The filter output splits the same way, because it is linear:'},
+    {t:'eq', tex:'y(t)=x(t)*h(t)=\\underbrace{g(t)*h(t)}_{g_0(t)}+\\underbrace{w(t)*h(t)}_{n(t)}'},
+    {t:'reveal', at:1, items:[
+      {t:'note', kind:'def', head:'The figure of merit', html:'The sample is taken at $t=T$, so what matters is the signal there against the noise power that accompanies it:'},
+      {t:'eq', key:true, tex:'(\\mathrm{SNR})_o=\\frac{|g_0(T)|^{2}}{E[n^{2}(t)]}'}
+    ]},
+    {t:'reveal', at:2, items:[
+      {t:'body', html:'Both parts can be written in terms of $H(f)$. The signal part is an inverse transform evaluated at $t=T$; the noise part is the area under the filtered noise density.'},
+      {t:'eq', tex:'(\\mathrm{SNR})_o=\\frac{\\left|\\int_{-\\infty}^{\\infty}G(f)H(f)e^{j2\\pi fT}\\,df\\right|^{2}}{\\dfrac{N_0}{2}\\int_{-\\infty}^{\\infty}|H(f)|^{2}\\,df}'},
+      {t:'note', kind:'warn', head:'The problem, stated', html:'For a given $G(f)$, find the $H(f)$ that maximises this ratio. Both the numerator and the denominator grow when $H$ is scaled up, so the answer cannot be "make $H$ large" — it has to be about the <em>shape</em> of $H$.'}
+    ]}
+  ], right:[
+    {t:'fig', frame:true, svg:()=>{
+      const a=P.Axes({w:620,h:300,xr:[0,5],yr:[-2.6,2.6],
+        xlabel:'t/T_b',ylabel:'x(t)',pad:{l:52,r:26,t:26,b:44},xtarget:5,ytarget:4});
+      const bits=[1,-1,1,1,-1];
+      const n=gauss(20260802,900,0.55);
+      const pts=[];
+      for(let i=0;i<900;i++){ const t=5*i/900; pts.push([t, bits[Math.min(4,Math.floor(t))]+n[i]]); }
+      a.poly(pts,{color:C.noise,width:0.9});
+      const cl=[]; for(let i=0;i<900;i++){ const t=5*i/900; cl.push([t,bits[Math.min(4,Math.floor(t))]]); }
+      a.poly(cl,{color:C.in,width:2.2});
+      return a.svg();
+    }, caption:'Five bits of polar NRZ under noise. The waveform the transmitter sent is drawn over the sum; the receiver sees only the sum, and it sees it once.'}
+  ]}
+]},
+
+{ id:'m2-schwarz', module:'M2', nav:'The bound', title:'A bound that does not depend on the filter',
+  objective:'Apply Schwarz\'s inequality to bound the output SNR.',
+  keywords:'schwarz inequality bound optimisation equality condition energy',
+  src:'CH8 s.7–8', steps:2, blocks:[
+  {t:'eyebrow', text:'Module 2 · The matched filter'},
+  {t:'title', text:'Where the bound comes from'},
+  {t:'note', kind:'def', head:'Schwarz\'s inequality', html:'For two finite-energy signals $\\phi_1$ and $\\phi_2$, $$\\left|\\int\\phi_1(x)\\phi_2(x)\\,dx\\right|^{2}\\le\\int|\\phi_1(x)|^{2}dx\\int|\\phi_2(x)|^{2}dx,$$ with equality if and only if $\\phi_1(x)=k\\,\\phi_2^{*}(x)$ for some constant $k$.'},
+  {t:'cols', ratio:'c-6-6', vcenter:true, left:[
+    {t:'body', html:'Take $\\phi_1(f)=H(f)$ and $\\phi_2(f)=G(f)e^{j2\\pi fT}$. The numerator of the ratio is exactly the left-hand side, and $|e^{j2\\pi fT}|=1$, so'},
+    {t:'eq', tex:'\\left|\\int G(f)H(f)e^{j2\\pi fT}df\\right|^{2}\\le\\int|H(f)|^{2}df\\int|G(f)|^{2}df'},
+    {t:'reveal', at:1, items:[
+      {t:'body', html:'Substituting into the ratio, the factor $\\int|H|^{2}$ appears above and below and cancels:'},
+      {t:'eq', key:true, tex:'(\\mathrm{SNR})_o\\le\\frac{2}{N_0}\\int_{-\\infty}^{\\infty}|G(f)|^{2}\\,df=\\frac{2E}{N_0}'}
+    ]},
+    {t:'reveal', at:2, items:[
+      {t:'note', kind:'ok', head:'Read what has just happened', html:'The bound contains no $H$ at all. Whatever filter the receiver uses, it cannot do better than $2E/N_0$ — and the bound depends on the <b>energy</b> of the transmitted waveform, not on its shape. Two completely different pulses of the same energy are equally good.'}
+    ]}
+  ], right:[
+    {t:'body', html:'<p>The condition for equality is what identifies the filter:</p>'},
+    {t:'eq', key:true, tex:'H(f)=k\\,\\phi_2^{*}(f)=k\\,G^{*}(f)e^{-j2\\pi fT}'},
+    {t:'body', html:'<p>The optimum filter has the transfer function of the complex conjugate of the spectrum of the signal it is looking for. The next scene takes the inverse transform of that and finds something simpler than it looks.</p>'}
+  ]}
+]},
+
+{ id:'m2-matched', module:'M2', nav:'The matched filter', title:'The filter is the signal, backwards',
+  objective:'Derive the impulse response of the matched filter.',
+  keywords:'matched filter impulse response time reversed shifted conjugate',
+  src:'CH8 s.9', steps:2, blocks:[
+  {t:'eyebrow', text:'Module 2 · The matched filter'},
+  {t:'title', text:'The matched filter'},
+  {t:'cols', ratio:'c-6-6', vcenter:true, left:[
+    {t:'body', html:'Take the inverse transform of the optimum $H(f)$. Since $g$ is real, $G^{*}(f)=G(-f)$, and the exponential is a shift:'},
+    {t:'eq', tex:'h_{\\mathrm{opt}}(t)=\\int k\\,G(-f)\\,e^{-j2\\pi f(T-t)}\\,df'},
+    {t:'eq', key:true, tex:'h_{\\mathrm{opt}}(t)=k\\,g(T-t),\\qquad 0<t<T'},
+    {t:'reveal', at:1, items:[
+      {t:'note', kind:'def', head:'Matched filter', html:'The optimum filter\'s impulse response is the transmitted waveform <b>reversed in time and shifted</b> so that it fits inside the bit interval. It is said to be <em>matched</em> to that waveform.'}
+    ]},
+    {t:'reveal', at:2, items:[
+      {t:'body', html:'The output at the sampling instant is then'},
+      {t:'eq', tex:'y(T)=\\int_{0}^{T}s(\\tau)\\,s\\bigl(T-(T-\\tau)\\bigr)\\,d\\tau=\\int_{0}^{T}s^{2}(\\tau)\\,d\\tau=E_s'},
+      {t:'note', kind:'ok', head:'What the filter computes', html:'The matched filter, sampled at the right instant, returns the energy of the waveform it is matched to. It is a correlation, and the next section makes that explicit.'}
+    ]}
+  ], right:[
+    {t:'fig', frame:true, svg:figMatched, caption:'A rectangular pulse of duration $T$, the filter matched to it, and the output. For a symmetric pulse the reversal changes nothing, which is why the filter is drawn dashed over the pulse rather than beside it. The output peaks at exactly $t=T$ and its peak is the energy.'},
+    {t:'legend', items:[['in','transmitted pulse'],['h','matched filter'],['out','filter output']]}
+  ]}
+]},
+
+{ id:'m2-props', module:'M2', nav:'What the matched filter achieves', title:'Energy, not shape',
+  objective:'Establish that the output SNR depends only on the energy-to-density ratio.',
+  keywords:'output snr energy noise spectral density unitless shape independent',
+  src:'CH8 s.12–13', steps:2, blocks:[
+  {t:'eyebrow', text:'Module 2 · The matched filter'},
+  {t:'title', text:'The result the module is built on'},
+  {t:'cols', ratio:'c-6-6', vcenter:true, left:[
+    {t:'body', html:'Substituting $H(f)=kG^{*}(f)e^{-j2\\pi fT}$ back into the two parts gives, by Parseval,'},
+    {t:'eq', tex:'g_0(T)=k\\int|G(f)|^{2}df=k\\,E,\\qquad E[n^{2}(t)]=\\frac{k^{2}N_0}{2}E'},
+    {t:'eq', key:true, tex:'(\\mathrm{SNR})_o=\\frac{(kE)^{2}}{k^{2}N_0E/2}=\\frac{2E}{N_0}'},
+    {t:'reveal', at:1, items:[
+      {t:'note', kind:'ok', head:'Three things this says', html:'<ol><li>The constant $k$ cancels. Any scaling of the filter gives the same ratio, so the filter is determined only up to a gain.</li><li>The ratio depends on the <b>energy</b> of the pulse and on the noise density, and on nothing else about the pulse.</li><li>$E/N_0$ is dimensionless: energy in joules over watts per hertz, and a watt per hertz is a joule.</li></ol>'}
+    ]},
+    {t:'reveal', at:2, items:[
+      {t:'note', kind:'warn', head:'The consequence worth stating early', html:'A designer choosing a pulse shape is not choosing performance in noise — that is fixed by the energy. The shape is chosen for other reasons: bandwidth, how fast the pulse decays, how much it interferes with its neighbours. Those are the second half of this module.'}
+    ]}
+  ], right:[
+    {t:'fig', frame:true, svg:()=>{
+      const a=P.Axes({w:600,h:280,xr:[-0.2,1.2],yr:[-0.2,2.4],
+        xlabel:'t/T',ylabel:'s(t)',pad:{l:52,r:26,t:26,b:44},xtarget:4,ytarget:4});
+      /* three pulses of equal energy and very different shape */
+      a.poly([[-0.2,0],[0,0],[0,1],[1,1],[1,0],[1.2,0]],{color:C.in,width:2.2});
+      a.curve(t=>t>0&&t<1?Math.sqrt(2)*Math.sin(Math.PI*t)*1.0/Math.SQRT1_2*0.7071:0,
+        {color:C.mid,width:2.2});
+      a.poly([[-0.2,0],[0,0],[0.5,2],[1,0],[1.2,0]],{color:C.h,width:2.2,dash:'6 4'});
+      return a.svg();
+    }, caption:'Three pulses of the same energy. Against white Gaussian noise a matched-filter receiver performs identically on all three, and no measurement at the detector could tell them apart on that basis alone.'}
+  ]}
+]},
+
+{ id:'m2-lab-c', module:'M2', nav:'Laboratory C', title:'Laboratory C · The matched filter',
+  objective:'Let the reader change the pulse, the noise and the sampling instant.',
+  keywords:'laboratory matched filter pulse shape noise sampling instant interactive',
+  steps:0, blocks:[
+  {t:'eyebrow', text:'Module 2 · The matched filter'},
+  {t:'title', text:'Laboratory C · The matched filter'},
+  {t:'body', html:'Choose the pulse shape, the noise level and where the output is sampled. The measured output signal-to-noise ratio is computed from the waveform; the predicted one is $2E/N_0$. Sampling anywhere other than at $t=T$ costs, and the laboratory says how much.'},
+  {t:'lab', id:'C'}
+]},
+
+/* ---------------------------------------------------------------- 2.2 ---- */
+{ id:'m2-basis', module:'M2', nav:'One basis, two symbols', title:'Writing both symbols on one axis',
+  objective:'Introduce the unit-energy basis and antipodal signalling.',
+  keywords:'basis function unit energy polar nrz antipodal signalling one dimensional',
+  src:'CH8 s.17', steps:2, blocks:[
+  {t:'eyebrow', text:'Module 2 · The demodulator'},
+  {t:'title', text:'Both symbols on one axis'},
+  {t:'cols', ratio:'c-6-6', vcenter:true, left:[
+    {t:'body', html:'Both waveforms of a binary baseband system are multiples of the same rectangular shape, so one unit-energy function carries both:'},
+    {t:'eq', tex:'\\psi(t)=\\begin{cases}\\dfrac{1}{\\sqrt{T_b}}, & 0\\le t\\le T_b\\\\[4pt] 0,&\\text{otherwise}\\end{cases}\\qquad \\int_0^{T_b}\\psi^{2}(t)\\,dt=1'},
+    {t:'eq', tex:'s_m(t)=s_m\\,\\psi(t),\\qquad s_0=-A\\sqrt{T_b},\\quad s_1=+A\\sqrt{T_b}'},
+    {t:'reveal', at:1, items:[
+      {t:'body', html:'In the time domain those are simply $\\mp A$ held for the whole bit interval — polar NRZ, the line code of Module 1. Both carry the same energy:'},
+      {t:'eq', tex:'E_{s_0}=E_{s_1}=\\int_0^{T_b}A^{2}dt=A^{2}T_b\\;\\triangleq\\;E_b,\\qquad A\\sqrt{T_b}=\\sqrt{E_b}'}
+    ]},
+    {t:'reveal', at:2, items:[
+      {t:'note', kind:'ok', head:'Why this is worth the notation', html:'Two waveforms have become two <em>numbers</em>, $\\pm\\sqrt{E_b}$, on a single axis. The whole of Module 3 is the observation that this works for any signal set, with as many axes as the set needs, and Module 4 is what the receiver looks like once it does.'}
+    ]}
+  ], right:[
+    {t:'fig', frame:true, svg:()=>{
+      const a=P.Axes({w:600,h:220,xr:[-0.3,1.3],yr:[-1.6,1.6],
+        xlabel:'t/T_b',ylabel:'s_0(t),\\;s_1(t)',pad:{l:56,r:26,t:26,b:44},xtarget:4,ytarget:4});
+      a.poly([[-0.3,0],[0,0],[0,1],[1,1],[1,0],[1.3,0]],{color:C.in,width:2.2});
+      a.poly([[-0.3,0],[0,0],[0,-1],[1,-1],[1,0],[1.3,0]],{color:C.err,width:2.2});
+      a.note(0.5,1.25,'s_1(t)=+A',{tex:true,fs:14,color:C.in,anchor:'middle'});
+      a.note(0.5,-1.42,'s_0(t)=-A',{tex:true,fs:14,color:C.err,anchor:'middle'});
+      return a.svg();
+    }, caption:'The two waveforms of polar NRZ. They differ by a sign and nothing else, which is what "antipodal" means.'},
+    {t:'fig', svg:()=>{
+      const a=P.Axes({w:600,h:130,xr:[-1.8,1.8],yr:[-0.7,0.7],
+        xlabel:'\\text{signal space (one dimension)}',pad:{l:40,r:26,t:22,b:44},
+        xtarget:4,yticksOverride:[],ytarget:1});
+      a.point(-1,0,{color:C.err,r:6}); a.point(1,0,{color:C.in,r:6});
+      a.note(-1,0.28,'s_0=-\\sqrt{E_b}',{tex:true,fs:13,color:C.err,anchor:'middle'});
+      a.note(1,0.28,'s_1=+\\sqrt{E_b}',{tex:true,fs:13,color:C.in,anchor:'middle'});
+      return a.svg();
+    }, caption:'The same two waveforms as two points. The distance between them is $2\\sqrt{E_b}$, and Module 4 shows that this distance is what the error probability actually depends on.'}
+  ]}
+]},
+
+{ id:'m2-correlator', module:'M2', nav:'Two demodulators, one number', title:'Two demodulators that agree',
+  objective:'Show that the correlator and the matched filter give the same statistic.',
+  keywords:'correlator demodulator matched filter equivalent decision statistic sample',
+  src:'CH8 s.19–20', steps:2, blocks:[
+  {t:'eyebrow', text:'Module 2 · The demodulator'},
+  {t:'title', text:'The same number by two routes'},
+  {t:'cols', ratio:'c-6-6', vcenter:true, left:[
+    {t:'body', html:'The <b>matched-filter</b> demodulator filters with $h_{\\mathrm{opt}}(t)=\\psi(T_b-t)$ and samples at $t=T_b$. The <b>correlator</b> multiplies by $\\psi(t)$ and integrates over the interval:'},
+    {t:'eq', tex:'y=\\int_0^{T_b}x(\\tau)\\,\\psi(\\tau)\\,d\\tau'},
+    {t:'reveal', at:1, items:[
+      {t:'body', html:'Writing $x=s_m\\psi+w$ and using $\\int\\psi^{2}=1$:'},
+      {t:'eq', key:true, tex:'y=s_m\\underbrace{\\int_0^{T_b}\\psi^{2}(\\tau)d\\tau}_{=1}+\\underbrace{\\int_0^{T_b}w(\\tau)\\psi(\\tau)d\\tau}_{n}=s_m+n'},
+      {t:'note', kind:'ok', head:'They are the same at the sampling instant', html:'Convolving with a time-reversed function and evaluating at $T_b$ <em>is</em> correlating over the interval. The two demodulators differ in how they are built and not in what they produce, and both reduce the received waveform to one number.'}
+    ]},
+    {t:'reveal', at:2, items:[
+      {t:'note', kind:'warn', head:'They agree at one instant only', html:'For $t\\ne T_b$ the two outputs are different signals. The equivalence is at the sampling instant, and it is another reason that instant matters: sample early and the two demodulators do not even agree with each other.'}
+    ]}
+  ], right:[
+    {t:'fig', frame:true, svg:()=>P.blocks({w:640,h:260,items:[
+      {t:'arrow',x1:20,y1:60,x2:110,y2:60},
+      {t:'box',x:110,y:28,w:170,h:64,label:'\\psi(T_b-t)',tex:true},
+      {t:'arrow',x1:280,y1:60,x2:370,y2:60},
+      {t:'text',x:65,y:44,label:'x(t)',tex:true,fs:15},
+      {t:'text',x:452,y:34,label:'y(T_b)',tex:true,fs:15},
+      {t:'line',d:'M370,60 h30'}, {t:'line',d:'M400,60 l20,-13'},
+      {t:'text',x:195,y:118,label:'matched filter',fs:12.5},
+      {t:'arrow',x1:20,y1:190,x2:100,y2:190},
+      {t:'sum',x:130,y:190},
+      {t:'arrow',x1:130,y1:236,x2:130,y2:208},
+      {t:'arrow',x1:148,y1:190,x2:230,y2:190},
+      {t:'box',x:230,y:158,w:140,h:64,label:'\\int_0^{t}(\\cdot)',tex:true},
+      {t:'arrow',x1:370,y1:190,x2:400,y2:190},
+      {t:'text',x:60,y:174,label:'x(t)',tex:true,fs:15},
+      {t:'text',x:172,y:246,label:'\\psi(t)',tex:true,fs:14},
+      {t:'text',x:482,y:164,label:'y(T_b)',tex:true,fs:15},
+      {t:'line',d:'M400,190 h30'}, {t:'line',d:'M430,190 l20,-13'},
+      {t:'text',x:250,y:248,label:'correlator',fs:12.5}
+    ]}), caption:'Two ways to build the same demodulator. The upper one is a filter; the lower one is a multiplier and an integrator. Sampled at $t=T_b$ they produce the same number.'}
+  ]}
+]},
+
+/* ---------------------------------------------------------------- 2.3 ---- */
+{ id:'m2-stat', module:'M2', nav:'The decision statistic', title:'What the detector is given',
+  objective:'Establish the distribution of the decision statistic.',
+  keywords:'decision statistic gaussian variance conditional density noise projection',
+  src:'CH8 s.21–22', steps:2, blocks:[
+  {t:'eyebrow', text:'Module 2 · The decision'},
+  {t:'title', text:'One Gaussian number'},
+  {t:'cols', ratio:'c-6-6', vcenter:true, left:[
+    {t:'body', html:'The noise term is a projection of a Gaussian process onto a fixed function, so it is a Gaussian random variable. Its variance follows from the autocorrelation of white noise:'},
+    {t:'eq', tex:'\\sigma_n^{2}=E\\!\\left[\\left(\\int_0^{T_b}\\!w(\\tau)\\psi(\\tau)d\\tau\\right)^{2}\\right]=\\frac{N_0}{2}\\int_0^{T_b}\\!\\psi^{2}(\\tau)d\\tau=\\frac{N_0}{2}'},
+    {t:'reveal', at:1, items:[
+      {t:'small', html:'The middle step uses $E[w(\\tau)w(u)]=\\tfrac{N_0}{2}\\delta(\\tau-u)$ and the sifting property, and the last uses that $\\psi$ has unit energy. The two-sided density $N_0/2$ arrives here unchanged, which is why the convention has to be fixed once and never mixed.'},
+      {t:'eq', key:true, tex:'y=s_m+n\\;\\sim\\;\\mathcal{N}\\!\\left(s_m,\\;\\frac{N_0}{2}\\right)'}
+    ]},
+    {t:'reveal', at:2, items:[
+      {t:'body', html:'So the two conditional densities are the same Gaussian, shifted:'},
+      {t:'eq', tex:'f_Y(y\\mid s_m)=\\frac{1}{\\sqrt{\\pi N_0}}\\exp\\!\\left(-\\frac{(y-s_m)^{2}}{N_0}\\right)'},
+      {t:'note', kind:'ok', head:'The problem has become one-dimensional', html:'A waveform in noise has been reduced to one number drawn from one of two known Gaussians. Deciding which is a question with a clean answer, and the next scene gives it.'}
+    ]}
+  ], right:[
+    {t:'fig', frame:true, svg:()=>figDensities(0), caption:'The two conditional densities, weighted by equal priors, with the threshold at the origin. The shaded regions are the decision regions, each in the colour of the symbol it decides for. The error probability is the area of each density that lies in the other\'s region.'}
+  ]}
+]},
+
+{ id:'m2-threshold', module:'M2', nav:'The optimal threshold', title:'Where the threshold goes',
+  objective:'Derive the optimal threshold for unequal priors.',
+  keywords:'threshold optimum priors leibniz likelihood unequal probabilities log ratio',
+  src:'CH8 s.24–26', steps:3, blocks:[
+  {t:'eyebrow', text:'Module 2 · The decision'},
+  {t:'title', text:'The threshold that minimises the error'},
+  {t:'cols', ratio:'c-6-6', vcenter:true, left:[
+    {t:'body', html:'The detector decides "1" when $y>\\lambda$. By total probability,'},
+    {t:'eq', tex:'P_e=P(s_0)\\!\\int_{\\lambda}^{\\infty}\\!f_Y(y\\mid s_0)dy+P(s_1)\\!\\int_{-\\infty}^{\\lambda}\\!f_Y(y\\mid s_1)dy'},
+    {t:'reveal', at:1, items:[
+      {t:'body', html:'Differentiating with respect to $\\lambda$ — the Leibniz rule gives $-f_Y(\\lambda\\mid s_0)$ from the first term and $+f_Y(\\lambda\\mid s_1)$ from the second — and setting the derivative to zero:'},
+      {t:'eq', tex:'P(s_1)\\,f_Y(\\lambda\\mid s_1)=P(s_0)\\,f_Y(\\lambda\\mid s_0)'}
+    ]},
+    {t:'reveal', at:2, items:[
+      {t:'body', html:'Dividing the two densities, the normalising constants cancel and the exponents subtract:'},
+      {t:'eq', tex:'\\frac{P(s_0)}{P(s_1)}=\\exp\\!\\left(\\frac{4\\lambda A\\sqrt{T_b}}{N_0}\\right)'},
+      {t:'eq', key:true, tex:'\\lambda_{\\mathrm{opt}}=\\frac{N_0}{4A\\sqrt{T_b}}\\ln\\frac{P(s_0)}{P(s_1)}=\\frac{N_0}{4\\sqrt{E_b}}\\ln\\frac{P(s_0)}{P(s_1)}'}
+    ]},
+    {t:'reveal', at:3, items:[
+      {t:'note', kind:'ok', head:'Read the sign', html:'If $P(s_0)>P(s_1)$ the threshold moves <b>towards</b> the more likely symbol\'s rival — that is, $\\lambda>0$, enlarging the region that decides $s_0$. Equal priors give $\\lambda=0$ and the threshold sits midway. As $N_0\\to0$ the threshold returns to the midpoint whatever the priors: when the noise is small enough the priors stop mattering.'}
+    ]}
+  ], right:[
+    {t:'fig', frame:true, svg:()=>figDensities(0.35), caption:'Unequal priors, $P(s_0)=0.7$. The densities are weighted by their priors, so the more likely symbol\'s curve is taller, and the crossing point — which is where the threshold belongs — has moved towards the less likely one.'}
+  ]}
+]},
+
+{ id:'m2-pe', module:'M2', nav:'The error probability', title:'The result of the module',
+  objective:'Derive the bit error probability of antipodal signalling.',
+  keywords:'probability of error antipodal q function energy per bit noise density',
+  src:'CH8 s.29–31', steps:3, blocks:[
+  {t:'eyebrow', text:'Module 2 · The decision'},
+  {t:'title', text:'The bit error probability'},
+  {t:'cols', ratio:'c-6-6', vcenter:true, left:[
+    {t:'body', html:'Take equal priors, so $\\lambda=0$. For a Gaussian $Y\\sim\\mathcal{N}(\\mu,\\sigma^{2})$, $P(Y>y)=Q\\!\\left(\\frac{y-\\mu}{\\sigma}\\right)$. With $\\mu=-\\sqrt{E_b}$ and $\\sigma=\\sqrt{N_0/2}$:'},
+    {t:'eq', tex:'P(y>0\\mid s_0)=Q\\!\\left(\\frac{0-(-\\sqrt{E_b})}{\\sqrt{N_0/2}}\\right)=Q\\!\\left(\\sqrt{\\frac{2E_b}{N_0}}\\right)'},
+    {t:'reveal', at:1, items:[
+      {t:'body', html:'The other case gives the same number, using $Q(-x)=1-Q(x)$:'},
+      {t:'eq', tex:'P(y<0\\mid s_1)=1-Q\\!\\left(-\\sqrt{\\frac{2E_b}{N_0}}\\right)=Q\\!\\left(\\sqrt{\\frac{2E_b}{N_0}}\\right)'}
+    ]},
+    {t:'reveal', at:2, items:[
+      {t:'eq', key:true, tex:'P_b=\\tfrac12 Q\\!\\left(\\sqrt{\\tfrac{2E_b}{N_0}}\\right)+\\tfrac12 Q\\!\\left(\\sqrt{\\tfrac{2E_b}{N_0}}\\right)=Q\\!\\left(\\sqrt{\\frac{2E_b}{N_0}}\\right)'},
+      {t:'note', kind:'ok', head:'What it depends on', html:'Not on $A$, not on $T_b$, not on the pulse shape — only on $E_b/N_0$. Doubling the amplitude and quartering the bit duration leave it unchanged, because they leave the energy per bit unchanged.'}
+    ]},
+    {t:'reveal', at:3, items:[
+      {t:'note', kind:'err', head:'The factor of two that lives here', html:'$Q\\!\\left(\\sqrt{E_b/N_0}\\right)$ — the same expression without the two — is the error probability of <em>orthogonal</em> binary signalling, and it is $3$ dB worse. Which of the two is right depends on whether the two waveforms are opposites or merely different, and the noise convention has to be the two-sided one throughout for either to come out.'}
+    ]}
+  ], right:[
+    {t:'fig', frame:true, svg:figPe, caption:'The bit error probability against $E_b/N_0$ in decibels, on a logarithmic scale. The curve falls faster than any straight line: past about $8$ dB, every extra decibel costs the channel roughly an order of magnitude in errors.'}
+  ]}
+]},
+
+{ id:'m2-ex-pe', module:'M2', nav:'Worked example: unequal priors', title:'Worked example: unequal priors',
+  objective:'Compute a threshold and an error probability with unequal priors.',
+  keywords:'worked example unequal priors threshold error probability binary pam',
+  src:'CH8 s.32–34', steps:3, blocks:[
+  {t:'eyebrow', text:'Module 2 · The decision'},
+  {t:'title', text:'Worked example'},
+  {t:'wex', rows:[
+    ['Given','A binary PAM system whose correlator output is $y=\\pm\\sqrt{E_b}+n$, with $P(s_1)=0.3$, $E_b=1$ and $N_0=0.1$.'],
+    ['Find','The optimal threshold, and the average error probability at that threshold.']
+  ]},
+  {t:'reveal', at:1, items:[
+    {t:'wex', rows:[
+      ['Method','The threshold from the log-ratio of the priors; each conditional error from the Gaussian tail at that threshold; the average by weighting with the priors.'],
+      ['Solution','$\\lambda_{\\mathrm{opt}}=\\dfrac{N_0}{4\\sqrt{E_b}}\\ln\\dfrac{P(s_0)}{P(s_1)}=\\dfrac{0.1}{4}\\ln\\dfrac{0.7}{0.3}=0.025(0.8473)=0.0212.$']
+    ]}
+  ]},
+  {t:'reveal', at:2, items:[
+    {t:'wex', rows:[
+      ['','$\\sigma=\\sqrt{N_0/2}=0.2236$. Then $P(\\text{err}\\mid s_0)=Q\\!\\left(\\dfrac{0.0212+1}{0.2236}\\right)=Q(4.567)=2.475\\times10^{-6}$ and $P(\\text{err}\\mid s_1)=Q\\!\\left(\\dfrac{1-0.0212}{0.2236}\\right)=Q(4.377)=6.005\\times10^{-6}$.'],
+      ['','$P_e=0.7(2.475\\times10^{-6})+0.3(6.005\\times10^{-6})=3.534\\times10^{-6}$.']
+    ]}
+  ]},
+  {t:'reveal', at:3, items:[
+    {t:'wex', rows:[
+      ['Check','With the threshold left at zero the answer would be $Q\\!\\left(\\sqrt{2E_b/N_0}\\right)=Q(\\sqrt{20})=3.872\\times10^{-6}$. Moving the threshold to $0.0212$ improves it to $3.534\\times10^{-6}$, about nine per cent — a real gain, and a small one, which is what the shape of the exponential predicts for a threshold moved by a tenth of a standard deviation.']
+    ]},
+    {t:'note', kind:'warn', head:'Which way the threshold moves', html:'$s_0$ is the more likely symbol here, and the threshold moves in the positive direction — that is, <em>away</em> from $s_0$ and towards $s_1$. The region deciding $s_0$ grows. Moving it the other way makes the answer worse, and a sign slip in the logarithm is the usual cause.'}
+  ]}
+]},
+
+{ id:'m2-lab-d', module:'M2', nav:'Laboratory D', title:'Laboratory D · Threshold and error probability',
+  objective:'Let the reader move the threshold, the priors and the noise.',
+  keywords:'laboratory threshold priors noise variance error probability decision regions',
+  steps:0, blocks:[
+  {t:'eyebrow', text:'Module 2 · The decision'},
+  {t:'title', text:'Laboratory D · Threshold and error probability'},
+  {t:'body', html:'Move the threshold by hand and watch the two conditional error probabilities trade against each other. Change the priors and the noise level and the best place for it moves. The laboratory marks the optimum, so a threshold placed by eye can be compared against the one the derivation gives.'},
+  {t:'lab', id:'D'}
+]},
+
+/* ---------------------------------------------------------------- 2.4 ---- */
+{ id:'m2-isi', module:'M2', nav:'Intersymbol interference', title:'When the pulses overlap',
+  objective:'Show where intersymbol interference comes from.',
+  keywords:'intersymbol interference bandlimited channel dispersion residual effect sampling instant',
+  src:'CH8 s.35–37', steps:2, blocks:[
+  {t:'eyebrow', text:'Module 2 · Intersymbol interference'},
+  {t:'title', text:'The error noise did not cause'},
+  {t:'cols', ratio:'c-6-6', vcenter:true, left:[
+    {t:'body', html:'Everything so far assumed an ideal channel. A real channel is bandlimited, and a bandlimited channel spreads a pulse in time. Write the received signal as a train of the overall pulse shape $p$:'},
+    {t:'eq', tex:'y(t)=\\mu\\sum_k a_k\\,p(t-kT_b)+n(t),\\qquad \\mu\\,p(t)=g(t)*h(t)*c(t)'},
+    {t:'reveal', at:1, items:[
+      {t:'body', html:'Sampling at $t_i=iT_b$ and separating the term that was meant to be there:'},
+      {t:'eq', key:true, tex:'y(t_i)=\\underbrace{\\mu a_i}_{\\text{wanted}}+\\underbrace{\\mu\\sum_{k\\ne i}a_k\\,p\\bigl((i-k)T_b\\bigr)}_{\\text{intersymbol interference}}+\\;n(t_i)'}
+    ]},
+    {t:'reveal', at:2, items:[
+      {t:'note', kind:'err', head:'Why this is a different problem', html:'The middle term is not noise. It is deterministic, it is caused by the data itself, and it does not go away when the transmitter turns up its power — raising the amplitude raises the interference by the same factor. At high signal-to-noise ratio it is the <em>only</em> thing limiting the system, which is why it needs a solution of its own rather than more energy.'}
+    ]}
+  ], right:[
+    {t:'fig', frame:true, svg:()=>figIsi(1.0), caption:'Eight bits through a channel whose pulse decays quickly. Each pulse is drawn faintly and their sum heavily; the dots are the sampling instants. Here every neighbouring pulse is zero at every other instant, so the dots sit exactly on $\\pm1$.'},
+    {t:'fig', frame:true, svg:()=>figIsi(0.0), caption:'The same eight bits through a channel whose pulse decays slowly. The tails of the neighbours no longer vanish at the sampling instants, and the dots have moved off $\\pm1$ by an amount that depends on the data that happens to be around them.'}
+  ]}
+]},
+
+{ id:'m2-eye', module:'M2', nav:'The eye diagram', title:'Every bit pattern at once',
+  objective:'Read the four measurements an eye diagram carries.',
+  keywords:'eye diagram eye pattern jitter margin noise timing sensitivity superposition',
+  src:'CH8 s.38–41', steps:2, blocks:[
+  {t:'eyebrow', text:'Module 2 · Intersymbol interference'},
+  {t:'title', text:'The eye diagram'},
+  {t:'cols', ratio:'c-6-6', vcenter:true, left:[
+    {t:'note', kind:'def', head:'Eye pattern', html:'Cut the received waveform into bit-length pieces and draw them all on top of each other, synchronised to the clock. The result is a synchronised superposition of every realisation of the signal within one signalling interval.'},
+    {t:'reveal', at:1, items:[
+      {t:'body', html:'<p>Four measurements are read off it directly:</p><ul><li>The <b>height of the opening</b> at the sampling instant is the margin over noise.</li><li>The <b>width of the opening</b> is how far the sampling instant may drift before a decision goes wrong.</li><li>The <b>slope</b> at the crossings is the sensitivity to a timing error.</li><li>The <b>spread of the crossings</b> is the timing jitter.</li></ul>'}
+    ]},
+    {t:'reveal', at:2, items:[
+      {t:'note', kind:'warn', head:'What a closed eye means', html:'When the opening shrinks to nothing there is no sampling instant at which every bit pattern is decided correctly, and no threshold placement helps. The system has failed for a reason that has nothing to do with the noise level, and the eye is where that is seen before it is measured.'}
+    ]}
+  ], right:[
+    {t:'fig', frame:true, svg:()=>figEye(1.0, 0.06), caption:'A wide-open eye: a pulse that decays quickly, and light noise. Every trace passes close to $\\pm1$ at the centre of the interval.'},
+    {t:'fig', frame:true, svg:()=>figEye(0.0, 0.06), caption:'The same noise through a slowly decaying pulse. The traces have spread, the opening has narrowed and the crossings have scattered — all of it caused by the data, none of it by more noise.'}
+  ]}
+]},
+
+{ id:'m2-lab-e', module:'M2', nav:'Laboratory E', title:'Laboratory E · The eye diagram',
+  objective:'Let the reader close the eye with roll-off, timing and noise.',
+  keywords:'laboratory eye diagram roll off timing offset noise intersymbol interference',
+  steps:0, blocks:[
+  {t:'eyebrow', text:'Module 2 · Intersymbol interference'},
+  {t:'title', text:'Laboratory E · The eye diagram and intersymbol interference'},
+  {t:'body', html:'Change the roll-off of the pulse, the sampling instant and the noise level, and watch the eye open and close. The readout reports the opening, the worst-case interference and the margin, so what the picture shows can be checked against a number.'},
+  {t:'lab', id:'E'}
+]},
+
+/* ---------------------------------------------------------------- 2.5 ---- */
+{ id:'m2-nyquist', module:'M2', nav:'Nyquist\'s criterion', title:'The condition for zero interference',
+  objective:'State Nyquist\'s criterion in both domains and give the ideal channel.',
+  keywords:'nyquist criterion distortionless transmission zero isi bandwidth ideal channel',
+  src:'CH8 s.42–45', steps:3, blocks:[
+  {t:'eyebrow', text:'Module 2 · Nyquist and the raised cosine'},
+  {t:'title', text:'Nyquist\'s criterion'},
+  {t:'cols', ratio:'c-6-6', vcenter:true, left:[
+    {t:'body', html:'The interference term vanishes exactly when the overall pulse is zero at every sampling instant but its own:'},
+    {t:'eq', key:true, label:'time domain', tex:'p\\bigl((i-k)T_b\\bigr)=\\begin{cases}1, & i=k\\\\ 0, & i\\ne k\\end{cases}'},
+    {t:'reveal', at:1, items:[
+      {t:'body', html:'Sampling $p$ at the instants and transforming turns that into a statement about the spectrum. The sampled pulse has transform $\\frac{1}{T_b}\\sum_n P(f-nR_b)$, and the condition makes the sampled pulse a single impulse of weight one:'},
+      {t:'eq', key:true, label:'frequency domain', tex:'R_b\\sum_{n}P(f-nR_b)=1,\\qquad R_b=\\frac{1}{T_b}'},
+      {t:'small', html:'In words: the replicas of the pulse spectrum, spaced by the symbol rate, must add to a constant.'}
+    ]},
+    {t:'reveal', at:2, items:[
+      {t:'body', html:'The simplest spectrum satisfying it is a rectangle of width $2W$ with $W=R_b/2$, the <b>Nyquist bandwidth</b>. Its pulse is'},
+      {t:'eq', tex:'p(t)=\\operatorname{sinc}(2Wt),\\qquad W=\\frac{R_b}{2}=\\frac{1}{2T_b}'},
+      {t:'note', kind:'ok', head:'The rate a bandwidth supports', html:'A channel of bandwidth $W$ carries at most $2W$ symbols per second with no interference. That number is the counterpart of the sampling theorem, arrived at from the other end.'}
+    ]},
+    {t:'reveal', at:3, items:[
+      {t:'note', kind:'err', head:'Why the ideal channel cannot be built', html:'A rectangular spectrum has abrupt edges and is not physically realisable. Worse, its pulse decays only as $1/t$, so a small timing error lets a long tail of neighbours contribute at once and the interference does not settle. The next scene buys a solution with bandwidth.'}
+    ]}
+  ], right:[
+    {t:'fig', frame:true, svg:()=>{
+      const a=P.Axes({w:600,h:210,xr:[-3.4,3.4],yr:[-0.15,1.5],
+        xlabel:'f/W',ylabel:'P(f)/T_b',pad:{l:56,r:26,t:26,b:42},xtarget:6,ytarget:3});
+      for(let n=-1;n<=1;n++)
+        a.poly([[-3.4,0],[2*n-1,0],[2*n-1,1],[2*n+1,1],[2*n+1,0],[3.4,0]],
+               {color:n?C.mid:C.in,width:n?1.6:2.2});
+      return a.svg();
+    }, caption:'The ideal Nyquist channel and its replicas at multiples of $R_b=2W$. They tile the axis exactly, so their sum is a constant and the criterion holds.'},
+    {t:'fig', frame:true, svg:()=>{
+      const a=P.Axes({w:600,h:210,xr:[-3.4,3.4],yr:[-0.35,1.25],
+        xlabel:'t/T_b',ylabel:'p(t)',pad:{l:52,r:26,t:26,b:42},xtarget:6,ytarget:3});
+      a.curve(t=>sinc(t),{color:C.in,width:2.2});
+      for(let k=-3;k<=3;k++) a.point(k, k===0?1:0, {color:C.out,r:3.6});
+      return a.svg();
+    }, caption:'Its pulse. Every sampling instant except its own falls on a zero, which is Nyquist\'s criterion seen in the time domain.'}
+  ]}
+]},
+
+{ id:'m2-rcos', module:'M2', nav:'The raised cosine', title:'Buying decay with bandwidth',
+  objective:'Give the raised-cosine spectrum and what the roll-off controls.',
+  keywords:'raised cosine roll off factor excess bandwidth transmission bandwidth decay',
+  src:'CH8 s.46–48', steps:2, blocks:[
+  {t:'eyebrow', text:'Module 2 · Nyquist and the raised cosine'},
+  {t:'title', text:'The raised cosine'},
+  {t:'cols', ratio:'c-6-6', vcenter:true, left:[
+    {t:'body', html:'Widen the spectrum from $W$ towards $2W$ and taper the edges, keeping the tiling property:'},
+    {t:'eq', tex:'P(f)=\\begin{cases}\\dfrac{1}{2W}, & 0\\le|f|\\le f_1\\\\[6pt] \\dfrac{1}{4W}\\left[1-\\sin\\dfrac{\\pi(|f|-W)}{2W-2f_1}\\right], & f_1\\le|f|<2W-f_1\\\\[6pt] 0,&\\text{otherwise}\\end{cases}'},
+    {t:'eq', label:'roll-off factor', tex:'\\alpha=1-\\frac{f_1}{W}'},
+    {t:'reveal', at:1, items:[
+      {t:'body', html:'Its pulse is the Nyquist pulse multiplied by a factor that makes it decay far faster:'},
+      {t:'eq', key:true, tex:'p(t)=\\operatorname{sinc}(2Wt)\\,\\frac{\\cos(2\\pi\\alpha Wt)}{1-16\\alpha^{2}W^{2}t^{2}}'},
+      {t:'small', html:'The first factor keeps the zero crossings at $t=iT_b$, so the criterion still holds. The second decays as $1/t^{2}$, so a timing error no longer accumulates a long tail of neighbours.'}
+    ]},
+    {t:'reveal', at:2, items:[
+      {t:'body', html:'<p>The price is bandwidth. The transmission bandwidth is $B_T=(1+\\alpha)W$ and the excess over Nyquist is $\\alpha W$.</p>'},
+      {t:'note', kind:'ok', head:'What $\\alpha$ trades', html:'A larger roll-off gives faster decay, less sensitivity to timing error and a gentler filter to build — and costs bandwidth. At $\\alpha=0$ the raised cosine is the ideal Nyquist channel; at $\\alpha=1$ it occupies twice the Nyquist bandwidth and its pulse decays as $1/t^{3}$. Real systems sit between, typically at $\\alpha$ between $0.2$ and $0.5$.'}
+    ]}
+  ], right:[
+    {t:'fig', frame:true, svg:()=>{
+      const a=P.Axes({w:600,h:220,xr:[-2.2,2.2],yr:[-0.12,1.2],
+        xlabel:'f/W',ylabel:'2W\\,P(f)',pad:{l:56,r:26,t:26,b:42},xtarget:6,ytarget:3});
+      const rc=(f,al)=>{ const u=Math.abs(f);
+        if(al===0) return u<=1?1:0;
+        const f1=1-al;
+        if(u<=f1) return 1;
+        if(u<2-f1) return 0.5*(1-Math.sin(Math.PI*(u-1)/(2-2*f1)));
+        return 0; };
+      [[0,C.in],[0.5,C.h],[1,C.out]].forEach(([al,col])=>a.curve(f=>rc(f,al),{color:col,width:2.1}));
+      return a.svg();
+    }, caption:'The raised-cosine spectrum at three roll-offs. All three tile the axis at spacing $2W$, so all three satisfy the criterion; they differ in how much room they take.'},
+    {t:'legend', items:[['in','$\\alpha = 0$'],['h','$\\alpha = 0.5$'],['out','$\\alpha = 1$']]},
+    {t:'fig', frame:true, svg:()=>{
+      const a=P.Axes({w:600,h:210,xr:[-3.4,3.4],yr:[-0.35,1.25],
+        xlabel:'t/T_b',ylabel:'p(t)',pad:{l:52,r:26,t:26,b:42},xtarget:6,ytarget:3});
+      const pl=(al,col)=>a.curve(t=>{ const den=1-4*al*al*t*t;
+        if(Math.abs(den)<1e-6) return sinc(t)*Math.PI/4;
+        return sinc(t)*Math.cos(Math.PI*al*t)/den; },{color:col,width:2.1});
+      pl(0,C.in); pl(0.5,C.h); pl(1,C.out);
+      return a.svg();
+    }, caption:'Their pulses. All three vanish at every non-zero integer multiple of $T_b$; the tails differ by orders of magnitude.'}
+  ]}
+]},
+
+/* ---------------------------------------------------------------- 2.6 ---- */
+{ id:'m2-synth', module:'M2', nav:'Summary', title:'What Module 2 established',
+  objective:'Collect the results this module contributes to the rest of the course.',
+  keywords:'summary matched filter threshold error probability nyquist raised cosine',
+  steps:0, blocks:[
+  {t:'eyebrow', text:'Module 2 · Summary'},
+  {t:'title', text:'What carries forward'},
+  {t:'grid', cols:2, gap:'26px', items:[
+    [{t:'card', head:'The filter', items:[
+      {t:'body', html:'<p>The matched filter maximises the output signal-to-noise ratio, and what it achieves depends on the energy of the pulse and not on its shape.</p>'},
+      {t:'eq', plain:true, tex:'h_{\\mathrm{opt}}(t)=g(T-t),\\quad(\\mathrm{SNR})_o=\\frac{2E}{N_0}'}
+    ]}],
+    [{t:'card', head:'The decision', items:[
+      {t:'body', html:'<p>The demodulator returns one Gaussian number. The threshold that minimises the error is the log-ratio of the priors, scaled by the noise density.</p>'},
+      {t:'eq', plain:true, tex:'y=s_m+n,\\quad \\lambda_{\\mathrm{opt}}=\\frac{N_0}{4\\sqrt{E_b}}\\ln\\frac{P(s_0)}{P(s_1)}'}
+    ]}],
+    [{t:'card', head:'The error probability', items:[
+      {t:'body', html:'<p>For antipodal signalling with equal priors it depends on one number, and Module 4 shows that number is really a distance.</p>'},
+      {t:'eq', plain:true, tex:'P_b=Q\\!\\left(\\sqrt{2E_b/N_0}\\right)'}
+    ]}],
+    [{t:'card', head:'The bandwidth', items:[
+      {t:'body', html:'<p>Zero interference requires the pulse spectrum to tile the axis at the symbol rate. A bandwidth $W$ carries $2W$ symbols per second at best, and the raised cosine buys practicality with the excess $\\alpha W$.</p>'},
+      {t:'eq', plain:true, tex:'R_b\\sum_n P(f-nR_b)=1,\\quad B_T=(1+\\alpha)W'}
+    ]}]
+  ]}
+]}
+
+];
+
+window.SCENES_M2 = SC;
+})();
+
+</script>
+<script>
 /* ==== 89_sections.js ==== */
 /* ==========================================================================
    NUMBERING — the contents address of every scene, and its textbook anchor.
@@ -3311,7 +4291,8 @@ window.SCENES_M1 = SC;
    would be an empty frame. */
 CONTENT.CHAPTERS = [
   { n:'0', module:'M0', title:'The frame of the course', flat:true },
-  { n:'1', module:'M1', title:'The transition from analog to digital' }
+  { n:'1', module:'M1', title:'The transition from analog to digital' },
+  { n:'2', module:'M2', title:'Baseband transmission of digital signals' }
 ];
 
 /* ---- sections ----------------------------------------------------------
@@ -3343,6 +4324,18 @@ CONTENT.SECTIONS = {
     { n:'1.6', title:'Pulse code modulation',          ids:[
         'm1-encode','m1-linecodes','m1-ex-pcm','m1-lab-b'] },
     { n:'1.7', title:'Summary',                        ids:['m1-synth'] }
+  ],
+
+  M2: [
+    { n:'2.0', title:'Opening',                        ids:['m2-open'] },
+    { n:'2.1', title:'The matched filter',             ids:[
+        'm2-model','m2-schwarz','m2-matched','m2-props','m2-lab-c'] },
+    { n:'2.2', title:'The demodulator',                ids:['m2-basis','m2-correlator'] },
+    { n:'2.3', title:'The decision and its error',     ids:[
+        'm2-stat','m2-threshold','m2-pe','m2-ex-pe','m2-lab-d'] },
+    { n:'2.4', title:'Intersymbol interference',       ids:['m2-isi','m2-eye','m2-lab-e'] },
+    { n:'2.5', title:'Nyquist and the raised cosine',  ids:['m2-nyquist','m2-rcos'] },
+    { n:'2.6', title:'Summary',                        ids:['m2-synth'] }
   ]
 
 };
@@ -3370,7 +4363,26 @@ CONTENT.BOOK = {
   'm1-ex-cos':'7.2.1', 'm1-ex-unif':'7.2.1', 'm1-ex-gauss':'7.2.1',
   'm1-nonuniform':'7.2.1', 'm1-companding':'7.2.1',
   'm1-encode':'7.3', 'm1-ex-pcm':'7.4.1', 'm1-lab-b':'7.4',
-  'm1-synth':'7.4.1'
+  'm1-synth':'7.4.1',
+
+  /* Module 2 spans two chapters of the book, and that is not an accident of
+     this course's numbering: the matched filter, the demodulators and the error
+     probability are chapter 8, while intersymbol interference, the Nyquist
+     criterion and the raised cosine are developed in chapter 10. Each was read
+     in the book before it was written here.
+
+     The eye-pattern scene carries no anchor. The book does describe the eye
+     pattern, but not under a heading this module can point at without guessing,
+     and a well-formed wrong anchor is the one failure the marker cannot catch. */
+  'm2-open':'8.3',
+  'm2-model':'8.3.2', 'm2-schwarz':'8.3.2', 'm2-matched':'8.3.2', 'm2-props':'8.3.2',
+  'm2-lab-c':'8.3.2',
+  'm2-basis':'8.2.1', 'm2-correlator':'8.3.1',
+  'm2-stat':'8.3.3', 'm2-threshold':'8.3.3', 'm2-pe':'8.3.3', 'm2-ex-pe':'8.3.3',
+  'm2-lab-d':'8.3.3',
+  'm2-isi':'10.1.1', 'm2-lab-e':'10.1.1',
+  'm2-nyquist':'10.3.1', 'm2-rcos':'10.3.1',
+  'm2-synth':'8.3, 10.3.1'
 };
 
 /* ---- derivation --------------------------------------------------------
@@ -3863,6 +4875,407 @@ window.DRILL_M1 = [
 
 </script>
 <script>
+/* ==== 93_drill_m2.js ==== */
+/* ==========================================================================
+   Practice questions — Module 2.
+
+   Three of the six shapes come from the question tables: the matched-filter
+   question with its conditional densities and threshold, the binary decision
+   under a noise density that is not Gaussian, and the unequal-prior PAM
+   question answered as a number rather than as a Q. The other three come from
+   the worked material: the matched filter on its own, the error probability as
+   a function of energy per bit, and the bandwidth questions of the second half
+   of the module.
+
+   Every question keeps the shape of its type and none of its numbers.
+   ========================================================================== */
+(function(){
+const P = PLOT, C = P.COL;
+
+CONTENT.DRILLTYPES.M2 = [
+  { k:'mf', name:'Designing the matched filter',
+    asks:'A pulse is given. Give the filter matched to it, the output at the sampling instant, and the signal-to-noise ratio that results.',
+    method:['The impulse response is the pulse reversed in time and shifted into the interval: $h_{\\mathrm{opt}}(t)=g(T-t)$. Sketch the reversal before writing it down.',
+            'The output at $t=T$ is the energy of the pulse, $\\int_0^T g^{2}(t)\\,dt$. Compute the energy first; everything else follows from it.',
+            'The peak signal-to-noise ratio is $2E/N_0$ and depends on nothing else about the pulse. Two pulses of the same energy give the same answer.'],
+    go:'m2-matched' },
+
+  { k:'cond', name:'Conditional densities, threshold and error probability',
+    asks:'A demodulator output is given with its noise. Write the two conditional densities, place the threshold and give the average error probability.',
+    method:['Write $y=s_m+n$ and identify the mean and variance under each hypothesis. For a unit-energy basis the variance is $N_0/2$.',
+            'With equal priors the threshold is midway between the two means. With unequal priors it is $\\lambda=\\frac{N_0}{4\\sqrt{E_b}}\\ln\\frac{P(s_0)}{P(s_1)}$ for antipodal signalling, and the crossing of the weighted densities in general.',
+            'Each conditional error is a Gaussian tail: $P(Y>y)=Q\\!\\left(\\frac{y-\\mu}{\\sigma}\\right)$. Weight the two by the priors and add.'],
+    go:'m2-threshold' },
+
+  { k:'nongauss', name:'A binary decision under a noise density that is not Gaussian',
+    asks:'A noise density is given that is not Gaussian. Find any unknown constant, then the two conditional errors and the threshold.',
+    method:['Find the constant from $\\int f_N(n)\\,dn=1$ before anything else.',
+            'Do not reach for $Q$. Integrate the given density over the region that causes an error, region by region, exactly as the definition asks.',
+            'The threshold that minimises the error still satisfies $P(s_1)f_Y(\\lambda\\mid s_1)=P(s_0)f_Y(\\lambda\\mid s_0)$, but with a density that has finite support or a kink the solution may sit at an edge rather than where a derivative vanishes.'],
+    go:'m2-stat' },
+
+  { k:'ebn0', name:'Error probability against energy per bit',
+    asks:'A system is specified by its energy per bit and noise density, or by a target error rate. Find the other.',
+    method:['$P_b=Q\\!\\left(\\sqrt{2E_b/N_0}\\right)$ for antipodal signalling and $Q\\!\\left(\\sqrt{E_b/N_0}\\right)$ for on-off or orthogonal signalling — a factor of two inside, three decibels outside.',
+            'Going the other way, invert the $Q$: read $x$ from $Q(x)=P_b$, then $E_b/N_0=x^{2}/2$.',
+            'Raising the bit rate at fixed transmit power lowers $E_b$ in proportion, so a factor of four in rate costs $6.02$ dB.'],
+    go:'m2-pe' },
+
+  { k:'isi', name:'Bandwidth, the Nyquist criterion and the eye',
+    asks:'A bit rate or a bandwidth is given with a roll-off. Find the other, or read an eye.',
+    method:['The Nyquist bandwidth is $W=R_b/2$: a bandwidth $W$ carries at most $2W$ symbols per second with no interference.',
+            'A raised cosine occupies $B_T=(1+\\alpha)W$, so the excess over Nyquist is $\\alpha W$ and a given bandwidth supports $R_b=2B_T/(1+\\alpha)$.',
+            'Worst-case interference is $\\sum_{k\\ne 0}|p(kT_b)|$ over both sides, and the eye opening is $2\\left(|p(0)|-\\text{that sum}\\right)$.'],
+    go:'m2-nyquist' },
+
+  { k:'full', name:'A full-length question combining several of the shapes above',
+    asks:'One statement and three or four lettered parts, each usually resting on the part before it.',
+    method:['Read every part before starting. The filter of part (a) produces the statistic of part (b), which produces the threshold of part (c).',
+            'Keep the noise convention straight: the density is two-sided $N_0/2$, so the variance of the decision statistic is $N_0/2$ and not $N_0$.',
+            'Carry exact values between parts, and check each against the one before: an error probability must fall when the energy rises, and a threshold must lie between the two signal points.'] }
+];
+
+CONTENT.DRILL = CONTENT.DRILL.concat([
+
+/* ---- single-skill ---------------------------------------------------- */
+
+{ id:'D2-01', module:'M2', type:'mf', src:'MT Q3',
+  stem:'A rectangular pulse of amplitude $A=2$ V and duration $T=4$ ms is received in white Gaussian noise of two-sided power spectral density $N_0/2$ with $N_0=10^{-3}$ W/Hz.',
+  parts:['Give the impulse response of the matched filter.',
+         'Give the filter output at $t=T$.',
+         'Give the peak signal-to-noise ratio, in decibels.'],
+  sol:'<b>Given.</b> $A=2$ V, $T=4$ ms, $N_0=10^{-3}$ W/Hz.<br>'
+     +'<b>Find.</b> $h_{\\mathrm{opt}}$, $y(T)$ and $(\\mathrm{SNR})_o$.<br>'
+     +'<b>Method.</b> Reverse and shift the pulse; the output at $T$ is its energy; the ratio is $2E/N_0$.<br>'
+     +'<b>Solution — (a).</b> $h_{\\mathrm{opt}}(t)=g(T-t)$. A rectangle reversed is the same rectangle, so $h_{\\mathrm{opt}}(t)=2$ V for $0\\le t\\le 4$ ms and zero elsewhere.<br>'
+     +'<b>Solution — (b).</b> $y(T)=E=\\int_0^{T}A^{2}dt=A^{2}T=4(0.004)=0.016$ J.<br>'
+     +'<b>Solution — (c).</b> $(\\mathrm{SNR})_o=\\dfrac{2E}{N_0}=\\dfrac{2(0.016)}{10^{-3}}=32$, which is $10\\log_{10}32=15.05$ dB.<br>'
+     +'<b>Check.</b> The filter output is a triangle peaking at $t=T$ with peak equal to the energy, so the value in (b) is also the height of that triangle. Halving the amplitude quarters the energy and costs $6.02$ dB, which is the same exchange rate the quantizer had for a different reason.',
+  err:'Reporting $y(T)=A=2$. The matched filter returns the <em>energy</em>, not the amplitude, and the two have different units.',
+  teach:'Ask what happens to (c) if the pulse is stretched to $8$ ms at the same amplitude. The energy doubles and the ratio gains $3$ dB — at the cost of halving the bit rate, which is the trade the whole subject turns on.' },
+
+{ id:'D2-02', module:'M2', type:'mf', src:'MT Q3',
+  stem:'A ramp pulse $s(t)=A\\,t/T$ is used on $0\\le t\\le T$ and zero elsewhere.',
+  parts:['Give its energy.',
+         'Give the impulse response of the matched filter.',
+         'By how many decibels does it fall short of a rectangular pulse of the same peak amplitude?'],
+  sol:'<b>Given.</b> A ramp reaching $A$ at $t=T$.<br>'
+     +'<b>Find.</b> $E$, $h_{\\mathrm{opt}}$ and the loss against a rectangle of the same peak.<br>'
+     +'<b>Method.</b> Integrate the square; reverse and shift; compare the two energies.<br>'
+     +'<b>Solution — (a).</b> $E=\\displaystyle\\int_0^{T}\\frac{A^{2}t^{2}}{T^{2}}dt=\\frac{A^{2}T}{3}$.<br>'
+     +'<b>Solution — (b).</b> $h_{\\mathrm{opt}}(t)=s(T-t)=A(T-t)/T$, a ramp falling from $A$ at $t=0$ to zero at $t=T$.<br>'
+     +'<b>Solution — (c).</b> The rectangle has $E=A^{2}T$, three times as much, so the ramp loses $10\\log_{10}3=4.77$ dB.<br>'
+     +'<b>Check.</b> Both filters are triangles reversed; the difference is entirely in the energy. A pulse of the same <em>energy</em> and any shape would lose nothing at all — the comparison here is at equal peak amplitude, which is a constraint on the transmitter rather than on the theory.',
+  err:'Concluding that the ramp is worse because it is a worse shape. It is worse because it carries less energy for the same peak, and a designer limited by average power rather than peak power would find them equal.',
+  teach:'This question separates two things students merge: the theory says shape does not matter at equal energy, and a real transmitter constrains the peak. Both are true and they say different things.' },
+
+{ id:'D2-03', module:'M2', type:'mf', src:'CH8 s.13',
+  stem:'A half-sine pulse $s(t)=B\\sin(\\pi t/T)$ on $0\\le t\\le T$ is to give the same matched-filter performance as a rectangular pulse of amplitude $A$ and the same duration.',
+  parts:['Give the energy of each pulse.',
+         'Give the peak amplitude $B$ the half-sine needs.'],
+  sol:'<b>Given.</b> A half-sine of peak $B$ and a rectangle of amplitude $A$, both of duration $T$.<br>'
+     +'<b>Find.</b> The $B$ that equalises the performance.<br>'
+     +'<b>Method.</b> Performance is $2E/N_0$, so equal performance is equal energy.<br>'
+     +'<b>Solution — (a).</b> $E_{\\text{rect}}=A^{2}T$ and $E_{\\text{sine}}=B^{2}\\displaystyle\\int_0^{T}\\sin^{2}(\\pi t/T)\\,dt=\\dfrac{B^{2}T}{2}$.<br>'
+     +'<b>Solution — (b).</b> Setting them equal, $B^{2}T/2=A^{2}T$, so $B=A\\sqrt2$.<br>'
+     +'<b>Check.</b> The half-sine must peak $41\\%$ higher because its average square is only half its peak square, while the rectangle\'s is all of it. The bound $2E/N_0$ contains no shape parameter, so once the energies match nothing else can distinguish them — which is worth stating as the answer to (b) rather than merely computing it.',
+  err:'Equating the peak amplitudes and concluding the two are equivalent. Equal peaks give unequal energies, and it is energy the bound depends on.',
+  teach:'A good place to ask what the matched filter for the half-sine looks like. It is the same half-sine, because that pulse is symmetric about the middle of its interval.' },
+
+{ id:'D2-04', module:'M2', type:'ebn0', src:'Final Q2',
+  stem:'An antipodal baseband system has $E_b=4\\times10^{-6}$ J per bit and noise of two-sided density $N_0/2$ with $N_0=10^{-6}$ W/Hz. The two symbols are equally likely.',
+  parts:['Give $E_b/N_0$ in decibels.',
+         'Give the bit error probability.'],
+  sol:'<b>Given.</b> $E_b=4\\times10^{-6}$ J, $N_0=10^{-6}$ W/Hz, equal priors.<br>'
+     +'<b>Find.</b> $E_b/N_0$ in dB and $P_b$.<br>'
+     +'<b>Method.</b> The ratio first, then $P_b=Q\\!\\left(\\sqrt{2E_b/N_0}\\right)$.<br>'
+     +'<b>Solution — (a).</b> $E_b/N_0=4$, which is $10\\log_{10}4=6.02$ dB.<br>'
+     +'<b>Solution — (b).</b> $P_b=Q\\!\\left(\\sqrt{8}\\right)=Q(2.828)=2.34\\times10^{-3}$.<br>'
+     +'<b>Check.</b> About one bit in $430$. At $6$ dB the system is in the region where a decibel is worth roughly a factor of three in error rate, which is the shape of the curve near its knee; further out each decibel is worth an order of magnitude.',
+  err:'Computing $Q(4)$ from the ratio directly instead of $Q(\\sqrt{2\\times4})$. The argument of $Q$ is a square root, and forgetting it here gives $3\\times10^{-5}$, two orders out.',
+  teach:'Worth having the student state the answer as "one error in every N bits". The decibel scale hides how large the numbers are.' },
+
+{ id:'D2-05', module:'M2', type:'ebn0', src:'Final Q2',
+  stem:'An antipodal system is required to achieve a bit error probability of $10^{-5}$.',
+  parts:['Give the argument of $Q$ that produces it.',
+         'Give the required $E_b/N_0$, as a ratio and in decibels.'],
+  sol:'<b>Given.</b> A target $P_b=10^{-5}$.<br>'
+     +'<b>Find.</b> The $E_b/N_0$ that meets it.<br>'
+     +'<b>Method.</b> Invert the $Q$ function, then undo the square root.<br>'
+     +'<b>Solution — (a).</b> $Q(x)=10^{-5}$ at $x=4.265$.<br>'
+     +'<b>Solution — (b).</b> $2E_b/N_0=x^{2}=18.19$, so $E_b/N_0=9.09$, which is $9.59$ dB.<br>'
+     +'<b>Check.</b> The previous question gave $2.34\\times10^{-3}$ at $6.02$ dB. Moving from there to $10^{-5}$ has cost $3.57$ dB and bought a factor of $234$ — roughly two orders of magnitude for three and a half decibels, which is the steepness the curve has in this region.',
+  err:'Reporting $E_b/N_0=18.19$, the value of $x^{2}$, without halving. The two differ by $3$ dB and the mistake is invisible unless the answer is sanity-checked forwards.',
+  teach:'Ask the student to check the answer by substituting it back. Inverting a $Q$ is the one operation in this module with no forward intuition to catch a slip.' },
+
+{ id:'D2-06', module:'M2', type:'cond', src:'Final Q2',
+  stem:'An antipodal system has $E_b=1$ and $N_0=0.2$. The symbol $s_0$ is sent with probability $0.8$.',
+  parts:['Give the optimal threshold.',
+         'Say which way it has moved, and why that is the right direction.'],
+  sol:'<b>Given.</b> $E_b=1$, $N_0=0.2$, $P(s_0)=0.8$.<br>'
+     +'<b>Find.</b> $\\lambda_{\\mathrm{opt}}$ and its direction.<br>'
+     +'<b>Method.</b> $\\lambda_{\\mathrm{opt}}=\\dfrac{N_0}{4\\sqrt{E_b}}\\ln\\dfrac{P(s_0)}{P(s_1)}$.<br>'
+     +'<b>Solution — (a).</b> $\\lambda_{\\mathrm{opt}}=\\dfrac{0.2}{4}\\ln\\dfrac{0.8}{0.2}=0.05\\ln4=0.0693$.<br>'
+     +'<b>Solution — (b).</b> Positive, so it has moved towards $s_1=+1$ and away from $s_0=-1$. The region that decides $s_0$ has grown, which is right: $s_0$ is four times more likely, so a statistic near the middle should be resolved in its favour.<br>'
+     +'<b>Check.</b> The shift is $0.0693$ against a signal separation of $2\\sqrt{E_b}=2$, so it is under four per cent of the way across — small, because at this noise level the densities are already well separated and the priors have little left to decide. Raising $N_0$ to $1$ would move the threshold to $0.347$, five times further.',
+  err:'Getting the sign backwards by writing $\\ln\\frac{P(s_1)}{P(s_0)}$. The threshold then moves towards the more likely symbol, shrinking its own region, and the error probability rises rather than falls.',
+  teach:'The check is the point: the size of the shift is set by the noise, and the direction by the priors. A student who can say which factor does which has understood the formula rather than memorised it.' },
+
+{ id:'D2-07', module:'M2', type:'ebn0', src:'Final Q2',
+  stem:'A system runs at $E_b/N_0=9$ dB. The bit rate is then raised by a factor of four with the transmit power and the noise density unchanged.',
+  parts:['Give the new $E_b/N_0$ in decibels.',
+         'Give the bit error probability before and after.'],
+  sol:'<b>Given.</b> $E_b/N_0=9$ dB, rate multiplied by four at constant power.<br>'
+     +'<b>Find.</b> The new ratio and both error probabilities.<br>'
+     +'<b>Method.</b> Transmit power is $E_b R_b$. Holding power fixed while multiplying $R_b$ by four divides $E_b$ by four, which is $-6.02$ dB.<br>'
+     +'<b>Solution — (a).</b> $9-6.02=2.98$ dB.<br>'
+     +'<b>Solution — (b).</b> Before: $E_b/N_0=7.943$, so $P_b=Q(\\sqrt{15.89})=Q(3.986)=3.36\\times10^{-5}$. After: $E_b/N_0=1.986$, so $P_b=Q(\\sqrt{3.97})=Q(1.993)=2.31\\times10^{-2}$.<br>'
+     +'<b>Check.</b> Four times the rate has cost nearly three orders of magnitude in error rate, from one bit in thirty thousand to one bit in forty-three. The energy per bit is the only quantity in the expression, and quadrupling the rate at fixed power is exactly quartering it.',
+  err:'Assuming the error probability is unchanged because the power is unchanged. The error probability depends on energy per bit, not on power, and the two differ by the bit rate.',
+  teach:'This is the cleanest statement in the module of what bandwidth and rate cost. It is worth setting before the Nyquist section rather than after it.' },
+
+{ id:'D2-08', module:'M2', type:'nongauss', src:'MT Q4',
+  stem:'A binary system has decision statistic $Y=s_m+N$, with $s_0=-1$, $s_1=+1$, equal priors, and noise of density $$f_N(n)=\\tfrac12 e^{-|n|},\\qquad n\\in\\mathbb{R}.$$The threshold is at zero.',
+  parts:['Give $P(\\text{error}\\mid s_0)$.',
+         'Give the average error probability, and compare it with the Gaussian case of the same noise variance.'],
+  sol:'<b>Given.</b> Laplacian noise with unit scale; $s_m=\\pm1$; threshold at zero.<br>'
+     +'<b>Find.</b> The conditional error and the average.<br>'
+     +'<b>Method.</b> Integrate the given density over the error region. There is no $Q$ here.<br>'
+     +'<b>Solution — (a).</b> With $s_0$ sent an error needs $Y>0$, that is $N>1$: $$P(N>1)=\\int_1^{\\infty}\\tfrac12 e^{-n}dn=\\tfrac12 e^{-1}=0.1839.$$<br>'
+     +'<b>Solution — (b).</b> The density is symmetric and so is the signal set, so $P(\\text{error}\\mid s_1)$ is the same and $P_e=0.1839$. A Laplacian of unit scale has variance $2$; Gaussian noise of variance $2$ would give $Q(1/\\sqrt2)=Q(0.707)=0.2398$.<br>'
+     +'<b>Check.</b> The Laplacian does better here, which is worth pausing on: it concentrates more probability near zero than a Gaussian of the same variance, and puts the rest further out in tails that a threshold at $\\pm1$ mostly does not reach.',
+  err:'Reaching for $Q$ because the picture looks like the Gaussian one. $Q$ is defined for the standard normal and says nothing about any other density.',
+  teach:'Ask what the optimal threshold is here. By symmetry it is zero, but the derivation that gives it is the density-crossing condition and not the Gaussian formula — a distinction the next question makes sharper.' },
+
+{ id:'D2-09', module:'M2', type:'isi', src:'CH8 s.44–47',
+  stem:'A baseband system transmits at $R_b=20$ kbit/s.',
+  parts:['Give the Nyquist bandwidth.',
+         'Give the transmission bandwidth with a raised-cosine roll-off of $\\alpha=0.35$.',
+         'Give the excess bandwidth as a percentage.'],
+  sol:'<b>Given.</b> $R_b=20$ kbit/s, $\\alpha=0.35$.<br>'
+     +'<b>Find.</b> $W$, $B_T$ and the excess.<br>'
+     +'<b>Method.</b> $W=R_b/2$; $B_T=(1+\\alpha)W$.<br>'
+     +'<b>Solution — (a).</b> $W=10$ kHz.<br>'
+     +'<b>Solution — (b).</b> $B_T=1.35(10)=13.5$ kHz.<br>'
+     +'<b>Solution — (c).</b> The excess is $\\alpha W=3.5$ kHz, which is $35\\%$ of the Nyquist bandwidth — the roll-off, read as a percentage, which is what it is.<br>'
+     +'<b>Check.</b> At $\\alpha=0$ the answer would be $10$ kHz and the pulse would be the ideal Nyquist one; at $\\alpha=1$ it would be $20$ kHz. Every value of $\\alpha$ between gives a system with zero interference at the sampling instants, so the $3.5$ kHz is bought entirely for tolerance to timing error and ease of filtering.',
+  err:'Computing $B_T=(1+\\alpha)R_b=27$ kHz. The roll-off multiplies the <em>bandwidth</em>, which is half the rate, not the rate.',
+  teach:'Worth asking what fraction of the theoretical maximum rate this system achieves: $20$ kbit/s in $13.5$ kHz is $1.48$ bit/s/Hz against a maximum of $2$.' },
+
+{ id:'D2-10', module:'M2', type:'isi', src:'CH8 s.44–47',
+  stem:'A channel of bandwidth $24$ kHz is to carry a raised-cosine baseband signal with roll-off $\\alpha=0.5$.',
+  parts:['Give the largest Nyquist bandwidth that fits.',
+         'Give the largest bit rate.'],
+  sol:'<b>Given.</b> $B_T=24$ kHz available, $\\alpha=0.5$.<br>'
+     +'<b>Find.</b> $W$ and $R_b$.<br>'
+     +'<b>Method.</b> Invert $B_T=(1+\\alpha)W$, then $R_b=2W$.<br>'
+     +'<b>Solution — (a).</b> $W=\\dfrac{B_T}{1+\\alpha}=\\dfrac{24}{1.5}=16$ kHz.<br>'
+     +'<b>Solution — (b).</b> $R_b=2W=32$ kbit/s.<br>'
+     +'<b>Check.</b> With $\\alpha=0$ the same channel would carry $48$ kbit/s, so the roll-off has cost a third of the rate. That is what the $50\\%$ excess bandwidth means seen from the other end, and it is why practical systems use a fifth to a half rather than one.',
+  err:'Answering $R_b=2B_T=48$ kbit/s. That is the rate the ideal Nyquist channel would give; the raised cosine has to fit its excess inside the same $24$ kHz.',
+  teach:'Ask for the spectral efficiency in bit/s/Hz — here $32/24=1.33$ — and then for the value of $\\alpha$ that would reach $1.6$. It is a short calculation and it makes the trade a number.' },
+
+{ id:'D2-11', module:'M2', type:'isi', src:'CH8 s.42–44',
+  stem:'A system uses the ideal Nyquist pulse $p(t)=\\operatorname{sinc}(2Wt)$ with $W=1/(2T_b)$.',
+  parts:['Verify Nyquist\'s criterion in the time domain.',
+         'Verify it in the frequency domain.'],
+  sol:'<b>Given.</b> $p(t)=\\operatorname{sinc}(2Wt)$, $T_b=1/(2W)$.<br>'
+     +'<b>Find.</b> That the criterion holds, both ways.<br>'
+     +'<b>Method.</b> The time condition is about the sampling instants; the frequency condition is about the replicas adding to a constant.<br>'
+     +'<b>Solution — (a).</b> At $t=kT_b=k/(2W)$ the argument is $2W\\cdot k/(2W)=k$, and $\\operatorname{sinc}(k)$ is $1$ at $k=0$ and $0$ at every other integer. So $p(kT_b)=\\delta_{k0}$, which is the criterion.<br>'
+     +'<b>Solution — (b).</b> $P(f)=\\dfrac{1}{2W}$ for $|f|\\le W$ and zero outside, a rectangle of width $2W=R_b$. Replicas spaced $R_b$ apart therefore tile the axis exactly with no gap and no overlap, so $R_b\\sum_n P(f-nR_b)=R_b\\cdot\\dfrac{1}{2W}=1$.<br>'
+     +'<b>Check.</b> The two verifications are the same statement: a spectrum whose replicas add to a constant has a sampled pulse that is a single impulse, and a sampled pulse that is a single impulse is a pulse that vanishes at every instant but its own.',
+  err:'Checking only that $p(0)=1$. The criterion is about the zeros as much as the peak, and a pulse with the right peak and the wrong zeros gives interference at every instant.',
+  teach:'Have the student say why the width has to be exactly $R_b$. Narrower leaves gaps and the sum is not constant; wider overlaps and the sum is not constant either, unless the overlap is shaped — which is what the raised cosine does.' },
+
+{ id:'D2-12', module:'M2', type:'cond', src:'MT Q3',
+  stem:'A correlator multiplies the received signal by a unit-energy basis function $\\psi(t)$ and integrates over $0\\le t\\le T_b$. The noise $w(t)$ is white and Gaussian with two-sided density $N_0/2$.',
+  parts:['Show that the noise contribution $n=\\int_0^{T_b}w(\\tau)\\psi(\\tau)d\\tau$ has zero mean.',
+         'Show that its variance is $N_0/2$.'],
+  sol:'<b>Given.</b> White Gaussian noise of two-sided density $N_0/2$; a basis function of unit energy.<br>'
+     +'<b>Find.</b> The mean and variance of the projection.<br>'
+     +'<b>Method.</b> Take the expectation inside the integral; for the variance use $E[w(\\tau)w(u)]=\\frac{N_0}{2}\\delta(\\tau-u)$ and the sifting property.<br>'
+     +'<b>Solution — (a).</b> $E[n]=\\int_0^{T_b}E[w(\\tau)]\\psi(\\tau)d\\tau=0$, because the noise is zero-mean at every instant.<br>'
+     +'<b>Solution — (b).</b> $$E[n^{2}]=\\int_0^{T_b}\\!\\!\\int_0^{T_b}E[w(\\tau)w(u)]\\psi(\\tau)\\psi(u)\\,d\\tau\\,du=\\frac{N_0}{2}\\int_0^{T_b}\\!\\!\\int_0^{T_b}\\delta(\\tau-u)\\psi(\\tau)\\psi(u)\\,d\\tau\\,du.$$The inner integral sifts to $\\psi(\\tau)$, leaving $\\frac{N_0}{2}\\int_0^{T_b}\\psi^{2}(\\tau)d\\tau=\\frac{N_0}{2}$.<br>'
+     +'<b>Check.</b> The answer does not contain $T_b$, and it should not: lengthening the interval spreads the same unit of energy over more time, so $\\psi$ falls and the two effects cancel exactly. The unit-energy normalisation is what makes that happen.',
+  err:'Reporting $N_0$ rather than $N_0/2$, by taking the density as one-sided. Every error probability in this course then comes out $\\sqrt2$ too optimistic inside the $Q$, which is a $3$ dB error and is invisible in the algebra.',
+  teach:'This is the one calculation in the module where the two-sided convention is used explicitly. It is worth doing in full once so that the factor is seen entering rather than assumed.' },
+
+/* ---- full-length ----------------------------------------------------- */
+
+{ id:'D2-13', module:'M2', type:'full', src:'MT Q3',
+  stem:'In an additive white Gaussian noise channel with noise power spectral density $9$ W/Hz, two equiprobable messages are transmitted by $s_0(t)=-3$ and $s_1(t)=+3$ volts, each held for $0\\le t\\le T_b=2$ s. These pass through a matched-filter demodulator whose basis is the unit-energy rectangular pulse $\\psi(t)=1/\\sqrt{T_b}$.',
+  parts:['Give the impulse response of the matched filter.',
+         'Give the conditional probability density functions $f_Y(y\\mid s_0)$ and $f_Y(y\\mid s_1)$.',
+         'Give the optimal decision threshold.',
+         'Give the average probability of error.'],
+  sol:'<b>Given.</b> $A=3$ V, $T_b=2$ s, $N_0/2=9$ so $N_0=18$ W/Hz, equal priors.<br>'
+     +'<b>Find.</b> The filter, the two densities, the threshold and $P_b$.<br>'
+     +'<b>Method.</b> The filter is the basis reversed; the statistic is $y=s_m+n$ with $n\\sim\\mathcal{N}(0,N_0/2)$; the threshold is midway for equal priors; the error is a Gaussian tail.<br>'
+     +'<b>Solution — (a).</b> $h_{\\mathrm{opt}}(t)=\\psi(T_b-t)=1/\\sqrt2$ for $0\\le t\\le 2$ s, zero elsewhere. The basis is rectangular, so the reversal leaves it unchanged.<br>'
+     +'<b>Solution — (b).</b> The energy per bit is $E_b=A^{2}T_b=9(2)=18$ J, so $s_{0,1}=\\mp\\sqrt{E_b}=\\mp4.243$. The variance is $N_0/2=9$, so $$f_Y(y\\mid s_m)=\\frac{1}{\\sqrt{18\\pi}}\\exp\\!\\left(-\\frac{(y\\mp4.243)^{2}}{18}\\right).$$<br>'
+     +'<b>Solution — (c).</b> The priors are equal, so $\\lambda_{\\mathrm{opt}}=0$: midway between the two means.<br>'
+     +'<b>Solution — (d).</b> $\\dfrac{2E_b}{N_0}=\\dfrac{36}{18}=2$, so $P_b=Q(\\sqrt2)=Q(1.414)=0.0786$.<br>'
+     +'<b>Check.</b> One bit in thirteen is wrong, which is a very noisy channel — and it should be, since $E_b/N_0=1$ is $0$ dB. The signal separation is $2\\sqrt{E_b}=8.49$ against a noise standard deviation of $3$, under three standard deviations, and $Q(1.414)$ is exactly the tail beyond half of that separation.',
+  err:'Taking the variance as $N_0=18$ because the question gave the density as $9$. The question gave $N_0/2=9$; the variance of the statistic is $N_0/2$, which is the same $9$, and reading the given number as $N_0$ doubles it.',
+  teach:'Part (b) is where the marks are lost. Asking for the two densities <em>written out</em>, rather than named, forces both the mean and the variance to be stated and is where a convention error surfaces.' },
+
+{ id:'D2-14', module:'M2', type:'full', src:'MT Q3',
+  stem:'A binary system uses on-off signalling: $s_1(t)=A$ for $0\\le t\\le T_b$ when "1" is sent, and $s_0(t)=0$ when "0" is sent. The two are equally likely and the noise is white and Gaussian with two-sided density $N_0/2$.',
+  parts:['Give the two points in signal space and the average energy per bit.',
+         'Give the optimal threshold.',
+         'Give the bit error probability in terms of $E_b/N_0$.',
+         'Compare it with antipodal signalling at the same $E_b/N_0$.'],
+  sol:'<b>Given.</b> On-off signalling with equal priors.<br>'
+     +'<b>Find.</b> The signal points, the threshold, $P_b$, and the comparison.<br>'
+     +'<b>Method.</b> Project onto the same unit-energy basis; the threshold is midway for equal priors; the tail follows from the separation and the noise.<br>'
+     +'<b>Solution — (a).</b> With $\\psi(t)=1/\\sqrt{T_b}$, $s_1=A\\sqrt{T_b}$ and $s_0=0$. The energy of the "1" waveform is $A^{2}T_b$ and of the "0" waveform is zero, so the <b>average</b> energy per bit is $E_b=\\tfrac12 A^{2}T_b$, and $s_1=\\sqrt{2E_b}$.<br>'
+     +'<b>Solution — (b).</b> Equal priors and equal noise on both sides put the threshold midway: $\\lambda=s_1/2=\\sqrt{E_b/2}$.<br>'
+     +'<b>Solution — (c).</b> The distance from either point to the threshold is $s_1/2=\\sqrt{2E_b}/2$, and the noise standard deviation is $\\sqrt{N_0/2}$, so $$P_b=Q\\!\\left(\\frac{\\sqrt{2E_b}/2}{\\sqrt{N_0/2}}\\right)=Q\\!\\left(\\sqrt{\\frac{E_b}{N_0}}\\right).$$<br>'
+     +'<b>Solution — (d).</b> Antipodal gives $Q\\!\\left(\\sqrt{2E_b/N_0}\\right)$. The argument is larger by $\\sqrt2$, so antipodal needs half the energy for the same error rate: a $3$ dB advantage.<br>'
+     +'<b>Check.</b> The two signal points here are $\\sqrt{2E_b}$ apart; in the antipodal case they are $2\\sqrt{E_b}$ apart, larger by $\\sqrt2$. The error depends on the separation and on nothing else about where the points sit, so the $3$ dB is exactly that $\\sqrt2$ — which is the observation Module 4 turns into a general rule.',
+  err:'Taking $E_b=A^{2}T_b$. Half the bits carry no energy at all, so the average is half that, and reporting the peak energy as $E_b$ makes on-off look as good as antipodal.',
+  teach:'Part (d) is the whole point. Ask the student to say what would have to change about the two waveforms to recover the $3$ dB, and the answer — move them apart at the same average energy — is the design problem of Module 5.' },
+
+{ id:'D2-15', module:'M2', type:'full', src:'MT Q4',
+  stem:'In a binary system the decision statistic is $Y=s_m+N$ with $s_0=-4$ and $s_1=+4$. The noise has the triangular density $$f_N(n)=c\\left(1-\\frac{|n|}{10}\\right),\\qquad |n|\\le10,$$and zero elsewhere. The two symbols are equally likely and the threshold is at zero.',
+  parts:['Determine $c$.',
+         'Give $P(\\text{error}\\mid s_0)$.',
+         'Give the average probability of error.',
+         'Give the optimal threshold, with a reason.'],
+  sol:'<b>Given.</b> Triangular noise on $[-10,10]$; $s_m=\\pm4$; equal priors; threshold zero.<br>'
+     +'<b>Find.</b> $c$, the conditional error, the average, and the optimal threshold.<br>'
+     +'<b>Method.</b> Area for $c$; integrate the density over the error region; symmetry for the rest.<br>'
+     +'<b>Solution — (a).</b> The density is a triangle of base $20$ and height $c$, so $\\tfrac12(20)c=10c=1$ and $c=0.1$.<br>'
+     +'<b>Solution — (b).</b> With $s_0$ sent an error needs $Y>0$, that is $N>4$: $$P(N>4)=\\int_4^{10}0.1\\left(1-\\frac{n}{10}\\right)dn=0.1\\left[n-\\frac{n^{2}}{20}\\right]_4^{10}=0.1\\bigl[(10-5)-(4-0.8)\\bigr]=0.18.$$<br>'
+     +'<b>Solution — (c).</b> The density and the signal set are both symmetric, so $P(\\text{error}\\mid s_1)=0.18$ as well and $P_e=0.18$.<br>'
+     +'<b>Solution — (d).</b> Zero. The optimality condition is $P(s_1)f_Y(\\lambda\\mid s_1)=P(s_0)f_Y(\\lambda\\mid s_0)$; with equal priors and a symmetric density the two weighted densities cross at the midpoint of the two means, which is zero.<br>'
+     +'<b>Check.</b> The noise reaches $\\pm10$ and the signals are only $4$ from the threshold, so a large error rate is expected — and $18\\%$ is what a triangle whose top $60\\%$ of range lies beyond the signal gives. A Gaussian of the same variance, $100/6=16.7$, would give $Q(4/4.08)=Q(0.98)=0.164$, close but not equal: two densities of the same variance are not interchangeable.',
+  err:'Applying $Q$ with the standard deviation of the triangular density. $Q$ is the tail of a <em>normal</em> distribution, and the two answers here differ in the second digit — enough to be wrong and close enough to look right.',
+  teach:'Part (d) matters more than it looks. The formula from the antipodal Gaussian case does not apply, and a student who writes it down has not noticed that the derivation assumed a Gaussian density at every step.' },
+
+{ id:'D2-16', module:'M2', type:'full', src:'MT Q4',
+  stem:'In a binary system the received sample is $Y=-2+N$ when "0" is sent and $Y=+2+N$ when "1" is sent, where the noise $N$ is exponential with mean $4$: $$f_N(n)=\\tfrac14 e^{-n/4},\\qquad n\\ge0,$$and zero for $n<0$. The two symbols are equally likely, and the detector decides "1" when $Y>\\lambda$.',
+  parts:['Give $P(\\text{error}\\mid s_1)$ and $P(\\text{error}\\mid s_0)$ as functions of $\\lambda$, for $\\lambda\\le2$.',
+         'Give the value of $\\lambda$ that minimises the average error probability.',
+         'Give the average error probability there.',
+         'Say what is different about this answer compared with the Gaussian case.'],
+  sol:'<b>Given.</b> One-sided exponential noise of mean $4$; signal points at $\\pm2$; equal priors.<br>'
+     +'<b>Find.</b> The two conditional errors, the best threshold, the resulting error, and what is unusual.<br>'
+     +'<b>Method.</b> The noise is non-negative, so each conditional distribution is supported on a half line. Work out where those half lines start before integrating anything.<br>'
+     +'<b>Solution — (a).</b> If "1" is sent, $Y=2+N\\ge2$. For $\\lambda\\le2$ the event $Y<\\lambda$ is impossible, so $P(\\text{error}\\mid s_1)=0$. If "0" is sent, $Y=-2+N$, and an error needs $Y>\\lambda$, that is $N>\\lambda+2$: $$P(\\text{error}\\mid s_0)=\\int_{\\lambda+2}^{\\infty}\\tfrac14 e^{-n/4}dn=e^{-(\\lambda+2)/4}.$$<br>'
+     +'<b>Solution — (b).</b> For $\\lambda\\le2$ the average is $\\tfrac12 e^{-(\\lambda+2)/4}$, which falls as $\\lambda$ rises. For $\\lambda>2$ the "1" errors switch on and the average rises again. The minimum is therefore at the corner, $\\lambda=2$.<br>'
+     +'<b>Solution — (c).</b> $P_e=\\tfrac12 e^{-1}=0.1839$.<br>'
+     +'<b>Solution — (d).</b> The optimum sits at an edge of the region rather than where a derivative vanishes, and one of the two conditional errors is exactly zero there. Neither can happen with Gaussian noise, whose density is positive everywhere, and it is the finite support of the noise that causes both.<br>'
+     +'<b>Check.</b> At $\\lambda=2$ every "1" is decided correctly and only the "0" errors remain, halved by the prior. Pushing $\\lambda$ to $3$ gives $\\tfrac12\\bigl[e^{-5/4}+1-e^{-1/4}\\bigr]=\\tfrac12[0.2865+0.2212]=0.2539$, worse — which confirms the corner is a minimum and not merely a kink.',
+  err:'Differentiating the average over all $\\lambda$ and solving for a stationary point. The expression is not differentiable at $\\lambda=2$ and has no stationary point at all; the minimum is found by looking at the two pieces.',
+  teach:'A rare question where the calculus does not apply and the answer still exists. Worth setting for exactly that reason.' },
+
+{ id:'D2-17', module:'M2', type:'full', src:'Final Q2',
+  stem:'In a binary pulse amplitude modulation system the correlator output is $y=\\pm\\sqrt{E_b}+n$, where $n$ is Gaussian with zero mean and variance $N_0/2$. The symbol $s_1$ occurs with probability $0.25$, and $E_b=2$, $N_0=0.4$.',
+  parts:['Give the optimal threshold.',
+         'Give the two conditional error probabilities.',
+         'Give the average probability of error, as a number.',
+         'Compare it with the error probability a threshold at zero would give.'],
+  sol:'<b>Given.</b> $E_b=2$, $N_0=0.4$, $P(s_1)=0.25$.<br>'
+     +'<b>Find.</b> $\\lambda_{\\mathrm{opt}}$, both conditional errors, the average, and the comparison.<br>'
+     +'<b>Method.</b> The log-ratio formula for the threshold, then a Gaussian tail on each side, then the weighted sum.<br>'
+     +'<b>Solution — (a).</b> $\\sqrt{E_b}=1.4142$ and $$\\lambda_{\\mathrm{opt}}=\\frac{N_0}{4\\sqrt{E_b}}\\ln\\frac{P(s_0)}{P(s_1)}=\\frac{0.4}{5.657}\\ln3=0.0707(1.0986)=0.0777.$$<br>'
+     +'<b>Solution — (b).</b> $\\sigma=\\sqrt{N_0/2}=0.4472$. Then $$P(\\text{err}\\mid s_0)=Q\\!\\left(\\frac{0.0777+1.4142}{0.4472}\\right)=Q(3.336)=4.250\\times10^{-4},$$ $$P(\\text{err}\\mid s_1)=Q\\!\\left(\\frac{1.4142-0.0777}{0.4472}\\right)=Q(2.989)=1.401\\times10^{-3}.$$<br>'
+     +'<b>Solution — (c).</b> $P_e=0.75(4.250\\times10^{-4})+0.25(1.401\\times10^{-3})=6.691\\times10^{-4}$.<br>'
+     +'<b>Solution — (d).</b> At $\\lambda=0$ both conditional errors are $Q(\\sqrt{2E_b/N_0})=Q(\\sqrt{10})=7.827\\times10^{-4}$, so the average is that same number. The optimal threshold improves it by $15\\%$.<br>'
+     +'<b>Check.</b> The threshold moved towards the less likely symbol, so the error given $s_1$ went up and the error given $s_0$ went down — and the weighted total fell, which is the only test that matters. Notice that the larger conditional error is the one carrying the smaller weight; that is not a coincidence but the condition being satisfied.',
+  err:'Averaging the two conditional errors without the priors, giving $9.13\\times10^{-4}$. The average error probability is a weighted average, and the whole point of moving the threshold is that the weights are unequal.',
+  teach:'Part (d) is where the value of the calculation shows. Fifteen per cent for a threshold shift of five per cent of the signal separation is a real gain, and it is available for free.' },
+
+{ id:'D2-18', module:'M2', type:'full', src:'Final Q2',
+  stem:'A detector observes $Y=N$ when "0" is sent and $Y=4+N$ when "1" is sent, where $N$ is Gaussian with zero mean and variance $4$. The symbol "0" occurs with probability $0.6$.',
+  parts:['Give the optimal decision threshold.',
+         'Give the two conditional error probabilities.',
+         'Give the average probability of error.',
+         'Give the average probability of error with the threshold placed midway, and say what the difference is worth.'],
+  sol:'<b>Given.</b> Two Gaussians of equal variance $\\sigma^{2}=4$ with means $0$ and $4$; $P(s_0)=0.6$.<br>'
+     +'<b>Find.</b> The threshold, both errors, the average, and the comparison.<br>'
+     +'<b>Method.</b> Setting the weighted densities equal for two Gaussians of equal variance gives $$\\lambda=\\frac{s_0+s_1}{2}+\\frac{\\sigma^{2}}{s_1-s_0}\\ln\\frac{P(s_0)}{P(s_1)},$$the midpoint plus a term that moves with the priors. The antipodal formula of the module is this expression with $s_{0,1}=\\mp\\sqrt{E_b}$ and $\\sigma^{2}=N_0/2$.<br>'
+     +'<b>Solution — (a).</b> $\\lambda=2+\\dfrac{4}{4}\\ln\\dfrac{0.6}{0.4}=2+0.4055=2.405$.<br>'
+     +'<b>Solution — (b).</b> $\\sigma=2$. $P(\\text{err}\\mid s_0)=Q(2.405/2)=Q(1.203)=0.1145$ and $P(\\text{err}\\mid s_1)=Q\\!\\left((4-2.405)/2\\right)=Q(0.797)=0.2127$.<br>'
+     +'<b>Solution — (c).</b> $P_e=0.6(0.1145)+0.4(0.2127)=0.1538$.<br>'
+     +'<b>Solution — (d).</b> At $\\lambda=2$ both conditional errors are $Q(1)=0.1587$, so $P_e=0.1587$. The optimal threshold is worth a $3.1\\%$ reduction.<br>'
+     +'<b>Check.</b> The gain is small because the priors are close to even; at $P(s_0)=0.9$ the threshold would move to $2+\\ln9=4.20$ and the gain would be much larger. The two conditional errors at the optimum are very different from each other, $0.115$ against $0.213$, and that is what an optimal threshold looks like: it does not equalise the two errors, it equalises the weighted densities.<br>'
+     +'<b>A general remark.</b> This signal set is on-off rather than antipodal, so the module\'s threshold formula does not apply directly. The general condition does, and reading it as "midpoint plus a prior term" is what makes it usable on any pair of equal-variance Gaussians.',
+  err:'Choosing the threshold that equalises the two conditional error probabilities. That is a different criterion — it minimises the worst case rather than the average — and here it would put $\\lambda$ back at $2$.',
+  teach:'The general formula in the Method is worth stating explicitly at some point in the course. Students who have only the antipodal special case cannot do this question at all, and the difference between the two is one line of algebra.' },
+
+{ id:'D2-19', module:'M2', type:'full', src:'CH8 s.44–48',
+  stem:'A baseband system must carry $R_b=64$ kbit/s through a channel of bandwidth $48$ kHz using raised-cosine pulse shaping.',
+  parts:['Give the Nyquist bandwidth.',
+         'Give the largest roll-off factor that fits in the channel.',
+         'Give the transmission bandwidth actually used at that roll-off, and the excess bandwidth.',
+         'Say what would go wrong at $\\alpha=0$, which also fits.'],
+  sol:'<b>Given.</b> $R_b=64$ kbit/s, $48$ kHz available.<br>'
+     +'<b>Find.</b> $W$, the largest $\\alpha$, the bandwidth used, and the objection to $\\alpha=0$.<br>'
+     +'<b>Method.</b> $W=R_b/2$, then $(1+\\alpha)W\\le B$.<br>'
+     +'<b>Solution — (a).</b> $W=32$ kHz.<br>'
+     +'<b>Solution — (b).</b> $(1+\\alpha)(32)\\le48$ gives $\\alpha\\le0.5$, so $\\alpha=0.5$.<br>'
+     +'<b>Solution — (c).</b> $B_T=1.5(32)=48$ kHz exactly, with an excess of $\\alpha W=16$ kHz over the Nyquist bandwidth.<br>'
+     +'<b>Solution — (d).</b> At $\\alpha=0$ the system would occupy only $32$ kHz and still meet the criterion, so it fits comfortably. What goes wrong is everything else: the spectrum has vertical edges and cannot be built, and the pulse decays as $1/t$, so a small timing error lets a long tail of neighbours contribute at once and the interference does not settle. Using the whole channel buys a pulse decaying as $1/t^{3}$ and a filter that can be made.<br>'
+     +'<b>Check.</b> The spectral efficiency at $\\alpha=0.5$ is $64/48=1.33$ bit/s/Hz against the theoretical $2$. The third of the capacity given up is exactly the excess bandwidth, and it is spent on being able to build the thing.',
+  err:'Answering (b) with $\\alpha=1$ on the grounds that a larger roll-off is better. At $\\alpha=1$ the signal would need $64$ kHz and would not fit.',
+  teach:'Part (d) is the question worth marking. A student who says only "it does not fit" has misread; a student who says "it fits and is a bad idea" has understood what the roll-off buys.' },
+
+{ id:'D2-20', module:'M2', type:'full', src:'CH8 s.35–41',
+  stem:'The overall pulse of a baseband system is normalised to $p(0)=1$ and has been measured at the neighbouring sampling instants: $p(\\pm T_b)=0.10$ and $p(\\pm2T_b)=-0.04$, with everything beyond negligible. The noise at the detector has standard deviation $\\sigma=0.15$.',
+  parts:['Give the worst-case intersymbol interference at a sampling instant.',
+         'Give the eye opening.',
+         'Give the margin over noise, in standard deviations.',
+         'Estimate the resulting error probability, and say what dominates it.'],
+  sol:'<b>Given.</b> $p(0)=1$, $p(\\pm T_b)=0.10$, $p(\\pm2T_b)=-0.04$, $\\sigma=0.15$.<br>'
+     +'<b>Find.</b> The worst-case interference, the opening, the margin and the error rate.<br>'
+     +'<b>Method.</b> The worst case is every neighbour contributing against the wanted symbol at once, so the magnitudes add.<br>'
+     +'<b>Solution — (a).</b> $$\\text{ISI}_{\\max}=\\sum_{k\\ne0}|p(kT_b)|=2(0.10)+2(0.04)=0.28.$$<br>'
+     +'<b>Solution — (b).</b> The wanted symbol contributes $\\pm1$, so the worst case reaches only $1-0.28=0.72$ and the opening between the two worst cases is $2(0.72)=1.44$.<br>'
+     +'<b>Solution — (c).</b> The half-opening is $0.72$, which is $0.72/0.15=4.8$ standard deviations.<br>'
+     +'<b>Solution — (d).</b> $P_b\\approx Q(4.8)=7.9\\times10^{-7}$, and the interference dominates: without it the margin would be $1/0.15=6.67$ standard deviations and the error rate $Q(6.67)=1.3\\times10^{-11}$, four orders of magnitude better.<br>'
+     +'<b>Check.</b> The estimate is a worst case and therefore pessimistic — the pattern that puts every neighbour against the wanted symbol occurs one time in sixteen here, and the average error rate is better than $7.9\\times10^{-7}$. It is the right number to design with, because the bad pattern will occur.',
+  err:'Adding the interference terms with their signs, $2(0.10)+2(-0.04)=0.12$, and reporting a much better answer. The neighbouring symbols carry data and can take either sign, so the worst case adds the <em>magnitudes</em>.',
+  teach:'Part (d) is the one that connects the two halves of the module. Interference costing four orders of magnitude while the noise is unchanged is the statement that more transmit power would not have helped.' }
+
+]);
+
+window.DRILLMAP_M2 = [
+
+{ id:'m2-drill-map', module:'M2', nav:'Module 2 · question types',
+  title:'Module 2 — what a question looks like',
+  objective:'Name the six recurring question shapes before the module is read.',
+  keywords:'question types module 2 matched filter threshold error probability nyquist taxonomy practice',
+  steps:0, blocks:[
+  {t:'eyebrow', text:'Module 2 · Question types'},
+  {t:'title', text:'Six shapes, and the method each one wants'},
+  {t:'lede', text:'Questions on baseband transmission come in six shapes. Read them now, before the module: you are not expected to answer them yet, only to recognise them when they arrive.'},
+  {t:'drilltypes', module:'M2', style:'grid-template-columns:repeat(3,minmax(0,1fr));gap:26px 44px'}
+]}
+
+];
+
+window.DRILL_M2 = [
+
+{ id:'m2-drill', module:'M2', nav:'Module 2 · practice questions',
+  title:'Module 2 — practice questions',
+  objective:'Twenty open-ended questions with worked solutions, in the form they are asked in.',
+  keywords:'practice questions module 2 matched filter correlator threshold priors error probability nyquist raised cosine eye',
+  steps:0, blocks:[
+  {t:'eyebrow', text:'Module 2 · Practice D2-01 … D2-20'},
+  {t:'title', text:'Practice questions'},
+  {t:'small', html:'Work each question on paper before opening its solution. Every solution ends with a <b>Check</b> step. In this module the cheap checks are: the matched-filter output at the sampling instant is an energy and has the units of one, the variance of the decision statistic is $N_0/2$ and never $N_0$, an optimal threshold lies between the two signal points and moves away from the more likely one, and an error probability must fall when the energy per bit rises.'},
+  {t:'rule', short:true},
+  {t:'drill', module:'M2'}
+]}
+
+];
+})();
+
+</script>
+<script>
 /* ---------- assemble the scene list from the content modules ---------- */
 (function(){
   /* Each module opens with the taxonomy of the question types that recur, and
@@ -3876,6 +5289,7 @@ window.DRILL_M1 = [
   const SCENES = [].concat(
     window.SCENES_M0||[],
     window.DRILLMAP_M1||[], window.SCENES_M1||[], window.DRILL_M1||[],
+    window.DRILLMAP_M2||[], window.SCENES_M2||[], window.DRILL_M2||[],
     window.SCENES_END||[]
   );
 

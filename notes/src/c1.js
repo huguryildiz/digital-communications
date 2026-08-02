@@ -14,7 +14,7 @@ window.C1 = [
 /* ---------------- title ---------------- */
 {t:'title', kicker:'EE 413 · Communication Systems II', text:'Digital Communications',
  sub:'Lecture notes for the whole course: how a waveform becomes a finite alphabet of symbols, how those symbols are carried across a channel that adds noise to everything, how a receiver decides which one was sent, and how often it is wrong.',
- meta:[['Covers','Chapter 1'],['Level','Undergraduate'],
+ meta:[['Covers','Chapters 1 and 2'],['Level','Undergraduate'],
        ['Assumed background','Fourier analysis, probability, random processes']]},
 
 {t:'h3', text:'How to read these notes'},
@@ -23,7 +23,8 @@ window.C1 = [
 {t:'p', text:'The contents below carries a third column. An entry such as <b>PS CH7.2.1</b> points into the course textbook, Proakis and Salehi, <i>Fundamentals of Communication Systems</i>, second edition, where the same material is developed at length. The <b>PS</b> marker is what tells the two apart, and it is not decorative: these notes reach information theory in chapter 6 and the textbook develops it in chapter 12, while the textbook\'s own chapter 12 heading is nowhere near what a bare number would suggest.'},
 
 {t:'toc', items:[
- ['1','The transition from analog to digital','Impulse-train sampling and the replication of the spectrum. The sampling theorem. Reconstruction and sinc interpolation. Uniform quantization, the error it makes, and the signal-to-quantization-noise ratio. Companding. Encoding, line codes and pulse code modulation.','PS CH7.1&ndash;7.4']
+ ['1','The transition from analog to digital','Impulse-train sampling and the replication of the spectrum. The sampling theorem. Reconstruction and sinc interpolation. Uniform quantization, the error it makes, and the signal-to-quantization-noise ratio. Companding. Encoding, line codes and pulse code modulation.','PS CH7.1&ndash;7.4'],
+ ['2','Baseband transmission of digital signals','The matched filter and what it achieves. Correlator and matched-filter demodulators. The decision statistic, the optimal threshold and the bit error probability. Intersymbol interference and the eye pattern. Nyquist\'s criterion and the raised cosine.','PS CH8.2&ndash;8.3, PS CH10.1, PS CH10.3']
 ]},
 
 {t:'page'},
