@@ -8,10 +8,10 @@ dist/Student_Workbook.*
 dist/Instructor_Solutions.*
 dist/Formula_Reference.*
 
-# Local working area, not student-facing. The commands are tracked: /uret is how
-# production is started, so it has to survive a clone.
-.claude/*
-!.claude/commands/
+# Local working area, not student-facing. The commands that drive production
+# live here too, and they are instructions to whoever is building this rather
+# than part of what is built — the same reason AGENTS.md and CLAUDE.md are out.
+.claude/
 
 # Local toolchain and scratch output.
 .venv/
