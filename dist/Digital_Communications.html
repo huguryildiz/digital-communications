@@ -2800,6 +2800,188 @@ Object.assign(LABS, (function(){
 
 </script>
 <script>
+/* ==== 73_labs_m3.js ==== */
+/* ==========================================================================
+   Module 3 laboratory.
+
+   F · From waveform to basis — Gram-Schmidt run on a signal set the reader
+       chooses, with the basis it produces, the constellation and the number of
+       dimensions reported as they change.
+
+   The numerical core is written here rather than ported. The equation
+   reference the ported version carries is wrong for this edition: it cites
+   7.1, which is the sampling theorem, where the procedure is 8.1.
+   ========================================================================== */
+Object.assign(LABS, (function(){
+  const T = LABS.KIT.T, M = LABS.KIT.M, fmt = LABS.KIT.F;
+  const P = PLOT;
+
+  const F = (() => {
+    const N = 600, TMAX = 3;                      /* the interval, sampled */
+    let st = { set:'ramp', order:0 };
+
+    /* Each set is three waveforms on [0,3], given as functions of t. They are
+       chosen so that the answer differs: one set needs three dimensions, one
+       needs two because a signal repeats a combination, one needs one because
+       all three are multiples of each other. */
+    const SETS = {
+      /* the worked example of the module: s3 = s1 + s2, so two dimensions */
+      steps: { name:'steps', fs:[
+        t => (t>=0 && t<2) ? 1 : 0,
+        t => (t>=2 && t<3) ? 1 : 0,
+        t => (t>=0 && t<3) ? 1 : 0 ] },
+      /* three disjoint pulses: nothing overlaps, so three dimensions */
+      disjoint: { name:'disjoint pulses', fs:[
+        t => (t>=0 && t<1) ? 1 : 0,
+        t => (t>=1 && t<2) ? 1 : 0,
+        t => (t>=2 && t<3) ? 1 : 0 ] },
+      /* all three are multiples of one shape, so one dimension */
+      scaled: { name:'scaled copies', fs:[
+        t => (t>=0 && t<3) ? 1 : 0,
+        t => (t>=0 && t<3) ? -0.5 : 0,
+        t => (t>=0 && t<3) ? 1.5 : 0 ] },
+      /* a ramp, a step and their difference: two dimensions */
+      ramp: { name:'ramp and step', fs:[
+        t => (t>=0 && t<3) ? t/3 : 0,
+        t => (t>=0 && t<3) ? 1 : 0,
+        t => (t>=0 && t<3) ? 1 - t/3 : 0 ] }
+    };
+
+    const dt = TMAX/N;
+    const sample = f => Array.from({length:N}, (_,i)=>f((i+0.5)*dt));
+    const dot = (a,b) => a.reduce((s,v,i)=>s+v*b[i],0)*dt;
+
+    /* Gram-Schmidt, written from the three steps of the scene. A remainder
+       whose energy is below the tolerance adds no basis function; the
+       tolerance is relative to the largest signal energy in the set, so a set
+       of tiny signals is not silently declared one-dimensional. */
+    function gramSchmidt(sigs){
+      const scale = Math.max(...sigs.map(s=>dot(s,s)), 1e-12);
+      const basis = [], coords = [];
+      sigs.forEach(s=>{
+        const c = basis.map(b=>dot(s,b));
+        const g = s.map((v,i)=>v - c.reduce((acc,ci,k)=>acc+ci*basis[k][i], 0));
+        const eg = dot(g,g);
+        if(eg > 1e-9*scale){
+          const psi = g.map(v=>v/Math.sqrt(eg));
+          basis.push(psi);
+          c.push(Math.sqrt(eg));
+        }
+        coords.push(c.slice());
+      });
+      const dim = basis.length;
+      coords.forEach(c=>{ while(c.length < dim) c.push(0); });
+      return { basis, coords };
+    }
+
+    function draw(root){
+      const set = SETS[st.set];
+      const idx = [[0,1,2],[1,2,0],[2,0,1]][st.order % 3];
+      const sigs = idx.map(i=>sample(set.fs[i]));
+      const { basis, coords } = gramSchmidt(sigs);
+
+      const wave = (arr, name, colour) => {
+        const a = P.Axes({w:250,h:150,xr:[0,TMAX],yr:[-1.8,1.8],
+          xlabel:'t',ylabel:name,pad:{l:44,r:16,t:22,b:34},xtarget:3,ytarget:3});
+        a.poly(arr.map((v,i)=>[(i+0.5)*dt, v]),{color:colour,width:2});
+        return a.svg();
+      };
+
+      const cols = [P.COL.in, P.COL.out, P.COL.mid];
+
+      /* The constellation is drawn on the first two axes. In one dimension the
+         second coordinate is zero for every signal, which is the honest
+         picture; in three the third is named in the readout instead. */
+      const xs = coords.map(c=>c[0]||0), ys = coords.map(c=>c[1]||0);
+      const lim = Math.max(1, ...xs.map(Math.abs), ...ys.map(Math.abs))*1.35;
+      const cx = P.Axes({w:420,h:300,xr:[-lim,lim],yr:[-lim,lim],
+        xlabel:'\\psi_1',ylabel:'\\psi_2',pad:{l:52,r:24,t:26,b:42},xtarget:4,ytarget:4});
+      /* The points are not labelled in the figure. Each takes the colour of the
+         waveform it came from, and the coordinates are listed in order in the
+         readout, so a label beside every point would repeat both. */
+      coords.forEach((c,k)=>{ cx.point(c[0]||0, c[1]||0, {color:cols[k], r:6}); });
+
+      /* The row style is inline rather than in the shared sheet: one laboratory
+         needing three figures side by side is not a reason to change the
+         stylesheet every scene in the course reads. */
+      /* An svg with a viewBox and no width fills whatever box it is put in, so
+         each one is given a box of its own. Without this the three signals are
+         drawn a column wide each and the laboratory is three screens tall. */
+      const row = 'display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start';
+      const cell = h => `<div style="flex:0 0 240px;max-width:240px">${h}</div>`;
+      root.querySelector('.plots').innerHTML =
+        `<div style="${row}">${sigs.map((s,k)=>cell(wave(s,'s_'+(k+1)+'(t)',cols[k]))).join('')}</div>` +
+        `<div style="${row}">${basis.map((b,k)=>cell(wave(b,'\\psi_'+(k+1)+'(t)',P.COL.h))).join('')}</div>` +
+        `<div style="max-width:420px;margin-top:6px">${cx.svg()}</div>`;
+
+      const energies = coords.map(c=>c.reduce((s,v)=>s+v*v,0));
+      const dists = [];
+      for(let i=0;i<coords.length;i++) for(let j=i+1;j<coords.length;j++)
+        dists.push(Math.sqrt(coords[i].reduce((s,v,k)=>s+(v-coords[j][k])**2,0)));
+
+      root.querySelector('.ro').innerHTML = `
+        <div><dt>Signals M</dt><dd>3</dd></div>
+        <div><dt>Dimensions N</dt><dd class="okv">${basis.length}</dd></div>
+        <div><dt>Energies</dt><dd>${energies.map(e=>fmt(e,3)).join(', ')}</dd></div>
+        <div><dt>Coordinates</dt><dd>${coords.map((c,k)=>
+          `<span style="color:${cols[k]}">(${c.map(v=>fmt(v,2)).join(', ')})</span>`).join(' ')}</dd></div>
+        <div><dt>Pairwise distances</dt><dd>${dists.map(d=>fmt(d,3)).join(', ')}</dd></div>
+        <div><dt>Smallest distance</dt><dd class="${Math.min(...dists)<1e-6?'warnv':'okv'}">${fmt(Math.min(...dists),3)}</dd></div>`;
+
+      root.querySelector('.verdict').innerHTML =
+        basis.length < 3
+        ? `<div class="note ok"><span class="note-h">Fewer axes than signals</span>
+             Three waveforms needed only ${T(String(basis.length),false)}
+             ${basis.length===1?'axis':'axes'}, because ${basis.length===1
+               ? 'all three are multiples of one shape'
+               : 'one of them is already a combination of the others'} — its remainder
+             ${T('g_k',false)} came out zero and added nothing. The receiver needs
+             ${T(String(basis.length),false)} matched ${basis.length===1?'filter':'filters'},
+             not three.</div>`
+        : `<div class="note warn"><span class="note-h">As many axes as signals</span>
+             Nothing in this set is a combination of the others, so every signal contributed a
+             new axis. Three matched filters are needed, and the constellation above shows only
+             two of the three coordinates.</div>`;
+
+      root.querySelectorAll('[data-out]').forEach(o=>{ o.textContent = String(st[o.dataset.out]); });
+      root.querySelectorAll('[data-seg=set]').forEach(b=>
+        b.setAttribute('aria-pressed', String(b.dataset.val===st.set)));
+    }
+
+    return { mount(root){
+      root.innerHTML = `
+        <div class="cols c-7-5" style="gap:40px">
+          <div class="col stack"><div class="plots"></div></div>
+          <div class="col stack">
+            <div class="ctrls one">
+              <div class="ctrl"><label>Signal set <span class="seg">
+                <button data-seg="set" data-val="steps">steps</button>
+                <button data-seg="set" data-val="disjoint">disjoint</button>
+                <button data-seg="set" data-val="scaled">scaled</button>
+                <button data-seg="set" data-val="ramp">ramp</button></span></label></div>
+              <div class="ctrl"><label>Order the signals are taken in <span class="val" data-out="order">0</span></label>
+                <input type="range" data-v="order" min="0" max="2" step="1" value="0"></div>
+            </div>
+            <dl class="readout ro"></dl>
+            <div class="verdict"></div>
+            <div class="note def"><span class="note-h">What to try</span>
+              Change the order and watch the basis functions change while the energies and the
+              distances do not. The constellation is the same picture seen from a different angle,
+              and every result of the next module depends only on those distances.</div>
+          </div></div>`;
+      root.addEventListener('input', e=>{ const k=e.target.dataset.v; if(!k) return;
+        st[k]=parseInt(e.target.value,10); draw(root); });
+      root.addEventListener('click', e=>{ const b=e.target.closest('[data-seg=set]'); if(!b) return;
+        st.set=b.dataset.val; draw(root); });
+      draw(root);
+    }};
+  })();
+
+  return { F };
+})());
+
+</script>
+<script>
 /* ==== 81_scenes_m0.js ==== */
 /* ==========================================================================
    Module 0 — The frame of the course.
@@ -4258,6 +4440,381 @@ window.SCENES_M2 = SC;
 
 </script>
 <script>
+/* ==== 84_scenes_m3.js ==== */
+/* ==========================================================================
+   Module 3 — Geometric representation of signal waveforms.
+
+   The idea of the module in one sentence: a set of waveforms can be written as
+   a set of points, and everything the receiver needs to know is in the picture
+   those points make.
+
+   The module is short and it is a change of language rather than a change of
+   subject. Every scene says what is happening in ordinary words first.
+   ========================================================================== */
+(function(){
+const P = PLOT, C = P.COL;
+
+/* The three waveforms of the worked example, and the basis Gram-Schmidt finds
+   for them. Drawn from their definitions so the figures and the arithmetic
+   cannot drift apart. */
+const S1 = t => (t>=0 && t<2) ? 1 : 0;
+const S2 = t => (t>=2 && t<3) ? 1 : 0;
+const S3 = t => (t>=0 && t<3) ? 1 : 0;
+const PSI1 = t => S1(t)/Math.SQRT2;
+const PSI2 = t => S2(t);
+
+function figWave(f, name, colour, yr, small){
+  const a = P.Axes({w:small?270:300,h:small?140:170,xr:[-0.2,3.4],yr:yr||[-0.3,1.4],
+    xlabel:'t',ylabel:name,pad:{l:44,r:18,t:22,b:36},xtarget:4,ytarget:3});
+  const pts=[]; for(let i=0;i<=680;i++){ const t=-0.2+3.6*i/680; pts.push([t,f(t)]); }
+  a.poly(pts,{color:colour||C.in,width:2.1});
+  return a.svg();
+}
+
+function figConstellation(pts, opts){
+  opts = opts || {};
+  const a = P.Axes({w:opts.w||520,h:opts.h||330,xr:opts.xr||[-0.6,2.0],yr:opts.yr||[-0.6,1.8],
+    xlabel:'\\psi_1',ylabel:'\\psi_2',pad:{l:54,r:26,t:28,b:44},xtarget:4,ytarget:4});
+  pts.forEach(p=>{
+    if(opts.dashTo!==false){
+      a.poly([[p.x,0],[p.x,p.y]],{color:C.rule,width:1,dash:'3 4'});
+      a.poly([[0,p.y],[p.x,p.y]],{color:C.rule,width:1,dash:'3 4'});
+    }
+    a.point(p.x,p.y,{color:p.c||C.in,r:6});
+    a.note(p.x, p.y+0.16, p.l, {tex:true,fs:14,color:p.c||C.in,anchor:'middle'});
+  });
+  return a.svg();
+}
+
+const SC = [
+
+/* ---------------------------------------------------------------- 3.0 ---- */
+{ id:'m3-open', module:'M3', nav:'Why one axis is not enough', title:'When one axis is not enough',
+  objective:'Show the problem two unrelated waveforms create for the Module 2 receiver.',
+  keywords:'geometric representation two matched filters basis signal space opening',
+  src:'CH9 s.2–3', steps:2, blocks:[
+  {t:'eyebrow', text:'Module 3 · Opening'},
+  {t:'title', text:'Two waveforms that do not fit on one line'},
+  {t:'lede', text:'In Module 2 the two waveforms were opposites, so one shape carried both and the receiver needed one number. What happens when the two waveforms are simply different?'},
+  {t:'cols', ratio:'c-6-6', vcenter:true, left:[
+    {t:'body', html:'<p>Take $s_0(t)$ and $s_1(t)$ below. Neither is a multiple of the other, so no single function $\\psi(t)$ can write both as $s_m\\psi(t)$. The receiver of Module 2 does not apply, and none of its results do either.</p>'},
+    {t:'reveal', at:1, items:[
+      {t:'body', html:'<p>The fix is straightforward once said out loud: use <b>two</b> matched filters, one for each waveform, and let the receiver work with the <b>two</b> numbers they produce.</p>'},
+      {t:'note', kind:'def', head:'The idea of this module', html:'A set of waveforms can be written as a set of <b>points</b>. Once it is, the receiver becomes a question about geometry — which point is the observation nearest to — and every result of the rest of the course is read off that picture.'}
+    ]},
+    {t:'reveal', at:2, items:[
+      {t:'note', kind:'ok', head:'What this buys', html:'Analysing waveforms means integrals. Analysing points means arithmetic. The whole of Modules 4 and 5 is done with the arithmetic, and this module is the translation.'}
+    ]}
+  ], right:[
+    {t:'grid', cols:2, gap:'20px', items:[
+      [{t:'fig', frame:true, svg:()=>figWave(t=>(t>=0&&t<1.5)?1:(t<3?-1:0),'s_0(t)',C.in,[-1.5,1.5]),
+        caption:'$s_0(t)$: positive for the first half of the interval, negative for the second.'}],
+      [{t:'fig', frame:true, svg:()=>figWave(t=>(t>=0&&t<0.75)?1:(t<2.25?-1:(t<3?1:0)),'s_1(t)',C.out,[-1.5,1.5]),
+        caption:'$s_1(t)$: three pieces rather than two. It is not a multiple of $s_0$.'}]
+    ]},
+    {t:'fig', frame:true, svg:()=>P.blocks({w:600,h:200,items:[
+      {t:'arrow',x1:20,y1:100,x2:110,y2:100},
+      {t:'box',x:110,y:20,w:200,h:60,label:'matched to s_0(t)',tex:true,fs:14},
+      {t:'box',x:110,y:120,w:200,h:60,label:'matched to s_1(t)',tex:true,fs:14},
+      {t:'line',d:'M65,100 v-50 h45'}, {t:'line',d:'M65,100 v50 h45'},
+      {t:'arrow',x1:310,y1:50,x2:400,y2:50},
+      {t:'arrow',x1:310,y1:150,x2:400,y2:150},
+      {t:'text',x:22,y:78,label:'x(t)',tex:true,fs:15,anchor:'start'},
+      {t:'text',x:445,y:56,label:'y_1',tex:true,fs:15},
+      {t:'text',x:445,y:156,label:'y_2',tex:true,fs:15}
+    ]}), caption:'Two filters, two numbers. The pair $(y_1,y_2)$ is a point in a plane, and that plane is what the module is about.'}
+  ]}
+]},
+
+/* ---------------------------------------------------------------- 3.1 ---- */
+{ id:'m3-ortho', module:'M3', nav:'An orthonormal basis', title:'Axes made of functions',
+  objective:'Define an orthonormal basis for signals by analogy with vectors.',
+  keywords:'orthonormal basis inner product norm orthogonal unit energy functions',
+  src:'CH9 s.4–5', steps:3, blocks:[
+  {t:'eyebrow', text:'Module 3 · Signals as vectors'},
+  {t:'title', text:'Axes made of functions'},
+  {t:'lede', text:'Everything in this section is one analogy. A vector is a list of numbers because it has been written against a set of axes. A signal can be a list of numbers for exactly the same reason.'},
+  {t:'cols', ratio:'c-6-6', vcenter:true, left:[
+    {t:'body', html:'<p><b>For vectors.</b> With unit axes $\\mathbf{e}_1,\\ldots,\\mathbf{e}_N$, any $\\mathbf{a}$ is $\\sum_k a_k\\mathbf{e}_k$, and two operations do all the work:</p>'},
+    {t:'eq', tex:'\\langle\\mathbf{a},\\mathbf{b}\\rangle=\\sum_{k=1}^{N}a_kb_k,\\qquad \\|\\mathbf{a}\\|=\\sqrt{\\langle\\mathbf{a},\\mathbf{a}\\rangle}'},
+    {t:'small', html:'The axes are <b>orthonormal</b>: each has unit length and each is perpendicular to all the others, $\\langle\\mathbf{e}_i,\\mathbf{e}_j\\rangle=0$ for $i\\ne j$.'},
+    {t:'reveal', at:1, items:[
+      {t:'body', html:'<p><b>For signals.</b> The inner product of two signals is the integral of their product, and everything else follows unchanged:</p>'},
+      {t:'eq', key:true, tex:'\\langle x,y\\rangle=\\int_{-\\infty}^{\\infty}x(t)\\,y(t)\\,dt'}
+    ]},
+    {t:'reveal', at:2, items:[
+      {t:'note', kind:'def', head:'Orthonormal signal set', html:'A set $\\{\\psi_1,\\ldots,\\psi_N\\}$ is orthonormal when $$\\int_{-\\infty}^{\\infty}\\psi_j(t)\\psi_k(t)\\,dt=\\begin{cases}1,&j=k\\\\0,&j\\ne k.\\end{cases}$$ The first line says each has <b>unit energy</b>; the second says any two are <b>orthogonal</b>.'}
+    ]},
+    {t:'reveal', at:3, items:[
+      {t:'note', kind:'ok', head:'Read it in plain words', html:'"Orthogonal" for signals means the same thing it means for arrows: the two have nothing of each other in them. If you multiply them together and add up the result over all time, you get zero. Two non-overlapping pulses are the clearest case — where one is non-zero the other is zero, so their product is zero everywhere.'}
+    ]}
+  ], right:[
+    {t:'fig', frame:true, svg:()=>{
+      const a = P.Axes({w:460,h:240,xr:[-0.4,1.9],yr:[-0.4,1.6],
+        xlabel:'\\mathbf{e}_1',ylabel:'\\mathbf{e}_2',pad:{l:52,r:24,t:26,b:42},xtarget:4,ytarget:3});
+      a.poly([[0,0],[1.5,0.9]],{color:C.in,width:2.4});
+      a.poly([[1.5,0],[1.5,0.9]],{color:C.rule,width:1,dash:'3 4'});
+      a.poly([[0,0.9],[1.5,0.9]],{color:C.rule,width:1,dash:'3 4'});
+      a.point(1.5,0.9,{color:C.in,r:5});
+      a.note(1.5,1.06,'\\mathbf{a}=(a_1,a_2)',{tex:true,fs:14,color:C.in,anchor:'middle'});
+      a.note(0.72,-0.22,'a_1',{tex:true,fs:13,color:C.muted,anchor:'middle'});
+      a.note(-0.3,0.86,'a_2',{tex:true,fs:13,color:C.muted});
+      return a.svg();
+    }, caption:'A vector is a list of numbers because it has been written against axes. Its length and its angle to another vector are computed from that list and nothing else.'},
+    {t:'grid', cols:2, gap:'18px', items:[
+      [{t:'fig', svg:()=>figWave(PSI1,'\\psi_1(t)',C.in,null,true), caption:'$\\psi_1$: height $1/\\sqrt{2}$ on $[0,2]$, so its energy is $1$.'}],
+      [{t:'fig', svg:()=>figWave(PSI2,'\\psi_2(t)',C.h,null,true), caption:'$\\psi_2$: height $1$ on $[2,3]$, energy $1$. It never overlaps $\\psi_1$, so the two are orthogonal.'}]
+    ]}
+  ]}
+]},
+
+{ id:'m3-project', module:'M3', nav:'Coordinates', title:'How a waveform becomes a list of numbers',
+  objective:'Give the projection formula and the property that makes it useful.',
+  keywords:'projection coordinates synthesis analysis inner product preserved key property',
+  src:'CH9 s.6–8', steps:3, blocks:[
+  {t:'eyebrow', text:'Module 3 · Signals as vectors'},
+  {t:'title', text:'Coordinates'},
+  {t:'cols', ratio:'c-6-6', vcenter:true, left:[
+    {t:'body', html:'Once the axes are fixed, a signal is written against them the same way a vector is:'},
+    {t:'eq', key:true, label:'analysis', tex:'s_{ij}=\\int_{0}^{T}s_i(t)\\,\\psi_j(t)\\,dt'},
+    {t:'eq', key:true, label:'synthesis', tex:'s_i(t)=\\sum_{j=1}^{N}s_{ij}\\,\\psi_j(t)'},
+    {t:'small', html:'The first line takes a waveform apart into $N$ numbers. The second builds it back. The list $\\mathbf{s}_i=(s_{i1},\\ldots,s_{iN})$ is the <b>signal vector</b>.'},
+    {t:'reveal', at:1, items:[
+      {t:'note', kind:'def', head:'The property that makes this worth doing', html:'Inner products survive the translation. If $x$ has coordinates $\\mathbf{x}$ and $y$ has coordinates $\\mathbf{y}$, then $$\\int_{-\\infty}^{\\infty}x(t)y(t)\\,dt=\\sum_{k=1}^{N}x_ky_k=\\langle\\mathbf{x},\\mathbf{y}\\rangle.$$'}
+    ]},
+    {t:'reveal', at:2, items:[
+      {t:'small', html:'<b>Why.</b> Expand both sums, exchange the integral and the sums, and use orthonormality: every cross term $\\int\\psi_j\\psi_k$ with $j\\ne k$ is zero and every term with $j=k$ is one. What is left is $\\sum_k x_ky_k$.'},
+      {t:'body', html:'An integral over waveforms has become a sum over $N$ numbers.'}
+    ]},
+    {t:'reveal', at:3, items:[
+      {t:'note', kind:'ok', head:'What this means in practice', html:'Nothing about the waveforms is lost and nothing has to be integrated twice. The receiver computes $N$ integrals once, and everything after that — energies, distances, decisions, error probabilities — is arithmetic on $N$ numbers.'}
+    ]}
+  ], right:[
+    {t:'fig', frame:true, svg:()=>P.blocks({w:620,h:270,items:[
+      {t:'arrow',x1:20,y1:70,x2:120,y2:70},
+      {t:'box',x:120,y:38,w:210,h:64,label:'\\int_0^T(\\cdot)\\,\\psi_1(t)\\,dt',tex:true,fs:15},
+      {t:'arrow',x1:330,y1:70,x2:420,y2:70},
+      {t:'arrow',x1:20,y1:190,x2:120,y2:190},
+      {t:'box',x:120,y:158,w:210,h:64,label:'\\int_0^T(\\cdot)\\,\\psi_2(t)\\,dt',tex:true,fs:15},
+      {t:'arrow',x1:330,y1:190,x2:420,y2:190},
+      {t:'text',x:65,y:56,label:'s_i(t)',tex:true,fs:15},
+      {t:'text',x:65,y:176,label:'s_i(t)',tex:true,fs:15},
+      {t:'text',x:466,y:76,label:'s_{i1}',tex:true,fs:15},
+      {t:'text',x:466,y:196,label:'s_{i2}',tex:true,fs:15},
+      {t:'text',x:225,y:250,label:'the analyser: one integral per axis',fs:12.5}
+    ]}), caption:'The analyser. One integral per basis function turns a waveform into its coordinates; the synthesiser runs the same picture backwards.'}
+  ]}
+]},
+
+{ id:'m3-energy', module:'M3', nav:'Energy and distance', title:'Energy is length, difference is distance',
+  objective:'Identify energy with squared norm and signal difference with Euclidean distance.',
+  keywords:'energy squared norm euclidean distance constellation L2 norm',
+  src:'CH9 s.11–12', steps:2, blocks:[
+  {t:'eyebrow', text:'Module 3 · Signals as vectors'},
+  {t:'title', text:'Two quantities, read straight off the picture'},
+  {t:'cols', ratio:'c-6-6', vcenter:true, left:[
+    {t:'body', html:'Put $y=x$ in the property of the last scene and the energy of a signal is the squared length of its vector:'},
+    {t:'eq', key:true, tex:'E_{s_i}=\\int_0^{T}s_i^{2}(t)\\,dt=\\sum_{j=1}^{N}s_{ij}^{2}=\\|\\mathbf{s}_i\\|^{2}'},
+    {t:'reveal', at:1, items:[
+      {t:'body', html:'Apply it to the difference of two signals and the energy of the difference is the squared distance between the two points:'},
+      {t:'eq', key:true, tex:'\\|\\mathbf{s}_i-\\mathbf{s}_k\\|^{2}=\\int_0^{T}\\bigl(s_i(t)-s_k(t)\\bigr)^{2}dt=\\sum_{j=1}^{N}(s_{ij}-s_{kj})^{2}'}
+    ]},
+    {t:'reveal', at:2, items:[
+      {t:'note', kind:'ok', head:'Why these two matter more than anything else in the module', html:'<b>Energy is how far the point is from the origin.</b> That is what the transmitter pays for. <b>Distance is how far two points are from each other.</b> That is what decides how often the receiver confuses them. Module 2 already showed this for two points on a line: antipodal signalling beats on-off by $3$ dB because its points are further apart at the same average energy. Module 4 makes it the general rule.'}
+    ]}
+  ], right:[
+    {t:'fig', frame:true, svg:()=>{
+      const a = P.Axes({w:520,h:340,xr:[-1.6,1.6],yr:[-1.6,1.6],
+        xlabel:'\\psi_1',ylabel:'\\psi_2',pad:{l:54,r:26,t:28,b:44},xtarget:4,ytarget:4});
+      const pts=[[1,1,C.in,'\\mathbf{s}_1'],[1,-1,C.out,'\\mathbf{s}_2'],[-1,-1,C.mid,'\\mathbf{s}_3'],[-1,1,C.h,'\\mathbf{s}_4']];
+      pts.forEach(([x,y,c,l])=>{ a.poly([[0,0],[x,y]],{color:c,width:1.4,dash:'4 4'});
+        a.point(x,y,{color:c,r:6}); a.note(x,y+(y>0?0.2:-0.32),l,{tex:true,fs:14,color:c,anchor:'middle'}); });
+      a.poly([[1,1],[1,-1]],{color:C.err,width:2});
+      a.note(1.12,0,'d=2',{tex:true,fs:13,color:C.err});
+      return a.svg();
+    }, caption:'Four points, each at distance $\\sqrt{2}$ from the origin, so all four waveforms carry energy $2$. The nearest pair are $2$ apart, and it is that number, not the energy, that sets how often they are confused.'}
+  ]}
+]},
+
+/* ---------------------------------------------------------------- 3.2 ---- */
+{ id:'m3-constellation', module:'M3', nav:'The constellation', title:'The constellation diagram',
+  objective:'Define the constellation and read energy and distance from it.',
+  keywords:'constellation diagram signal space points energy distance qpsk',
+  src:'CH9 s.11', steps:2, blocks:[
+  {t:'eyebrow', text:'Module 3 · Constellations'},
+  {t:'title', text:'The constellation diagram'},
+  {t:'cols', ratio:'c-6-6', vcenter:true, left:[
+    {t:'note', kind:'def', head:'Constellation diagram', html:'The picture of the signal vectors in the space their basis spans. One point per waveform, one axis per basis function. Nothing else is in the picture, and nothing else is needed.'},
+    {t:'reveal', at:1, items:[
+      {t:'body', html:'<p>Three things are read directly off it:</p><ul><li>The <b>distance from the origin</b> to a point is $\\sqrt{E_i}$, the square root of that waveform\'s energy.</li><li>The <b>distance between two points</b> is the square root of the energy of their difference.</li><li>The <b>number of axes</b> is how many matched filters the receiver needs.</li></ul>'}
+    ]},
+    {t:'reveal', at:2, items:[
+      {t:'note', kind:'warn', head:'A picture is not a waveform', html:'Two completely different sets of waveforms can produce the same constellation — different shapes, different durations, the same points. When they do, they have the same error performance and the same receiver structure, and the only things that separate them are bandwidth and how easy they are to build. That is a strong statement, and the next module proves it.'}
+    ]}
+  ], right:[
+    {t:'fig', frame:true, svg:()=>figConstellation(
+      [{x:1,y:1,c:C.in,l:'\\mathbf{s}_1'},{x:1,y:-1,c:C.out,l:'\\mathbf{s}_2'},
+       {x:-1,y:-1,c:C.mid,l:'\\mathbf{s}_3'},{x:-1,y:1,c:C.h,l:'\\mathbf{s}_4'}],
+      {xr:[-1.7,1.7],yr:[-1.7,1.7],dashTo:false}),
+      caption:'Four equal-energy points on a square. Every point is $\\sqrt{2}$ from the origin, so every waveform has energy $2$; the nearest neighbours are $2$ apart, so the squared distance between the closest pair is $8$ when the energy is $4$ per point.'}
+  ]}
+]},
+
+/* ---------------------------------------------------------------- 3.3 ---- */
+{ id:'m3-gs', module:'M3', nav:'Gram–Schmidt', title:'Finding the axes',
+  objective:'State the Gram–Schmidt procedure as three repeated steps.',
+  keywords:'gram schmidt orthogonalization procedure basis normalise subtract remainder',
+  src:'CH9 s.16–18', steps:3, blocks:[
+  {t:'eyebrow', text:'Module 3 · Gram–Schmidt'},
+  {t:'title', text:'Finding the axes'},
+  {t:'lede', text:'The axes have been assumed so far. Gram–Schmidt is the recipe that produces them from any set of waveforms, and it is three steps repeated until there is nothing left.'},
+  {t:'cols', ratio:'c-6-6', vcenter:true, left:[
+    {t:'body', html:'<p><b>The first axis is the first signal, scaled to unit energy.</b></p>'},
+    {t:'eq', tex:'E_1=\\int s_1^{2}(t)\\,dt,\\qquad \\psi_1(t)=\\frac{s_1(t)}{\\sqrt{E_1}},\\qquad s_{11}=\\sqrt{E_1}'},
+    {t:'reveal', at:1, items:[
+      {t:'body', html:'<p><b>Every later axis is what is left of the next signal after the axes already found are taken out of it.</b> For $s_k$:</p>'},
+      {t:'eq', key:true, tex:'g_k(t)=s_k(t)-\\sum_{i=1}^{k-1}s_{ki}\\,\\psi_i(t),\\qquad s_{ki}=\\int s_k(t)\\psi_i(t)\\,dt'},
+      {t:'eq', tex:'E_{g_k}=\\int g_k^{2}(t)\\,dt,\\qquad \\psi_k(t)=\\frac{g_k(t)}{\\sqrt{E_{g_k}}}'}
+    ]},
+    {t:'reveal', at:2, items:[
+      {t:'note', kind:'ok', head:'The step that ends it', html:'If $g_k(t)=0$, that signal was already a combination of the axes found so far and <b>no new axis is added</b>. The procedure stops when every signal has been used, and the number of axes $N$ is at most the number of signals $M$ — often fewer.'}
+    ]},
+    {t:'reveal', at:3, items:[
+      {t:'note', kind:'warn', head:'The order matters, the answer does not', html:'Starting from a different signal gives a different set of axes. It gives the same number of them, the same energies and the same distances, so the constellation is the same picture seen from a different angle — and every result that depends only on distances is unchanged.'}
+    ]}
+  ], right:[
+    {t:'fig', frame:true, svg:()=>{
+      const a = P.Axes({w:520,h:340,xr:[-0.4,2.0],yr:[-0.4,1.7],
+        xlabel:'\\psi_1',ylabel:'\\psi_2',pad:{l:54,r:26,t:28,b:44},xtarget:4,ytarget:4});
+      a.poly([[0,0],[1.7,0]],{color:C.in,width:2.2});
+      a.poly([[0,0],[1.2,1.3]],{color:C.out,width:2.2});
+      a.poly([[1.2,0],[1.2,1.3]],{color:C.mid,width:2.2,dash:'5 4'});
+      a.poly([[0,0],[1.2,0]],{color:C.h,width:2.2});
+      a.note(1.62,0.14,'\\psi_1',{tex:true,fs:14,color:C.in,anchor:'middle'});
+      a.note(1.24,1.44,'s_2',{tex:true,fs:14,color:C.out,anchor:'middle'});
+      a.note(1.32,0.62,'g_2',{tex:true,fs:14,color:C.mid});
+      a.note(0.6,0.14,'s_{21}\\psi_1',{tex:true,fs:13,color:C.h,anchor:'middle'});
+      return a.svg();
+    }, caption:'The second step, drawn. The part of $s_2$ that lies along $\\psi_1$ is subtracted off; what is left, $g_2$, is perpendicular to $\\psi_1$ by construction, and normalising it gives the second axis.'}
+  ]}
+]},
+
+{ id:'m3-ex-gs', module:'M3', nav:'Worked example: Gram–Schmidt', title:'Worked example: three pulses, two axes',
+  objective:'Run the procedure on three waveforms and draw the constellation.',
+  keywords:'worked example gram schmidt three signals two basis functions constellation',
+  src:'CH9 s.19–21', steps:4, blocks:[
+  {t:'eyebrow', text:'Module 3 · Gram–Schmidt'},
+  {t:'title', text:'Worked example'},
+  {t:'cols', ratio:'c-6-6', vcenter:false, left:[
+    {t:'wex', rows:[
+      ['Given','$s_1(t)=1$ on $[0,2]$; $s_2(t)=1$ on $[2,3]$; $s_3(t)=1$ on $[0,3]$; each zero elsewhere.'],
+      ['Find','An orthonormal basis, the three signal vectors, and the constellation.']
+    ]},
+    {t:'reveal', at:1, items:[
+      {t:'wex', rows:[
+        ['Step 1','$E_1=\\int_0^{2}1^{2}dt=2$, so $\\psi_1(t)=\\dfrac{1}{\\sqrt{2}}$ on $[0,2]$ and $s_{11}=\\sqrt{2}$.']
+      ]}
+    ]},
+    {t:'reveal', at:2, items:[
+      {t:'wex', rows:[
+        ['Step 2','$s_{21}=\\int s_2\\psi_1\\,dt=0$, because $s_2$ and $\\psi_1$ never overlap. So $g_2=s_2$, $E_{g_2}=1$, and $\\psi_2(t)=s_2(t)=1$ on $[2,3]$.']
+      ]}
+    ]},
+    {t:'reveal', at:3, items:[
+      {t:'wex', rows:[
+        ['Step 3','$s_{31}=\\int_0^{2}1\\cdot\\tfrac{1}{\\sqrt{2}}dt=\\sqrt{2}$ and $s_{32}=\\int_2^{3}1\\cdot1\\,dt=1$. Then $$g_3=s_3-\\sqrt{2}\\,\\psi_1-1\\cdot\\psi_2=0,$$ so <b>no third axis</b>: $s_3$ was already a combination of the two.'],
+        ['Vectors','$\\mathbf{s}_1=(\\sqrt{2},\\,0)$, $\\;\\mathbf{s}_2=(0,\\,1)$, $\\;\\mathbf{s}_3=(\\sqrt{2},\\,1)$.']
+      ]}
+    ]},
+    {t:'reveal', at:4, items:[
+      {t:'wex', rows:[
+        ['Check','Energies from the vectors: $\\|\\mathbf{s}_1\\|^{2}=2$, $\\|\\mathbf{s}_2\\|^{2}=1$, $\\|\\mathbf{s}_3\\|^{2}=3$. Energies from the waveforms: $s_1$ is $1$ for two seconds, so $2$; $s_2$ is $1$ for one second, so $1$; $s_3$ is $1$ for three seconds, so $3$. They agree, and that agreement is the whole content of "energy is squared length".']
+      ]},
+      {t:'note', kind:'ok', head:'Read the answer', html:'Three waveforms needed only two axes, because the third was the sum of the other two — $s_3=s_1+s_2$, visible in the pictures before any integral is computed. The receiver needs two matched filters, not three.'}
+    ]}
+  ], right:[
+    {t:'grid', cols:3, gap:'14px', items:[
+      [{t:'fig', svg:()=>figWave(S1,'s_1(t)',C.in), caption:'$s_1$'}],
+      [{t:'fig', svg:()=>figWave(S2,'s_2(t)',C.out), caption:'$s_2$'}],
+      [{t:'fig', svg:()=>figWave(S3,'s_3(t)',C.mid), caption:'$s_3=s_1+s_2$'}]
+    ]},
+    {t:'fig', frame:true, svg:()=>figConstellation(
+      [{x:Math.SQRT2,y:0,c:C.in,l:'\\mathbf{s}_1'},{x:0,y:1,c:C.out,l:'\\mathbf{s}_2'},
+       {x:Math.SQRT2,y:1,c:C.mid,l:'\\mathbf{s}_3'}]),
+      caption:'The constellation. Two axes carry three signals, and the picture shows at a glance that $\\mathbf{s}_3$ is $\\mathbf{s}_1+\\mathbf{s}_2$.'}
+  ]}
+]},
+
+{ id:'m3-lab-f', module:'M3', nav:'Laboratory F', title:'Laboratory F · From waveform to basis',
+  objective:'Let the reader change the waveform set and watch the basis and the constellation follow.',
+  keywords:'laboratory gram schmidt basis constellation waveform set dimension',
+  steps:0, blocks:[
+  {t:'eyebrow', text:'Module 3 · Gram–Schmidt'},
+  {t:'title', text:'Laboratory F · From waveform to basis'},
+  {t:'body', html:'Choose a set of waveforms and watch the procedure run on it: the basis functions it produces, how many there are, and where the signals land. Reorder the set and the axes change while the constellation keeps its shape.'},
+  {t:'lab', id:'F'}
+]},
+
+{ id:'m3-remarks', module:'M3', nav:'What the geometry decides', title:'What the picture does and does not fix',
+  objective:'State what the constellation determines and what it leaves open.',
+  keywords:'remarks same geometry different waveforms performance receiver structure bandwidth',
+  src:'CH9 s.15', steps:2, blocks:[
+  {t:'eyebrow', text:'Module 3 · Constellations'},
+  {t:'title', text:'What the picture fixes'},
+  {t:'cols', ratio:'c-6-6', vcenter:true, left:[
+    {t:'note', kind:'def', head:'Two statements worth remembering', html:'<ol><li><b>Two entirely different signal sets can have the same geometric representation.</b> Different shapes, different durations, the same points.</li><li><b>The geometry determines the performance and the receiver structure.</b> How many filters, how the decision is made, and how often it is wrong.</li></ol>'},
+    {t:'reveal', at:1, items:[
+      {t:'body', html:'<p>Put together: if two signal sets give the same constellation, they have the same error probability and the same receiver. Nothing about the waveforms themselves survives into the answer.</p>'}
+    ]},
+    {t:'reveal', at:2, items:[
+      {t:'note', kind:'warn', head:'What the picture does not fix', html:'Bandwidth. Two sets with the same constellation can occupy very different amounts of spectrum — Module 2 already showed a whole family of pulses with the same energy and very different bandwidths. Which one to build is decided outside this picture; how well it works is decided inside it.'}
+    ]}
+  ], right:[
+    {t:'grid', cols:2, gap:'18px', items:[
+      [{t:'fig', frame:true, svg:()=>figWave(t=>(t>=0&&t<1.5)?1:(t<3?-1:0),'s_a(t)',C.in,[-1.5,1.5]),
+        caption:'One waveform set: two rectangular pieces.'}],
+      [{t:'fig', frame:true, svg:()=>figWave(t=>(t>=0&&t<3)?Math.sqrt(2/3)*1.22*Math.cos(2*Math.PI*t/3):0,'s_b(t)',C.out,[-1.5,1.5]),
+        caption:'Another: one cycle of a cosine. It has the same energy, and against a basis of its own it is the same single point.'}]
+    ]},
+    {t:'fig', frame:true, svg:()=>figConstellation(
+      [{x:1.4,y:0,c:C.in,l:'\\text{both}'}],{w:500,h:200,xr:[-1.8,1.8],yr:[-0.5,0.7],dashTo:false}),
+      caption:'One dimension, one point each. A receiver built for either is built for both.'}
+  ]}
+]},
+
+/* ---------------------------------------------------------------- 3.4 ---- */
+{ id:'m3-synth', module:'M3', nav:'Summary', title:'What Module 3 established',
+  objective:'Collect the translation this module provides.',
+  keywords:'summary basis coordinates energy distance constellation gram schmidt',
+  steps:0, blocks:[
+  {t:'eyebrow', text:'Module 3 · Summary'},
+  {t:'title', text:'What carries forward'},
+  {t:'grid', cols:2, gap:'26px', items:[
+    [{t:'card', head:'The translation', items:[
+      {t:'body', html:'<p>A waveform becomes a list of numbers by integrating it against each basis function, and comes back by adding the pieces up.</p>'},
+      {t:'eq', plain:true, tex:'s_{ij}=\\int_0^T s_i\\psi_j\\,dt,\\quad s_i(t)=\\sum_j s_{ij}\\psi_j(t)'}
+    ]}],
+    [{t:'card', head:'What survives it', items:[
+      {t:'body', html:'<p>Inner products, and therefore energies and distances. Everything the receiver needs is one of those.</p>'},
+      {t:'eq', plain:true, tex:'\\int xy\\,dt=\\langle\\mathbf{x},\\mathbf{y}\\rangle,\\quad E_i=\\|\\mathbf{s}_i\\|^{2}'}
+    ]}],
+    [{t:'card', head:'Finding the axes', items:[
+      {t:'body', html:'<p>Gram–Schmidt: normalise the first signal, then repeatedly subtract what is already known and normalise the remainder. A zero remainder adds no axis.</p>'},
+      {t:'eq', plain:true, tex:'g_k=s_k-\\textstyle\\sum_{i<k}s_{ki}\\psi_i,\\quad \\psi_k=g_k/\\sqrt{E_{g_k}}'}
+    ]}],
+    [{t:'card', head:'What comes next', items:[
+      {t:'body', html:'<p>Module 4 builds the receiver for this picture: it computes the coordinates of what arrives and picks the nearest point. The error probability then depends on the distances, and on nothing else.</p>'}
+    ]}]
+  ]}
+]}
+
+];
+
+window.SCENES_M3 = SC;
+})();
+
+</script>
+<script>
 /* ==== 89_sections.js ==== */
 /* ==========================================================================
    NUMBERING — the contents address of every scene, and its textbook anchor.
@@ -4292,7 +4849,8 @@ window.SCENES_M2 = SC;
 CONTENT.CHAPTERS = [
   { n:'0', module:'M0', title:'The frame of the course', flat:true },
   { n:'1', module:'M1', title:'The transition from analog to digital' },
-  { n:'2', module:'M2', title:'Baseband transmission of digital signals' }
+  { n:'2', module:'M2', title:'Baseband transmission of digital signals' },
+  { n:'3', module:'M3', title:'Geometric representation of signal waveforms' }
 ];
 
 /* ---- sections ----------------------------------------------------------
@@ -4336,6 +4894,15 @@ CONTENT.SECTIONS = {
     { n:'2.4', title:'Intersymbol interference',       ids:['m2-isi','m2-eye','m2-lab-e'] },
     { n:'2.5', title:'Nyquist and the raised cosine',  ids:['m2-nyquist','m2-rcos'] },
     { n:'2.6', title:'Summary',                        ids:['m2-synth'] }
+  ],
+
+  M3: [
+    { n:'3.0', title:'Opening',                        ids:['m3-open'] },
+    { n:'3.1', title:'Signals as vectors',             ids:[
+        'm3-ortho','m3-project','m3-energy'] },
+    { n:'3.2', title:'Constellations',                 ids:['m3-constellation','m3-remarks'] },
+    { n:'3.3', title:'The Gram–Schmidt procedure',     ids:['m3-gs','m3-ex-gs','m3-lab-f'] },
+    { n:'3.4', title:'Summary',                        ids:['m3-synth'] }
   ]
 
 };
@@ -4382,7 +4949,15 @@ CONTENT.BOOK = {
   'm2-lab-d':'8.3.3',
   'm2-isi':'10.1.1', 'm2-lab-e':'10.1.1',
   'm2-nyquist':'10.3.1', 'm2-rcos':'10.3.1',
-  'm2-synth':'8.3, 10.3.1'
+  'm2-synth':'8.3, 10.3.1',
+
+  /* All of Module 3 is section 8.1 of the book, "Geometric Representation of
+     Signal Waveforms", p. 348 — read there rather than inferred. This is also
+     the anchor the ported Gram-Schmidt code got wrong: its comments cite 7.1,
+     which in this edition is the sampling theorem. */
+  'm3-open':'8.1', 'm3-ortho':'8.1', 'm3-project':'8.1', 'm3-energy':'8.1',
+  'm3-constellation':'8.1', 'm3-remarks':'8.1',
+  'm3-gs':'8.1', 'm3-ex-gs':'8.1', 'm3-lab-f':'8.1', 'm3-synth':'8.1'
 };
 
 /* ---- derivation --------------------------------------------------------
@@ -5276,6 +5851,405 @@ window.DRILL_M2 = [
 
 </script>
 <script>
+/* ==== 94_drill_m3.js ==== */
+/* ==========================================================================
+   Practice questions — Module 3.
+
+   This module's taxonomy does NOT come from the question tables. Neither the
+   midterm nor the final has a question on the geometric representation: the
+   twenty-four questions in the tables cover sampling and quantization, the
+   matched filter and the threshold, the M-ary constellation and the union
+   bound, and information theory, and none of them asks for a basis. The six
+   shapes below are taken from the worked examples in the lecture material and
+   from the home exercise that follows them.
+
+   That is stated here rather than discovered later. It is the one module of
+   the six whose questions rest on a weaker source than the rest, and a reader
+   preparing for a paper should know that this material appears there as the
+   first step of a longer question rather than on its own.
+   ========================================================================== */
+(function(){
+const P = PLOT, C = P.COL;
+
+CONTENT.DRILLTYPES.M3 = [
+  { k:'ortho', name:'Testing a set for orthonormality',
+    asks:'A set of waveforms is given. Decide whether it is orthogonal, orthonormal, or neither.',
+    method:['Two signals are orthogonal when $\\int\\psi_j\\psi_k\\,dt=0$. Two pulses that never overlap always are — their product is zero everywhere, so no integration is needed.',
+            'A signal has unit energy when $\\int\\psi^{2}\\,dt=1$. Orthogonal plus unit energy is orthonormal.',
+            'Check every pair, not just the neighbouring ones. A set can fail on one pair and pass on all the others.'],
+    go:'m3-ortho' },
+
+  { k:'coords', name:'Coordinates, energy and distance',
+    asks:'A signal set and a basis are given. Find the signal vectors, their energies and the distances between them.',
+    method:['Each coordinate is one integral: $s_{ij}=\\int s_i\\psi_j\\,dt$. Where the two do not overlap the integral is zero and can be written down.',
+            'Energy is the squared length of the vector, $E_i=\\sum_j s_{ij}^{2}$. Check it against the waveform: for a rectangle it is height squared times width.',
+            'The distance between two signals is the ordinary distance between their points, $\\|\\mathbf{s}_i-\\mathbf{s}_k\\|$, and it is the square root of the energy of their difference.'],
+    go:'m3-energy' },
+
+  { k:'gs', name:'Running Gram–Schmidt',
+    asks:'A set of waveforms is given with no basis. Produce one, and the signal vectors against it.',
+    method:['Normalise the first signal: $\\psi_1=s_1/\\sqrt{E_1}$, and $s_{11}=\\sqrt{E_1}$.',
+            'For each later signal, compute its projections on the axes found so far, subtract them off, and normalise what is left. A zero remainder adds no axis.',
+            'Stop when every signal has been used. The number of axes is at most the number of signals and is often fewer.'],
+    go:'m3-gs' },
+
+  { k:'dim', name:'How many dimensions a set needs',
+    asks:'Given a signal set, say how many basis functions it needs and therefore how many matched filters the receiver has.',
+    method:['The dimension is the number of signals that are <em>not</em> combinations of the others. Look for that relationship before integrating anything.',
+            'Disjoint pulses are always independent, so a set of $M$ non-overlapping pulses needs $M$ dimensions.',
+            'Scaled copies of one shape need one dimension however many of them there are.'],
+    go:'m3-gs' },
+
+  { k:'const', name:'Reading a constellation',
+    asks:'A constellation is given. Read off energies, average energy, and the distance that matters.',
+    method:['The distance from the origin to a point is $\\sqrt{E_i}$, so the energy is the squared distance.',
+            'The average energy is $\\frac{1}{M}\\sum_i E_i$ when the symbols are equally likely.',
+            'The number that decides performance is the <b>smallest</b> distance between any two points, not the average one.'],
+    go:'m3-constellation' },
+
+  { k:'full', name:'A full-length question combining several of the shapes above',
+    asks:'One statement and three or four lettered parts, usually: find a basis, find the vectors, draw the constellation, and read something off it.',
+    method:['Sketch the waveforms before starting. Whether one is the sum of the others is usually visible, and it decides how many axes there will be.',
+            'Carry exact values — $\\sqrt{2}$ rather than $1.414$ — through to the end. Distances are compared, and a rounded coordinate makes two equal distances look different.',
+            'Check the energies both ways at the end: from the vectors and from the waveforms. They must agree, and it is the fastest check there is.'] }
+];
+
+CONTENT.DRILL = CONTENT.DRILL.concat([
+
+/* ---- single-skill ---------------------------------------------------- */
+
+{ id:'D3-01', module:'M3', type:'ortho', src:'CH9 s.5',
+  stem:'Two waveforms are defined on $[0,2]$: $\\;p_1(t)=1$ on $[0,1]$ and zero after; $\\;p_2(t)=1$ on $[1,2]$ and zero before.',
+  parts:['Are they orthogonal?',
+         'Are they orthonormal?'],
+  sol:'<b>Given.</b> Two unit-height pulses on adjacent intervals.<br>'
+     +'<b>Find.</b> Whether the set is orthogonal, and whether it is orthonormal.<br>'
+     +'<b>Method.</b> Orthogonal means the integral of the product is zero; orthonormal adds unit energy.<br>'
+     +'<b>Solution — (a).</b> Wherever $p_1$ is non-zero $p_2$ is zero and the other way round, so $p_1(t)p_2(t)=0$ for every $t$ and $\\int p_1p_2\\,dt=0$. <b>Yes.</b><br>'
+     +'<b>Solution — (b).</b> $\\int_0^{1}1^{2}dt=1$ and $\\int_1^{2}1^{2}dt=1$, so both have unit energy. <b>Yes.</b><br>'
+     +'<b>Check.</b> No integration was needed for part (a) at all — non-overlapping supports make the product identically zero. That is worth recognising, because most of the orthogonality in this course comes from exactly that.',
+  err:'Computing $\\int p_1p_2$ as $1\\times1\\times$ (some width) because both are "equal to one". They are equal to one on <em>different</em> intervals, and the product is zero on both.',
+  teach:'A good place to ask for a pair that is orthogonal but not orthonormal: the same two pulses at height $2$ are orthogonal with energy $4$ each.' },
+
+{ id:'D3-02', module:'M3', type:'ortho', src:'CH9 s.5',
+  stem:'On $[0,T]$, take $\\psi_1(t)=\\sqrt{2/T}\\cos(2\\pi t/T)$ and $\\psi_2(t)=\\sqrt{2/T}\\sin(2\\pi t/T)$.',
+  parts:['Show that each has unit energy.',
+         'Show that the two are orthogonal.'],
+  sol:'<b>Given.</b> A scaled cosine and sine over one full period.<br>'
+     +'<b>Find.</b> That the pair is orthonormal.<br>'
+     +'<b>Method.</b> Use $\\cos^{2}\\theta=\\tfrac12(1+\\cos2\\theta)$ and $\\sin\\theta\\cos\\theta=\\tfrac12\\sin2\\theta$; the oscillating parts integrate to zero over a whole number of periods.<br>'
+     +'<b>Solution — (a).</b> $\\displaystyle\\int_0^{T}\\frac{2}{T}\\cos^{2}\\frac{2\\pi t}{T}dt=\\frac{2}{T}\\int_0^{T}\\frac{1+\\cos(4\\pi t/T)}{2}dt=\\frac{2}{T}\\cdot\\frac{T}{2}=1$, and the same for $\\psi_2$.<br>'
+     +'<b>Solution — (b).</b> $\\displaystyle\\int_0^{T}\\frac{2}{T}\\cos\\frac{2\\pi t}{T}\\sin\\frac{2\\pi t}{T}dt=\\frac{1}{T}\\int_0^{T}\\sin\\frac{4\\pi t}{T}dt=0$, because the interval holds two whole periods of that sine.<br>'
+     +'<b>Check.</b> The factor $\\sqrt{2/T}$ is exactly what unit energy requires: a cosine of amplitude $A$ over $T$ carries $A^{2}T/2$, so $A=\\sqrt{2/T}$ gives $1$. This pair is the basis every carrier-modulated scheme in Module 5 is written against.',
+  err:'Concluding orthogonality from "sine and cosine are different functions". They are orthogonal <em>over a whole number of periods</em>; over $[0,T/4]$ they are not.',
+  teach:'Worth stating that this is the most important orthonormal pair in the course, and that the whole of QAM is two numbers against these two axes.' },
+
+{ id:'D3-03', module:'M3', type:'coords', src:'CH9 s.6–8',
+  stem:'With the basis $\\psi_1=1/\\sqrt{2}$ on $[0,2]$ and $\\psi_2=1$ on $[2,3]$, a signal is $s(t)=3$ on $[0,2]$ and $s(t)=-2$ on $[2,3]$.',
+  parts:['Give the coordinates of $s$.',
+         'Give its energy, twice: from the vector and from the waveform.'],
+  sol:'<b>Given.</b> A two-piece signal and a two-function basis on the same intervals.<br>'
+     +'<b>Find.</b> $\\mathbf{s}$ and $E_s$.<br>'
+     +'<b>Method.</b> One integral per axis; then the squared length, checked against the waveform.<br>'
+     +'<b>Solution — (a).</b> $s_1=\\displaystyle\\int_0^{2}3\\cdot\\frac{1}{\\sqrt{2}}dt=\\frac{6}{\\sqrt{2}}=3\\sqrt{2}$ and $s_2=\\displaystyle\\int_2^{3}(-2)(1)\\,dt=-2$. So $\\mathbf{s}=(3\\sqrt{2},\\,-2)$.<br>'
+     +'<b>Solution — (b).</b> From the vector: $\\|\\mathbf{s}\\|^{2}=18+4=22$. From the waveform: $3^{2}(2)+(-2)^{2}(1)=18+4=22$.<br>'
+     +'<b>Check.</b> They agree, which is the statement that energy is squared length. Note that the first coordinate is not $3$: the basis function has height $1/\\sqrt{2}$, not $1$, and the coordinate is the amount of $\\psi_1$ in $s$, not the height of $s$.',
+  err:'Reporting $\\mathbf{s}=(3,-2)$ by reading the heights off the waveform. That only works when the basis functions have height one, which $\\psi_1$ does not.',
+  teach:'The two routes to the energy in part (b) are the cheapest check in the module and worth insisting on every time.' },
+
+{ id:'D3-04', module:'M3', type:'coords', src:'CH9 s.11',
+  stem:'Two signals have coordinates $\\mathbf{s}_1=(3,\\,4)$ and $\\mathbf{s}_2=(-3,\\,4)$ against an orthonormal basis.',
+  parts:['Give the energy of each.',
+         'Give the distance between them and the energy of their difference.'],
+  sol:'<b>Given.</b> Two points in a two-dimensional signal space.<br>'
+     +'<b>Find.</b> Energies, distance, and the energy of the difference signal.<br>'
+     +'<b>Method.</b> Energy is squared length; distance is ordinary Euclidean distance; the energy of the difference is the squared distance.<br>'
+     +'<b>Solution — (a).</b> $E_1=3^{2}+4^{2}=25$ and $E_2=(-3)^{2}+4^{2}=25$. Equal energies.<br>'
+     +'<b>Solution — (b).</b> $d=\\sqrt{(3-(-3))^{2}+(4-4)^{2}}=6$, so the energy of $s_1-s_2$ is $d^{2}=36$.<br>'
+     +'<b>Check.</b> The two points differ only in the first coordinate, so the difference signal is $6\\psi_1$, whose energy is $36$ — the same number reached without any geometry. Note also that equal energy does not mean the points coincide, and unequal energy does not stop them being close.',
+  err:'Computing the energy of the difference as $E_1-E_2=0$. Energy is not linear; the difference of two equal-energy signals is generally not zero.',
+  teach:'Ask what changes if $\\mathbf{s}_2$ becomes $(-3,-4)$: the energies stay at $25$ and the distance grows to $10$, which is antipodal signalling and the best a pair of points of that energy can do.' },
+
+{ id:'D3-05', module:'M3', type:'dim', src:'CH9 s.17–18',
+  stem:'Four waveforms are defined on $[0,4]$: $\\;s_1=1$ on $[0,1]$; $\\;s_2=1$ on $[1,2]$; $\\;s_3=1$ on $[2,3]$; $\\;s_4=s_1+s_2+s_3$.',
+  parts:['How many dimensions does this set need?',
+         'How many matched filters does a receiver for it need?'],
+  sol:'<b>Given.</b> Three disjoint pulses and their sum.<br>'
+     +'<b>Find.</b> The dimension of the set.<br>'
+     +'<b>Method.</b> Count the signals that are not combinations of the others.<br>'
+     +'<b>Solution — (a).</b> The first three never overlap, so none is a combination of the others and each contributes an axis. The fourth is stated as their sum, so its remainder after subtracting the three is zero and it adds nothing. <b>Three dimensions.</b><br>'
+     +'<b>Solution — (b).</b> Three. The receiver computes three coordinates and works with the triple, whichever of the four signals was sent.<br>'
+     +'<b>Check.</b> $N\\le M$ always, and here $N=3<M=4$. Running Gram–Schmidt would give $\\psi_k=s_k$ for $k=1,2,3$, because each already has unit energy and they are already orthogonal, and then $g_4=0$.',
+  err:'Answering four because there are four signals. The number of dimensions is at most the number of signals and is smaller whenever one is a combination of the others.',
+  teach:'Ask what the four signal vectors are: $(1,0,0)$, $(0,1,0)$, $(0,0,1)$ and $(1,1,1)$. Written down, the fourth being the sum of the first three is obvious.' },
+
+{ id:'D3-06', module:'M3', type:'dim', src:'CH9 s.17–18',
+  stem:'Three waveforms on $[0,T]$ are $s_1(t)=A$, $\\;s_2(t)=-2A$ and $\\;s_3(t)=3A$, each constant over the whole interval.',
+  parts:['How many dimensions does this set need?',
+         'Give the basis and the three signal vectors.'],
+  sol:'<b>Given.</b> Three constants over the same interval.<br>'
+     +'<b>Find.</b> The dimension, a basis, and the vectors.<br>'
+     +'<b>Method.</b> All three are multiples of one shape, so one axis carries all of them.<br>'
+     +'<b>Solution — (a).</b> One.<br>'
+     +'<b>Solution — (b).</b> $E_1=A^{2}T$, so $\\psi_1(t)=1/\\sqrt{T}$ on $[0,T]$, and $$\\mathbf{s}_1=A\\sqrt{T},\\quad \\mathbf{s}_2=-2A\\sqrt{T},\\quad \\mathbf{s}_3=3A\\sqrt{T}.$$<br>'
+     +'<b>Check.</b> Energies from the vectors: $A^{2}T$, $4A^{2}T$, $9A^{2}T$. From the waveforms: height squared times $T$, giving the same three. The constellation is three points on a line — which is exactly what pulse amplitude modulation is, and Module 5 returns to it.',
+  err:'Producing three basis functions by normalising each signal separately. Those three are all the same function, so the set has one member, not three.',
+  teach:'Worth naming: a one-dimensional constellation of equally spaced points is $M$-ary PAM, and this question is its geometry with $M=3$.' },
+
+{ id:'D3-07', module:'M3', type:'const', src:'CH9 s.11',
+  stem:'A constellation has four points at $(\\pm a,\\,\\pm a)$ against an orthonormal basis.',
+  parts:['Give the energy of each signal and the average energy.',
+         'Give the smallest distance between any two points.',
+         'Express that distance in terms of the average energy.'],
+  sol:'<b>Given.</b> Four points on a square of half-side $a$.<br>'
+     +'<b>Find.</b> Energies, the smallest distance, and the relation between them.<br>'
+     +'<b>Method.</b> Squared length for the energy; compare all the pairwise distances and take the smallest.<br>'
+     +'<b>Solution — (a).</b> Every point has $E=a^{2}+a^{2}=2a^{2}$, so the average energy is also $E_{\\text{avg}}=2a^{2}$.<br>'
+     +'<b>Solution — (b).</b> Neighbouring points differ in one coordinate by $2a$, giving $d=2a$; the diagonal pairs are $2a\\sqrt{2}$ apart. The smallest is $d_{\\min}=2a$.<br>'
+     +'<b>Solution — (c).</b> $a=\\sqrt{E_{\\text{avg}}/2}$, so $d_{\\min}=2\\sqrt{E_{\\text{avg}}/2}=\\sqrt{2E_{\\text{avg}}}$.<br>'
+     +'<b>Check.</b> With $M=4$ and two bits a symbol, $E_{\\text{avg}}=2E_b$, so $d_{\\min}=\\sqrt{4E_b}=2\\sqrt{E_b}$ — the same separation antipodal binary signalling has at the same energy per bit. That is not a coincidence and Module 5 explains it: this constellation is two independent antipodal signals, one on each axis.',
+  err:'Taking the smallest distance to be the diagonal because it is drawn as one line. The smallest distance is the one that matters and it is always to a nearest neighbour.',
+  teach:'The observation in the check is the whole reason this constellation is used. It carries two bits per symbol at no cost in error rate over one bit.' },
+
+{ id:'D3-08', module:'M3', type:'const', src:'CH9 s.11',
+  stem:'A constellation has three points at $(0,\\,1)$, $(\\sqrt{3}/2,\\,-1/2)$ and $(-\\sqrt{3}/2,\\,-1/2)$.',
+  parts:['Give the energy of each point.',
+         'Give the distance between any two of them.'],
+  sol:'<b>Given.</b> Three points, evenly spaced on a circle.<br>'
+     +'<b>Find.</b> Energies and distances.<br>'
+     +'<b>Method.</b> Squared length; then one distance, since symmetry makes them all equal.<br>'
+     +'<b>Solution — (a).</b> $0^{2}+1^{2}=1$; $\\;3/4+1/4=1$; $\\;3/4+1/4=1$. All three have energy $1$.<br>'
+     +'<b>Solution — (b).</b> Between the second and the third: $\\sqrt{(\\sqrt{3})^{2}+0^{2}}=\\sqrt{3}=1.732$. By symmetry every pair is that far apart.<br>'
+     +'<b>Check.</b> Three points on a unit circle at $120^{\\circ}$ have chord length $2\\sin(60^{\\circ})=\\sqrt{3}$, which agrees. Compare with two points of the same energy placed antipodally: they are $2$ apart. Carrying a third symbol on the same energy has cost some separation, and that is the trade every $M$-ary scheme makes.',
+  err:'Computing the distance as the arc rather than the chord. Distance in signal space is the straight line between the points.',
+  teach:'This is three-phase PSK. Asking for the bits per symbol — $\\log_2 3=1.58$ — and comparing with the separation lost makes the trade concrete.' },
+
+{ id:'D3-09', module:'M3', type:'gs', src:'CH9 s.16',
+  stem:'A signal set begins with $s_1(t)=2$ on $[0,4]$ and zero elsewhere.',
+  parts:['Give the first basis function.',
+         'Give the first coordinate of $s_1$.'],
+  sol:'<b>Given.</b> The first signal of a set.<br>'
+     +'<b>Find.</b> $\\psi_1$ and $s_{11}$.<br>'
+     +'<b>Method.</b> The first axis is the first signal normalised to unit energy.<br>'
+     +'<b>Solution — (a).</b> $E_1=\\int_0^{4}2^{2}dt=16$, so $\\psi_1(t)=s_1(t)/4=0.5$ on $[0,4]$.<br>'
+     +'<b>Solution — (b).</b> $s_{11}=\\sqrt{E_1}=4$. Equivalently $\\int_0^{4}2(0.5)\\,dt=4$.<br>'
+     +'<b>Check.</b> $\\psi_1$ must have unit energy: $\\int_0^{4}0.5^{2}dt=0.25(4)=1$. And $s_{11}\\psi_1=4(0.5)=2$ on $[0,4]$, which is $s_1$ — so the coordinate does rebuild the signal.',
+  err:'Taking $\\psi_1=s_1/E_1=s_1/16$. The normalisation divides by $\\sqrt{E_1}$, not by $E_1$; dividing by the energy makes the basis function\'s energy $1/E_1$ rather than one.',
+  teach:'Both checks in the solution are one line each and catch the two mistakes students actually make. Worth requiring them.' },
+
+{ id:'D3-10', module:'M3', type:'gs', src:'CH9 s.17',
+  stem:'With $\\psi_1(t)=0.5$ on $[0,4]$ already found, the next signal is $s_2(t)=3$ on $[0,4]$ and zero elsewhere.',
+  parts:['Give the projection $s_{21}$.',
+         'Give the remainder $g_2$ and say whether a second axis is added.'],
+  sol:'<b>Given.</b> The first axis and a second signal proportional to the first.<br>'
+     +'<b>Find.</b> $s_{21}$, $g_2$, and whether the dimension grows.<br>'
+     +'<b>Method.</b> Project, subtract, and look at what is left.<br>'
+     +'<b>Solution — (a).</b> $s_{21}=\\int_0^{4}3(0.5)\\,dt=6$.<br>'
+     +'<b>Solution — (b).</b> $g_2(t)=s_2(t)-6\\psi_1(t)=3-6(0.5)=0$ on $[0,4]$, and zero elsewhere too. The remainder is identically zero, so <b>no second axis is added</b> and $\\mathbf{s}_2=(6)$.<br>'
+     +'<b>Check.</b> $E_2=\\int_0^{4}3^{2}dt=36$ and $\\|\\mathbf{s}_2\\|^{2}=6^{2}=36$. The signal was already a multiple of the first, which the picture shows before any integral: both are constants on the same interval.',
+  err:'Adding a second axis because there is a second signal. The procedure adds an axis only when the remainder is non-zero, and that is what keeps $N$ below $M$.',
+  teach:'Ask for the answer before the arithmetic. A student who sees that $s_2=1.5\\,s_1$ knows the answer immediately, and the integrals only confirm it.' },
+
+{ id:'D3-11', module:'M3', type:'ortho', src:'CH9 s.5',
+  stem:'On $[0,2]$, take $\\phi_1(t)=1$ throughout, and $\\phi_2(t)=1$ on $[0,1]$ with $\\phi_2(t)=-1$ on $[1,2]$.',
+  parts:['Are $\\phi_1$ and $\\phi_2$ orthogonal?',
+         'Are they orthonormal? If not, give the orthonormal pair.'],
+  sol:'<b>Given.</b> A constant and a square wave of one period on the same interval.<br>'
+     +'<b>Find.</b> Whether the pair is orthogonal and whether it is orthonormal.<br>'
+     +'<b>Method.</b> Integrate the product; then check each energy.<br>'
+     +'<b>Solution — (a).</b> $\\int_0^{2}\\phi_1\\phi_2\\,dt=\\int_0^{1}1\\,dt+\\int_1^{2}(-1)\\,dt=1-1=0$. <b>Orthogonal.</b> They overlap everywhere and are still orthogonal — the positive and negative parts cancel.<br>'
+     +'<b>Solution — (b).</b> $\\int_0^{2}\\phi_1^{2}dt=2$ and $\\int_0^{2}\\phi_2^{2}dt=2$, so neither has unit energy. Dividing each by $\\sqrt{2}$ gives the orthonormal pair $\\psi_1=1/\\sqrt{2}$ and $\\psi_2=\\pm1/\\sqrt{2}$.<br>'
+     +'<b>Check.</b> Scaling does not change orthogonality — the integral of the product is scaled but stays zero — so the normalised pair is still orthogonal, and now each has energy $\\tfrac12(2)=1$.',
+  err:'Assuming that overlapping signals cannot be orthogonal. Non-overlap is sufficient and not necessary; cancellation does the same job here.',
+  teach:'This pair is the two-point Hadamard basis, and it is the cleanest example of orthogonality without disjoint support.' },
+
+{ id:'D3-12', module:'M3', type:'coords', src:'CH9 s.6',
+  stem:'Two signals have coordinates $\\mathbf{x}=(1,\\,2,\\,-1)$ and $\\mathbf{y}=(3,\\,0,\\,1)$ against the same orthonormal basis.',
+  parts:['Give $\\int x(t)y(t)\\,dt$.',
+         'Are the two signals orthogonal?'],
+  sol:'<b>Given.</b> Two signals by their coordinates.<br>'
+     +'<b>Find.</b> Their inner product, and whether it vanishes.<br>'
+     +'<b>Method.</b> The inner product of the signals equals the inner product of the coordinate vectors — that is the property the whole module rests on.<br>'
+     +'<b>Solution — (a).</b> $\\int xy\\,dt=(1)(3)+(2)(0)+(-1)(1)=3+0-1=2$.<br>'
+     +'<b>Solution — (b).</b> It is $2$ and not $0$, so <b>no</b>.<br>'
+     +'<b>Check.</b> No waveform was needed and no integral was computed. That is the point of the translation: once the coordinates are known the waveforms can be put away.',
+  err:'Trying to reconstruct the waveforms and integrate. The whole content of the key property is that this is unnecessary.',
+  teach:'Ask what the third coordinate of $\\mathbf{y}$ would have to be for the two to be orthogonal. Solving $3+0-y_3\\cdot 1=0$ gives $y_3=3$, and the arithmetic is a line.' },
+
+/* ---- full-length ----------------------------------------------------- */
+
+{ id:'D3-13', module:'M3', type:'full', src:'CH9 s.19–21',
+  stem:'Three waveforms are defined on $[0,3]$: $\\;s_1(t)=2$ on $[0,1]$; $\\;s_2(t)=2$ on $[1,3]$; $\\;s_3(t)=2$ on $[0,3]$. Each is zero outside the interval named.',
+  parts:['Use Gram–Schmidt to find an orthonormal basis.',
+         'Give the three signal vectors.',
+         'Draw the constellation and give the energy of each signal.',
+         'Give the distance between the two closest signals.'],
+  sol:'<b>Given.</b> Two disjoint pulses and their sum, all of height $2$.<br>'
+     +'<b>Find.</b> A basis, the vectors, the constellation and the smallest distance.<br>'
+     +'<b>Method.</b> Normalise the first, project and subtract for the second, and check whether the third adds anything.<br>'
+     +'<b>Solution — (a).</b> $E_1=\\int_0^{1}4\\,dt=4$, so $\\psi_1(t)=s_1(t)/2=1$ on $[0,1]$. Next, $s_{21}=\\int s_2\\psi_1\\,dt=0$ because the two do not overlap, so $g_2=s_2$, $E_{g_2}=\\int_1^{3}4\\,dt=8$, and $\\psi_2(t)=s_2(t)/\\sqrt{8}=1/\\sqrt{2}$ on $[1,3]$.<br>'
+     +'<b>Solution — (b).</b> $s_{31}=\\int_0^{1}2(1)dt=2$ and $s_{32}=\\int_1^{3}2\\left(1/\\sqrt{2}\\right)dt=4/\\sqrt{2}=2\\sqrt{2}$, and $g_3=s_3-2\\psi_1-2\\sqrt{2}\\,\\psi_2=0$, so there is no third axis. $$\\mathbf{s}_1=(2,\\,0),\\qquad \\mathbf{s}_2=(0,\\,2\\sqrt{2}),\\qquad \\mathbf{s}_3=(2,\\,2\\sqrt{2}).$$<br>'
+     +'<b>Solution — (c).</b> The three points sit at the corners of a rectangle missing one corner. Energies: $4$, $8$ and $12$.<br>'
+     +'<b>Solution — (d).</b> $\\|\\mathbf{s}_1-\\mathbf{s}_3\\|=2\\sqrt{2}=2.83$, $\\;\\|\\mathbf{s}_2-\\mathbf{s}_3\\|=2$, and $\\|\\mathbf{s}_1-\\mathbf{s}_2\\|=\\sqrt{4+8}=3.46$. The smallest is $2$.<br>'
+     +'<b>Check.</b> Energies from the waveforms: $2^{2}(1)=4$, $2^{2}(2)=8$, $2^{2}(3)=12$. They match the squared lengths. And $s_3=s_1+s_2$ is visible in the pictures, which is why two axes carry three signals.',
+  err:'Taking $\\psi_2=s_2$ without normalising, because $\\psi_1$ came out equal to $s_1/2$ and the pattern looks like "divide by the height". $s_2$ has energy $8$, not $1$.',
+  teach:'Part (d) is the one worth marking. Students compute one distance and stop; the question asks for the smallest, which requires all three.' },
+
+{ id:'D3-14', module:'M3', type:'full', src:'CH9 s.19–21',
+  stem:'Three waveforms on $[0,2]$: $\\;s_1(t)=1$ throughout; $\\;s_2(t)=1$ on $[0,1]$ and $-1$ on $[1,2]$; $\\;s_3(t)=2$ on $[0,1]$ and $0$ after.',
+  parts:['Find an orthonormal basis by Gram–Schmidt.',
+         'Give the three signal vectors.',
+         'Give the energy of each signal from its vector, and check one of them against the waveform.',
+         'Say how many matched filters a receiver for this set needs.'],
+  sol:'<b>Given.</b> A constant, a square wave and a single pulse, all on $[0,2]$.<br>'
+     +'<b>Find.</b> A basis, the vectors, the energies and the number of filters.<br>'
+     +'<b>Method.</b> The three steps in order, checking each remainder.<br>'
+     +'<b>Solution — (a).</b> $E_1=\\int_0^{2}1\\,dt=2$, so $\\psi_1=1/\\sqrt{2}$ on $[0,2]$. Then $s_{21}=\\int_0^{2}s_2\\psi_1\\,dt=\\tfrac{1}{\\sqrt{2}}(1-1)=0$, so $g_2=s_2$, $E_{g_2}=2$, and $\\psi_2=s_2/\\sqrt{2}$: that is $1/\\sqrt{2}$ on $[0,1]$ and $-1/\\sqrt{2}$ on $[1,2]$.<br>'
+     +'<b>Solution — (b).</b> $s_{31}=\\int_0^{1}2\\left(\\tfrac{1}{\\sqrt{2}}\\right)dt=\\sqrt{2}$ and $s_{32}=\\int_0^{1}2\\left(\\tfrac{1}{\\sqrt{2}}\\right)dt=\\sqrt{2}$, and $$g_3=s_3-\\sqrt{2}\\psi_1-\\sqrt{2}\\psi_2=0,$$ so no third axis. $$\\mathbf{s}_1=(\\sqrt{2},\\,0),\\quad \\mathbf{s}_2=(0,\\,\\sqrt{2}),\\quad \\mathbf{s}_3=(\\sqrt{2},\\,\\sqrt{2}).$$<br>'
+     +'<b>Solution — (c).</b> $E_1=2$, $E_2=2$, $E_3=4$. Checking the third against the waveform: $2^{2}(1)+0^{2}(1)=4$. ✓<br>'
+     +'<b>Solution — (d).</b> Two.<br>'
+     +'<b>Check.</b> $s_3=s_1+s_2$: on $[0,1]$ that is $1+1=2$ and on $[1,2]$ it is $1-1=0$, which is $s_3$. The two axes are the constant and the square wave, and every signal in the set is a combination of them.',
+  err:'Missing that $s_1$ and $s_2$ are already orthogonal and going through a subtraction that is identically zero. Not an error in the answer, but it hides the structure, and the structure is what part (d) asks about.',
+  teach:'This set is the two-point Hadamard basis with one combination added. Asking what the fourth Hadamard signal would be — $s_1-s_2$, the pulse on $[1,2]$ — extends it naturally.' },
+
+{ id:'D3-15', module:'M3', type:'full', src:'CH9 s.11',
+  stem:'A four-point constellation has $\\mathbf{s}_1=(a,\\,0)$, $\\mathbf{s}_2=(0,\\,a)$, $\\mathbf{s}_3=(-a,\\,0)$ and $\\mathbf{s}_4=(0,\\,-a)$, with the four symbols equally likely.',
+  parts:['Give the energy of each signal and the average energy per symbol.',
+         'Give the average energy per bit.',
+         'Give the smallest distance between two points.',
+         'Compare that distance with the one a square constellation of the same average energy gives.'],
+  sol:'<b>Given.</b> Four points on the axes at distance $a$ from the origin.<br>'
+     +'<b>Find.</b> Energies, the smallest distance, and a comparison.<br>'
+     +'<b>Method.</b> Squared lengths; then all six pairwise distances, of which only two values occur.<br>'
+     +'<b>Solution — (a).</b> Every point has $E=a^{2}$, so $E_{\\text{avg}}=a^{2}$.<br>'
+     +'<b>Solution — (b).</b> Four symbols carry $\\log_2 4=2$ bits, so $E_b=E_{\\text{avg}}/2=a^{2}/2$.<br>'
+     +'<b>Solution — (c).</b> Neighbouring points, such as $(a,0)$ and $(0,a)$, are $\\sqrt{2a^{2}}=a\\sqrt{2}$ apart; opposite points are $2a$ apart. The smallest is $a\\sqrt{2}=1.414a$.<br>'
+     +'<b>Solution — (d).</b> A square constellation at $(\\pm b,\\pm b)$ has $E_{\\text{avg}}=2b^{2}$; matching $2b^{2}=a^{2}$ gives $b=a/\\sqrt{2}$, and its smallest distance is $2b=a\\sqrt{2}$ — <b>the same</b>.<br>'
+     +'<b>Check.</b> The two constellations are the same four points rotated by $45^{\\circ}$. A rotation changes no length and no distance, so the energies and the separations had to agree, and part (d) is a check on the arithmetic rather than a discovery.',
+  err:'Taking the smallest distance to be $2a$, the distance between the opposite pair, because those two are the most conspicuous. The nearest neighbours are the ones that matter.',
+  teach:'The rotation observation in the check is worth drawing on the board. It is also the first instance of a rule Module 4 states in general: performance depends on distances, and distances are unchanged by rotating the whole constellation.' },
+
+{ id:'D3-16', module:'M3', type:'full', src:'CH9 s.19–21',
+  stem:'Two waveforms on $[0,T]$ are $s_1(t)=A\\cos(2\\pi t/T)$ and $s_2(t)=A\\sin(2\\pi t/T)$.',
+  parts:['Show that the two are orthogonal.',
+         'Give an orthonormal basis for the set.',
+         'Give the two signal vectors and their energies.',
+         'Give the distance between them, and compare it with the distance an antipodal pair of the same energy would have.'],
+  sol:'<b>Given.</b> A cosine and a sine over one full period, both of amplitude $A$.<br>'
+     +'<b>Find.</b> Orthogonality, a basis, the vectors, and a comparison.<br>'
+     +'<b>Method.</b> Integrate the product over the whole period; normalise each; then compute the distance.<br>'
+     +'<b>Solution — (a).</b> $\\int_0^{T}A^{2}\\cos\\frac{2\\pi t}{T}\\sin\\frac{2\\pi t}{T}dt=\\frac{A^{2}}{2}\\int_0^{T}\\sin\\frac{4\\pi t}{T}dt=0$, over two whole periods of that sine. <b>Orthogonal.</b><br>'
+     +'<b>Solution — (b).</b> Each has energy $A^{2}T/2$, so $$\\psi_1(t)=\\sqrt{\\tfrac{2}{T}}\\cos\\tfrac{2\\pi t}{T},\\qquad \\psi_2(t)=\\sqrt{\\tfrac{2}{T}}\\sin\\tfrac{2\\pi t}{T}.$$<br>'
+     +'<b>Solution — (c).</b> $\\mathbf{s}_1=(A\\sqrt{T/2},\\,0)$ and $\\mathbf{s}_2=(0,\\,A\\sqrt{T/2})$. Writing $E=A^{2}T/2$, that is $(\\sqrt{E},0)$ and $(0,\\sqrt{E})$, both of energy $E$.<br>'
+     +'<b>Solution — (d).</b> $d=\\sqrt{E+E}=\\sqrt{2E}$. An antipodal pair of the same energy sits at $\\pm\\sqrt{E}$ and is $2\\sqrt{E}$ apart, larger by $\\sqrt{2}$.<br>'
+     +'<b>Check.</b> The ratio $\\sqrt{2}$ in distance is the $3$ dB that Module 2 found between antipodal and orthogonal signalling, met here as a picture rather than as an integral. Orthogonal signals are at right angles; antipodal ones point opposite ways, and opposite is further than perpendicular.',
+  err:'Concluding that the two are antipodal because one is the other shifted. A quarter-period shift turns a cosine into a sine and gives a right angle in signal space, not a reversal.',
+  teach:'This question ties Modules 2 and 3 together in one line, and the picture makes the $3$ dB obvious in a way the integrals never do.' },
+
+{ id:'D3-17', module:'M3', type:'full', src:'CH9 s.6–12',
+  stem:'Against an orthonormal basis $\\{\\psi_1,\\psi_2\\}$, a signal set is $\\mathbf{s}_1=(2,\\,1)$, $\\mathbf{s}_2=(-1,\\,2)$ and $\\mathbf{s}_3=(1,\\,-2)$, with the three symbols equally likely.',
+  parts:['Give the energy of each signal and the average.',
+         'Give all three pairwise distances.',
+         'Which pair is a receiver most likely to confuse, and why?',
+         'Give the waveform $s_2(t)$ explicitly if $\\psi_1(t)=1/\\sqrt{2}$ on $[0,2]$ and $\\psi_2(t)=1$ on $[2,3]$.'],
+  sol:'<b>Given.</b> Three points and, in part (d), a basis to turn one of them back into a waveform.<br>'
+     +'<b>Find.</b> Energies, distances, the vulnerable pair, and one waveform.<br>'
+     +'<b>Method.</b> Squared lengths; ordinary distances; then the synthesis formula.<br>'
+     +'<b>Solution — (a).</b> $E_1=4+1=5$, $E_2=1+4=5$, $E_3=1+4=5$. All equal, so $E_{\\text{avg}}=5$.<br>'
+     +'<b>Solution — (b).</b> $$d_{12}=\\sqrt{9+1}=\\sqrt{10}=3.16,\\quad d_{13}=\\sqrt{1+9}=\\sqrt{10}=3.16,\\quad d_{23}=\\sqrt{4+16}=\\sqrt{20}=4.47.$$<br>'
+     +'<b>Solution — (c).</b> The pairs $(\\mathbf{s}_1,\\mathbf{s}_2)$ and $(\\mathbf{s}_1,\\mathbf{s}_3)$, equally: they are the closest, at $3.16$. Noise has to push the observation further to cross the boundary between $\\mathbf{s}_2$ and $\\mathbf{s}_3$, so that confusion is rarer.<br>'
+     +'<b>Solution — (d).</b> $s_2(t)=-1\\cdot\\psi_1(t)+2\\cdot\\psi_2(t)$, which is $-1/\\sqrt{2}=-0.707$ on $[0,2]$ and $+2$ on $[2,3]$.<br>'
+     +'<b>Check.</b> The energy of that waveform is $0.5(2)+4(1)=5$, matching $E_2$ from the vector. Note that all three signals have the same energy and are still not equally distinguishable — energy and separation are different quantities, and it is separation the receiver cares about.',
+  err:'Answering (c) with "the pair with the largest distance", reading the question as asking which pair is most easily told apart. The closest pair is the vulnerable one.',
+  teach:'Part (d) is the module run backwards, and it is worth asking for: students are quick at analysis and slow at synthesis, and the two are the same formula.' },
+
+{ id:'D3-18', module:'M3', type:'full', src:'CH9 s.17–18',
+  stem:'A signal set consists of $M$ waveforms $s_i(t)=A_i\\,p(t)$, all multiples of the same finite-energy pulse $p(t)$ of energy $E_p$.',
+  parts:['How many dimensions does the set need, whatever $M$ is?',
+         'Give the basis function and the general signal vector.',
+         'Give the energy of $s_i$.',
+         'Give the distance between $s_i$ and $s_k$.'],
+  sol:'<b>Given.</b> $M$ scaled copies of one pulse.<br>'
+     +'<b>Find.</b> The dimension, the basis, the vectors, energies and distances, in general.<br>'
+     +'<b>Method.</b> Normalise the pulse once; every signal is then a number times that one axis.<br>'
+     +'<b>Solution — (a).</b> One, however large $M$ is. Every signal is a multiple of the first, so every remainder after the first step is zero.<br>'
+     +'<b>Solution — (b).</b> $\\psi_1(t)=p(t)/\\sqrt{E_p}$, and $s_i=A_i\\sqrt{E_p}$ — a single number.<br>'
+     +'<b>Solution — (c).</b> $E_i=s_i^{2}=A_i^{2}E_p$, which is also $\\int A_i^{2}p^{2}dt$ read directly.<br>'
+     +'<b>Solution — (d).</b> $d_{ik}=|s_i-s_k|=|A_i-A_k|\\sqrt{E_p}$.<br>'
+     +'<b>Check.</b> The whole constellation is $M$ points on a line, and the receiver needs one matched filter regardless of $M$. This is $M$-ary pulse amplitude modulation, and part (d) says its performance is set by the closest amplitude spacing — which is why the amplitudes are chosen equally spaced.',
+  err:'Answering (a) with $M$. The number of dimensions counts independent shapes, not signals, and here there is one shape.',
+  teach:'A good question to set immediately before Module 5, which opens with exactly this constellation and then asks what happens on two axes instead of one.' },
+
+{ id:'D3-19', module:'M3', type:'full', src:'CH9 s.22',
+  stem:'Four waveforms on $[0,4]$ are built from the unit pulses $p_k(t)=1$ on $[k-1,k]$, $k=1,2,3,4$: $$s_1=p_1+p_2,\\quad s_2=p_3+p_4,\\quad s_3=p_1+p_3,\\quad s_4=p_2+p_4.$$',
+  parts:['Are the four pulses $p_k$ an orthonormal set? Give a reason.',
+         'Give the four signal vectors against that basis.',
+         'Give the energy of each signal and all the distinct pairwise distances.',
+         'How many dimensions does the set $\\{s_1,\\ldots,s_4\\}$ actually need?'],
+  sol:'<b>Given.</b> Four signals, each the sum of two of four disjoint unit pulses.<br>'
+     +'<b>Find.</b> The basis, the vectors, energies, distances and the true dimension.<br>'
+     +'<b>Method.</b> The $p_k$ are a ready-made basis; then read the vectors off the definitions.<br>'
+     +'<b>Solution — (a).</b> Yes. Any two of them have disjoint supports, so every cross integral is zero, and each has energy $\\int 1^{2}dt=1$ over its own unit interval.<br>'
+     +'<b>Solution — (b).</b> $$\\mathbf{s}_1=(1,1,0,0),\\;\\mathbf{s}_2=(0,0,1,1),\\;\\mathbf{s}_3=(1,0,1,0),\\;\\mathbf{s}_4=(0,1,0,1).$$<br>'
+     +'<b>Solution — (c).</b> Every energy is $1+1=2$. The distances come in two values. The two <em>complementary</em> pairs share no pulse at all: $\\mathbf{s}_1-\\mathbf{s}_2=(1,1,-1,-1)$ has length $2$, and so does $\\mathbf{s}_3-\\mathbf{s}_4$. The four <em>mixed</em> pairs share one pulse: $\\mathbf{s}_1-\\mathbf{s}_3=(0,1,-1,0)$ has length $\\sqrt{2}=1.414$, and so do the other three. The smallest distance is therefore $\\sqrt{2}$.<br>'
+     +'<b>Solution — (d).</b> Three. The four vectors satisfy $\\mathbf{s}_1+\\mathbf{s}_2=\\mathbf{s}_3+\\mathbf{s}_4=(1,1,1,1)$, so the fourth is determined by the other three and adds no axis.<br>'
+     +'<b>Check.</b> The two values have a reason: two signals that share a pulse differ in only two of the four coordinates, and two that share none differ in all four. Counting the shared pulses predicts the distance without any arithmetic. The pairs at $\\sqrt{2}$ are the vulnerable ones, so the receiver confuses $\\mathbf{s}_1$ with $\\mathbf{s}_3$ far more often than with $\\mathbf{s}_2$ — and a set whose distances are all equal would be better, which is what the next module\'s union bound makes precise.',
+  err:'Reporting one distance and assuming the rest match it. Four points give six pairs, and here they take two different values; the one that matters is the smallest.',
+  teach:'The relation $\\mathbf{s}_1+\\mathbf{s}_2=\\mathbf{s}_3+\\mathbf{s}_4$ is easy to miss and easy to check. Asking students to test it before answering (d) is the whole lesson of that part.' },
+
+{ id:'D3-20', module:'M3', type:'full', src:'CH9 s.15',
+  stem:'Two engineers design different waveform sets. The first uses rectangular pulses on $[0,T]$; the second uses half-sine pulses on the same interval. Both sets turn out to have the constellation $\\{(\\sqrt{E},0),\\,(0,\\sqrt{E}),\\,(-\\sqrt{E},0),\\,(0,-\\sqrt{E})\\}$.',
+  parts:['What is the same about the two systems?',
+         'What is not?',
+         'Give the average energy per symbol and the smallest distance.',
+         'Which of the two would you choose, and on what grounds?'],
+  sol:'<b>Given.</b> Two waveform sets with the same constellation.<br>'
+     +'<b>Find.</b> What the geometry fixes and what it leaves open.<br>'
+     +'<b>Method.</b> Everything that depends only on the points is the same; everything else is not.<br>'
+     +'<b>Solution — (a).</b> The number of matched filters, the structure of the receiver, the energies, the distances, and therefore the error probability in white Gaussian noise. Every one of those is read off the constellation.<br>'
+     +'<b>Solution — (b).</b> The waveforms themselves, and everything that depends on their shape rather than their geometry: the bandwidth they occupy, how fast their spectra decay, how sensitive they are to a timing error, and how hard the filters are to build.<br>'
+     +'<b>Solution — (c).</b> Every point has energy $E$, so $E_{\\text{avg}}=E$; the nearest pairs are $\\sqrt{2E}$ apart.<br>'
+     +'<b>Solution — (d).</b> Not on error performance, since that is identical. The half-sine has a smoother spectrum and lower sidelobes, so it fits a bandlimited channel better and interferes less with its neighbours; the rectangular pulse is easier to generate and to time. The choice is made on the criteria of Module 2, not on those of this module.<br>'
+     +'<b>Check.</b> If the answer to (d) had depended on the error probability, one of the earlier parts would be wrong: the constellations are identical and so are all the distances, so there is nothing left for the noise to distinguish.',
+  err:'Answering (d) with "the one with lower error probability" and choosing arbitrarily. The two have the same error probability, and saying so is the answer.',
+  teach:'This question exists to be answered in words. It is the clearest test of whether the reader has understood what the geometric representation captures and what it deliberately throws away.' }
+
+]);
+
+window.DRILLMAP_M3 = [
+
+{ id:'m3-drill-map', module:'M3', nav:'Module 3 · question types',
+  title:'Module 3 — what a question looks like',
+  objective:'Name the recurring question shapes, and say where they come from.',
+  keywords:'question types module 3 orthonormal basis gram schmidt constellation dimension taxonomy practice',
+  steps:0, blocks:[
+  {t:'eyebrow', text:'Module 3 · Question types'},
+  {t:'title', text:'Six shapes, and the method each one wants'},
+  {t:'lede', text:'Questions on the geometric representation come in six shapes. They are shorter than the questions of the modules on either side, because this material usually appears as the first step of a longer question rather than on its own.'},
+  {t:'drilltypes', module:'M3', style:'grid-template-columns:repeat(3,minmax(0,1fr));gap:26px 44px'}
+]}
+
+];
+
+window.DRILL_M3 = [
+
+{ id:'m3-drill', module:'M3', nav:'Module 3 · practice questions',
+  title:'Module 3 — practice questions',
+  objective:'Twenty open-ended questions with worked solutions.',
+  keywords:'practice questions module 3 orthonormal gram schmidt basis constellation energy distance dimension',
+  steps:0, blocks:[
+  {t:'eyebrow', text:'Module 3 · Practice D3-01 … D3-20'},
+  {t:'title', text:'Practice questions'},
+  {t:'small', html:'Work each question on paper before opening its solution. Every solution ends with a <b>Check</b> step. In this module the cheap checks are: a basis function must have unit energy, the energy from the vector must equal the energy from the waveform, the number of axes must be at most the number of signals, and the distance that matters is the smallest one.'},
+  {t:'rule', short:true},
+  {t:'drill', module:'M3'}
+]}
+
+];
+})();
+
+</script>
+<script>
 /* ---------- assemble the scene list from the content modules ---------- */
 (function(){
   /* Each module opens with the taxonomy of the question types that recur, and
@@ -5290,6 +6264,7 @@ window.DRILL_M2 = [
     window.SCENES_M0||[],
     window.DRILLMAP_M1||[], window.SCENES_M1||[], window.DRILL_M1||[],
     window.DRILLMAP_M2||[], window.SCENES_M2||[], window.DRILL_M2||[],
+    window.DRILLMAP_M3||[], window.SCENES_M3||[], window.DRILL_M3||[],
     window.SCENES_END||[]
   );
 

@@ -187,6 +187,43 @@ def _raised_cosine(t, alpha, w=0.5):
     return float(np.sinc(2 * w * t) * math.cos(2 * math.pi * alpha * w * t) / den)
 
 
+
+# ── Module 3 ────────────────────────────────────────────────────────────────
+
+
+def _gs_example():
+    """Gram-Schmidt on the three pulses of scene 3.3.2, run numerically.
+
+    The scene reaches the coordinates by integrating by hand. This samples the
+    waveforms, runs the procedure on the samples and reads the coordinates off
+    the result, so the two agree only if the procedure and the arithmetic both
+    hold.
+    """
+    n, tmax = 30000, 3.0
+    dt = tmax / n
+    t = (np.arange(n) + 0.5) * dt
+    sigs = [np.where((t >= 0) & (t < 2), 1.0, 0.0),
+            np.where((t >= 2) & (t < 3), 1.0, 0.0),
+            np.where((t >= 0) & (t < 3), 1.0, 0.0)]
+    dot = lambda a, b: float(np.sum(a * b) * dt)
+    basis, coords = [], []
+    scale = max(dot(s, s) for s in sigs)
+    for s in sigs:
+        c = [dot(s, b) for b in basis]
+        g = s - sum(ci * basis[k] for k, ci in enumerate(c)) if basis else s.copy()
+        eg = dot(g, g)
+        if eg > 1e-9 * scale:
+            basis.append(g / math.sqrt(eg))
+            c.append(math.sqrt(eg))
+        coords.append(c)
+    dim = len(basis)
+    for c in coords:
+        while len(c) < dim:
+            c.append(0.0)
+    return {"coords": coords, "dim": dim,
+            "energies": [sum(v * v for v in c) for c in coords]}
+
+
 # Each entry:
 #   name    -- the scene and the quantity, as a reader would name them
 #   stated  -- the number the scene prints
@@ -302,6 +339,28 @@ CHECKS: list[dict] = [
      "derive": lambda: 20e3 / 2},
     {"name": "2.5.2 transmission bandwidth at alpha = 0.5", "stated": 15e3,
      "derive": lambda: (1 + 0.5) * 10e3},
+
+    # ---- 3.3.2, the Gram-Schmidt example ---------------------------------
+    # The procedure is run numerically on the sampled waveforms rather than
+    # symbolically, which is a different route from the scene's integrals.
+    {"name": "3.3.2 first coordinate of s1", "stated": 1.41421,
+     "derive": lambda: _gs_example()["coords"][0][0], "tol": 1e-5},
+    {"name": "3.3.2 second coordinate of s2", "stated": 1.0,
+     "derive": lambda: _gs_example()["coords"][1][1], "tol": 1e-6},
+    {"name": "3.3.2 first coordinate of s3", "stated": 1.41421,
+     "derive": lambda: _gs_example()["coords"][2][0], "tol": 1e-5},
+    {"name": "3.3.2 second coordinate of s3", "stated": 1.0,
+     "derive": lambda: _gs_example()["coords"][2][1], "tol": 1e-6},
+    {"name": "3.3.2 the set needs two dimensions", "stated": 2,
+     "derive": lambda: _gs_example()["dim"]},
+    {"name": "3.3.2 energy of s1", "stated": 2.0,
+     "derive": lambda: _gs_example()["energies"][0], "tol": 1e-6},
+    {"name": "3.3.2 energy of s2", "stated": 1.0,
+     "derive": lambda: _gs_example()["energies"][1], "tol": 1e-6},
+    {"name": "3.3.2 energy of s3", "stated": 3.0,
+     "derive": lambda: _gs_example()["energies"][2], "tol": 1e-6},
+    {"name": "3.2 four points on a square: smallest distance at energy 2",
+     "stated": 2.0, "derive": lambda: 2 * 1.0},
 ]
 
 DEFAULT_TOL = 5e-3
