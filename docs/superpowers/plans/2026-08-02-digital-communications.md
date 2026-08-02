@@ -457,17 +457,17 @@ git commit -m "Check closed-form error probabilities against an independent simu
 and on a chip that has lost its book icon. Changing one and not the other leaves the rule enforced
 on one side only.
 
-- [ ] **Step 1: Read the existing marker check in both files**
+- [x] **Step 1: Read the existing marker check in both files**
 
 The source repository's `rule_check.py` fails on a `§` and on a `CH` without `OW` in front of it.
 `seccheck.js` holds the same rule for the rendered artifact. Find both.
 
-- [ ] **Step 2: Change the marker from `OW` to `PS` in both**
+- [x] **Step 2: Change the marker from `OW` to `PS` in both**
 
 Keep the single exemption: the sentence in M0 that introduces the convention has to show the form
 it describes.
 
-- [ ] **Step 3: Run both**
+- [x] **Step 3: Run both**
 
 ```bash
 cd build && node pw.js seccheck.js
@@ -475,7 +475,7 @@ cd build && node pw.js seccheck.js
 
 Expected: `PROBLEMS: none`, with the addressed and anchored counts printed.
 
-- [ ] **Step 4: Run `rule_check.py`**
+- [x] **Step 4: Run `rule_check.py`**
 
 ```bash
 .venv/bin/python tools/rule_check.py "build/src/8[1-9]_scenes*.js" "build/src/9[2-8]_drill_m*.js" \
@@ -485,7 +485,7 @@ Expected: `PROBLEMS: none`, with the addressed and anchored counts printed.
 Expected: `TOTAL VIOLATIONS: 0` (there is almost no content yet, which is the point — the gate runs
 clean before content exists).
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add tools/rule_check.py && git commit -m "Mark textbook anchors PS, since this course reads Proakis and Salehi"

@@ -5,7 +5,7 @@ const fs = require('fs'), path = require('path');
 
 (async () => {
   const only = process.argv[2] ? process.argv[2].split(',') : null;
-  const file = 'file://' + path.resolve(__dirname, '..', 'dist', 'Signals_and_Systems.html');
+  const file = 'file://' + path.resolve(__dirname, '..', 'dist', 'Digital_Communications.html');
   const outDir = path.resolve(__dirname, '..', 'shots');
   fs.mkdirSync(outDir, { recursive: true });
   const browser = await chromium.launch();

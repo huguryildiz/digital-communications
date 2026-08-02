@@ -9,14 +9,15 @@
 
    It also holds the rule that keeps the two numbering systems apart: an
    anchor into the textbook is never rendered as a bare section mark. This
-   course's chapter 5 is the continuous-time transform and the textbook's
-   chapter 5 is the discrete-time one, so a bare number beside a scene title
-   reads as this course's own address and is a factual error on the page. */
+   course reaches information theory in its chapter 10 and the textbook's
+   chapter 10 is about transmission through bandlimited channels, so a bare
+   number beside a scene title reads as this course's own address and is a
+   factual error on the page rather than a style slip. */
 const { chromium } = require('/home/claude/.npm-global/lib/node_modules/playwright');
 const path = require('path');
 
 (async () => {
-  const file = 'file://' + path.resolve(__dirname, '..', 'dist', 'Signals_and_Systems.html');
+  const file = 'file://' + path.resolve(__dirname, '..', 'dist', 'Digital_Communications.html');
   const b = await chromium.launch();
   const page = await b.newPage({ viewport:{width:1920,height:1080} });
   await page.goto(file,{waitUntil:'load'}); await page.waitForTimeout(400);
@@ -95,20 +96,27 @@ const path = require('path');
     if(!/^\d+(\.\d+){0,2}(, \d+(\.\d+){0,2})*$/.test(s.book))
       say(`scene "${s.id}" has a malformed anchor: ${s.book}`);
   }
-  /* On screen the anchor is the open-book icon followed by `CH1.1.2`, inside
-     the chip. Outside that chip a `CH` reference, or a section mark of any
-     kind, reads as this course's own numbering — the two systems do not agree,
-     so either one is a factual error on the page rather than a style slip. */
-  const anchors = await page.evaluate(()=>{
+  /* On screen the anchor is the open-book icon followed by `CH8.4`, inside the
+     chip. Outside that chip a `CH` reference, or a section mark of any kind,
+     reads as this course's own numbering — the two systems do not agree, so
+     either one is a factual error on the page rather than a style slip.
+
+     The single exemption is running text that spells the marker out. The scene
+     that introduces the convention has to show the reader the form it is
+     describing, and that form is the marker followed by the address. The
+     marker is read from `CONTENT.BOOKMARK` rather than written here, so the
+     page and the gate cannot name it differently. */
+  const anchors = await page.evaluate(mark=>{
     const bad = [];
+    const spelt = new RegExp('\\b' + mark + '\\s+CH\\s?\\d');
     document.querySelectorAll('#sidenav, #mapgrid, #scene-host').forEach(host=>{
       host.querySelectorAll('*').forEach(e=>{
         if(e.children.length) return;
         const t = (e.textContent||'').trim();
         if(/§/.test(t))
           bad.push(`section mark on the page: "${t.slice(0,60)}"`);
-        if(/\bCH\s?\d/.test(t) && !e.closest('.ebbook'))
-          bad.push(`textbook reference outside the chip: "${t.slice(0,60)}"`);
+        if(/\bCH\s?\d/.test(t) && !e.closest('.ebbook') && !spelt.test(t))
+          bad.push(`textbook reference without its "${mark}" marker: "${t.slice(0,60)}"`);
       });
       host.querySelectorAll('.ebbook').forEach(c=>{
         const t = (c.textContent||'').trim();
@@ -119,7 +127,7 @@ const path = require('path');
       });
     });
     return [...new Set(bad)];
-  });
+  }, data.mark);
   anchors.forEach(say);
 
   console.log('SCENES: '+data.scenes.length);
