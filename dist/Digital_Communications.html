@@ -2739,6 +2739,7 @@ const SC = [
     {t:'wex', rows:[
       ['Check','The two answers differ by $6.02$ dB, which is one bit. Independently: $E[Q^{2}]=\\Delta^{2}/12 = 1.25^{2}/12 = 0.1302$, and $10\\log_{10}(12.5/0.1302) = 19.82$ dB. Two routes, one number.']
     ]},
+    {t:'note', kind:'warn', head:'What the formula does not know', html:'Quantize this waveform and measure the error it actually makes, and the answers are $19.09$ dB and $25.31$ dB — about $0.7$ dB and $0.5$ dB below what the formula gives. The uniform error model assumes the error is equally likely anywhere in $(-\\Delta/2,\\Delta/2)$, and a sinusoid spends most of its time near its peaks, where the error is largest. The gap halves with every extra bit — $0.27$ dB at $R=6$, $0.14$ dB at $R=8$ — because that is what "$\\Delta$ small enough" means. At the resolutions used in practice the formula is exact for every purpose; at eight levels it is optimistic, and knowing by how much is the difference between using a model and believing it.'},
     {t:'note', kind:'warn', head:'The factor of two in the step size', html:'The range spanned is $2m_{\\max}=10$ V, not $m_{\\max}$. Writing $\\Delta = m_{\\max}/L$ halves every step size and is the commonest slip in this calculation. It leaves the SQNR in decibels untouched when that is computed from $\\alpha+6.02R$, so the error survives until someone asks for $\\Delta$ itself.'}
   ]}
 ]},

@@ -655,12 +655,12 @@ git add -A && git commit -m "Teach sampling, quantization and PCM"
 **Files:**
 - Modify: `verify/verify_scenes.py`
 
-- [ ] **Step 1: Write one check per number stated in an M1 scene**
+- [x] **Step 1: Write one check per number stated in an M1 scene**
 
 Each re-derives the result independently — symbolically with SymPy where it can, numerically where
 it cannot. A check that restates the scene's own arithmetic checks nothing.
 
-- [ ] **Step 2: Run it**
+- [x] **Step 2: Run it**
 
 ```bash
 cd verify && ../.venv/bin/python verify_scenes.py
@@ -668,7 +668,7 @@ cd verify && ../.venv/bin/python verify_scenes.py
 
 Expected: `N passed, 0 failed`, with N equal to the number of claims in M1.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add verify/verify_scenes.py && git commit -m "Re-derive every number the sampling scenes state"
