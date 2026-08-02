@@ -301,7 +301,7 @@ git commit -m "Decide simulated error rates with a Wilson interval, not a normal
 whose error probability every textbook agrees on. Getting the harness right on a known answer is
 what makes it trustworthy on an unknown one.
 
-- [ ] **Step 1: Write the first claim**
+- [x] **Step 1: Write the first claim**
 
 Create `verify/ber_claims.py`:
 
@@ -364,7 +364,7 @@ CLAIMS = [
 ]
 ```
 
-- [ ] **Step 2: Write the runner**
+- [x] **Step 2: Write the runner**
 
 Create `verify/verify_ber.py`:
 
@@ -417,7 +417,7 @@ if __name__ == "__main__":
     sys.exit(main())
 ```
 
-- [ ] **Step 3: Run it**
+- [x] **Step 3: Run it**
 
 ```bash
 cd verify && ../.venv/bin/python verify_ber.py
@@ -425,7 +425,7 @@ cd verify && ../.venv/bin/python verify_ber.py
 
 Expected: `2 passed, 0 failed`.
 
-- [ ] **Step 4: Prove the gate can fail**
+- [x] **Step 4: Prove the gate can fail**
 
 Temporarily change `antipodal_closed` to return `qfunc(np.sqrt(ebn0))` — the missing factor of two
 that is the single most common error in this material. Re-run.
@@ -433,7 +433,7 @@ that is the single most common error in this material. Re-run.
 Expected: `0 passed, 2 failed`. **Then revert the change.** A gate never seen failing is a gate
 that may not work.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add verify/verify_ber.py verify/ber_claims.py && \
