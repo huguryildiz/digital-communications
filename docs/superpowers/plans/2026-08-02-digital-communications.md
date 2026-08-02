@@ -60,7 +60,7 @@ Copied verbatim from the spec. Every task's requirements implicitly include this
 | `build/src/89_sections.js` | **the one place** chapters, sections, addresses and `PS` anchors are declared |
 | `build/src/81_scenes_m0.js` … `87_scenes_m6.js` | teaching scenes, one file per module |
 | `build/src/70_labs.js` … `74_labs_*.js` | laboratories |
-| `build/src/91_scenes_end.js` | closing scenes |
+In `build/src/80_content_core.js`, which is the one place the version lives in this course — there is no `91_scenes_end.js` here, and the Formula Reference reads the same value.
 | `build/src/92_drill_m1.js` … `97_drill_m6.js` | question sections, one file per module |
 | `build/src/99_tail.html` | **scene order** — a new array must be registered here or it never appears |
 | `build/qa.js` `labtest.js` `textclash.js` `mathscan.js` `seccheck.js` `labwalk.js` `pw.js` | browser gates |
@@ -896,9 +896,9 @@ reserved for exactly this.
 This scene shows the `PS CH` form it describes and is the single exemption in `rule_check.py` and
 `seccheck.js`. Everywhere else the form is enforced.
 
-- [ ] **Step 3: Run all eleven gates**
+- [x] **Step 3: Run all eleven gates**
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ---
 
@@ -931,7 +931,7 @@ turned it into `J\OMEGA`. No gate reads the editions.
 
 Render every page to an image and look at it.
 
-- [ ] **Step 5: Commit sources and `dist/` together**
+- [x] **Step 5: Commit sources and `dist/` together**
 
 ---
 
@@ -940,20 +940,20 @@ Render every page to an image and look at it.
 **Files:**
 - Create: `CLAUDE.md`, `README.md`
 
-- [ ] **Step 1: Write `CLAUDE.md`**
+- [x] **Step 1: Write `CLAUDE.md`**
 
 Following the structure of the source course's: read order, where the project stands, repository
 layout, building, the eleven gates with what each must print, the editorial rules, the fixed
 decisions, and the known traps. It is what the next session reads.
 
-- [ ] **Step 2: Bump `CONTENT.META.version` to 1.0**
+- [x] **Step 2: Bump `CONTENT.META.version` to 1.0**
 
-In `build/src/80_content_core.js` and `build/src/91_scenes_end.js` **together** — they must move in
+In `build/src/80_content_core.js`, which is the one place the version lives in this course — there is no `91_scenes_end.js` here, and the Formula Reference reads the same value.
 the same commit.
 
-- [ ] **Step 3: Run all eleven gates one final time and record every number**
+- [x] **Step 3: Run all eleven gates one final time and record every number**
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ---
 
