@@ -1,0 +1,838 @@
+/* ==========================================================================
+   Signals and Systems · Interactive Learning Artifact
+   Visual system: "Scientific Editorial". Warm ivory canvas, restrained
+   terracotta/slate accents, editorial serif display, precise engineering
+   graphics. Original identity — no card-heavy dashboard chrome.
+   ========================================================================== */
+
+:root{
+  /* ---- surface ---- */
+  --paper:        #FAF8F4;   /* primary canvas, cool ivory */
+  --paper-2:      #FFFFFF;   /* raised panel */
+  --paper-3:      #F2EFE8;   /* sunken well / grid tint */
+  --fig-halo:     #FFFFFF;   /* label halo inside figures */
+  --navy:         #12314E;   /* high-contrast scenes & dividers */
+  --navy-2:       #1B4066;
+
+  /* ---- ink ---- */
+  --ink:          #232B33;
+  --graphite:     #3B4650;
+  --muted:        #616B76;
+  --faint:        #939BA4;
+  --rule:         #DCD7CC;
+  --rule-strong:  #C2BCB0;
+
+  /* ---- accents ---- */
+  --coral:        #A0451C;   /* major editorial emphasis */
+  --terracotta:   #7F3512;
+  --slate:        #28567E;   /* eyebrow labels, metadata, structure */
+  --slate-deep:   #1D4265;
+
+  /* ---- signal semantics (harmonised, colour-blind safe pairs) ---- */
+  --sig-in:       #14707F;   /* input / continuous-time signal   (cyan)   */
+  --sig-h:        #C08422;   /* impulse response / system        (amber)  */
+  --sig-out:      #4A7A46;   /* output                           (green)  */
+  --sig-mid:      #6A5A92;   /* intermediate transformation      (violet) */
+  --sig-err:      #A63B2A;   /* error / misconception / aliasing (red)    */
+  --sig-in-soft:  rgba(20,112,127,.14);
+  --sig-h-soft:   rgba(192,132,34,.16);
+  --sig-out-soft: rgba(74,122,70,.14);
+  --sig-err-soft: rgba(166,59,42,.13);
+
+  /* ---- two things this course draws and no colour above covers ----
+     Noise takes no colour of its own. A sixth hue would make the palette
+     unreadable, and noise is almost always drawn behind something else, so it
+     is the hairline tone at low opacity and the symbol points inside a noise
+     cloud keep their own colour.
+     A decision region is a low-opacity fill of the colour of the symbol it
+     decides for, so the region and the symbol read as one statement. */
+  --sig-noise:      #B8B2A6;
+  --sig-noise-soft: rgba(184,178,166,.28);
+  --dec-in:         rgba(20,112,127,.10);
+  --dec-h:          rgba(192,132,34,.11);
+  --dec-out:        rgba(74,122,70,.10);
+  --dec-mid:        rgba(106,90,146,.11);
+  --dec-err:        rgba(166,59,42,.10);
+
+  /* ---- type ---- */
+  --serif: "Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",
+           "Hoefler Text",Georgia,"Times New Roman",serif;
+  --sans:  "Inter","SF Pro Text",-apple-system,BlinkMacSystemFont,"Segoe UI",
+           Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:  ui-monospace,"SF Mono","JetBrains Mono","IBM Plex Mono",Menlo,
+           Consolas,"Liberation Mono",monospace;
+
+  /* ---- spacing scale (8 px base on the 1920×1080 stage) ---- */
+  --s1: 8px;  --s2: 16px; --s3: 24px; --s4: 32px; --s5: 48px;
+  --s6: 44px; --s7: 80px; --s8: 104px;
+  --flow: 18px;     /* gap between consecutive blocks in a scene flow */
+
+  --ts: 1;          /* type scale: 1 = normal, raised in projector mode */
+  --radius: 3px;
+  --dur: 260ms;
+  --ease: cubic-bezier(.22,.61,.36,1);
+}
+
+
+/* ==========================================================================
+   Dark theme — a real palette swap, not a filter. Every token is redefined,
+   so figures, callouts and quizzes stay legible and keep their meaning.
+   ========================================================================== */
+body[data-theme=dark]{
+  --paper:        #0E1621;
+  --paper-2:      #1A2634;
+  --paper-3:      #0A111A;
+  --fig-halo:     #1A2634;
+  --navy:         #080F18;
+  --navy-2:       #15202E;
+
+  --ink:          #E6E2D9;
+  --graphite:     #C8C3B9;
+  --muted:        #A29D94;
+  --faint:        #7E848C;
+  --rule:         #27333F;
+  --rule-strong:  #3A4754;
+
+  --coral:        #E09A6A;
+  --terracotta:   #EBB289;
+  --slate:        #8FB8DC;
+  --slate-deep:   #A9CBE8;
+
+  --sig-in:       #4FBECE;
+  --sig-h:        #E5B255;
+  --sig-out:      #82C27B;
+  --sig-mid:      #AC99DC;
+  --sig-err:      #E8785F;
+  --sig-in-soft:  rgba(79,190,206,.16);
+  --sig-h-soft:   rgba(229,178,85,.16);
+  --sig-out-soft: rgba(130,194,123,.15);
+  --sig-err-soft: rgba(232,120,95,.16);
+
+  --sig-noise:      #44515F;
+  --sig-noise-soft: rgba(68,81,95,.34);
+  --dec-in:         rgba(79,190,206,.12);
+  --dec-h:          rgba(229,178,85,.12);
+  --dec-out:        rgba(130,194,123,.12);
+  --dec-mid:        rgba(172,153,220,.13);
+  --dec-err:        rgba(232,120,95,.12);
+}
+body[data-theme=dark] #stage::after{ opacity:.25;
+  background-image:radial-gradient(rgba(214,230,255,.045) 1px, transparent 1px); }
+body[data-theme=dark] .eq{ background:rgba(255,255,255,.035); }
+body[data-theme=dark] .eq.key{ background:linear-gradient(0deg,rgba(224,154,106,.08),rgba(224,154,106,.08)),rgba(255,255,255,.035); }
+body[data-theme=dark] .ctrls,
+body[data-theme=dark] .readout div,
+body[data-theme=dark] .fig-frame,
+body[data-theme=dark] .box{ background:var(--paper-2); }
+body[data-theme=dark] .sheet{ background:var(--paper-2); }
+body[data-theme=dark] .overlay{ background:rgba(0,0,0,.66); }
+
+/* ==========================================================================
+   Display density. Projector mode raises the type scale and the weight of
+   every drawn element; the contents rail can be hidden with S to give the
+   scene the full width.
+   ========================================================================== */
+body[data-display=projector]{ --ts:1.36; }
+/* the smallest labels are what a back row loses first: raise their floor */
+body[data-display=projector] .small{ font-size:calc(17.5px * var(--ts)); }
+body[data-display=projector] figcaption{ font-size:calc(16.5px * var(--ts)); }
+body[data-display=projector] .eyebrow{ font-size:calc(16px * var(--ts)); }
+body[data-display=projector] .eq-label,
+body[data-display=projector] .note-h,
+body[data-display=projector] .wex-k,
+body[data-display=projector] .qid,
+body[data-display=projector] .ctrl label,
+body[data-display=projector] .readout dt{ font-size:calc(14px * var(--ts)); }
+body[data-display=projector] .legend{ font-size:calc(17px * var(--ts)); }
+body[data-display=projector] .eq .katex{ font-size:1.42em; }
+body[data-display=projector] .eq.lg .katex{ font-size:1.66em; }
+body[data-display=projector] .eq.sm .katex{ font-size:1.18em; }
+body[data-display=projector] .katex{ font-size:1.10em; }
+body[data-display=projector]{ --rule:#C2BCB0; }      /* stronger hairlines */
+body[data-display=projector][data-theme=dark]{ --rule:#3A4754; }
+body[data-display=projector] .scene{ padding:44px 76px 60px; }
+body[data-display=projector] .cols{ gap:34px; }
+
+*,*::before,*::after{ box-sizing:border-box; }
+
+html,body{
+  margin:0; padding:0; height:100%;
+  background:var(--paper-3);
+  color:var(--ink);
+  font-family:var(--sans);
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  overflow:hidden;
+}
+
+/* ==========================================================================
+   Stage — fixed 1920×1080 design basis, scaled to fit any viewport.
+   Guarantees exact alignment on desktop, tablet, projector and in PDF.
+   ========================================================================== */
+#viewport{
+  position:fixed; inset:0; display:grid;
+  grid-template-columns:var(--sbw) 1fr;
+  grid-template-rows:46px 1fr 38px;
+  grid-template-areas:"hd hd" "sb main" "ft ft";
+  background:var(--paper-3);
+}
+body[data-sidebar=off] #viewport{ --sbw:0px; }
+:root{ --sbw:268px; }
+
+/* --- brand mark ------------------------------------------------------- */
+#appheader .eelogo{ width:22px; height:22px; flex:none; display:block; }
+.eelogo-trace{ fill:none; stroke:url(#eelogo-gt); stroke-width:3.6;
+  stroke-linecap:round; stroke-linejoin:round; }
+.eelogo-halo{ fill:none; stroke:url(#eelogo-gt); stroke-width:4.6;
+  stroke-linecap:round; stroke-linejoin:round; filter:url(#eelogo-soft);
+  opacity:.16; animation:eelogo-glow 2.6s ease-in-out infinite; }
+.eelogo-beat{ transform-box:view-box; transform-origin:32px 32px;
+  animation:eelogo-beat 2.6s ease-in-out infinite; }
+
+@keyframes eelogo-beat{ 0%{transform:scale(1)} 7%{transform:scale(1.055)} 15%{transform:scale(1)}
+  22%{transform:scale(1.03)} 31%{transform:scale(1)} 100%{transform:scale(1)} }
+@keyframes eelogo-glow{ 0%{opacity:.16} 7%{opacity:.62} 15%{opacity:.24}
+  22%{opacity:.45} 31%{opacity:.16} 100%{opacity:.16} }
+body[data-motion=reduced] .eelogo-beat,
+body[data-motion=reduced] .eelogo-halo{ animation:none; }
+@media (prefers-reduced-motion:reduce){ .eelogo-beat, .eelogo-halo{ animation:none; } }
+
+/* --- top bar --------------------------------------------------------- */
+#appheader{
+  grid-area:hd; display:flex; align-items:center; gap:8px; padding:0 14px 0 8px;
+  background:var(--paper-2); border-bottom:1px solid var(--rule);
+  font-family:var(--mono); font-size:12px; color:var(--muted);
+}
+#appheader .brand{ letter-spacing:.14em; text-transform:uppercase; color:var(--slate);
+  font-size:11.5px; padding-left:4px; }
+#appheader .spacer{ flex:1; }
+#appheader .sep{ width:1px; height:18px; background:var(--rule); margin:0 4px; }
+#appheader button{
+  font-family:var(--mono); font-size:11.5px; letter-spacing:.08em; text-transform:uppercase;
+  background:transparent; border:0; color:var(--muted); cursor:pointer;
+  padding:6px 9px; border-radius:var(--radius);
+}
+#appheader button:hover{ color:var(--ink); background:var(--paper-3); }
+#appheader button[aria-pressed=true]{ color:var(--coral); }
+#sbtoggle{ font-size:15px !important; line-height:1; padding:5px 9px !important; }
+
+/* --- left contents rail ---------------------------------------------- */
+#sidebar{
+  grid-area:sb; overflow:hidden auto; background:var(--paper-3);
+  border-right:1px solid var(--rule); display:flex; flex-direction:column;
+}
+body[data-sidebar=off] #sidebar{ display:none; }
+#sidenav{ flex:1; padding:14px 10px 6px 14px; }
+#sidenav .sgroup{ margin-bottom:16px; }
+#sidenav .sgh{
+  font-family:var(--mono); font-size:10.5px; letter-spacing:.13em; text-transform:uppercase;
+  color:var(--slate); padding:0 0 6px; border-bottom:1px solid var(--rule);
+  margin-bottom:6px; display:flex; gap:8px; align-items:baseline;
+}
+#sidenav .sgh .sid{ color:var(--coral); }
+#sidenav ol{ list-style:none; margin:0; padding:0; }
+#sidenav li{ margin:0; }
+#sidenav a{
+  display:block; font-size:13px; line-height:1.34; color:var(--graphite);
+  padding:5px 8px 5px 10px; border-left:2px solid transparent; cursor:pointer;
+  text-decoration:none; border-radius:0 2px 2px 0;
+}
+#sidenav a:hover{ background:var(--paper-2); color:var(--ink); }
+#sidenav a.seen{ color:var(--muted); }
+#sidenav a.on{
+  background:var(--paper-2); border-left-color:var(--coral);
+  color:var(--ink); font-weight:600;
+}
+/* A contents entry is two columns: the address and the title. The address
+   column is fixed so the titles line up down the rail. The textbook anchor is
+   not here — it lives on the scene, in the eyebrow band. */
+#sidenav a{ display:grid; grid-template-columns:44px 1fr; gap:8px; align-items:baseline; }
+/* A section heading is a control: it opens and closes the scenes under it, so
+   a chapter can be scanned at section level and drilled into one at a time. */
+#sidenav .csec{ margin:9px 0 1px; }
+#sidenav .csec:first-child{ margin-top:2px; }
+#sidenav .csec button{
+  display:grid; grid-template-columns:44px 1fr 12px; gap:8px; align-items:baseline;
+  width:100%; text-align:left; background:none; border:0; cursor:pointer;
+  font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--muted); padding:4px 8px 4px 10px; border-radius:2px;
+}
+#sidenav .csec button:hover{ background:var(--paper-2); color:var(--ink); }
+#sidenav .csec button.open{ color:var(--ink); }
+.ccaret{ justify-self:end; align-self:center; width:0; height:0;
+  border-left:3.5px solid transparent; border-right:3.5px solid transparent;
+  border-top:4px solid currentColor; opacity:.6;
+  transition:transform var(--dur) var(--ease); transform:rotate(-90deg); }
+#sidenav .csec button.open .ccaret{ transform:rotate(0deg); }
+/* An open section draws a rule down the left of the scenes it holds, so the
+   run is visibly one group and its end is visible without counting. The rule
+   is the entry's own left border, so it is continuous between rows and turns
+   coral on the scene the reader is standing in. */
+#sidenav li.insec{ margin-left:7px; }
+#sidenav li.insec a{ border-left-color:var(--rule-strong); }
+#sidenav li.insec a.on{ border-left-color:var(--coral); }
+.cnum{ font-family:var(--mono); font-size:10.5px; letter-spacing:.04em; color:var(--slate); }
+#sidenav a.on .cnum{ color:var(--coral); }
+/* The label frame is uppercase mono with wide tracking, and both properties
+   are inherited. A typeset title must not be rewritten by either (R8). */
+.cnum .katex, .cbook .katex, #sidenav .csec .katex{ text-transform:none; letter-spacing:normal; }
+#sidebar .sfoot{ padding:10px 14px 14px; border-top:1px solid var(--rule); }
+#sidebar .sfoot .btn{ font-size:12px; padding:6px 10px; width:100%; }
+
+/* --- stage: fixed 1920x1080 design basis, scaled into the main area --- */
+#stagewrap{ grid-area:main; overflow:hidden; position:relative; background:var(--paper); }
+#stage{
+  width:1920px; height:1080px; position:absolute; top:0; left:0;
+  transform-origin:top left;            /* explicit placement — never rely on
+                                           alignment of an oversized grid item */
+  background:var(--paper);
+  overflow:hidden;
+}
+#stage::after{  /* paper grain: extremely subtle, never over equations */
+  content:""; position:absolute; inset:0; pointer-events:none; opacity:.5;
+  background-image:radial-gradient(rgba(120,105,80,.055) 1px, transparent 1px);
+  background-size:4px 4px;
+}
+
+/* ==========================================================================
+   Scene skeleton
+   ========================================================================== */
+.scene{
+  position:absolute; inset:0;
+  padding:54px var(--s8) 74px;
+  display:block;
+  opacity:0; visibility:hidden;
+  transition:opacity var(--dur) var(--ease);
+}
+.scene.is-active{ opacity:1; visibility:visible; }
+.scene-inner{ display:flex; flex-direction:column; height:100%; width:100%;
+  transform-origin:top left; }
+.scene.dark{
+  /* a complete token override, so every element inherits correct contrast */
+  --ink:#E6E2D9; --graphite:#C9C4BA; --muted:#A9B0B8; --faint:#838C96;
+  --rule:rgba(233,236,242,.20); --rule-strong:rgba(233,236,242,.32);
+  --paper:var(--navy); --paper-2:rgba(255,255,255,.05); --paper-3:rgba(255,255,255,.09);
+  --fig-halo:var(--navy);
+  --slate:#8FB8DC; --slate-deep:#A9CBE8; --coral:#E09A6A; --terracotta:#EBB289;
+  background:var(--navy); color:var(--ink);
+}
+.scene.dark .katex{ color:var(--ink); }
+.scene.dark .lede{ color:#C3CCD6; }
+
+/* eyebrow / metadata */
+.eyebrow{
+  font-family:var(--mono); font-size:calc(15px * var(--ts)); letter-spacing:.16em;
+  text-transform:uppercase; color:var(--slate); font-weight:500;
+  display:flex; align-items:center; gap:12px; margin:0 0 18px;
+}
+.eyebrow .tick{ width:26px; height:1px; background:currentColor; opacity:.55; }
+.eyebrow .ebnum{ color:var(--coral); letter-spacing:.1em; }
+.eyebrow .ebnum::before{ content:'·'; color:var(--faint); margin-right:8px; }
+/* The anchor is a chip, not another word in the eyebrow. It points outside the
+   course — into the textbook — and the frame says so at a glance, without the
+   reader having to parse the string first. Every token it uses is overridden by
+   `.scene.dark`, so it follows the navy pages by itself. */
+.eyebrow .ebbook{
+  display:inline-flex; align-items:center; gap:.4em;
+  color:var(--faint); letter-spacing:.06em; text-transform:none;
+  white-space:nowrap; border:1px solid var(--rule); background:var(--paper-2);
+  border-radius:3px; padding:.15em .55em; font-size:.82em; line-height:1.5;
+}
+.eyebrow .ebicon{ flex:none; opacity:.85; }
+.eyebrow .src{ color:var(--faint); letter-spacing:.1em; text-transform:none;
+  font-size:13px; margin-left:auto; }
+
+/* titles */
+h1.display{
+  font-family:var(--serif); font-weight:400; font-size:calc(74px * var(--ts)); line-height:1.04;
+  letter-spacing:-.012em; margin:0 0 20px; color:var(--ink);
+}
+h2.title{
+  font-family:var(--serif); font-weight:400; font-size:calc(45px * var(--ts)); line-height:1.10;
+  letter-spacing:-.008em; margin:0 0 14px; color:var(--ink);
+}
+h3.sub{
+  font-family:var(--sans); font-weight:600; font-size:calc(20px * var(--ts)); line-height:1.3;
+  letter-spacing:.005em; margin:0 0 10px; color:var(--graphite);
+}
+.lede{
+  font-family:var(--serif); font-style:italic; font-size:calc(23.5px * var(--ts)); line-height:1.42;
+  color:var(--muted); margin:0 0 var(--s4); max-width:1200px;
+}
+.body{ font-size:calc(19px * var(--ts)); line-height:1.55; color:var(--graphite); max-width:900px; }
+.body p{ margin:0 0 11px; }
+.body strong{ font-weight:650; color:var(--ink); }
+.small{ font-size:calc(15.5px * var(--ts)); line-height:1.5; color:var(--muted); }
+
+.rule{ height:1px; background:var(--rule); border:0; margin:var(--s3) 0; }
+.rule.short{ width:120px; background:var(--coral); height:2px; }
+
+/* two-column editorial grid */
+.cols{ display:grid; gap:var(--s6); flex:1; min-height:0; }
+.cols.c-6-6{ grid-template-columns:1fr 1fr; }
+.cols.c-5-7{ grid-template-columns:5fr 7fr; }
+.cols.c-7-5{ grid-template-columns:7fr 5fr; }
+.cols.c-4-8{ grid-template-columns:4fr 8fr; }
+.cols.c-8-4{ grid-template-columns:8fr 4fr; }
+.col{ min-width:0; display:flex; flex-direction:column; }
+.col.center{ justify-content:center; }
+.stack{ display:flex; flex-direction:column; gap:16px; }
+.grow{ flex:1; min-height:0; }
+
+/* card: a raised panel for a scene that is a set of short independent notes
+   rather than one running argument. A hairline rule under the heading, no
+   shadow and no tinted chrome, so it reads as paper and not as a dashboard. */
+.card{
+  --flow:11px;
+  background:var(--paper-2); border:1px solid var(--rule);
+  border-radius:var(--radius); padding:20px 22px 19px;
+  height:100%; box-sizing:border-box;
+}
+.card-h{
+  font-family:var(--sans); font-weight:600; font-size:calc(17.5px * var(--ts));
+  line-height:1.3; color:var(--ink); margin:0 0 13px;
+  padding-bottom:10px; border-bottom:1px solid var(--rule);
+}
+.card .body{ font-size:calc(17px * var(--ts)); line-height:1.5; }
+
+/* vertical rhythm: two blocks in the same flow never touch. Headings, the lede
+   and rules carry their own bottom margin, so nothing is added after them. */
+:where(.scene-inner, .col, .reveal, .gcell, .card)
+  > :not(.eyebrow, h1, h2, h3, .lede, hr) + *{ margin-top:var(--flow); }
+
+/* ==========================================================================
+   Equations — first-class visual elements
+   ========================================================================== */
+.eq{
+  position:relative; margin:10px 0; padding:14px 22px 14px 26px;
+  background:var(--paper-2);
+  border:1px solid var(--rule);
+  border-left:3px solid var(--coral);
+  border-radius:var(--radius);
+}
+.eq.plain{ background:transparent; border:0; border-left:0; padding:10px 0; }
+.eq.key{ background:linear-gradient(0deg,rgba(190,85,57,.045),rgba(190,85,57,.045)),var(--paper-2); }
+.eq .katex-display{ margin:0; }
+.eq .katex{ font-size:1.26em; }
+.eq.lg .katex{ font-size:1.5em; }
+.eq.sm .katex{ font-size:1.06em; }
+.eq-label{
+  font-family:var(--mono); font-size:calc(12px * var(--ts)); letter-spacing:.12em;
+  text-transform:uppercase; color:var(--slate); margin-bottom:6px;
+}
+.eq-note{ font-size:calc(15px * var(--ts)); color:var(--muted); margin-top:8px; line-height:1.45; }
+.scene.dark .eq{ background:rgba(255,255,255,.045); border-color:rgba(239,231,216,.18); }
+
+/* inline math sizing */
+.katex{ font-size:1.06em; }
+
+/* Typeset mathematics inherits nothing from the label frame it sits in. Every
+   label class — eyebrow, eq-label, note-h, wex-k — is uppercase mono with wide
+   tracking, and both properties rewrite the formula: text-transform turns
+   a_k into A_K, and letter-spacing pulls the glyphs of an expression apart. */
+.katex{ text-transform:none; letter-spacing:normal; }
+/* A label column is narrow, and a formula in it breaks at its relation sign
+   otherwise: `T_0 =` on one line and `1` on the next. A label is short by
+   definition, so it wraps around its mathematics instead of inside it. */
+.eyebrow .katex, .eq-label .katex, .note-h .katex, .wex-k .katex{ white-space:nowrap; }
+
+/* symbol chips linking to the glossary */
+.sym{
+  border-bottom:1px dotted var(--slate); cursor:help; color:inherit;
+}
+
+/* ==========================================================================
+   Callouts: definition / interpretation / warning / misconception
+   ========================================================================== */
+.note{
+  border-left:2px solid var(--rule-strong); padding:2px 0 2px 17px;
+  font-size:calc(17.5px * var(--ts)); line-height:1.5; color:var(--graphite);
+}
+.note.def{ border-left-color:var(--slate); }
+.note.warn{ border-left-color:var(--sig-h); }
+.note.err{ border-left-color:var(--sig-err); background:var(--sig-err-soft);
+  padding:14px 18px 14px 20px; border-radius:0 var(--radius) var(--radius) 0; }
+.note.ok{ border-left-color:var(--sig-out); }
+.note-h{
+  font-family:var(--mono); font-size:calc(12.5px * var(--ts)); letter-spacing:.14em;
+  text-transform:uppercase; color:var(--slate); margin-bottom:8px; display:block;
+}
+.note.err .note-h{ color:var(--sig-err); }
+.note.warn .note-h{ color:#8A5E12; }
+.note.ok .note-h{ color:var(--sig-out); }
+
+/* worked-example ladder */
+.wex{ display:flex; flex-direction:column; gap:9px; }
+.wex-row{ display:grid; grid-template-columns:calc(136px * var(--ts)) 1fr;
+  gap:calc(20px * var(--ts)); align-items:start; }
+/* The key is uppercase mono with wide tracking, so a single long word — DIFFERENTIATION,
+   MULTIPLICATION — is wider than it looks. The column is cut to hold one, and the break
+   is allowed only at a space, so a key never splits mid-word. */
+.wex-k{
+  font-family:var(--mono); font-size:calc(12.5px * var(--ts)); letter-spacing:.1em;
+  overflow-wrap:normal; word-break:normal; hyphens:none;
+  text-transform:uppercase; color:var(--slate); padding-top:6px;
+  border-top:1px solid var(--rule);
+}
+.wex-v{ font-size:calc(17.5px * var(--ts)); line-height:1.48; color:var(--graphite);
+  border-top:1px solid var(--rule); padding-top:6px; }
+.wex-v .eq{ margin:8px 0; }
+
+/* legend */
+.legend{ display:flex; flex-wrap:wrap; gap:18px 26px; font-size:calc(15px * var(--ts)); color:var(--muted); }
+.legend i{ display:inline-flex; align-items:center; gap:8px; font-style:normal; }
+.legend i::before{ content:""; width:22px; height:3px; border-radius:2px; background:currentColor; }
+.lg-in{ color:var(--sig-in); } .lg-h{ color:var(--sig-h); }
+.lg-out{ color:var(--sig-out); } .lg-mid{ color:var(--sig-mid); }
+.lg-err{ color:var(--sig-err); }
+
+/* ==========================================================================
+   Figures
+   ========================================================================== */
+figure.fig{ margin:0; display:flex; flex-direction:column; gap:7px; min-height:0; }
+figure.fig svg{ display:block; width:100%; height:auto; }
+#scene-host svg{ display:block; width:100%; height:auto; }
+/* an axis name is typeset mathematics inside the figure; the small svg pieces a
+   formula uses for roots and stretched brackets keep their own intrinsic size */
+figure.fig .katex svg, #scene-host .katex svg{ display:inline; width:auto; height:auto; }
+/* The rule above makes every svg in a scene a full-width figure. The book icon
+   in the eyebrow is not a figure and has to opt out by the same id, or it fills
+   the column. */
+#scene-host .eyebrow .ebicon{ display:inline-block; width:12.5px; height:12.5px; }
+figcaption{ font-size:calc(14px * var(--ts)); color:var(--muted); line-height:1.42; }
+figcaption b{ color:var(--graphite); font-weight:600; }
+.fig-frame{
+  background:var(--paper-2); border:1px solid var(--rule);
+  border-radius:var(--radius); padding:12px 15px;
+}
+
+/* --- title motif: the figure draws itself once, then one highlight per cycle
+       follows the signal through the system. Every animation ends on the
+       finished figure, so the still state is exactly the printed one. --- */
+.mtf-h{
+  height:34px; display:flex; align-items:center; justify-content:center;
+  font-size:17px; line-height:1;
+}
+.mtf-h .katex{ font-size:1.06em; }
+.mtf-trace{ animation:mtf-draw 1.5s var(--ease) both; }
+@keyframes mtf-draw{
+  from{ stroke-dasharray:var(--len) var(--len); stroke-dashoffset:var(--len); }
+  to  { stroke-dasharray:var(--len) var(--len); stroke-dashoffset:0; }
+}
+.mtf-fade{ animation:mtf-fade .9s var(--ease) .45s both; }
+@keyframes mtf-fade{ from{ opacity:0 } to{ opacity:1 } }
+.mtf-stem{
+  transform-box:view-box;
+  animation:mtf-rise .55s var(--ease) calc(1.15s + var(--i) * .085s) both;
+}
+@keyframes mtf-rise{ from{ transform:scaleY(0); opacity:0 } to{ transform:scaleY(1); opacity:1 } }
+
+/* the travelling highlight — one 7 s cycle, shared by every moving part. On the
+   scope it reads as the beam: a bright head with a fading tail behind it. Head
+   and tail are one dash each on the same path, offset so that the leading edge
+   of the tail sits on the head for the whole sweep. */
+.mtf-beam{
+  stroke-dasharray:30 6000; stroke-dashoffset:30;
+  animation:mtf-beam 7s cubic-bezier(.4,0,.5,1) 2.1s infinite;
+}
+@keyframes mtf-beam{
+  0%      { stroke-dashoffset:30 }
+  26%,100%{ stroke-dashoffset:var(--len-neg) }
+}
+.mtf-beam-tail{
+  stroke-dasharray:170 6000; stroke-dashoffset:170;
+  animation:mtf-beamtail 7s cubic-bezier(.4,0,.5,1) 2.1s infinite;
+}
+@keyframes mtf-beamtail{
+  0%      { stroke-dashoffset:170 }
+  26%,100%{ stroke-dashoffset:var(--tail-e) }
+}
+.mtf-sparkwrap{ opacity:0; animation:mtf-sparkfade 7s linear 2.1s infinite; }
+@keyframes mtf-sparkfade{ 0%{ opacity:0 } 4%,20%{ opacity:1 } 26%,100%{ opacity:0 } }
+/* each wire carries the colour of the signal on it for as long as that signal
+   is passing: cyan going in, green coming out */
+.mtf-wire-in { animation:mtf-wire-in  7s var(--ease) 2.1s infinite; }
+.mtf-wire-out{ animation:mtf-wire-out 7s var(--ease) 2.1s infinite; }
+@keyframes mtf-wire-in{
+  0%,23%  { stroke:var(--mtf-ink); fill:var(--mtf-ink); stroke-width:1.4 }
+  27%,33% { stroke:var(--mtf-in);  fill:var(--mtf-in);  stroke-width:2.4 }
+  40%,100%{ stroke:var(--mtf-ink); fill:var(--mtf-ink); stroke-width:1.4 }
+}
+@keyframes mtf-wire-out{
+  0%,40%  { stroke:var(--mtf-ink); fill:var(--mtf-ink); stroke-width:1.4 }
+  44%,50% { stroke:var(--mtf-out); fill:var(--mtf-out); stroke-width:2.4 }
+  57%,100%{ stroke:var(--mtf-ink); fill:var(--mtf-ink); stroke-width:1.4 }
+}
+.mtf-box{ animation:mtf-glow 7s var(--ease) 2.1s infinite; }
+@keyframes mtf-glow{
+  0%,31%  { stroke:var(--mtf-ink); stroke-width:1.6 }
+  37%     { stroke:var(--mtf-h);   stroke-width:2.6 }
+  45%     { stroke:var(--mtf-h);   stroke-width:2.2 }
+  54%,100%{ stroke:var(--mtf-ink); stroke-width:1.6 }
+}
+.mtf-stem-dot{ animation:mtf-pop 7s var(--ease) calc(2.1s + var(--i) * .1s) infinite; }
+@keyframes mtf-pop{ 0%,50%{ r:4 } 56%{ r:6.6 } 66%,100%{ r:4 } }
+
+/* the highlight is the one purely visual motion here: it stops entirely when
+   motion is reduced, and never appears on paper */
+body[data-motion=reduced] .mtf-sparkwrap{ display:none; }
+@media (prefers-reduced-motion:reduce){ .mtf-sparkwrap{ display:none; } }
+
+/* ==========================================================================
+   Reveal sequence
+   ========================================================================== */
+.reveal{ opacity:0; transform:translateY(6px);
+  transition:opacity var(--dur) var(--ease), transform var(--dur) var(--ease); }
+.reveal.shown{ opacity:1; transform:none; }
+.reveal.hidden-hard{ display:none; }
+
+/* ==========================================================================
+   Controls & laboratories
+   ========================================================================== */
+.lab{ display:flex; flex-direction:column; gap:var(--s3); flex:1; min-height:0; }
+.ctrls{
+  display:grid; gap:18px 28px; grid-template-columns:repeat(2,minmax(0,1fr));
+  background:var(--paper-2); border:1px solid var(--rule);
+  border-radius:var(--radius); padding:20px 24px;
+}
+.ctrls.one{ grid-template-columns:1fr; }
+.ctrl{ display:flex; flex-direction:column; gap:7px; }
+.ctrl label{
+  font-family:var(--mono); font-size:calc(12.5px * var(--ts)); letter-spacing:.1em;
+  text-transform:uppercase; color:var(--slate);
+  display:flex; justify-content:space-between; align-items:baseline; gap:10px;
+}
+.ctrl label .val{ font-size:15px; color:var(--coral); letter-spacing:0;
+  text-transform:none; font-weight:600; }
+input[type=range]{
+  -webkit-appearance:none; appearance:none; width:100%; height:22px;
+  background:transparent; cursor:pointer; margin:0;
+}
+input[type=range]::-webkit-slider-runnable-track{
+  height:3px; background:var(--rule-strong); border-radius:2px;
+}
+input[type=range]::-moz-range-track{ height:3px; background:var(--rule-strong); border-radius:2px; }
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none; width:17px; height:17px; border-radius:50%;
+  background:var(--paper-2); border:2px solid var(--coral); margin-top:-7px;
+  transition:transform 120ms var(--ease);
+}
+input[type=range]::-moz-range-thumb{
+  width:15px; height:15px; border-radius:50%; background:var(--paper-2);
+  border:2px solid var(--coral);
+}
+input[type=range]:hover::-webkit-slider-thumb{ transform:scale(1.12); }
+input[type=range]:focus-visible::-webkit-slider-thumb{ box-shadow:0 0 0 4px rgba(74,101,127,.28); }
+
+.seg{ display:inline-flex; border:1px solid var(--rule-strong); border-radius:var(--radius); overflow:hidden; }
+.seg button{
+  font-family:var(--mono); font-size:calc(13px * var(--ts)); letter-spacing:.06em; padding:8px 14px;
+  background:transparent; border:0; border-right:1px solid var(--rule-strong);
+  color:var(--muted); cursor:pointer; transition:background 140ms var(--ease),color 140ms var(--ease);
+}
+.seg button:last-child{ border-right:0; }
+.seg button[aria-pressed=true]{ background:var(--coral); color:#FCF9F3; }
+.seg button:hover:not([aria-pressed=true]){ background:var(--paper-3); color:var(--ink); }
+
+.btn{
+  font-family:var(--sans); font-size:calc(15px * var(--ts)); font-weight:550; padding:10px 18px;
+  background:transparent; color:var(--slate-deep);
+  border:1px solid var(--rule-strong); border-radius:var(--radius);
+  cursor:pointer; transition:all 140ms var(--ease);
+}
+.btn:hover{ background:var(--paper-3); border-color:var(--slate); color:var(--ink); }
+.btn.primary{ background:var(--coral); border-color:var(--coral); color:#FCF9F3; }
+.btn.primary:hover{ background:var(--terracotta); border-color:var(--terracotta); }
+.btn:disabled{ opacity:.42; cursor:not-allowed; }
+.btn.ghost{ border-color:transparent; }
+
+.readout{
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:2px;
+  background:var(--rule); border:1px solid var(--rule); border-radius:var(--radius);
+  overflow:hidden;
+}
+.readout div{ background:var(--paper-2); padding:12px 16px; }
+.readout dt{ font-family:var(--mono); font-size:11.5px; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--slate); margin:0 0 5px; }
+.readout dd{ margin:0; font-size:calc(19px * var(--ts)); color:var(--ink); font-weight:600; }
+.readout dd.warnv{ color:var(--sig-err); }
+.readout dd.okv{ color:var(--sig-out); }
+
+/* ==========================================================================
+   Quizzes
+   ========================================================================== */
+.quiz{ display:flex; flex-direction:column; gap:var(--s2); max-width:1180px; }
+.qid{ font-family:var(--mono); font-size:12.5px; letter-spacing:.12em; color:var(--faint); }
+.qstem{ font-size:calc(21px * var(--ts)); line-height:1.55; color:var(--ink); }
+/* Answer options, their feedback panel and the hint ladder were all removed when
+   the question bank was folded into the exam drill: a question is now stated,
+   worked on paper, and checked against its solution. Nothing renders .opt, .fb
+   or .hintbox any more. */
+
+/* instructor-only material */
+.instr{ display:none; }
+body[data-edition=instructor] .instr{ display:block; }
+.instr-inline{ display:none; }
+body[data-edition=instructor] .instr-inline{ display:inline; }
+.instr-panel{
+  border:1px dashed var(--slate); border-radius:var(--radius);
+  padding:16px 20px; background:rgba(74,101,127,.06);
+}
+.instr-panel .note-h{ color:var(--slate-deep); }
+
+/* ==========================================================================
+   Chrome: progress, nav, overlays
+   ========================================================================== */
+#chrome{ grid-area:ft; position:relative;
+  display:flex; align-items:center; gap:16px; padding:0 16px;
+  border-top:1px solid var(--rule); background:var(--paper-2);
+  font-family:var(--mono); font-size:11.5px; color:var(--muted); }
+#chrome .srcref{ color:var(--faint); }
+#progress{ position:absolute; top:-1px; left:0; height:2px; background:var(--coral);
+  transition:width var(--dur) var(--ease); }
+#chrome .crumb{ letter-spacing:.1em; text-transform:uppercase; color:var(--slate); }
+#chrome .spacer{ flex:1; }
+#chrome button{
+  font-family:var(--mono); font-size:11.5px; letter-spacing:.08em; text-transform:uppercase;
+  background:transparent; border:0; color:var(--muted); cursor:pointer; padding:6px 8px;
+  border-radius:var(--radius);
+}
+#chrome button:hover{ color:var(--ink); background:var(--paper-3); }
+#chrome button[aria-pressed=true]{ color:var(--coral); }
+
+.overlay{
+  position:fixed; inset:0; background:rgba(20,18,15,.55);
+  backdrop-filter:blur(3px); display:none; z-index:40;
+  align-items:center; justify-content:center; padding:60px;
+}
+.overlay.open{ display:flex; }
+.sheet{
+  background:var(--paper); width:100%; max-width:1560px; max-height:100%;
+  border-radius:var(--radius); padding:44px 52px; overflow:auto;
+  box-shadow:0 30px 90px rgba(0,0,0,.4);
+}
+.sheet h2{ font-family:var(--serif); font-weight:400; font-size:40px; margin:0 0 6px; }
+.sheet .close{ position:absolute; top:26px; right:34px; }
+.mapgrid{ display:grid; grid-template-columns:repeat(4,1fr); gap:22px; margin-top:26px; }
+.mapmod{ border-top:2px solid var(--rule-strong); padding-top:14px; }
+.mapmod h4{ font-family:var(--mono); font-size:12.5px; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--slate); margin:0 0 4px; }
+.mapmod .mt{ font-family:var(--serif); font-size:23px; margin:0 0 12px; color:var(--ink); }
+.mapmod ol{ margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:5px; }
+.mapmod a{ font-size:15.5px; color:var(--graphite); text-decoration:none;
+  border-bottom:1px solid transparent; cursor:pointer; line-height:1.35; }
+.mapmod a:hover{ color:var(--coral); border-bottom-color:var(--coral); }
+.mapmod a.done::after{ content:" ✓"; color:var(--sig-out); }
+/* The map lists the same two columns as the rail, at the map's larger size,
+   and shows every section open: it is the whole-course view. The chapter
+   number replaces the module badge in the heading. */
+.mapmod a{ display:grid; grid-template-columns:46px 1fr; gap:8px; align-items:baseline; }
+.mapmod .csec{
+  display:grid; grid-template-columns:46px 1fr; gap:8px; align-items:baseline;
+  font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--muted); margin-top:9px;
+}
+.mapmod .csec:first-child{ margin-top:0; }
+.mapmod .cnum{ font-size:11.5px; }
+.mapmod .cbook{ font-size:10px; }
+
+#searchbox{ width:100%; font-size:24px; font-family:var(--serif); padding:14px 4px;
+  border:0; border-bottom:2px solid var(--rule-strong); background:transparent;
+  color:var(--ink); outline:none; }
+#searchbox:focus{ border-bottom-color:var(--coral); }
+.sresults{ margin-top:22px; display:flex; flex-direction:column; gap:4px; max-height:660px; overflow:auto; }
+.sres{ padding:12px 14px; border-radius:var(--radius); cursor:pointer; border:1px solid transparent; }
+.sres:hover,.sres.on{ background:var(--paper-2); border-color:var(--rule); }
+.sres .t{ font-size:18px; color:var(--ink); }
+.sres .m{ font-family:var(--mono); font-size:12px; color:var(--faint); letter-spacing:.08em; }
+
+.gloss{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px 34px; margin-top:24px; }
+.gitem{ display:grid; grid-template-columns:96px 1fr; gap:14px; align-items:baseline;
+  padding:9px 0; border-bottom:1px solid var(--rule); }
+.gitem .gs{ text-align:right; }
+.gitem .gd{ font-size:15.5px; color:var(--graphite); line-height:1.4; }
+.gitem .gd a{ color:var(--slate); cursor:pointer; text-decoration:none;
+  border-bottom:1px dotted var(--slate); }
+
+
+/* ==========================================================================
+   Exam drills: the taxonomy scene, and the panel of open-ended questions
+   ========================================================================== */
+.dr-types{ display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+  gap:24px 38px; align-items:start; }
+.dr-type{ border-top:2px solid var(--rule-strong); padding-top:14px; }
+.dr-type-h{ display:flex; align-items:baseline; gap:10px;
+  font-family:var(--serif); font-size:calc(21px * var(--ts)); line-height:1.25;
+  color:var(--ink); margin-bottom:8px; }
+.dr-type-k{ font-family:var(--mono); font-size:12.5px; letter-spacing:.12em;
+  color:var(--coral); flex:none; padding-top:2px; }
+.dr-type-asks{ font-size:calc(16.5px * var(--ts)); line-height:1.5; color:var(--graphite); }
+.dr-type-m{ margin:10px 0 0; padding-left:20px;
+  font-size:calc(15.5px * var(--ts)); line-height:1.48; color:var(--muted); }
+.dr-type-m li{ margin:3px 0; }
+.dr-type-go{ display:inline-block; margin-top:10px; cursor:pointer;
+  font-family:var(--mono); font-size:11.5px; letter-spacing:.08em;
+  color:var(--slate); border-bottom:1px dotted var(--slate); }
+.dr-type-go:hover{ color:var(--coral); border-bottom-color:var(--coral); }
+
+/* The pager. One question is on screen at a time, so the reader always knows
+   which of the twenty they are on and never has to hunt for the next one. */
+.dr-pager{ display:flex; align-items:center; gap:16px; margin-bottom:18px;
+  padding-bottom:14px; border-bottom:1px solid var(--rule); }
+.dr-count{ font-family:var(--mono); font-size:13px; letter-spacing:.1em;
+  color:var(--ink); }
+.dr-count .dr-of{ color:var(--faint); }
+.dr-seen{ margin-left:auto; font-size:14.5px; color:var(--sig-out); }
+.dr-pager .btn[disabled]{ opacity:.38; cursor:default; }
+/* The question itself is a single column that scrolls. It is never laid out in
+   columns: CSS multicolumn inside a height-constrained box overflows sideways,
+   which puts the overflow out of reach rather than below the fold. */
+.dr-page{ flex:1; min-height:0; overflow-y:auto; overflow-x:hidden; padding-right:22px; }
+.dr-page::-webkit-scrollbar{ width:9px; }
+.dr-page::-webkit-scrollbar-thumb{ background:var(--rule-strong); border-radius:6px; }
+.dr-page .quiz{ max-width:1560px; }
+/* Examination parts are lettered a), b), c) — not numbered, because the numbers
+   would read as steps of one method rather than as separate questions. */
+.drill .dr-parts{ margin:0; padding-left:30px; list-style:none; counter-reset:drpart;
+  display:flex; flex-direction:column; gap:9px;
+  font-size:calc(19px * var(--ts)); line-height:1.5; color:var(--graphite); }
+.drill .dr-parts li{ counter-increment:drpart; position:relative; }
+.drill .dr-parts li::before{
+  content:counter(drpart,lower-alpha) ")"; position:absolute; left:-30px; top:1px;
+  font-family:var(--mono); font-size:.78em; color:var(--slate); }
+.drill .note.ok figure.fig{ margin-top:14px; }
+/* two figures a question shows together — the input and the impulse response,
+   or an input-output pair. Each keeps its own column and scales inside it. */
+.dr-pair{ display:flex; gap:16px; align-items:flex-start; }
+  .dr-pair > div{ flex:1 1 0; min-width:0; }
+/* the distractor analysis a bank question was written with, kept for the
+   instructor edition */
+.dr-wrongs{ margin:8px 0 0; padding-left:20px; display:flex; flex-direction:column; gap:6px; }
+
+kbd{ font-family:var(--mono); font-size:12px; background:var(--paper-3);
+  border:1px solid var(--rule-strong); border-bottom-width:2px;
+  border-radius:3px; padding:2px 6px; color:var(--graphite); }
+
+/* focus states — visible, calm, consistent */
+:focus-visible{ outline:2px solid var(--slate); outline-offset:3px; border-radius:2px; }
+
+/* reduced motion */
+body[data-motion=reduced] *{ transition-duration:1ms !important; animation-duration:1ms !important; }
+@media (prefers-reduced-motion:reduce){
+  *{ transition-duration:1ms !important; animation-duration:1ms !important; }
+}
+
+/* print / PDF: one scene per landscape page */
+@media print{
+  html,body{ background:#fff; overflow:visible; }
+  #viewport{ position:static; display:block; }
+  #stagewrap{ overflow:visible; display:block; }
+  #stage{ transform:none !important; box-shadow:none; width:1920px; height:1080px; }
+  #chrome,#appheader,#sidebar,.overlay{ display:none !important; }
+  .scene{ position:relative; opacity:1 !important; visibility:visible !important;
+    page-break-after:always; break-after:page; }
+  .reveal{ opacity:1 !important; transform:none !important; }
+  .mtf-sparkwrap{ display:none !important; }
+  .mtf-trace,.mtf-fade,.mtf-stem,.mtf-box,.mtf-stem-dot,
+  .mtf-wire-in,.mtf-wire-out{ animation:none !important; opacity:1 !important; }
+}
