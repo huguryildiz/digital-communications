@@ -850,7 +850,7 @@ Per-module specifics:
 | 2 | M2 baseband transmission ✔ done | CH8, all 48 | 13–27 | C, D, E | MT Q3, MT Q4, Final Q2 |
 | 3 | M3 signal-space representation ✔ done | CH9 s.3–21 | 28–~40 | F | slides only — no exam type |
 | 4 | M4 optimal receiver, decision regions, union bound ✔ done | CH9 s.23–65 | ~40–58 | G | Final Q3 in part |
-| 5 | M5 modulation families | CH9 s.66–101 | ~58–66 | H | Final Q3 in part |
+| 5 | M5 modulation families ✔ done | CH9 s.66–101 | ~58–66 | H | Final Q3 in part |
 | 6 | M6 information theory | CH10, all 22 | 67–80 | I, J | Final Q4 |
 
 Three things differ from Phase 1 and must not be forgotten:

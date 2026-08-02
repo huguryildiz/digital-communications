@@ -34,7 +34,8 @@ CONTENT.CHAPTERS = [
   { n:'2', module:'M2', title:'Baseband transmission of digital signals' },
   { n:'3', module:'M3', title:'Geometric representation of signal waveforms' },
   { n:'4', module:'M4', title:'The optimal receiver in AWGN' },
-  { n:'5', module:'M5', title:'Digital modulation methods' }
+  { n:'5', module:'M5', title:'Digital modulation methods' },
+  { n:'6', module:'M6', title:'An introduction to information theory' }
 ];
 
 /* ---- sections ----------------------------------------------------------
@@ -106,6 +107,17 @@ CONTENT.SECTIONS = {
     { n:'5.3', title:'Amplitude and quadrature',       ids:['m5-mask','m5-qam','m5-lab-h'] },
     { n:'5.4', title:'Frequency-shift keying',         ids:['m5-mfsk','m5-compare'] },
     { n:'5.5', title:'Summary',                        ids:['m5-synth'] }
+  ],
+
+  M6: [
+    { n:'6.0', title:'Opening',                        ids:['m6-open'] },
+    { n:'6.1', title:'Information and entropy',        ids:[
+        'm6-selfinfo','m6-entropy','m6-extension','m6-lab-i'] },
+    { n:'6.2', title:'What a code costs',              ids:['m6-coding'] },
+    { n:'6.3', title:'Prefix codes and the Kraft inequality', ids:[
+        'm6-prefix','m6-kraft','m6-bound'] },
+    { n:'6.4', title:'Huffman coding',                 ids:['m6-huffman','m6-huffman-var','m6-lab-j'] },
+    { n:'6.5', title:'Summary',                        ids:['m6-synth'] }
   ]
 
 };
@@ -178,7 +190,13 @@ CONTENT.BOOK = {
   'm5-open':'8.5', 'm5-bpsk':'8.6.1', 'm5-bfsk':'9.5', 'm5-bask':'8.5.1',
   'm5-mpsk':'8.6.1', 'm5-mpsk-pe':'8.6.3',
   'm5-mask':'8.5.3', 'm5-qam':'8.7.1', 'm5-lab-h':'8.6.3, 8.7.1',
-  'm5-mfsk':'9.5', 'm5-compare':'9.7', 'm5-synth':'8.5, 8.6, 8.7'
+  'm5-mfsk':'9.5', 'm5-compare':'9.7', 'm5-synth':'8.5, 8.6, 8.7',
+
+  'm6-open':'12.1', 'm6-selfinfo':'12.1.1', 'm6-entropy':'12.1.1',
+  'm6-extension':'12.1.1', 'm6-lab-i':'12.1.1',
+  'm6-coding':'12.2', 'm6-prefix':'12.3', 'm6-kraft':'12.3',
+  'm6-bound':'12.2', 'm6-huffman':'12.3.1', 'm6-huffman-var':'12.3.1',
+  'm6-lab-j':'12.3.1', 'm6-synth':'12.1, 12.2, 12.3'
 };
 
 /* ---- derivation --------------------------------------------------------
