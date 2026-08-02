@@ -686,23 +686,23 @@ git add verify/verify_scenes.py && git commit -m "Re-derive every number the sam
 - Produces: laboratory A (quantization and SQNR) and B (PCM, DPCM, delta modulation), each
   registered in the scene list with a `1.L1` / `1.L2` address.
 
-- [ ] **Step 1: Port the numerical core from `commsyslab`**
+- [x] **Step 1: Port the numerical core from `commsyslab`**
 
 `src/lib/dsp/sigmadelta.ts` and `dpcm.ts` for laboratory B; the quantizer in
 `src/modules/sampling-quantization/` for A. TypeScript to vanilla JavaScript, type annotations
 dropped. **Not** an import — the artifact stays one file.
 
-- [ ] **Step 2: Re-check every equation reference that came with it**
+- [x] **Step 2: Re-check every equation reference that came with it**
 
 Look each up in `source/Book.pdf`. `gram-schmidt.ts` is already known to cite §7.1 for a result
 that is §8.1 here. `rule_check.py` cannot catch this: a wrong `PS` anchor is a well-formed one.
 
-- [ ] **Step 3: Draw the figures from `PLOT.COL`**
+- [x] **Step 3: Draw the figures from `PLOT.COL`**
 
 No figure carries a page, plate or ink colour of its own, and a figure built in JavaScript is
 produced per render — a figure generated once at load time keeps the palette it was born with.
 
-- [ ] **Step 4: Run the interaction gates**
+- [x] **Step 4: Run the interaction gates**
 
 ```bash
 cd build && node labtest.js && node pw.js labwalk.js
@@ -710,7 +710,7 @@ cd build && node labtest.js && node pw.js labwalk.js
 
 Expected: `ERRORS: none`, and `PROBLEMS: none` with the walked-state count printed.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add -A && git commit -m "Add the quantization and waveform-coding laboratories"
