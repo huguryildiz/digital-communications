@@ -423,12 +423,12 @@ const SC = [
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>{
-      const a = P.Axes({w:520,h:320,xr:[0,16],yr:[-7,0.3],
-        xlabel:'E_b/N_0\\;(\\mathrm{dB})',ylabel:'\\log_{10}P_e',
+      const a = P.Axes({w:520,h:320,xr:[0,16],yr:[-7,-0.02],
+        xlabel:'E_b/N_0\\;(\\mathrm{dB})',ylabel:'P_e',ytickfmt:P.decade,yticksOverride:P.decades(-7,-1),zeroAxes:false,
         pad:{l:58,r:26,t:26,b:44},xtarget:6,ytarget:6});
       /* 8-PSK: d_min^2 = 4 Es sin^2(pi/8), Es = 3 Eb, Nmin = 2, M-1 = 7 */
       const arg = d => Math.sqrt(3*Math.pow(10,d/10)*4*Math.pow(Math.sin(Math.PI/8),2)/2);
-      const cl = v => Math.max(-6.4, Math.log10(Math.max(1e-12, v)));
+      const cl = v => Math.log10(Math.max(1e-12, v));
       a.curve(d=>cl(7*Qf(arg(d))),{color:C.err,width:2.2});
       a.curve(d=>cl(2*Qf(arg(d))),{color:C.in,width:2.2});
       a.curve(d=>cl(1*Qf(arg(d))),{color:C.muted,width:1.5,dash:'5 4'});

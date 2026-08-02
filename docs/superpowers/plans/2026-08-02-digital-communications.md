@@ -886,12 +886,12 @@ Per-module file names, following the established pattern:
 M0 is written last, because a course opening is easier to write once the course exists. It carries
 no examinable method and therefore **no question section**.
 
-- [ ] **Step 1: Replace the placeholder scene with the opening**
+- [x] **Step 1: Replace the placeholder scene with the opening**
 
 The frame of the course, why digital, and the course map. Radial and orbital compositions are
 reserved for exactly this.
 
-- [ ] **Step 2: Write the one scene that introduces the anchor convention**
+- [x] **Step 2: Write the one scene that introduces the anchor convention**
 
 This scene shows the `PS CH` form it describes and is the single exemption in `rule_check.py` and
 `seccheck.js`. Everywhere else the form is enforced.

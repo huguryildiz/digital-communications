@@ -231,10 +231,10 @@ const SC = [
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>{
-      const a = P.Axes({w:520,h:340,xr:[0,20],yr:[-6,0.3],
-        xlabel:'E_b/N_0\\;(\\mathrm{dB})',ylabel:'\\log_{10}P_e',
+      const a = P.Axes({w:520,h:340,xr:[0,20],yr:[-6,-0.02],
+        xlabel:'E_b/N_0\\;(\\mathrm{dB})',ylabel:'P_e',ytickfmt:P.decade,yticksOverride:P.decades(-6,-1),zeroAxes:false,
         pad:{l:58,r:26,t:26,b:44},xtarget:5,ytarget:6});
-      const cl = v => Math.max(-5.6, Math.log10(Math.max(1e-12, v)));
+      const cl = v => Math.log10(Math.max(1e-12, v));
       [[2,C.in],[4,C.out],[8,C.h],[16,C.err]].forEach(([M,col])=>{
         a.curve(d=>cl(2*Qf(Math.sqrt(2*Math.log2(M)*Math.pow(10,d/10))*Math.sin(Math.PI/M))),
           {color:col,width:2.1});

@@ -97,8 +97,8 @@ Object.assign(LABS, (function(){
       const nTrial = [400, 1500, 5000, 20000][st.trials - 1] || 5000;
       const cl = v => Math.log10(Math.max(1e-12, v));
 
-      const a = P.Axes({w:600,h:420,xr:[0,20],yr:[-5.4,0.3],
-        xlabel:'E_s/N_0\\;(\\mathrm{dB})', ylabel:'\\log_{10}P_s',
+      const a = P.Axes({w:600,h:420,xr:[0,20],yr:[-5.4,-0.02],
+        xlabel:'E_s/N_0\\;(\\mathrm{dB})', ylabel:'P_s', ytickfmt:P.decade, yticksOverride:P.decades(-5,-1), zeroAxes:false,
         pad:{l:60,r:26,t:26,b:46}, xtarget:5, ytarget:6});
       a.curve(d=>cl(closed(g, d)), {color:P.COL.in, width:2.2});
 

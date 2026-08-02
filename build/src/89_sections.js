@@ -49,7 +49,7 @@ CONTENT.CHAPTERS = [
 CONTENT.SECTIONS = {
 
   M0: [
-    { n:'0', ids:['m0-open'] }
+    { n:'0', ids:['m0-open','m0-why','m0-map','m0-how'] }
   ],
 
   M1: [

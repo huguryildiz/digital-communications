@@ -167,10 +167,13 @@ Object.assign(LABS, (function(){
       ax.vline(lam,{color:P.COL.ink,dash:'5 4',width:1.8});
       ax.vline(lamOpt,{color:P.COL.h,dash:'2 4',width:1.6});
 
-      const bx = P.Axes({w:800,h:200,xr:[-1,1],yr:[Math.log10(Math.max(1e-12,peOpt))-0.6,
-                                                  Math.log10(Math.max(1e-12,peOpt))+1.6],
-        xlabel:'\\lambda/(2\\sqrt{E_b})',ylabel:'\\log_{10}P_e',pad:{l:60,r:26,t:26,b:44},
-        xtarget:5,ytarget:4});
+      /* The range floats with the operating point, so the decades are taken
+         from the range rather than written down. */
+      const bLo = Math.log10(Math.max(1e-12,peOpt)) - 0.6, bHi = bLo + 2.2;
+      const bx = P.Axes({w:800,h:200,xr:[-1,1],yr:[bLo,bHi],
+        xlabel:'\\lambda/(2\\sqrt{E_b})',ylabel:'P_e',
+        ytickfmt:P.decade, yticksOverride:P.decades(bLo,bHi), zeroAxes:false,
+        pad:{l:60,r:26,t:26,b:44}, xtarget:5, ytarget:4});
       bx.curve(u=>{ const L=u*2*A;
         return Math.log10(Math.max(1e-12, p0*Q((L+A)/sig)+p1*Q((A-L)/sig))); },
         {color:P.COL.in,width:2.3});
