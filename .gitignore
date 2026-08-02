@@ -1,0 +1,21 @@
+# Third-party and oversized source material. Never redistributed, never in history.
+source/
+
+# Generated intermediates and derived editions. Only the artifact and the lecture
+# notes PDF are tracked; the other three editions are rebuilt from the sources.
+dist/Lecture_Notes.html
+dist/Student_Workbook.*
+dist/Instructor_Solutions.*
+dist/Formula_Reference.*
+
+# Local working area, not student-facing.
+.claude/
+
+# Local toolchain and scratch output.
+.venv/
+node_modules/
+shots/
+pages/
+textclash.json
+
+.DS_Store
