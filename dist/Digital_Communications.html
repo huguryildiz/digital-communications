@@ -4338,7 +4338,8 @@ const SC = [
     ]},
     {t:'reveal', at:3, items:[
       {t:'body', html:'Substituting $\\Delta=2m_{\\max}/L$ and $L=2^{R}$ gives the form used for the rest of the module:'},
-      {t:'eq', key:true, tex:'E[Q^{2}]=\\frac{1}{12}\\left(\\frac{2m_{\\max}}{L}\\right)^{2}=\\frac{1}{3}\\frac{m_{\\max}^{2}}{L^{2}}=\\frac{m_{\\max}^{2}}{3\\cdot 2^{2R}}'}
+      {t:'eq', key:true, tex:'E[Q^{2}]=\\frac{1}{12}\\left(\\frac{2m_{\\max}}{L}\\right)^{2}=\\frac{1}{3}\\frac{m_{\\max}^{2}}{L^{2}}=\\frac{m_{\\max}^{2}}{3\\cdot 2^{2R}}'},
+      {t:'note', kind:'def', head:'What this says, in plain words', html:'Rounding to the nearest level adds a small random amount to every sample, and that amount is never more than half a step. Its power is one twelfth of the step squared. The last form says the same thing about bits: every extra bit halves the step, so it divides the noise power by four. That factor of four is the $6$ dB the next scene is about.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figQuantError().top, caption:'A sinusoid of amplitude $5$ through an eight-level uniform quantizer, so $\\Delta=1.25$.'},
@@ -4638,7 +4639,8 @@ const SC = [
       {t:'body', html:'<p>Every bit per sample buys $6.02$ dB and costs $f_s$ bits per second. Module 2 takes that bit stream and asks what the channel does to it.</p>'},
       {t:'eq', plain:true, tex:'\\mathrm{SQNR}=\\alpha+6.02R,\\qquad R_b=Rf_s'}
     ]}]
-  ]}
+  ]},
+  {t:'note', kind:'ok', head:'The module in one sentence', html:'Turning a signal into bits costs two things and nothing else: you must sample fast enough, or the spectrum folds and cannot be unfolded, and you must round, which adds a small noise whose power falls by a factor of four with every extra bit.'}
 ]}
 
 ];
@@ -5294,7 +5296,8 @@ const SC = [
       {t:'body', html:'<p>Zero interference requires the pulse spectrum to tile the axis at the symbol rate. A bandwidth $W$ carries $2W$ symbols per second at best, and the raised cosine buys practicality with the excess $\\alpha W$.</p>'},
       {t:'eq', plain:true, tex:'R_b\\sum_n P(f-nR_b)=1,\\quad B_T=(1+\\alpha)W'}
     ]}]
-  ]}
+  ]},
+  {t:'note', kind:'ok', head:'The module in one sentence', html:'Two things can go wrong on the way to the decision, and they are fixed separately: noise is dealt with by the matched filter, which extracts as much of the pulse energy as there is to extract, and interference from neighbouring symbols is dealt with by choosing a pulse whose spectrum tiles the axis at the symbol rate.'}
 ]}
 
 ];
@@ -5669,7 +5672,8 @@ const SC = [
     [{t:'card', head:'What comes next', items:[
       {t:'body', html:'<p>Module 4 builds the receiver for this picture: it computes the coordinates of what arrives and picks the nearest point. The error probability then depends on the distances, and on nothing else.</p>'}
     ]}]
-  ]}
+  ]},
+  {t:'note', kind:'ok', head:'The module in one sentence', html:'A waveform is hard to reason about and a point is not, so the whole of this module is one change of language: pick an orthonormal basis, write every signal as its list of coordinates, and from then on energy is a squared length and the difference between two signals is a distance.'}
 ]}
 
 ];

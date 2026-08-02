@@ -362,7 +362,8 @@ const SC = [
     [{t:'card', head:'What comes next', items:[
       {t:'body', html:'<p>Module 4 builds the receiver for this picture: it computes the coordinates of what arrives and picks the nearest point. The error probability then depends on the distances, and on nothing else.</p>'}
     ]}]
-  ]}
+  ]},
+  {t:'note', kind:'ok', head:'The module in one sentence', html:'A waveform is hard to reason about and a point is not, so the whole of this module is one change of language: pick an orthonormal basis, write every signal as its list of coordinates, and from then on energy is a squared length and the difference between two signals is a distance.'}
 ]}
 
 ];

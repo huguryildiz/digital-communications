@@ -643,7 +643,8 @@ const SC = [
       {t:'body', html:'<p>Zero interference requires the pulse spectrum to tile the axis at the symbol rate. A bandwidth $W$ carries $2W$ symbols per second at best, and the raised cosine buys practicality with the excess $\\alpha W$.</p>'},
       {t:'eq', plain:true, tex:'R_b\\sum_n P(f-nR_b)=1,\\quad B_T=(1+\\alpha)W'}
     ]}]
-  ]}
+  ]},
+  {t:'note', kind:'ok', head:'The module in one sentence', html:'Two things can go wrong on the way to the decision, and they are fixed separately: noise is dealt with by the matched filter, which extracts as much of the pulse energy as there is to extract, and interference from neighbouring symbols is dealt with by choosing a pulse whose spectrum tiles the axis at the symbol rate.'}
 ]}
 
 ];
