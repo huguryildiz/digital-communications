@@ -262,6 +262,47 @@ def _m5_qam(m):
     return _m5_unit([(x, y) for x in lv for y in lv])
 
 
+# ── Module 6 ────────────────────────────────────────────────────────────────
+# The Huffman code here is built with a heap; the scenes state the result of
+# working the algorithm by hand on the same probabilities.
+
+import heapq
+
+
+def _m6_H(ps):
+    return -sum(p * math.log2(p) for p in ps if p > 0)
+
+
+def _m6_lengths(ps, minvar=True):
+    heap = [(p, 1 if minvar else -1, i, (i,)) for i, p in enumerate(ps)]
+    heapq.heapify(heap)
+    depth = [0] * len(ps)
+    nxt = len(ps)
+    while len(heap) > 1:
+        pa, _, _, la = heapq.heappop(heap)
+        pb, _, _, lb = heapq.heappop(heap)
+        for i in la + lb:
+            depth[i] += 1
+        n = len(la) + len(lb)
+        heapq.heappush(heap, (pa + pb, (n if minvar else -n), nxt, la + lb))
+        nxt += 1
+    return depth
+
+
+def _m6_L(ps, minvar=True):
+    return sum(p * l for p, l in zip(ps, _m6_lengths(ps, minvar)))
+
+
+def _m6_var(ps, minvar=True):
+    ls = _m6_lengths(ps, minvar)
+    L = sum(p * l for p, l in zip(ps, ls))
+    return sum(p * (l - L) ** 2 for p, l in zip(ps, ls))
+
+
+_M6_S3 = [0.7, 0.2, 0.1]
+_M6_FIVE = [0.4, 0.2, 0.2, 0.1, 0.1]
+
+
 CHECKS: list[dict] = [
     # ---- 1.2.3, the sampling-rate example -------------------------------
     {"name": "1.2.3 Nyquist rate, W = 40 kHz",
@@ -427,6 +468,39 @@ CHECKS: list[dict] = [
      "derive": lambda: 10 * math.log10(
          _m5_dmin(_m5_psk(8)) ** 2 / _m5_dmin(_m5_psk(16)) ** 2 * 3 / 4),
      "tol": 0.11},
+
+    # ── Module 6 ────────────────────────────────────────────────────────────
+
+    {"name": "6.2 entropy of the source 0.7, 0.2, 0.1", "stated": 1.1568,
+     "derive": lambda: _m6_H(_M6_S3), "tol": 1e-4},
+    {"name": "6.2 its ceiling log2 3", "stated": 1.585,
+     "derive": lambda: math.log2(3), "tol": 1e-3},
+    {"name": "6.3 entropy of the second extension", "stated": 2.3136,
+     "derive": lambda: _m6_H([a * b for a in _M6_S3 for b in _M6_S3]),
+     "tol": 1e-4},
+    {"name": "6.4 efficiency of English at L=4.22, H=1.3", "stated": 0.31,
+     "derive": lambda: 1.3 / 4.22, "tol": 8e-3},
+    {"name": "6.6 Kraft sum for Code I", "stated": 1.5,
+     "derive": lambda: sum(2.0 ** -l for l in [1, 1, 2, 2]), "tol": 1e-9},
+    {"name": "6.6 Kraft sum for Code II", "stated": 1.0,
+     "derive": lambda: sum(2.0 ** -l for l in [1, 2, 3, 3]), "tol": 1e-9},
+    {"name": "6.6 Kraft sum for Code III", "stated": 0.9375,
+     "derive": lambda: sum(2.0 ** -l for l in [1, 2, 3, 4]), "tol": 1e-9},
+    {"name": "6.8 entropy of the Huffman example", "stated": 2.1219,
+     "derive": lambda: _m6_H(_M6_FIVE), "tol": 1e-4},
+    {"name": "6.8 its Huffman average length", "stated": 2.2,
+     "derive": lambda: _m6_L(_M6_FIVE), "tol": 1e-9},
+    {"name": "6.8 its coding efficiency", "stated": 0.9645,
+     "derive": lambda: _m6_H(_M6_FIVE) / _m6_L(_M6_FIVE), "tol": 1e-4},
+    {"name": "6.8 the excess over the entropy, per cent", "stated": 3.68,
+     "derive": lambda: (_m6_L(_M6_FIVE) - _m6_H(_M6_FIVE))
+         / _m6_H(_M6_FIVE) * 100, "tol": 3e-3},
+    {"name": "6.9 average length of the other tie-breaking", "stated": 2.2,
+     "derive": lambda: _m6_L(_M6_FIVE, False), "tol": 1e-9},
+    {"name": "6.9 variance of the minimum-variance code", "stated": 0.16,
+     "derive": lambda: _m6_var(_M6_FIVE, True), "tol": 1e-9},
+    {"name": "6.9 variance of the other one", "stated": 1.36,
+     "derive": lambda: _m6_var(_M6_FIVE, False), "tol": 1e-9},
 ]
 
 DEFAULT_TOL = 5e-3
