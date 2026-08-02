@@ -32,7 +32,8 @@ CONTENT.CHAPTERS = [
   { n:'0', module:'M0', title:'The frame of the course', flat:true },
   { n:'1', module:'M1', title:'The transition from analog to digital' },
   { n:'2', module:'M2', title:'Baseband transmission of digital signals' },
-  { n:'3', module:'M3', title:'Geometric representation of signal waveforms' }
+  { n:'3', module:'M3', title:'Geometric representation of signal waveforms' },
+  { n:'4', module:'M4', title:'The optimal receiver in AWGN' }
 ];
 
 /* ---- sections ----------------------------------------------------------
@@ -85,6 +86,16 @@ CONTENT.SECTIONS = {
     { n:'3.2', title:'Constellations',                 ids:['m3-constellation','m3-remarks'] },
     { n:'3.3', title:'The Gram–Schmidt procedure',     ids:['m3-gs','m3-ex-gs','m3-lab-f'] },
     { n:'3.4', title:'Summary',                        ids:['m3-synth'] }
+  ],
+
+  M4: [
+    { n:'4.0', title:'Opening',                        ids:['m4-open'] },
+    { n:'4.1', title:'The observation',                ids:['m4-observe','m4-noise'] },
+    { n:'4.2', title:'The decision rule',              ids:['m4-map','m4-mindist','m4-metric'] },
+    { n:'4.3', title:'Decision regions',               ids:['m4-regions','m4-binary','m4-lab-g'] },
+    { n:'4.4', title:'The union bound',                ids:[
+        'm4-pe','m4-union','m4-dmin','m4-ex-union','m4-ex-union-b'] },
+    { n:'4.5', title:'Summary',                        ids:['m4-synth'] }
   ]
 
 };
@@ -139,7 +150,16 @@ CONTENT.BOOK = {
      which in this edition is the sampling theorem. */
   'm3-open':'8.1', 'm3-ortho':'8.1', 'm3-project':'8.1', 'm3-energy':'8.1',
   'm3-constellation':'8.1', 'm3-remarks':'8.1',
-  'm3-gs':'8.1', 'm3-ex-gs':'8.1', 'm3-lab-f':'8.1', 'm3-synth':'8.1'
+  'm3-gs':'8.1', 'm3-ex-gs':'8.1', 'm3-lab-f':'8.1', 'm3-synth':'8.1',
+
+  /* Module 4 is section 8.4 of the book, "M-ary Digital Modulation": 8.4.1 is
+     the optimum receiver for M-ary signals in AWGN and 8.4.2 is the union
+     bound. Both were read there. */
+  'm4-open':'8.4', 'm4-observe':'8.4.1', 'm4-noise':'8.4.1',
+  'm4-map':'8.4.1', 'm4-mindist':'8.4.1', 'm4-metric':'8.4.1',
+  'm4-regions':'8.4.1', 'm4-binary':'8.3.3', 'm4-lab-g':'8.4.1',
+  'm4-pe':'8.4.1', 'm4-union':'8.4.2', 'm4-dmin':'8.4.2', 'm4-ex-union':'8.4.2', 'm4-ex-union-b':'8.4.2',
+  'm4-synth':'8.4'
 };
 
 /* ---- derivation --------------------------------------------------------
