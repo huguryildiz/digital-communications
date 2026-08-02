@@ -231,6 +231,37 @@ def _gs_example():
 #              computed independently of how the scene computes it
 #   tol     -- relative tolerance; the default is what a figure printed to
 #              three significant digits can be trusted to
+# ── Module 5 constellations ─────────────────────────────────────────────────
+# Built from the definition of each family and scaled to unit average symbol
+# energy, so a distance read off one is already in units of root Es.
+
+
+def _m5_unit(pts):
+    e = sum(x * x + y * y for x, y in pts) / len(pts)
+    k = 1 / math.sqrt(e)
+    return [(x * k, y * k) for x, y in pts]
+
+
+def _m5_dmin(pts):
+    return min(math.hypot(pts[i][0] - pts[j][0], pts[i][1] - pts[j][1])
+               for i in range(len(pts)) for j in range(i + 1, len(pts)))
+
+
+def _m5_psk(m):
+    return _m5_unit([(math.cos(2 * math.pi * k / m),
+                      math.sin(2 * math.pi * k / m)) for k in range(m)])
+
+
+def _m5_pam(m):
+    return _m5_unit([(2 * k - (m - 1), 0.0) for k in range(m)])
+
+
+def _m5_qam(m):
+    side = int(round(math.sqrt(m)))
+    lv = [2 * k - (side - 1) for k in range(side)]
+    return _m5_unit([(x, y) for x in lv for y in lv])
+
+
 CHECKS: list[dict] = [
     # ---- 1.2.3, the sampling-rate example -------------------------------
     {"name": "1.2.3 Nyquist rate, W = 40 kHz",
@@ -361,6 +392,41 @@ CHECKS: list[dict] = [
      "derive": lambda: _gs_example()["energies"][2], "tol": 1e-6},
     {"name": "3.2 four points on a square: smallest distance at energy 2",
      "stated": 2.0, "derive": lambda: 2 * 1.0},
+
+    # ── Module 5 ────────────────────────────────────────────────────────────
+    # The scenes state seven numbers. Each is re-derived here from the points
+    # of the constellation, scaled to unit average energy, rather than from the
+    # formula the scene displays beside it.
+
+    {"name": "5.1 BFSK and BASK against BPSK, in dB", "stated": 3.0,
+     "derive": lambda: 10 * math.log10(
+         _m5_dmin(_m5_unit([(-1, 0), (1, 0)])) ** 2
+         / _m5_dmin(_m5_unit([(1, 0), (0, 1)])) ** 2), "tol": 5e-3},
+    {"name": "5.2 energy ratio from QPSK to 8-PSK", "stated": 3.41,
+     "derive": lambda: _m5_dmin(_m5_psk(4)) ** 2 / _m5_dmin(_m5_psk(8)) ** 2,
+     "tol": 2e-3},
+    {"name": "5.2 that ratio in dB per symbol", "stated": 5.33,
+     "derive": lambda: 10 * math.log10(
+         _m5_dmin(_m5_psk(4)) ** 2 / _m5_dmin(_m5_psk(8)) ** 2), "tol": 2e-3},
+    {"name": "5.2 and per bit", "stated": 3.57,
+     "derive": lambda: 10 * math.log10(
+         _m5_dmin(_m5_psk(4)) ** 2 / _m5_dmin(_m5_psk(8)) ** 2 * 2 / 3),
+     "tol": 3e-3},
+    {"name": "5.3 QAM over PAM at sixteen points", "stated": 8.5,
+     "derive": lambda: _m5_dmin(_m5_qam(16)) ** 2 / _m5_dmin(_m5_pam(16)) ** 2,
+     "tol": 2e-3},
+    {"name": "5.3 that advantage in dB", "stated": 9.3,
+     "derive": lambda: 10 * math.log10(
+         _m5_dmin(_m5_qam(16)) ** 2 / _m5_dmin(_m5_pam(16)) ** 2), "tol": 1e-2},
+    {"name": "5.5 cost of doubling the PAM levels, 8 against 4, in dB",
+     "stated": 6.0,
+     "derive": lambda: 10 * math.log10(
+         _m5_dmin(_m5_pam(4)) ** 2 / _m5_dmin(_m5_pam(8)) ** 2), "tol": 4e-2},
+    {"name": "5.5 cost of the extra PSK bit above eight points, in dB",
+     "stated": 5.0,
+     "derive": lambda: 10 * math.log10(
+         _m5_dmin(_m5_psk(8)) ** 2 / _m5_dmin(_m5_psk(16)) ** 2 * 3 / 4),
+     "tol": 0.11},
 ]
 
 DEFAULT_TOL = 5e-3
