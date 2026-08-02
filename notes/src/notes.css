@@ -114,11 +114,10 @@ td:last-child,th:last-child{ padding-right:0; }
 /* title page */
 .title{ padding-top:52pt; }
 .title .mark{ margin-bottom:20pt; }
+/* The mark carries its own gradients and stroke widths, so all the page has
+   to decide is how large it is. Nothing animates in a document meant to be
+   printed. */
 .title .mark .eelogo{ width:38pt; height:38pt; display:block; }
-.eelogo-trace{ fill:none; stroke:url(#eelogo-gt); stroke-width:3.6;
-  stroke-linecap:round; stroke-linejoin:round; }
-.eelogo-halo{ fill:none; stroke:url(#eelogo-gt); stroke-width:4.6;
-  stroke-linecap:round; stroke-linejoin:round; filter:url(#eelogo-soft); opacity:.16; }
 .title .kicker{ font-family:var(--mono); font-size:8.4pt; letter-spacing:.18em;
   text-transform:uppercase; color:var(--slate); margin-bottom:16pt; }
 .title .meta{ margin-top:34pt; border-top:0.7pt solid var(--rule); padding-top:10pt;

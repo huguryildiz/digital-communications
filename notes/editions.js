@@ -23,6 +23,15 @@ const g = s => s.replace(/<\/script>/gi, '<\\/script>');
 /* the exam drills and the glossary, loaded the way the artifact loads them */
 const DRILL_FILES = fs.readdirSync(B).filter(f => /^9[2-8]_drill_m\d\.js$/.test(f)).sort();
 
+/* The mark is `build/src/icon.svg` and nothing else. It is read here, given
+   the class the stylesheet sizes it by, and handed to `render.js` as a global,
+   so the artifact, the lecture notes and the three editions all draw the same
+   file. */
+const MARK = JSON.stringify(
+  fs.readFileSync(path.join(B, 'icon.svg'), 'utf8').trim()
+    .replace(/^<svg /, '<svg class="eelogo" aria-hidden="true" focusable="false" ')
+    .replace(/\swidth="\d+"\sheight="\d+"/, ''));
+
 const doc = (title, builder, extra = '') => `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
 <title>${title}</title>
 <style>${R('20_katex.css')}</style>
@@ -46,6 +55,7 @@ const doc = (title, builder, extra = '') => `<!DOCTYPE html><html lang="en"><hea
 </style></head><body><div id="doc"></div>
 <script>${g(R('30_katex.js'))}</script>
 <script>${g(R('60_plot.js'))}</script>
+<script>window.ICON_SVG=${MARK};</script>
 <script>${g(S('src/render.js'))}</script>
 <script>${g(R('80_content_core.js'))}</script>
 ${DRILL_FILES.map(f => `<script>${g(R(f))}</script>`).join('\n')}

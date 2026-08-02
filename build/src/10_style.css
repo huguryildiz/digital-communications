@@ -180,22 +180,22 @@ body[data-sidebar=off] #viewport{ --sbw:0px; }
 :root{ --sbw:268px; }
 
 /* --- brand mark ------------------------------------------------------- */
-#appheader .eelogo{ width:22px; height:22px; flex:none; display:block; }
-.eelogo-trace{ fill:none; stroke:url(#eelogo-gt); stroke-width:3.6;
-  stroke-linecap:round; stroke-linejoin:round; }
-.eelogo-halo{ fill:none; stroke:url(#eelogo-gt); stroke-width:4.6;
-  stroke-linecap:round; stroke-linejoin:round; filter:url(#eelogo-soft);
-  opacity:.16; animation:eelogo-glow 2.6s ease-in-out infinite; }
-.eelogo-beat{ transform-box:view-box; transform-origin:32px 32px;
+#appheader .eelogo{ width:22px; height:22px; flex:none; display:block;
+  animation:eelogo-glow 2.6s ease-in-out infinite; }
+/* The pulse is applied to the two wave paths and not to the frame, so the
+   rounded square stays still while the signal inside it beats. */
+#appheader .eelogo path{ transform-box:view-box; transform-origin:24px 24px;
   animation:eelogo-beat 2.6s ease-in-out infinite; }
-
-@keyframes eelogo-beat{ 0%{transform:scale(1)} 7%{transform:scale(1.055)} 15%{transform:scale(1)}
-  22%{transform:scale(1.03)} 31%{transform:scale(1)} 100%{transform:scale(1)} }
-@keyframes eelogo-glow{ 0%{opacity:.16} 7%{opacity:.62} 15%{opacity:.24}
-  22%{opacity:.45} 31%{opacity:.16} 100%{opacity:.16} }
-body[data-motion=reduced] .eelogo-beat,
-body[data-motion=reduced] .eelogo-halo{ animation:none; }
-@media (prefers-reduced-motion:reduce){ .eelogo-beat, .eelogo-halo{ animation:none; } }
+@keyframes eelogo-beat{ 0%{transform:scale(1)} 7%{transform:scale(1.07)} 15%{transform:scale(1)}
+  22%{transform:scale(1.035)} 30%{transform:scale(1)} 100%{transform:scale(1)} }
+@keyframes eelogo-glow{ 0%{filter:none}
+  7%{filter:drop-shadow(0 0 3.5px rgba(91,140,255,.75))}
+  15%{filter:drop-shadow(0 0 1.5px rgba(91,140,255,.35))}
+  30%{filter:none} 100%{filter:none} }
+body[data-motion=reduced] #appheader .eelogo,
+body[data-motion=reduced] #appheader .eelogo path{ animation:none; filter:none; }
+@media (prefers-reduced-motion:reduce){
+  #appheader .eelogo, #appheader .eelogo path{ animation:none; filter:none; } }
 
 /* --- top bar --------------------------------------------------------- */
 #appheader{
