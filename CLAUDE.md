@@ -53,6 +53,22 @@ arithmetic, or that arrives at the answer by a step the reader cannot see the re
 unfinished. This covers the worked solution behind every practice question in the artifact, the
 worked examples in the lecture notes, and the instructor solutions.
 
+## Follow the lecturer's own exposition
+
+`source/Lecture Notes.pdf` is where this course is already explained well, and that explanation is
+the model for every page of this artifact. **Keep it throughout — the same voice from the first
+scene to the last.** Concretely:
+
+- **Take the order of ideas from the handwritten pages**, not from the slides and not from the book.
+  Where the notes set something up before using it, set it up in the same place.
+- **Keep the lecturer's phrasing for a definition or a warning** where it is already plain. Rewrite
+  only what the page leaves implicit because it was said aloud.
+- **The image-only worked examples live only in those pages.** Several slides show an example as a
+  picture with no extractable text; the handwritten version is the one that can be read, and it is
+  the authority for that example.
+- **One voice.** A reader must not be able to tell which module was written when. Where an earlier
+  module drifts from this, it is fixed rather than left.
+
 ## Where the project stands
 
 | Phase | Content | State |
