@@ -153,6 +153,83 @@ def _triangular_tail(edge, half_base):
 #   derive  -- a callable of no arguments returning the same quantity,
 #              computed independently of how the solution computes it
 #   tol     -- relative tolerance
+# ── Module 5 constellations ─────────────────────────────────────────────────
+# Each family is built from its definition and then scaled to unit average
+# symbol energy, so a distance read off it is already in units of root Es. The
+# solutions quote formulas; these functions never use one.
+
+
+def _unit_energy(pts):
+    """Scale a point list so that its average squared norm is one."""
+    e = sum(sum(c * c for c in p) for p in pts) / len(pts)
+    k = 1 / math.sqrt(e)
+    return [tuple(c * k for c in p) for p in pts]
+
+
+def _dist(a, b):
+    return math.sqrt(sum((x - y) ** 2 for x, y in zip(a, b)))
+
+
+def _dmin(pts):
+    return min(_dist(pts[i], pts[j])
+               for i in range(len(pts)) for j in range(i + 1, len(pts)))
+
+
+def _nmin(pts):
+    """The average number of points at the minimum distance."""
+    d = _dmin(pts)
+    n = sum(1 for i in range(len(pts)) for j in range(len(pts))
+            if i != j and _dist(pts[i], pts[j]) < d * 1.0001)
+    return n / len(pts)
+
+
+def _pe(pts, esn0_db):
+    """The nearest-neighbour estimate, from the geometry alone."""
+    n0 = 10 ** (-esn0_db / 10)
+    return _nmin(pts) * _Q(math.sqrt(_dmin(pts) ** 2 / (2 * n0)))
+
+
+def _ebn0_for(pts, target):
+    """The energy per bit, in dB, at which a constellation reaches `target`."""
+    x = _Qinv(target / _nmin(pts))
+    esn0 = 2 * x ** 2 / _dmin(pts) ** 2
+    return 10 * math.log10(esn0 / math.log2(len(pts)))
+
+
+def _psk(m):
+    return _unit_energy([(math.cos(2 * math.pi * k / m),
+                          math.sin(2 * math.pi * k / m)) for k in range(m)])
+
+
+def _pam_raw(m):
+    return [(2 * k - (m - 1), 0.0) for k in range(m)]
+
+
+def _pam(m):
+    return _unit_energy(_pam_raw(m))
+
+
+def _qam(m):
+    side = int(round(math.sqrt(m)))
+    levels = [2 * k - (side - 1) for k in range(side)]
+    return _unit_energy([(x, y) for x in levels for y in levels])
+
+
+def _simplex_orthogonal(m):
+    """M orthogonal waveforms: one axis each, so M dimensions."""
+    return _unit_energy([tuple(1.0 if j == k else 0.0 for j in range(m))
+                         for k in range(m)])
+
+
+_ANTIPODAL = _unit_energy([(-1.0, 0.0), (1.0, 0.0)])
+_ORTHOGONAL = _unit_energy([(1.0, 0.0), (0.0, 1.0)])
+_ONOFF = _unit_energy([(0.0, 0.0), (1.0, 0.0)])
+
+
+def _pair_d2(pts):
+    return _dist(pts[0], pts[1]) ** 2
+
+
 CHECKS: list[dict] = [
     # ---- D1-01 ----------------------------------------------------------
     {"name": "D1-01(a) Nyquist rate", "stated": 24e3, "derive": lambda: 2 * 12e3},
@@ -606,6 +683,116 @@ CHECKS: list[dict] = [
      "derive": lambda: math.sqrt(1 / 5), "tol": 1e-5},
     {"name": "D4-20(c) ratio of the Q arguments", "stated": 1.58114,
      "derive": lambda: math.sqrt(2 / 0.8), "tol": 1e-5},
+
+    # ── Module 5 ────────────────────────────────────────────────────────────
+    # Every closed form here is reached from the constellation rather than from
+    # the formula the solution quotes: the points are written down, the
+    # distances measured, and the neighbours counted.
+
+    {"name": "D5-01(b) BPSK Q argument at 9 dB", "stated": 3.986,
+     "derive": lambda: math.sqrt(_pair_d2(_ANTIPODAL) * 10 ** 0.9 / 2), "tol": 1e-3},
+    {"name": "D5-01(b) BPSK error at 9 dB", "stated": 3.36e-5,
+     "derive": lambda: _Q(math.sqrt(_pair_d2(_ANTIPODAL) * 10 ** 0.9 / 2)), "tol": 5e-3},
+    {"name": "D5-02(b) BFSK error at 9 dB", "stated": 2.41e-3,
+     "derive": lambda: _Q(math.sqrt(_pair_d2(_ORTHOGONAL) * 10 ** 0.9 / 2)), "tol": 5e-3},
+    {"name": "D5-02(c) orthogonal penalty in dB", "stated": 3.01,
+     "derive": lambda: 10 * math.log10(_pair_d2(_ANTIPODAL) / _pair_d2(_ORTHOGONAL)),
+     "tol": 2e-3},
+    {"name": "D5-03(c) on-off error at 10 dB", "stated": 7.83e-4,
+     "derive": lambda: _Q(math.sqrt(_pair_d2(_ONOFF) * 10 / 2)), "tol": 5e-3},
+    {"name": "D5-04(a) BPSK dB for 1e-5", "stated": 9.59,
+     "derive": lambda: 10 * math.log10(2 * _Qinv(1e-5) ** 2 / _pair_d2(_ANTIPODAL)),
+     "tol": 2e-3},
+    {"name": "D5-04(b) BFSK dB for 1e-5", "stated": 12.60,
+     "derive": lambda: 10 * math.log10(2 * _Qinv(1e-5) ** 2 / _pair_d2(_ORTHOGONAL)),
+     "tol": 2e-3},
+    {"name": "D5-05(a) 8-PSK minimum distance over root Es", "stated": 0.765,
+     "derive": lambda: _dmin(_psk(8)), "tol": 1e-3},
+    {"name": "D5-05(b) 8-PSK average neighbours", "stated": 2.0,
+     "derive": lambda: _nmin(_psk(8)), "tol": 1e-9},
+    {"name": "D5-05(c) 8-PSK error at 13 dB", "stated": 1.56e-2,
+     "derive": lambda: _pe(_psk(8), 13), "tol": 5e-3},
+    {"name": "D5-06(a) QPSK error at 12 dB", "stated": 6.86e-5,
+     "derive": lambda: _pe(_psk(4), 12), "tol": 5e-3},
+    {"name": "D5-06(c) BPSK at the matching energy per bit", "stated": 3.43e-5,
+     "derive": lambda: _Q(math.sqrt(_pair_d2(_ANTIPODAL) * 10 ** 0.899 / 2)), "tol": 5e-3},
+    {"name": "D5-07(a) energy ratio from QPSK to 8-PSK", "stated": 3.414,
+     "derive": lambda: _dmin(_psk(4)) ** 2 / _dmin(_psk(8)) ** 2, "tol": 1e-3},
+    {"name": "D5-07(b) cost per symbol in dB", "stated": 5.33,
+     "derive": lambda: 10 * math.log10(_dmin(_psk(4)) ** 2 / _dmin(_psk(8)) ** 2),
+     "tol": 2e-3},
+    {"name": "D5-07(b) cost per bit in dB", "stated": 3.57,
+     "derive": lambda: 10 * math.log10(
+         _dmin(_psk(4)) ** 2 / _dmin(_psk(8)) ** 2 * 2 / 3), "tol": 3e-3},
+    {"name": "D5-08(a) 16-PSK minimum distance over root Es", "stated": 0.390,
+     "derive": lambda: _dmin(_psk(16)), "tol": 2e-3},
+    {"name": "D5-08(b) 16-PSK against 8-PSK in dB", "stated": -5.85,
+     "derive": lambda: 10 * math.log10(_dmin(_psk(16)) ** 2 / _dmin(_psk(8)) ** 2),
+     "tol": 2e-3},
+    {"name": "D5-09(a) 4-PAM average energy over A squared", "stated": 5.0,
+     "derive": lambda: sum(p[0] ** 2 for p in _pam_raw(4)) / 4, "tol": 1e-9},
+    {"name": "D5-09(b) 4-PAM average neighbours", "stated": 1.5,
+     "derive": lambda: _nmin(_pam(4)), "tol": 1e-9},
+    {"name": "D5-09(c) 4-PAM error at 12 dB", "stated": 8.9e-3,
+     "derive": lambda: _pe(_pam(4), 12), "tol": 8e-3},
+    {"name": "D5-10(a) 8-PAM against 4-PAM squared distance", "stated": 0.238,
+     "derive": lambda: _dmin(_pam(8)) ** 2 / _dmin(_pam(4)) ** 2, "tol": 3e-3},
+    {"name": "D5-10(b) cost of doubling the PAM levels in dB", "stated": 6.23,
+     "derive": lambda: 10 * math.log10(_dmin(_pam(4)) ** 2 / _dmin(_pam(8)) ** 2),
+     "tol": 2e-3},
+    {"name": "D5-11(a) 8-PAM average neighbours", "stated": 1.75,
+     "derive": lambda: _nmin(_pam(8)), "tol": 1e-9},
+    {"name": "D5-12(a) 16-QAM squared distance over Es", "stated": 0.400,
+     "derive": lambda: _dmin(_qam(16)) ** 2, "tol": 2e-3},
+    {"name": "D5-12(b) 16-QAM average neighbours", "stated": 3.0,
+     "derive": lambda: _nmin(_qam(16)), "tol": 1e-9},
+    {"name": "D5-12(c) 16-QAM error at 15 dB", "stated": 1.79e-2,
+     "derive": lambda: _pe(_qam(16), 15), "tol": 5e-3},
+    {"name": "D5-13(a) 16-PAM squared distance over Es", "stated": 0.0471,
+     "derive": lambda: _dmin(_pam(16)) ** 2, "tol": 3e-3},
+    {"name": "D5-13(b) QAM advantage over PAM at M=16", "stated": 8.5,
+     "derive": lambda: _dmin(_qam(16)) ** 2 / _dmin(_pam(16)) ** 2, "tol": 2e-3},
+    {"name": "D5-13(b) that advantage in dB", "stated": 9.29,
+     "derive": lambda: 10 * math.log10(
+         _dmin(_qam(16)) ** 2 / _dmin(_pam(16)) ** 2), "tol": 2e-3},
+    {"name": "D5-14(b) 64-QAM average neighbours", "stated": 3.5,
+     "derive": lambda: _nmin(_qam(64)), "tol": 1e-9},
+    {"name": "D5-15(b) 8-FSK average neighbours", "stated": 7.0,
+     "derive": lambda: _nmin(_simplex_orthogonal(8)), "tol": 1e-9},
+    {"name": "D5-15(c) 8-FSK error at 10 dB", "stated": 5.48e-3,
+     "derive": lambda: _pe(_simplex_orthogonal(8), 10), "tol": 5e-3},
+    {"name": "D5-16(b) 16-FSK bits per second per hertz", "stated": 0.5,
+     "derive": lambda: math.log2(16) / (16 / 2), "tol": 1e-9},
+    {"name": "D5-17(a) QPSK energy per bit for 1e-4, in dB", "stated": 8.79,
+     "derive": lambda: _ebn0_for(_psk(4), 1e-4), "tol": 2e-3},
+    {"name": "D5-17(b) 16-QAM energy per bit for 1e-4, in dB", "stated": 12.98,
+     "derive": lambda: _ebn0_for(_qam(16), 1e-4), "tol": 2e-3},
+    {"name": "D5-18(c) 16-QAM error at 18 dB", "stated": 5.72e-4,
+     "derive": lambda: _pe(_qam(16), 18), "tol": 5e-3},
+    {"name": "D5-18(d) the same divided by four bits", "stated": 1.43e-4,
+     "derive": lambda: _pe(_qam(16), 18) / math.log2(16), "tol": 5e-3},
+    {"name": "D5-19(a) 8-PSK squared distance over Es", "stated": 0.586,
+     "derive": lambda: _dmin(_psk(8)) ** 2, "tol": 2e-3},
+    {"name": "D5-19(a) 8-PAM squared distance over Es", "stated": 0.190,
+     "derive": lambda: _dmin(_pam(8)) ** 2, "tol": 3e-3},
+    {"name": "D5-19(c) 8-PSK error at 15 dB", "stated": 2.33e-3,
+     "derive": lambda: _pe(_psk(8), 15), "tol": 5e-3},
+    {"name": "D5-19(c) 8-PAM error at 15 dB", "stated": 7.24e-2,
+     "derive": lambda: _pe(_pam(8), 15), "tol": 5e-3},
+    {"name": "D5-19(d) PSK over PAM at M=8, in dB", "stated": 4.9,
+     "derive": lambda: 10 * math.log10(
+         _dmin(_psk(8)) ** 2 / _dmin(_pam(8)) ** 2), "tol": 5e-3},
+    {"name": "D5-20(a) QPSK at 10 dB per bit", "stated": 7.74e-6,
+     "derive": lambda: _pe(_psk(4), 10 + 10 * math.log10(2)), "tol": 5e-3},
+    {"name": "D5-20(b) 8-PSK at 10 dB per bit", "stated": 3.03e-3,
+     "derive": lambda: _pe(_psk(8), 10 + 10 * math.log10(3)), "tol": 5e-3},
+    {"name": "D5-20(c) 16-QAM at 10 dB per bit", "stated": 7.03e-3,
+     "derive": lambda: _pe(_qam(16), 10 + 10 * math.log10(4)), "tol": 5e-3},
+    {"name": "D5-20 teach: dB that would rescue 8-PSK", "stated": 0.9,
+     "derive": lambda: 10 * math.log10(
+         _Qinv(1e-3 / _nmin(_psk(8))) ** 2
+         / (_dmin(_psk(8)) ** 2 * 10 ** ((10 + 10 * math.log10(3)) / 10) / 2)),
+     "tol": 2e-2},
 ]
 
 DEFAULT_TOL = 5e-3
