@@ -4,9 +4,25 @@ mathematics written as something other than LaTeX (R7)."""
 import re, sys, glob, os
 # The list is matched case-insensitively, so a phrase opening a sentence is
 # caught as readily as one inside it. Write each pattern in lower case.
+# Two patterns are narrower here than in the course this list came from, and
+# both for the same reason: the words mean something technical in a
+# communications course and banning them outright bans the subject.
+#
+# "source" is the origin of the information — a discrete memoryless source, a
+# Gaussian source, the source coding theorem. What R2 forbids is naming the
+# material this artifact was written from, so the pattern now matches only that
+# sense: the source *document*, or a claim made about what "the source" says.
+#
+# "PDF" is a probability density function on every page of this course. What R2
+# forbids is naming a file, so the pattern now needs the file sense: a .pdf
+# extension, or the word "file" or "document" beside it. A gate that fires on
+# the abbreviation would be turned off within a module, and a gate that is
+# turned off checks nothing.
 BANNED = [
- r'\bpdf\b', r'in this file', r'this document', r'the document shows',
- r'source notes', r'the source\b', r'original notes', r'the lecture notes (state|say|show)',
+ r'\.pdf\b', r'\bpdf (?:file|document|page)\b', r'in this file', r'this document', r'the document shows',
+ r'source notes', r'the source (?:material|document|text|file|notes|slides?|pages?)\b',
+ r'(?:in|from|per|according to) the source\b', r'the source (?:says|states|shows|gives)\b',
+ r'original notes', r'the lecture notes (state|say|show)',
  r'uploaded document', r'provided material', r'\bredrawn\b',
  r'reconstructed from', r'based on the original', r'verified against',
  # "Check:" and "Cross-check:" are legitimate steps of a worked example (R7).

@@ -728,26 +728,26 @@ git add -A && git commit -m "Add the quantization and waveform-coding laboratori
 - Produces: `window.DRILL_M1` — one taxonomy section and twenty questions, each with a hidden
   worked solution and an instructor-only `src` field.
 
-- [ ] **Step 1: Write the taxonomy**
+- [x] **Step 1: Write the taxonomy**
 
 Six entries. Three come from the exam tables (MT Q1, MT Q2, Final Q1 — see spec §8); the rest from
 the worked examples in the slides. The sixth names the full-length form.
 
-- [ ] **Step 2: Write twelve single-skill questions**
+- [x] **Step 2: Write twelve single-skill questions**
 
 Two or three parts each.
 
-- [ ] **Step 3: Write eight full-length questions**
+- [x] **Step 3: Write eight full-length questions**
 
 One statement, three to four lettered parts, in the form the papers use. A question may keep the
 shape of a paper question. It may keep **no** number from it. A replacement number must leave the
 character of the answer intact.
 
-- [ ] **Step 4: Set `options=0` throughout**
+- [x] **Step 4: Set `options=0` throughout**
 
 Every question is open-ended. `labtest.js` asserts this; a multiple-choice button fails the gate.
 
-- [ ] **Step 5: Walk the pager and the solutions**
+- [x] **Step 5: Walk the pager and the solutions**
 
 ```bash
 cd build && node labtest.js && node mathscan.js
@@ -756,7 +756,7 @@ cd build && node labtest.js && node mathscan.js
 `labtest.js` walks the pager to the last question; `mathscan.js` opens every worked solution. A
 pager that stops short fails here.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add -A && git commit -m "Set twenty practice questions on sampling and quantization"
