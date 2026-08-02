@@ -23,3 +23,7 @@ __pycache__/
 .pytest_cache/
 
 .DS_Store
+.vercel
+
+# Vercel local state
+.vercel/

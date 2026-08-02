@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EE 413 · Digital Communications</title>
+<meta name="description" content="EE 413 Digital Communications — an interactive course artifact, ten laboratories, one hundred and twenty practice questions with worked solutions, and the lecture notes as a book.">
+<link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/site/site.css">
+</head>
+<body>
+
+<header class="bar">
+  <a class="brand" href="/">
+    <img src="/assets/icon.svg" alt="" width="30" height="30">
+    <span class="brand__name">EE&nbsp;413</span>
+    <span class="brand__sub">Communication Systems II</span>
+  </a>
+  <nav class="bar__nav">
+    <a href="#instrument">The instrument</a>
+    <a href="#modules">Modules</a>
+    <a href="#documents">Documents</a>
+    <a class="btn btn--sm" href="/dist/Digital_Communications.html">Open the course</a>
+  </nav>
+</header>
+
+<!-- ─────────────────────────────── hero ─────────────────────────────── -->
+<section class="hero">
+  <canvas id="grid" class="hero__grid" aria-hidden="true"></canvas>
+  <div class="hero__inner">
+    <p class="eyebrow">EE 413 · Communication Systems II</p>
+    <h1 class="hero__title">Digital<br><span class="hero__title-em">Communications</span></h1>
+    <p class="hero__lead">
+      A digital communication system carries a finite alphabet of symbols across a channel
+      that adds noise to everything it carries. This course is the study of how those symbols
+      are chosen, how they are recovered, and how often the recovery is wrong.
+    </p>
+    <div class="hero__cta">
+      <a class="btn btn--primary" href="/dist/Digital_Communications.html">Open the course</a>
+      <a class="btn" href="/dist/Lecture_Notes.pdf">Lecture notes (PDF)</a>
+    </div>
+    <ul class="facts">
+      <li><b>7</b><span>modules</span></li>
+      <li><b>109</b><span>scenes</span></li>
+      <li><b>10</b><span>laboratories</span></li>
+      <li><b>120</b><span>worked questions</span></li>
+    </ul>
+  </div>
+</section>
+
+<!-- ──────────────────────────── the instrument ──────────────────────── -->
+<section class="band" id="instrument">
+  <div class="band__grid">
+    <div class="band__copy">
+      <p class="eyebrow">What the course is about</p>
+      <h2>One picture, and the number beside it</h2>
+      <p>
+        The screen beside this shows a bit stream in Manchester code with noise added to it,
+        exactly as a receiver would see it. Nothing on it is decoration. The signal-to-noise
+        ratio in the corner drifts slowly between 7 and 11&nbsp;dB, the noise drawn on the trace
+        is scaled by that same ratio, and the error rate is computed from it.
+      </p>
+      <p class="eq">P<sub>b</sub> = Q(√(2 E<sub>b</sub> ⁄ N<sub>0</sub>))</p>
+      <p>
+        That formula is where the course arrives. Watch the trace get rough and the error rate
+        gets worse in the same breath, because they are one quantity and not two. The bits along
+        the top are the bits the trace is drawing, not a second random string.
+      </p>
+      <p class="note">
+        Every figure in the course is drawn from the mathematics beside it, and every number is
+        checked by a program that computes it a second way.
+      </p>
+    </div>
+
+    <figure class="scope">
+      <div class="scope__frame">
+        <canvas id="scope" class="scope__screen" aria-hidden="true"></canvas>
+        <div class="hud" aria-hidden="true">
+          <span class="hud__tl">
+            <span class="hud__live"><i></i> LIVE · CH-1</span>
+            <span class="hud__bits" id="hud-bits">0110 1011 0101</span>
+          </span>
+          <span class="hud__tr">
+            R<sub>b</sub> = <b id="hud-rate">10.0 Mb/s</b><br>MANCHESTER
+          </span>
+          <span class="hud__bl">SNR = <b id="hud-snr">9.0 dB</b></span>
+          <span class="hud__br">BER <b id="hud-ber">3.4e−5</b></span>
+        </div>
+      </div>
+      <figcaption>
+        A Manchester-coded stream at 10&nbsp;Mb/s under additive white Gaussian noise.
+        The readout is measured from the same model that draws the trace.
+      </figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ───────────────────────────── the modules ────────────────────────── -->
+<section class="band band--alt" id="modules">
+ <div class="band__in">
+  <p class="eyebrow">The seven modules</p>
+  <h2>One question, asked seven ways</h2>
+  <p class="band__lead">
+    A transmitter is given a symbol and sends a waveform. A channel adds noise to that waveform.
+    A receiver observes the sum and decides which symbol was sent. Every module is either a way
+    of choosing the waveforms, a way of making the decision, or a way of working out how often
+    the decision is wrong.
+  </p>
+
+  <ol class="mods">
+    <li><span class="mods__n">0</span>
+      <h3>The frame of the course</h3>
+      <p>What the whole subject asks, why digits are sent at all, and what that costs.</p></li>
+    <li><span class="mods__n">1</span>
+      <h3>Sampling, quantization and PCM</h3>
+      <p>Turning a continuous signal into a finite alphabet, and what the rounding costs.</p></li>
+    <li><span class="mods__n">2</span>
+      <h3>Baseband transmission</h3>
+      <p>Line codes, pulse shapes, intersymbol interference and the eye that shows it.</p></li>
+    <li><span class="mods__n">3</span>
+      <h3>Geometric representation</h3>
+      <p>Signals as points. Once distance means something, the receiver becomes obvious.</p></li>
+    <li><span class="mods__n">4</span>
+      <h3>The optimal receiver</h3>
+      <p>Decision regions, the matched filter, and the union bound on the error probability.</p></li>
+    <li><span class="mods__n">5</span>
+      <h3>Modulation methods</h3>
+      <p>ASK, PSK, FSK and QAM, each measured by the same distance as the last module.</p></li>
+    <li><span class="mods__n">6</span>
+      <h3>Information theory</h3>
+      <p>Entropy, source coding and channel capacity — the limit none of the above passes.</p></li>
+  </ol>
+ </div>
+</section>
+
+<!-- ──────────────────────────── the documents ───────────────────────── -->
+<section class="band" id="documents">
+  <p class="eyebrow">Take it away</p>
+  <h2>The course as four things you can hold</h2>
+
+  <div class="docs">
+    <a class="doc" href="/dist/Digital_Communications.html">
+      <span class="doc__kind">Interactive</span>
+      <h3>The course artifact</h3>
+      <p>109 scenes, ten laboratories and every practice question with its worked solution.
+         One file, no network, works offline.</p>
+      <span class="doc__go">Open →</span>
+    </a>
+    <a class="doc" href="/dist/Lecture_Notes.pdf">
+      <span class="doc__kind">PDF</span>
+      <h3>Lecture notes</h3>
+      <p>The six chapters written out as a book, in the order the lectures take them.</p>
+      <span class="doc__go">Download →</span>
+    </a>
+    <a class="doc" href="/dist/Student_Workbook.pdf">
+      <span class="doc__kind">PDF</span>
+      <h3>Student workbook</h3>
+      <p>The questions, the laboratories, and room to work.</p>
+      <span class="doc__go">Download →</span>
+    </a>
+    <a class="doc" href="/dist/Formula_Reference.pdf">
+      <span class="doc__kind">PDF</span>
+      <h3>Formula reference</h3>
+      <p>Every result the course uses, on the fewest pages it fits on.</p>
+      <span class="doc__go">Download →</span>
+    </a>
+  </div>
+
+  <p class="note note--wide">
+    Two conventions decide every number here, and mixing them is a silent factor of two:
+    the noise is white and Gaussian with <b>two-sided</b> power spectral density N<sub>0</sub>⁄2,
+    and Q(x) is the Gaussian tail, Q(x) = ½&nbsp;erfc(x⁄√2).
+  </p>
+</section>
+
+<footer class="foot">
+  <p>EE 413 · Communication Systems II — Digital Communications.</p>
+  <p class="foot__fine">
+    The hero background is adapted from <a href="https://radiant-shaders.com/shader/kinetic-grid">Kinetic Grid</a>,
+    part of <a href="https://github.com/pbakaus/radiant">Radiant Shaders</a> by Paul Bakaus, used under the MIT licence
+    and recoloured to this course's palette.
+  </p>
+</footer>
+
+<script src="/site/grid.js"></script>
+<script src="/site/scope.js"></script>
+</body>
+</html>
