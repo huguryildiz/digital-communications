@@ -25,5 +25,6 @@ __pycache__/
 .DS_Store
 .vercel
 
-# Vercel local state
-.vercel/
+# Working notes for the agents that build this, not part of what is published.
+AGENTS.md
+CLAUDE.md
