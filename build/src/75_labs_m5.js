@@ -42,7 +42,7 @@ Object.assign(LABS, (function(){
     };
     const ORDER = ['bpsk','bfsk','qpsk','psk8','pam4','qam16'];
 
-    let st = { set:'qpsk', esn0:10, trials:3 };
+    let st = { set:'qpsk', esn0:10, trials:3, phase:25 };
 
     function geometry(key){
       const S = SETS[key];
@@ -68,15 +68,19 @@ Object.assign(LABS, (function(){
       return g.near * Q(Math.sqrt(g.dmin*g.dmin/(2*N0)));
     }
 
-    /* The measurement. Draw a symbol, add Gaussian noise of variance N0/2 to
-       each dimension the scheme uses, and decide by nearest point. */
-    function measure(g, esn0dB, n, seed){
+    /* One mark's measurement, held open. `s.r` is the mark's own generator,
+       made once; every batch draws from where the last stopped, so twenty-five
+       batches of n consume exactly the sequence one batch of 25n would. That
+       identity is what lets the animation accumulate without the final frame
+       disagreeing with a single run — and `labwalk.js` checks it rather than
+       trusting it. */
+    function markState(seed){ return { r: rng(seed), wrong:0, n:0 }; }
+
+    function advance(s, g, esn0dB, n){
       const N0 = 1/Math.pow(10, esn0dB/10), sig = Math.sqrt(N0/2);
-      const r = rng(seed);
-      let wrong = 0;
       for(let t=0;t<n;t++){
-        const i = Math.min(g.M-1, Math.floor(r()*g.M));
-        const u = Math.max(1e-12, r()), v = r();
+        const i = Math.min(g.M-1, Math.floor(s.r()*g.M));
+        const u = Math.max(1e-12, s.r()), v = s.r();
         const m = sig*Math.sqrt(-2*Math.log(u));
         const x = g.pts[i][0] + m*Math.cos(2*Math.PI*v);
         const y = g.dim === 2 ? g.pts[i][1] + m*Math.sin(2*Math.PI*v) : g.pts[i][1];
@@ -85,9 +89,20 @@ Object.assign(LABS, (function(){
           const d = (x-g.pts[k][0])**2 + (y-g.pts[k][1])**2;
           if(d < bd){ bd = d; best = k; }
         }
-        if(best !== i) wrong++;
+        if(best !== i) s.wrong++;
       }
-      return { wrong, n, rate: wrong/n };
+      s.n += n;
+      return s;
+    }
+
+    /* Run a mark from scratch to `phase` batches. Cheap enough to redo per
+       frame — 25 batches of at most 800 trials — and it keeps `draw()` a pure
+       function of `st`, which is what makes the slider scrubbable in both
+       directions rather than only forwards. */
+    function toPhase(g, esn0dB, seed, target, phase){
+      const s = markState(seed);
+      advance(s, g, esn0dB, Math.round(target/25)*phase);
+      return { wrong:s.wrong, n:s.n, rate: s.n ? s.wrong/s.n : 0 };
     }
 
     const MARKS = [0,2,4,6,8,10,12,14,16,18,20];
@@ -104,13 +119,13 @@ Object.assign(LABS, (function(){
 
       /* One measurement for each mark, each with its own seed so that the
          points are independent of one another and identical between runs. */
-      const dots = MARKS.map((d,i)=>({ d, r: measure(g, d, nTrial, 20260802 + 977*i) }));
+      const dots = MARKS.map((d,i)=>({ d, r: toPhase(g, d, 20260802 + 977*i, nTrial, st.phase) }));
       dots.forEach(({d,r})=>{
         if(r.wrong === 0) return;
         a.point(d, Math.max(-5.2, cl(r.rate)), {color:P.COL.out, r:4});
       });
       const here = closed(g, st.esn0);
-      const meas = measure(g, st.esn0, nTrial, 20260802 + 977*MARKS.indexOf(st.esn0));
+      const meas = toPhase(g, st.esn0, 20260802 + 977*MARKS.indexOf(st.esn0), nTrial, st.phase);
       const ebn0 = st.esn0 - 10*Math.log10(g.bits);
 
       root.querySelector('.plots').innerHTML = a.svg();
@@ -124,7 +139,7 @@ Object.assign(LABS, (function(){
         <div><dt>E_b/N₀ at the mark</dt><dd>${fmt(ebn0,3)} dB</dd></div>
         <div><dt>Closed form</dt><dd class="okv">${fmt(here,6)}</dd></div>
         <div><dt>Measured</dt><dd class="okv">${meas.wrong} of ${nTrial} = ${fmt(meas.rate,6)}</dd></div>
-        <div><dt>Trials a point</dt><dd>${nTrial}</dd></div>`;
+        <div><dt>Trials a point</dt><dd>${meas.n} of ${nTrial}</dd></div>`;
 
       /* An error count is a binomial draw. Its own standard deviation is the
          yardstick for whether a gap between the two routes means anything. */
@@ -174,6 +189,10 @@ Object.assign(LABS, (function(){
                 <input type="range" data-v="esn0" min="0" max="20" step="2" value="10"></div>
               <div class="ctrl"><label>Trials a point, 1 to 4 <span class="val" data-out="trials">3</span></label>
                 <input type="range" data-v="trials" min="1" max="4" step="1" value="3"></div>
+              <div class="ctrl"><label>Batches run <span class="val" data-out="phase">25</span></label>
+                <div class="ctrl-run">
+                  <input type="range" data-v="phase" min="0" max="25" step="1" value="25">
+                  ${LABS.KIT.runbar()}</div></div>
             </div>
             <dl class="readout ro"></dl>
             <div class="verdict"></div>
@@ -188,6 +207,8 @@ Object.assign(LABS, (function(){
       root.addEventListener('click', e=>{ const b=e.target.closest('[data-seg=set]'); if(!b) return;
         st.set=b.dataset.val; draw(root); });
       draw(root);
+      LABS.KIT.transport(root, { key:'phase', max:25, ms:140,
+        get:()=>st.phase, set:v=>{ st.phase=v; }, redraw:()=>draw(root) });
     }};
   })();
 

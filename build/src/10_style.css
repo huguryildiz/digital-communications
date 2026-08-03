@@ -634,7 +634,18 @@ input[type=range]:focus-visible::-webkit-slider-thumb{ box-shadow:0 0 0 4px rgba
 .seg button[aria-pressed=true]{ background:var(--coral); color:#FCF9F3; }
 .seg button:hover:not([aria-pressed=true]){ background:var(--paper-3); color:var(--ink); }
 
-.runbar{ display:flex; gap:8px; }
+/* `flex-direction` is stated because `.ctrl`, the block a runbar sits in, is a
+   column flexbox — left implicit the three buttons stack and the row triples
+   in height, which is what put laboratory H under qa.js's dense threshold. */
+.runbar{ display:flex; flex-direction:row; gap:8px; }
+/* The axis slider and its transport on one line. A laboratory whose control
+   column is already full gains two rows from a time axis — the slider and the
+   buttons — and two rows is what pushed one of them under qa.js's 0.90 scale
+   factor. Side by side they cost one. */
+.ctrl-run{ display:flex; gap:12px; align-items:center; }
+.ctrl-run input[type=range]{ flex:1 1 auto; min-width:60px; margin:0; }
+.ctrl-run .runbar{ flex:0 0 auto; }
+.runbar button{ flex:0 0 auto; white-space:nowrap; }
 .runbar button{
   font-family:var(--mono); font-size:calc(13px * var(--ts)); letter-spacing:.06em; padding:8px 14px;
   background:transparent; border:1px solid var(--rule-strong); border-radius:var(--radius);
