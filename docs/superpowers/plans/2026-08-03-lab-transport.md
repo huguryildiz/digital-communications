@@ -75,12 +75,12 @@ on it.
 - Produces: `LABS.KIT.runbar()` returning the three-button HTML string.
 - Consumed by Tasks 3, 4 and 5.
 
-- [ ] **Step 1: Read the spec**
+- [x] **Step 1: Read the spec**
 
 Read `docs/superpowers/specs/2026-08-03-lab-transport-design.md` §3 and §4 in full. The button
 semantics table in §4 is the specification for Step 3 and is not repeated here.
 
-- [ ] **Step 2: Add the runbar markup helper to the kit**
+- [x] **Step 2: Add the runbar markup helper to the kit**
 
 In `build/src/70_labs.js`, inside the IIFE, above the `return`:
 
@@ -96,7 +96,7 @@ In `build/src/70_labs.js`, inside the IIFE, above the `return`:
         <button data-run="reset">&#8634; Reset</button></div>`;
 ```
 
-- [ ] **Step 3: Add the transport to the kit**
+- [x] **Step 3: Add the transport to the kit**
 
 In the same IIFE, below `runbar`:
 
@@ -165,7 +165,7 @@ Then change the kit's export line from `return { KIT:{ T, M, F, el, gcd } };` to
   return { KIT:{ T, M, F, el, gcd, transport, runbar } };
 ```
 
-- [ ] **Step 4: Style the runbar**
+- [x] **Step 4: Style the runbar**
 
 In `build/src/10_style.css`, immediately after the `.seg button:hover…` rule at line 635:
 
@@ -181,7 +181,7 @@ In `build/src/10_style.css`, immediately after the `.seg button:hover…` rule a
 .runbar button:disabled{ opacity:.4; cursor:default; }
 ```
 
-- [ ] **Step 5: Rename J's axis and bind the transport**
+- [x] **Step 5: Rename J's axis and bind the transport**
 
 In `build/src/76_labs_m6.js`, three edits inside the `J` IIFE:
 
@@ -212,7 +212,7 @@ And at the end of `mount`, after the existing `draw(root);`:
 700 ms a step is long enough to read which two entries were merged and where the combination went
 back, which is the whole of what the tie-break control changes.
 
-- [ ] **Step 6: Syntax check and build**
+- [x] **Step 6: Syntax check and build**
 
 ```bash
 cd /Users/huguryildiz/Documents/GitHub/digital-communications
@@ -222,7 +222,7 @@ cd build && node build.js
 
 Expected: no output from `--check`, and `build.js` reports the file written.
 
-- [ ] **Step 7: Confirm the resting frame did not move**
+- [x] **Step 7: Confirm the resting frame did not move**
 
 ```bash
 cd build && node pw.js qa.js && node pw.js labwalk.js
@@ -234,7 +234,7 @@ one slider, but it is now named `phase`; the count rises only once Tasks 3–5 l
 reports `m6-lab-j` as dense, the runbar has pushed the control column over: move it below the
 tie-break control and re-run before continuing.
 
-- [ ] **Step 8: Watch it**
+- [x] **Step 8: Watch it**
 
 ```bash
 cd build && node pw.js shot.js
@@ -246,7 +246,7 @@ rewinds and replays; step advances one merge and is disabled on the last; reset 
 tree. Then navigate to another scene mid-animation and back — nothing must be left running, and the
 console must be clean.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add build/src/70_labs.js build/src/10_style.css build/src/76_labs_m6.js dist/Digital_Communications.html
@@ -264,7 +264,7 @@ git commit -m "Give the laboratory kit a transport, and run laboratory J on it"
 - Consumes: `[data-run="play"|"step"|"reset"]` from Task 1.
 - Produces: a `hasRun` flag on the discovery result, consumed by Task 4's accumulation check.
 
-- [ ] **Step 1: Understand why this task exists**
+- [x] **Step 1: Understand why this task exists**
 
 `labwalk.js` discovers controls off the rendered DOM precisely so that a control it was never told
 about is still walked. Its header says the honest thing: *"the cost is that a control using an
@@ -273,7 +273,7 @@ the design system gains a new kind of control."* Leaving `data-run` invisible wo
 green while breaking that promise. This task keeps the promise **without** ever pressing play,
 because play is the one control on the page whose result depends on when it is read.
 
-- [ ] **Step 2: Report the transport from `discover()`**
+- [x] **Step 2: Report the transport from `discover()`**
 
 In `build/labwalk.js`, in the object returned by the `p.evaluate` inside `discover()`, add one
 property beside `hasNav` and `hasReveal`:
@@ -282,7 +282,7 @@ property beside `hasNav` and `hasReveal`:
         hasRun: !!lab.querySelector('[data-run]'),
 ```
 
-- [ ] **Step 3: Walk it**
+- [x] **Step 3: Walk it**
 
 Where the walk consumes the discovery result, after the slider walk for a laboratory and before it
 moves on, add:
@@ -308,7 +308,7 @@ moves on, add:
 `d` is the discovery result and `L` the laboratory record; match the surrounding code's names if
 they differ.
 
-- [ ] **Step 4: Run it**
+- [x] **Step 4: Run it**
 
 ```bash
 cd build && node pw.js labwalk.js
@@ -317,14 +317,14 @@ cd build && node pw.js labwalk.js
 Expected: `PROBLEMS: none`, and a state count **two higher than the previous run** — laboratory J is
 the only transport so far, and it contributes one `reset` probe and one `step` probe.
 
-- [ ] **Step 5: Prove the walk actually reaches the transport**
+- [x] **Step 5: Prove the walk actually reaches the transport**
 
 Temporarily break it: in `76_labs_m6.js`, change J's `set` callback to `set:v=>{ st.phase=v+1; }`,
 rebuild, and re-run `labwalk.js`. The `transport step` probe must now fail or the readouts go wrong.
 Revert the change, rebuild, re-run, confirm `PROBLEMS: none`. A check that cannot fail is not a
 check, and this is the cheapest way to know this one can.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add build/labwalk.js
@@ -342,7 +342,7 @@ git commit -m "Walk the transport in labwalk, by stepping it and never playing i
 **Interfaces:**
 - Consumes: `LABS.KIT.transport`, `LABS.KIT.runbar` from Task 1.
 
-- [ ] **Step 1: Add the axis to the state**
+- [x] **Step 1: Add the axis to the state**
 
 Line 159: `let st = { method:'pcm', bits:3, step:8 };` becomes
 
@@ -353,7 +353,7 @@ Line 159: `let st = { method:'pcm', bits:3, step:8 };` becomes
 `st.step` here is the delta modulator's **step size** and is unrelated to the transport. Do not
 rename it. `phase` runs 0–64 and each unit is four of the 256 source samples.
 
-- [ ] **Step 2: Draw only the prefix of the coded waveform**
+- [x] **Step 2: Draw only the prefix of the coded waveform**
 
 The source waveform keeps being drawn in full; only the coded output is truncated. Where `draw`
 plots the reconstruction, clip it to `4 * st.phase` samples. The reconstruction array is `rec` for
@@ -375,7 +375,7 @@ That last point is deliberate and worth a comment in the file:
          coder. */
 ```
 
-- [ ] **Step 3: Add the control and bind the transport**
+- [x] **Step 3: Add the control and bind the transport**
 
 In the control column, after the existing step-size slider:
 
@@ -392,7 +392,7 @@ At the end of `mount`, after `draw(root);`:
         get:()=>st.phase, set:v=>{ st.phase=v; }, redraw:()=>draw(root) });
 ```
 
-- [ ] **Step 4: Build and check the resting frame**
+- [x] **Step 4: Build and check the resting frame**
 
 ```bash
 cd build && node build.js && node pw.js qa.js && node pw.js mathscan.js
@@ -402,14 +402,14 @@ Expected: `qa.js` 109 scenes, 0 errors, 0 overflow, nothing dense. `mathscan.js`
 At `phase = 64` the figure must be pixel-identical to before this task; `4 × 64 = 256`, the whole
 array, so `slice` returns everything.
 
-- [ ] **Step 5: Watch the lesson land**
+- [x] **Step 5: Watch the lesson land**
 
 Open the artifact at laboratory B, choose **delta**, set the step size to its minimum, and press
 play. The staircase must visibly fall behind the source and never catch up — that is slope
 overload, and watching it fail is the thing this task exists to produce. If the trace grows too fast
 to follow, raise `ms` from 55 to 70 and rebuild.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add build/src/71_labs_m1.js dist/Digital_Communications.html
@@ -428,7 +428,7 @@ git commit -m "Build laboratory B's coded waveform one sample at a time"
 **Interfaces:**
 - Consumes: `LABS.KIT.transport`, `LABS.KIT.runbar` from Task 1; `hasRun` from Task 2.
 
-- [ ] **Step 1: Understand the identity that must hold**
+- [x] **Step 1: Understand the identity that must hold**
 
 Twenty-five batches of `target/25` trials must produce **the identical error count** to today's one
 call of `target` trials. It does if each mark keeps one `rng` stream, created once from its existing
@@ -439,7 +439,7 @@ batch is the obvious way) and the resting frame silently disagrees with version 
 `target` is what the `trials` slider selects: 400, 1500, 5000 or 20 000. All four divide by 25
 exactly, so the batch size is a whole number and the run time is the same whichever is chosen.
 
-- [ ] **Step 2: Restructure `measure` to advance a state**
+- [x] **Step 2: Restructure `measure` to advance a state**
 
 Replace `measure(g, esn0dB, n, seed)` with a version that advances a caller-held state instead of
 running to completion. The trial body — draw a symbol, add Gaussian noise to each dimension the
@@ -487,7 +487,7 @@ scheme uses, decide by nearest point — is unchanged; only who owns the loop co
 `toPhase` running the batches as one call of `batch × phase` is the same sequence as `phase` calls
 of `batch` — that is the identity of Step 1, used to keep `draw()` stateless.
 
-- [ ] **Step 3: Point `draw()` at it**
+- [x] **Step 3: Point `draw()` at it**
 
 In `draw`, `nTrial` is the target. Replace the two `measure(...)` calls:
 
@@ -510,7 +510,7 @@ unchanged, but the `Trials a point` readout now reports what has actually been r
 
 At `phase = 25` this reads `20000 of 20000` and every other number is what it is today.
 
-- [ ] **Step 4: Add the control and bind the transport**
+- [x] **Step 4: Add the control and bind the transport**
 
 After the `trials` slider in the control column:
 
@@ -528,7 +528,7 @@ State line 45 becomes `let st = { set:'qpsk', esn0:10, trials:3, phase:25 };`, a
         get:()=>st.phase, set:v=>{ st.phase=v; }, redraw:()=>draw(root) });
 ```
 
-- [ ] **Step 5: Add the accumulation check to `labwalk.js`**
+- [x] **Step 5: Add the accumulation check to `labwalk.js`**
 
 Inside the `if (d.hasRun)` block written in Task 2, after the existing probes:
 
@@ -561,7 +561,7 @@ This runs for any laboratory carrying both a transport and a `Measured` readout,
 alone. The 25 presses match H's `max`; a laboratory with a different maximum simply reaches its own
 end early and the comparison still holds, because `step` does nothing at the maximum.
 
-- [ ] **Step 6: Watch the check fail, then pass**
+- [x] **Step 6: Watch the check fail, then pass**
 
 Break it on purpose first. In `toPhase`, replace the single `advance` call with a loop that remakes
 the generator each batch:
@@ -587,7 +587,7 @@ cd build && node build.js && node pw.js labwalk.js
 
 Expected: `PROBLEMS: none`.
 
-- [ ] **Step 7: Run the numerical gates**
+- [x] **Step 7: Run the numerical gates**
 
 ```bash
 cd build && node pw.js qa.js && node pw.js mathscan.js && node pw.js textclash.js
@@ -599,13 +599,13 @@ Expected: `qa.js` 0 errors, 0 overflow, nothing dense; `mathscan.js` `0 / 109`; 
 Python check of the error probabilities and must be untouched by this task — if it moves, the
 restructure changed the mathematics and not just who owns the loop.
 
-- [ ] **Step 8: Watch it**
+- [x] **Step 8: Watch it**
 
 Open laboratory H, press play, and confirm the points jump early and settle late, with the lowest
 points settling last. Try `trials` at each of its four positions: the run must take the same time at
 every one.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add build/src/75_labs_m5.js build/labwalk.js dist/Digital_Communications.html
@@ -623,7 +623,7 @@ git commit -m "Accumulate laboratory H's trials, and check the accumulation is o
 **Interfaces:**
 - Consumes: `LABS.KIT.transport`, `LABS.KIT.runbar` from Task 1.
 
-- [ ] **Step 1: Understand the two acts**
+- [x] **Step 1: Understand the two acts**
 
 They are one idea — **the peak of the matched-filter output is the right instant to sample** — in
 two movements. `phase` 0–20 sweeps the filter and draws the output curve as far as the sweep has
@@ -631,7 +631,7 @@ reached, so the curve is visibly the running integral of a shaded overlap rather
 was always there. `phase` 21–40 leaves the curve complete and walks the sampling marker from 20 % of
 `T` to 100 %, ending at the peak, which is the resting state.
 
-- [ ] **Step 2: Add the axis**
+- [x] **Step 2: Add the axis**
 
 Line 38: `let st = { shape:'rect', noise:30, samp:100 };` becomes
 
@@ -639,7 +639,7 @@ Line 38: `let st = { shape:'rect', noise:30, samp:100 };` becomes
     let st = { shape:'rect', noise:30, samp:100, phase:40 };
 ```
 
-- [ ] **Step 3: Cache the correlation**
+- [x] **Step 3: Cache the correlation**
 
 `out` depends only on `shape`, never on `samp`, `noise` or `phase`, and it costs 512 × 513 products.
 Above `draw`, add:
@@ -668,7 +668,7 @@ Above `draw`, add:
 In `draw`, replace the inline `sig`/`E`/`out` computation with `const { out, E, sig, dt } =
 correlation();`. Everything below it is unchanged.
 
-- [ ] **Step 4: Derive the two acts from `phase`**
+- [x] **Step 4: Derive the two acts from `phase`**
 
 At the top of `draw`, after the cache read:
 
@@ -688,7 +688,7 @@ At the top of `draw`, after the cache read:
 At `phase = 40` this gives `st.samp = 100`, the resting value. Verify that arithmetic before moving
 on: `(40-21)/19 = 1`, `1 × 80/5 = 16`, `16 × 5 = 80`, `20 + 80 = 100`.
 
-- [ ] **Step 5: Draw the sweep**
+- [x] **Step 5: Draw the sweep**
 
 In the top panel, after the two existing `ax.curve` calls, add the shifted filter and the overlap —
 only while sweeping:
@@ -723,7 +723,7 @@ In the bottom panel, clip the output curve to the sweep and hide the marker duri
       }
 ```
 
-- [ ] **Step 6: Add the control and bind the transport**
+- [x] **Step 6: Add the control and bind the transport**
 
 After the `samp` slider:
 
@@ -740,7 +740,7 @@ At the end of `mount`, after `draw(root);`:
         get:()=>st.phase, set:v=>{ st.phase=v; }, redraw:()=>draw(root) });
 ```
 
-- [ ] **Step 7: Build and check the resting frame hardest of all**
+- [x] **Step 7: Build and check the resting frame hardest of all**
 
 This is the task most likely to move the resting frame, because it touches the drawing and not only
 the data.
@@ -755,7 +755,7 @@ appears there, the control column has grown too tall; move the runbar above the 
 
 At `phase = 40`, `sweeping` is false and the marker is drawn, so the figure is what it is today.
 
-- [ ] **Step 8: Watch both acts**
+- [x] **Step 8: Watch both acts**
 
 Open laboratory C and press play. Act one: the dashed filter slides across the pulse, the shaded
 overlap grows and shrinks, and the output curve draws itself in step with it, peaking exactly where
@@ -763,7 +763,7 @@ the overlap is largest. Act two: the marker appears at 20 % and walks to the pea
 readout climbs to `0 dB`. Try all three pulse shapes — the peak value must be the same for all
 three, which is the point the laboratory already makes and the animation must not break.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add build/src/72_labs_m2.js dist/Digital_Communications.html
@@ -779,7 +779,7 @@ git commit -m "Sweep the matched filter, then walk the sample to its peak"
 - Modify: `docs/superpowers/specs/2026-08-02-digital-communications-design.md:211-250` — §7
 - Modify: `dist/Digital_Communications.html` if the final build differs
 
-- [ ] **Step 1: Run all eleven gates, in order**
+- [x] **Step 1: Run all eleven gates, in order**
 
 ```bash
 cd /Users/huguryildiz/Documents/GitHub/digital-communications
@@ -807,7 +807,7 @@ Expected: `qa.js` 109 scenes, 0 errors, 0 overflow, nothing dense · `labtest.js
 
 **Write down what each run actually printed.** A summary in place of a run is not acceptable here.
 
-- [ ] **Step 2: Prove the build is still byte-reproducible**
+- [x] **Step 2: Prove the build is still byte-reproducible**
 
 ```bash
 cd build && node build.js && cd .. && git status --short
@@ -817,7 +817,7 @@ Expected: no modification to `dist/Digital_Communications.html`. A diff nobody a
 transport put a timestamp, a frame count or a random value into the output — find it before
 continuing.
 
-- [ ] **Step 3: Check reduced motion behaves**
+- [x] **Step 3: Check reduced motion behaves**
 
 ```bash
 cd build && node -e "
@@ -837,7 +837,7 @@ await b.close();})()"
 Expected: `phase after play: 4` — under reduced motion, play lands on the final frame at once
 instead of animating there.
 
-- [ ] **Step 4: Look at the screenshots**
+- [x] **Step 4: Look at the screenshots**
 
 ```bash
 cd build && node pw.js shot.js
@@ -847,7 +847,7 @@ Then look at them. Two of the four bugs found in the source course were invisibl
 gates and visible at a glance, and a laboratory that has just gained a row of buttons is exactly
 where a layout regression hides.
 
-- [ ] **Step 5: Update `CLAUDE.md`**
+- [x] **Step 5: Update `CLAUDE.md`**
 
 In the *"What a run printed on the last full sweep"* table, replace the `labwalk.js` row with the
 count Step 1 actually printed. Add one row to the *"Where the project stands"* table:
@@ -860,7 +860,7 @@ and change *"**Version 1.0. Complete.**"* to *"**Version 1.1. Complete.**"*.
 
 In the repository-layout table, extend the `build/src/70_labs.js` row to mention the transport.
 
-- [ ] **Step 6: Correct §7 of the v1.0 design record**
+- [x] **Step 6: Correct §7 of the v1.0 design record**
 
 `docs/superpowers/specs/2026-08-02-digital-communications-design.md` §7 says the laboratories'
 numerical cores are ported from `commsyslab`. They were not — every one was written from the
@@ -877,7 +877,7 @@ reset semantics of `src/components/TransportControls.tsx`, with React, the speed
 tick callback dropped.
 ```
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add CLAUDE.md docs/superpowers/specs/2026-08-02-digital-communications-design.md
