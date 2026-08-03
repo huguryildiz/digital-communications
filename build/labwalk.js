@@ -204,12 +204,71 @@ const MAX_COMBOS = 60;      /* per laboratory; a breach is reported, never silen
       if (d.hasRun) {
         await click('[data-run="reset"]');
         await p.waitForTimeout(60);
-        await probe(`${lab}: transport reset`, d.figures);
+        await probe(`${theme} ${lab}: transport reset`, d.figures);
         await click('[data-run="step"]');
         await p.waitForTimeout(60);
-        await probe(`${lab}: transport step`, d.figures);
+        await probe(`${theme} ${lab}: transport step`, d.figures);
         await click('[data-run="reset"]');
         await p.waitForTimeout(60);
+
+        /* The one new numerical claim of this design: twenty-five batches equal
+           one run. Its failure is silent — a resting frame that quietly
+           disagrees with the released version still looks perfectly fine — so
+           it is read off the page rather than trusted.
+
+           `draw()` recomputes everything from `st.phase` alone on every call,
+           so two visits to the *same* phase always print the same string
+           whether the batching inside is right or wrong — comparing "at
+           reset" to "after stepping to the maximum" is no test at all, only a
+           check that some trials ran. What the bug this guards against — a
+           fresh generator drawn for every batch instead of one continued
+           stream — actually does is replay the first batch's trials twenty-
+           five times over, so the count at the last batch is exactly twenty-
+           five times the count after the first. A correctly continued run
+           draws twenty-four more batches of new trials in between and, on
+           real random data, essentially never lands on that exact multiple.
+           That multiple is the signature read off the page instead. */
+        const readMeasured = () => p.evaluate(() => {
+          const dt = [...document.querySelectorAll('.lab .readout dt')]
+            .find(e => e.textContent.trim() === 'Measured');
+          return dt ? dt.nextElementSibling.textContent.trim() : null;
+        });
+        const wrongCount = s => { const m = /^(\d+) of/.exec(s || ''); return m ? +m[1] : null; };
+        /* The slider sweep above left the mark wherever its last combination
+           put it, which for a signal-to-noise mark can be its highest setting
+           — where a scheme measures zero errors at any trial count, correct
+           or broken alike, and 25×0 = 0 tells nothing apart. Drive an `esn0`
+           mark, if this laboratory has one, to the bottom of its range first,
+           where every scheme has errors to count in even the first batch. */
+        const esn0 = await p.$('[data-v="esn0"]');
+        if (esn0) {
+          await p.$eval('[data-v="esn0"]', e => {
+            e.value = e.min; e.dispatchEvent(new Event('input', { bubbles: true }));
+          });
+          await p.waitForTimeout(70);
+        }
+        /* The axis is written directly rather than clicked to. `draw()` is a
+           pure function of `st`, so phase N reached in one write and phase N
+           reached in N presses are the same computation — and pressing costs
+           a full redraw of every mark each time, which on this laboratory ran
+           the gate past ten minutes on its own. The transport's own buttons
+           are exercised by the probes above; this part is arithmetic. */
+        const setPhase = v => p.$eval('[data-v="phase"]', (e, val) => {
+          e.value = String(val === 'max' ? e.max : val);
+          e.dispatchEvent(new Event('input', { bubbles: true }));
+        }, v);
+        const pmax = await p.$eval('[data-v="phase"]', e => +e.max);
+        await setPhase(1);
+        await p.waitForTimeout(80);
+        const w1 = wrongCount(await readMeasured());
+        await setPhase('max');
+        await p.waitForTimeout(80);
+        const wN = wrongCount(await readMeasured());
+        if (w1 !== null && wN !== null && w1 > 0 && wN === pmax * w1)
+          problems.push(`${theme} ${lab}: accumulation differs from one run — ` +
+                        `batch one measured ${w1} wrong, all ${pmax} measured ` +
+                        `${wN}, exactly ${pmax}×${w1}`);
+        await click('[data-run="reset"]');
       }
     }
   }
