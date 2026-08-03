@@ -259,6 +259,14 @@ restriction on reuse.
    on the strength of having been written down already. This is precisely the class of error the
    `PS` anchor of §5 exists to prevent, arriving through a different door.
 
+**What was actually done.** No numerical core was ported. Every laboratory was written from the
+textbook, and the correspondence in the table above is one of subject and not of code — the two
+projects teach the same course, so they compute the same quantities by different routes. The first
+code genuinely taken from `commsyslab` is the transport of the 2026-08-03 design: the fixed-step
+`requestAnimationFrame` accumulator of `src/lib/sim/useSimulationLoop.ts` and the play / step /
+reset semantics of `src/components/TransportControls.tsx`, with React, the speed control and the
+tick callback dropped.
+
 ---
 
 ## 8. Question sections
