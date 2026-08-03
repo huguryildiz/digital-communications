@@ -2666,7 +2666,7 @@ Object.assign(LABS, (function(){
      ======================================================================= */
   const C = (() => {
     const N = 512, TB = 1;
-    let st = { shape:'rect', noise:30, samp:100 };
+    let st = { shape:'rect', noise:30, samp:100, phase:40 };
 
     /* Three pulses, each normalised to unit energy over [0,1], so that what
        changes between them is the shape and not the energy the bound depends
@@ -2682,21 +2682,52 @@ Object.assign(LABS, (function(){
       return SHAPES[st.shape](t);
     }
 
-    function draw(root){
-      const dt = TB/N;
-      const sig = [], mf = [];
+    /* The matched filter output is the correlation of the pulse with itself,
+       which peaks at t = T and nowhere else. It is a property of the pulse
+       alone — neither the noise, nor the sampling instant, nor the phase of
+       the animation moves it — so it is computed once per shape and reused
+       across all forty-one phases. Recomputing it every frame would be a
+       quarter of a million products spent to redraw one marker. */
+    let cache = { shape:null };
+    function correlation(){
+      if(cache.shape === st.shape) return cache;
+      const dt = TB/N, sig = [];
       for(let i=0;i<N;i++) sig.push(pulse(i*dt));
       const E = sig.reduce((s,v)=>s+v*v,0)*dt;
-      const N0 = Math.pow(10, -st.noise/10);
-
-      /* The matched filter output is the correlation of the pulse with itself,
-         which peaks at t = T and nowhere else. */
       const out = [];
       for(let k=0;k<=N;k++){
         let s=0;
         for(let i=0;i<N;i++){ const j=i-(N-k); if(j>=0&&j<N) s += sig[i]*sig[j]; }
         out.push(s*dt);
       }
+      cache = { shape:st.shape, out, E };
+      return cache;
+    }
+
+    /* Act two of the animation drives the sampling instant. The slider is a
+       real control and stays draggable, so the phase writes it only when the
+       phase itself moves — never inside `draw`, which would snap the slider
+       back under the reader's finger. Moving the thumb as well as the value
+       shows which control the animation is driving.
+       At phase 21 this gives 20 % of T, and at phase 40 exactly 100 %, which
+       is the resting instant the laboratory rests at today. */
+    function scan(root){
+      if(st.phase <= 20) return;
+      st.samp = 20 + Math.round((st.phase-21)/19*80/5)*5;
+      const sl = root.querySelector('[data-v="samp"]');
+      if(sl) sl.value = String(st.samp);
+    }
+
+    function draw(root){
+      const { out, E } = correlation();
+      const N0 = Math.pow(10, -st.noise/10);
+
+      /* Act one sweeps the filter across the pulse and builds the output curve
+         as far as the sweep has reached; act two leaves the curve whole and
+         walks the sample to the peak. */
+      const sweeping = st.phase <= 20;
+      const swept    = Math.min(1, st.phase/20);          /* 0…1 of the axis */
+
       const idx = Math.round(st.samp/100*N);
       const peak = out[Math.min(N,idx)];
       const snrMax = 2*E/N0;
@@ -2710,13 +2741,27 @@ Object.assign(LABS, (function(){
         xtarget:5,ytarget:4});
       ax.curve(t=>pulse(t*TB),{color:P.COL.in,width:2.2,n:600});
       ax.curve(t=>pulse(TB-t*TB),{color:P.COL.h,width:1.9,dash:'6 4',n:600});
+      if(sweeping){
+        const tau = swept;                     /* the filter's leading edge */
+        ax.curve(t=>pulse((tau-t)*TB),{color:P.COL.h,width:1.9,n:600});
+        /* The overlap is what the integral is accumulating at this instant,
+           and shading it is the whole reason the sweep is worth watching.
+           Amber is the filter's colour and `dec.h` is its low-opacity fill,
+           which carries a separate value for the dark theme. */
+        ax.area(t=>Math.min(pulse(t*TB), pulse((tau-t)*TB)), 0, 1, {color:P.COL.dec.h});
+      }
 
       const bx = P.Axes({w:780,h:220,xr:[0,1],yr:[-0.15*out[N],1.25*out[N]],
         xlabel:'\\text{sampling instant},\\;t/T',ylabel:'\\text{filter output}',
         pad:{l:60,r:26,t:26,b:44},xtarget:5,ytarget:4});
-      bx.poly(out.map((v,k)=>[k/N,v]),{color:P.COL.out,width:2.3});
-      bx.vline(st.samp/100,{color:P.COL.err,width:1.6,dash:'5 4'});
-      bx.point(st.samp/100, peak, {color:P.COL.err, r:4.5});
+      /* The curve is the running integral of that shaded overlap, so during
+         act one it exists only as far as the sweep has carried it. */
+      const kmax = sweeping ? Math.round(swept*N) : N;
+      bx.poly(out.slice(0,kmax+1).map((v,k)=>[k/N,v]),{color:P.COL.out,width:2.3});
+      if(!sweeping){
+        bx.vline(st.samp/100,{color:P.COL.err,width:1.6,dash:'5 4'});
+        bx.point(st.samp/100, peak, {color:P.COL.err, r:4.5});
+      }
 
       root.querySelector('.plots').innerHTML = ax.svg() + bx.svg();
       root.querySelector('.ro').innerHTML = `
@@ -2756,15 +2801,20 @@ Object.assign(LABS, (function(){
                 <input type="range" data-v="noise" min="0" max="40" step="2" value="30"></div>
               <div class="ctrl"><label>Sampling instant, % of T <span class="val" data-out="samp">100</span></label>
                 <input type="range" data-v="samp" min="20" max="100" step="5" value="100"></div>
+              <div class="ctrl"><label>Sweep and scan <span class="val" data-out="phase">40</span></label>
+                <input type="range" data-v="phase" min="0" max="40" step="1" value="40"></div>
+              ${LABS.KIT.runbar()}
             </div>
             <dl class="readout ro"></dl>
             <div class="verdict"></div>
           </div></div>`;
       root.addEventListener('input', e=>{ const k=e.target.dataset.v; if(!k) return;
-        st[k]=parseInt(e.target.value,10); draw(root); });
+        st[k]=parseInt(e.target.value,10); if(k==='phase') scan(root); draw(root); });
       root.addEventListener('click', e=>{ const b=e.target.closest('[data-seg=shape]'); if(!b) return;
         st.shape=b.dataset.val; draw(root); });
       draw(root);
+      LABS.KIT.transport(root, { key:'phase', max:40, ms:90,
+        get:()=>st.phase, set:v=>{ st.phase=v; scan(root); }, redraw:()=>draw(root) });
     }};
   })();
 
