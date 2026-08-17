@@ -141,6 +141,15 @@ def _pcm_code_index(n):
 
 
 
+def _pairs_within_one(L):
+    """How many ordered pairs of levels differ by at most one step.
+
+    The scene states 3L-2. This counts the grid instead, so the closed form is
+    checked rather than repeated.
+    """
+    return sum(1 for i in range(L) for j in range(L) if abs(i - j) <= 1)
+
+
 # ── Module 2 ────────────────────────────────────────────────────────────────
 # Baseband transmission: the matched filter, the threshold, the error
 # probability, and the bandwidth the pulse needs.
@@ -484,6 +493,25 @@ CHECKS: list[dict] = [
     {"name": "1.6.3 bit rate", "stated": 5.0, "derive": lambda: 3 * (1 / 0.6)},
 
     # ---- 2.1, the matched filter ----------------------------------------
+    {"name": "1.7.1 pairs a 16-level scalar quantizer must name",
+     "stated": 256, "derive": lambda: 16 ** 2},
+    {"name": "1.7.1 pairs that can actually occur", "stated": 46,
+     "derive": lambda: _pairs_within_one(16)},
+    {"name": "1.7.1 bits a pair the smaller codebook needs", "stated": 6,
+     "derive": lambda: math.ceil(math.log2(_pairs_within_one(16)))},
+    {"name": "1.7.2 bits in a 512x512 image at 8 bits a pixel",
+     "stated": 2097152, "derive": lambda: 512 * 512 * 8},
+    {"name": "1.7.2 that in KiB", "stated": 256,
+     "derive": lambda: 512 * 512 * 8 / 8 / 1024},
+    {"name": "1.7.2 bits at 32 levels", "stated": 1310720,
+     "derive": lambda: 512 * 512 * int(math.log2(32))},
+    {"name": "1.7.2 that in KiB", "stated": 160,
+     "derive": lambda: 512 * 512 * int(math.log2(32)) / 8 / 1024},
+    {"name": "1.7.2 fraction of the file saved, per cent", "stated": 37.5,
+     "derive": lambda: (1 - math.log2(32) / 8) * 100, "tol": 1e-9},
+    {"name": "1.7.2 what those three bits cost, dB", "stated": 18.06,
+     "derive": lambda: 20 * (8 - 5) * math.log10(2), "tol": 3e-4},
+
     {"name": "2.1.4 the matched-filter bound for a unit-energy pulse",
      "stated": 2.0, "derive": lambda: 2 * 1.0 / 1.0},
 

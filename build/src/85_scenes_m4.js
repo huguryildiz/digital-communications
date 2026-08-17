@@ -77,7 +77,7 @@ const SC = [
       {t:'note', kind:'ok', head:'The answer, in one line', html:'When the $M$ signals are equally likely, the best rule is: <b>compute the coordinates of what arrived and choose the signal point nearest to it.</b> Nothing cleverer helps, and the rest of the module is why that is true and what it costs.'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'body', html:'<p>Two things follow, and both matter more than the rule itself.</p><ul><li>The error probability depends only on the <b>distances</b> between the points — not on the waveforms, not on their shapes.</li><li>The exact error probability is an integral in $N$ dimensions and is usually impossible to evaluate. The <b>union bound</b> replaces it with a sum of $Q$ functions that anyone can compute.</li></ul>'}
+      {t:'body', html:'<p>Two results follow under this white Gaussian noise model.</p><ul><li>The coherent-detection error probability depends on the <b>distances</b> between the signal points.</li><li>The exact error probability requires an integral over the decision regions. This integral usually has no simple closed form. The <b>union bound</b> gives a computable upper bound made of $Q$ functions.</li></ul>'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figRegions(
@@ -105,7 +105,7 @@ const SC = [
       {t:'note', kind:'ok', head:'Why $n_0(t)$ can be thrown away', html:'It contains no signal at all — every signal is a combination of the $N$ basis functions, so none of them has any component outside that space. And it is independent of the $N$ numbers the receiver kept. A quantity that carries no information about the answer and is unrelated to what was kept cannot help, so discarding it costs nothing.'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'warn', head:'What this does not say', html:'It does not say the noise is small, or that the correlators remove it. The noise inside the signal space is kept in full, and it is all the trouble there is. What has been shown is that a waveform problem has become an $N$-number problem with nothing lost.'}
+      {t:'note', kind:'warn', head:'What this does not say', html:'The result does not say that the noise is small or that the correlators remove it. The receiver keeps all noise components inside the signal space. It discards only the component that cannot help distinguish the signals.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>P.blocks({w:620,h:300,items:[
@@ -153,7 +153,7 @@ const SC = [
         a.poly(pts,{color:C.muted,width:1,dash:'4 4'});
       });
       return a.svg();
-    }, caption:'Eight hundred draws of a two-dimensional noise vector, with circles at one, two and three standard deviations. The cloud has no preferred direction, and that is the whole reason the receiver may simply measure distance.'}
+    }, caption:'Eight hundred draws of a two-dimensional noise vector, with circles at one, two and three standard deviations. The cloud has no preferred direction. This symmetry makes Euclidean distance the correct measure for the decision rule.'}
   ]}
 ]},
 
@@ -175,7 +175,7 @@ const SC = [
       {t:'note', kind:'def', head:'The ML rule', html:'If all $M$ signals are equally likely, every prior is $1/M$ and the priors cannot change the answer either. What is left is: choose the $\\mathbf{s}_i$ that maximises the likelihood $f_{\\mathbf{r}}(\\mathbf{r}\\mid\\mathbf{s}_i)$.'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'warn', head:'Which one to use', html:'MAP is always right. ML is right when the priors are equal, and is used anyway when they are unknown — a receiver that does not know the priors cannot use them. When the priors are known and unequal, ML is a real loss, and Module 2 measured it once already: the threshold moved and the error fell.'}
+      {t:'note', kind:'warn', head:'Which one to use', html:'MAP minimizes the probability of error when the signal probabilities and likelihood model are known and all decision errors have equal cost. ML gives the same decision when the signal probabilities are equal. If the probabilities are unknown, ML does not use them. With known unequal probabilities, MAP can give a lower error probability.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figRegions(
@@ -362,10 +362,10 @@ const SC = [
     {t:'reveal', at:1, items:[
       {t:'body', html:'<p>Each of those probabilities is an integral of the likelihood over a region:</p>'},
       {t:'eq', key:true, tex:'P_e=1-\\frac{1}{M}\\sum_{i=1}^{M}\\int_{R_i}f_{\\mathbf{r}}(\\mathbf{r}\\mid\\mathbf{s}_i)\\,d\\mathbf{r}'},
-      {t:'note', kind:'err', head:'Why this is where the trail goes cold', html:'The integral is over $N$ dimensions and its region is a polygon with as many faces as there are neighbouring signal points. For $M=2$ it is a Gaussian tail and there is nothing to it. For anything larger there is no closed form, and numerical evaluation gets expensive fast.'}
+      {t:'note', kind:'err', head:'Why the exact form is difficult', html:'The integral can extend over $N$ dimensions, and the decision region can have several faces. For $M=2$, it reduces to one Gaussian tail. For a general larger constellation, a closed form is usually unavailable and numerical integration can be expensive.'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'ok', head:'So it is bounded instead', html:'The next scene replaces the exact expression with an upper bound made of $Q$ functions. The bound is easy, it is tight at the signal-to-noise ratios systems are actually run at, and — being an upper bound — a system designed to meet it will meet the real requirement too.'}
+      {t:'note', kind:'ok', head:'Use an upper bound instead', html:'The next scene replaces the exact expression with an upper bound made of $Q$ functions. The bound is often useful at high signal-to-noise ratios. It can be loose at low ratios. Because it is an upper bound, meeting the bound is sufficient to meet the true error requirement.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figRegions(
@@ -393,7 +393,7 @@ const SC = [
       {t:'eq', key:true, label:'union bound', tex:'P_e\\le\\frac{1}{M}\\sum_{k=1}^{M}\\sum_{\\substack{j=1\\\\ j\\ne k}}^{M}Q\\!\\left(\\sqrt{\\frac{d_{kj}^{2}}{2N_0}}\\right)'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'warn', head:'Why it is an over-estimate, and when that matters', html:'The events overlap: an observation can be closer to two other points at once, and the sum counts it twice. So the bound is always at least the truth. At low signal-to-noise ratio the overlaps are large and the bound can exceed one, which is useless. At the ratios real systems run at, the terms are tiny and the overlaps are tinier, and the bound is close enough to be used as the answer.'}
+      {t:'note', kind:'warn', head:'Why it is an over-estimate, and when that matters', html:'The events overlap. One observation can be closer to two other points, so the sum can count it twice. The bound is therefore not less than the true probability. At low signal-to-noise ratios, it can even exceed one. At high ratios, the overlap terms become small and the bound is often close to the true result.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figRegions(
@@ -420,7 +420,7 @@ const SC = [
     {t:'reveal', at:2, items:[
       {t:'body', html:'<p>The tighter form keeps only the points that are actually at the minimum distance. Let $N_{\\min}$ be the average number of such <b>nearest neighbours</b> per signal point:</p>'},
       {t:'eq', key:true, label:'nearest-neighbour approximation', tex:'P_e\\approx N_{\\min}\\,Q\\!\\left(\\sqrt{\\frac{d_{\\min}^{2}}{2N_0}}\\right)'},
-      {t:'small', html:'This is the expression used in practice. At useful signal-to-noise ratios the neighbours further away contribute a smaller $Q$ by orders of magnitude, so dropping them changes almost nothing.'}
+      {t:'small', html:'This approximation is useful at high signal-to-noise ratios. More distant points have much smaller pairwise terms, so the nearest neighbours dominate the error probability.'}
     ]},
     {t:'reveal', at:3, items:[
       {t:'note', kind:'ok', head:'What to take away', html:'A constellation is judged by two numbers: $d_{\\min}$, which sets the exponent and therefore almost everything, and $N_{\\min}$, which multiplies it and matters far less. Designing a good constellation means pushing $d_{\\min}$ as far as possible at a fixed average energy.'}
@@ -456,7 +456,7 @@ const SC = [
     {t:'reveal', at:1, items:[
       {t:'body', html:'<p>Leaving $R_k$ means crossing at least one of its faces, so the union over the faces already covers every error. Summing over that smaller set is still an upper bound:</p>'},
       {t:'eq', key:true, label:'intelligent union bound', tex:'P(\\text{error}\\mid\\mathbf{s}_k)\\le\\sum_{j\\in\\mathcal{N}(k)}Q\\!\\left(\\sqrt{\\frac{d_{kj}^{2}}{2N_0}}\\right)'},
-      {t:'small', html:'Fewer terms than the union bound, every term identical to one the union bound had, and the same argument behind it. It is simply the union taken over a set that is enough.'}
+      {t:'small', html:'This bound uses fewer terms than the full union bound. Each retained term represents a face that the observation can cross when it leaves the correct region.'}
     ]},
     {t:'reveal', at:2, items:[
       {t:'wex', head:'Four points in a square', rows:[
@@ -522,7 +522,7 @@ const SC = [
   {t:'lede', text:'The same constellation, with the two forms that are actually used, and the three answers side by side.'},
   {t:'reveal', at:1, items:[
     {t:'wex', rows:[
-      ['Nearest neighbours','$d_{\\min}=d$, and each point has $N_{\\min}=2$ neighbours at that distance, so $$P_e\\approx 2\\,Q\\!\\left(\\sqrt{\\frac{d^{2}}{2N_0}}\\right).$$ The diagonal term has simply been dropped.'],
+      ['Nearest neighbours','$d_{\\min}=d$, and each point has $N_{\\min}=2$ neighbours at that distance, so $$P_e\\approx 2\\,Q\\!\\left(\\sqrt{\\frac{d^{2}}{2N_0}}\\right).$$ This approximation omits the smaller diagonal term.'],
       ['Minimum-distance form','$M-1=3$, so $$P_e\\le 3\\,Q\\!\\left(\\sqrt{\\frac{d^{2}}{2N_0}}\\right),$$ which pretends the diagonal point is as close as the neighbours.']
     ]}
   ]},

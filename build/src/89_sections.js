@@ -66,7 +66,8 @@ CONTENT.SECTIONS = {
         'm1-nonuniform','m1-companding'] },
     { n:'1.6', title:'Pulse code modulation',          ids:[
         'm1-encode','m1-linecodes','m1-ex-pcm','m1-lab-b'] },
-    { n:'1.7', title:'Summary',                        ids:['m1-synth'] }
+    { n:'1.7', title:'Vector quantization',            ids:['m1-vq','m1-vq-image'] },
+    { n:'1.8', title:'Summary',                        ids:['m1-synth'] }
   ],
 
   M2: [
@@ -154,6 +155,9 @@ CONTENT.BOOK = {
   'm1-ex-cos':'7.2.1', 'm1-ex-unif':'7.2.1', 'm1-ex-gauss':'7.2.1',
   'm1-nonuniform':'7.2.1', 'm1-companding':'7.2.1',
   'm1-encode':'7.3', 'm1-ex-pcm':'7.4.1', 'm1-lab-b':'7.4',
+  /* Vector quantization is section 7.2.2 of the book, "Vector Quantization",
+     p. 309 — read there, not inferred from the neighbouring section number. */
+  'm1-vq':'7.2.2', 'm1-vq-image':'7.2.2',
   'm1-synth':'7.4.1',
 
   /* Module 2 spans two chapters of the book, and that is not an accident of

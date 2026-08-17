@@ -31,6 +31,12 @@ from scipy import integrate
 _x = sp.Symbol("x", real=True)
 
 
+def _pairs_within_one(L):
+    """Ordered pairs of levels differing by at most one step, counted rather
+    than taken from the solution's 3L-2."""
+    return sum(1 for i in range(L) for j in range(L) if abs(i - j) <= 1)
+
+
 def _second_moment(density, lo, hi):
     """E[X^2] against a density given as a SymPy expression in _x."""
     return float(sp.integrate(_x ** 2 * density, (_x, lo, hi)))
@@ -829,6 +835,29 @@ CHECKS: list[dict] = [
      "derive": lambda: 2 * math.sin(math.pi / 6), "tol": 1e-9},
     {"name": "D4-20(a) amplitude of the four-level line", "stated": 0.44721,
      "derive": lambda: math.sqrt(1 / 5), "tol": 1e-5},
+    {"name": "D1-21(a) pixels in a 512x512 image", "stated": 262144,
+     "derive": lambda: 512 * 512},
+    {"name": "D1-21(a) bits at 8 bits a pixel", "stated": 2097152,
+     "derive": lambda: 512 * 512 * 8},
+    {"name": "D1-21(a) that in KiB", "stated": 256,
+     "derive": lambda: 512 * 512 * 8 / 8 / 1024},
+    {"name": "D1-21(b) bits at 32 levels", "stated": 1310720,
+     "derive": lambda: 512 * 512 * int(math.log2(32))},
+    {"name": "D1-21(b) fraction saved, per cent", "stated": 37.5,
+     "derive": lambda: (1 - math.log2(32) / 8) * 100, "tol": 1e-9},
+    {"name": "D1-21(b) the SQNR it costs, dB", "stated": 18.06,
+     "derive": lambda: 20 * 3 * math.log10(2), "tol": 3e-4},
+    {"name": "D1-21(c) pairs a scalar coder must name", "stated": 256,
+     "derive": lambda: 16 ** 2},
+    {"name": "D1-21(c) pairs that can occur", "stated": 46,
+     "derive": lambda: _pairs_within_one(16)},
+    {"name": "D1-21(d) bits a pair, scalar", "stated": 8,
+     "derive": lambda: math.log2(16 ** 2)},
+    {"name": "D1-21(d) bits a pair, using the dependence", "stated": 6,
+     "derive": lambda: math.ceil(math.log2(_pairs_within_one(16)))},
+    {"name": "D1-21 check: five bits would name only 32 pairs", "stated": 32,
+     "derive": lambda: 2 ** 5},
+
     {"name": "D4-21(a) faces of the left-hand region", "stated": 1,
      "derive": lambda: len(_drill_faces(_D421, 0))},
     {"name": "D4-21(a) faces of the middle region", "stated": 2,

@@ -84,10 +84,10 @@ const SC = [
   ]},
   {t:'body', html:'<p>Each has a binary form and an $M$-ary form, and a fourth family — <b>quadrature amplitude modulation</b> — switches amplitude and phase together. Every scheme below is presented in the same order: the waveform, the constellation, the minimum distance, the error probability.</p>'},
   {t:'reveal', at:1, items:[
-    {t:'note', kind:'ok', head:'Module 4 has already done the hard part', html:'Every one of these schemes is a constellation, and Module 4 says the error probability is $N_{\\min}Q\\!\\left(\\sqrt{d_{\\min}^{2}/2N_0}\\right)$ whatever the waveforms are. So the whole of this module is: write down the constellation, measure $d_{\\min}$, count the neighbours, and read off the answer.'}
+    {t:'note', kind:'ok', head:'Module 4 provides the method', html:'Each scheme defines a constellation. At high signal-to-noise ratios, Module 4 approximates its symbol error probability by $N_{\\min}Q\\!\\left(\\sqrt{d_{\\min}^{2}/2N_0}\\right)$. We will draw each constellation, find $d_{\\min}$, and count its nearest neighbours.'}
   ]},
   {t:'reveal', at:2, items:[
-    {t:'note', kind:'warn', head:'The one thing that is not geometry', html:'Bandwidth. Phase and amplitude schemes keep the same bandwidth however many points they use; frequency-shift keying needs a new dimension for every symbol and its bandwidth grows with $M$. That trade is invisible in the constellation and decides which family a system actually uses.'}
+    {t:'note', kind:'warn', head:'Bandwidth is not shown by the constellation', html:'At a fixed bit rate, increasing $M$ reduces the symbol rate of phase and amplitude schemes. Their required bandwidth therefore decreases. Orthogonal frequency-shift keying needs more frequencies as $M$ grows, so its required bandwidth increases. A constellation alone does not show this trade-off.'}
   ]}
 ]},
 
@@ -114,7 +114,7 @@ const SC = [
     {t:'fig', frame:true, svg:()=>figCarrier('bpsk'),
       caption:'The waveform for the bits $1\\,0\\,1\\,0$. Every bit boundary where the data changes carries a phase reversal, visible as a discontinuity in the envelope of the oscillation.'},
     {t:'fig', frame:true, svg:()=>figConst([[-1.2,0],[1.2,0]],{lim:1.9,w:400,h:190}),
-      caption:'The constellation: two points, one axis, $2\\sqrt{E_b}$ apart. The boundary is the whole $\\psi_2$ axis, and the rule is simply the sign of the correlator output.'}
+      caption:'The constellation has two points on one axis, separated by $2\\sqrt{E_b}$. The boundary is the $\\psi_2$ axis. The receiver decides from the sign of the correlator output.'}
   ]}
 ]},
 

@@ -52,15 +52,15 @@ const SC = [
   src:'CH9 s.2–3', steps:2, blocks:[
   {t:'eyebrow', text:'Module 3 · Opening'},
   {t:'title', text:'Two waveforms that do not fit on one line'},
-  {t:'lede', text:'In Module 2 the two waveforms were opposites, so one shape carried both and the receiver needed one number. What happens when the two waveforms are simply different?'},
+  {t:'lede', text:'In Module 2 the two waveforms were opposites, so one shape represented both and the receiver needed one number. What happens when neither waveform is a multiple of the other?'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>Take $s_0(t)$ and $s_1(t)$ below. Neither is a multiple of the other, so no single function $\\psi(t)$ can write both as $s_m\\psi(t)$. The receiver of Module 2 does not apply, and none of its results do either.</p>'},
     {t:'reveal', at:1, items:[
-      {t:'body', html:'<p>The fix is straightforward once said out loud: use <b>two</b> matched filters, one for each waveform, and let the receiver work with the <b>two</b> numbers they produce.</p>'},
-      {t:'note', kind:'def', head:'The idea of this module', html:'A set of waveforms can be written as a set of <b>points</b>. Once it is, the receiver becomes a question about geometry — which point is the observation nearest to — and every result of the rest of the course is read off that picture.'}
+      {t:'body', html:'<p>Use <b>two</b> axes to represent these waveforms. The receiver computes one coordinate on each axis and then works with the two resulting numbers.</p>'},
+      {t:'note', kind:'def', head:'The idea of this module', html:'A set of waveforms can be represented by a set of <b>points</b>. The receiver can then use geometry. For equally likely signals in white Gaussian noise, it chooses the signal point nearest to the observation.'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'ok', head:'What this buys', html:'Analysing waveforms means integrals. Analysing points means arithmetic. The whole of Modules 4 and 5 is done with the arithmetic, and this module is the translation.'}
+      {t:'note', kind:'ok', head:'Why the point representation helps', html:'Waveform analysis requires integrals. Point analysis uses arithmetic on coordinates. This module provides the translation, and Modules 4 and 5 use the resulting geometry.'}
     ]}
   ], right:[
     {t:'grid', cols:2, gap:'20px', items:[
@@ -168,7 +168,7 @@ const SC = [
   keywords:'energy squared norm euclidean distance constellation L2 norm',
   src:'CH9 s.11–12', steps:2, blocks:[
   {t:'eyebrow', text:'Module 3 · Signals as vectors'},
-  {t:'title', text:'Two quantities, read straight off the picture'},
+  {t:'title', text:'Two quantities shown by the picture'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'Put $y=x$ in the property of the last scene and the energy of a signal is the squared length of its vector:'},
     {t:'eq', key:true, tex:'E_{s_i}=\\int_0^{T}s_i^{2}(t)\\,dt=\\sum_{j=1}^{N}s_{ij}^{2}=\\|\\mathbf{s}_i\\|^{2}'},
@@ -206,7 +206,7 @@ const SC = [
       {t:'body', html:'<p>Three things are read directly off it:</p><ul><li>The <b>distance from the origin</b> to a point is $\\sqrt{E_i}$, the square root of that waveform\'s energy.</li><li>The <b>distance between two points</b> is the square root of the energy of their difference.</li><li>The <b>number of axes</b> is how many matched filters the receiver needs.</li></ul>'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'warn', head:'A picture is not a waveform', html:'Two completely different sets of waveforms can produce the same constellation — different shapes, different durations, the same points. When they do, they have the same error performance and the same receiver structure, and the only things that separate them are bandwidth and how easy they are to build. That is a strong statement, and the next module proves it.'}
+      {t:'note', kind:'warn', head:'A picture is not a waveform', html:'Different waveform sets can produce the same constellation. In the white Gaussian noise model, equal constellations have equal coherent-detection error performance. Their bandwidth and implementation can still differ. The next module derives the receiver result.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figConstellation(
@@ -363,7 +363,7 @@ const SC = [
       {t:'body', html:'<p>Module 4 builds the receiver for this picture: it computes the coordinates of what arrives and picks the nearest point. The error probability then depends on the distances, and on nothing else.</p>'}
     ]}]
   ]},
-  {t:'note', kind:'ok', head:'The module in one sentence', html:'A waveform is hard to reason about and a point is not, so the whole of this module is one change of language: pick an orthonormal basis, write every signal as its list of coordinates, and from then on energy is a squared length and the difference between two signals is a distance.'}
+  {t:'note', kind:'ok', head:'The module in one sentence', html:'Choose an orthonormal basis and write each signal as a list of coordinates. In this representation, signal energy is squared length. The energy of a signal difference is squared distance.'}
 ]}
 
 ];

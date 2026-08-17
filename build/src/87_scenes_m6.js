@@ -211,10 +211,10 @@ window.SCENES_M6 = [
   {t:'title', text:'How much is a message worth?'},
   {t:'lede', text:'Everything so far has been about getting bits across a channel. This module steps back and asks where the bits came from, and how few of them a message really needs.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
-    {t:'body', html:'<p>A source produces symbols — letters, samples, pixels. Some are common and some are rare. It is obvious that a message of rare symbols is more surprising than one of common symbols, and it turns out that this can be measured, in bits, and that the measurement is exactly the number of bits the message needs.</p>'},
-    {t:'note', kind:'def', head:'What a discrete memoryless source is', html:'A source that emits one of $K$ symbols each time, with fixed probabilities $p_1,\\ldots,p_K$, and where each symbol is chosen independently of the ones before it. <b>Discrete</b> because the alphabet is finite, <b>memoryless</b> because the past does not matter. It is the simplest model that is still worth anything, and it is the only one this course uses.'},
+    {t:'body', html:'<p>A source produces symbols such as letters, samples, or pixels. Some symbols occur often, while others are rare. A rare symbol gives more new information when it occurs. Information theory measures this amount in bits and relates its average to the best possible lossless compression rate.</p>'},
+    {t:'note', kind:'def', head:'What a discrete memoryless source is', html:'A discrete memoryless source emits one of $K$ symbols at each step. The probabilities $p_1,\\ldots,p_K$ remain fixed, and successive symbols are independent. <b>Discrete</b> means that the alphabet is finite. <b>Memoryless</b> means that earlier symbols do not change the next-symbol probabilities. This course uses this basic source model.'},
     {t:'reveal', at:1, items:[
-      {t:'note', kind:'ok', head:'The two questions', html:'<b>1.</b> How much information does a source produce, on average, per symbol? The answer is its <em>entropy</em>. <b>2.</b> How few bits can encode it without losing anything? The answer is the same number. That coincidence is the source-coding theorem, and it is what makes this module short.'}
+      {t:'note', kind:'ok', head:'The two questions', html:'<b>1.</b> How much information does a source produce on average per symbol? Its <em>entropy</em> measures this amount. <b>2.</b> What average rate can a lossless code approach? For long blocks, the source-coding theorem shows that this rate can approach the entropy but cannot fall below it.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figSelf(),
@@ -267,18 +267,18 @@ window.SCENES_M6 = [
     {t:'small', html:'The unit is <b>bits a symbol</b>. Read it as the uncertainty before a symbol arrives, or equivalently as what is learnt once it has.'},
     {t:'reveal', at:1, items:[
       {t:'eq', label:'bounds', tex:'0\\le H(S)\\le \\log_2 K'},
-      {t:'note', kind:'ok', head:'Both ends are easy to see', html:'<b>Zero</b> when one symbol has probability one: nothing is ever in doubt, so nothing is ever learnt. <b>$\\log_2 K$</b> when all $K$ symbols are equally likely: putting $p_k=1/K$ into the sum gives $\\sum\\frac1K\\log_2 K=\\log_2 K$. Between them, the more even the probabilities, the higher the entropy.'}
+      {t:'note', kind:'ok', head:'Interpret the two limits', html:'The entropy is <b>zero</b> when one symbol has probability one because the next symbol is known. It is $\\log_2 K$ when all $K$ symbols are equally likely. Substitution of $p_k=1/K$ gives $\\sum\\frac1K\\log_2 K=\\log_2 K$. More even probabilities give higher entropy.'}
     ]},
     {t:'reveal', at:2, items:[
       {t:'wex', head:'The standard example', rows:[
         ['Given','A memoryless source with alphabet $\\{s_1,s_2,s_3\\}$ and probabilities $0.7,\\;0.2,\\;0.1$.'],
         ['Find','The entropy.'],
         ['Solution','$H(S)=-0.7\\log_2 0.7-0.2\\log_2 0.2-0.1\\log_2 0.1=1.1568$ bits a symbol.'],
-        ['Read it','Three symbols would need $2$ bits each if they were simply numbered. The source needs only $1.1568$, so numbering them wastes almost $0.85$ bits every symbol. Getting that back is the whole of source coding.']
+        ['Read it','A fixed-length binary label needs $2$ bits for each of three symbols. The entropy is $1.1568$ bits per symbol. Thus, suitable block codes can approach a rate that is almost $0.85$ bits per symbol lower.']
       ]}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'small', html:'Check the bound: $\\log_2 3=1.585$, and $1.1568$ is below it. Equal probabilities would have reached $1.585$; these are lopsided, so they do not.'}
+      {t:'small', html:'Check the bound: $\\log_2 3=1.585$, and $1.1568$ is less than this value. Equal probabilities give $1.585$. The unequal probabilities in this example give lower entropy.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figHb(),
@@ -343,7 +343,7 @@ window.SCENES_M6 = [
       tex:'\\bar{L}=\\sum_{k=1}^{K}p_k\\,l_k\\quad\\text{bits a symbol}'},
     {t:'small', html:'$l_k$ is the length of the codeword for symbol $k$. $\\bar{L}$ is what the code actually costs, averaged over a long message.'},
     {t:'reveal', at:1, items:[
-      {t:'note', kind:'def', head:'The source-coding theorem', html:'For any code from which the symbols can be recovered exactly, $\\bar{L}\\ge H(S)$. So the smallest average length any code can have is $L_{\\min}=H(S)$ — the entropy is not merely a measure of information, it is a limit on how few bits will carry it.'},
+      {t:'note', kind:'def', head:'The source-coding theorem', html:'For any uniquely decodable binary code, $\\bar{L}\\ge H(S)$. Thus, entropy is a lower bound on the average number of bits per symbol. A one-symbol code does not always reach this bound. Codes for longer blocks can approach it.'},
       {t:'eq', label:'efficiency', tex:'\\eta=\\frac{L_{\\min}}{\\bar{L}}=\\frac{H(S)}{\\bar{L}}\\le 1'}
     ]},
     {t:'reveal', at:2, items:[
@@ -451,7 +451,7 @@ window.SCENES_M6 = [
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>The source-coding theorem says no code beats $H(S)$. The complementary result says a prefix code always gets within one bit of it.</p>'},
     {t:'eq', key:true, label:'the two-sided bound', tex:'H(S)\\le\\bar{L}< H(S)+1'},
-    {t:'note', kind:'def', head:'Where the extra bit comes from', html:'The ideal length for symbol $k$ is $-\\log_2 p_k$, which is almost never a whole number. A codeword has to be a whole number of bits, so each length is rounded up, and rounding up costs less than one bit per symbol. That is the whole of the $+1$.'},
+    {t:'note', kind:'def', head:'Where the extra bit comes from', html:'The ideal length for symbol $k$ is $-\\log_2 p_k$, which is usually not an integer. A codeword must contain an integer number of bits. Choosing $l_k=\\lceil-\\log_2 p_k\\rceil$ adds less than one bit to each ideal length. Averaging gives the $+1$ bound.'},
     {t:'reveal', at:1, items:[
       {t:'note', kind:'ok', head:'When the bound is tight', html:'If every probability is a power of two — $p_k=2^{-l_k}$, called a <b>dyadic</b> distribution — nothing needs rounding. Then $\\bar{L}=\\sum p_k l_k=\\sum l_k 2^{-l_k}$ and $H(S)=-\\sum 2^{-l_k}\\log_2 2^{-l_k}=\\sum l_k 2^{-l_k}$: the same sum. So $\\bar{L}=H(S)$ exactly, and the code is perfect.'}
     ]},
@@ -752,18 +752,18 @@ window.SCENES_M6 = [
     {t:'reveal', at:1, items:[
       {t:'body', html:'<p>The same quantity can be read from the other end, and the two readings are equal:</p>'},
       {t:'eq', key:true, tex:'I(X;Y)=H(Y)-H(Y\\mid X)=I(Y;X)'},
-      {t:'small', html:'The second form is the one that gets used, because $H(Y\\mid X)$ comes straight off the channel matrix while $H(X\\mid Y)$ needs Bayes\' rule first.'}
+      {t:'small', html:'The second form is often easier to use. The channel matrix gives $H(Y\\mid X)$ directly, while $H(X\\mid Y)$ first requires Bayes\' rule.'}
     ]},
     {t:'reveal', at:2, items:[
       {t:'wex', head:'The BSC at $p=0.1$ with equally likely inputs', rows:[
         ['$H(X)$','$1$ bit — the transmitter sends a fair bit.'],
-        ['$H(Y\\mid X)$','$H(0.1)=0.469$ bits, read off the channel matrix.'],
+        ['$H(Y\\mid X)$','$H(0.1)=0.469$ bits, obtained directly from the channel matrix.'],
         ['$H(Y)$','$1$ bit, from the last scene\'s output distribution.'],
         ['$I(X;Y)$','$1-0.469=0.531$ bits per use of the channel.']
       ]}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'ok', head:'What that number means', html:'One bit was offered and just over half a bit arrived. The missing $0.469$ bits were not delayed or corrupted — they were destroyed, and no receiver however clever recovers them. That is the first quantity in this course that says what a channel <em>cannot</em> do.'}
+      {t:'note', kind:'ok', head:'What that number means', html:'The input contained one bit of uncertainty, and the output resolved $0.531$ bits of it on average. The remaining $0.469$ bits are the uncertainty left after observing the output. No detector can remove this uncertainty without additional information.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>{
@@ -847,7 +847,7 @@ window.SCENES_M6 = [
   {t:'title', text:'Capacity of the binary symmetric channel'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>Take $I(X;Y)=H(Y)-H(Y\\mid X)$ and work on the two pieces separately.</p>'},
-    {t:'body', html:'<p>The second piece is easy and does not depend on the transmitter at all. Whichever symbol goes in, the output distribution is $(1-p,\\,p)$ in some order, so</p>'},
+    {t:'body', html:'<p>The second term does not depend on the input probabilities. For either input symbol, the conditional output distribution is $(1-p,\\,p)$ in some order. Therefore,</p>'},
     {t:'eq', tex:'H(Y\\mid X)=H(p)=-p\\log_2 p-(1-p)\\log_2(1-p)'},
     {t:'reveal', at:1, items:[
       {t:'body', html:'<p>The first piece is an entropy of a two-symbol distribution, so $H(Y)\\le1$ bit, with equality when the output is equally likely. Section 6.6.2 showed that equally likely <em>inputs</em> give exactly that. So the maximum is reached at $p(x_0)=\\tfrac12$ and</p>'},
@@ -855,7 +855,7 @@ window.SCENES_M6 = [
     ]},
     {t:'reveal', at:2, items:[
       {t:'wex', head:'Reading the answer', rows:[
-        ['$p=0$ or $p=1$','$H(p)=0$, so $C=1$: a whole bit per use. At $p=1$ every bit is flipped, which the receiver simply undoes.'],
+        ['$p=0$ or $p=1$','$H(p)=0$, so $C=1$: one bit per use. At $p=1$, every bit is flipped. The receiver recovers the input by inverting each output bit.'],
         ['$p=\\tfrac12$','$H(p)=1$, so $C=0$. Nothing whatever can be sent. This is the <b>useless channel</b>.'],
         ['$p=0.1$','$H(0.1)=0.469$, so $C=0.531$ bits per use — the number the last section computed, now known to be the best available.'],
         ['$p=0.11$','$C=0.500$: a crossover of about one bit in nine already halves the channel.']
@@ -919,7 +919,7 @@ window.SCENES_M6 = [
   ], right:[
     {t:'fig', frame:true, svg:()=>figChannel(ZCH,['0','1'],['0','1'],
       {w:400, h:160, tex:[['1',''],['\\tfrac12','\\tfrac12']]}),
-      caption:'The Z-channel, named for the shape the surviving transitions make. The missing arrow is the whole of its asymmetry: a $0$ can never be received as a $1$.'},
+      caption:'The Z-channel is named for the shape of its possible transitions. Its asymmetry comes from the missing arrow: a $0$ can never be received as a $1$.'},
     {t:'fig', frame:true, svg:()=>{
       const a = P.Axes({w:440,h:196,xr:[0,1],yr:[0,0.40],
         xlabel:'q=P(X=0)', ylabel:'I(X;Y)\\;\\text{bits}',
@@ -980,7 +980,7 @@ window.SCENES_M6 = [
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>Everything so far counted symbols. A real channel is not given as a matrix: it is given as a bandwidth in hertz, a transmitted power in watts, and a noise density. The capacity of that channel is one of the most quoted results in engineering.</p>'},
     {t:'eq', key:true, label:'information capacity law', tex:'C=B\\log_2\\!\\left(1+\\frac{P}{N_0B}\\right)\\quad\\text{bits per second}'},
-    {t:'note', kind:'def', head:'What each symbol is', html:'$B$ is the bandwidth in hertz. $P$ is the average transmitted power. $N_0/2$ is the two-sided noise density, so $N_0B$ is the noise power in the band. The ratio $P/N_0B$ is the signal-to-noise ratio, and the whole of the channel enters through it.'},
+    {t:'note', kind:'def', head:'What each symbol is', html:'$B$ is the bandwidth in hertz. $P$ is the average transmitted power. $N_0/2$ is the two-sided noise density, so $N_0B$ is the noise power in the band. The ratio $P/(N_0B)$ is the received signal-to-noise ratio used by this channel model.'},
     {t:'reveal', at:1, items:[
       {t:'note', kind:'ok', head:'Read the two knobs', html:'$C$ grows <b>linearly</b> with bandwidth and only <b>logarithmically</b> with power. Doubling the bandwidth at fixed noise density roughly doubles the rate; doubling the power adds one bit per second per hertz at best, and much less when the ratio is already large. Bandwidth is the better buy, and it is the one that is regulated and scarce.'}
     ]},

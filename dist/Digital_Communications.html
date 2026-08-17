@@ -164,6 +164,29 @@ body[data-display=projector][data-theme=dark]{ --rule:#3A4754; }
 body[data-display=projector] .scene{ padding:44px 76px 60px; }
 body[data-display=projector] .cols{ gap:34px; }
 
+/* the laser pointer of projector mode. The canvas is created by the core the
+   first time projector mode is entered; it never takes a click. The system
+   arrow is hidden only while the laser is the pointer, and only where there
+   is a real mouse to hide it from — on a touch screen there is nothing to
+   replace it with. */
+#laser{
+  position:fixed; inset:0; display:none;
+  pointer-events:none; z-index:90;
+}
+@media (pointer:fine){
+  body[data-display=projector][data-pointer=laser],
+  body[data-display=projector][data-pointer=laser] *{ cursor:none; }
+}
+/* drawing with the button held would otherwise sweep a text selection across
+   the scene; the fields the reader types into keep theirs */
+body[data-display=projector][data-pointer=laser]{ user-select:none; -webkit-user-select:none; }
+body[data-display=projector][data-pointer=laser] input,
+body[data-display=projector][data-pointer=laser] textarea{ user-select:text; -webkit-user-select:text; }
+
+/* the two pointer controls belong to projector mode and are hidden outside it */
+#appheader .proj-only{ display:none; }
+body[data-display=projector] #appheader .proj-only{ display:block; }
+
 *,*::before,*::after{ box-sizing:border-box; }
 
 html,body{
@@ -225,6 +248,8 @@ body[data-motion=reduced] #appheader .eelogo path{ animation:none; filter:none; 
 }
 #appheader button:hover{ color:var(--ink); background:var(--paper-3); }
 #appheader button[aria-pressed=true]{ color:var(--coral); }
+#appheader button:disabled{ opacity:.4; cursor:default; }
+#appheader button:disabled:hover{ color:var(--muted); background:transparent; }
 #sbtoggle{ font-size:15px !important; line-height:1; padding:5px 9px !important; }
 
 /* --- left contents rail ---------------------------------------------- */
@@ -903,6 +928,9 @@ body[data-motion=reduced] *{ transition-duration:1ms !important; animation-durat
     <button data-act="gloss" title="Notation (G)">Notation</button>
     <span class="sep"></span>
     <button id="btn-display" data-act="display" title="Normal / projector (P)">Normal</button>
+    <button id="btn-pointer" class="proj-only" data-act="pointer" title="Laser pointer / system arrow">Laser</button>
+    <button id="btn-trail" class="proj-only" data-act="trail" title="Ink: fade, hold, off (T) — hold the mouse button to draw, C clears">Trail: fade</button>
+    <span class="sep proj-only"></span>
     <button id="btn-theme" data-act="theme" title="Light / dark (D)">Light</button>
     <span class="sep"></span>
     <button id="btn-mode" data-act="mode" title="Lecture / self-study (L)">Self-study</button>
@@ -1452,7 +1480,7 @@ const CONTENT = {
   META: {
     course:'Digital Communications',
     title:'Digital Communications',
-    version:'1.2',
+    version:'1.3',
     language:'Academic English',
     /* Both are stated once on the page, in the scene where they are first
        needed, and repeated here so the conventions panel can show them without
@@ -1603,6 +1631,8 @@ const APP = (() => {
     sidebar: 'on',      // contents rail
     theme: 'light',     // 'light' | 'dark'
     display: 'normal',  // 'normal' | 'projector'
+    pointer: 'laser',   // 'laser' | 'arrow'  — projector mode only
+    trail:   'fade',    // 'fade' | 'hold' | 'off' — ink drawn while the button is held
     quiz: {},           // qid -> {picked, correct, attempts, revealed}
     drillPage: {},      // module id -> index of the drill question on screen
     secOpen: {}         // section number -> the reader's own open/closed choice
@@ -1621,6 +1651,8 @@ const APP = (() => {
       sidebar: saved.sidebar || 'on',
       theme: saved.theme || (matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'),
       display: saved.display || 'normal',
+      pointer: saved.pointer || 'laser',
+      trail:   saved.trail==='on' ? 'fade' : (saved.trail || 'fade'),
       visited: saved.visited || {},
       quiz: saved.quiz || {},
       drillPage: saved.drillPage || {}
@@ -1636,7 +1668,7 @@ const APP = (() => {
 
   function persist(){
     store.write({ mode:state.mode, edition:state.edition, motion:state.motion, sidebar:state.sidebar,
-                  theme:state.theme, display:state.display,
+                  theme:state.theme, display:state.display, pointer:state.pointer, trail:state.trail,
                   visited:state.visited, quiz:state.quiz, drillPage:state.drillPage,
                   at:SCENES[state.i]&&SCENES[state.i].id });
   }
@@ -1647,7 +1679,164 @@ const APP = (() => {
     document.body.dataset.sidebar = state.sidebar;
     document.body.dataset.theme = state.theme;
     document.body.dataset.display = state.display;
+    document.body.dataset.pointer = state.pointer;
+    document.body.dataset.trail = state.trail;
+    laser.sync();
   }
+
+  /* ---------- laser pointer, projector mode only ----------
+     In front of a class the pointer is an instrument, not a control: the
+     system arrow is too small to follow from the back of a room. In
+     projector mode it becomes a red dot. Holding the mouse button down draws
+     with it, the way a finger draws on a tablet. Strokes accumulate, so a
+     term can be ringed and a word written beside it, and the drawing goes
+     all at once a few seconds after the last stroke ends — or is held until
+     it is cleared, which the header decides. Moving without holding the
+     button moves the dot alone, so pointing leaves no ink. The dot never
+     leaves, because it is standing in for the arrow. Everything is drawn on
+     one fixed canvas above the page that takes no clicks, so nothing else
+     changes. Under reduced motion the stroke is left out and only the dot is
+     drawn. Both the pointer and the ink can be turned off from the header. */
+  const laser = (() => {
+    const HOLD = 3000;         /* ms the ink stays after the button is let go */
+    const FADE = 900;          /* ms it then takes to go */
+    const KEEP = 6000;         /* most points held across all strokes */
+    let cv=null, cx=null, on=false, raf=0, dpr=1, W=0, H=0;
+    let head=null;             /* {x,y} where the dot is now */
+    let drawing=false, released=0;
+    const strokes = [];        /* each one a list of {x,y}; oldest first */
+
+    function count(){ let n=0; for(const s of strokes) n+=s.length; return n; }
+    function drop(){                       /* forget the oldest ink first */
+      while(count()>KEEP && strokes.length){
+        strokes[0].shift();
+        if(strokes[0].length<2) strokes.shift();
+      }
+    }
+
+    function size(){
+      dpr = Math.min(window.devicePixelRatio||1, 2);
+      W = window.innerWidth; H = window.innerHeight;
+      cv.width = Math.round(W*dpr); cv.height = Math.round(H*dpr);
+      cv.style.width = W+'px'; cv.style.height = H+'px';
+      cx.setTransform(dpr,0,0,dpr,0,0);
+    }
+    function frame(){
+      raf = 0;
+      /* `hold` keeps the ink until it is cleared; `fade` gives it HOLD at full
+         strength after the button is let go — long enough to say a sentence
+         over it — and then takes the whole drawing away together, rather than
+         tail first, so a word does not lose its first letter while it is
+         still being read */
+      const keep = state.trail==='hold';
+      const idle = (drawing||keep) ? 0 : performance.now() - released;
+      let a = idle<=HOLD ? 1 : 1 - (idle-HOLD)/FADE;
+      if(a<=0){ a=0; strokes.length=0; }
+      cx.clearRect(0,0,W,H);
+      if(a>0 && strokes.length && state.trail!=='off' && state.motion==='full'){
+        /* every stroke in one path, stroked three times — a wide soft halo,
+           the red body, a pale core. Stroking each piece on its own instead
+           leaves a bead at every round cap and doubles the ink where two
+           strokes cross. */
+        cx.lineCap='round'; cx.lineJoin='round'; cx.globalAlpha = a;
+        cx.beginPath();
+        for(const pts of strokes){
+          if(pts.length<2) continue;
+          cx.moveTo(pts[0].x, pts[0].y);
+          for(let k=1;k<pts.length-1;k++){        /* midpoint smoothing */
+            cx.quadraticCurveTo(pts[k].x, pts[k].y,
+                                (pts[k].x+pts[k+1].x)/2, (pts[k].y+pts[k+1].y)/2);
+          }
+          const b = pts[pts.length-1];
+          cx.lineTo(b.x, b.y);
+        }
+        cx.strokeStyle='rgba(255,66,44,0.26)'; cx.lineWidth=21; cx.stroke();
+        cx.strokeStyle='rgba(228,38,22,0.94)'; cx.lineWidth=11; cx.stroke();
+        cx.strokeStyle='rgba(255,231,226,0.96)'; cx.lineWidth=4; cx.stroke();
+        cx.globalAlpha = 1;
+      }
+      const p = head;
+      if(p){
+        const g = cx.createRadialGradient(p.x,p.y,0, p.x,p.y,19);
+        g.addColorStop(0,   'rgba(255,236,230,1)');
+        g.addColorStop(0.10,'rgba(255,64,40,1)');
+        g.addColorStop(0.32,'rgba(214,45,32,0.92)');
+        g.addColorStop(0.55,'rgba(214,45,32,0.32)');
+        g.addColorStop(1,   'rgba(214,45,32,0)');
+        cx.fillStyle = g;
+        cx.beginPath(); cx.arc(p.x,p.y,19,0,Math.PI*2); cx.fill();
+      }
+      /* while the button is held the next point comes from the next event, and
+         held ink never changes on its own: only a fade has to be animated */
+      if(!drawing && state.trail!=='hold' && a>0 && strokes.length) raf = requestAnimationFrame(frame);
+    }
+    function tick(){ if(!raf) raf = requestAnimationFrame(frame); }
+    function mouse(e){ return !e.pointerType || e.pointerType==='mouse' || e.pointerType==='pen'; }
+    function move(e){
+      if(!mouse(e)) return;
+      head = {x:e.clientX, y:e.clientY};
+      if(drawing){ strokes[strokes.length-1].push(head); drop(); }
+      tick();
+    }
+    function down(e){
+      if(!mouse(e) || e.button!==0) return;
+      /* a drawing that had begun to fade is finished with: start a clean one */
+      if(!drawing && state.trail!=='hold' && performance.now()-released > HOLD) strokes.length=0;
+      drawing = true;
+      head = {x:e.clientX, y:e.clientY};
+      strokes.push([head]);                    /* strokes accumulate: a word
+                                                  keeps every letter of it */
+      tick();
+    }
+    function up(){
+      if(!drawing) return;
+      drawing = false; released = performance.now();
+      tick();
+    }
+    function leave(){
+      if(drawing){ drawing=false; released=performance.now(); }
+      head=null; tick();
+    }
+
+    function start(){
+      if(on) return;
+      if(!window.matchMedia || !matchMedia('(pointer:fine)').matches) return;
+      if(!cv){
+        cv = document.createElement('canvas');
+        cv.id = 'laser'; cv.setAttribute('aria-hidden','true');
+        document.body.appendChild(cv);
+        cx = cv.getContext('2d');
+      }
+      on = true; cv.style.display='block'; size();
+      window.addEventListener('pointermove', move, {passive:true});
+      window.addEventListener('pointerdown', down, {passive:true});
+      window.addEventListener('pointerup', up, {passive:true});
+      window.addEventListener('pointercancel', up, {passive:true});
+      document.addEventListener('mouseleave', leave);
+      window.addEventListener('blur', leave);
+      window.addEventListener('resize', size);
+    }
+    function stop(){
+      if(!on) return;
+      on = false;
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerdown', down);
+      window.removeEventListener('pointerup', up);
+      window.removeEventListener('pointercancel', up);
+      document.removeEventListener('mouseleave', leave);
+      window.removeEventListener('blur', leave);
+      window.removeEventListener('resize', size);
+      if(raf){ cancelAnimationFrame(raf); raf=0; }
+      leave();
+      if(cv) cv.style.display='none';
+    }
+    return {
+      sync(){ (state.display==='projector' && state.pointer==='laser') ? start() : stop(); },
+      /* clearing takes whatever is on screen with it — the C key, a change of
+         scene, and turning the ink off all use this */
+      clear(){ if(on && strokes.length){ strokes.length=0; drawing=false; tick(); } }
+    };
+  })();
 
   /* ---------- stage scaling: exact 1920×1080 basis, scaled to fit ---------- */
   let _ro = null;
@@ -1699,6 +1888,8 @@ const APP = (() => {
 
   function go(i, opt={}){
     if(i<0||i>=SCENES.length) return;
+    /* ink belongs to the scene it was drawn over, not to the next one */
+    if(i!==state.i) laser.clear();
     state.i = i;
     state.step = opt.step!=null ? opt.step : 0;
     state.visited[SCENES[i].id] = 1;
@@ -1757,6 +1948,8 @@ const APP = (() => {
         case 's': case 'S': toggleSidebar(); break;
         case 'd': case 'D': toggleTheme(); break;
         case 'p': case 'P': toggleDisplay(); break;
+        case 't': case 'T': toggleTrail(); break;
+        case 'c': case 'C': laser.clear(); break;
       }
     });
   }
@@ -1772,6 +1965,16 @@ const APP = (() => {
     state.sidebar = state.display==='projector' ? 'off' : 'on';
     applyBodyFlags(); persist();
     requestAnimationFrame(()=>{ fit(); onRender(); });
+  }
+  function togglePointer(){
+    state.pointer = state.pointer==='laser'?'arrow':'laser';
+    applyBodyFlags(); persist(); onRender();
+  }
+  function toggleTrail(){
+    /* fade → hold → off, and round again */
+    state.trail = state.trail==='fade' ? 'hold' : state.trail==='hold' ? 'off' : 'fade';
+    if(state.trail==='off') laser.clear();
+    applyBodyFlags(); persist(); onRender();
   }
   function toggleSidebar(){ state.sidebar = state.sidebar==='on'?'off':'on'; applyBodyFlags(); persist();
     requestAnimationFrame(()=>{ fit(); onRender(); }); }
@@ -1795,6 +1998,8 @@ const APP = (() => {
       else if(a==='sidebar') toggleSidebar();
       else if(a==='theme') toggleTheme();
       else if(a==='display') toggleDisplay();
+      else if(a==='pointer') togglePointer();
+      else if(a==='trail') toggleTrail();
       else if(a==='goto') goId(t.dataset.id, parseInt(t.dataset.step||'0',10));
       else if(a==='sec'){ const n=t.dataset.sec;
         state.secOpen[n] = !secIsOpen(n); buildSidebar(); }
@@ -2330,6 +2535,11 @@ const RENDER = (() => {
       bt.textContent = S.theme==='dark'?'Dark':'Light'; }
     const bd=document.getElementById('btn-display'); if(bd){ bd.setAttribute('aria-pressed', S.display==='projector');
       bd.textContent = S.display==='projector'?'Projector':'Normal'; }
+    const bp=document.getElementById('btn-pointer'); if(bp){ bp.setAttribute('aria-pressed', S.pointer==='laser');
+      bp.textContent = S.pointer==='laser'?'Laser':'Arrow'; }
+    const bi=document.getElementById('btn-trail'); if(bi){ bi.setAttribute('aria-pressed', S.trail!=='off');
+      bi.textContent = 'Trail: '+S.trail;
+      bi.disabled = S.pointer!=='laser'; }
     APP.buildMap();
     APP.buildSidebar();
   }
@@ -4367,6 +4577,38 @@ function figLineCode(i){
   return a.svg();
 }
 
+/* Every pair a two-sample block can take, with the pairs a smooth signal can
+   actually produce shaded. Nothing is sampled or simulated: a cell is shaded
+   when the two indices differ by at most one, which is the condition the scene
+   states, so the count in the caption is the count the figure draws. */
+function figPairLattice(L){
+  const a = P.Axes({w:440,h:330,xr:[0,L],yr:[0,L],
+    xlabel:'\\text{sample }n', ylabel:'\\text{sample }n+1',
+    pad:{l:58,r:22,t:22,b:46}, xticksOverride:[0,4,8,12,16], yticksOverride:[0,4,8,12,16],
+    grid:false});
+  for(let i=0;i<L;i++) for(let j=0;j<L;j++){
+    const near = Math.abs(i-j) <= 1;
+    a.rect(i, j, i+1, j+1,
+      {fill: near ? C.dec.in : 'none', stroke: near ? C.in : C.rule});
+  }
+  return a.svg();
+}
+
+/* One row of a smooth gradient at two level counts. The coarse staircase is
+   what a reader sees as banding: the step edges are boundaries the scene never
+   had. Both curves are the same quantizer rule with a different L. */
+function figBanding(){
+  const a = P.Axes({w:470,h:300,xr:[0,1],yr:[-0.06,1.10],
+    xlabel:'\\text{position across the image}', ylabel:'\\text{brightness}',
+    pad:{l:62,r:22,t:22,b:46}, xtarget:5, ytarget:5});
+  const q = (v,L) => (Math.min(L-1, Math.floor(v*L)) + 0.5)/L;
+  a.curve(x => q(x, 256), {color:C.in, width:2.0, n:1400});
+  a.curve(x => q(x, 8),   {color:C.mid, width:2.2, n:1400});
+  a.note(0.06, 0.96, 'L=256', {tex:true, fs:12, color:C.in});
+  a.note(0.62, 0.30, 'L=8', {tex:true, fs:12, color:C.mid});
+  return a.svg();
+}
+
 function figPcmExample(){
   const sinc = x => Math.abs(x)<1e-9 ? 1 : Math.sin(Math.PI*x)/(Math.PI*x);
   const m = t => 8*Math.abs(sinc(t-2));
@@ -4439,7 +4681,7 @@ const SC = [
       {t:'eq', key:true, tex:'g_\\delta(t)=\\sum_{n=-\\infty}^{\\infty}g(nT_s)\\,\\delta(t-nT_s)'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'warn', head:'What this object is and is not', html:'$g_\\delta(t)$ is not a sequence of numbers. It is a continuous-time signal built from impulses, and it has a Fourier transform. That is the whole reason for writing sampling this way: the next scene takes that transform, and the sampling theorem falls out of it.'}
+      {t:'note', kind:'warn', head:'What this object is and is not', html:'$g_\\delta(t)$ is not a sequence of numbers. It is a continuous-time signal built from impulses, so it has a Fourier transform. We use this form because the next scene takes that transform and leads directly to the sampling theorem.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:figSampling, caption:'The message and its ideal samples. Each impulse carries the value of $g$ at its own instant as its weight; between the instants the sampled signal is zero.'}
@@ -4618,7 +4860,7 @@ const SC = [
       {t:'body', html:'The two conditions refer to each other, which is why they are applied by turns rather than solved at once. A uniform quantizer satisfies the first by construction; it satisfies the second only when the input is uniformly distributed.'}
     ]}
   ], right:[
-    {t:'fig', frame:true, svg:()=>figQuantizer('midrise'), caption:'A uniform mid-rise quantizer with $L=8$ over $[-4,4]$, so $\\Delta = 8/8 = 1$. Each tread is $\\Delta$ wide and its output sits at the middle of the tread — the midpoint condition, read off the picture.'}
+    {t:'fig', frame:true, svg:()=>figQuantizer('midrise'), caption:'A uniform mid-rise quantizer with $L=8$ over $[-4,4]$, so $\\Delta = 8/8 = 1$. Each tread is $\\Delta$ wide. Its output lies at the middle of the tread, as the midpoint condition requires.'}
   ]}
 ]},
 
@@ -4931,6 +5173,67 @@ const SC = [
 ]},
 
 /* ---------------------------------------------------------------- 1.7 ---- */
+{ id:'m1-vq', module:'M1', nav:'Vector quantization', title:'Quantizing samples together',
+  objective:'Show why quantizing a block of samples beats quantizing each one alone.',
+  keywords:'vector quantization scalar codebook block image compression jpeg lossy levels',
+  src:'CH7 s.37', steps:3, blocks:[
+  {t:'eyebrow', text:'Module 1 · Vector quantization'},
+  {t:'title', text:'Quantizing samples together'},
+  {t:'cols', ratio:'c-6-6', vcenter:true, left:[
+    {t:'body', html:'<p>Every quantizer so far has rounded one sample on its own. That is <b>scalar</b> quantization, and it throws something away before it starts: real signals do not jump about from one sample to the next, and a quantizer looking at one sample at a time cannot know that.</p>'},
+    {t:'note', kind:'def', head:'What vector quantization is', html:'Take $n$ samples at a time and treat them as one point in $n$ dimensions. Choose a <b>codebook</b> of allowed points, and round the whole block to the nearest one. With $n=1$ this is the quantizer of section 1.3. With $n=2$ the allowed points are places in a plane, and they can be put wherever the signal actually goes.'},
+    {t:'reveal', at:1, items:[
+      {t:'body', html:'<p>Here is the whole argument, in a case small enough to count. Take $L=16$ levels and look at <em>pairs</em> of neighbouring samples. A scalar quantizer allows every combination:</p>'},
+      {t:'eq', tex:'L^{2}=16^{2}=256\\ \\text{pairs},\\qquad \\log_2 256 = 8\\ \\text{bits a pair}=4\\ \\text{bits a sample}'},
+      {t:'body', html:'<p>Now suppose the signal is smooth enough that a sample never moves by more than one step from the one before it. Then only the pairs on and beside the diagonal can ever occur:</p>'},
+      {t:'eq', key:true, tex:'3L-2=46\\ \\text{pairs},\\qquad \\lceil\\log_2 46\\rceil = 6\\ \\text{bits a pair}=3\\ \\text{bits a sample}'}
+    ]},
+    {t:'reveal', at:2, items:[
+      {t:'note', kind:'ok', head:'A quarter of the rate, at the same distortion', html:'The cells did not change size, so the rounding error did not change. The code now omits the $210$ combinations that this signal model never produces. Vector quantization uses its codebook only in regions that the signal can reach.'}
+    ]},
+    {t:'reveal', at:3, items:[
+      {t:'small', html:'The next scene takes the case this is actually used on, where the samples are the pixels of an image and there are a quarter of a million of them.'}
+    ]}
+  ], right:[
+    {t:'fig', frame:true, svg:()=>figPairLattice(16),
+      caption:'Every pair of neighbouring samples a $16$-level quantizer can produce. A scalar quantizer pays for all $256$ squares. If a sample never moves by more than one step, only the $46$ shaded ones ever occur, and the codebook needs $6$ bits a pair instead of $8$.'},
+    {t:'small', html:'Almost all of the saving comes from neighbouring samples being alike. A small gain survives even for independent samples, because better-shaped cells pack the space more efficiently than squares, but it is under a quarter of a bit a sample and this course does not pursue it.'}
+  ]}
+]},
+
+{ id:'m1-vq-image', module:'M1', nav:'Quantizing an image', title:'What quantization saves, and what it costs',
+  objective:'Work the bit rate of a quantized image and name what is lost.',
+  keywords:'image quantization bits per pixel compression ratio banding contouring jpeg lossy',
+  src:'CH7 s.37', steps:3, blocks:[
+  {t:'eyebrow', text:'Module 1 · Vector quantization'},
+  {t:'title', text:'What quantization saves, and what it costs'},
+  {t:'cols', ratio:'c-6-6', vcenter:true, left:[
+    {t:'body', html:'<p>An image is the case where this matters, because there are so many samples. Each pixel is one sample of brightness, and the arithmetic of section 1.6 applies to it unchanged.</p>'},
+    {t:'wex', head:'A greyscale image, quantized', rows:[
+      ['Given','$512\\times512$ pixels at $8$ bits a pixel, so $L=256$ levels.'],
+      ['Uncoded','$512^{2}(8)=2\\,097\\,152$ bits, which is $256$ KiB.'],
+      ['At $L=32$','$R=\\log_2 32=5$ bits a pixel: $1\\,310\\,720$ bits, or $160$ KiB.'],
+      ['Saved','$3$ bits of every $8$, so $37.5\\%$ of the file.']
+    ]},
+    {t:'reveal', at:1, items:[
+      {t:'body', html:'<p>What that costs is the same number section 1.4 gives, and it is large:</p>'},
+      {t:'eq', key:true, tex:'\\Delta\\mathrm{SQNR}=6.02(8-5)=18.06\\ \\text{dB}'},
+      {t:'note', kind:'warn', head:'And it is visible, not just measurable', html:'A smooth gradient — a sky, a shadow across a wall — is a slow ramp in brightness. Quantize it coarsely and the ramp becomes a staircase, so the picture shows <b>bands</b> of flat tone with hard edges between them where there was no edge in the scene. The eye finds those invented edges easily, which is why an image tolerates far fewer bits in a noisy region than in a smooth one.'}
+    ]},
+    {t:'reveal', at:2, items:[
+      {t:'note', kind:'def', head:'This is lossy compression', html:'The removed information is not recoverable. The omitted bits described where the pixel lay inside its quantization interval. A decoder cannot recover that position. This loss is why the method is called <b>lossy</b>. JPEG also uses quantization, but it quantizes transformed image blocks rather than individual pixels.'}
+    ]},
+    {t:'reveal', at:3, items:[
+      {t:'note', kind:'ok', head:'Where the chapter ends', html:'Sampling is reversible when the sampling-theorem conditions hold. Quantization is not reversible. An image makes the second fact visible because coarse levels create bands that were not present before quantization. Later chapters start with the resulting bit stream.'}
+    ]}
+  ], right:[
+    {t:'fig', frame:true, svg:()=>figBanding(),
+      caption:'One row of a smooth gradient, quantized at $256$ levels and at $8$. The fine quantizer follows the ramp so closely that the two cannot be told apart; the coarse one replaces it with flat steps, and each step edge is a band boundary the eye sees as a line that is not in the scene.'},
+    {t:'small', html:'The step height here is $\\Delta=2m_{\\max}/L$, exactly as in section 1.3 — an image is not a new kind of quantizer, only a great many samples of one.'}
+  ]}
+]},
+
+/* ---------------------------------------------------------------- 1.8 ---- */
 { id:'m1-synth', module:'M1', nav:'Summary', title:'What Module 1 established',
   objective:'Collect the results this module contributes to the rest of the course.',
   keywords:'summary sampling quantization pcm results bit rate sqnr',
@@ -5178,7 +5481,7 @@ const SC = [
       {t:'eq', key:true, tex:'(\\mathrm{SNR})_o\\le\\frac{2}{N_0}\\int_{-\\infty}^{\\infty}|G(f)|^{2}\\,df=\\frac{2E}{N_0}'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'ok', head:'Read what has just happened', html:'The bound contains no $H$ at all. Whatever filter the receiver uses, it cannot do better than $2E/N_0$ — and the bound depends on the <b>energy</b> of the transmitted waveform, not on its shape. Two completely different pulses of the same energy are equally good.'}
+      {t:'note', kind:'ok', head:'Interpret the bound', html:'The bound contains no $H$. In white Gaussian noise, no linear filter can give an output ratio greater than $2E/N_0$. A matched filter reaches this bound. Thus, pulses with the same energy give the same maximum output ratio when each pulse uses its own matched filter.'}
     ]}
   ], right:[
     {t:'body', html:'<p>The condition for equality is what identifies the filter:</p>'},
@@ -5267,7 +5570,7 @@ const SC = [
       {t:'eq', tex:'E_{s_0}=E_{s_1}=\\int_0^{T_b}A^{2}dt=A^{2}T_b\\;\\triangleq\\;E_b,\\qquad A\\sqrt{T_b}=\\sqrt{E_b}'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'ok', head:'Why this is worth the notation', html:'Two waveforms have become two <em>numbers</em>, $\\pm\\sqrt{E_b}$, on a single axis. The whole of Module 3 is the observation that this works for any signal set, with as many axes as the set needs, and Module 4 is what the receiver looks like once it does.'}
+      {t:'note', kind:'ok', head:'Why this notation helps', html:'Two waveforms have become two <em>numbers</em>, $\\pm\\sqrt{E_b}$, on one axis. Module 3 extends this method to any finite signal set by using the required number of axes. Module 4 then builds the receiver in this signal space.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>{
@@ -5479,7 +5782,7 @@ const SC = [
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'note', kind:'def', head:'Eye pattern', html:'Cut the received waveform into bit-length pieces and draw them all on top of each other, synchronised to the clock. The result is a synchronised superposition of every realisation of the signal within one signalling interval.'},
     {t:'reveal', at:1, items:[
-      {t:'body', html:'<p>Four measurements are read off it directly:</p><ul><li>The <b>height of the opening</b> at the sampling instant is the margin over noise.</li><li>The <b>width of the opening</b> is how far the sampling instant may drift before a decision goes wrong.</li><li>The <b>slope</b> at the crossings is the sensitivity to a timing error.</li><li>The <b>spread of the crossings</b> is the timing jitter.</li></ul>'}
+      {t:'body', html:'<p>The diagram shows four measurements directly:</p><ul><li>The <b>height of the opening</b> at the sampling instant is the margin over noise.</li><li>The <b>width of the opening</b> is how far the sampling instant can move before a decision goes wrong.</li><li>The <b>slope</b> at the crossings shows sensitivity to a timing error.</li><li>The <b>spread of the crossings</b> is the timing jitter.</li></ul>'}
     ]},
     {t:'reveal', at:2, items:[
       {t:'note', kind:'warn', head:'What a closed eye means', html:'When the opening shrinks to nothing there is no sampling instant at which every bit pattern is decided correctly, and no threshold placement helps. The system has failed for a reason that has nothing to do with the noise level, and the eye is where that is seen before it is measured.'}
@@ -5677,15 +5980,15 @@ const SC = [
   src:'CH9 s.2–3', steps:2, blocks:[
   {t:'eyebrow', text:'Module 3 · Opening'},
   {t:'title', text:'Two waveforms that do not fit on one line'},
-  {t:'lede', text:'In Module 2 the two waveforms were opposites, so one shape carried both and the receiver needed one number. What happens when the two waveforms are simply different?'},
+  {t:'lede', text:'In Module 2 the two waveforms were opposites, so one shape represented both and the receiver needed one number. What happens when neither waveform is a multiple of the other?'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>Take $s_0(t)$ and $s_1(t)$ below. Neither is a multiple of the other, so no single function $\\psi(t)$ can write both as $s_m\\psi(t)$. The receiver of Module 2 does not apply, and none of its results do either.</p>'},
     {t:'reveal', at:1, items:[
-      {t:'body', html:'<p>The fix is straightforward once said out loud: use <b>two</b> matched filters, one for each waveform, and let the receiver work with the <b>two</b> numbers they produce.</p>'},
-      {t:'note', kind:'def', head:'The idea of this module', html:'A set of waveforms can be written as a set of <b>points</b>. Once it is, the receiver becomes a question about geometry — which point is the observation nearest to — and every result of the rest of the course is read off that picture.'}
+      {t:'body', html:'<p>Use <b>two</b> axes to represent these waveforms. The receiver computes one coordinate on each axis and then works with the two resulting numbers.</p>'},
+      {t:'note', kind:'def', head:'The idea of this module', html:'A set of waveforms can be represented by a set of <b>points</b>. The receiver can then use geometry. For equally likely signals in white Gaussian noise, it chooses the signal point nearest to the observation.'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'ok', head:'What this buys', html:'Analysing waveforms means integrals. Analysing points means arithmetic. The whole of Modules 4 and 5 is done with the arithmetic, and this module is the translation.'}
+      {t:'note', kind:'ok', head:'Why the point representation helps', html:'Waveform analysis requires integrals. Point analysis uses arithmetic on coordinates. This module provides the translation, and Modules 4 and 5 use the resulting geometry.'}
     ]}
   ], right:[
     {t:'grid', cols:2, gap:'20px', items:[
@@ -5793,7 +6096,7 @@ const SC = [
   keywords:'energy squared norm euclidean distance constellation L2 norm',
   src:'CH9 s.11–12', steps:2, blocks:[
   {t:'eyebrow', text:'Module 3 · Signals as vectors'},
-  {t:'title', text:'Two quantities, read straight off the picture'},
+  {t:'title', text:'Two quantities shown by the picture'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'Put $y=x$ in the property of the last scene and the energy of a signal is the squared length of its vector:'},
     {t:'eq', key:true, tex:'E_{s_i}=\\int_0^{T}s_i^{2}(t)\\,dt=\\sum_{j=1}^{N}s_{ij}^{2}=\\|\\mathbf{s}_i\\|^{2}'},
@@ -5831,7 +6134,7 @@ const SC = [
       {t:'body', html:'<p>Three things are read directly off it:</p><ul><li>The <b>distance from the origin</b> to a point is $\\sqrt{E_i}$, the square root of that waveform\'s energy.</li><li>The <b>distance between two points</b> is the square root of the energy of their difference.</li><li>The <b>number of axes</b> is how many matched filters the receiver needs.</li></ul>'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'warn', head:'A picture is not a waveform', html:'Two completely different sets of waveforms can produce the same constellation — different shapes, different durations, the same points. When they do, they have the same error performance and the same receiver structure, and the only things that separate them are bandwidth and how easy they are to build. That is a strong statement, and the next module proves it.'}
+      {t:'note', kind:'warn', head:'A picture is not a waveform', html:'Different waveform sets can produce the same constellation. In the white Gaussian noise model, equal constellations have equal coherent-detection error performance. Their bandwidth and implementation can still differ. The next module derives the receiver result.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figConstellation(
@@ -5988,7 +6291,7 @@ const SC = [
       {t:'body', html:'<p>Module 4 builds the receiver for this picture: it computes the coordinates of what arrives and picks the nearest point. The error probability then depends on the distances, and on nothing else.</p>'}
     ]}]
   ]},
-  {t:'note', kind:'ok', head:'The module in one sentence', html:'A waveform is hard to reason about and a point is not, so the whole of this module is one change of language: pick an orthonormal basis, write every signal as its list of coordinates, and from then on energy is a squared length and the difference between two signals is a distance.'}
+  {t:'note', kind:'ok', head:'The module in one sentence', html:'Choose an orthonormal basis and write each signal as a list of coordinates. In this representation, signal energy is squared length. The energy of a signal difference is squared distance.'}
 ]}
 
 ];
@@ -6078,7 +6381,7 @@ const SC = [
       {t:'note', kind:'ok', head:'The answer, in one line', html:'When the $M$ signals are equally likely, the best rule is: <b>compute the coordinates of what arrived and choose the signal point nearest to it.</b> Nothing cleverer helps, and the rest of the module is why that is true and what it costs.'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'body', html:'<p>Two things follow, and both matter more than the rule itself.</p><ul><li>The error probability depends only on the <b>distances</b> between the points — not on the waveforms, not on their shapes.</li><li>The exact error probability is an integral in $N$ dimensions and is usually impossible to evaluate. The <b>union bound</b> replaces it with a sum of $Q$ functions that anyone can compute.</li></ul>'}
+      {t:'body', html:'<p>Two results follow under this white Gaussian noise model.</p><ul><li>The coherent-detection error probability depends on the <b>distances</b> between the signal points.</li><li>The exact error probability requires an integral over the decision regions. This integral usually has no simple closed form. The <b>union bound</b> gives a computable upper bound made of $Q$ functions.</li></ul>'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figRegions(
@@ -6106,7 +6409,7 @@ const SC = [
       {t:'note', kind:'ok', head:'Why $n_0(t)$ can be thrown away', html:'It contains no signal at all — every signal is a combination of the $N$ basis functions, so none of them has any component outside that space. And it is independent of the $N$ numbers the receiver kept. A quantity that carries no information about the answer and is unrelated to what was kept cannot help, so discarding it costs nothing.'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'warn', head:'What this does not say', html:'It does not say the noise is small, or that the correlators remove it. The noise inside the signal space is kept in full, and it is all the trouble there is. What has been shown is that a waveform problem has become an $N$-number problem with nothing lost.'}
+      {t:'note', kind:'warn', head:'What this does not say', html:'The result does not say that the noise is small or that the correlators remove it. The receiver keeps all noise components inside the signal space. It discards only the component that cannot help distinguish the signals.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>P.blocks({w:620,h:300,items:[
@@ -6154,7 +6457,7 @@ const SC = [
         a.poly(pts,{color:C.muted,width:1,dash:'4 4'});
       });
       return a.svg();
-    }, caption:'Eight hundred draws of a two-dimensional noise vector, with circles at one, two and three standard deviations. The cloud has no preferred direction, and that is the whole reason the receiver may simply measure distance.'}
+    }, caption:'Eight hundred draws of a two-dimensional noise vector, with circles at one, two and three standard deviations. The cloud has no preferred direction. This symmetry makes Euclidean distance the correct measure for the decision rule.'}
   ]}
 ]},
 
@@ -6176,7 +6479,7 @@ const SC = [
       {t:'note', kind:'def', head:'The ML rule', html:'If all $M$ signals are equally likely, every prior is $1/M$ and the priors cannot change the answer either. What is left is: choose the $\\mathbf{s}_i$ that maximises the likelihood $f_{\\mathbf{r}}(\\mathbf{r}\\mid\\mathbf{s}_i)$.'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'warn', head:'Which one to use', html:'MAP is always right. ML is right when the priors are equal, and is used anyway when they are unknown — a receiver that does not know the priors cannot use them. When the priors are known and unequal, ML is a real loss, and Module 2 measured it once already: the threshold moved and the error fell.'}
+      {t:'note', kind:'warn', head:'Which one to use', html:'MAP minimizes the probability of error when the signal probabilities and likelihood model are known and all decision errors have equal cost. ML gives the same decision when the signal probabilities are equal. If the probabilities are unknown, ML does not use them. With known unequal probabilities, MAP can give a lower error probability.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figRegions(
@@ -6363,10 +6666,10 @@ const SC = [
     {t:'reveal', at:1, items:[
       {t:'body', html:'<p>Each of those probabilities is an integral of the likelihood over a region:</p>'},
       {t:'eq', key:true, tex:'P_e=1-\\frac{1}{M}\\sum_{i=1}^{M}\\int_{R_i}f_{\\mathbf{r}}(\\mathbf{r}\\mid\\mathbf{s}_i)\\,d\\mathbf{r}'},
-      {t:'note', kind:'err', head:'Why this is where the trail goes cold', html:'The integral is over $N$ dimensions and its region is a polygon with as many faces as there are neighbouring signal points. For $M=2$ it is a Gaussian tail and there is nothing to it. For anything larger there is no closed form, and numerical evaluation gets expensive fast.'}
+      {t:'note', kind:'err', head:'Why the exact form is difficult', html:'The integral can extend over $N$ dimensions, and the decision region can have several faces. For $M=2$, it reduces to one Gaussian tail. For a general larger constellation, a closed form is usually unavailable and numerical integration can be expensive.'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'ok', head:'So it is bounded instead', html:'The next scene replaces the exact expression with an upper bound made of $Q$ functions. The bound is easy, it is tight at the signal-to-noise ratios systems are actually run at, and — being an upper bound — a system designed to meet it will meet the real requirement too.'}
+      {t:'note', kind:'ok', head:'Use an upper bound instead', html:'The next scene replaces the exact expression with an upper bound made of $Q$ functions. The bound is often useful at high signal-to-noise ratios. It can be loose at low ratios. Because it is an upper bound, meeting the bound is sufficient to meet the true error requirement.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figRegions(
@@ -6394,7 +6697,7 @@ const SC = [
       {t:'eq', key:true, label:'union bound', tex:'P_e\\le\\frac{1}{M}\\sum_{k=1}^{M}\\sum_{\\substack{j=1\\\\ j\\ne k}}^{M}Q\\!\\left(\\sqrt{\\frac{d_{kj}^{2}}{2N_0}}\\right)'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'warn', head:'Why it is an over-estimate, and when that matters', html:'The events overlap: an observation can be closer to two other points at once, and the sum counts it twice. So the bound is always at least the truth. At low signal-to-noise ratio the overlaps are large and the bound can exceed one, which is useless. At the ratios real systems run at, the terms are tiny and the overlaps are tinier, and the bound is close enough to be used as the answer.'}
+      {t:'note', kind:'warn', head:'Why it is an over-estimate, and when that matters', html:'The events overlap. One observation can be closer to two other points, so the sum can count it twice. The bound is therefore not less than the true probability. At low signal-to-noise ratios, it can even exceed one. At high ratios, the overlap terms become small and the bound is often close to the true result.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figRegions(
@@ -6421,7 +6724,7 @@ const SC = [
     {t:'reveal', at:2, items:[
       {t:'body', html:'<p>The tighter form keeps only the points that are actually at the minimum distance. Let $N_{\\min}$ be the average number of such <b>nearest neighbours</b> per signal point:</p>'},
       {t:'eq', key:true, label:'nearest-neighbour approximation', tex:'P_e\\approx N_{\\min}\\,Q\\!\\left(\\sqrt{\\frac{d_{\\min}^{2}}{2N_0}}\\right)'},
-      {t:'small', html:'This is the expression used in practice. At useful signal-to-noise ratios the neighbours further away contribute a smaller $Q$ by orders of magnitude, so dropping them changes almost nothing.'}
+      {t:'small', html:'This approximation is useful at high signal-to-noise ratios. More distant points have much smaller pairwise terms, so the nearest neighbours dominate the error probability.'}
     ]},
     {t:'reveal', at:3, items:[
       {t:'note', kind:'ok', head:'What to take away', html:'A constellation is judged by two numbers: $d_{\\min}$, which sets the exponent and therefore almost everything, and $N_{\\min}$, which multiplies it and matters far less. Designing a good constellation means pushing $d_{\\min}$ as far as possible at a fixed average energy.'}
@@ -6457,7 +6760,7 @@ const SC = [
     {t:'reveal', at:1, items:[
       {t:'body', html:'<p>Leaving $R_k$ means crossing at least one of its faces, so the union over the faces already covers every error. Summing over that smaller set is still an upper bound:</p>'},
       {t:'eq', key:true, label:'intelligent union bound', tex:'P(\\text{error}\\mid\\mathbf{s}_k)\\le\\sum_{j\\in\\mathcal{N}(k)}Q\\!\\left(\\sqrt{\\frac{d_{kj}^{2}}{2N_0}}\\right)'},
-      {t:'small', html:'Fewer terms than the union bound, every term identical to one the union bound had, and the same argument behind it. It is simply the union taken over a set that is enough.'}
+      {t:'small', html:'This bound uses fewer terms than the full union bound. Each retained term represents a face that the observation can cross when it leaves the correct region.'}
     ]},
     {t:'reveal', at:2, items:[
       {t:'wex', head:'Four points in a square', rows:[
@@ -6523,7 +6826,7 @@ const SC = [
   {t:'lede', text:'The same constellation, with the two forms that are actually used, and the three answers side by side.'},
   {t:'reveal', at:1, items:[
     {t:'wex', rows:[
-      ['Nearest neighbours','$d_{\\min}=d$, and each point has $N_{\\min}=2$ neighbours at that distance, so $$P_e\\approx 2\\,Q\\!\\left(\\sqrt{\\frac{d^{2}}{2N_0}}\\right).$$ The diagonal term has simply been dropped.'],
+      ['Nearest neighbours','$d_{\\min}=d$, and each point has $N_{\\min}=2$ neighbours at that distance, so $$P_e\\approx 2\\,Q\\!\\left(\\sqrt{\\frac{d^{2}}{2N_0}}\\right).$$ This approximation omits the smaller diagonal term.'],
       ['Minimum-distance form','$M-1=3$, so $$P_e\\le 3\\,Q\\!\\left(\\sqrt{\\frac{d^{2}}{2N_0}}\\right),$$ which pretends the diagonal point is as close as the neighbours.']
     ]}
   ]},
@@ -6659,10 +6962,10 @@ const SC = [
   ]},
   {t:'body', html:'<p>Each has a binary form and an $M$-ary form, and a fourth family — <b>quadrature amplitude modulation</b> — switches amplitude and phase together. Every scheme below is presented in the same order: the waveform, the constellation, the minimum distance, the error probability.</p>'},
   {t:'reveal', at:1, items:[
-    {t:'note', kind:'ok', head:'Module 4 has already done the hard part', html:'Every one of these schemes is a constellation, and Module 4 says the error probability is $N_{\\min}Q\\!\\left(\\sqrt{d_{\\min}^{2}/2N_0}\\right)$ whatever the waveforms are. So the whole of this module is: write down the constellation, measure $d_{\\min}$, count the neighbours, and read off the answer.'}
+    {t:'note', kind:'ok', head:'Module 4 provides the method', html:'Each scheme defines a constellation. At high signal-to-noise ratios, Module 4 approximates its symbol error probability by $N_{\\min}Q\\!\\left(\\sqrt{d_{\\min}^{2}/2N_0}\\right)$. We will draw each constellation, find $d_{\\min}$, and count its nearest neighbours.'}
   ]},
   {t:'reveal', at:2, items:[
-    {t:'note', kind:'warn', head:'The one thing that is not geometry', html:'Bandwidth. Phase and amplitude schemes keep the same bandwidth however many points they use; frequency-shift keying needs a new dimension for every symbol and its bandwidth grows with $M$. That trade is invisible in the constellation and decides which family a system actually uses.'}
+    {t:'note', kind:'warn', head:'Bandwidth is not shown by the constellation', html:'At a fixed bit rate, increasing $M$ reduces the symbol rate of phase and amplitude schemes. Their required bandwidth therefore decreases. Orthogonal frequency-shift keying needs more frequencies as $M$ grows, so its required bandwidth increases. A constellation alone does not show this trade-off.'}
   ]}
 ]},
 
@@ -6689,7 +6992,7 @@ const SC = [
     {t:'fig', frame:true, svg:()=>figCarrier('bpsk'),
       caption:'The waveform for the bits $1\\,0\\,1\\,0$. Every bit boundary where the data changes carries a phase reversal, visible as a discontinuity in the envelope of the oscillation.'},
     {t:'fig', frame:true, svg:()=>figConst([[-1.2,0],[1.2,0]],{lim:1.9,w:400,h:190}),
-      caption:'The constellation: two points, one axis, $2\\sqrt{E_b}$ apart. The boundary is the whole $\\psi_2$ axis, and the rule is simply the sign of the correlator output.'}
+      caption:'The constellation has two points on one axis, separated by $2\\sqrt{E_b}$. The boundary is the $\\psi_2$ axis. The receiver decides from the sign of the correlator output.'}
   ]}
 ]},
 
@@ -7203,10 +7506,10 @@ window.SCENES_M6 = [
   {t:'title', text:'How much is a message worth?'},
   {t:'lede', text:'Everything so far has been about getting bits across a channel. This module steps back and asks where the bits came from, and how few of them a message really needs.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
-    {t:'body', html:'<p>A source produces symbols — letters, samples, pixels. Some are common and some are rare. It is obvious that a message of rare symbols is more surprising than one of common symbols, and it turns out that this can be measured, in bits, and that the measurement is exactly the number of bits the message needs.</p>'},
-    {t:'note', kind:'def', head:'What a discrete memoryless source is', html:'A source that emits one of $K$ symbols each time, with fixed probabilities $p_1,\\ldots,p_K$, and where each symbol is chosen independently of the ones before it. <b>Discrete</b> because the alphabet is finite, <b>memoryless</b> because the past does not matter. It is the simplest model that is still worth anything, and it is the only one this course uses.'},
+    {t:'body', html:'<p>A source produces symbols such as letters, samples, or pixels. Some symbols occur often, while others are rare. A rare symbol gives more new information when it occurs. Information theory measures this amount in bits and relates its average to the best possible lossless compression rate.</p>'},
+    {t:'note', kind:'def', head:'What a discrete memoryless source is', html:'A discrete memoryless source emits one of $K$ symbols at each step. The probabilities $p_1,\\ldots,p_K$ remain fixed, and successive symbols are independent. <b>Discrete</b> means that the alphabet is finite. <b>Memoryless</b> means that earlier symbols do not change the next-symbol probabilities. This course uses this basic source model.'},
     {t:'reveal', at:1, items:[
-      {t:'note', kind:'ok', head:'The two questions', html:'<b>1.</b> How much information does a source produce, on average, per symbol? The answer is its <em>entropy</em>. <b>2.</b> How few bits can encode it without losing anything? The answer is the same number. That coincidence is the source-coding theorem, and it is what makes this module short.'}
+      {t:'note', kind:'ok', head:'The two questions', html:'<b>1.</b> How much information does a source produce on average per symbol? Its <em>entropy</em> measures this amount. <b>2.</b> What average rate can a lossless code approach? For long blocks, the source-coding theorem shows that this rate can approach the entropy but cannot fall below it.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figSelf(),
@@ -7259,18 +7562,18 @@ window.SCENES_M6 = [
     {t:'small', html:'The unit is <b>bits a symbol</b>. Read it as the uncertainty before a symbol arrives, or equivalently as what is learnt once it has.'},
     {t:'reveal', at:1, items:[
       {t:'eq', label:'bounds', tex:'0\\le H(S)\\le \\log_2 K'},
-      {t:'note', kind:'ok', head:'Both ends are easy to see', html:'<b>Zero</b> when one symbol has probability one: nothing is ever in doubt, so nothing is ever learnt. <b>$\\log_2 K$</b> when all $K$ symbols are equally likely: putting $p_k=1/K$ into the sum gives $\\sum\\frac1K\\log_2 K=\\log_2 K$. Between them, the more even the probabilities, the higher the entropy.'}
+      {t:'note', kind:'ok', head:'Interpret the two limits', html:'The entropy is <b>zero</b> when one symbol has probability one because the next symbol is known. It is $\\log_2 K$ when all $K$ symbols are equally likely. Substitution of $p_k=1/K$ gives $\\sum\\frac1K\\log_2 K=\\log_2 K$. More even probabilities give higher entropy.'}
     ]},
     {t:'reveal', at:2, items:[
       {t:'wex', head:'The standard example', rows:[
         ['Given','A memoryless source with alphabet $\\{s_1,s_2,s_3\\}$ and probabilities $0.7,\\;0.2,\\;0.1$.'],
         ['Find','The entropy.'],
         ['Solution','$H(S)=-0.7\\log_2 0.7-0.2\\log_2 0.2-0.1\\log_2 0.1=1.1568$ bits a symbol.'],
-        ['Read it','Three symbols would need $2$ bits each if they were simply numbered. The source needs only $1.1568$, so numbering them wastes almost $0.85$ bits every symbol. Getting that back is the whole of source coding.']
+        ['Read it','A fixed-length binary label needs $2$ bits for each of three symbols. The entropy is $1.1568$ bits per symbol. Thus, suitable block codes can approach a rate that is almost $0.85$ bits per symbol lower.']
       ]}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'small', html:'Check the bound: $\\log_2 3=1.585$, and $1.1568$ is below it. Equal probabilities would have reached $1.585$; these are lopsided, so they do not.'}
+      {t:'small', html:'Check the bound: $\\log_2 3=1.585$, and $1.1568$ is less than this value. Equal probabilities give $1.585$. The unequal probabilities in this example give lower entropy.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figHb(),
@@ -7335,7 +7638,7 @@ window.SCENES_M6 = [
       tex:'\\bar{L}=\\sum_{k=1}^{K}p_k\\,l_k\\quad\\text{bits a symbol}'},
     {t:'small', html:'$l_k$ is the length of the codeword for symbol $k$. $\\bar{L}$ is what the code actually costs, averaged over a long message.'},
     {t:'reveal', at:1, items:[
-      {t:'note', kind:'def', head:'The source-coding theorem', html:'For any code from which the symbols can be recovered exactly, $\\bar{L}\\ge H(S)$. So the smallest average length any code can have is $L_{\\min}=H(S)$ — the entropy is not merely a measure of information, it is a limit on how few bits will carry it.'},
+      {t:'note', kind:'def', head:'The source-coding theorem', html:'For any uniquely decodable binary code, $\\bar{L}\\ge H(S)$. Thus, entropy is a lower bound on the average number of bits per symbol. A one-symbol code does not always reach this bound. Codes for longer blocks can approach it.'},
       {t:'eq', label:'efficiency', tex:'\\eta=\\frac{L_{\\min}}{\\bar{L}}=\\frac{H(S)}{\\bar{L}}\\le 1'}
     ]},
     {t:'reveal', at:2, items:[
@@ -7443,7 +7746,7 @@ window.SCENES_M6 = [
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>The source-coding theorem says no code beats $H(S)$. The complementary result says a prefix code always gets within one bit of it.</p>'},
     {t:'eq', key:true, label:'the two-sided bound', tex:'H(S)\\le\\bar{L}< H(S)+1'},
-    {t:'note', kind:'def', head:'Where the extra bit comes from', html:'The ideal length for symbol $k$ is $-\\log_2 p_k$, which is almost never a whole number. A codeword has to be a whole number of bits, so each length is rounded up, and rounding up costs less than one bit per symbol. That is the whole of the $+1$.'},
+    {t:'note', kind:'def', head:'Where the extra bit comes from', html:'The ideal length for symbol $k$ is $-\\log_2 p_k$, which is usually not an integer. A codeword must contain an integer number of bits. Choosing $l_k=\\lceil-\\log_2 p_k\\rceil$ adds less than one bit to each ideal length. Averaging gives the $+1$ bound.'},
     {t:'reveal', at:1, items:[
       {t:'note', kind:'ok', head:'When the bound is tight', html:'If every probability is a power of two — $p_k=2^{-l_k}$, called a <b>dyadic</b> distribution — nothing needs rounding. Then $\\bar{L}=\\sum p_k l_k=\\sum l_k 2^{-l_k}$ and $H(S)=-\\sum 2^{-l_k}\\log_2 2^{-l_k}=\\sum l_k 2^{-l_k}$: the same sum. So $\\bar{L}=H(S)$ exactly, and the code is perfect.'}
     ]},
@@ -7744,18 +8047,18 @@ window.SCENES_M6 = [
     {t:'reveal', at:1, items:[
       {t:'body', html:'<p>The same quantity can be read from the other end, and the two readings are equal:</p>'},
       {t:'eq', key:true, tex:'I(X;Y)=H(Y)-H(Y\\mid X)=I(Y;X)'},
-      {t:'small', html:'The second form is the one that gets used, because $H(Y\\mid X)$ comes straight off the channel matrix while $H(X\\mid Y)$ needs Bayes\' rule first.'}
+      {t:'small', html:'The second form is often easier to use. The channel matrix gives $H(Y\\mid X)$ directly, while $H(X\\mid Y)$ first requires Bayes\' rule.'}
     ]},
     {t:'reveal', at:2, items:[
       {t:'wex', head:'The BSC at $p=0.1$ with equally likely inputs', rows:[
         ['$H(X)$','$1$ bit — the transmitter sends a fair bit.'],
-        ['$H(Y\\mid X)$','$H(0.1)=0.469$ bits, read off the channel matrix.'],
+        ['$H(Y\\mid X)$','$H(0.1)=0.469$ bits, obtained directly from the channel matrix.'],
         ['$H(Y)$','$1$ bit, from the last scene\'s output distribution.'],
         ['$I(X;Y)$','$1-0.469=0.531$ bits per use of the channel.']
       ]}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'ok', head:'What that number means', html:'One bit was offered and just over half a bit arrived. The missing $0.469$ bits were not delayed or corrupted — they were destroyed, and no receiver however clever recovers them. That is the first quantity in this course that says what a channel <em>cannot</em> do.'}
+      {t:'note', kind:'ok', head:'What that number means', html:'The input contained one bit of uncertainty, and the output resolved $0.531$ bits of it on average. The remaining $0.469$ bits are the uncertainty left after observing the output. No detector can remove this uncertainty without additional information.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>{
@@ -7839,7 +8142,7 @@ window.SCENES_M6 = [
   {t:'title', text:'Capacity of the binary symmetric channel'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>Take $I(X;Y)=H(Y)-H(Y\\mid X)$ and work on the two pieces separately.</p>'},
-    {t:'body', html:'<p>The second piece is easy and does not depend on the transmitter at all. Whichever symbol goes in, the output distribution is $(1-p,\\,p)$ in some order, so</p>'},
+    {t:'body', html:'<p>The second term does not depend on the input probabilities. For either input symbol, the conditional output distribution is $(1-p,\\,p)$ in some order. Therefore,</p>'},
     {t:'eq', tex:'H(Y\\mid X)=H(p)=-p\\log_2 p-(1-p)\\log_2(1-p)'},
     {t:'reveal', at:1, items:[
       {t:'body', html:'<p>The first piece is an entropy of a two-symbol distribution, so $H(Y)\\le1$ bit, with equality when the output is equally likely. Section 6.6.2 showed that equally likely <em>inputs</em> give exactly that. So the maximum is reached at $p(x_0)=\\tfrac12$ and</p>'},
@@ -7847,7 +8150,7 @@ window.SCENES_M6 = [
     ]},
     {t:'reveal', at:2, items:[
       {t:'wex', head:'Reading the answer', rows:[
-        ['$p=0$ or $p=1$','$H(p)=0$, so $C=1$: a whole bit per use. At $p=1$ every bit is flipped, which the receiver simply undoes.'],
+        ['$p=0$ or $p=1$','$H(p)=0$, so $C=1$: one bit per use. At $p=1$, every bit is flipped. The receiver recovers the input by inverting each output bit.'],
         ['$p=\\tfrac12$','$H(p)=1$, so $C=0$. Nothing whatever can be sent. This is the <b>useless channel</b>.'],
         ['$p=0.1$','$H(0.1)=0.469$, so $C=0.531$ bits per use — the number the last section computed, now known to be the best available.'],
         ['$p=0.11$','$C=0.500$: a crossover of about one bit in nine already halves the channel.']
@@ -7911,7 +8214,7 @@ window.SCENES_M6 = [
   ], right:[
     {t:'fig', frame:true, svg:()=>figChannel(ZCH,['0','1'],['0','1'],
       {w:400, h:160, tex:[['1',''],['\\tfrac12','\\tfrac12']]}),
-      caption:'The Z-channel, named for the shape the surviving transitions make. The missing arrow is the whole of its asymmetry: a $0$ can never be received as a $1$.'},
+      caption:'The Z-channel is named for the shape of its possible transitions. Its asymmetry comes from the missing arrow: a $0$ can never be received as a $1$.'},
     {t:'fig', frame:true, svg:()=>{
       const a = P.Axes({w:440,h:196,xr:[0,1],yr:[0,0.40],
         xlabel:'q=P(X=0)', ylabel:'I(X;Y)\\;\\text{bits}',
@@ -7972,7 +8275,7 @@ window.SCENES_M6 = [
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>Everything so far counted symbols. A real channel is not given as a matrix: it is given as a bandwidth in hertz, a transmitted power in watts, and a noise density. The capacity of that channel is one of the most quoted results in engineering.</p>'},
     {t:'eq', key:true, label:'information capacity law', tex:'C=B\\log_2\\!\\left(1+\\frac{P}{N_0B}\\right)\\quad\\text{bits per second}'},
-    {t:'note', kind:'def', head:'What each symbol is', html:'$B$ is the bandwidth in hertz. $P$ is the average transmitted power. $N_0/2$ is the two-sided noise density, so $N_0B$ is the noise power in the band. The ratio $P/N_0B$ is the signal-to-noise ratio, and the whole of the channel enters through it.'},
+    {t:'note', kind:'def', head:'What each symbol is', html:'$B$ is the bandwidth in hertz. $P$ is the average transmitted power. $N_0/2$ is the two-sided noise density, so $N_0B$ is the noise power in the band. The ratio $P/(N_0B)$ is the received signal-to-noise ratio used by this channel model.'},
     {t:'reveal', at:1, items:[
       {t:'note', kind:'ok', head:'Read the two knobs', html:'$C$ grows <b>linearly</b> with bandwidth and only <b>logarithmically</b> with power. Doubling the bandwidth at fixed noise density roughly doubles the rate; doubling the power adds one bit per second per hertz at best, and much less when the ratio is already large. Bandwidth is the better buy, and it is the one that is regulated and scarce.'}
     ]},
@@ -8160,7 +8463,8 @@ CONTENT.SECTIONS = {
         'm1-nonuniform','m1-companding'] },
     { n:'1.6', title:'Pulse code modulation',          ids:[
         'm1-encode','m1-linecodes','m1-ex-pcm','m1-lab-b'] },
-    { n:'1.7', title:'Summary',                        ids:['m1-synth'] }
+    { n:'1.7', title:'Vector quantization',            ids:['m1-vq','m1-vq-image'] },
+    { n:'1.8', title:'Summary',                        ids:['m1-synth'] }
   ],
 
   M2: [
@@ -8248,6 +8552,9 @@ CONTENT.BOOK = {
   'm1-ex-cos':'7.2.1', 'm1-ex-unif':'7.2.1', 'm1-ex-gauss':'7.2.1',
   'm1-nonuniform':'7.2.1', 'm1-companding':'7.2.1',
   'm1-encode':'7.3', 'm1-ex-pcm':'7.4.1', 'm1-lab-b':'7.4',
+  /* Vector quantization is section 7.2.2 of the book, "Vector Quantization",
+     p. 309 — read there, not inferred from the neighbouring section number. */
+  'm1-vq':'7.2.2', 'm1-vq-image':'7.2.2',
   'm1-synth':'7.4.1',
 
   /* Module 2 spans two chapters of the book, and that is not an accident of
@@ -8374,7 +8681,7 @@ window.applyNumbering = function(scenes){
    Practice questions — Module 1.
 
    The module opens with a taxonomy of the question shapes that keep coming
-   back and closes with twenty open-ended questions in those shapes. Every
+   back and closes with twenty-one open-ended questions in those shapes. Every
    worked solution is hidden until the reader asks for it, so a first pass
    shows the target and not the answer.
 
@@ -8426,7 +8733,8 @@ CONTENT.DRILLTYPES.M1 = [
     asks:'A signal, a sampling interval and a quantizer are given. Produce the samples, the levels, the code words and the bit rate.',
     method:['Evaluate the signal at each sampling instant. Do not read the values off a sketch.',
             'Find which tread each sample falls in: the index is $\\lfloor (m-m_{\\min})/\\Delta\\rfloor$, capped at $L-1$.',
-            'Write the index as an $R$-bit word, in natural binary unless Gray coding is asked for. The bit rate is $Rf_s$ and one bit lasts $T_b=T_s/R$.'],
+            'Write the index as an $R$-bit word, in natural binary unless Gray coding is asked for. The bit rate is $Rf_s$ and one bit lasts $T_b=T_s/R$.',
+            'If the question codes samples in blocks, count the blocks that can actually occur rather than all $L^{n}$ of them, and take $\\lceil\\log_2(\\cdot)\\rceil$ — a codeword is a whole number of bits.'],
     go:'m1-ex-pcm' },
 
   { k:'full', name:'A full-length question combining several of the shapes above',
@@ -8762,7 +9070,24 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
      +'<b>Solution — (d).</b> Polar NRZ sends $+A$ for a one and $-A$ for a zero, each held for a full $T_b$. The first six bits are $000\\,100$, so the waveform holds $-A$ for three bit intervals, rises to $+A$ for one, and returns to $-A$ for two — a total of $0.8$ s, which is two sampling intervals.<br>'
      +'<b>Check.</b> The signal is symmetric about $t=1$, and so are the samples and therefore the code words, read forwards or backwards. The sample at $t=0$ is $6|\\operatorname{sinc}(-1)|=0$ exactly, because $\\operatorname{sinc}$ vanishes at every non-zero integer — the same fact the interpolation formula rests on. Every quantization error is at most half a step. The smallest is $|5.613-5.625|=0.012$; the largest is at $t=0$ and $t=2$, where the sample is exactly zero and the level below it is $0.375$, so the error is $0.375=\\Delta/2$ exactly. A sample sitting on the bottom edge of the first tread is the worst case a mid-tread level list allows, and it is the reason the bound is stated as $\\le\\Delta/2$ rather than $<$.',
   err:'Placing the eight levels at $0,\\,0.75,\\,\\ldots,\\,5.25$ rather than at the tread midpoints. The sample at $t=0$ then encodes correctly by luck, and every other one is off by half a step.',
-  teach:'The symmetry noted in the check is the quickest way to mark this question: the word list must read the same in both directions, and a student whose does not has made an arithmetic slip somewhere in the middle.' }
+  teach:'The symmetry noted in the check is the quickest way to mark this question: the word list must read the same in both directions, and a student whose does not has made an arithmetic slip somewhere in the middle.' },
+
+{ id:'D1-21', module:'M1', type:'pcm', src:'CH7 s.37',
+  stem:'A $512\\times512$ greyscale image is stored at $8$ bits a pixel. It is then requantized more coarsely, and finally coded in pairs of neighbouring pixels.',
+  parts:['Give the stored size at $8$ bits a pixel, in bits and in KiB.',
+         'Give the size at $L=32$ levels, the fraction saved, and what it costs in SQNR.',
+         'At $L=16$, neighbouring pixels never differ by more than one level. Give the number of pairs a coder must be able to name if it ignores that, and the number if it does not.',
+         'Give the bits a pixel each of those two needs, and say what the saving was bought with.'],
+  sol:'<b>Given.</b> $512\\times512$ pixels; $8$ bits a pixel, then $L=32$, then $L=16$ in pairs.<br>'
+     +'<b>Find.</b> Two file sizes, the SQNR cost, two pair counts and two rates.<br>'
+     +'<b>Method.</b> Rate times pixel count for a size; $6.02$ dB a bit for the cost; for the pairs, count what can occur and take $\\lceil\\log_2(\\cdot)\\rceil$.<br>'
+     +'<b>Solution — (a).</b> $512^{2}=262\\,144$ pixels, so $262\\,144(8)=2\\,097\\,152$ bits. Dividing by eight gives $262\\,144$ bytes, which is $256$ KiB.<br>'
+     +'<b>Solution — (b).</b> $R=\\log_2 32=5$ bits a pixel, so $1\\,310\\,720$ bits or $160$ KiB. Three bits of every eight are gone, so $37.5\\%$ is saved, and it costs $6.02(8-5)=18.06$ dB.<br>'
+     +'<b>Solution — (c).</b> Ignoring the dependence, every combination has to be nameable: $L^{2}=256$ pairs. Using it, only the pairs with $|i-j|\\le1$ occur — the diagonal has $L$, and each neighbouring diagonal has $L-1$ — so $3L-2=46$.<br>'
+     +'<b>Solution — (d).</b> $\\log_2 256=8$ bits a pair, which is $4$ bits a pixel. For the other, $\\log_2 46=5.52$, so $6$ bits a pair, which is $3$ bits a pixel. The quarter saved was bought with the <em>dependence</em> between neighbouring pixels, and with nothing else: the cells are the same size in both, so the rounding error is the same.<br>'
+     +'<b>Check.</b> Five bits a pair would name only $32$ pairs and there are $46$, so six is the smallest whole number that works — and $46$ is comfortably under $64$, so a little dependence is being left unclaimed. Part (b) and part (d) are two different ways of spending less: (b) makes the cells bigger and accepts more error, (d) keeps the cells and stops paying for combinations that never happen. Only the first is lossy in the sense of adding distortion.',
+  err:'Quoting $\\log_2 46=5.52$ bits a pair as the answer. A codeword is a whole number of bits, so it is $6$ — and the leftover is why coding longer blocks does better still.',
+  teach:'Part (d) is Module 6 arriving three months early. The count of what can actually occur, turned into a logarithm, is exactly the entropy argument, and a student who sees the connection here will recognise the source-coding theorem when it arrives rather than meeting it cold.' }
 
 ]);
 
@@ -8792,10 +9117,10 @@ window.DRILL_M1 = [
 
 { id:'m1-drill', module:'M1', nav:'Module 1 · practice questions',
   title:'Module 1 — practice questions',
-  objective:'Twenty open-ended questions with worked solutions, in the form they are asked in.',
+  objective:'Twenty-one open-ended questions with worked solutions, in the form they are asked in.',
   keywords:'practice questions module 1 sampling nyquist quantization sqnr step size bit rate pcm gray code aliasing',
   steps:0, blocks:[
-  {t:'eyebrow', text:'Module 1 · Practice D1-01 … D1-20'},
+  {t:'eyebrow', text:'Module 1 · Practice D1-01 … D1-21'},
   {t:'title', text:'Practice questions'},
   {t:'small', html:'Work each question on paper before opening its solution. Every solution ends with a <b>Check</b> step. In this module the cheap checks are: a bit rate must be the resolution times the sampling rate, an SQNR must move by $6.02$ dB when a bit is added and by nothing else, every quantization error must be under half a step, and a level count derived from an accuracy requirement must be rounded up.'},
   {t:'rule', short:true},
@@ -10959,7 +11284,10 @@ window.DRILL_M6 = [
     ['Home / End','First / last scene'],
     ['M','Contents overlay'],['/ or F','Full-text search'],['G','Notation glossary'],
     ['S','Show or hide the contents rail'],
-    ['P','Normal ⇄ projector size'],['D','Light ⇄ dark'],
+    ['P','Normal ⇄ projector size; in projector size the mouse becomes a laser pointer'],
+    ['T','Ink of that pointer: fades a few seconds after the button is let go, is held until it is cleared, or is off'],
+    ['C','Clear the ink now; a change of scene clears it too'],
+    ['D','Light ⇄ dark'],
     ['L','Lecture ⇄ self-study'],['I','Student ⇄ instructor edition'],['R','Reduced motion'],
     ['Esc','Close any overlay']
   ].map(([k,d])=>`<div class="gitem"><div class="gs"><kbd>${k}</kbd></div><div class="gd">${d}</div></div>`).join('');
