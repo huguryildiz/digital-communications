@@ -49,7 +49,28 @@ CONTENT.DRILLTYPES.M6 = [
     asks:'A set of probabilities is given. Build the code, then find its average length, efficiency and variance.',
     method:['Merge the two least likely, label them $0$ and $1$, put the sum back in the list, and repeat until two are left.',
             'On a tie, place the merged symbol as high as possible. Both choices give the same $\\bar{L}$; only the high one gives the least variance.',
-            'Finish with $\\bar{L}$, $\\eta=H(S)/\\bar{L}$ and $\\sigma^{2}=\\sum_k p_k(l_k-\\bar{L})^{2}$, and check $H(S)\\le\\bar{L}<H(S)+1$.'] }
+            'Finish with $\\bar{L}$, $\\eta=H(S)/\\bar{L}$ and $\\sigma^{2}=\\sum_k p_k(l_k-\\bar{L})^{2}$, and check $H(S)\\le\\bar{L}<H(S)+1$.'] },
+
+  { k:'universal', name:'Parsing for a universal code',
+    asks:'A stream or a list of parsed pieces is given. Encode them, or decode a received block.',
+    method:['Each new piece is the shortest run not yet stored, so everything but its last bit is already in the dictionary. Find that entry: it is the pointer.',
+            'A transmitted block is the pointer in binary followed by the one new bit. To decode, split the last bit off first — it is the innovation — and read the rest as a position.',
+            'Check every piece by confirming its own start is already stored. If it is not, the parse was wrong.'],
+    go:'m6-lz' },
+
+  { k:'channel', name:'A channel and what it lets through',
+    asks:'A channel matrix and an input distribution are given. Find the output distribution, the entropies and the mutual information.',
+    method:['Check the matrix first: every row sums to one. Columns need not, and expecting them to is the usual first mistake.',
+            'Joint is $p(x_j,y_k)=p(y_k\\mid x_j)p(x_j)$; the output distribution is the column sums of that.',
+            '$H(Y\\mid X)=\\sum_j p(x_j)H(\\text{row }j)$, then $I(X;Y)=H(Y)-H(Y\\mid X)$. Going through $H(X\\mid Y)$ instead needs Bayes\' rule and is longer.'],
+    go:'m6-mutual' },
+
+  { k:'capacity', name:'Capacity, and what it permits',
+    asks:'A channel is given, discrete or bandlimited. Find its capacity and say what rate it supports.',
+    method:['For the binary symmetric channel $C=1-H(p)$, reached with equally likely inputs. For anything asymmetric, write $I(X;Y)$ as a function of the input distribution and maximise it.',
+            'For a bandlimited channel $C=B\\log_2(1+P/N_0B)$ bits per second. Keep the units straight: bits per <em>use</em> for a discrete channel, bits per <em>second</em> for this one.',
+            'Reliable communication needs $R_b<C$. Nothing else about the code enters the answer.'],
+    go:'m6-capacity' }
 ];
 
 CONTENT.DRILL = CONTENT.DRILL.concat([
@@ -336,7 +357,109 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
      +'<b>Solution — (d).</b> The efficiency rose from $0.7219$ to $0.7219/0.78=0.9255$. Coding two at a time recovered most of the waste, and the reason is that the one-bit floor now covers two symbols instead of one.<br>'
      +'<b>Check.</b> $0.78$ is between $H(S)=0.7219$ and $H(S)+1/2=1.2219$, as the bound over the second extension requires.',
   err:'Comparing $L_2=1.56$ with $H(S)=0.7219$ directly. $L_2$ is bits a <em>pair</em>; it has to be divided by two before it can be compared with anything per symbol.',
-  teach:'This is the clearest case in the module of why blocking matters. A very lopsided binary source wants to spend a fraction of a bit on its common symbol, and no single-symbol code can. Blocking is the only way to spend fractions of a bit, and D6-14 says how far that idea can be pushed.' }
+  teach:'This is the clearest case in the module of why blocking matters. A very lopsided binary source wants to spend a fraction of a bit on its common symbol, and no single-symbol code can. Blocking is the only way to spend fractions of a bit, and D6-14 says how far that idea can be pushed.' },
+
+{ id:'D6-21', module:'M6', type:'universal', src:'CH10 w.12',
+  stem:'A Lempel–Ziv encoder begins with $0$ at position $1$ and $1$ at position $2$ in its dictionary. Parsing a stream produces, in order, the new pieces $00$, $01$, $011$ and $10$. Pointers are sent in three bits.',
+  parts:['Give the dictionary position of each new piece.',
+         'Give the pointer and the innovation bit for each.',
+         'Write the four transmitted blocks.',
+         'Decode the block $0111$ and say what position the result takes.'],
+  sol:'<b>Given.</b> Four parsed pieces, a dictionary holding $0$ and $1$, and three-bit pointers.<br>'
+     +'<b>Find.</b> The positions, the pointers, the blocks, and one decoded block.<br>'
+     +'<b>Method.</b> A new piece is the shortest run not yet stored, so everything but its last bit is already in the dictionary. That earlier entry is the pointer; the last bit is the innovation.<br>'
+     +'<b>Solution — (a).</b> Pieces are stored in the order they are parsed, after the two already held: $00$ takes position $3$, $01$ position $4$, $011$ position $5$, and $10$ position $6$.<br>'
+     +'<b>Solution — (b).</b> $00$ starts with $0$, at position $1$, and its new bit is $0$. $01$ starts with $0$, position $1$, new bit $1$. $011$ starts with $01$, which is position $4$, new bit $1$. $10$ starts with $1$, position $2$, new bit $0$.<br>'
+     +'<b>Solution — (c).</b> Writing each position in three bits and appending the innovation: $0010$, $0011$, $1001$, $0100$.<br>'
+     +'<b>Solution — (d).</b> Split the last bit off first: the innovation is $1$. The remaining $011$ is $3$, and entry $3$ is $00$, so the piece is $001$. It is new, so it takes position $7$.<br>'
+     +'<b>Check.</b> Every piece\'s own start must already be stored, and each one is: $0$ at $1$, $0$ at $1$, $01$ at $4$, $1$ at $2$. A parse that produces a piece whose start is missing is a wrong parse, and this is the check that catches it.',
+  err:'Sending the whole piece and then the pointer as well. The pointer <em>replaces</em> everything but the last bit — that is the entire saving, and repeating the piece throws it away.',
+  teach:'Ask what these four pieces cost: $16$ bits of blocks for $8$ bits of stream. The method is losing, and it goes on losing until the stored pieces grow long. That is the honest answer to "is this better than Huffman", and it is why the algorithm is used on files rather than on single symbols.' },
+
+{ id:'D6-22', module:'M6', type:'channel', src:'CH10 w.13',
+  stem:'A binary channel has $p(y_0\\mid x_0)=0.9$ and $p(y_0\\mid x_1)=0.2$. The transmitter sends $x_0$ with probability $0.6$.',
+  parts:['Write the channel matrix and check it.',
+         'Give the four joint probabilities.',
+         'Give the output distribution.',
+         'Give $H(Y\\mid X)$, and say whether it would change if the transmitter changed.'],
+  sol:'<b>Given.</b> An asymmetric binary channel and an input distribution $0.6/0.4$.<br>'
+     +'<b>Find.</b> The matrix, the joint and output distributions, and $H(Y\\mid X)$.<br>'
+     +'<b>Method.</b> Each row of the matrix is the output distribution for one input, so each row is completed by subtraction from one.<br>'
+     +'<b>Solution — (a).</b> $\\mathbf{P}=\\begin{bmatrix}0.9&0.1\\\\0.2&0.8\\end{bmatrix}$. Both rows sum to one, as every channel matrix must.<br>'
+     +'<b>Solution — (b).</b> $p(x_0,y_0)=0.9(0.6)=0.54$, $p(x_0,y_1)=0.1(0.6)=0.06$, $p(x_1,y_0)=0.2(0.4)=0.08$, $p(x_1,y_1)=0.8(0.4)=0.32$.<br>'
+     +'<b>Solution — (c).</b> $p(y_0)=0.54+0.08=0.62$ and $p(y_1)=0.06+0.32=0.38$.<br>'
+     +'<b>Solution — (d).</b> $H(Y\\mid X)=0.6\\,H(0.1)+0.4\\,H(0.2)=0.6(0.4690)+0.4(0.7219)=0.5702$ bits. It <em>would</em> change: it is an average of the row entropies weighted by how often each input is sent.<br>'
+     +'<b>Check.</b> The four joint probabilities add to $1.00$, and the output probabilities add to $1$. Part (d) is the one worth pausing on — for the binary <em>symmetric</em> channel the two rows have the same entropy, so the weights do not matter and $H(Y\\mid X)=H(p)$ whatever the transmitter does. That is a property of symmetry, not a general rule.',
+  err:'Checking that the columns sum to one. They do not here — $0.9+0.2=1.1$ — and there is no reason they should. Only the rows are distributions.',
+  teach:'Part (d) separates the two facts students merge. $H(Y\\mid X)$ is a property of the channel only when the channel is symmetric. The general statement is that it is an average over the input distribution, and this channel is asymmetric enough to show the difference.' },
+
+{ id:'D6-23', module:'M6', type:'channel', src:'CH10 w.13',
+  stem:'A binary symmetric channel has crossover probability $p=0.2$ and equally likely inputs.',
+  parts:['Give $H(X)$ and $H(Y\\mid X)$.',
+         'Give $H(Y)$.',
+         'Give the mutual information.',
+         'Say what fraction of each transmitted bit the channel destroys.'],
+  sol:'<b>Given.</b> A BSC at $p=0.2$, inputs equally likely.<br>'
+     +'<b>Find.</b> The three entropies, $I(X;Y)$, and the fraction lost.<br>'
+     +'<b>Method.</b> Use $I(X;Y)=H(Y)-H(Y\\mid X)$; the other form would need Bayes\' rule first.<br>'
+     +'<b>Solution — (a).</b> $H(X)=1$ bit. Whichever symbol is sent, the output distribution is $(0.8,0.2)$ in some order, so $H(Y\\mid X)=H(0.2)=-0.2\\log_2 0.2-0.8\\log_2 0.8=0.4644+0.2575=0.7219$ bits.<br>'
+     +'<b>Solution — (b).</b> $p(y_0)=0.8(0.5)+0.2(0.5)=0.5$, so the output is equally likely and $H(Y)=1$ bit.<br>'
+     +'<b>Solution — (c).</b> $I(X;Y)=1-0.7219=0.2781$ bits per channel use.<br>'
+     +'<b>Solution — (d).</b> $0.7219$ of every bit offered, which is $72.2\\%$.<br>'
+     +'<b>Check.</b> Because the inputs are equally likely and the channel is symmetric, this $I(X;Y)$ is also the capacity: $C=1-H(0.2)=0.2781$. A crossover of one in five — which sounds survivable — leaves barely a quarter of the channel, and that mismatch between how it sounds and what it costs is the point of the question.',
+  err:'Reading a balanced output as evidence that the channel is working. The output of a BSC with equally likely inputs is balanced for every $p$, including $p=\\tfrac12$ where nothing at all gets through.',
+  teach:'Worth asking before any arithmetic: "one bit in five is flipped, so what fraction survives?" Almost everyone guesses about four fifths. The answer is a little over a quarter, and the gap between the guess and the answer is what entropy is for.' },
+
+{ id:'D6-24', module:'M6', type:'capacity', src:'CH10 w.14',
+  stem:'A binary symmetric channel with crossover probability $0.05$ is used $10^{6}$ times a second.',
+  parts:['Give the capacity in bits per channel use.',
+         'Give it in bits per second.',
+         'Say whether $800$ kbit/s can be sent with an arbitrarily small error probability.',
+         'Give the largest crossover probability for which $800$ kbit/s would be possible.'],
+  sol:'<b>Given.</b> A BSC at $p=0.05$, used $10^{6}$ times a second.<br>'
+     +'<b>Find.</b> The capacity in both units, and what rate it permits.<br>'
+     +'<b>Method.</b> $C=1-H(p)$ per use; multiply by the number of uses a second for a rate. The coding theorem then decides the question in part (c).<br>'
+     +'<b>Solution — (a).</b> $H(0.05)=-0.05\\log_2 0.05-0.95\\log_2 0.95=0.2161+0.0703=0.2864$, so $C=0.7136$ bits per use.<br>'
+     +'<b>Solution — (b).</b> $0.7136\\times10^{6}=713.6$ kbit/s.<br>'
+     +'<b>Solution — (c).</b> No. $800>713.6$, so $R_b>C$ and the coding theorem says no scheme of any kind keeps the error probability small.<br>'
+     +'<b>Solution — (d).</b> Reliable transmission needs $C\\ge0.8$, so $H(p)\\le0.2$, which gives $p\\le0.0311$.<br>'
+     +'<b>Check.</b> The required crossover, $0.0311$, is not far below the one on offer, $0.05$ — yet one permits the rate and the other forbids it entirely. That is what a sharp limit looks like, and it is why part (c) has a one-word answer rather than a "nearly".',
+  err:'Answering (c) with "yes, with a good enough code". Above capacity there is no good enough code. The theorem is not a statement about the codes known today.',
+  teach:'Part (d) is worth doing by trial: evaluate $H(p)$ at $0.03$ and at $0.04$ and close in. Students who solve it that way notice how flat $H$ is near zero, which is the same flatness that makes the first few errors on a good channel almost free.' },
+
+{ id:'D6-25', module:'M6', type:'capacity', src:'CH10 w.14',
+  stem:'A coherent binary PSK link runs at $E_b/N_0=6$ dB. The receiver makes a hard decision on every bit and hands the result to a decoder.',
+  parts:['Give the crossover probability of the binary symmetric channel the decoder sees.',
+         'Give the capacity of that channel in bits per channel use.',
+         'The link carries $1$ Mbit/s of channel bits. Give the largest information rate that can be sent reliably.',
+         'Say what the hard decision has thrown away.'],
+  sol:'<b>Given.</b> Coherent BPSK at $E_b/N_0=6$ dB, hard decisions, $10^{6}$ channel bits a second.<br>'
+     +'<b>Find.</b> $p$, the capacity, the largest reliable information rate, and what the hard decision costs.<br>'
+     +'<b>Method.</b> The error probability of coherent BPSK is the Module 5 result; feeding it into $C=1-H(p)$ joins the two halves of the course.<br>'
+     +'<b>Solution — (a).</b> $E_b/N_0=10^{0.6}=3.981$, so $p=Q\\!\\left(\\sqrt{2E_b/N_0}\\right)=Q(2.822)=2.39\\times10^{-3}$.<br>'
+     +'<b>Solution — (b).</b> $H(p)=0.0242$, so $C=0.9758$ bits per channel use.<br>'
+     +'<b>Solution — (c).</b> $0.9758\\times10^{6}=976$ kbit/s. Anything below that is reachable with a long enough code; anything above it is not.<br>'
+     +'<b>Solution — (d).</b> How confident each decision was. The demodulator produced a number; the hard decision reduced it to a sign, and a bit that was decided by a hair is passed on looking exactly like one decided comfortably. A decoder given the numbers instead does better, and this course does not measure by how much.<br>'
+     +'<b>Check.</b> The capacity is close to one bit per use, which fits the error probability: about one bit in $420$ is wrong, so a code with a little over $2\\%$ of redundancy should be enough. It is the same statement read two ways.',
+  err:'Reporting the capacity as $976$ kbit/s of <em>channel</em> bits. The channel bits are already $1$ Mbit/s; the $976$ kbit/s is the <em>information</em> carried inside them, and the difference is the redundancy the code spends.',
+  teach:'This is the question that shows the two halves of the course are one system. Modules 2 to 5 produce a number, $P_e$. Module 6 consumes exactly that number and returns what the link can carry. Nothing about the waveform survives the join — only $p$ crosses it.' },
+
+{ id:'D6-26', module:'M6', type:'capacity', src:'CH10 w.14',
+  stem:'A channel has bandwidth $3.4$ kHz and a signal-to-noise ratio of $30$ dB.',
+  parts:['Give its capacity.',
+         'Give the capacity if the transmitted power is doubled, and the gain as a percentage.',
+         'Give the capacity if the bandwidth is doubled instead, at the same noise density, and the gain as a percentage.',
+         'Say which is the better buy, and why the two answers differ so much.'],
+  sol:'<b>Given.</b> $B=3.4$ kHz and $P/N_0B=10^{3}=1000$.<br>'
+     +'<b>Find.</b> The capacity, and what doubling each of power and bandwidth buys.<br>'
+     +'<b>Method.</b> $C=B\\log_2(1+P/N_0B)$. Doubling the bandwidth at fixed noise density doubles the noise power in the band, so the ratio halves — that is the step the question is built around.<br>'
+     +'<b>Solution — (a).</b> $C=3400\\log_2(1001)=3400(9.967)=33.9$ kbit/s.<br>'
+     +'<b>Solution — (b).</b> The ratio becomes $2000$, so $C=3400\\log_2(2001)=3400(10.967)=37.3$ kbit/s — a gain of $10.0\\%$.<br>'
+     +'<b>Solution — (c).</b> The bandwidth becomes $6800$ Hz and the noise power doubles with it, so the ratio falls to $500$: $C=6800\\log_2(501)=6800(8.969)=61.0$ kbit/s — a gain of $80.0\\%$.<br>'
+     +'<b>Solution — (d).</b> Bandwidth, by a long way. Capacity is <b>linear</b> in bandwidth and only <b>logarithmic</b> in the ratio, so doubling the bandwidth nearly doubles the rate while doubling the power adds one bit per second per hertz at most — and much less than that when the ratio is already $1000$.<br>'
+     +'<b>Check.</b> Doubling the power added $3400$ bits a second, which is one bit per second per hertz — exactly the extra $\\log_2 2$ the formula promises. The bandwidth answer is not the same shape at all: it added $27$ kbit/s. Reading those two numbers side by side is the whole content of the law.',
+  err:'Doubling the bandwidth and leaving the signal-to-noise ratio at $1000$. The noise power in the band doubles with the band, so the ratio halves. Forgetting that turns an $80\\%$ gain into a $100\\%$ one and hides the trade the question is about.',
+  teach:'This question is why bandwidth is regulated and power mostly is not. The scarce resource is the one that pays linearly. It also explains a system decision students meet everywhere: when a link runs out of rate, the first thing tried is more bandwidth, and more power is the fallback.' }
 
 ]);
 
@@ -344,13 +467,13 @@ window.DRILLMAP_M6 = [
 
 { id:'m6-drill-map', module:'M6', nav:'Module 6 · question types',
   title:'Module 6 — what a question looks like',
-  objective:'Name the six recurring question shapes before the module is read.',
-  keywords:'question types module 6 entropy extension code kraft huffman taxonomy',
+  objective:'Name the six source-side question shapes before the module is read.',
+  keywords:'question types module 6 entropy extension code kraft huffman channel capacity taxonomy',
   steps:0, blocks:[
   {t:'eyebrow', text:'Module 6 · Question types'},
-  {t:'title', text:'Six shapes, and the method each one wants'},
-  {t:'lede', text:'Questions on information theory come in six shapes, and every one of them is arithmetic that can be done on paper. That is unusual in this course, and it is worth taking advantage of.'},
-  {t:'drilltypes', module:'M6', style:'grid-template-columns:repeat(3,minmax(0,1fr));gap:26px 44px'}
+  {t:'title', text:'Six shapes for the source, and the method each one wants'},
+  {t:'lede', text:'Questions on information theory come in nine shapes. The six here are about the source — how much information it makes and how few bits will carry it. The other three are about the channel it is sent over, and they are collected at the head of section 6.5, where that half of the module begins.'},
+  {t:'drilltypes', module:'M6', to:6, style:'grid-template-columns:repeat(3,minmax(0,1fr));gap:26px 44px'}
 ]}
 
 ];
@@ -359,12 +482,12 @@ window.DRILL_M6 = [
 
 { id:'m6-drill', module:'M6', nav:'Module 6 · practice questions',
   title:'Module 6 — practice questions',
-  objective:'Twenty open-ended questions with worked solutions.',
-  keywords:'practice questions module 6 entropy self information extension prefix kraft huffman efficiency variance',
+  objective:'Twenty-six open-ended questions with worked solutions.',
+  keywords:'practice questions module 6 entropy self information extension prefix kraft huffman efficiency variance lempel ziv channel mutual information capacity shannon',
   steps:0, blocks:[
-  {t:'eyebrow', text:'Module 6 · Practice D6-01 … D6-20'},
+  {t:'eyebrow', text:'Module 6 · Practice D6-01 … D6-26'},
   {t:'title', text:'Practice questions'},
-  {t:'small', html:'Work each question on paper before opening its solution. Every solution ends with a <b>Check</b> step. In this module the cheap checks are: the entropy never exceeds $\\log_2 K$, the efficiency never exceeds one, $H(S)\\le\\bar{L}<H(S)+1$ for a prefix code, the Kraft sum never exceeds one, and every Huffman code for a given source has the same average length whatever the tie-breaking.'},
+  {t:'small', html:'Work each question on paper before opening its solution. Every solution ends with a <b>Check</b> step. In this module the cheap checks are: the entropy never exceeds $\\log_2 K$, the efficiency never exceeds one, $H(S)\\le\\bar{L}<H(S)+1$ for a prefix code, the Kraft sum never exceeds one, every Huffman code for a given source has the same average length whatever the tie-breaking, every row of a channel matrix sums to one, and the mutual information never exceeds the capacity.'},
   {t:'rule', short:true},
   {t:'drill', module:'M6'}
 ]}

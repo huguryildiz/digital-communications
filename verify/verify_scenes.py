@@ -231,6 +231,110 @@ def _gs_example():
 #              computed independently of how the scene computes it
 #   tol     -- relative tolerance; the default is what a figure printed to
 #              three significant digits can be trusted to
+def _m6_bisect(f, lo=1e-9, hi=0.5, n=200):
+    for _ in range(n):
+        mid = (lo + hi) / 2
+        if f(mid) < 0:
+            lo = mid
+        else:
+            hi = mid
+    return lo
+
+
+def _m6_qinv(p, lo=0.0, hi=12.0, n=200):
+    """The x with Q(x) = p, by bisection on Q itself."""
+    for _ in range(n):
+        mid = (lo + hi) / 2
+        if _Q(mid) > p:
+            lo = mid
+        else:
+            hi = mid
+    return lo
+
+
+def _m6_Hb(p):
+    if p <= 0 or p >= 1:
+        return 0.0
+    return -(p * math.log2(p) + (1 - p) * math.log2(1 - p))
+
+
+def _m6_chan(Pyx, px):
+    """H(Y), H(Y|X) and I(X;Y) for a channel matrix and an input distribution,
+    computed from the definitions rather than from any closed form."""
+    ny = len(Pyx[0])
+    py = [sum(Pyx[j][k] * px[j] for j in range(len(px))) for k in range(ny)]
+    hyx = sum(px[j] * _m6_H(Pyx[j]) for j in range(len(px)))
+    return _m6_H(py), hyx, _m6_H(py) - hyx
+
+
+def _m6_capacity(Pyx, n=4000):
+    """Capacity of a binary-input channel by searching the input distribution.
+
+    The scenes reach the BSC answer through 1 - H(p) and the Z-channel answer
+    through a derivative. Searching re-derives both without either identity.
+    """
+    best, best_q = -1.0, 0.0
+    for i in range(n + 1):
+        q = i / n
+        val = _m6_chan(Pyx, [q, 1 - q])[2]
+        if val > best:
+            best, best_q = val, q
+    return best, best_q
+
+
+_M6_BSC = lambda p: [[1 - p, p], [p, 1 - p]]
+_M6_Z = [[1.0, 0.0], [0.5, 0.5]]
+
+
+# ── Module 4 ────────────────────────────────────────────────────────────────
+
+
+def _faces(pts, k):
+    """The neighbours of pts[k] whose bisectors give its region a face.
+
+    Found from the geometry rather than read off the scene: j gives a face when
+    some point of the bisector between k and j is strictly nearer to those two
+    than to every other signal point. The bisector is sampled along its own
+    direction, which is what makes this independent of how the scene counted.
+    """
+    p = np.asarray(pts, dtype=float)
+    out = []
+    for j in range(len(p)):
+        if j == k:
+            continue
+        mid = (p[k] + p[j]) / 2
+        d = p[j] - p[k]
+        # a direction along the bisector: perpendicular to d in the plane
+        t = np.array([-d[1], d[0]])
+        n = np.linalg.norm(t)
+        if n == 0:                      # collinear points: the bisector is a
+            t = np.zeros(2)             # single point in one dimension
+        else:
+            t = t / n
+        span = 40 * float(np.linalg.norm(d))
+        for s in np.linspace(-span, span, 4001):
+            x = mid + s * t
+            near = np.linalg.norm(p - x, axis=1)
+            if near[k] <= min(near[m] for m in range(len(p)) if m not in (k, j)) - 1e-9:
+                out.append(j)
+                break
+    return out
+
+
+def _intelligent(pts, arg_of_d):
+    """The intelligent union bound, averaged over an equally likely alphabet.
+
+    `arg_of_d` turns a distance into the argument of Q. Only the neighbours the
+    geometry says give a face contribute.
+    """
+    p = np.asarray(pts, dtype=float)
+    total = 0.0
+    for k in range(len(p)):
+        for j in _faces(p, k):
+            total += _Q(arg_of_d(float(np.linalg.norm(p[k] - p[j]))))
+    return total / len(p)
+
+
 # ── Module 5 constellations ─────────────────────────────────────────────────
 # Built from the definition of each family and scaled to unit average symbol
 # energy, so a distance read off one is already in units of root Es.
@@ -434,6 +538,26 @@ CHECKS: list[dict] = [
     {"name": "3.2 four points on a square: smallest distance at energy 2",
      "stated": 2.0, "derive": lambda: 2 * 1.0},
 
+    # ── Module 4 ────────────────────────────────────────────────────────────
+    # The intelligent union bound counts the neighbours that give the decision
+    # region a face. The scene counts them by looking at the picture; the check
+    # finds them by sampling each bisector, so the count itself is re-derived
+    # and not copied.
+
+    {"name": "4.4.4 faces of a corner region in the square", "stated": 2,
+     "derive": lambda: len(_faces(
+         [(0.5, 0.5), (-0.5, 0.5), (-0.5, -0.5), (0.5, -0.5)], 0))},
+    {"name": "4.4.4 intelligent bound for the square at d^2/2N0=9",
+     "stated": 2.70e-3,
+     "derive": lambda: _intelligent(
+         [(0.5, 0.5), (-0.5, 0.5), (-0.5, -0.5), (0.5, -0.5)],
+         lambda d: 3.0 * d), "tol": 2e-3},
+    {"name": "4.4.4 union bound for the same square, for comparison",
+     "stated": 2.71e-3,
+     "derive": lambda: 2 * _Q(3.0) + _Q(3.0 * math.sqrt(2)), "tol": 2e-3},
+    {"name": "4.4.4 minimum-distance bound for the same square",
+     "stated": 4.05e-3, "derive": lambda: 3 * _Q(3.0), "tol": 2e-3},
+
     # ── Module 5 ────────────────────────────────────────────────────────────
     # The scenes state seven numbers. Each is re-derived here from the points
     # of the constellation, scaled to unit average energy, rather than from the
@@ -501,7 +625,62 @@ CHECKS: list[dict] = [
      "derive": lambda: _m6_var(_M6_FIVE, True), "tol": 1e-9},
     {"name": "6.9 variance of the other one", "stated": 1.36,
      "derive": lambda: _m6_var(_M6_FIVE, False), "tol": 1e-9},
+    # ── Module 6, the channel half ──────────────────────────────────────────
+    # Every capacity below is found by searching the input distribution, which
+    # is the definition. The scenes reach the same numbers through 1 - H(p) and
+    # through a derivative, so neither route is being restated here.
+
+    {"name": "6.7.2 H(Y|X) of the BSC at p=0.1", "stated": 0.469,
+     "derive": lambda: _m6_Hb(0.1), "tol": 1e-3},
+    {"name": "6.7.2 mutual information there", "stated": 0.531,
+     "derive": lambda: _m6_chan(_M6_BSC(0.1), [0.5, 0.5])[2], "tol": 1e-3},
+    {"name": "6.7.2 the joint entropy of that pair", "stated": 1.469,
+     "derive": lambda: 2 - _m6_chan(_M6_BSC(0.1), [0.5, 0.5])[2], "tol": 1e-3},
+    {"name": "6.7.3 mutual information at p=0.25", "stated": 0.189,
+     "derive": lambda: _m6_chan(_M6_BSC(0.25), [0.5, 0.5])[2], "tol": 3e-3},
+    {"name": "6.7.3 the joint entropy at p=0.25", "stated": 1.811,
+     "derive": lambda: 2 - _m6_chan(_M6_BSC(0.25), [0.5, 0.5])[2], "tol": 1e-3},
+    {"name": "6.8.2 capacity of the BSC at p=0.1", "stated": 0.531,
+     "derive": lambda: _m6_capacity(_M6_BSC(0.1))[0], "tol": 1e-3},
+    {"name": "6.8.2 equally likely inputs are the best ones", "stated": 0.5,
+     "derive": lambda: _m6_capacity(_M6_BSC(0.1))[1], "tol": 1e-3},
+    {"name": "6.8.2 capacity at p=0.11", "stated": 0.500,
+     "derive": lambda: _m6_capacity(_M6_BSC(0.11))[0], "tol": 2e-3},
+    {"name": "6.8.2 capacity at one error in a thousand", "stated": 0.9886,
+     "derive": lambda: _m6_capacity(_M6_BSC(0.001))[0], "tol": 1e-3},
+    {"name": "6.8.4 capacity of the Z-channel", "stated": 0.3219,
+     "derive": lambda: _m6_capacity(_M6_Z)[0], "tol": 1e-3},
+    {"name": "6.8.4 the input distribution that reaches it", "stated": 0.6,
+     "derive": lambda: _m6_capacity(_M6_Z)[1], "tol": 2e-3},
+    {"name": "6.8.4 that capacity is log2(5/4) exactly", "stated": 0.3219,
+     "derive": lambda: math.log2(1.25), "tol": 1e-3},
+    {"name": "6.8.4 what a transmitter at q=0.5 gets instead", "stated": 0.3113,
+     "derive": lambda: _m6_chan(_M6_Z, [0.5, 0.5])[2], "tol": 1e-3},
+    {"name": "6.8.5 crossover at which capacity falls to one half",
+     "stated": 0.11,
+     "derive": lambda: _m6_bisect(lambda p: 0.5 - _m6_capacity(_M6_BSC(p))[0]),
+     "tol": 2e-2},
+    # Stated as a ratio rather than in dB: the scene's value there is 0 dB, and
+    # a relative tolerance against zero cannot say anything.
+    {"name": "6.9.1 energy per bit for one bit a second a hertz, as a ratio",
+     "stated": 1.0, "derive": lambda: (2 ** 1 - 1) / 1, "tol": 1e-9},
+    {"name": "6.9.1 energy per bit for two bits a second a hertz, dB",
+     "stated": 1.76,
+     "derive": lambda: 10 * math.log10((2 ** 2 - 1) / 2), "tol": 3e-3},
+    {"name": "6.9.2 the Shannon limit as a ratio", "stated": 0.693,
+     "derive": lambda: math.log(2), "tol": 1e-3},
+    {"name": "6.9.2 the Shannon limit in dB", "stated": -1.59,
+     "derive": lambda: 10 * math.log10(math.log(2)), "tol": 3e-3},
+    {"name": "6.9.2 coherent BPSK at an error probability of 1e-5, dB",
+     "stated": 9.6,
+     "derive": lambda: 10 * math.log10(_m6_qinv(1e-5) ** 2 / 2), "tol": 5e-3},
+    {"name": "6.9.2 how far that sits above the floor, dB", "stated": 11.0,
+     "derive": lambda: 10 * math.log10(_m6_qinv(1e-5) ** 2 / 2)
+         - 10 * math.log10(math.log(2)), "tol": 2e-2},
+    {"name": "6.6.2 output probability in the worked joint distribution",
+     "stated": 0.675, "derive": lambda: 0.8 * 0.75 + 0.3 * 0.25, "tol": 1e-9},
 ]
+
 
 DEFAULT_TOL = 5e-3
 

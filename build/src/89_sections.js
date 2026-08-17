@@ -96,7 +96,7 @@ CONTENT.SECTIONS = {
     { n:'4.2', title:'The decision rule',              ids:['m4-map','m4-mindist','m4-metric'] },
     { n:'4.3', title:'Decision regions',               ids:['m4-regions','m4-binary','m4-lab-g'] },
     { n:'4.4', title:'The union bound',                ids:[
-        'm4-pe','m4-union','m4-dmin','m4-ex-union','m4-ex-union-b'] },
+        'm4-pe','m4-union','m4-dmin','m4-intel','m4-ex-union','m4-ex-union-b'] },
     { n:'4.5', title:'Summary',                        ids:['m4-synth'] }
   ],
 
@@ -117,7 +117,16 @@ CONTENT.SECTIONS = {
     { n:'6.3', title:'Prefix codes and the Kraft inequality', ids:[
         'm6-prefix','m6-kraft','m6-bound'] },
     { n:'6.4', title:'Huffman coding',                 ids:['m6-huffman','m6-huffman-var','m6-lab-j'] },
-    { n:'6.5', title:'Summary',                        ids:['m6-synth'] }
+    { n:'6.5', title:'Universal coding',               ids:[
+        'm6-drill-types-b','m6-lz'] },
+    { n:'6.6', title:'The discrete memoryless channel', ids:[
+        'm6-dmc','m6-inputdist','m6-bsc'] },
+    { n:'6.7', title:'Mutual information',             ids:[
+        'm6-condent','m6-mutual','m6-mutual-props'] },
+    { n:'6.8', title:'Channel capacity',               ids:[
+        'm6-capacity','m6-bsc-cap','m6-lab-k','m6-ex-zchannel','m6-coding-thm'] },
+    { n:'6.9', title:'The bandlimited channel',        ids:['m6-shannon','m6-limit'] },
+    { n:'6.10', title:'Summary',                       ids:['m6-synth'] }
   ]
 
 };
@@ -180,7 +189,8 @@ CONTENT.BOOK = {
   'm4-open':'8.4', 'm4-observe':'8.4.1', 'm4-noise':'8.4.1',
   'm4-map':'8.4.1', 'm4-mindist':'8.4.1', 'm4-metric':'8.4.1',
   'm4-regions':'8.4.1', 'm4-binary':'8.3.3', 'm4-lab-g':'8.4.1',
-  'm4-pe':'8.4.1', 'm4-union':'8.4.2', 'm4-dmin':'8.4.2', 'm4-ex-union':'8.4.2', 'm4-ex-union-b':'8.4.2',
+  'm4-pe':'8.4.1', 'm4-union':'8.4.2', 'm4-dmin':'8.4.2', 'm4-intel':'8.4.2',
+  'm4-ex-union':'8.4.2', 'm4-ex-union-b':'8.4.2',
   'm4-synth':'8.4',
 
   /* Module 5 spans four sections of the book, each read there: 8.5 for M-ary
@@ -196,7 +206,21 @@ CONTENT.BOOK = {
   'm6-extension':'12.1.1', 'm6-lab-i':'12.1.1',
   'm6-coding':'12.2', 'm6-prefix':'12.3', 'm6-kraft':'12.3',
   'm6-bound':'12.2', 'm6-huffman':'12.3.1', 'm6-huffman-var':'12.3.1',
-  'm6-lab-j':'12.3.1', 'm6-synth':'12.1, 12.2, 12.3'
+  'm6-lab-j':'12.3.1',
+
+  /* The channel half of the module. Each of these was read in the book before
+     it was written down: 12.1.2 carries joint and conditional entropy, 12.1.3
+     mutual information, 12.3.2 the Lempel-Ziv algorithm, 12.4 the modelling of
+     communication channels, 12.5 channel capacity and 12.5.1 the Gaussian
+     channel — which is where the bandwidth-and-power law lives. */
+  'm6-lz':'12.3.2',
+  'm6-dmc':'12.4', 'm6-inputdist':'12.4', 'm6-bsc':'12.4',
+  'm6-condent':'12.1.2', 'm6-mutual':'12.1.3', 'm6-mutual-props':'12.1.3',
+  'm6-capacity':'12.5', 'm6-bsc-cap':'12.5', 'm6-lab-k':'12.5',
+  'm6-ex-zchannel':'12.5', 'm6-coding-thm':'12.5',
+  'm6-shannon':'12.5.1', 'm6-limit':'12.5.1',
+
+  'm6-synth':'12.1, 12.2, 12.3, 12.5'
 };
 
 /* ---- derivation --------------------------------------------------------

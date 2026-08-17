@@ -14,7 +14,7 @@ window.C1 = [
 /* ---------------- title ---------------- */
 {t:'title', kicker:'Digital Communications', text:'Digital Communications',
  sub:'Lecture notes for the whole course: how a waveform becomes a finite alphabet of symbols, how those symbols are carried across a channel that adds noise to everything, how a receiver decides which one was sent, and how often it is wrong.',
- meta:[['Covers','Chapters 1 to 6, and appendix A'],['Level','Undergraduate'],
+ meta:[['Covers','Chapters 1 to 6, and appendices A and B'],['Level','Undergraduate'],
        ['Assumed background','Fourier analysis, probability, random processes']]},
 
 {t:'h3', text:'How to read these notes'},
@@ -29,7 +29,8 @@ window.C1 = [
  ['4','The optimal receiver in additive white Gaussian noise','What the correlator bank keeps. The MAP and ML rules. Minimum-distance detection and the receiver that computes it. Decision regions. The union bound and the nearest-neighbour approximation.','PS CH8.3&ndash;8.4'],
  ['5','Digital modulation methods','The three binary schemes and the three decibels between them. M-ary phase-shift keying and what each extra bit costs. Amplitude-shift keying on a line, quadrature amplitude modulation on a grid, and frequency-shift keying in M dimensions.','PS CH8.5&ndash;8.7, PS CH9.5'],
  ['6','An introduction to information theory','Self-information and entropy. Extended sources. Average codeword length and coding efficiency. Uniquely decodable and prefix codes, the Kraft inequality, and how close to the entropy a code can get. Huffman coding, its ties and its variance.','PS CH12.1&ndash;12.3'],
- ['A','Summary of formulas','Everything the course establishes, in the order it establishes it, with no derivations.','&mdash;']
+ ['A','Summary of formulas','Everything the course establishes, in the order it establishes it, with no derivations.','&mdash;'],
+ ['B','The laboratories','The four laboratories of the course, each one run rather than described. A uniform quantizer and the ratio it achieves. A matched filter and the bit error rate it makes. Sixteen-point quadrature amplitude modulation against the union bound. Huffman coding and how much it compresses.','&mdash;']
 ]},
 
 {t:'page'},

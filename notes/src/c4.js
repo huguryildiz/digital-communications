@@ -88,19 +88,23 @@ window.C4 = [
 {t:'h2', num:'4.4', text:'The union bound'},
 {t:'p', text:'For more than two signals the exact answer is an integral of the likelihood over each decision region, in $N$ dimensions and over a polygon with as many faces as the point has neighbours. There is no closed form. The way round it is to bound the answer instead.'},
 {t:'p', text:'Suppose $\\mathbf{s}_k$ was sent, and let $A_{kj}$ be the event that the observation is closer to $\\mathbf{s}_j$ than to $\\mathbf{s}_k$. An error happens exactly when at least one of those occurs, and the probability of a union is at most the sum of the probabilities. Each term is a two-point question whose answer is already known.'},
-{t:'eqbox', cap:'The union bound and its two usable forms', tex:[
+{t:'eqbox', cap:'The union bound and its three usable forms', tex:[
   'P(\\mathbf{s}_k\\to\\mathbf{s}_j)=Q\\!\\left(\\sqrt{\\frac{d_{kj}^{2}}{2N_0}}\\right)',
   'P_e\\le\\frac{1}{M}\\sum_{k}\\sum_{j\\ne k}Q\\!\\left(\\sqrt{\\frac{d_{kj}^{2}}{2N_0}}\\right)',
   'P_e\\le(M-1)Q\\!\\left(\\sqrt{\\frac{d_{\\min}^{2}}{2N_0}}\\right),\\qquad P_e\\approx N_{\\min}Q\\!\\left(\\sqrt{\\frac{d_{\\min}^{2}}{2N_0}}\\right)'],
  after:'$N_{\\min}$ is the <em>average</em> number of points at the minimum distance, and need not be an integer. The last form is the one used in practice.'},
+{t:'p', text:'One more tightening is available, and it costs nothing. To land nearer a different point the observation must leave its own region, and it leaves through a <b>face</b> — a piece of boundary shared with one particular neighbour. A point that shares no face with the region cannot be the first one reached, so the union need only run over the neighbours that bound the region. Write $\\mathcal{N}(k)$ for those.'},
+{t:'eqbox', cap:'The intelligent union bound', tex:[
+  'P(\\text{error}\\mid\\mathbf{s}_k)\\le\\sum_{j\\in\\mathcal{N}(k)}Q\\!\\left(\\sqrt{\\frac{d_{kj}^{2}}{2N_0}}\\right)'],
+ after:'Still an upper bound, because leaving the region means crossing one of its faces. It is not the nearest-neighbour form: this one counts <em>faces</em> and bounds, that one counts <em>points at $d_{\\min}$</em> and approximates. They agree whenever every face sits at $d_{\\min}$, and part company when a face is shared with a point further away.'},
 {t:'box', kind:'warn', hd:'Why it is an over-estimate, and when that matters', html:'The events overlap: an observation can be closer to two other points at once, and the sum counts it twice. So the bound is always at least the truth. At low signal-to-noise ratio the overlaps are large and the bound can exceed one, which is useless; at the ratios real systems run at, every term is tiny and the bound is close enough to be quoted as the answer.'},
 
-{t:'ex', hd:'Example 4.1 — three bounds on one constellation', rows:[
+{t:'ex', hd:'Example 4.1 — four bounds on one constellation', rows:[
  ['Given','Four equally likely points at $(\\pm d/2,\\pm d/2)$: neighbours $d$ apart, diagonals $d\\sqrt2$.'],
- ['Find','The symbol error probability by each of the three forms.'],
- ['Method','Take one point, list its distances to the other three, and add one $Q$ for each. Symmetry makes every point give the same answer.'],
- ['Solution','General: $P_e\\le 2Q\\!\\left(\\sqrt{d^{2}/2N_0}\\right)+Q\\!\\left(\\sqrt{2d^{2}/2N_0}\\right)$. Nearest neighbours ($d_{\\min}=d$, $N_{\\min}=2$): $P_e\\approx 2Q\\!\\left(\\sqrt{d^{2}/2N_0}\\right)$. Minimum distance ($M-1=3$): $P_e\\le 3Q\\!\\left(\\sqrt{d^{2}/2N_0}\\right)$.'],
- ['Check','Put $d^{2}/2N_0=9$, so $Q(3)=1.35\\times10^{-3}$ and $Q(4.243)=1.10\\times10^{-5}$. The three answers are $2.71\\times10^{-3}$, $2.70\\times10^{-3}$ and $4.05\\times10^{-3}$: the diagonal term is worth $0.4\\%$, and pretending it is a nearest neighbour costs $50\\%$. All three are the same $Q$ with a different count in front, so none of them moves the curve sideways.']
+ ['Find','The symbol error probability by each of the four forms.'],
+ ['Method','Take one point, list its distances to the other three, and add one $Q$ for each — then ask which of those three actually bound its region. Symmetry makes every point give the same answer.'],
+ ['Solution','General: $P_e\\le 2Q\\!\\left(\\sqrt{d^{2}/2N_0}\\right)+Q\\!\\left(\\sqrt{2d^{2}/2N_0}\\right)$. Intelligent (the region has two faces, both at $d$): $P_e\\le 2Q\\!\\left(\\sqrt{d^{2}/2N_0}\\right)$. Nearest neighbours ($d_{\\min}=d$, $N_{\\min}=2$): $P_e\\approx 2Q\\!\\left(\\sqrt{d^{2}/2N_0}\\right)$. Minimum distance ($M-1=3$): $P_e\\le 3Q\\!\\left(\\sqrt{d^{2}/2N_0}\\right)$.'],
+ ['Check','Put $d^{2}/2N_0=9$, so $Q(3)=1.35\\times10^{-3}$ and $Q(4.243)=1.10\\times10^{-5}$. The four answers are $2.71\\times10^{-3}$, $2.70\\times10^{-3}$, $2.70\\times10^{-3}$ and $4.05\\times10^{-3}$: the diagonal term is worth $0.4\\%$, and pretending it is a nearest neighbour costs $50\\%$. The middle two agree here because both faces sit at $d_{\\min}$, and only one of them is a bound. All four are the same $Q$ with a different count in front, so none of them moves the curve sideways.']
 ]},
 
 {t:'fig', svg:()=>regions([[1,1],[-1,1],[-1,-1],[1,-1]],{lim:2.4,w:400,h:280,cloud:340,sigma:0.42}),
@@ -115,6 +119,7 @@ window.C4 = [
  ['Regions','perpendicular bisectors; the less likely region shrinks','PS CH8.4.1'],
  ['Binary','$P_e=Q\\!\\left(\\sqrt{d^{2}/2N_0}\\right)$','PS CH8.3.3'],
  ['Union bound','$P_e\\le\\frac{1}{M}\\sum_k\\sum_{j\\ne k}Q(\\cdot)$','PS CH8.4.2'],
+ ['Intelligent form','sum over the neighbours that give $R_k$ a face','PS CH8.4.2'],
  ['In practice','$P_e\\approx N_{\\min}Q\\!\\left(\\sqrt{d_{\\min}^{2}/2N_0}\\right)$','PS CH8.4.2']
 ]},
 {t:'p', text:'A constellation is judged by two numbers: $d_{\\min}$, which sets the exponent and therefore almost everything, and $N_{\\min}$, which multiplies it and matters far less. Chapter 5 applies this to the constellations that are actually used, and asks which of them gets the largest $d_{\\min}$ for a given average energy and a given number of bits per symbol.'}
