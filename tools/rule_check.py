@@ -153,7 +153,15 @@ def figure_labels(path):
                     continue
                 if backslash_runs_odd(lab):
                     bad('lost backslash — a TeX macro needs \\\\ in a JS string')
-                for s in re.finditer(r';', lab):
+                # A semicolon inside a parenthesised group is notation rather
+                # than a lost thin space: I(X;Y) is the mutual information, and
+                # module 6 writes it that way on every axis it appears on. The
+                # groups are blanked out — keeping the positions, so the offset
+                # test below is unaffected — and a genuinely lost \\; outside
+                # the brackets is still caught.
+                scan = re.sub(r'\(([^()]*)\)',
+                              lambda m: '(' + ' ' * len(m.group(1)) + ')', lab)
+                for s in re.finditer(r';', scan):
                     if not re.search(r'\\\\;$', lab[:s.end()]):
                         bad('bare ";" — a lost \\\\; thin space')
                         break

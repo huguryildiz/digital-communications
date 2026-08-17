@@ -34,9 +34,10 @@ CONTENT.DRILLTYPES.M4 = [
             'For antipodal binary, $d^{2}=4E_b$ and this is $Q\\!\\left(\\sqrt{2E_b/N_0}\\right)$; for on-off or orthogonal, $d^{2}=2E_b$ and it is $Q\\!\\left(\\sqrt{E_b/N_0}\\right)$.'],
     go:'m4-binary' },
 
-  { k:'union', name:'The union bound in its three forms',
+  { k:'union', name:'The union bound in its four forms',
     asks:'A constellation and a noise level are given. Bound or estimate the symbol error probability.',
     method:['General form: one $Q$ for every other point, averaged over the transmitted point. Use it when the constellation is small enough to list.',
+            'Intelligent form: keep only the neighbours whose bisectors give the decision region a face. Still an upper bound, and tighter than the general one.',
             'Nearest-neighbour form: $P_e\\approx N_{\\min}Q\\!\\left(\\sqrt{d_{\\min}^{2}/2N_0}\\right)$, where $N_{\\min}$ is the <em>average</em> number of points at the minimum distance. This is the one used in practice.',
             'Minimum-distance form: $P_e\\le(M-1)Q(\\cdot)$. It is loose by design and needs only $M$ and $d_{\\min}$.'],
     go:'m4-dmin' },
@@ -360,7 +361,25 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
      +'<b>Solution — (d).</b> Bandwidth, and simplicity. A one-dimensional constellation needs one basis function, so one carrier and one matched filter, and it occupies half the bandwidth of a two-dimensional scheme at the same symbol rate. QPSK buys its distance by using a second dimension, and that dimension is not free.<br>'
      +'<b>Check.</b> Both schemes carry two bits a symbol at energy $E_s$, so the comparison is between geometries and nothing else. The two-dimensional one wins on error rate by a factor that grows without limit — which is why every modern system that can afford two dimensions uses them.',
   err:'Comparing the two at equal <em>spacing</em> rather than equal energy. At equal spacing the one-dimensional scheme needs far more energy, and the comparison says nothing.',
-  teach:'Part (d) is the part students leave out. Every gain in this course is bought with something, and naming the price is what turns a calculation into a design argument.' }
+  teach:'Part (d) is the part students leave out. Every gain in this course is bought with something, and naming the price is what turns a calculation into a design argument.' },
+
+{ id:'D4-21', module:'M4', type:'union', src:'CH9 s.60',
+  stem:'Three equally likely signals sit on one basis function at $0$, $d$ and $2.2d$. The noise is white and Gaussian with two-sided density $N_0/2$, and $d^{2}/2N_0=9$.',
+  parts:['Give the decision regions, and name the neighbours that give each region a face.',
+         'Write the intelligent union bound on the symbol error probability.',
+         'Evaluate it, and evaluate the nearest-neighbour approximation beside it.',
+         'Say which of the two a designer should quote, and why.'],
+  sol:'<b>Given.</b> Three points on a line at $0$, $d$ and $2.2d$, equally likely, with $d^{2}/2N_0=9$.<br>'
+     +'<b>Find.</b> The regions, the intelligent bound, its value, and the nearest-neighbour value.<br>'
+     +'<b>Method.</b> The boundaries are the midpoints between adjacent points. A face is a boundary the region actually has, so the neighbours that give a face are the adjacent points and nothing else.<br>'
+     +'<b>Solution — (a).</b> The midpoints are $0.5d$ and $1.6d$, so the regions are $r<0.5d$, $0.5d<r<1.6d$ and $r>1.6d$. The left region has one face, shared with the middle point at distance $d$. The middle region has two, at $d$ and at $1.2d$. The right region has one, at $1.2d$. The outer pair, $2.2d$ apart, share no boundary — the middle point stands between them.<br>'
+     +'<b>Solution — (b).</b> Averaging one term per face over the three points:<br>'
+     +'$P_e\\le\\frac{1}{3}\\Bigl[2Q\\!\\left(\\sqrt{d^{2}/2N_0}\\right)+2Q\\!\\left(\\sqrt{(1.2d)^{2}/2N_0}\\right)\\Bigr]=\\frac{2}{3}\\Bigl[Q(3)+Q(3.6)\\Bigr].$<br>'
+     +'<b>Solution — (c).</b> $Q(3)=1.3499\\times10^{-3}$ and $Q(3.6)=1.5911\\times10^{-4}$, so the bound is $\\frac{2}{3}(1.5090\\times10^{-3})=1.006\\times10^{-3}$. The nearest-neighbour form counts only the points at $d_{\\min}=d$: the left and middle points have one each, the right point has none, so $N_{\\min}=2/3$ and $P_e\\approx\\frac{2}{3}Q(3)=8.999\\times10^{-4}$.<br>'
+     +'<b>Solution — (d).</b> The bound. The approximation is $12\\%$ <em>below</em> it, and it is below it because it threw away the two faces at $1.2d$ — which are real boundaries that the observation really can cross. An approximation that sits under the truth is the wrong side to be on when a system is being designed to meet a target.<br>'
+     +'<b>Check.</b> The minimum-distance bound gives $(M-1)Q(3)=2.700\\times10^{-3}$, comfortably above both, as a loose bound must be. And the general union bound adds the outer pair at $2.2d$: $Q(6.6)=2.1\\times10^{-11}$, which changes nothing at four figures. So the intelligent bound has kept everything that mattered and dropped only what did not.',
+  err:'Reading $N_{\\min}$ off the picture as $1$ because "each point has a neighbour". It is an average over the transmitted point, and the right-hand point has no neighbour at $d_{\\min}$ at all, so the average is $2/3$.',
+  teach:'This is the constellation where the two forms separate, and it separates them in the direction that matters. Equal spacing hides the difference — every face then sits at $d_{\\min}$ and the two expressions are identical, which is why the square constellation of scene 4.4.4 shows nothing. Unequal spacing is what exposes that one of them is a bound and the other is not.' }
 
 ]);
 
@@ -383,10 +402,10 @@ window.DRILL_M4 = [
 
 { id:'m4-drill', module:'M4', nav:'Module 4 · practice questions',
   title:'Module 4 — practice questions',
-  objective:'Twenty open-ended questions with worked solutions.',
+  objective:'Twenty-one open-ended questions with worked solutions.',
   keywords:'practice questions module 4 minimum distance decision regions union bound constellations psk qam pam',
   steps:0, blocks:[
-  {t:'eyebrow', text:'Module 4 · Practice D4-01 … D4-20'},
+  {t:'eyebrow', text:'Module 4 · Practice D4-01 … D4-21'},
   {t:'title', text:'Practice questions'},
   {t:'small', html:'Work each question on paper before opening its solution. Every solution ends with a <b>Check</b> step. In this module the cheap checks are: the minimum distance is to a <em>nearest</em> neighbour and never to the furthest point, $N_{\\min}$ is an average and need not be an integer, a boundary always lies between the two points it separates, and a constellation with more points at the same energy is always worse.'},
   {t:'rule', short:true},

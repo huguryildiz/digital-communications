@@ -64,6 +64,57 @@ function tree(codes,labels,opts){
   return a.svg();
 }
 
+/* ---- the channel half ----------------------------------------------------
+   The three figures below are computed from the definitions in the text, not
+   from tabulated points, so a change to the text that the figure contradicts
+   shows up as a figure that has moved. */
+const hbin=p=>(p<=0||p>=1)?0:-(p*lg(p)+(1-p)*lg(1-p));
+
+/* Capacity of the binary symmetric channel against its crossover. */
+function capfig(){
+  const a=ax({w:420,h:230,xr:[0,1],yr:[0,1.14],xlabel:'p',ylabel:'C\\;\\text{bits per use}',
+    pad:{l:58,r:20,t:20,b:40},xtarget:5,ytarget:4});
+  a.curve(p=>1-hbin(p),{color:C.in,width:2.2});
+  a.point(0.5,0,{color:C.err,r:4});
+  a.point(0.1,1-hbin(0.1),{color:C.out,r:4});
+  a.note(0.14,0.62,'C=0.531',{tex:true,fs:11,color:C.out});
+  return a.svg();
+}
+
+/* Mutual information of the Z-channel against its input distribution. */
+function zfig(){
+  const I=q=>{
+    const py=[q+0.5*(1-q), 0.5*(1-q)];
+    return H(py)-(1-q);
+  };
+  const a=ax({w:420,h:230,xr:[0,1],yr:[0,0.40],xlabel:'q=P(X=0)',
+    ylabel:'I(X;Y)\\;\\text{bits}',pad:{l:58,r:20,t:20,b:40},xtarget:5,ytarget:4});
+  a.curve(I,{color:C.h,width:2.2});
+  a.vline(0.6,{color:C.err,dash:'4 3'});
+  a.point(0.6,I(0.6),{color:C.err,r:4});
+  a.note(0.63,0.10,'q^{*}=0.6',{tex:true,fs:11,color:C.err});
+  return a.svg();
+}
+
+/* Bandwidth efficiency against energy per bit, and the floor it never crosses.
+   Drawn from the closed form for the ratio each efficiency needs, so no solver
+   is involved and the asymptote is exact. */
+function shannonfig(){
+  const a=ax({w:700,h:280,xr:[-4,16],yr:[0,6.4],
+    xlabel:'E_b/N_0\\;(\\mathrm{dB})',ylabel:'C/B\\;(\\mathrm{bit/s/Hz})',
+    pad:{l:66,r:22,t:22,b:44},xtarget:6,ytarget:6});
+  const pts=[];
+  for(let e=0.004;e<=6.4;e+=0.004){
+    const db=10*Math.log10((Math.pow(2,e)-1)/e);
+    if(db>=-4&&db<=16) pts.push([db,e]);
+  }
+  a.area(()=>6.4,-4,10*Math.log10(Math.LN2),{fill:C.dec.err});
+  a.poly(pts,{color:C.in,width:2.2});
+  a.vline(10*Math.log10(Math.LN2),{color:C.err,width:2});
+  a.note(1.0,5.8,'-1.59\\ \\mathrm{dB}\\;\\text{: no system to the left}',{tex:true,fs:11,color:C.err});
+  return a.svg();
+}
+
 window.C6 = [
 
 {t:'h1', num:'CHAPTER 6', text:'An introduction to information theory'},
@@ -166,7 +217,78 @@ window.C6 = [
 ]},
 {t:'box', kind:'ok', hd:'Why the smaller variance is wanted', html:'The encoder produces bits at a varying rate and the channel takes them at a fixed one, so a buffer sits between them. A code with wildly different lengths makes that buffer fill and empty unpredictably; a code with steady lengths does not. Both cost $2.2$ bits on average, and only one is comfortable to build. <b>The rule:</b> on a tie, move the merged symbol as high as possible in the list.'},
 
-{t:'h2', num:'6.8', text:'Summary'},
+{t:'h2', num:'6.8', text:'Lempel–Ziv coding'},
+{t:'p', text:'Huffman coding has one practical weakness, and it is not its length. It needs the probabilities <em>before</em> it can build the tree, and for a stream arriving over a wire nobody knows them in advance. A <b>universal</b> code is one that reaches the entropy without being told the source, and the Lempel–Ziv algorithm is the one in use everywhere.'},
+{t:'box', kind:'def', hd:'The algorithm', html:'Read the stream once. Each time, take the <b>shortest run of bits not seen before</b> and store it in a dictionary. Because it is the shortest new one, everything but its last bit is already stored — so it is sent as a <b>pointer</b> to that earlier entry followed by the one new bit, the <b>innovation</b>. The decoder builds the same dictionary from the same blocks in the same order, so the dictionary is never transmitted.'},
+{t:'ex', hd:'Example 6.4 — parsing and sending a stream', rows:[
+ ['Given','The stream $0\\;1\\;00\\;011\\;1\\ldots$, with $0$ and $1$ held in the dictionary at positions $1$ and $2$.'],
+ ['Method','Parse left to right into pieces not seen before, then send each piece as (position of its start, new bit).'],
+ ['Solution','$00$ takes position $3$: its start $0$ is at position $1$ and its new bit is $0$, so with four-bit blocks it goes as $001\\,0$. Next $011$ takes position $4$: its start $01$ is at position $4$… so it is sent as $100\\,1$.'],
+ ['Decoding','Receive $1101$. The last bit is the innovation, $1$. The first three, $110$, are $6$ in binary, so the piece is entry $6$ followed by $1$ — and entry $6$ is already in the decoder\'s own dictionary.'],
+ ['Check','Seven pieces at four bits each cost $28$ bits where the raw stream was $18$. The method <em>loses</em> on a short stream, and that is not a fault: the dictionary has to be paid for before it can pay back. In practice the block is $12$ bits, giving $2^{12}=4096$ entries, and a long file compresses to roughly two thirds of its size.']
+]},
+{t:'box', kind:'ok', hd:'Optimal against universal', html:'Huffman is optimal but not universal: no prefix code on single symbols beats it, and it cannot start until the probabilities are known. Lempel–Ziv is universal but reaches the limit only in the long run. That trade is the whole difference between them, and it is why the second is what compresses an archive.'},
+
+{t:'h2', num:'6.9', text:'The discrete memoryless channel'},
+{t:'p', text:'The chapter so far has been about the source alone. The rest is about what a channel does to it, and the first job is to write a channel down in a form that can be calculated with. A <b>discrete memoryless channel</b> takes one symbol from a finite input alphabet and produces one from a finite output alphabet. <b>Discrete</b> because both alphabets are finite; <b>memoryless</b> because the output depends only on the input sent at that moment.'},
+{t:'eqbox', cap:'The channel, and what the transmitter adds', tex:[
+ 'p(y_k\\mid x_j)=P\\bigl(Y=y_k\\mid X=x_j\\bigr),\\qquad\\sum_{k=0}^{K-1}p(y_k\\mid x_j)=1\\ \\ \\text{for every }j',
+ 'p(x_j,y_k)=p(y_k\\mid x_j)\\,p(x_j),\\qquad p(y_k)=\\sum_{j=0}^{J-1}p(y_k\\mid x_j)\\,p(x_j)'],
+ after:'The transition probabilities collected into a matrix, one row per input, are the <b>channel matrix</b>. Every <em>row</em> sums to one, because something must come out when a symbol goes in; the columns do not, and expecting them to is the usual first mistake. The <b>input distribution</b> $p(x_j)$ is not part of the channel — it belongs to the transmitter, and it is chosen.'},
+{t:'box', kind:'def', hd:'The binary symmetric channel', html:'Two inputs, two outputs, and one number: the probability $p$ that a bit is flipped, called the <b>crossover probability</b>. Its matrix is $\\begin{bmatrix}1-p&p\\\\ p&1-p\\end{bmatrix}$. It is not an abstraction invented for this chapter — the binary receiver of chapter 2, seen from outside, <em>is</em> a binary symmetric channel with $p=Q\\!\\left(\\sqrt{2E_b/N_0}\\right)$. With equally likely inputs the output is equally likely whatever $p$ is, even at $p=\\tfrac12$ where the channel is destroying everything, so a balanced output is no evidence that anything survived.'},
+
+{t:'h2', num:'6.10', text:'Mutual information'},
+{t:'p', text:'Before anything arrives, the uncertainty about the input is $H(X)$. Then one output symbol arrives, and it rarely settles the question but it does change the odds. What remains is an entropy like any other, averaged over which output actually came.'},
+{t:'eqbox', cap:'Conditional entropy, and the information that got through', tex:[
+ 'H(X\\mid Y)=\\sum_{k}H(X\\mid Y=y_k)\\,p(y_k)=-\\sum_{k}\\sum_{j}p(x_j,y_k)\\log_2 p(x_j\\mid y_k)',
+ 'I(X;Y)=H(X)-H(X\\mid Y)=H(Y)-H(Y\\mid X)',
+ 'H(X,Y)=H(X)+H(Y)-I(X;Y)'],
+ after:'Read the middle line in words: <b>how much doubt the arrival removed</b>, in bits, per use of the channel. The second form is the one used, because $H(Y\\mid X)$ comes straight off the channel matrix while $H(X\\mid Y)$ needs Bayes\' rule first.'},
+{t:'box', kind:'def', hd:'Three properties', html:'<b>Symmetry.</b> $I(X;Y)=I(Y;X)$. Bayes\' rule gives $p(x_j\\mid y_k)/p(x_j)=p(y_k\\mid x_j)/p(y_k)$, and substituting turns one sum into the other. What the output says about the input equals what the input says about the output — which is why the quantity is called <em>mutual</em>.<br><b>Non-negativity.</b> $I(X;Y)\\ge0$, with equality exactly when $X$ and $Y$ are independent. An observation never leaves you knowing less than before.<br><b>Joint entropy.</b> Adding $H(X)$ and $H(Y)$ counts the shared part twice, so it is subtracted once. That is the whole content of the third line.'},
+{t:'ex', hd:'Example 6.5 — the binary symmetric channel at $p=0.1$', rows:[
+ ['Given','A BSC with $p=0.1$ and equally likely inputs.'],
+ ['Find','$H(X)$, $H(Y\\mid X)$, $H(Y)$ and $I(X;Y)$.'],
+ ['Method','$H(Y\\mid X)$ comes off the matrix: whichever symbol goes in, the output distribution is $(0.9,0.1)$ in some order. $H(Y)$ needs the output distribution first.'],
+ ['Solution','$H(X)=1$ bit. $H(Y\\mid X)=H(0.1)=-0.1\\log_2 0.1-0.9\\log_2 0.9=0.4690$ bits. The output is equally likely, so $H(Y)=1$ bit, and $I(X;Y)=1-0.4690=0.5310$ bits per use.'],
+ ['Check','One bit was offered and just over half a bit arrived. The missing $0.4690$ bits were not delayed or corrupted — they were destroyed, and no receiver however clever recovers them. The joint entropy is $1+1-0.5310=1.4690$ bits, and at $p=0.25$ the shared part falls to $0.1887$ while the total rises to $1.8113$: a noisier channel does not destroy uncertainty, it moves it out of the shared part.']
+]},
+{t:'box', kind:'warn', hd:'The two conditional entropies are not the same thing', html:'$H(Y\\mid X)$ is the uncertainty about the <em>output</em> given the input, and for the BSC it is $H(p)$ whatever the transmitter does — a property of the channel alone. $H(X\\mid Y)$ is the uncertainty about the <em>input</em> given the output, and it depends on the input distribution too. $I(X;Y)=I(Y;X)$ is a statement about one number; it does not make the two ends interchangeable.'},
+
+{t:'h2', num:'6.11', text:'Channel capacity'},
+{t:'p', text:'Mutual information measures one transmitter on one channel; change how often each symbol is sent and the number moves. The channel is fixed and the input distribution is the engineer\'s to choose, so take the best choice. What comes out then depends on the channel matrix alone, because the one free thing has been optimised away: <b>capacity is a property of the channel, and mutual information is not.</b>'},
+{t:'eqbox', cap:'Capacity, and the capacity of the BSC', tex:[
+ 'C=\\max_{\\{p(x_j)\\}}I(X;Y)\\quad\\text{bits per channel use}',
+ 'C_{\\text{BSC}}=1-H(p),\\qquad H(p)=-p\\log_2 p-(1-p)\\log_2(1-p)'],
+ after:'For the BSC, $H(Y\\mid X)=H(p)$ whatever the transmitter does, and $H(Y)\\le1$ bit with equality when the output is equally likely — which equally likely inputs deliver. So the maximum sits at $p(x_0)=\\tfrac12$ and the two pieces subtract. The unit is bits per <em>use</em> of the channel, not bits per second; multiply by the number of uses a second to reach a rate.'},
+{t:'figrow', items:[
+ {svg:()=>capfig(), cap:'The capacity of the binary symmetric channel. Worth a full bit at both ends — at $p=1$ every bit is flipped, which the receiver simply undoes — and zero at $p=\\tfrac12$, the <b>useless channel</b>, where the output is independent of the input.'},
+ {svg:()=>zfig(), cap:'The Z-channel of Example 6.6. Its mutual information peaks at $q=0.6$, not at a half, which is what an asymmetric channel does: the transmitter should favour the symbol that survives.'}
+]},
+{t:'p', text:'The curve is flat near $p=0$: a channel with one error in a thousand has capacity $0.9886$ bits, so the first errors cost almost nothing. It then falls away steeply — at $p=0.11$ the capacity is already $0.500$. Halving the error probability of an already-good channel buys very little, and the effort belongs where the curve is steep.'},
+{t:'ex', hd:'Example 6.6 — the capacity of the Z-channel', rows:[
+ ['Given','A $0$ always arrives as a $0$; a $1$ arrives correctly half the time and as a $0$ otherwise. Write $P(X=0)=q$.'],
+ ['Find','The capacity, and the input distribution that achieves it.'],
+ ['Method','Nothing is symmetric, so the equally likely input is no longer the right guess. Form $I(X;Y)$ as a function of $q$ and maximise it.'],
+ ['Solution','$P(Y=0)=q+\\tfrac12(1-q)=\\tfrac12(1+q)$, and $H(Y\\mid X)=q(0)+(1-q)(1)=1-q$ because a transmitted $0$ leaves nothing in doubt. Subtracting gives $I(X;Y)=q-\\tfrac12(1+q)\\log_2(1+q)-\\tfrac12(1-q)\\log_2(1-q)$. Setting the derivative to zero collapses the logarithmic terms to $\\tfrac12\\log_2\\frac{1-q}{1+q}=-1$, so $\\frac{1-q}{1+q}=\\frac14$ and $q^{*}=0.6$.'],
+ ['Check','$C=0.3219$ bits per channel use, and $0.3219=\\log_2\\tfrac54$ exactly — a check on the arithmetic that costs nothing. The optimum is not the balanced input: the transmitter should send the reliable symbol three times in five. A transmitter that guesses $q=0.5$ still gets $0.3113$ bits, losing about $3\\%$.']
+]},
+{t:'box', kind:'ok', hd:'The channel coding theorem', html:'If the transmission rate satisfies $R_b<C$, there is a coding scheme whose probability of error is as small as required. If $R_b>C$, there is not — no scheme, however long or however clever. <b>An error-free data rate can never exceed the capacity.</b> The theorem says a code exists; it does not say what the code is, how long its blocks must be, or what the decoder costs. Finding codes that come close and can also be decoded took the fifty years after it was proved.'},
+
+{t:'h2', num:'6.12', text:'The bandlimited channel'},
+{t:'p', text:'Everything above counted symbols. A real channel is given instead as a bandwidth in hertz, an average transmitted power and a noise density. Its capacity is one of the most quoted results in engineering.'},
+{t:'eqbox', cap:'The information capacity law', tex:[
+ 'C=B\\log_2\\!\\left(1+\\frac{P}{N_0B}\\right)\\quad\\text{bits per second}',
+ '\\frac{C}{B}=\\log_2\\!\\left(1+\\frac{E_b}{N_0}\\frac{C}{B}\\right)\\quad\\Longrightarrow\\quad\\frac{E_b}{N_0}=\\frac{2^{C/B}-1}{C/B}'],
+ after:'$B$ is the bandwidth, $P$ the average transmitted power and $N_0B$ the noise power in the band. Writing $P=E_bC$ — power is energy per bit times bits per second — and dividing by $B$ gives the second line, in which $C/B$ is the <b>bandwidth efficiency</b> in bits per second per hertz.'},
+{t:'box', kind:'def', hd:'Read the two knobs', html:'$C$ grows <b>linearly</b> with bandwidth and only <b>logarithmically</b> with power. Doubling the bandwidth at fixed noise density roughly doubles the rate; doubling the power adds one bit per second per hertz at best and much less when the ratio is already large. Bandwidth is the better buy, and it is the one that is scarce and regulated. At $C/B=1$ the requirement is $E_b/N_0=1$, which is $0$ dB; at $C/B=2$ it is $1.5$, which is $1.76$ dB.'},
+{t:'eqbox', cap:'The Shannon limit', tex:[
+ '\\lim_{x\\to0}\\frac{2^{x}-1}{x}=\\ln 2,\\qquad \\frac{E_b}{N_0}\\bigg|_{\\min}=\\ln 2=0.693=-1.59\\ \\mathrm{dB}'],
+ after:'Spend bandwidth freely — let $C/B\\to0$ — and the energy per bit a system needs falls, but not to nothing. No system of any kind communicates reliably below $-1.59$ dB: not a better code, not a better modulation, not a better receiver.'},
+{t:'fig', svg:()=>shannonfig(),
+ cap:'Bandwidth efficiency against energy per bit. Every working system sits below the curve and to the right of the line; the region to the left of $-1.59$ dB has never been occupied and never will be. Climbing from one bit per hertz to six costs about $14$ dB, and the climb steepens the whole way.'},
+{t:'box', kind:'warn', hd:'A floor that is approached and never touched', html:'Reaching the limit needs infinite bandwidth, and the rate per hertz goes to zero on the way. Coherent binary PSK needs about $9.6$ dB for an error probability of $10^{-5}$, so it sits some $11$ dB above the floor. Closing that gap is what channel coding was invented for; this course stops at the uncoded schemes, which is where the gap is widest and easiest to see.'},
+
+{t:'h2', num:'6.13', text:'Summary'},
 {t:'table', head:['Result','Statement','Anchor'], rows:[
  ['Self-information','$I(s_k)=-\\log_2 p_k$','PS CH12.1.1'],
  ['Entropy','$H(S)=-\\sum_k p_k\\log_2 p_k$','PS CH12.1.1'],

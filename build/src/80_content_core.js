@@ -14,7 +14,7 @@ const CONTENT = {
   META: {
     course:'Digital Communications',
     title:'Digital Communications',
-    version:'1.0',
+    version:'1.2',
     language:'Academic English',
     /* Both are stated once on the page, in the scene where they are first
        needed, and repeated here so the conventions panel can show them without
@@ -112,7 +112,12 @@ const CONTENT = {
     H:{ s:'H(S)', d:'Entropy: the average information a symbol carries, in bits a symbol. Bounded by $0$ and $\\log_2 K$.' },
     Lbar:{ s:'\\bar{L},\\;l_k', d:'Average codeword length and the length of the codeword for symbol $k$.' },
     eta:{ s:'\\eta', d:'Coding efficiency, $H(S)/\\bar{L}$. Never above one.' },
-    sig2:{ s:'\\sigma^{2}', d:'Variance of the codeword length about $\\bar{L}$. Separates two Huffman codes that share an average.' }
+    sig2:{ s:'\\sigma^{2}', d:'Variance of the codeword length about $\\bar{L}$. Separates two Huffman codes that share an average.' },
+    pyx:{ s:'p(y_k\\mid x_j)', d:'Transition probability of a discrete memoryless channel. Collected into the channel matrix, whose every row sums to one.', go:'m6-dmc' },
+    Hcond:{ s:'H(X\\mid Y)', d:'Conditional entropy: the uncertainty still remaining about the input after the output has been seen.', go:'m6-condent' },
+    Ixy:{ s:'I(X;Y)', d:'Mutual information, $H(X)-H(X\\mid Y)$: what the channel actually delivered, in bits per use. Symmetric and never negative.', go:'m6-mutual' },
+    Ccap:{ s:'C', d:'Channel capacity, the largest $I(X;Y)$ over all input distributions. For the binary symmetric channel, $1-H(p)$.', go:'m6-capacity' },
+    Hp:{ s:'H(p)', d:'The binary entropy function, $-p\\log_2 p-(1-p)\\log_2(1-p)$. It measures a two-symbol source and also the noise a binary symmetric channel adds.' }
   },
 
   /* ---- practice questions: open-ended, in the form they are asked in ----

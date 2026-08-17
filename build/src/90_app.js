@@ -85,10 +85,15 @@ const RENDER = (() => {
         </div>
         <div class="dr-page">${drillHTML(qs[i])}</div>`; },
     /* The taxonomy of a module's question types, read from CONTENT.DRILLTYPES. */
-    drilltypes: b => { const ts=(CONTENT.DRILLTYPES[b.module]||[]);
+    /* `from` and `to` show a slice of the list, for a module whose taxonomy is
+       too long to read on one page. The letters keep counting from where the
+       slice starts, so a shape has one label wherever it is shown. */
+    drilltypes: b => { const all=(CONTENT.DRILLTYPES[b.module]||[]);
+        const off=b.from||0;
+        const ts=(b.from!=null||b.to!=null) ? all.slice(off, b.to) : all;
         return `<div class="dr-types" style="${b.style||''}">${ts.map((ty,i)=>
           `<div class="dr-type">
-             <div class="dr-type-h"><span class="dr-type-k">${String.fromCharCode(65+i)}</span>${md(ty.name)}</div>
+             <div class="dr-type-h"><span class="dr-type-k">${String.fromCharCode(65+off+i)}</span>${md(ty.name)}</div>
              <div class="dr-type-asks">${symLinks(md(ty.asks))}</div>
              <ol class="dr-type-m">${ty.method.map(s=>`<li>${symLinks(md(s))}</li>`).join('')}</ol>
              ${ty.go?`<a class="dr-type-go" data-act="goto" data-id="${ty.go}">where this is taught →</a>`:''}

@@ -492,9 +492,18 @@ h3.sub{
 figure.fig{ margin:0; display:flex; flex-direction:column; gap:7px; min-height:0; }
 figure.fig svg{ display:block; width:100%; height:auto; }
 #scene-host svg{ display:block; width:100%; height:auto; }
-/* an axis name is typeset mathematics inside the figure; the small svg pieces a
-   formula uses for roots and stretched brackets keep their own intrinsic size */
-figure.fig .katex svg, #scene-host .katex svg{ display:inline; width:auto; height:auto; }
+/* An axis name is typeset mathematics inside the figure, and the two rules above
+   would stretch the small svg pieces a formula uses for roots and for stretched
+   brackets to the width of the column. Those pieces are given back exactly the
+   geometry KaTeX sets for them — absolutely positioned, full width of their own
+   container, height inherited from it — rather than a size of our choosing:
+   KaTeX draws a tall square root as a surd whose tail is one of these svgs, and
+   any other geometry collapses the surd onto the expression under it. The rule
+   is restated here rather than left to KaTeX only because `#scene-host svg`
+   carries an id and would otherwise win. */
+figure.fig .katex svg, #scene-host .katex svg{
+  display:block; position:absolute; width:100%; height:inherit;
+}
 /* The rule above makes every svg in a scene a full-width figure. The book icon
    in the eyebrow is not a figure and has to opt out by the same id, or it fills
    the column. */

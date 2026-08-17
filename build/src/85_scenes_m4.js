@@ -52,6 +52,10 @@ function figRegions(pts, opts){
       a.point(pts[0].x+nz[2*i], pts[0].y+nz[2*i+1], {color:C.noise, r:1.7, ring:'none'});
   }
   pts.forEach((p,k)=>a.point(p.x,p.y,{color:PTCOL[k % PTCOL.length], r:6}));
+  /* A scene that needs to mark something on top of the regions — a boundary,
+     a label — draws it here, on the same axes, rather than building a second
+     figure that would have to repeat the grid. */
+  if(opts.over) opts.over(a);
   return a.svg();
 }
 
@@ -437,6 +441,47 @@ const SC = [
     {t:'legend', items:[['err','minimum-distance bound, $M-1=7$'],
                         ['in','nearest-neighbour, $N_{\\min}=2$'],
                         ['mid','a single pairwise term']]}
+  ]}
+]},
+
+{ id:'m4-intel', module:'M4', nav:'The intelligent bound', title:'Only the neighbours the region touches',
+  objective:'Tighten the union bound by dropping the points whose bisectors form no face of the region.',
+  keywords:'intelligent union bound decision region faces neighbours tighter maximum likelihood',
+  src:'CH9 s.59–60', steps:3, blocks:[
+  {t:'eyebrow', text:'Module 4 · The union bound'},
+  {t:'title', text:'Only the neighbours the region touches'},
+  {t:'cols', ratio:'c-6-6', vcenter:true, left:[
+    {t:'body', html:'<p>The union bound adds one term for every other signal point. Look at what most of those points are doing. To land nearer a far-away point, the observation has to leave its own region first — and it leaves through a <b>face</b>, a piece of boundary shared with one particular neighbour. A point that shares no face with the region cannot be the first one reached.</p>'},
+    {t:'note', kind:'def', head:'The set that matters', html:'Write $\\mathcal{N}(k)$ for the neighbours of $\\mathbf{s}_k$ whose perpendicular bisectors form the faces of the decision region $R_k$. These are the only points that bound the region, so they are the only ones an error has to cross.'},
+    {t:'reveal', at:1, items:[
+      {t:'body', html:'<p>Leaving $R_k$ means crossing at least one of its faces, so the union over the faces already covers every error. Summing over that smaller set is still an upper bound:</p>'},
+      {t:'eq', key:true, label:'intelligent union bound', tex:'P(\\text{error}\\mid\\mathbf{s}_k)\\le\\sum_{j\\in\\mathcal{N}(k)}Q\\!\\left(\\sqrt{\\frac{d_{kj}^{2}}{2N_0}}\\right)'},
+      {t:'small', html:'Fewer terms than the union bound, every term identical to one the union bound had, and the same argument behind it. It is simply the union taken over a set that is enough.'}
+    ]},
+    {t:'reveal', at:2, items:[
+      {t:'wex', head:'Four points in a square', rows:[
+        ['Region','The top-right point decides for the whole first quadrant. That region has two faces: one shared with the point to its left, one with the point below.'],
+        ['Dropped','The diagonal point shares no face. Its bisector is the line $\\psi_2=-\\psi_1$, which never touches the first quadrant.'],
+        ['Bound','$P_e\\le 2Q\\!\\left(\\sqrt{d^{2}/2N_0}\\right)$, where the union bound also carried $Q\\!\\left(\\sqrt{2d^{2}/2N_0}\\right)$.'],
+        ['At $d^{2}/2N_0=9$','$2.70\\times10^{-3}$ against the union bound\'s $2.71\\times10^{-3}$ and the minimum-distance bound\'s $4.05\\times10^{-3}$.']
+      ]}
+    ]},
+    {t:'reveal', at:3, items:[
+      {t:'note', kind:'warn', head:'Not the same statement as the nearest-neighbour form', html:'Here the two give the same expression, because both faces happen to sit at $d_{\\min}$. They still say different things. This one <em>counts faces</em> and is an upper bound, so a system built to it is safe. The nearest-neighbour form of the last scene <em>counts points at $d_{\\min}$</em> and is an approximation, so it can sit below the truth. They part company whenever a face is shared with a point further away than $d_{\\min}$ — that face is a real way out of the region, and only this bound keeps it.'}
+    ]}
+  ], right:[
+    {t:'fig', frame:true, svg:()=>figRegions(
+      [{x:1.2,y:1.2},{x:-1.2,y:1.2},{x:-1.2,y:-1.2},{x:1.2,y:-1.2}],
+      {lim:2.6, over:a=>{
+        /* the two faces of the first-quadrant region, and the bisector that
+           bounds nothing — drawn from the geometry, not placed by hand */
+        a.poly([[0,0],[0,2.6]], {color:C.h, width:3.4});
+        a.poly([[0,0],[2.6,0]], {color:C.h, width:3.4});
+        a.poly([[-1.95,1.95],[1.95,-1.95]], {color:C.muted, width:1.6, dash:'5 4'});
+        a.note(0.16, 2.16, '\\text{face}', {tex:true, fs:12, color:C.h});
+        a.note(-2.50, 1.55, '\\text{no face}', {tex:true, fs:12, color:C.muted});
+      }}),
+      caption:'The two solid boundaries are the faces of the top-right region, each shared with one neighbour. The dashed line is the bisector against the diagonal point: it separates two other regions and never touches this one, so the term the union bound spent on it was buying nothing.'}
   ]}
 ]},
 

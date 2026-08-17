@@ -183,6 +183,46 @@ def _nmin(pts):
     return n / len(pts)
 
 
+def _drill_faces(pts, k):
+    """The neighbours of pts[k] whose bisectors give its region a face.
+
+    The solution counts them by reading the picture. This finds them instead:
+    j gives a face when some point of the bisector between k and j is nearer to
+    those two than to every other point. The bisector is walked in the plane,
+    so a collinear constellation is handled by the same code as a planar one.
+    """
+    p = np.asarray([(x[0], x[1]) for x in pts], dtype=float)
+    out = []
+    for j in range(len(p)):
+        if j == k:
+            continue
+        mid = (p[k] + p[j]) / 2
+        d = p[j] - p[k]
+        t = np.array([-d[1], d[0]])
+        t = t / np.linalg.norm(t)
+        span = 40 * float(np.linalg.norm(d))
+        for s in np.linspace(-span, span, 4001):
+            x = mid + s * t
+            near = np.linalg.norm(p - x, axis=1)
+            if near[k] <= min(near[m] for m in range(len(p))
+                              if m not in (k, j)) - 1e-9:
+                out.append(j)
+                break
+    return out
+
+
+def _drill_intelligent(pts, arg_of_d):
+    """The intelligent union bound over an equally likely alphabet."""
+    total = 0.0
+    for k in range(len(pts)):
+        for j in _drill_faces(pts, k):
+            total += _Q(arg_of_d(_dist(pts[k], pts[j])))
+    return total / len(pts)
+
+
+_D421 = [(0.0, 0.0), (1.0, 0.0), (2.2, 0.0)]
+
+
 def _pe(pts, esn0_db):
     """The nearest-neighbour estimate, from the geometry alone."""
     n0 = 10 ** (-esn0_db / 10)
@@ -278,6 +318,62 @@ def _var(ps, minvar=True):
 
 _S3 = [0.7, 0.2, 0.1]
 _DYADIC = [0.5, 0.25, 0.125, 0.125]
+def _bisect(f, lo, hi, n=200):
+    """The root of a monotone f on [lo, hi], for a solution that inverts one."""
+    for _ in range(n):
+        mid = (lo + hi) / 2
+        if f(mid) < 0:
+            lo = mid
+        else:
+            hi = mid
+    return lo
+
+
+def _Hb(p):
+    """The binary entropy function, from the definition."""
+    if p <= 0 or p >= 1:
+        return 0.0
+    return -(p * math.log2(p) + (1 - p) * math.log2(1 - p))
+
+
+def _bsc_capacity(p):
+    """Capacity of the BSC by maximising I(X;Y) over the input distribution.
+
+    The solution quotes 1 - H(p), which is the closed form. Searching the input
+    distribution instead re-derives both the value and the claim that the
+    maximum sits at equally likely inputs.
+    """
+    best_q, best = 0.0, -1.0
+    for i in range(0, 4001):
+        q = i / 4000
+        py0 = (1 - p) * q + p * (1 - q)
+        hy = _H([py0, 1 - py0])
+        i_xy = hy - _Hb(p)
+        if i_xy > best:
+            best, best_q = i_xy, q
+    return best, best_q
+
+
+def _lz_dictionary(pieces):
+    """Replay a Lempel-Ziv parse and return, for each piece, the position of the
+    entry its pointer names and the position the piece itself takes.
+
+    The dictionary starts with the two single bits, as the encoder of the
+    question does. Nothing is read from the solution: the pointer is found by
+    looking the piece's own start up in the dictionary built so far.
+    """
+    book = {"0": 1, "1": 2}
+    out = []
+    for piece in pieces:
+        start = piece[:-1]
+        out.append((book.get(start), len(book) + 1))
+        book[piece] = len(book) + 1
+    return out
+
+
+_D621 = ["00", "01", "011", "10"]
+
+
 _FIVE = [0.4, 0.2, 0.2, 0.1, 0.1]
 _SIX = [0.3, 0.25, 0.2, 0.12, 0.08, 0.05]
 
@@ -733,6 +829,30 @@ CHECKS: list[dict] = [
      "derive": lambda: 2 * math.sin(math.pi / 6), "tol": 1e-9},
     {"name": "D4-20(a) amplitude of the four-level line", "stated": 0.44721,
      "derive": lambda: math.sqrt(1 / 5), "tol": 1e-5},
+    {"name": "D4-21(a) faces of the left-hand region", "stated": 1,
+     "derive": lambda: len(_drill_faces(_D421, 0))},
+    {"name": "D4-21(a) faces of the middle region", "stated": 2,
+     "derive": lambda: len(_drill_faces(_D421, 1))},
+    {"name": "D4-21(a) faces of the right-hand region", "stated": 1,
+     "derive": lambda: len(_drill_faces(_D421, 2))},
+    {"name": "D4-21(c) the intelligent bound", "stated": 1.006e-3,
+     "derive": lambda: _drill_intelligent(_D421, lambda d: 3.0 * d),
+     "tol": 1e-3},
+    {"name": "D4-21(c) the nearest-neighbour estimate beside it",
+     "stated": 8.999e-4,
+     "derive": lambda: _nmin(_D421) * _Q(3.0 * _dmin(_D421)), "tol": 1e-3},
+    {"name": "D4-21(c) N_min of the three-point line", "stated": 0.66667,
+     "derive": lambda: _nmin(_D421), "tol": 1e-4},
+    {"name": "D4-21(d) how far the estimate sits below the bound, per cent",
+     "stated": 12.0,
+     "derive": lambda: (_drill_intelligent(_D421, lambda d: 3.0 * d)
+                        - _nmin(_D421) * _Q(3.0 * _dmin(_D421)))
+         / (_nmin(_D421) * _Q(3.0 * _dmin(_D421))) * 100, "tol": 3e-2},
+    {"name": "D4-21 check: minimum-distance bound", "stated": 2.700e-3,
+     "derive": lambda: 2 * _Q(3.0), "tol": 1e-3},
+    {"name": "D4-21 check: the outer pair contributes Q(6.6)", "stated": 2.1e-11,
+     "derive": lambda: _Q(6.6), "tol": 3e-2},
+
     {"name": "D4-20(c) ratio of the Q arguments", "stated": 1.58114,
      "derive": lambda: math.sqrt(2 / 0.8), "tol": 1e-5},
 
@@ -929,6 +1049,60 @@ CHECKS: list[dict] = [
     {"name": "D6-20 efficiency after blocking by two", "stated": 0.9255,
      "derive": lambda: _H([0.8, 0.2]) /
          (_abar([a*b for a in [0.8, 0.2] for b in [0.8, 0.2]])/2), "tol": 1e-4},
+
+    {"name": "D6-21(a) position taken by the piece 011", "stated": 5,
+     "derive": lambda: _lz_dictionary(_D621)[2][1]},
+    {"name": "D6-21(b) pointer for the piece 011", "stated": 4,
+     "derive": lambda: _lz_dictionary(_D621)[2][0]},
+    {"name": "D6-21(b) pointer for the piece 10", "stated": 2,
+     "derive": lambda: _lz_dictionary(_D621)[3][0]},
+    {"name": "D6-21(d) position the decoded piece takes", "stated": 7,
+     "derive": lambda: len(_D621) + 2 + 1},
+    {"name": "D6-22(c) output probability of y0", "stated": 0.62,
+     "derive": lambda: 0.9 * 0.6 + 0.2 * 0.4, "tol": 1e-9},
+    {"name": "D6-22(b) the four joint probabilities sum to one", "stated": 1.0,
+     "derive": lambda: 0.9 * 0.6 + 0.1 * 0.6 + 0.2 * 0.4 + 0.8 * 0.4,
+     "tol": 1e-9},
+    {"name": "D6-22(d) H(Y|X) of the asymmetric channel", "stated": 0.5702,
+     "derive": lambda: 0.6 * _Hb(0.1) + 0.4 * _Hb(0.2), "tol": 1e-4},
+    {"name": "D6-23(a) H(0.2)", "stated": 0.7219,
+     "derive": lambda: _Hb(0.2), "tol": 1e-4},
+    {"name": "D6-23(c) mutual information at p=0.2", "stated": 0.2781,
+     "derive": lambda: _bsc_capacity(0.2)[0], "tol": 1e-3},
+    {"name": "D6-23 check: equally likely inputs reach the maximum",
+     "stated": 0.5, "derive": lambda: _bsc_capacity(0.2)[1], "tol": 1e-3},
+    {"name": "D6-24(a) capacity of the BSC at p=0.05", "stated": 0.7136,
+     "derive": lambda: _bsc_capacity(0.05)[0], "tol": 1e-3},
+    {"name": "D6-24(b) that capacity in kbit/s", "stated": 713.6,
+     "derive": lambda: (1 - _Hb(0.05)) * 1000, "tol": 1e-4},
+    {"name": "D6-24(d) largest crossover that still permits 800 kbit/s",
+     "stated": 0.0311,
+     "derive": lambda: _bisect(lambda p: _Hb(p) - 0.2, 1e-9, 0.5), "tol": 3e-3},
+    {"name": "D6-25(a) crossover of BPSK at 6 dB", "stated": 2.39e-3,
+     "derive": lambda: _Q(math.sqrt(2 * 10 ** 0.6)), "tol": 3e-3},
+    {"name": "D6-25(b) capacity of that channel", "stated": 0.9758,
+     "derive": lambda: _bsc_capacity(_Q(math.sqrt(2 * 10 ** 0.6)))[0],
+     "tol": 1e-3},
+    {"name": "D6-25(c) largest information rate, kbit/s", "stated": 976,
+     "derive": lambda: (1 - _Hb(_Q(math.sqrt(2 * 10 ** 0.6)))) * 1000,
+     "tol": 1e-3},
+    {"name": "D6-26(a) capacity of a 3.4 kHz line at 30 dB, kbit/s",
+     "stated": 33.9,
+     "derive": lambda: 3400 * math.log2(1 + 10 ** 3.0) / 1000, "tol": 2e-3},
+    {"name": "D6-26(b) capacity with the power doubled, kbit/s", "stated": 37.3,
+     "derive": lambda: 3400 * math.log2(1 + 2 * 10 ** 3.0) / 1000, "tol": 2e-3},
+    {"name": "D6-26(b) that gain, per cent", "stated": 10.0,
+     "derive": lambda: (math.log2(2001) / math.log2(1001) - 1) * 100,
+     "tol": 5e-3},
+    {"name": "D6-26(c) capacity with the bandwidth doubled, kbit/s",
+     "stated": 61.0,
+     "derive": lambda: 6800 * math.log2(1 + 10 ** 3.0 / 2) / 1000, "tol": 2e-3},
+    {"name": "D6-26(c) that gain, per cent", "stated": 80.0,
+     "derive": lambda: (2 * math.log2(501) / math.log2(1001) - 1) * 100,
+     "tol": 5e-3},
+    {"name": "D6-26(d) what doubling the power added, bit/s/Hz", "stated": 1.0,
+     "derive": lambda: (3400 * math.log2(2001) - 3400 * math.log2(1001)) / 3400,
+     "tol": 2e-3},
 
     {"name": "D5-20 teach: dB that would rescue 8-PSK", "stated": 0.9,
      "derive": lambda: 10 * math.log10(
