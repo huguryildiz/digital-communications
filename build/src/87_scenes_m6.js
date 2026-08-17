@@ -219,17 +219,18 @@ window.SCENES_M6 = [
   ], right:[
     {t:'fig', frame:true, svg:()=>figSelf(),
       caption:'A rare symbol carries many bits and a common one carries few. The lower curve is the first weighted by how often it happens — and the area under that weighting, summed over the alphabet, is the entropy.'},
-    {t:'small', html:'The two curves already say why the answer is an average and not a maximum: a symbol so rare that it carries twenty bits contributes almost nothing, because it almost never arrives.'}
+    {t:'small', html:'The two curves already say why the answer is an average and not a maximum. A symbol so rare that it carries twenty bits contributes almost nothing, because it almost never arrives.'}
   ]}
 ]},
 
 /* ---------------------------------------------------------------- 6.1 ---- */
-{ id:'m6-selfinfo', module:'M6', nav:'Self-information', title:'The information in one symbol',
+{ id:'m6-selfinfo', module:'M6', nav:'Self-information', title:'Self-information',
   objective:'Define self-information and give its three properties.',
   keywords:'self information logarithm bits nats hartleys properties independent',
   src:'CH10 s.4', steps:2, blocks:[
   {t:'eyebrow', text:'Module 6 · An introduction to information theory'},
-  {t:'title', text:'The information in one symbol'},
+  {t:'title', text:'Self-information'},
+  {t:'lede', text:'The information in one symbol.'},
   {t:'cols', ratio:'c-7-5', vcenter:true, left:[
     {t:'body', html:'<p>How much do you learn when a symbol arrives? If it was certain, nothing. If it was almost impossible, a great deal. So the measure has to fall as the probability rises, and it has to reach zero at probability one.</p>'},
     {t:'eq', key:true, label:'self-information',
@@ -254,12 +255,12 @@ window.SCENES_M6 = [
 ]},
 
 /* ---------------------------------------------------------------- 6.2 ---- */
-{ id:'m6-entropy', module:'M6', nav:'Entropy', title:'Entropy: the average over the alphabet',
+{ id:'m6-entropy', module:'M6', nav:'Entropy', title:'Entropy',
   objective:'Define entropy, give its bounds, and work the standard example.',
   keywords:'entropy average bits per symbol bounds maximum uniform binary entropy function',
   src:'CH10 s.5–6', steps:3, blocks:[
   {t:'eyebrow', text:'Module 6 · An introduction to information theory'},
-  {t:'title', text:'Entropy: the average over the alphabet'},
+  {t:'title', text:'Entropy'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>Self-information describes one symbol. Average it over the alphabet, weighting each symbol by how often it happens, and the result describes the source.</p>'},
     {t:'eq', key:true, label:'entropy',
@@ -289,12 +290,13 @@ window.SCENES_M6 = [
 ]},
 
 /* ---------------------------------------------------------------- 6.3 ---- */
-{ id:'m6-extension', module:'M6', nav:'Extended sources', title:'Taking symbols in blocks',
+{ id:'m6-extension', module:'M6', nav:'Extended sources', title:'Extended sources',
   objective:'Show that the n-th extension has n times the entropy.',
   keywords:'extension extended source blocks n times entropy independent',
   src:'CH10 s.7', steps:2, blocks:[
   {t:'eyebrow', text:'Module 6 · An introduction to information theory'},
-  {t:'title', text:'Taking symbols in blocks'},
+  {t:'title', text:'Extended sources'},
+  {t:'lede', text:'Taking symbols in blocks.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>Nothing forces a coder to handle one symbol at a time. Group them in $n$s and treat each block as one symbol of a new, larger alphabet. That alphabet is the <b>$n$-th extension</b>, written $S^n$, and it has $K^n$ symbols.</p>'},
     {t:'eq', key:true, label:'extension', tex:'H(S^{n})=n\\,H(S)'},
@@ -309,13 +311,13 @@ window.SCENES_M6 = [
       ]}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'ok', head:'Why bother', html:'Per symbol nothing changed — $2.3136$ over two symbols is still $1.1568$ each. What changes is what a coder can do with it. A code has to use a whole number of bits for each thing it codes, and that rounding costs less when it is spread over a block than over a single symbol. Scene $6.7$ turns that into a bound.'}
+      {t:'note', kind:'ok', head:'Why bother', html:'Per symbol nothing changed — $2.3136$ over two symbols is still $1.1568$ each. What changes is what a coder can do with it. A code has to use a whole number of bits for each thing it codes. That rounding costs less when it is spread over a block than over a single symbol. Scene $6.7$ turns that into a bound.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figBars(
       [0.49,0.14,0.07,0.14,0.04,0.02,0.07,0.02,0.01], []),
       caption:'The nine symbols of $S^2$, in the order $s_1s_1,\\,s_1s_2,\\,s_1s_3,\\,s_2s_1,\\ldots$ The dashed line is $H(S^2)=2.3136$ bits a block, exactly twice the line in the last scene.'},
-    {t:'note', kind:'warn', head:'Only because it is memoryless', html:'If the source had memory — as English does, where $q$ is followed by $u$ — the block probabilities would not be products and the entropy of the extension would be <em>less</em> than $nH(S)$. That is precisely the redundancy real compressors live on.'}
+    {t:'note', kind:'warn', head:'Only because it is memoryless', html:'If the source had memory — as English does, where $q$ is followed by $u$ — the block probabilities would not be products. The entropy of the extension would then be <em>less</em> than $nH(S)$. That is precisely the redundancy real compressors live on.'}
   ]}
 ]},
 
@@ -326,7 +328,7 @@ window.SCENES_M6 = [
   steps:0, blocks:[
   {t:'eyebrow', text:'Module 6 · An introduction to information theory'},
   {t:'title', text:'Laboratory I · Entropy of a source'},
-  {t:'body', html:'Move the probabilities of a four-symbol source and watch three things at once: the information each symbol carries, the entropy, and how far it sits below its own ceiling of $\\log_2 K$.'},
+  {t:'body', html:'Move the probabilities of a four-symbol source and watch three things at once. The display shows the information each symbol carries, the entropy, and how far it sits below its own ceiling of $\\log_2 K$.'},
   {t:'lab', id:'I'}
 ]},
 
@@ -338,7 +340,7 @@ window.SCENES_M6 = [
   {t:'eyebrow', text:'Module 6 · An introduction to information theory'},
   {t:'title', text:'What a code costs'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
-    {t:'body', html:'<p>A source encoder turns each symbol into a string of bits, called its <b>codeword</b>. There is no need for every codeword to be the same length, and the good idea of this module is that they should not be: give the common symbols short codewords and the rare ones long ones.</p>'},
+    {t:'body', html:'<p>A source encoder turns each symbol into a string of bits, called its <b>codeword</b>. There is no need for every codeword to be the same length, and the good idea of this module is that they should not be. Give the common symbols short codewords, and the rare ones long ones.</p>'},
     {t:'eq', key:true, label:'average length',
       tex:'\\bar{L}=\\sum_{k=1}^{K}p_k\\,l_k\\quad\\text{bits a symbol}'},
     {t:'small', html:'$l_k$ is the length of the codeword for symbol $k$. $\\bar{L}$ is what the code actually costs, averaged over a long message.'},
@@ -373,12 +375,13 @@ window.SCENES_M6 = [
 ]},
 
 /* ---------------------------------------------------------------- 6.5 ---- */
-{ id:'m6-prefix', module:'M6', nav:'Prefix codes', title:'Codes that can be read back',
+{ id:'m6-prefix', module:'M6', nav:'Prefix codes', title:'Prefix codes',
   objective:'Define uniquely decodable and prefix codes and separate the two.',
   keywords:'uniquely decodable prefix code instantaneous tree decoding ambiguity',
   src:'CH10 s.12–14', steps:3, blocks:[
   {t:'eyebrow', text:'Module 6 · An introduction to information theory'},
-  {t:'title', text:'Codes that can be read back'},
+  {t:'title', text:'Prefix codes'},
+  {t:'lede', text:'Codes that can be read back.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>Short codewords are worth nothing if the receiver cannot tell where one ends and the next begins. Two conditions matter, and they are not the same condition.</p>'},
     {t:'grid', cols:2, gap:'16px', items:[
@@ -397,10 +400,10 @@ window.SCENES_M6 = [
       ]}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'small', html:'<b>Code I</b> is not a prefix code — $0$ begins $00$ — and it is not uniquely decodable either: the string $00$ is both $s_3$ and $s_1s_1$. <b>Code II</b> is a prefix code. <b>Code III</b> is not a prefix code, since $0$ begins all three of the others.'}
+      {t:'small', html:'<b>Code I</b> is not a prefix code, since $0$ begins $00$. It is not uniquely decodable either: the string $00$ is both $s_3$ and $s_1s_1$. <b>Code II</b> is a prefix code. <b>Code III</b> is not a prefix code, since $0$ begins all three of the others.'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'warn', head:'Code III is the interesting one', html:'It <em>can</em> be read back: every codeword starts with the only $0$ and is then named by how many $1$s follow, so a long string parses one way and one way only. What it cannot do is decode on the fly — after reading $011$ the decoder still does not know whether it has $s_3$ or the start of $s_4$, and it has to wait for the next $0$. Uniquely decodable, but not instantaneous.'}
+      {t:'note', kind:'warn', head:'Code III is the interesting one', html:'It <em>can</em> be read back. Every codeword starts with the only $0$ and is then named by how many $1$s follow, so a long string parses one way and one way only. What it cannot do is decode on the fly. After reading $011$ the decoder still does not know whether it has $s_3$ or the start of $s_4$, and it has to wait for the next $0$. Uniquely decodable, but not instantaneous.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figTree(['0','10','110','111'],['s_1','s_2','s_3','s_4'],{w:430,h:130}),
@@ -411,12 +414,13 @@ window.SCENES_M6 = [
 ]},
 
 /* ---------------------------------------------------------------- 6.6 ---- */
-{ id:'m6-kraft', module:'M6', nav:'The Kraft inequality', title:'Which sets of lengths are possible',
+{ id:'m6-kraft', module:'M6', nav:'The Kraft inequality', title:'The Kraft inequality',
   objective:'State the Kraft inequality and show it is necessary but not sufficient.',
   keywords:'kraft inequality codeword lengths necessary sufficient prefix budget',
   src:'CH10 s.15–16', steps:3, blocks:[
   {t:'eyebrow', text:'Module 6 · An introduction to information theory'},
-  {t:'title', text:'Which sets of lengths are possible'},
+  {t:'title', text:'The Kraft inequality'},
+  {t:'lede', text:'Which sets of lengths are possible.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>Before choosing any codewords, ask whether the <em>lengths</em> can work at all. Short codewords use up the tree quickly, and there is only so much tree.</p>'},
     {t:'eq', key:true, label:'Kraft', tex:'\\sum_{k=1}^{K}2^{-l_k}\\le 1'},
@@ -442,12 +446,13 @@ window.SCENES_M6 = [
 ]},
 
 /* ---------------------------------------------------------------- 6.7 ---- */
-{ id:'m6-bound', module:'M6', nav:'How close to the entropy', title:'The bound, and how to beat the rounding',
+{ id:'m6-bound', module:'M6', nav:'How close to the entropy', title:'How close a code can get',
   objective:'State H ≤ L̄ < H+1 and show blocking closes the gap.',
   keywords:'bound entropy plus one dyadic extension converges rounding block coding',
   src:'CH10 s.17–18', steps:3, blocks:[
   {t:'eyebrow', text:'Module 6 · An introduction to information theory'},
-  {t:'title', text:'The bound, and how to beat the rounding'},
+  {t:'title', text:'How close a code can get'},
+  {t:'lede', text:'The bound, and how to beat the rounding.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>The source-coding theorem says no code beats $H(S)$. The complementary result says a prefix code always gets within one bit of it.</p>'},
     {t:'eq', key:true, label:'the two-sided bound', tex:'H(S)\\le\\bar{L}< H(S)+1'},
@@ -505,7 +510,7 @@ window.SCENES_M6 = [
       {t:'eq', key:true, tex:'\\eta=\\frac{H(S)}{\\bar{L}}=\\frac{2.1219}{2.2}=0.9645'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'ok', head:'What that number says', html:'The code spends $3.68\\%$ more bits than the source strictly needs, and no other prefix code on single symbols does better. To close the remaining gap the coder would have to work on blocks, as the last scene described — and the bound already said the gain available is at most $1/n$.'}
+      {t:'note', kind:'ok', head:'What that number says', html:'The code spends $3.68\\%$ more bits than the source strictly needs, and no other prefix code on single symbols does better. To close the remaining gap the coder would have to work on blocks, as the last scene described. And the bound already said the gain available is at most $1/n$.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figTree(['00','10','11','010','011'],HLAB,{w:470,h:150}),
@@ -516,12 +521,13 @@ window.SCENES_M6 = [
 ]},
 
 /* ---------------------------------------------------------------- 6.9 ---- */
-{ id:'m6-huffman-var', module:'M6', nav:'Ties and variance', title:'The same length, a different code',
+{ id:'m6-huffman-var', module:'M6', nav:'Ties and variance', title:'Ties and variance',
   objective:'Show Huffman is not unique and that variance separates the choices.',
   keywords:'huffman not unique ties variance codeword length minimum variance buffer',
   src:'CH10 s.21–22', steps:3, blocks:[
   {t:'eyebrow', text:'Module 6 · An introduction to information theory'},
-  {t:'title', text:'The same length, a different code'},
+  {t:'title', text:'Ties and variance'},
+  {t:'lede', text:'The same length, a different code.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>Two choices in the algorithm are free. Which of the merged pair gets $0$ is arbitrary. And when a merged symbol ties with one already in the list, either may be placed first. Different choices give different codes.</p>'},
     {t:'reveal', at:1, items:[
@@ -552,7 +558,7 @@ window.SCENES_M6 = [
   steps:0, blocks:[
   {t:'eyebrow', text:'Module 6 · An introduction to information theory'},
   {t:'title', text:'Laboratory J · Building a Huffman code'},
-  {t:'body', html:'Set the probabilities, then step through the merges one at a time. The tree, the codewords, the average length, the efficiency and the variance are all recomputed as the algorithm runs, and the tie-breaking rule can be switched to see the two codes of the last scene appear.'},
+  {t:'body', html:'Set the probabilities, then step through the merges one at a time. The tree, the codewords, the average length, the efficiency and the variance are all recomputed as the algorithm runs. The tie-breaking rule can be switched to see the two codes of the last scene appear.'},
   {t:'lab', id:'J'}
 ]},
 
@@ -568,19 +574,20 @@ window.SCENES_M6 = [
   steps:0, blocks:[
   {t:'eyebrow', text:'Module 6 · Question types'},
   {t:'title', text:'Three more shapes, for the rest of the module'},
-  {t:'lede', text:'The taxonomy at the head of the module named six shapes, all of them about the source. The rest of the module brings three more: one on the universal code of the next scene, and two on the channel. They are collected here for the same reason the first six were collected there: it is easier to read new material when the questions it will be asked are already known.'},
+  {t:'lede', text:'The taxonomy at the head of the module named six shapes, all of them about the source. The rest of the module brings three more: one on the universal code of the next scene, and two on the channel. They are collected here for the same reason the first six were collected there. It is easier to read new material when the questions it will be asked are already known.'},
   {t:'drilltypes', module:'M6', from:6, style:'grid-template-columns:repeat(3,minmax(0,1fr));gap:26px 44px'}
 ]},
 
-{ id:'m6-lz', module:'M6', nav:'Lempel–Ziv coding', title:'A code that learns the source',
+{ id:'m6-lz', module:'M6', nav:'Lempel–Ziv coding', title:'Lempel–Ziv coding',
   objective:'Show how a code reaches the entropy without being told the probabilities.',
   keywords:'lempel ziv universal coding parsing dictionary pointer innovation compression zip',
   src:'CH10 w.12', steps:3, blocks:[
   {t:'eyebrow', text:'Module 6 · Universal coding'},
-  {t:'title', text:'A code that learns the source'},
+  {t:'title', text:'Lempel–Ziv coding'},
+  {t:'lede', text:'A code that learns the source.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>Huffman coding has one practical weakness, and it is not its length. It needs the probabilities <em>before</em> it can build the tree. For a file arriving over a wire nobody knows them in advance, and measuring them means reading everything twice.</p>'},
-    {t:'note', kind:'def', head:'The Lempel–Ziv idea', html:'Read the stream once. Each time, take the <b>shortest run of bits that has not been seen before</b>, and store it. Because it is the shortest new one, everything but its last bit is already stored — so it can be sent as a <b>pointer</b> to that earlier entry plus the one new bit, the <b>innovation</b>. The dictionary is built by the encoder and rebuilt identically by the decoder, so it never has to be transmitted.'},
+    {t:'note', kind:'def', head:'The Lempel–Ziv idea', html:'Read the stream once. Each time, take the <b>shortest run of bits that has not been seen before</b>, and store it. Because it is the shortest new one, everything but its last bit is already stored. So it can be sent as a <b>pointer</b> to that earlier entry plus the one new bit, the <b>innovation</b>. The dictionary is built by the encoder and rebuilt identically by the decoder, so it never has to be transmitted.'},
     {t:'reveal', at:1, items:[
       {t:'wex', head:'Parsing a stream', rows:[
         ['Stream','$0\\;1\\;00\\;011\\;1\\ldots$, parsed left to right into pieces not seen before.'],
@@ -588,13 +595,13 @@ window.SCENES_M6 = [
         ['Sending $00$','Its first bit is the entry at position $1$, and its new bit is $0$. Send the position in binary, then the bit: $001\\,0$.'],
         ['Sending $011$','Its start $01$ is at position $4$ and its new bit is $1$, so the block is $100\\,1$.']
       ]},
-      {t:'small', html:'With a fixed block of four bits, seven pieces cost $28$ bits where the raw stream was $18$. The method <em>loses</em> on a short stream and that is not a flaw — the dictionary has to be paid for before it can pay back.'}
+      {t:'small', html:'With a fixed block of four bits, seven pieces cost $28$ bits where the raw stream was $18$. The method <em>loses</em> on a short stream, and that is not a flaw. The dictionary has to be paid for before it can pay back.'}
     ]},
     {t:'reveal', at:2, items:[
       {t:'note', kind:'ok', head:'Decoding needs nothing extra', html:'Receive the block $1101$. The last bit is the innovation, $1$. The first three bits are $110$, which is $6$ in binary, so the piece is entry $6$ followed by $1$. The decoder has entry $6$ already, because it built the same dictionary from the same blocks in the same order. Nothing about the source was ever sent.'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'warn', head:'Where it wins, and why the course meets it here', html:'The longer the stream, the longer the stored pieces become, and the more original bits each fixed-size block carries. In practice the block is $12$ bits, giving a dictionary of $2^{12}=4096$ entries, and a file compresses to roughly two thirds of its size. It is the algorithm behind the ordinary compressed archive. It belongs in this module because it reaches the same limit Huffman does — the entropy — while being told nothing about the source at all.'}
+      {t:'note', kind:'warn', head:'Where it wins, and why the course meets it here', html:'The longer the stream, the longer the stored pieces become, and the more original bits each fixed-size block carries. In practice the block is $12$ bits, giving a dictionary of $2^{12}=4096$ entries, and a file compresses to roughly two thirds of its size. It is the algorithm behind the ordinary compressed archive. It belongs in this module because it reaches the same limit Huffman does, the entropy, while being told nothing about the source at all.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figTree(['0','1','00','011'],['1','2','3','4'],{w:440,h:170}),
@@ -604,13 +611,13 @@ window.SCENES_M6 = [
 ]},
 
 /* ---------------------------------------------------------------- 6.6 ---- */
-{ id:'m6-dmc', module:'M6', nav:'The discrete channel', title:'Writing a channel down',
+{ id:'m6-dmc', module:'M6', nav:'The discrete channel', title:'The discrete memoryless channel',
   objective:'Define the discrete memoryless channel and its matrix.',
   keywords:'discrete memoryless channel transition probabilities channel matrix joint marginal',
   src:'CH10 w.13', steps:3, blocks:[
   {t:'eyebrow', text:'Module 6 · The discrete memoryless channel'},
-  {t:'title', text:'Writing a channel down'},
-  {t:'lede', text:'The module so far has been about the source alone. The rest is about what a channel does to it — and the first job is to say what a channel <em>is</em>, in a form that can be calculated with.'},
+  {t:'title', text:'The discrete memoryless channel'},
+  {t:'lede', text:'The module so far has been about the source alone. The rest is about what a channel does to it. The first job is to say what a channel <em>is</em>, in a form that can be calculated with.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>A <b>discrete memoryless channel</b> takes one symbol from a finite input alphabet and produces one from a finite output alphabet. It is described by one number for each pair:</p>'},
     {t:'eq', key:true, label:'transition probability', tex:'p(y_k\\mid x_j)=P\\bigl(Y=y_k\\mid X=x_j\\bigr)'},
@@ -622,7 +629,7 @@ window.SCENES_M6 = [
       {t:'small', html:'Every <em>row</em> sums to one, because something must come out when a symbol goes in. The columns do not, and expecting them to is the usual first mistake.'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'warn', head:'The matrix is not enough on its own', html:'It says what the channel does to each symbol. It does not say what comes out, because that depends on how often each symbol is sent — and that is the transmitter\'s business, not the channel\'s. The next scene adds it.'}
+      {t:'note', kind:'warn', head:'The matrix is not enough on its own', html:'It says what the channel does to each symbol. It does not say what comes out, because that depends on how often each symbol is sent. That is the transmitter\'s business, not the channel\'s. The next scene adds it.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figChannel([[0.8,0.2],[0.3,0.7]],['x_0','x_1'],['y_0','y_1'],
@@ -632,12 +639,13 @@ window.SCENES_M6 = [
   ]}
 ]},
 
-{ id:'m6-inputdist', module:'M6', nav:'What comes out', title:'The transmitter has a say too',
+{ id:'m6-inputdist', module:'M6', nav:'What comes out', title:'The input distribution',
   objective:'Combine the channel matrix with an input distribution to get the joint and output distributions.',
   keywords:'input distribution a priori joint pmf marginal output distribution transmitter choice',
   src:'CH10 w.13', steps:3, blocks:[
   {t:'eyebrow', text:'Module 6 · The discrete memoryless channel'},
-  {t:'title', text:'The transmitter has a say too'},
+  {t:'title', text:'The input distribution'},
+  {t:'lede', text:'The transmitter has a say too.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>Add one more list of numbers: how often the transmitter sends each input symbol. These are the <b>a priori probabilities</b>, and they are chosen, not given.</p>'},
     {t:'eq', tex:'p(x_j)=P(X=x_j),\\qquad j=0,1,\\ldots,J-1'},
@@ -656,7 +664,7 @@ window.SCENES_M6 = [
       ]}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'ok', head:'Two things, kept apart', html:'The matrix belongs to the <b>channel</b> and the engineer cannot change it. The input distribution belongs to the <b>transmitter</b> and the engineer chooses it. Everything from here to the end of the module is about what the second can buy against a fixed first — and that split is the reason capacity, when it arrives, is defined as a maximum.'}
+      {t:'note', kind:'ok', head:'Two things, kept apart', html:'The matrix belongs to the <b>channel</b> and the engineer cannot change it. The input distribution belongs to the <b>transmitter</b> and the engineer chooses it. Everything from here to the end of the module is about what the second can buy against a fixed first. That split is the reason capacity, when it arrives, is defined as a maximum.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>{
@@ -692,7 +700,7 @@ window.SCENES_M6 = [
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>One channel is used more than all the others put together. It has two inputs, two outputs, and one number: the probability $p$ that a bit is flipped, called the <b>crossover probability</b>.</p>'},
     {t:'eq', key:true, label:'the BSC matrix', tex:'\\mathbf{P}=\\begin{bmatrix}1-p&p\\\\ p&1-p\\end{bmatrix}'},
-    {t:'note', kind:'def', head:'Where it comes from', html:'It is not an abstraction invented for this chapter. Take the binary receiver of Module 2, send antipodal signals through white Gaussian noise, and the probability of a wrong decision is $p=Q\\!\\left(\\sqrt{2E_b/N_0}\\right)$ — the same for a transmitted $0$ as for a transmitted $1$. That receiver, seen from outside, <em>is</em> a binary symmetric channel.'},
+    {t:'note', kind:'def', head:'Where it comes from', html:'It is not an abstraction invented for this chapter. Take the binary receiver of Module 2 and send antipodal signals through white Gaussian noise. The probability of a wrong decision is $p=Q\\!\\left(\\sqrt{2E_b/N_0}\\right)$, the same for a transmitted $0$ as for a transmitted $1$. That receiver, seen from outside, <em>is</em> a binary symmetric channel.'},
     {t:'reveal', at:1, items:[
       {t:'wex', head:'What comes out, with equally likely inputs', rows:[
         ['Given','$p(x_0)=p(x_1)=\\tfrac12$.'],
@@ -712,12 +720,13 @@ window.SCENES_M6 = [
 ]},
 
 /* ---------------------------------------------------------------- 6.7 ---- */
-{ id:'m6-condent', module:'M6', nav:'Conditional entropy', title:'What is left in doubt',
+{ id:'m6-condent', module:'M6', nav:'Conditional entropy', title:'Conditional entropy',
   objective:'Define conditional entropy as the uncertainty remaining after the output is seen.',
   keywords:'conditional entropy uncertainty remaining channel output equivocation average',
   src:'CH10 w.13', steps:3, blocks:[
   {t:'eyebrow', text:'Module 6 · Mutual information'},
-  {t:'title', text:'What is left in doubt'},
+  {t:'title', text:'Conditional entropy'},
+  {t:'lede', text:'What is left in doubt.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>Before anything arrives, the receiver\'s uncertainty about the input is $H(X)$. Then one output symbol arrives. It rarely settles the question, but it changes the odds. The uncertainty that remains is an entropy like any other — computed from the probabilities that now apply:</p>'},
     {t:'eq', tex:'H(X\\mid Y=y_k)=-\\sum_{j=0}^{J-1}p(x_j\\mid y_k)\\log_2 p(x_j\\mid y_k)'},
@@ -730,7 +739,7 @@ window.SCENES_M6 = [
       {t:'note', kind:'def', head:'The two extremes fix the meaning', html:'On a perfect channel the output names the input, so nothing is left in doubt and $H(X\\mid Y)=0$. On a useless channel the output says nothing, the conditional probabilities are the original ones, and $H(X\\mid Y)=H(X)$ — the arrival changed nothing. Every real channel sits between the two.'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'warn', head:'Not the same as $H(Y\\mid X)$', html:'$H(Y\\mid X)$ is the uncertainty about the <em>output</em> given the input, and it is a property of the channel alone — for the BSC it is $H(p)$, whatever the transmitter does. $H(X\\mid Y)$ is the uncertainty about the <em>input</em> given the output, and it depends on the input distribution too. The two are equal only when the alphabets are balanced, and swapping them is the mistake this section is built to prevent.'}
+      {t:'note', kind:'warn', head:'Not the same as $H(Y\\mid X)$', html:'$H(Y\\mid X)$ is the uncertainty about the <em>output</em> given the input, and it is a property of the channel alone. For the BSC it is $H(p)$, whatever the transmitter does. $H(X\\mid Y)$ is the uncertainty about the <em>input</em> given the output, and it depends on the input distribution too. The two are equal only when the alphabets are balanced, and swapping them is the mistake this section is built to prevent.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figHb(0.1),
@@ -739,12 +748,13 @@ window.SCENES_M6 = [
   ]}
 ]},
 
-{ id:'m6-mutual', module:'M6', nav:'Mutual information', title:'What actually got through',
+{ id:'m6-mutual', module:'M6', nav:'Mutual information', title:'Mutual information',
   objective:'Define mutual information as the uncertainty the output removes.',
   keywords:'mutual information definition uncertainty resolved channel bits per use',
   src:'CH10 w.13', steps:3, blocks:[
   {t:'eyebrow', text:'Module 6 · Mutual information'},
-  {t:'title', text:'What actually got through'},
+  {t:'title', text:'Mutual information'},
+  {t:'lede', text:'What actually got through.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>Two numbers are now in hand: the uncertainty before, and the uncertainty after. The information the channel delivered is the difference — what the observation removed.</p>'},
     {t:'eq', key:true, label:'mutual information', tex:'I(X;Y)=H(X)-H(X\\mid Y)'},
@@ -774,12 +784,13 @@ window.SCENES_M6 = [
   ]}
 ]},
 
-{ id:'m6-mutual-props', module:'M6', nav:'Its three properties', title:'Symmetric, never negative, and joint',
+{ id:'m6-mutual-props', module:'M6', nav:'Its three properties', title:'Properties of mutual information',
   objective:'Give the properties of mutual information and the joint-entropy relation.',
   keywords:'mutual information properties symmetry non-negative joint entropy bayes rule',
   src:'CH10 w.13', steps:3, blocks:[
   {t:'eyebrow', text:'Module 6 · Mutual information'},
-  {t:'title', text:'Symmetric, never negative, and joint'},
+  {t:'title', text:'Properties of mutual information'},
+  {t:'lede', text:'Symmetric, never negative, and joint.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>Written as one sum over both alphabets, mutual information is</p>'},
     {t:'eq', tex:'I(X;Y)=\\sum_{j}\\sum_{k}p(x_j,y_k)\\log_2\\frac{p(x_j\\mid y_k)}{p(x_j)}'},
@@ -805,12 +816,13 @@ window.SCENES_M6 = [
 ]},
 
 /* ---------------------------------------------------------------- 6.8 ---- */
-{ id:'m6-capacity', module:'M6', nav:'Channel capacity', title:'The best the channel can do',
+{ id:'m6-capacity', module:'M6', nav:'Channel capacity', title:'Channel capacity',
   objective:'Define capacity as the maximum of mutual information over input distributions.',
   keywords:'channel capacity definition maximum mutual information input distribution bits per use',
   src:'CH10 w.13', steps:2, blocks:[
   {t:'eyebrow', text:'Module 6 · Channel capacity'},
-  {t:'title', text:'The best the channel can do'},
+  {t:'title', text:'Channel capacity'},
+  {t:'lede', text:'The best the channel can do.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>Mutual information measures one transmitter on one channel. Change how often the transmitter sends each symbol and the number moves. The channel is fixed; the input distribution is the engineer\'s to choose. So take the best choice:</p>'},
     {t:'eq', key:true, label:'channel capacity', tex:'C=\\max_{\\{p(x_j)\\}}I(X;Y)\\quad\\text{bits per channel use}'},
@@ -862,7 +874,7 @@ window.SCENES_M6 = [
       ]}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'warn', head:'The shape is the lesson, not the formula', html:'The curve is flat near $p=0$: a channel with one error in a thousand has capacity $0.9886$, so the first errors cost almost nothing. It then falls away steeply and reaches zero at a half. Halving the error probability of an already-good channel buys very little; the effort belongs where the curve is steep.'}
+      {t:'note', kind:'warn', head:'The shape is the lesson, not the formula', html:'The curve is flat near $p=0$. A channel with one error in a thousand has capacity $0.9886$, so the first errors cost almost nothing. It then falls away steeply and reaches zero at a half. Halving the error probability of an already-good channel buys very little; the effort belongs where the curve is steep.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>{
@@ -887,16 +899,16 @@ window.SCENES_M6 = [
   steps:0, blocks:[
   {t:'eyebrow', text:'Module 6 · Channel capacity'},
   {t:'title', text:'Laboratory K · Channel capacity'},
-  {t:'body', html:'Choose a channel, set how noisy it is, and then move the input distribution by hand. The channel matrix, the three entropies and the mutual information are recomputed from the definitions each time, and the capacity is found by searching the input distribution, so the peak on the curve and the number in the readout cannot disagree.'},
+  {t:'body', html:'Choose a channel, set how noisy it is, and then move the input distribution by hand. The channel matrix, the three entropies and the mutual information are recomputed from the definitions each time. The capacity is found by searching the input distribution, so the peak on the curve and the number in the readout cannot disagree.'},
   {t:'lab', id:'K'}
 ]},
 
-{ id:'m6-ex-zchannel', module:'M6', nav:'Worked example: the Z-channel', title:'Worked example: a channel that is not symmetric',
+{ id:'m6-ex-zchannel', module:'M6', nav:'Worked example: the Z-channel', title:'Worked example: the Z-channel',
   objective:'Find the capacity of the Z-channel and the input distribution that achieves it.',
   keywords:'z channel capacity worked example asymmetric optimum input distribution derivative',
   src:'CH10 w.13', steps:3, blocks:[
   {t:'eyebrow', text:'Module 6 · Channel capacity'},
-  {t:'title', text:'Worked example: a channel that is not symmetric'},
+  {t:'title', text:'Worked example: the Z-channel'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>A $0$ always arrives as a $0$. A $1$ arrives correctly half the time and as a $0$ the other half. Nothing is symmetric here, so the equally likely input is no longer the right guess — it has to be found.</p>'},
     {t:'wex', head:'Setting it up', rows:[
@@ -934,21 +946,22 @@ window.SCENES_M6 = [
   ]}
 ]},
 
-{ id:'m6-coding-thm', module:'M6', nav:'The channel coding theorem', title:'What capacity promises',
+{ id:'m6-coding-thm', module:'M6', nav:'The channel coding theorem', title:'The channel coding theorem',
   objective:'State the channel coding theorem and say what it does and does not offer.',
   keywords:'channel coding theorem transmission rate reliable communication converse shannon',
   src:'CH10 w.14', steps:3, blocks:[
   {t:'eyebrow', text:'Module 6 · Channel capacity'},
-  {t:'title', text:'What capacity promises'},
+  {t:'title', text:'The channel coding theorem'},
+  {t:'lede', text:'What capacity promises.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
-    {t:'body', html:'<p>Capacity was defined as a maximum of a quantity measured in bits. It would be a curiosity if that were all. The theorem that makes it matter says the number is an <em>operational</em> limit: it is exactly the rate at which the channel can be used reliably.</p>'},
+    {t:'body', html:'<p>Capacity was defined as a maximum of a quantity measured in bits. It would be a curiosity if that were all. The theorem that makes it matter says the number is an <em>operational</em> limit. It is exactly the rate at which the channel can be used reliably.</p>'},
     {t:'note', kind:'def', head:'The channel coding theorem', html:'If the transmission rate satisfies $R_b<C$, there is a coding scheme whose probability of error is as small as required. If $R_b>C$, there is not — no coding scheme, however long or however clever, keeps the error probability down.'},
     {t:'reveal', at:1, items:[
       {t:'eq', key:true, label:'the condition', tex:'R_b<C'},
       {t:'small', html:'An error-free data rate can never exceed the capacity. That is not a statement about today\'s codes; it is a statement about all codes that will ever exist.'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'warn', head:'What the theorem does not give', html:'It says a code exists. It does not say what the code is, how long its blocks have to be, or how much computation the decoder needs. The proof shows that <em>almost every</em> long code works, which is a strange kind of guidance: it promises the answer is common without pointing at one. Finding codes that come close and can also be decoded took the fifty years after the theorem.'}
+      {t:'note', kind:'warn', head:'What the theorem does not give', html:'It says a code exists. It does not say what the code is, how long its blocks have to be, or how much computation the decoder needs. The proof shows that <em>almost every</em> long code works, which is a strange kind of guidance. It promises the answer is common without pointing at one. Finding codes that come close and can also be decoded took the fifty years after the theorem.'}
     ]},
     {t:'reveal', at:3, items:[
       {t:'note', kind:'ok', head:'Where this closes the course', html:'Module 6 opened with the source-coding theorem: no code carries a source in fewer than $H(S)$ bits a symbol. It closes with the channel-coding theorem: no code carries more than $C$ bits per use across a channel. Between the two sits everything Modules 1 to 5 built. A system is possible exactly when $H(S)$ fits inside $C$, and the rest is engineering.'}
@@ -971,18 +984,19 @@ window.SCENES_M6 = [
 ]},
 
 /* ---------------------------------------------------------------- 6.9 ---- */
-{ id:'m6-shannon', module:'M6', nav:'The bandlimited channel', title:'Bandwidth, power and the rate they buy',
+{ id:'m6-shannon', module:'M6', nav:'The bandlimited channel', title:'The capacity of the bandlimited channel',
   objective:'State the information capacity law and read the trade it describes.',
   keywords:'information capacity law shannon hartley bandwidth signal to noise continuous channel',
   src:'CH10 w.14', steps:3, blocks:[
   {t:'eyebrow', text:'Module 6 · The bandlimited channel'},
-  {t:'title', text:'Bandwidth, power and the rate they buy'},
+  {t:'title', text:'The capacity of the bandlimited channel'},
+  {t:'lede', text:'Bandwidth, power, and the rate they buy.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
-    {t:'body', html:'<p>Everything so far counted symbols. A real channel is not given as a matrix: it is given as a bandwidth in hertz, a transmitted power in watts, and a noise density. The capacity of that channel is one of the most quoted results in engineering.</p>'},
+    {t:'body', html:'<p>Everything so far counted symbols. A real channel is not given as a matrix. It is given as a bandwidth in hertz, a transmitted power in watts, and a noise density. The capacity of that channel is one of the most quoted results in engineering.</p>'},
     {t:'eq', key:true, label:'information capacity law', tex:'C=B\\log_2\\!\\left(1+\\frac{P}{N_0B}\\right)\\quad\\text{bits per second}'},
     {t:'note', kind:'def', head:'What each symbol is', html:'$B$ is the bandwidth in hertz. $P$ is the average transmitted power. $N_0/2$ is the two-sided noise density, so $N_0B$ is the noise power in the band. The ratio $P/(N_0B)$ is the received signal-to-noise ratio used by this channel model.'},
     {t:'reveal', at:1, items:[
-      {t:'note', kind:'ok', head:'Read the two knobs', html:'$C$ grows <b>linearly</b> with bandwidth and only <b>logarithmically</b> with power. Doubling the bandwidth at fixed noise density roughly doubles the rate; doubling the power adds one bit per second per hertz at best, and much less when the ratio is already large. Bandwidth is the better buy, and it is the one that is regulated and scarce.'}
+      {t:'note', kind:'ok', head:'Read the two knobs', html:'$C$ grows <b>linearly</b> with bandwidth and only <b>logarithmically</b> with power. Doubling the bandwidth at fixed noise density roughly doubles the rate. Doubling the power adds one bit per second per hertz at best, and much less when the ratio is already large. Bandwidth is the better buy, and it is the one that is regulated and scarce.'}
     ]},
     {t:'reveal', at:2, items:[
       {t:'body', html:'<p>Write $P=E_bC$ — the power is the energy per bit times the bits per second — and divide by $B$:</p>'},
@@ -1017,12 +1031,13 @@ window.SCENES_M6 = [
   ]}
 ]},
 
-{ id:'m6-limit', module:'M6', nav:'The Shannon limit', title:'The floor beneath every system',
+{ id:'m6-limit', module:'M6', nav:'The Shannon limit', title:'The Shannon limit',
   objective:'Derive the -1.6 dB limit and say what it does and does not forbid.',
   keywords:'shannon limit minus 1.6 dB infinite bandwidth energy per bit floor natural logarithm',
   src:'CH10 w.14', steps:3, blocks:[
   {t:'eyebrow', text:'Module 6 · The bandlimited channel'},
-  {t:'title', text:'The floor beneath every system'},
+  {t:'title', text:'The Shannon limit'},
+  {t:'lede', text:'The floor beneath every system.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>The last relation says the energy per bit a system needs falls as its bandwidth efficiency falls. Spend bandwidth freely and the cost per bit drops. The question is whether it drops to nothing.</p>'},
     {t:'body', html:'<p>Let $C/B\\to0$ — unlimited bandwidth for a fixed rate — and take the limit:</p>'},
@@ -1032,7 +1047,7 @@ window.SCENES_M6 = [
       {t:'note', kind:'ok', head:'What it says', html:'No system of any kind communicates reliably with less than $-1.59$ dB of energy per bit against noise density. Not a better code, not a better modulation, not a better receiver. It is the floor of the whole subject, and every scheme in Module 5 sits well above it.'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'warn', head:'What it does not say', html:'It does not say the limit is reachable. Reaching it needs infinite bandwidth, and the rate per hertz goes to zero on the way. It is a floor that is approached and never touched, and a system designed near it pays in bandwidth for every decibel it saves in power.'}
+      {t:'note', kind:'warn', head:'What it does not say', html:'It does not say the limit is reachable. Reaching it needs infinite bandwidth, and the rate per hertz goes to zero on the way. It is a floor that is approached and never touched. A system designed near it pays in bandwidth for every decibel it saves in power.'}
     ]},
     {t:'reveal', at:3, items:[
       {t:'note', kind:'def', head:'How far the course got from it', html:'Coherent binary PSK needs about $9.6$ dB for an error probability of $10^{-5}$, so it sits some $11$ dB above the floor. That gap is what channel coding was invented to close, and closing most of it is what the fifty years after the theorem achieved. This course stops at the uncoded schemes, which is where the gap is widest and easiest to see.'}
@@ -1057,12 +1072,12 @@ window.SCENES_M6 = [
 ]},
 
 /* ---------------------------------------------------------------- 6.10 --- */
-{ id:'m6-synth', module:'M6', nav:'Summary', title:'Module 6 in one page',
+{ id:'m6-synth', module:'M6', nav:'Summary', title:'What Module 6 established',
   objective:'Collect the definitions, the bounds, the algorithms and the two limits.',
   keywords:'summary module 6 entropy source coding kraft huffman efficiency capacity mutual information shannon',
   src:'CH10 s.4–22, w.12–14', steps:1, blocks:[
   {t:'eyebrow', text:'Module 6 · An introduction to information theory'},
-  {t:'title', text:'Module 6 in one page'},
+  {t:'title', text:'What Module 6 established'},
   {t:'grid', cols:2, gap:'26px', items:[
     [{t:'card', head:'How much information there is', items:[
       {t:'eq', plain:true, tex:'I(s_k)=-\\log_2 p_k,\\qquad H(S)=-\\sum_k p_k\\log_2 p_k'},
@@ -1082,7 +1097,7 @@ window.SCENES_M6 = [
     ]}],
     [{t:'card', head:'What a channel lets through', items:[
       {t:'eq', plain:true, tex:'I(X;Y)=H(X)-H(X\\mid Y)=H(Y)-H(Y\\mid X)'},
-      {t:'body', html:'<p>Symmetric and never negative. A channel is a matrix of $p(y_k\\mid x_j)$ whose rows sum to one; the transmitter supplies $p(x_j)$, and only the pair of them fixes $I(X;Y)$.</p>'}
+      {t:'body', html:'<p>Symmetric and never negative. A channel is a matrix of $p(y_k\\mid x_j)$ whose rows sum to one. The transmitter supplies $p(x_j)$, and only the pair of them fixes $I(X;Y)$.</p>'}
     ]}],
     [{t:'card', head:'The two limits', items:[
       {t:'eq', plain:true, tex:'C=\\max_{\\{p(x_j)\\}}I(X;Y),\\qquad C=B\\log_2\\!\\left(1+\\frac{P}{N_0B}\\right)'},
@@ -1090,7 +1105,7 @@ window.SCENES_M6 = [
     ]}]
   ]},
   {t:'reveal', at:1, items:[
-    {t:'note', kind:'ok', head:'What the course adds up to', html:'Module 1 turned a waveform into bits. Modules 2 to 5 got those bits across a channel and counted the errors. Module 6 put a number on both ends of that: $H(S)$, the fewest bits the message can be written in, and $C$, the most bits the channel will carry. A system is possible exactly when the first fits inside the second. Every stage between them is engineering; the two limits are not.'}
+    {t:'note', kind:'ok', head:'What the course adds up to', html:'Module 1 turned a waveform into bits. Modules 2 to 5 got those bits across a channel and counted the errors. Module 6 put a number on both ends of that. $H(S)$ is the fewest bits the message can be written in; $C$ is the most bits the channel will carry. A system is possible exactly when the first fits inside the second. Every stage between them is engineering; the two limits are not.'}
   ]}
 ]}
 

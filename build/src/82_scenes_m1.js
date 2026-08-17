@@ -222,7 +222,7 @@ const SC = [
   keywords:'sampling quantization encoding chain analog digital reversible',
   src:'CH7 s.3', steps:2, blocks:[
   {t:'eyebrow', text:'Module 1 · Opening'},
-  {t:'title', text:'Three operations, in this order'},
+  {t:'title', text:'From a waveform to a bit stream'},
   {t:'lede', text:'A continuous waveform becomes a bit stream in three steps. Each step discards something different, and only one of the three can be undone.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p><b>Sampling</b> makes the signal discrete in time. <b>Quantization</b> makes it discrete in amplitude. <b>Encoding</b> replaces each quantized amplitude by a word of $R$ bits.</p>'},
@@ -253,12 +253,13 @@ const SC = [
 ]},
 
 /* ---------------------------------------------------------------- 1.1 ---- */
-{ id:'m1-sampler', module:'M1', nav:'Impulse-train sampling', title:'Sampling written as a multiplication',
+{ id:'m1-sampler', module:'M1', nav:'Impulse-train sampling', title:'Impulse-train sampling',
   objective:'Define the ideal sampled signal and reduce it to a weighted impulse train.',
   keywords:'impulse train sampling period sifting property ideal sampled signal',
   src:'CH7 s.4', steps:2, blocks:[
   {t:'eyebrow', text:'Module 1 · The sampling theorem'},
-  {t:'title', text:'The ideal sampled signal'},
+  {t:'title', text:'Impulse-train sampling'},
+  {t:'lede', text:'Sampling is written as a multiplication, so that the Fourier transform can be applied to it.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'Sampling every $T_s$ seconds is multiplication by an impulse train:'},
     {t:'eq', tex:'p(t)=\\sum_{n=-\\infty}^{\\infty}\\delta(t-nT_s),\\qquad f_s=\\frac{1}{T_s}'},
@@ -280,7 +281,7 @@ const SC = [
   keywords:'fourier transform replication convolution impulse train spectrum',
   src:'CH7 s.5–6', steps:2, blocks:[
   {t:'eyebrow', text:'Module 1 · The sampling theorem'},
-  {t:'title', text:'One multiplication, one convolution'},
+  {t:'title', text:'Sampling replicates the spectrum'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'A product in time is a convolution in frequency, so $G_\\delta(f)=G(f)*P(f)$. The transform of the impulse train is another impulse train:'},
     {t:'eq', tex:'P(f)=\\frac{1}{T_s}\\sum_{n=-\\infty}^{\\infty}\\delta(f-nf_s)=f_s\\sum_{n=-\\infty}^{\\infty}\\delta(f-nf_s)'},
@@ -296,22 +297,22 @@ const SC = [
   ]}
 ]},
 
-{ id:'m1-cases', module:'M1', nav:'Three sampling rates', title:'Three rates, three outcomes',
+{ id:'m1-cases', module:'M1', nav:'Three sampling rates', title:'Three sampling rates',
   objective:'Separate oversampling, Nyquist sampling and aliasing by the geometry of the replicas.',
   keywords:'oversampling nyquist undersampling aliasing overlap guard band',
   src:'CH7 s.7–8', steps:2, blocks:[
   {t:'eyebrow', text:'Module 1 · The sampling theorem'},
-  {t:'title', text:'Whether the replicas overlap'},
+  {t:'title', text:'Three sampling rates'},
   {t:'grid', cols:3, gap:'26px', items:[
     [{t:'fig', svg:()=>figCase('over'), caption:'<b>$f_s>2W$.</b> The replicas are separated by a gap. The message can be filtered out unchanged.'}],
     [{t:'fig', svg:()=>figCase('nyq'), caption:'<b>$f_s=2W$.</b> The replicas touch and do not overlap. This is the lowest rate that still works.'}],
     [{t:'fig', svg:()=>figCase('under'), caption:'<b>$f_s<2W$.</b> The replicas overlap. The sum in the overlap cannot be separated back into its parts.'}]
   ]},
   {t:'reveal', at:1, items:[
-    {t:'note', kind:'err', head:'Aliasing', html:'In the third case a high frequency of the message has been added to a low frequency of a replica, and no filter can undo the addition. The original signal cannot be recovered from its samples — not by a better filter, not by more computation.'}
+    {t:'note', kind:'err', head:'Aliasing', html:'In the third case a high frequency of the message has been added to a low frequency of a replica. No filter can undo the addition. The original signal cannot be recovered from its samples — not by a better filter, not by more computation.'}
   ]},
   {t:'reveal', at:2, items:[
-    {t:'body', html:'In practice a real signal is never strictly bandlimited, so a <b>guard band</b> $f_g$ is left between the edge of the message and the edge of the first replica. The sampling rate becomes $f_s = 2W + f_g$, and an anti-aliasing filter removes whatever lies above $W$ before the sampler sees it.'}
+    {t:'body', html:'In practice a real signal is never strictly bandlimited. A <b>guard band</b> $f_g$ is therefore left between the edge of the message and the edge of the first replica. The sampling rate becomes $f_s = 2W + f_g$, and an anti-aliasing filter removes whatever lies above $W$ before the sampler sees it.'}
   ]}
 ]},
 
@@ -320,12 +321,12 @@ const SC = [
   keywords:'sampling theorem nyquist rate bandlimited reconstruction statement',
   src:'CH7 s.12', steps:1, blocks:[
   {t:'eyebrow', text:'Module 1 · The sampling theorem'},
-  {t:'title', text:'The statement'},
+  {t:'title', text:'The sampling theorem'},
   {t:'note', kind:'def', head:'Sampling theorem', html:'If $G(f)=0$ for $|f|\\ge W$ and the sampling rate satisfies $f_s\\ge 2W$, then $g(t)$ is determined completely by its samples $g(nT_s)$ and can be recovered from them exactly. If $f_s<2W$, aliasing occurs and the recovery fails.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>The rate $2W$ is the <b>Nyquist rate</b>: twice the highest frequency present. The interval $T_s = 1/(2W)$ at that rate is the <b>Nyquist interval</b>.</p>'},
     {t:'reveal', at:1, items:[
-      {t:'note', kind:'warn', head:'Twice the highest frequency, not twice the bandwidth', html:'For a lowpass signal the two coincide, and that is the only case treated here. For a signal occupying a band that does not reach down to zero the two are different numbers, and the rate that matters is still set by the geometry of the replicas rather than by either name.'}
+      {t:'note', kind:'warn', head:'Twice the highest frequency, not twice the bandwidth', html:'For a lowpass signal the two coincide, and that is the only case treated here. For a signal whose band does not reach down to zero, the two are different numbers. The rate that matters is still set by the geometry of the replicas, not by either name.'}
     ]}
   ], right:[
     {t:'eq', label:'Nyquist rate', key:true, tex:'f_s^{\\min}=2W'},
@@ -334,34 +335,36 @@ const SC = [
 ]},
 
 /* ---------------------------------------------------------------- 1.2 ---- */
-{ id:'m1-lpf', module:'M1', nav:'The reconstruction filter', title:'Recovering the message',
+{ id:'m1-lpf', module:'M1', nav:'The reconstruction filter', title:'The reconstruction filter',
   objective:'Give the ideal reconstruction filter and its impulse response.',
   keywords:'reconstruction lowpass filter impulse response sinc interpolation',
   src:'CH7 s.9–10', steps:2, blocks:[
   {t:'eyebrow', text:'Module 1 · Reconstruction'},
-  {t:'title', text:'One filter undoes the replication'},
+  {t:'title', text:'The reconstruction filter'},
+  {t:'lede', text:'One lowpass filter undoes the replication.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'Keeping the copy at the origin and rejecting every other one is a lowpass filter. At $f_s=2W$:'},
     {t:'eq', tex:'H_{\\mathrm{LPF}}(f)=\\begin{cases}\\dfrac{1}{2W}, & |f|\\le W\\\\[4pt] 0, & \\text{otherwise}\\end{cases}'},
     {t:'reveal', at:1, items:[
       {t:'body', html:'Its impulse response is the inverse transform of a rectangle:'},
       {t:'eq', key:true, tex:'h_{\\mathrm{LPF}}(t)=\\int_{-W}^{W}\\frac{1}{2W}e^{j2\\pi ft}\\,df=\\frac{\\sin(2\\pi Wt)}{2\\pi Wt}=\\operatorname{sinc}(2Wt)'},
-      {t:'small', html:'The convention fixed here and used for the rest of the course: $\\operatorname{sinc}(x)=\\dfrac{\\sin(\\pi x)}{\\pi x}$, so that $\\operatorname{sinc}(x)$ is one at $x=0$ and zero at every other integer.'}
+      {t:'small', html:'The convention fixed here and used for the rest of the course: $\\operatorname{sinc}(x)=\\dfrac{\\sin(\\pi x)}{\\pi x}$. This makes $\\operatorname{sinc}(x)$ one at $x=0$ and zero at every other integer.'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'warn', head:'Why the gain is $1/2W$', html:'Sampling multiplied the spectrum by $f_s=2W$. The filter has to divide it back. A reconstruction filter of unit gain returns a signal $2W$ times too large, which is a scaling error that no plot of the spectrum shape will reveal.'}
+      {t:'note', kind:'warn', head:'Why the gain is $1/2W$', html:'Sampling multiplied the spectrum by $f_s=2W$. The filter has to divide it back. A reconstruction filter of unit gain returns a signal $2W$ times too large. That scaling error shows on no plot of the spectrum shape.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:figLpf, caption:'The filter passes the copy at the origin and rejects the replicas. At exactly the Nyquist rate the replicas touch the edge of the passband, which is why an ideal filter is needed there and a gentler one suffices when the rate is higher.'}
   ]}
 ]},
 
-{ id:'m1-interp', module:'M1', nav:'Interpolation', title:'The message between the samples',
+{ id:'m1-interp', module:'M1', nav:'Interpolation', title:'The interpolation formula',
   objective:'Show the interpolation formula as a sum of shifted sinc functions.',
   keywords:'interpolation formula sinc shifted samples reconstruction sum',
   src:'CH7 s.11–12', steps:2, blocks:[
   {t:'eyebrow', text:'Module 1 · Reconstruction'},
-  {t:'title', text:'Every sample carries one sinc'},
+  {t:'title', text:'The interpolation formula'},
+  {t:'lede', text:'Every sample carries one sinc, and the sum of them is the message between the samples.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'Filtering in frequency is convolution in time. Convolving the impulse train with $h_{\\mathrm{LPF}}$ and using the sifting property once more gives'},
     {t:'eq', key:true, tex:'g_r(t)=\\sum_{n=-\\infty}^{\\infty}g(nT_s)\\operatorname{sinc}\\!\\bigl(2W(t-nT_s)\\bigr)'},
@@ -382,7 +385,7 @@ const SC = [
   keywords:'worked example nyquist rate guard band modulation bandwidth product',
   src:'CH7 s.13–14', steps:3, blocks:[
   {t:'eyebrow', text:'Module 1 · Reconstruction'},
-  {t:'title', text:'Worked example'},
+  {t:'title', text:'Worked example: three sampling rates'},
   {t:'wex', rows:[
     ['Given','A signal $x(t)$ bandlimited to $W=40$ kHz.'],
     ['Find','(a) the Nyquist rate; (b) the rate with a $10$ kHz guard band; (c) the Nyquist rate of $y(t)=x(t)\\cos(80000\\pi t)$.']
@@ -408,12 +411,13 @@ const SC = [
 ]},
 
 /* ---------------------------------------------------------------- 1.3 ---- */
-{ id:'m1-quant', module:'M1', nav:'Quantization', title:'Rounding to a finite set',
+{ id:'m1-quant', module:'M1', nav:'Quantization', title:'Uniform quantization',
   objective:'Define quantization and separate mid-rise from mid-tread.',
   keywords:'quantization levels midrise midtread uniform nonuniform step size',
   src:'CH7 s.15–16', steps:2, blocks:[
   {t:'eyebrow', text:'Module 1 · Quantization'},
-  {t:'title', text:'Mid-rise and mid-tread'},
+  {t:'title', text:'Uniform quantization'},
+  {t:'lede', text:'Rounding each sample to the nearest of a finite set of levels. The two standard families differ only at zero.'},
   {t:'cols', ratio:'c-5-7', vcenter:true, left:[
     {t:'note', kind:'def', head:'Definition', html:'<b>Quantization</b> replaces a sample amplitude by the nearest member of a finite set of $L$ <b>representation levels</b>. In a <b>uniform</b> quantizer the spacing $\\Delta$ between consecutive levels is the same everywhere.'},
     {t:'reveal', at:1, items:[
@@ -430,7 +434,7 @@ const SC = [
   ]}
 ]},
 
-{ id:'m1-lloydmax', module:'M1', nav:'Levels and boundaries', title:'Where the boundaries go',
+{ id:'m1-lloydmax', module:'M1', nav:'Levels and boundaries', title:'The quantizer as a function',
   objective:'State the quantizer function and the two optimality conditions.',
   keywords:'quantizer function boundaries lloyd max midpoint centroid step size',
   src:'CH7 s.17', steps:2, blocks:[
@@ -462,23 +466,24 @@ const SC = [
 ]},
 
 /* ---------------------------------------------------------------- 1.4 ---- */
-{ id:'m1-qnoise', module:'M1', nav:'Quantization noise', title:'The error and its power',
+{ id:'m1-qnoise', module:'M1', nav:'Quantization noise', title:'Quantization noise',
   objective:'Model the quantization error and derive its mean-square value.',
   keywords:'quantization noise error uniform distribution mean square delta squared twelve',
   src:'CH7 s.18–20', steps:3, blocks:[
   {t:'eyebrow', text:'Module 1 · Quantization noise'},
-  {t:'title', text:'How large is the rounding?'},
+  {t:'title', text:'Quantization noise'},
+  {t:'lede', text:'The rounding error behaves like a small noise, and its power can be computed exactly.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'The quantization error is the difference between what went in and what came out:'},
     {t:'eq', tex:'Q=M-V=M-\\mathbb{Q}(M)'},
     {t:'reveal', at:1, items:[
       {t:'body', html:'Because every input is sent to the nearer level, the error can never exceed half a step:'},
       {t:'eq', tex:'-\\frac{\\Delta}{2}\\le q\\le\\frac{\\Delta}{2}'},
-      {t:'body', html:'If $\\Delta$ is small enough that the density of $M$ is nearly flat across one region, the error is as likely to fall anywhere in that interval as anywhere else, so $Q\\sim U(-\\Delta/2,\\Delta/2)$.'}
+      {t:'body', html:'If $\\Delta$ is small enough, the density of $M$ is nearly flat across one region. The error is then as likely to fall anywhere in that interval as anywhere else, so $Q\\sim U(-\\Delta/2,\\Delta/2)$.'}
     ]},
     {t:'reveal', at:2, items:[
       {t:'eq', key:true, tex:'E[Q^{2}]=\\int_{-\\Delta/2}^{\\Delta/2}q^{2}\\,\\frac{1}{\\Delta}\\,dq=\\frac{\\Delta^{2}}{12}'},
-      {t:'small', html:'With a zero-mean input the error has zero mean as well, so this mean square is also the variance: the power of the quantization noise <em>is</em> its variance.'}
+      {t:'small', html:'With a zero-mean input the error has zero mean as well, so this mean square is also the variance. The power of the quantization noise <em>is</em> its variance.'}
     ]},
     {t:'reveal', at:3, items:[
       {t:'body', html:'Substituting $\\Delta=2m_{\\max}/L$ and $L=2^{R}$ gives the form used for the rest of the module:'},
@@ -491,12 +496,13 @@ const SC = [
   ]}
 ]},
 
-{ id:'m1-sqnr', module:'M1', nav:'Signal-to-noise ratio', title:'Six decibels a bit',
+{ id:'m1-sqnr', module:'M1', nav:'Signal-to-noise ratio', title:'Signal-to-quantization-noise ratio',
   objective:'Derive the SQNR expression and the per-bit rule that follows from it.',
   keywords:'sqnr signal to quantization noise ratio decibel six per bit',
   src:'CH7 s.21–22', steps:2, blocks:[
   {t:'eyebrow', text:'Module 1 · Quantization noise'},
   {t:'title', text:'Signal-to-quantization-noise ratio'},
+  {t:'lede', text:'Six decibels a bit.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'eq', label:'definition', tex:'\\mathrm{SQNR}=\\frac{P_M}{E[Q^{2}]}=\\frac{E[M^{2}]}{E\\bigl[(M-\\mathbb{Q}(M))^{2}\\bigr]}'},
     {t:'reveal', at:1, items:[
@@ -529,7 +535,7 @@ const SC = [
   keywords:'worked example sinusoid parseval average power sqnr three four bits',
   src:'CH7 s.23–24', steps:3, blocks:[
   {t:'eyebrow', text:'Module 1 · Quantization noise'},
-  {t:'title', text:'Worked example'},
+  {t:'title', text:'Worked example: quantizing a sinusoid'},
   {t:'wex', rows:[
     ['Given','$m(t)=5\\cos t$, quantized by a uniform quantizer that spans the full range of the signal.'],
     ['Find','The step size and the SQNR in decibels for $R=3$ and for $R=4$ bits per sample.']
@@ -550,7 +556,7 @@ const SC = [
     {t:'wex', rows:[
       ['Check','The two answers differ by $6.02$ dB, which is one bit. Independently: $E[Q^{2}]=\\Delta^{2}/12 = 1.25^{2}/12 = 0.1302$, and $10\\log_{10}(12.5/0.1302) = 19.82$ dB. Two routes, one number.']
     ]},
-    {t:'note', kind:'warn', head:'What the formula does not know', html:'Quantize this waveform and measure the error it actually makes, and the answers are $19.09$ dB and $25.31$ dB — about $0.7$ dB and $0.5$ dB below what the formula gives. The uniform error model assumes the error is equally likely anywhere in $(-\\Delta/2,\\Delta/2)$, and a sinusoid spends most of its time near its peaks, where the error is largest. The gap halves with every extra bit — $0.27$ dB at $R=6$, $0.14$ dB at $R=8$ — because that is what "$\\Delta$ small enough" means. At the resolutions used in practice the formula is exact for every purpose; at eight levels it is optimistic, and knowing by how much is the difference between using a model and believing it.'},
+    {t:'note', kind:'warn', head:'What the formula does not know', html:'Quantize this waveform and measure the error it actually makes, and the answers are $19.09$ dB and $25.31$ dB. That is about $0.7$ dB and $0.5$ dB below what the formula gives. The uniform error model assumes the error is equally likely anywhere in $(-\\Delta/2,\\Delta/2)$. A sinusoid spends most of its time near its peaks, where the error is largest. The gap halves with every extra bit — $0.27$ dB at $R=6$, $0.14$ dB at $R=8$. That is what "$\\Delta$ small enough" means. At the resolutions used in practice the formula is exact for every purpose. At eight levels it is optimistic. Knowing by how much is the difference between using a model and believing it.'},
     {t:'note', kind:'warn', head:'The factor of two in the step size', html:'The range spanned is $2m_{\\max}=10$ V, not $m_{\\max}$. Writing $\\Delta = m_{\\max}/L$ halves every step size and is the commonest slip in this calculation. It leaves the SQNR in decibels untouched when that is computed from $\\alpha+6.02R$, so the error survives until someone asks for $\\Delta$ itself.'}
   ]}
 ]},
@@ -560,7 +566,7 @@ const SC = [
   keywords:'worked example uniform distribution 256 levels sqnr integration',
   src:'CH7 s.25–26', steps:2, blocks:[
   {t:'eyebrow', text:'Module 1 · Quantization noise'},
-  {t:'title', text:'Worked example'},
+  {t:'title', text:'Worked example: a uniform source'},
   {t:'wex', rows:[
     ['Given','$M\\sim U(-1,1)$, quantized by a uniform quantizer with $L=256$ levels.'],
     ['Find','The SQNR of this scheme.']
@@ -580,12 +586,12 @@ const SC = [
   ]}
 ]},
 
-{ id:'m1-ex-gauss', module:'M1', nav:'Worked example: a Gaussian source', title:'Worked example: when the model breaks',
+{ id:'m1-ex-gauss', module:'M1', nav:'Worked example: a Gaussian source', title:'Worked example: a Gaussian source',
   objective:'Compute the SQNR by integration when the uniform-error model does not apply.',
   keywords:'worked example gaussian source overload distortion coarse quantizer psd',
   src:'CH7 s.27–28', steps:3, blocks:[
   {t:'eyebrow', text:'Module 1 · Quantization noise'},
-  {t:'title', text:'Worked example'},
+  {t:'title', text:'Worked example: a Gaussian source'},
   {t:'wex', rows:[
     ['Given','A zero-mean stationary Gaussian source with $S_X(f)=2$ for $|f|<100$ Hz and zero elsewhere, sampled at the Nyquist rate. Each sample goes through a five-level quantizer with outputs $-30,-10,0,10,30$ and boundaries at $-40,-20,20,40$.'],
     ['Find','The SQNR of this scheme.']
@@ -603,7 +609,7 @@ const SC = [
     ]}
   ]},
   {t:'reveal', at:3, items:[
-    {t:'note', kind:'err', head:'Why $\\Delta^{2}/12$ would have lied', html:'The quantizer is coarse and its outer regions are unbounded, so the error there is not bounded by half a step at all — a sample at $x=120$ is quantized to $30$ and the error is $90$. Applying the uniform model with $\\Delta=20$ would predict $E[Q^{2}]=33.3$ and an SQNR of $10.8$ dB, three times too optimistic. The model is a small-step model, and this is what its failure looks like.'},
+    {t:'note', kind:'err', head:'Why $\\Delta^{2}/12$ would have lied', html:'The quantizer is coarse and its outer regions are unbounded, so the error there is not bounded by half a step at all. A sample at $x=120$ is quantized to $30$, and the error is $90$. Applying the uniform model with $\\Delta=20$ would predict $E[Q^{2}]=33.3$ and an SQNR of $10.8$ dB, three times too optimistic. The model is a small-step model, and this is what its failure looks like.'},
     {t:'wex', rows:[
       ['Check','The central region alone contributes $79.50$ of the $188.18$, and it holds $P(|X|<20) = 68\\%$ of the probability mass with an error of up to $20$. That is where a five-level quantizer spends its error, and it is why the answer is a few decibels rather than a few tens.']
     ]}
@@ -611,19 +617,20 @@ const SC = [
 ]},
 
 /* ---------------------------------------------------------------- 1.5 ---- */
-{ id:'m1-nonuniform', module:'M1', nav:'Non-uniform quantization', title:'When equal steps are the wrong steps',
+{ id:'m1-nonuniform', module:'M1', nav:'Non-uniform quantization', title:'Non-uniform quantization',
   objective:'Motivate non-uniform quantization from the statistics of speech.',
   keywords:'non uniform quantization speech small amplitudes companding compressor expander',
   src:'CH7 s.29–30', steps:2, blocks:[
   {t:'eyebrow', text:'Module 1 · Non-uniform quantization'},
-  {t:'title', text:'Spend the levels where the signal is'},
+  {t:'title', text:'Non-uniform quantization'},
+  {t:'lede', text:'When equal steps are the wrong steps: spend the levels where the signal spends its time.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
-    {t:'body', html:'<p>Speech spends most of its time at small amplitudes and only occasionally reaches the peak. A uniform quantizer gives the same absolute step to a whisper and to a shout, so the whisper is quantized far more coarsely <em>in proportion to itself</em>.</p>'},
+    {t:'body', html:'<p>Speech spends most of its time at small amplitudes and only occasionally reaches the peak. A uniform quantizer gives the same absolute step to a whisper and to a shout. The whisper is therefore quantized far more coarsely <em>in proportion to itself</em>.</p>'},
     {t:'reveal', at:1, items:[
-      {t:'body', html:'Relaxing the requirement that the regions be of equal length allows the distortion to be reduced at the same level count: narrow regions where the density is high, wide ones where it is low. This is what the centroid condition asks for and what a uniform quantizer cannot give.'}
+      {t:'body', html:'Drop the requirement that the regions have equal length, and the distortion falls at the same level count. Make the regions narrow where the density is high, and wide where it is low. This is what the centroid condition asks for and what a uniform quantizer cannot give.'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'def', head:'Companding', html:'Rather than build a non-uniform quantizer, compress the signal with a memoryless non-linearity, quantize the result <em>uniformly</em>, and expand at the receiver with the inverse. <b>Comp</b>ressing plus exp<b>anding</b> is companding, and it is how the non-uniform quantizer is built out of a uniform one.'}
+      {t:'note', kind:'def', head:'Companding', html:'Rather than build a non-uniform quantizer, compress the signal with a memoryless non-linearity and quantize the result <em>uniformly</em>. At the receiver, expand with the inverse. <b>Comp</b>ressing plus exp<b>anding</b> is companding, and it is how the non-uniform quantizer is built out of a uniform one.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>P.blocks({w:700,h:230,items:[
@@ -641,12 +648,13 @@ const SC = [
   ]}
 ]},
 
-{ id:'m1-companding', module:'M1', nav:'A-law and µ-law', title:'The two standard compressors',
+{ id:'m1-companding', module:'M1', nav:'A-law and µ-law', title:'A-law and µ-law companding',
   objective:'Give the two companding laws and where each is used.',
   keywords:'mu law a law compander 255 87.6 speech telephony logarithmic',
   src:'CH7 s.31–33', steps:2, blocks:[
   {t:'eyebrow', text:'Module 1 · Non-uniform quantization'},
-  {t:'title', text:'Two laws, one shape'},
+  {t:'title', text:'A-law and µ-law companding'},
+  {t:'lede', text:'Two laws, one shape.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'eq', label:'mu-law', tex:'y=\\frac{\\ln(1+\\mu|x|)}{\\ln(1+\\mu)}\\operatorname{sgn}(x),\\qquad |x|\\le 1'},
     {t:'eq', label:'A-law', tex:'y=\\begin{cases}\\dfrac{A|x|}{1+\\ln A}\\operatorname{sgn}(x), & 0\\le|x|\\le\\dfrac{1}{A}\\\\[8pt] \\dfrac{1+\\ln(A|x|)}{1+\\ln A}\\operatorname{sgn}(x), & \\dfrac{1}{A}<|x|\\le 1\\end{cases}'},
@@ -663,7 +671,7 @@ const SC = [
 ]},
 
 /* ---------------------------------------------------------------- 1.6 ---- */
-{ id:'m1-encode', module:'M1', nav:'Encoding and bit rate', title:'From levels to bits',
+{ id:'m1-encode', module:'M1', nav:'Encoding and bit rate', title:'Encoding and the bit rate',
   objective:'Fix the bit rate relation and contrast natural binary with Gray coding.',
   keywords:'encoding bit rate natural binary gray code adjacent levels one bit',
   src:'CH7 s.34', steps:2, blocks:[
@@ -696,7 +704,7 @@ const SC = [
   ]}
 ]},
 
-{ id:'m1-linecodes', module:'M1', nav:'Line codes', title:'Bits become waveforms',
+{ id:'m1-linecodes', module:'M1', nav:'Line codes', title:'Line codes',
   objective:'Present the line-code families and the property that separates them.',
   keywords:'line codes unipolar polar nrz rz manchester dc component synchronization',
   src:'CH7 s.35', steps:2, blocks:[
@@ -710,7 +718,7 @@ const SC = [
     {t:'body', html:'<p><b>Unipolar NRZ</b> is on-off signalling: it is the simplest, and it carries a DC level that causes the waveform to droop through any AC-coupled stage. <b>Polar NRZ</b> is antipodal signalling and has no DC component for balanced data, which is why it is the shape Module 2 analyses.</p>'}
   ]},
   {t:'reveal', at:2, items:[
-    {t:'note', kind:'warn', head:'What a long run of one symbol costs', html:'Both NRZ codes go quiet during a long run of identical bits, and a receiver recovering its clock from the waveform has nothing to lock to. <b>Manchester</b> forces a transition in the middle of every bit, so the clock is always recoverable and there is never a DC component — paid for with twice the bandwidth.'}
+    {t:'note', kind:'warn', head:'What a long run of one symbol costs', html:'Both NRZ codes go quiet during a long run of identical bits. A receiver that recovers its clock from the waveform then has nothing to lock to. <b>Manchester</b> forces a transition in the middle of every bit, so the clock is always recoverable and there is never a DC component. The price is twice the bandwidth.'}
   ]}
 ]},
 
@@ -719,7 +727,7 @@ const SC = [
   keywords:'worked example pcm sinc sampling quantizing encoding bit rate polar nrz',
   src:'CH7 s.36', steps:3, blocks:[
   {t:'eyebrow', text:'Module 1 · Pulse code modulation'},
-  {t:'title', text:'Worked example'},
+  {t:'title', text:'Worked example: sample, quantize, encode'},
   {t:'cols', ratio:'c-6-6', vcenter:false, left:[
     {t:'wex', rows:[
       ['Given','$m(t)=8\\,|\\operatorname{sinc}(t-2)|$, so $0\\le m(t)\\le 8$. It is sampled every $T_s=0.6$ s and quantized by an eight-level uniform quantizer covering $[0,8]$.'],
@@ -760,14 +768,15 @@ const SC = [
 ]},
 
 /* ---------------------------------------------------------------- 1.7 ---- */
-{ id:'m1-vq', module:'M1', nav:'Vector quantization', title:'Quantizing samples together',
+{ id:'m1-vq', module:'M1', nav:'Vector quantization', title:'Vector quantization',
   objective:'Show why quantizing a block of samples beats quantizing each one alone.',
   keywords:'vector quantization scalar codebook block image compression jpeg lossy levels',
   src:'CH7 s.37', steps:3, blocks:[
   {t:'eyebrow', text:'Module 1 · Vector quantization'},
-  {t:'title', text:'Quantizing samples together'},
+  {t:'title', text:'Vector quantization'},
+  {t:'lede', text:'Quantizing a block of samples together, instead of one at a time.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
-    {t:'body', html:'<p>Every quantizer so far has rounded one sample on its own. That is <b>scalar</b> quantization, and it throws something away before it starts: real signals do not jump about from one sample to the next, and a quantizer looking at one sample at a time cannot know that.</p>'},
+    {t:'body', html:'<p>Every quantizer so far has rounded one sample on its own. That is <b>scalar</b> quantization, and it throws something away before it starts. Real signals do not jump about from one sample to the next. A quantizer that sees one sample at a time cannot know that.</p>'},
     {t:'note', kind:'def', head:'What vector quantization is', html:'Take $n$ samples at a time and treat them as one point in $n$ dimensions. Choose a <b>codebook</b> of allowed points, and round the whole block to the nearest one. With $n=1$ this is the quantizer of section 1.3. With $n=2$ the allowed points are places in a plane, and they can be put wherever the signal actually goes.'},
     {t:'reveal', at:1, items:[
       {t:'body', html:'<p>Here is the whole argument, in a case small enough to count. Take $L=16$ levels and look at <em>pairs</em> of neighbouring samples. A scalar quantizer allows every combination:</p>'},
@@ -779,21 +788,22 @@ const SC = [
       {t:'note', kind:'ok', head:'A quarter of the rate, at the same distortion', html:'The cells did not change size, so the rounding error did not change. The code now omits the $210$ combinations that this signal model never produces. Vector quantization uses its codebook only in regions that the signal can reach.'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'small', html:'The next scene takes the case this is actually used on, where the samples are the pixels of an image and there are a quarter of a million of them.'}
+      {t:'small', html:'The next scene takes the case this is actually used on. There the samples are the pixels of an image, and there are a quarter of a million of them.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figPairLattice(16),
       caption:'Every pair of neighbouring samples a $16$-level quantizer can produce. A scalar quantizer pays for all $256$ squares. If a sample never moves by more than one step, only the $46$ shaded ones ever occur, and the codebook needs $6$ bits a pair instead of $8$.'},
-    {t:'small', html:'Almost all of the saving comes from neighbouring samples being alike. A small gain survives even for independent samples, because better-shaped cells pack the space more efficiently than squares, but it is under a quarter of a bit a sample and this course does not pursue it.'}
+    {t:'small', html:'Almost all of the saving comes from neighbouring samples being alike. A small gain survives even for independent samples, because better-shaped cells pack the space more efficiently than squares. But it is under a quarter of a bit a sample, and this course does not pursue it.'}
   ]}
 ]},
 
-{ id:'m1-vq-image', module:'M1', nav:'Quantizing an image', title:'What quantization saves, and what it costs',
+{ id:'m1-vq-image', module:'M1', nav:'Quantizing an image', title:'Quantizing an image',
   objective:'Work the bit rate of a quantized image and name what is lost.',
   keywords:'image quantization bits per pixel compression ratio banding contouring jpeg lossy',
   src:'CH7 s.37', steps:3, blocks:[
   {t:'eyebrow', text:'Module 1 · Vector quantization'},
-  {t:'title', text:'What quantization saves, and what it costs'},
+  {t:'title', text:'Quantizing an image'},
+  {t:'lede', text:'What quantization saves, and what it costs.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>An image is the case where this matters, because there are so many samples. Each pixel is one sample of brightness, and the arithmetic of section 1.6 applies to it unchanged.</p>'},
     {t:'wex', head:'A greyscale image, quantized', rows:[
@@ -805,7 +815,7 @@ const SC = [
     {t:'reveal', at:1, items:[
       {t:'body', html:'<p>What that costs is the same number section 1.4 gives, and it is large:</p>'},
       {t:'eq', key:true, tex:'\\Delta\\mathrm{SQNR}=6.02(8-5)=18.06\\ \\text{dB}'},
-      {t:'note', kind:'warn', head:'And it is visible, not just measurable', html:'A smooth gradient — a sky, a shadow across a wall — is a slow ramp in brightness. Quantize it coarsely and the ramp becomes a staircase, so the picture shows <b>bands</b> of flat tone with hard edges between them where there was no edge in the scene. The eye finds those invented edges easily, which is why an image tolerates far fewer bits in a noisy region than in a smooth one.'}
+      {t:'note', kind:'warn', head:'And it is visible, not just measurable', html:'A smooth gradient — a sky, a shadow across a wall — is a slow ramp in brightness. Quantize it coarsely and the ramp becomes a staircase. The picture then shows <b>bands</b> of flat tone, with hard edges between them where the scene had no edge. The eye finds those invented edges easily, which is why an image tolerates far fewer bits in a noisy region than in a smooth one.'}
     ]},
     {t:'reveal', at:2, items:[
       {t:'note', kind:'def', head:'This is lossy compression', html:'The removed information is not recoverable. The omitted bits described where the pixel lay inside its quantization interval. A decoder cannot recover that position. This loss is why the method is called <b>lossy</b>. JPEG also uses quantization, but it quantizes transformed image blocks rather than individual pixels.'}
@@ -816,7 +826,7 @@ const SC = [
   ], right:[
     {t:'fig', frame:true, svg:()=>figBanding(),
       caption:'One row of a smooth gradient, quantized at $256$ levels and at $8$. The fine quantizer follows the ramp so closely that the two cannot be told apart; the coarse one replaces it with flat steps, and each step edge is a band boundary the eye sees as a line that is not in the scene.'},
-    {t:'small', html:'The step height here is $\\Delta=2m_{\\max}/L$, exactly as in section 1.3 — an image is not a new kind of quantizer, only a great many samples of one.'}
+    {t:'small', html:'The step height here is $\\Delta=2m_{\\max}/L$, exactly as in section 1.3. An image is not a new kind of quantizer, only a great many samples of one.'}
   ]}
 ]},
 
@@ -826,7 +836,7 @@ const SC = [
   keywords:'summary sampling quantization pcm results bit rate sqnr',
   steps:0, blocks:[
   {t:'eyebrow', text:'Module 1 · Summary'},
-  {t:'title', text:'What carries forward'},
+  {t:'title', text:'What Module 1 established'},
   {t:'grid', cols:2, gap:'26px', items:[
     [{t:'card', head:'Sampling', items:[
       {t:'body', html:'<p>Sampling replicates the spectrum every $f_s$. If $f_s\\ge 2W$ the replicas do not overlap and the message survives exactly; otherwise it does not survive at all.</p>'},
@@ -837,7 +847,7 @@ const SC = [
       {t:'eq', plain:true, tex:'g_r(t)=\\sum_n g(nT_s)\\operatorname{sinc}(2Wt-n)'}
     ]}],
     [{t:'card', head:'Quantization', items:[
-      {t:'body', html:'<p>Rounding to $L=2^{R}$ levels costs a mean-square error that is fixed by the step size alone, as long as the step is small compared with how fast the density varies.</p>'},
+      {t:'body', html:'<p>Rounding to $L=2^{R}$ levels costs a mean-square error fixed by the step size alone. This holds as long as the step is small compared with how fast the density varies.</p>'},
       {t:'eq', plain:true, tex:'E[Q^{2}]=\\Delta^{2}/12,\\quad \\Delta=2m_{\\max}/L'}
     ]}],
     [{t:'card', head:'The rate that follows', items:[
@@ -845,7 +855,7 @@ const SC = [
       {t:'eq', plain:true, tex:'\\mathrm{SQNR}=\\alpha+6.02R,\\qquad R_b=Rf_s'}
     ]}]
   ]},
-  {t:'note', kind:'ok', head:'The module in one sentence', html:'Turning a signal into bits costs two things and nothing else: you must sample fast enough, or the spectrum folds and cannot be unfolded, and you must round, which adds a small noise whose power falls by a factor of four with every extra bit.'}
+  {t:'note', kind:'ok', head:'The module in one sentence', html:'Turning a signal into bits costs two things and nothing else. You must sample fast enough, or the spectrum folds and cannot be unfolded. And you must round, which adds a small noise whose power falls by a factor of four with every extra bit.'}
 ]}
 
 ];
