@@ -64,13 +64,13 @@ const PAM = M => Array.from({length:M},(_,k)=>[(2*k-(M-1))/(M-1)*1.4, 0]);
 const SC = [
 
 /* ---------------------------------------------------------------- 5.0 ---- */
-{ id:'m5-open', module:'M5', nav:'Three things to switch', title:'Three things a carrier has',
+{ id:'m5-open', module:'M5', nav:'Three things to switch', title:'Amplitude, frequency, phase',
   objective:'Frame the module as one question asked of three carrier parameters.',
   keywords:'digital modulation amplitude frequency phase keying ask fsk psk opening',
   src:'CH9 s.65', steps:2, blocks:[
   {t:'eyebrow', text:'Module 5 · Opening'},
   {t:'title', text:'Amplitude, frequency, phase'},
-  {t:'lede', text:'A sinusoidal carrier has an amplitude, a frequency and a phase. Switching any one of them according to the data is a digital modulation scheme, and there are three families because there are three things to switch.'},
+  {t:'lede', text:'A sinusoidal carrier has an amplitude, a frequency and a phase. Switching any one of them according to the data is a digital modulation scheme. There are three families because there are three things to switch.'},
   /* The three waveforms go side by side rather than stacked. Three figures in
      one column is taller than the stage; three across uses the width the scene
      has spare and leaves the type at the size it was designed at. */
@@ -108,7 +108,7 @@ const SC = [
       {t:'eq', key:true, tex:'d_{\\min}=2\\sqrt{E_b},\\qquad P_b=Q\\!\\left(\\sqrt{\\frac{2E_b}{N_0}}\\right)'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'ok', head:'This is the antipodal case again', html:'Exactly the constellation of Module 2 and Module 4, now carried on a carrier. The modulation has moved the signal to a frequency band; it has not changed the geometry, and so it has not changed the error probability by a decibel.'}
+      {t:'note', kind:'ok', head:'This is the antipodal case again', html:'Exactly the constellation of Module 2 and Module 4, now carried on a carrier. The modulation has moved the signal to a frequency band. It has not changed the geometry, and so it has not changed the error probability by a decibel.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figCarrier('bpsk'),
@@ -128,7 +128,7 @@ const SC = [
     {t:'body', html:'Two frequencies, one per bit, at the same amplitude:'},
     {t:'eq', tex:'s_i(t)=\\sqrt{\\frac{2E_b}{T_b}}\\cos(2\\pi f_it),\\qquad i=0,1'},
     {t:'reveal', at:1, items:[
-      {t:'note', kind:'def', head:'How far apart the frequencies must be', html:'The two waveforms are made <b>orthogonal</b> by choosing $$f_1=f_0+\\frac{1}{2T_b}.$$ Any closer and their inner product is non-zero, which pulls the two constellation points together; any further apart is wasted bandwidth for no gain in distance.'}
+      {t:'note', kind:'def', head:'How far apart the frequencies must be', html:'The two waveforms are made <b>orthogonal</b> by choosing $$f_1=f_0+\\frac{1}{2T_b}.$$ Any closer and their inner product is non-zero, which pulls the two constellation points together. Any further apart is wasted bandwidth for no gain in distance.'}
     ]},
     {t:'reveal', at:2, items:[
       {t:'body', html:'Two orthogonal waveforms need two axes, so the constellation is two-dimensional with one point on each:'},
@@ -136,7 +136,7 @@ const SC = [
       {t:'eq', key:true, tex:'d_{\\min}=\\sqrt{2E_b},\\qquad P_b=Q\\!\\left(\\sqrt{\\frac{E_b}{N_0}}\\right)'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'warn', head:'The three decibels, and where they went', html:'BFSK needs <b>twice the energy per bit</b> of BPSK for the same error probability. The reason is in the picture: two perpendicular points of length $\\sqrt{E_b}$ are $\\sqrt{2E_b}$ apart, while two opposite points of the same length are $2\\sqrt{E_b}$ apart. Perpendicular is closer than opposite, by a factor of $\\sqrt2$ in distance and a factor of two in energy.'}
+      {t:'note', kind:'warn', head:'The three decibels, and where they went', html:'BFSK needs <b>twice the energy per bit</b> of BPSK for the same error probability. The reason is in the picture. Two perpendicular points of length $\\sqrt{E_b}$ are $\\sqrt{2E_b}$ apart; two opposite points of the same length are $2\\sqrt{E_b}$ apart. Perpendicular is closer than opposite, by a factor of $\\sqrt2$ in distance and a factor of two in energy.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figCarrier('bfsk'),
@@ -165,7 +165,7 @@ const SC = [
       {t:'body', html:'The same answer as BFSK, and for the same reason: the same distance at the same average energy.'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'ok', head:'Two schemes, one geometry', html:'BASK puts its points at $0$ and $\\sqrt{2E_b}$ on a line; BFSK puts them at $(\\sqrt{E_b},0)$ and $(0,\\sqrt{E_b})$ in a plane. Different pictures, the same separation at the same average energy, and therefore the same error probability. Module 3 said two signal sets with the same geometry perform identically — here are two with <em>different</em> geometry and the same distance, which is all the performance depends on.'}
+      {t:'note', kind:'ok', head:'Two schemes, one geometry', html:'BASK puts its points at $0$ and $\\sqrt{2E_b}$ on a line; BFSK puts them at $(\\sqrt{E_b},0)$ and $(0,\\sqrt{E_b})$ in a plane. Different pictures, the same separation at the same average energy, and therefore the same error probability. Module 3 said two signal sets with the same geometry perform identically. Here are two with <em>different</em> geometry and the same distance, which is all the performance depends on.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figCarrier('bask'),
@@ -185,7 +185,7 @@ const SC = [
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'Keep the amplitude fixed and use $M$ phases instead of two:'},
     {t:'eq', tex:'s_i(t)=\\sqrt{\\frac{2E_s}{T_s}}\\cos\\!\\left(2\\pi f_ct+\\frac{2\\pi(i-1)}{M}\\right),\\quad i=1,\\ldots,M'},
-    {t:'small', html:'Two basis functions — a cosine and a sine at the carrier frequency — carry all $M$ of them, so the constellation is $M$ points evenly spaced on a circle of radius $\\sqrt{E_s}$, whatever $M$ is.'},
+    {t:'small', html:'Two basis functions — a cosine and a sine at the carrier frequency — carry all $M$ of them. The constellation is therefore $M$ points evenly spaced on a circle of radius $\\sqrt{E_s}$, whatever $M$ is.'},
     {t:'reveal', at:1, items:[
       {t:'body', html:'Neighbouring points subtend $2\\pi/M$ at the centre. The cosine rule gives the chord between them:'},
       {t:'eq', tex:'d_{\\min}^{2}=E_s+E_s-2E_s\\cos\\frac{2\\pi}{M}=2E_s\\left(1-\\cos\\frac{2\\pi}{M}\\right)'},
@@ -208,12 +208,13 @@ const SC = [
   ]}
 ]},
 
-{ id:'m5-mpsk-pe', module:'M5', nav:'What M-PSK costs', title:'What each extra bit costs',
+{ id:'m5-mpsk-pe', module:'M5', nav:'What M-PSK costs', title:'The error probability of M-ary PSK',
   objective:'Give the M-PSK error probability and the cost of increasing M.',
   keywords:'m-psk error probability energy per bit cost of doubling M decibels',
   src:'CH9 s.78', steps:3, blocks:[
   {t:'eyebrow', text:'Module 5 · Phase-shift keying'},
-  {t:'title', text:'What each extra bit costs'},
+  {t:'title', text:'The error probability of M-ary PSK'},
+  {t:'lede', text:'What each extra bit costs.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'Put the distance into the nearest-neighbour approximation of Module 4:'},
     {t:'eq', key:true, tex:'P_e\\approx 2\\,Q\\!\\left(\\sqrt{\\frac{2E_s}{N_0}}\\,\\sin\\frac{\\pi}{M}\\right)'},
@@ -242,7 +243,7 @@ const SC = [
       return a.svg();
     }, caption:'Symbol error probability against energy per bit, for four sizes of PSK. The curves move steadily to the right as $M$ grows, and the gaps widen.'},
     {t:'legend', items:[['in','$M=2$'],['out','$M=4$'],['h','$M=8$'],['err','$M=16$']]},
-    {t:'small', html:'$M=2$ and $M=4$ lie almost on top of each other — QPSK carries two bits a symbol for the same energy per bit as BPSK, which is why it is everywhere.'}
+    {t:'small', html:'$M=2$ and $M=4$ lie almost on top of each other. QPSK carries two bits a symbol for the same energy per bit as BPSK, which is why it is everywhere.'}
   ]}
 ]},
 
@@ -285,7 +286,7 @@ const SC = [
   {t:'title', text:'Quadrature amplitude modulation'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'note', kind:'def', head:'The idea in one line', html:'Run one amplitude-modulated signal on the cosine and an independent one on the sine. Two axes, two independent $\\sqrt{M}$-level constellations, and $M$ points on a square grid.'},
-    {t:'body', html:'<p>That is why the material states $M$-QAM as two-dimensional $M$-ASK: it is literally two amplitude constellations at right angles, and the receiver decides each axis separately.</p>'},
+    {t:'body', html:'<p>That is why the material states $M$-QAM as two-dimensional $M$-ASK. It is literally two amplitude constellations at right angles, and the receiver decides each axis separately.</p>'},
     {t:'reveal', at:1, items:[
       {t:'body', html:'With neighbouring points a distance $d$ apart on the grid,'},
       {t:'eq', tex:'E_{s,\\text{avg}}=\\frac{(M-1)d^{2}}{6}\\quad\\Longrightarrow\\quad d_{\\min}=d=\\sqrt{\\frac{6\\,E_{s,\\text{avg}}}{M-1}}'},
@@ -296,7 +297,7 @@ const SC = [
       {t:'eq', key:true, tex:'P_e\\approx N_{\\min}\\,Q\\!\\left(\\sqrt{\\frac{d_{\\min}^{2}}{2N_0}}\\right)'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'ok', head:'Why QAM wins for large alphabets', html:'At sixteen points, PAM has $d_{\\min}^{2}=12E_s/255$ and QAM has $6E_s/15$ — larger by a factor of $8.5$, or $9.3$ dB, at the same energy and the same four bits a symbol. Two dimensions are worth having, and QAM is how they are used.'}
+      {t:'note', kind:'ok', head:'Why QAM wins for large alphabets', html:'At sixteen points, PAM has $d_{\\min}^{2}=12E_s/255$ and QAM has $6E_s/15$. That is larger by a factor of $8.5$, or $9.3$ dB, at the same energy and the same four bits a symbol. Two dimensions are worth having, and QAM is how they are used.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figConst(QAM16,{lim:1.35,w:360,h:300,r:4.5,n:88}),
@@ -333,7 +334,7 @@ const SC = [
       {t:'note', kind:'ok', head:'The distance does not shrink', html:'This is the opposite of every other family in the module. In PSK and QAM the points crowd together as $M$ grows and $d_{\\min}$ falls; here the separation stays at $\\sqrt{2E_s}$ however large $M$ becomes. Only the number of ways to be wrong grows, and that costs a factor in front of the $Q$ rather than inside it.'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'warn', head:'What it costs instead', html:'Bandwidth. Each new symbol needs a new frequency, so the occupied band grows in proportion to $M$, while PSK and QAM keep the same two dimensions however many points they place in them. Frequency-shift keying spends bandwidth to save power; the others spend power to save bandwidth. Which is the right trade depends entirely on which of the two is scarce.'}
+      {t:'note', kind:'warn', head:'What it costs instead', html:'Bandwidth. Each new symbol needs a new frequency, so the occupied band grows in proportion to $M$. PSK and QAM keep the same two dimensions however many points they place in them. Frequency-shift keying spends bandwidth to save power; the others spend power to save bandwidth. Which is the right trade depends entirely on which of the two is scarce.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>{
@@ -354,7 +355,8 @@ const SC = [
   keywords:'comparison psk qam pam fsk bandwidth power efficiency trade',
   src:'CH9 s.95–101', steps:2, blocks:[
   {t:'eyebrow', text:'Module 5 · Comparison'},
-  {t:'title', text:'Which family to use'},
+  {t:'title', text:'Comparing the families'},
+  {t:'lede', text:'Which family to use, and what each one spends.'},
   {t:'body', html:'Every scheme in this module carries $\\log_2 M$ bits a symbol. What separates them is how much energy that costs and how much bandwidth.'},
   {t:'grid', cols:2, gap:'26px', items:[
     [{t:'card', head:'PAM — one dimension', items:[
@@ -371,10 +373,10 @@ const SC = [
     ]}]
   ]},
   {t:'reveal', at:1, items:[
-    {t:'note', kind:'ok', head:'One sentence to take away', html:'Every family answers the same question — how to place $M$ points as far apart as possible for a given average energy — and they differ in how many dimensions they are allowed to use. More dimensions mean more room and more bandwidth, and that is the whole trade.'}
+    {t:'note', kind:'ok', head:'One sentence to take away', html:'Every family answers the same question: how to place $M$ points as far apart as possible for a given average energy. They differ in how many dimensions they are allowed to use. More dimensions mean more room and more bandwidth, and that is the whole trade.'}
   ]},
   {t:'reveal', at:2, items:[
-    {t:'note', kind:'warn', head:'What none of this settles', html:'The comparison is on error probability and bandwidth alone. A real choice also weighs how hard the transmitter is to build, whether the amplifier can be run at saturation, and how much the receiver has to know about the carrier phase. PSK survives against QAM in some systems for the second of those reasons and no other.'}
+    {t:'note', kind:'warn', head:'What none of this settles', html:'The comparison is on error probability and bandwidth alone. A real choice weighs three more things. How hard is the transmitter to build, can the amplifier run at saturation, and how much must the receiver know about the carrier phase? PSK survives against QAM in some systems for the second of those reasons and no other.'}
   ]}
 ]},
 
@@ -384,10 +386,10 @@ const SC = [
   keywords:'summary modulation families minimum distance error probability comparison',
   steps:0, blocks:[
   {t:'eyebrow', text:'Module 5 · Summary'},
-  {t:'title', text:'What carries forward'},
+  {t:'title', text:'What Module 5 established'},
   {t:'grid', cols:2, gap:'26px', items:[
     [{t:'card', head:'The binary three', items:[
-      {t:'body', html:'<p>BPSK is antipodal and best. BFSK and BASK are both $3$ dB worse, and for the same reason: their two points are $\\sqrt2$ closer at the same average energy per bit.</p>'},
+      {t:'body', html:'<p>BPSK is antipodal and best. BFSK and BASK are both $3$ dB worse, for the same reason: their points are $\\sqrt2$ closer at the same average energy per bit.</p>'},
       {t:'eq', plain:true, tex:'Q\\!\\left(\\sqrt{2E_b/N_0}\\right)\\ \\text{vs}\\ Q\\!\\left(\\sqrt{E_b/N_0}\\right)'}
     ]}],
     [{t:'card', head:'The M-ary families', items:[
@@ -404,7 +406,7 @@ const SC = [
       {t:'body', html:'<p>More bits a symbol costs power in PSK, PAM and QAM, and bandwidth in FSK. Which to spend is a question about the channel, not about the mathematics.</p>'}
     ]}]
   ]},
-  {t:'note', kind:'ok', head:'What Module 6 asks instead', html:'Every scheme here is judged against the noise. Module 6 asks a different question: how much information the source produced in the first place, and how fast a channel can carry it at all — a limit no modulation scheme can pass.'}
+  {t:'note', kind:'ok', head:'What Module 6 asks instead', html:'Every scheme here is judged against the noise. Module 6 asks a different question: how much information did the source produce, and how fast can a channel carry it at all? That limit no modulation scheme can pass.'}
 ]}
 
 ];

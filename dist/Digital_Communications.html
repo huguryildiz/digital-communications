@@ -4294,7 +4294,7 @@ const SC = [
   steps:2, blocks:[
   {t:'eyebrow', text:'Module 0 · The frame of the course'},
   {t:'title', text:'One question, asked in seven ways'},
-  {t:'lede', text:'A transmitter is given a symbol and sends a waveform. A channel adds noise to that waveform. A receiver observes the sum and decides which symbol was sent. Everything in this course is either a way of choosing the waveforms, a way of making the decision, or a way of working out how often the decision is wrong.'},
+  {t:'lede', text:'A transmitter is given a symbol and sends a waveform. A channel adds noise to that waveform. A receiver observes the sum and decides which symbol was sent. Everything in this course is one of three things. It is a way of choosing the waveforms, a way of making the decision, or a way of working out how often the decision is wrong.'},
   {t:'fig', frame:true, svg:()=>figChain(),
     caption:'The system, and the three places a module can work on it. The transmitter chooses the waveforms; the channel is given and cannot be argued with; the receiver decides.'},
   {t:'reveal', at:1, items:[
@@ -4320,13 +4320,13 @@ const SC = [
   {t:'eyebrow', text:'Module 0 · The frame of the course'},
   {t:'title', text:'Why send digits at all'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
-    {t:'body', html:'<p>An analog signal that travels through a long link picks up noise at every stage, and there is nothing to be done about it: an amplifier cannot tell the signal from what has been added to it, so it amplifies both. After twenty hops the noise has been added twenty times.</p>'},
+    {t:'body', html:'<p>An analog signal that travels through a long link picks up noise at every stage, and there is nothing to be done about it. An amplifier cannot tell the signal from what has been added to it, so it amplifies both. After twenty hops the noise has been added twenty times.</p>'},
     {t:'reveal', at:1, items:[
       {t:'note', kind:'ok', head:'The one reason', html:'A digital receiver does not amplify what it receives — it <b>decides</b>. If the decision is right, the waveform it sends on is the original one, exactly, with no trace of the noise the last hop added. Twenty hops with a decision at each one are no worse than one hop, as long as every decision is right.'},
       {t:'body', html:'<p>That is the whole argument, and it is why the rest of the course is about how often a decision is wrong. A small error probability at each hop is what buys the perfect regeneration.</p>'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'warn', head:'And the price', html:'Sending digits costs <b>bandwidth</b>, because a sharp pulse needs more of it than the smooth signal it replaced, and it costs <b>accuracy</b>, because a continuous value has to be rounded to one of a finite set before it can be sent at all. Module 1 is the study of that rounding and Module 2 of that bandwidth.'}
+      {t:'note', kind:'warn', head:'And the price', html:'Sending digits costs <b>bandwidth</b>, because a sharp pulse needs more of it than the smooth signal it replaced. And it costs <b>accuracy</b>, because a continuous value has to be rounded to one of a finite set before it can be sent at all. Module 1 is the study of that rounding and Module 2 of that bandwidth.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>{
@@ -4373,7 +4373,7 @@ const SC = [
       {t:'note', kind:'def', head:'What depends on what', html:'Modules 1 and 2 stand on their own. Module 3 is needed for 4, and 4 for 5 — those three should be read in order and not sampled. Module 6 depends on nothing else here and can be read at any point.'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'ok', head:'Ten laboratories and a hundred and twenty questions', html:'Each module carries one or two laboratories, where every control changes the mathematics rather than the picture, and twenty practice questions whose solutions are worked rather than stated. The questions follow the shapes the papers actually set, and each module names those shapes before it starts.'}
+      {t:'note', kind:'ok', head:'Ten laboratories and a hundred and twenty questions', html:'Each module carries one or two laboratories, where every control changes the mathematics rather than the picture. It also carries twenty practice questions whose solutions are worked rather than stated. The questions follow the shapes the papers actually set, and each module names those shapes before it starts.'}
     ]}
   ]}
 ]},
@@ -4386,8 +4386,8 @@ const SC = [
   {t:'eyebrow', text:'Module 0 · The frame of the course'},
   {t:'title', text:'How to read this, and where the numbers come from'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
-    {t:'note', kind:'def', head:'Scenes build in steps', html:'Most scenes reveal themselves a piece at a time. Space or the right arrow takes the next step, and a scene with three steps says so at the bottom right. The point is to leave time to answer a question before its answer appears, so it is worth pausing at each step rather than pressing through.'},
-    {t:'note', kind:'def', head:'The laboratories are live', html:'Every control in a laboratory changes the mathematics and not the drawing. The numbers beside a figure are computed from the definitions at the moment the control moves, so a reading taken from a laboratory is a reading of the same formulas the scenes derive.'},
+    {t:'note', kind:'def', head:'Scenes build in steps', html:'Most scenes reveal themselves a piece at a time. Space or the right arrow takes the next step, and a scene with three steps says so at the bottom right. The point is to leave time to answer a question before its answer appears. It is worth pausing at each step rather than pressing through.'},
+    {t:'note', kind:'def', head:'The laboratories are live', html:'Every control in a laboratory changes the mathematics and not the drawing. The numbers beside a figure are computed from the definitions at the moment the control moves. A reading taken from a laboratory is therefore a reading of the same formulas the scenes derive.'},
     {t:'reveal', at:1, items:[
       {t:'note', kind:'ok', head:'Four ways to read it', html:'<b>Normal</b> shows everything. <b>Lecture</b> hides the practice questions. <b>Self-study</b> opens the solutions by default. <b>Student</b> and <b>instructor</b> differ in whether the teaching notes appear. The controls are along the top, and the choice is remembered.'}
     ]},
@@ -4396,9 +4396,9 @@ const SC = [
     ]}
   ], right:[
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'def', head:'Where the textbook is', html:'Most scenes carry a small chip beside their address pointing into the course textbook. The chip is a marker followed by a chapter and section, such as <b>PS CH8.4.1</b>, and the marker is there because this artifact numbers its own chapters the same way — without it a reader cannot tell which of the two an address belongs to.'},
-      {t:'small', html:'A scene with no chip is one the textbook does not cover in that form, and a few scenes carry two addresses. The chip points at the section that states the same result, not at a page a figure came from — nothing here came from a page.'},
-      {t:'note', kind:'ok', head:'And where the numbers come from', html:'Every number stated in a scene or a solution is recomputed by a separate program that reaches it a different way: constellations are rebuilt from their definitions rather than from the formula printed beside them, Huffman codes are built twice by two different algorithms, and every error probability is simulated against its formula. A number that appears here has survived that.'}
+      {t:'note', kind:'def', head:'Where the textbook is', html:'Most scenes carry a small chip beside their address pointing into the course textbook. The chip is a marker followed by a chapter and section, such as <b>PS CH8.4.1</b>. The marker is there because this artifact numbers its own chapters the same way. Without it a reader cannot tell which of the two an address belongs to.'},
+      {t:'small', html:'A scene with no chip is one the textbook does not cover in that form, and a few scenes carry two addresses. The chip points at the section that states the same result, not at a page a figure came from. Nothing here came from a page.'},
+      {t:'note', kind:'ok', head:'And where the numbers come from', html:'Every number stated in a scene or a solution is recomputed by a separate program that reaches it a different way. Constellations are rebuilt from their definitions rather than from the formula printed beside them. Huffman codes are built twice by two different algorithms. Every error probability is simulated against its formula. A number that appears here has survived that.'}
     ]}
   ]}
 ]}
@@ -4635,7 +4635,7 @@ const SC = [
   keywords:'sampling quantization encoding chain analog digital reversible',
   src:'CH7 s.3', steps:2, blocks:[
   {t:'eyebrow', text:'Module 1 · Opening'},
-  {t:'title', text:'Three operations, in this order'},
+  {t:'title', text:'From a waveform to a bit stream'},
   {t:'lede', text:'A continuous waveform becomes a bit stream in three steps. Each step discards something different, and only one of the three can be undone.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p><b>Sampling</b> makes the signal discrete in time. <b>Quantization</b> makes it discrete in amplitude. <b>Encoding</b> replaces each quantized amplitude by a word of $R$ bits.</p>'},
@@ -4666,12 +4666,13 @@ const SC = [
 ]},
 
 /* ---------------------------------------------------------------- 1.1 ---- */
-{ id:'m1-sampler', module:'M1', nav:'Impulse-train sampling', title:'Sampling written as a multiplication',
+{ id:'m1-sampler', module:'M1', nav:'Impulse-train sampling', title:'Impulse-train sampling',
   objective:'Define the ideal sampled signal and reduce it to a weighted impulse train.',
   keywords:'impulse train sampling period sifting property ideal sampled signal',
   src:'CH7 s.4', steps:2, blocks:[
   {t:'eyebrow', text:'Module 1 · The sampling theorem'},
-  {t:'title', text:'The ideal sampled signal'},
+  {t:'title', text:'Impulse-train sampling'},
+  {t:'lede', text:'Sampling is written as a multiplication, so that the Fourier transform can be applied to it.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'Sampling every $T_s$ seconds is multiplication by an impulse train:'},
     {t:'eq', tex:'p(t)=\\sum_{n=-\\infty}^{\\infty}\\delta(t-nT_s),\\qquad f_s=\\frac{1}{T_s}'},
@@ -4693,7 +4694,7 @@ const SC = [
   keywords:'fourier transform replication convolution impulse train spectrum',
   src:'CH7 s.5–6', steps:2, blocks:[
   {t:'eyebrow', text:'Module 1 · The sampling theorem'},
-  {t:'title', text:'One multiplication, one convolution'},
+  {t:'title', text:'Sampling replicates the spectrum'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'A product in time is a convolution in frequency, so $G_\\delta(f)=G(f)*P(f)$. The transform of the impulse train is another impulse train:'},
     {t:'eq', tex:'P(f)=\\frac{1}{T_s}\\sum_{n=-\\infty}^{\\infty}\\delta(f-nf_s)=f_s\\sum_{n=-\\infty}^{\\infty}\\delta(f-nf_s)'},
@@ -4709,22 +4710,22 @@ const SC = [
   ]}
 ]},
 
-{ id:'m1-cases', module:'M1', nav:'Three sampling rates', title:'Three rates, three outcomes',
+{ id:'m1-cases', module:'M1', nav:'Three sampling rates', title:'Three sampling rates',
   objective:'Separate oversampling, Nyquist sampling and aliasing by the geometry of the replicas.',
   keywords:'oversampling nyquist undersampling aliasing overlap guard band',
   src:'CH7 s.7–8', steps:2, blocks:[
   {t:'eyebrow', text:'Module 1 · The sampling theorem'},
-  {t:'title', text:'Whether the replicas overlap'},
+  {t:'title', text:'Three sampling rates'},
   {t:'grid', cols:3, gap:'26px', items:[
     [{t:'fig', svg:()=>figCase('over'), caption:'<b>$f_s>2W$.</b> The replicas are separated by a gap. The message can be filtered out unchanged.'}],
     [{t:'fig', svg:()=>figCase('nyq'), caption:'<b>$f_s=2W$.</b> The replicas touch and do not overlap. This is the lowest rate that still works.'}],
     [{t:'fig', svg:()=>figCase('under'), caption:'<b>$f_s<2W$.</b> The replicas overlap. The sum in the overlap cannot be separated back into its parts.'}]
   ]},
   {t:'reveal', at:1, items:[
-    {t:'note', kind:'err', head:'Aliasing', html:'In the third case a high frequency of the message has been added to a low frequency of a replica, and no filter can undo the addition. The original signal cannot be recovered from its samples — not by a better filter, not by more computation.'}
+    {t:'note', kind:'err', head:'Aliasing', html:'In the third case a high frequency of the message has been added to a low frequency of a replica. No filter can undo the addition. The original signal cannot be recovered from its samples — not by a better filter, not by more computation.'}
   ]},
   {t:'reveal', at:2, items:[
-    {t:'body', html:'In practice a real signal is never strictly bandlimited, so a <b>guard band</b> $f_g$ is left between the edge of the message and the edge of the first replica. The sampling rate becomes $f_s = 2W + f_g$, and an anti-aliasing filter removes whatever lies above $W$ before the sampler sees it.'}
+    {t:'body', html:'In practice a real signal is never strictly bandlimited. A <b>guard band</b> $f_g$ is therefore left between the edge of the message and the edge of the first replica. The sampling rate becomes $f_s = 2W + f_g$, and an anti-aliasing filter removes whatever lies above $W$ before the sampler sees it.'}
   ]}
 ]},
 
@@ -4733,12 +4734,12 @@ const SC = [
   keywords:'sampling theorem nyquist rate bandlimited reconstruction statement',
   src:'CH7 s.12', steps:1, blocks:[
   {t:'eyebrow', text:'Module 1 · The sampling theorem'},
-  {t:'title', text:'The statement'},
+  {t:'title', text:'The sampling theorem'},
   {t:'note', kind:'def', head:'Sampling theorem', html:'If $G(f)=0$ for $|f|\\ge W$ and the sampling rate satisfies $f_s\\ge 2W$, then $g(t)$ is determined completely by its samples $g(nT_s)$ and can be recovered from them exactly. If $f_s<2W$, aliasing occurs and the recovery fails.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>The rate $2W$ is the <b>Nyquist rate</b>: twice the highest frequency present. The interval $T_s = 1/(2W)$ at that rate is the <b>Nyquist interval</b>.</p>'},
     {t:'reveal', at:1, items:[
-      {t:'note', kind:'warn', head:'Twice the highest frequency, not twice the bandwidth', html:'For a lowpass signal the two coincide, and that is the only case treated here. For a signal occupying a band that does not reach down to zero the two are different numbers, and the rate that matters is still set by the geometry of the replicas rather than by either name.'}
+      {t:'note', kind:'warn', head:'Twice the highest frequency, not twice the bandwidth', html:'For a lowpass signal the two coincide, and that is the only case treated here. For a signal whose band does not reach down to zero, the two are different numbers. The rate that matters is still set by the geometry of the replicas, not by either name.'}
     ]}
   ], right:[
     {t:'eq', label:'Nyquist rate', key:true, tex:'f_s^{\\min}=2W'},
@@ -4747,34 +4748,36 @@ const SC = [
 ]},
 
 /* ---------------------------------------------------------------- 1.2 ---- */
-{ id:'m1-lpf', module:'M1', nav:'The reconstruction filter', title:'Recovering the message',
+{ id:'m1-lpf', module:'M1', nav:'The reconstruction filter', title:'The reconstruction filter',
   objective:'Give the ideal reconstruction filter and its impulse response.',
   keywords:'reconstruction lowpass filter impulse response sinc interpolation',
   src:'CH7 s.9–10', steps:2, blocks:[
   {t:'eyebrow', text:'Module 1 · Reconstruction'},
-  {t:'title', text:'One filter undoes the replication'},
+  {t:'title', text:'The reconstruction filter'},
+  {t:'lede', text:'One lowpass filter undoes the replication.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'Keeping the copy at the origin and rejecting every other one is a lowpass filter. At $f_s=2W$:'},
     {t:'eq', tex:'H_{\\mathrm{LPF}}(f)=\\begin{cases}\\dfrac{1}{2W}, & |f|\\le W\\\\[4pt] 0, & \\text{otherwise}\\end{cases}'},
     {t:'reveal', at:1, items:[
       {t:'body', html:'Its impulse response is the inverse transform of a rectangle:'},
       {t:'eq', key:true, tex:'h_{\\mathrm{LPF}}(t)=\\int_{-W}^{W}\\frac{1}{2W}e^{j2\\pi ft}\\,df=\\frac{\\sin(2\\pi Wt)}{2\\pi Wt}=\\operatorname{sinc}(2Wt)'},
-      {t:'small', html:'The convention fixed here and used for the rest of the course: $\\operatorname{sinc}(x)=\\dfrac{\\sin(\\pi x)}{\\pi x}$, so that $\\operatorname{sinc}(x)$ is one at $x=0$ and zero at every other integer.'}
+      {t:'small', html:'The convention fixed here and used for the rest of the course: $\\operatorname{sinc}(x)=\\dfrac{\\sin(\\pi x)}{\\pi x}$. This makes $\\operatorname{sinc}(x)$ one at $x=0$ and zero at every other integer.'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'warn', head:'Why the gain is $1/2W$', html:'Sampling multiplied the spectrum by $f_s=2W$. The filter has to divide it back. A reconstruction filter of unit gain returns a signal $2W$ times too large, which is a scaling error that no plot of the spectrum shape will reveal.'}
+      {t:'note', kind:'warn', head:'Why the gain is $1/2W$', html:'Sampling multiplied the spectrum by $f_s=2W$. The filter has to divide it back. A reconstruction filter of unit gain returns a signal $2W$ times too large. That scaling error shows on no plot of the spectrum shape.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:figLpf, caption:'The filter passes the copy at the origin and rejects the replicas. At exactly the Nyquist rate the replicas touch the edge of the passband, which is why an ideal filter is needed there and a gentler one suffices when the rate is higher.'}
   ]}
 ]},
 
-{ id:'m1-interp', module:'M1', nav:'Interpolation', title:'The message between the samples',
+{ id:'m1-interp', module:'M1', nav:'Interpolation', title:'The interpolation formula',
   objective:'Show the interpolation formula as a sum of shifted sinc functions.',
   keywords:'interpolation formula sinc shifted samples reconstruction sum',
   src:'CH7 s.11–12', steps:2, blocks:[
   {t:'eyebrow', text:'Module 1 · Reconstruction'},
-  {t:'title', text:'Every sample carries one sinc'},
+  {t:'title', text:'The interpolation formula'},
+  {t:'lede', text:'Every sample carries one sinc, and the sum of them is the message between the samples.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'Filtering in frequency is convolution in time. Convolving the impulse train with $h_{\\mathrm{LPF}}$ and using the sifting property once more gives'},
     {t:'eq', key:true, tex:'g_r(t)=\\sum_{n=-\\infty}^{\\infty}g(nT_s)\\operatorname{sinc}\\!\\bigl(2W(t-nT_s)\\bigr)'},
@@ -4795,7 +4798,7 @@ const SC = [
   keywords:'worked example nyquist rate guard band modulation bandwidth product',
   src:'CH7 s.13–14', steps:3, blocks:[
   {t:'eyebrow', text:'Module 1 · Reconstruction'},
-  {t:'title', text:'Worked example'},
+  {t:'title', text:'Worked example: three sampling rates'},
   {t:'wex', rows:[
     ['Given','A signal $x(t)$ bandlimited to $W=40$ kHz.'],
     ['Find','(a) the Nyquist rate; (b) the rate with a $10$ kHz guard band; (c) the Nyquist rate of $y(t)=x(t)\\cos(80000\\pi t)$.']
@@ -4821,12 +4824,13 @@ const SC = [
 ]},
 
 /* ---------------------------------------------------------------- 1.3 ---- */
-{ id:'m1-quant', module:'M1', nav:'Quantization', title:'Rounding to a finite set',
+{ id:'m1-quant', module:'M1', nav:'Quantization', title:'Uniform quantization',
   objective:'Define quantization and separate mid-rise from mid-tread.',
   keywords:'quantization levels midrise midtread uniform nonuniform step size',
   src:'CH7 s.15–16', steps:2, blocks:[
   {t:'eyebrow', text:'Module 1 · Quantization'},
-  {t:'title', text:'Mid-rise and mid-tread'},
+  {t:'title', text:'Uniform quantization'},
+  {t:'lede', text:'Rounding each sample to the nearest of a finite set of levels. The two standard families differ only at zero.'},
   {t:'cols', ratio:'c-5-7', vcenter:true, left:[
     {t:'note', kind:'def', head:'Definition', html:'<b>Quantization</b> replaces a sample amplitude by the nearest member of a finite set of $L$ <b>representation levels</b>. In a <b>uniform</b> quantizer the spacing $\\Delta$ between consecutive levels is the same everywhere.'},
     {t:'reveal', at:1, items:[
@@ -4843,7 +4847,7 @@ const SC = [
   ]}
 ]},
 
-{ id:'m1-lloydmax', module:'M1', nav:'Levels and boundaries', title:'Where the boundaries go',
+{ id:'m1-lloydmax', module:'M1', nav:'Levels and boundaries', title:'The quantizer as a function',
   objective:'State the quantizer function and the two optimality conditions.',
   keywords:'quantizer function boundaries lloyd max midpoint centroid step size',
   src:'CH7 s.17', steps:2, blocks:[
@@ -4875,23 +4879,24 @@ const SC = [
 ]},
 
 /* ---------------------------------------------------------------- 1.4 ---- */
-{ id:'m1-qnoise', module:'M1', nav:'Quantization noise', title:'The error and its power',
+{ id:'m1-qnoise', module:'M1', nav:'Quantization noise', title:'Quantization noise',
   objective:'Model the quantization error and derive its mean-square value.',
   keywords:'quantization noise error uniform distribution mean square delta squared twelve',
   src:'CH7 s.18–20', steps:3, blocks:[
   {t:'eyebrow', text:'Module 1 · Quantization noise'},
-  {t:'title', text:'How large is the rounding?'},
+  {t:'title', text:'Quantization noise'},
+  {t:'lede', text:'The rounding error behaves like a small noise, and its power can be computed exactly.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'The quantization error is the difference between what went in and what came out:'},
     {t:'eq', tex:'Q=M-V=M-\\mathbb{Q}(M)'},
     {t:'reveal', at:1, items:[
       {t:'body', html:'Because every input is sent to the nearer level, the error can never exceed half a step:'},
       {t:'eq', tex:'-\\frac{\\Delta}{2}\\le q\\le\\frac{\\Delta}{2}'},
-      {t:'body', html:'If $\\Delta$ is small enough that the density of $M$ is nearly flat across one region, the error is as likely to fall anywhere in that interval as anywhere else, so $Q\\sim U(-\\Delta/2,\\Delta/2)$.'}
+      {t:'body', html:'If $\\Delta$ is small enough, the density of $M$ is nearly flat across one region. The error is then as likely to fall anywhere in that interval as anywhere else, so $Q\\sim U(-\\Delta/2,\\Delta/2)$.'}
     ]},
     {t:'reveal', at:2, items:[
       {t:'eq', key:true, tex:'E[Q^{2}]=\\int_{-\\Delta/2}^{\\Delta/2}q^{2}\\,\\frac{1}{\\Delta}\\,dq=\\frac{\\Delta^{2}}{12}'},
-      {t:'small', html:'With a zero-mean input the error has zero mean as well, so this mean square is also the variance: the power of the quantization noise <em>is</em> its variance.'}
+      {t:'small', html:'With a zero-mean input the error has zero mean as well, so this mean square is also the variance. The power of the quantization noise <em>is</em> its variance.'}
     ]},
     {t:'reveal', at:3, items:[
       {t:'body', html:'Substituting $\\Delta=2m_{\\max}/L$ and $L=2^{R}$ gives the form used for the rest of the module:'},
@@ -4904,12 +4909,13 @@ const SC = [
   ]}
 ]},
 
-{ id:'m1-sqnr', module:'M1', nav:'Signal-to-noise ratio', title:'Six decibels a bit',
+{ id:'m1-sqnr', module:'M1', nav:'Signal-to-noise ratio', title:'Signal-to-quantization-noise ratio',
   objective:'Derive the SQNR expression and the per-bit rule that follows from it.',
   keywords:'sqnr signal to quantization noise ratio decibel six per bit',
   src:'CH7 s.21–22', steps:2, blocks:[
   {t:'eyebrow', text:'Module 1 · Quantization noise'},
   {t:'title', text:'Signal-to-quantization-noise ratio'},
+  {t:'lede', text:'Six decibels a bit.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'eq', label:'definition', tex:'\\mathrm{SQNR}=\\frac{P_M}{E[Q^{2}]}=\\frac{E[M^{2}]}{E\\bigl[(M-\\mathbb{Q}(M))^{2}\\bigr]}'},
     {t:'reveal', at:1, items:[
@@ -4942,7 +4948,7 @@ const SC = [
   keywords:'worked example sinusoid parseval average power sqnr three four bits',
   src:'CH7 s.23–24', steps:3, blocks:[
   {t:'eyebrow', text:'Module 1 · Quantization noise'},
-  {t:'title', text:'Worked example'},
+  {t:'title', text:'Worked example: quantizing a sinusoid'},
   {t:'wex', rows:[
     ['Given','$m(t)=5\\cos t$, quantized by a uniform quantizer that spans the full range of the signal.'],
     ['Find','The step size and the SQNR in decibels for $R=3$ and for $R=4$ bits per sample.']
@@ -4963,7 +4969,7 @@ const SC = [
     {t:'wex', rows:[
       ['Check','The two answers differ by $6.02$ dB, which is one bit. Independently: $E[Q^{2}]=\\Delta^{2}/12 = 1.25^{2}/12 = 0.1302$, and $10\\log_{10}(12.5/0.1302) = 19.82$ dB. Two routes, one number.']
     ]},
-    {t:'note', kind:'warn', head:'What the formula does not know', html:'Quantize this waveform and measure the error it actually makes, and the answers are $19.09$ dB and $25.31$ dB — about $0.7$ dB and $0.5$ dB below what the formula gives. The uniform error model assumes the error is equally likely anywhere in $(-\\Delta/2,\\Delta/2)$, and a sinusoid spends most of its time near its peaks, where the error is largest. The gap halves with every extra bit — $0.27$ dB at $R=6$, $0.14$ dB at $R=8$ — because that is what "$\\Delta$ small enough" means. At the resolutions used in practice the formula is exact for every purpose; at eight levels it is optimistic, and knowing by how much is the difference between using a model and believing it.'},
+    {t:'note', kind:'warn', head:'What the formula does not know', html:'Quantize this waveform and measure the error it actually makes, and the answers are $19.09$ dB and $25.31$ dB. That is about $0.7$ dB and $0.5$ dB below what the formula gives. The uniform error model assumes the error is equally likely anywhere in $(-\\Delta/2,\\Delta/2)$. A sinusoid spends most of its time near its peaks, where the error is largest. The gap halves with every extra bit — $0.27$ dB at $R=6$, $0.14$ dB at $R=8$. That is what "$\\Delta$ small enough" means. At the resolutions used in practice the formula is exact for every purpose. At eight levels it is optimistic. Knowing by how much is the difference between using a model and believing it.'},
     {t:'note', kind:'warn', head:'The factor of two in the step size', html:'The range spanned is $2m_{\\max}=10$ V, not $m_{\\max}$. Writing $\\Delta = m_{\\max}/L$ halves every step size and is the commonest slip in this calculation. It leaves the SQNR in decibels untouched when that is computed from $\\alpha+6.02R$, so the error survives until someone asks for $\\Delta$ itself.'}
   ]}
 ]},
@@ -4973,7 +4979,7 @@ const SC = [
   keywords:'worked example uniform distribution 256 levels sqnr integration',
   src:'CH7 s.25–26', steps:2, blocks:[
   {t:'eyebrow', text:'Module 1 · Quantization noise'},
-  {t:'title', text:'Worked example'},
+  {t:'title', text:'Worked example: a uniform source'},
   {t:'wex', rows:[
     ['Given','$M\\sim U(-1,1)$, quantized by a uniform quantizer with $L=256$ levels.'],
     ['Find','The SQNR of this scheme.']
@@ -4993,12 +4999,12 @@ const SC = [
   ]}
 ]},
 
-{ id:'m1-ex-gauss', module:'M1', nav:'Worked example: a Gaussian source', title:'Worked example: when the model breaks',
+{ id:'m1-ex-gauss', module:'M1', nav:'Worked example: a Gaussian source', title:'Worked example: a Gaussian source',
   objective:'Compute the SQNR by integration when the uniform-error model does not apply.',
   keywords:'worked example gaussian source overload distortion coarse quantizer psd',
   src:'CH7 s.27–28', steps:3, blocks:[
   {t:'eyebrow', text:'Module 1 · Quantization noise'},
-  {t:'title', text:'Worked example'},
+  {t:'title', text:'Worked example: a Gaussian source'},
   {t:'wex', rows:[
     ['Given','A zero-mean stationary Gaussian source with $S_X(f)=2$ for $|f|<100$ Hz and zero elsewhere, sampled at the Nyquist rate. Each sample goes through a five-level quantizer with outputs $-30,-10,0,10,30$ and boundaries at $-40,-20,20,40$.'],
     ['Find','The SQNR of this scheme.']
@@ -5016,7 +5022,7 @@ const SC = [
     ]}
   ]},
   {t:'reveal', at:3, items:[
-    {t:'note', kind:'err', head:'Why $\\Delta^{2}/12$ would have lied', html:'The quantizer is coarse and its outer regions are unbounded, so the error there is not bounded by half a step at all — a sample at $x=120$ is quantized to $30$ and the error is $90$. Applying the uniform model with $\\Delta=20$ would predict $E[Q^{2}]=33.3$ and an SQNR of $10.8$ dB, three times too optimistic. The model is a small-step model, and this is what its failure looks like.'},
+    {t:'note', kind:'err', head:'Why $\\Delta^{2}/12$ would have lied', html:'The quantizer is coarse and its outer regions are unbounded, so the error there is not bounded by half a step at all. A sample at $x=120$ is quantized to $30$, and the error is $90$. Applying the uniform model with $\\Delta=20$ would predict $E[Q^{2}]=33.3$ and an SQNR of $10.8$ dB, three times too optimistic. The model is a small-step model, and this is what its failure looks like.'},
     {t:'wex', rows:[
       ['Check','The central region alone contributes $79.50$ of the $188.18$, and it holds $P(|X|<20) = 68\\%$ of the probability mass with an error of up to $20$. That is where a five-level quantizer spends its error, and it is why the answer is a few decibels rather than a few tens.']
     ]}
@@ -5024,19 +5030,20 @@ const SC = [
 ]},
 
 /* ---------------------------------------------------------------- 1.5 ---- */
-{ id:'m1-nonuniform', module:'M1', nav:'Non-uniform quantization', title:'When equal steps are the wrong steps',
+{ id:'m1-nonuniform', module:'M1', nav:'Non-uniform quantization', title:'Non-uniform quantization',
   objective:'Motivate non-uniform quantization from the statistics of speech.',
   keywords:'non uniform quantization speech small amplitudes companding compressor expander',
   src:'CH7 s.29–30', steps:2, blocks:[
   {t:'eyebrow', text:'Module 1 · Non-uniform quantization'},
-  {t:'title', text:'Spend the levels where the signal is'},
+  {t:'title', text:'Non-uniform quantization'},
+  {t:'lede', text:'When equal steps are the wrong steps: spend the levels where the signal spends its time.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
-    {t:'body', html:'<p>Speech spends most of its time at small amplitudes and only occasionally reaches the peak. A uniform quantizer gives the same absolute step to a whisper and to a shout, so the whisper is quantized far more coarsely <em>in proportion to itself</em>.</p>'},
+    {t:'body', html:'<p>Speech spends most of its time at small amplitudes and only occasionally reaches the peak. A uniform quantizer gives the same absolute step to a whisper and to a shout. The whisper is therefore quantized far more coarsely <em>in proportion to itself</em>.</p>'},
     {t:'reveal', at:1, items:[
-      {t:'body', html:'Relaxing the requirement that the regions be of equal length allows the distortion to be reduced at the same level count: narrow regions where the density is high, wide ones where it is low. This is what the centroid condition asks for and what a uniform quantizer cannot give.'}
+      {t:'body', html:'Drop the requirement that the regions have equal length, and the distortion falls at the same level count. Make the regions narrow where the density is high, and wide where it is low. This is what the centroid condition asks for and what a uniform quantizer cannot give.'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'def', head:'Companding', html:'Rather than build a non-uniform quantizer, compress the signal with a memoryless non-linearity, quantize the result <em>uniformly</em>, and expand at the receiver with the inverse. <b>Comp</b>ressing plus exp<b>anding</b> is companding, and it is how the non-uniform quantizer is built out of a uniform one.'}
+      {t:'note', kind:'def', head:'Companding', html:'Rather than build a non-uniform quantizer, compress the signal with a memoryless non-linearity and quantize the result <em>uniformly</em>. At the receiver, expand with the inverse. <b>Comp</b>ressing plus exp<b>anding</b> is companding, and it is how the non-uniform quantizer is built out of a uniform one.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>P.blocks({w:700,h:230,items:[
@@ -5054,12 +5061,13 @@ const SC = [
   ]}
 ]},
 
-{ id:'m1-companding', module:'M1', nav:'A-law and µ-law', title:'The two standard compressors',
+{ id:'m1-companding', module:'M1', nav:'A-law and µ-law', title:'A-law and µ-law companding',
   objective:'Give the two companding laws and where each is used.',
   keywords:'mu law a law compander 255 87.6 speech telephony logarithmic',
   src:'CH7 s.31–33', steps:2, blocks:[
   {t:'eyebrow', text:'Module 1 · Non-uniform quantization'},
-  {t:'title', text:'Two laws, one shape'},
+  {t:'title', text:'A-law and µ-law companding'},
+  {t:'lede', text:'Two laws, one shape.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'eq', label:'mu-law', tex:'y=\\frac{\\ln(1+\\mu|x|)}{\\ln(1+\\mu)}\\operatorname{sgn}(x),\\qquad |x|\\le 1'},
     {t:'eq', label:'A-law', tex:'y=\\begin{cases}\\dfrac{A|x|}{1+\\ln A}\\operatorname{sgn}(x), & 0\\le|x|\\le\\dfrac{1}{A}\\\\[8pt] \\dfrac{1+\\ln(A|x|)}{1+\\ln A}\\operatorname{sgn}(x), & \\dfrac{1}{A}<|x|\\le 1\\end{cases}'},
@@ -5076,7 +5084,7 @@ const SC = [
 ]},
 
 /* ---------------------------------------------------------------- 1.6 ---- */
-{ id:'m1-encode', module:'M1', nav:'Encoding and bit rate', title:'From levels to bits',
+{ id:'m1-encode', module:'M1', nav:'Encoding and bit rate', title:'Encoding and the bit rate',
   objective:'Fix the bit rate relation and contrast natural binary with Gray coding.',
   keywords:'encoding bit rate natural binary gray code adjacent levels one bit',
   src:'CH7 s.34', steps:2, blocks:[
@@ -5109,7 +5117,7 @@ const SC = [
   ]}
 ]},
 
-{ id:'m1-linecodes', module:'M1', nav:'Line codes', title:'Bits become waveforms',
+{ id:'m1-linecodes', module:'M1', nav:'Line codes', title:'Line codes',
   objective:'Present the line-code families and the property that separates them.',
   keywords:'line codes unipolar polar nrz rz manchester dc component synchronization',
   src:'CH7 s.35', steps:2, blocks:[
@@ -5123,7 +5131,7 @@ const SC = [
     {t:'body', html:'<p><b>Unipolar NRZ</b> is on-off signalling: it is the simplest, and it carries a DC level that causes the waveform to droop through any AC-coupled stage. <b>Polar NRZ</b> is antipodal signalling and has no DC component for balanced data, which is why it is the shape Module 2 analyses.</p>'}
   ]},
   {t:'reveal', at:2, items:[
-    {t:'note', kind:'warn', head:'What a long run of one symbol costs', html:'Both NRZ codes go quiet during a long run of identical bits, and a receiver recovering its clock from the waveform has nothing to lock to. <b>Manchester</b> forces a transition in the middle of every bit, so the clock is always recoverable and there is never a DC component — paid for with twice the bandwidth.'}
+    {t:'note', kind:'warn', head:'What a long run of one symbol costs', html:'Both NRZ codes go quiet during a long run of identical bits. A receiver that recovers its clock from the waveform then has nothing to lock to. <b>Manchester</b> forces a transition in the middle of every bit, so the clock is always recoverable and there is never a DC component. The price is twice the bandwidth.'}
   ]}
 ]},
 
@@ -5132,7 +5140,7 @@ const SC = [
   keywords:'worked example pcm sinc sampling quantizing encoding bit rate polar nrz',
   src:'CH7 s.36', steps:3, blocks:[
   {t:'eyebrow', text:'Module 1 · Pulse code modulation'},
-  {t:'title', text:'Worked example'},
+  {t:'title', text:'Worked example: sample, quantize, encode'},
   {t:'cols', ratio:'c-6-6', vcenter:false, left:[
     {t:'wex', rows:[
       ['Given','$m(t)=8\\,|\\operatorname{sinc}(t-2)|$, so $0\\le m(t)\\le 8$. It is sampled every $T_s=0.6$ s and quantized by an eight-level uniform quantizer covering $[0,8]$.'],
@@ -5173,14 +5181,15 @@ const SC = [
 ]},
 
 /* ---------------------------------------------------------------- 1.7 ---- */
-{ id:'m1-vq', module:'M1', nav:'Vector quantization', title:'Quantizing samples together',
+{ id:'m1-vq', module:'M1', nav:'Vector quantization', title:'Vector quantization',
   objective:'Show why quantizing a block of samples beats quantizing each one alone.',
   keywords:'vector quantization scalar codebook block image compression jpeg lossy levels',
   src:'CH7 s.37', steps:3, blocks:[
   {t:'eyebrow', text:'Module 1 · Vector quantization'},
-  {t:'title', text:'Quantizing samples together'},
+  {t:'title', text:'Vector quantization'},
+  {t:'lede', text:'Quantizing a block of samples together, instead of one at a time.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
-    {t:'body', html:'<p>Every quantizer so far has rounded one sample on its own. That is <b>scalar</b> quantization, and it throws something away before it starts: real signals do not jump about from one sample to the next, and a quantizer looking at one sample at a time cannot know that.</p>'},
+    {t:'body', html:'<p>Every quantizer so far has rounded one sample on its own. That is <b>scalar</b> quantization, and it throws something away before it starts. Real signals do not jump about from one sample to the next. A quantizer that sees one sample at a time cannot know that.</p>'},
     {t:'note', kind:'def', head:'What vector quantization is', html:'Take $n$ samples at a time and treat them as one point in $n$ dimensions. Choose a <b>codebook</b> of allowed points, and round the whole block to the nearest one. With $n=1$ this is the quantizer of section 1.3. With $n=2$ the allowed points are places in a plane, and they can be put wherever the signal actually goes.'},
     {t:'reveal', at:1, items:[
       {t:'body', html:'<p>Here is the whole argument, in a case small enough to count. Take $L=16$ levels and look at <em>pairs</em> of neighbouring samples. A scalar quantizer allows every combination:</p>'},
@@ -5192,21 +5201,22 @@ const SC = [
       {t:'note', kind:'ok', head:'A quarter of the rate, at the same distortion', html:'The cells did not change size, so the rounding error did not change. The code now omits the $210$ combinations that this signal model never produces. Vector quantization uses its codebook only in regions that the signal can reach.'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'small', html:'The next scene takes the case this is actually used on, where the samples are the pixels of an image and there are a quarter of a million of them.'}
+      {t:'small', html:'The next scene takes the case this is actually used on. There the samples are the pixels of an image, and there are a quarter of a million of them.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figPairLattice(16),
       caption:'Every pair of neighbouring samples a $16$-level quantizer can produce. A scalar quantizer pays for all $256$ squares. If a sample never moves by more than one step, only the $46$ shaded ones ever occur, and the codebook needs $6$ bits a pair instead of $8$.'},
-    {t:'small', html:'Almost all of the saving comes from neighbouring samples being alike. A small gain survives even for independent samples, because better-shaped cells pack the space more efficiently than squares, but it is under a quarter of a bit a sample and this course does not pursue it.'}
+    {t:'small', html:'Almost all of the saving comes from neighbouring samples being alike. A small gain survives even for independent samples, because better-shaped cells pack the space more efficiently than squares. But it is under a quarter of a bit a sample, and this course does not pursue it.'}
   ]}
 ]},
 
-{ id:'m1-vq-image', module:'M1', nav:'Quantizing an image', title:'What quantization saves, and what it costs',
+{ id:'m1-vq-image', module:'M1', nav:'Quantizing an image', title:'Quantizing an image',
   objective:'Work the bit rate of a quantized image and name what is lost.',
   keywords:'image quantization bits per pixel compression ratio banding contouring jpeg lossy',
   src:'CH7 s.37', steps:3, blocks:[
   {t:'eyebrow', text:'Module 1 · Vector quantization'},
-  {t:'title', text:'What quantization saves, and what it costs'},
+  {t:'title', text:'Quantizing an image'},
+  {t:'lede', text:'What quantization saves, and what it costs.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>An image is the case where this matters, because there are so many samples. Each pixel is one sample of brightness, and the arithmetic of section 1.6 applies to it unchanged.</p>'},
     {t:'wex', head:'A greyscale image, quantized', rows:[
@@ -5218,7 +5228,7 @@ const SC = [
     {t:'reveal', at:1, items:[
       {t:'body', html:'<p>What that costs is the same number section 1.4 gives, and it is large:</p>'},
       {t:'eq', key:true, tex:'\\Delta\\mathrm{SQNR}=6.02(8-5)=18.06\\ \\text{dB}'},
-      {t:'note', kind:'warn', head:'And it is visible, not just measurable', html:'A smooth gradient — a sky, a shadow across a wall — is a slow ramp in brightness. Quantize it coarsely and the ramp becomes a staircase, so the picture shows <b>bands</b> of flat tone with hard edges between them where there was no edge in the scene. The eye finds those invented edges easily, which is why an image tolerates far fewer bits in a noisy region than in a smooth one.'}
+      {t:'note', kind:'warn', head:'And it is visible, not just measurable', html:'A smooth gradient — a sky, a shadow across a wall — is a slow ramp in brightness. Quantize it coarsely and the ramp becomes a staircase. The picture then shows <b>bands</b> of flat tone, with hard edges between them where the scene had no edge. The eye finds those invented edges easily, which is why an image tolerates far fewer bits in a noisy region than in a smooth one.'}
     ]},
     {t:'reveal', at:2, items:[
       {t:'note', kind:'def', head:'This is lossy compression', html:'The removed information is not recoverable. The omitted bits described where the pixel lay inside its quantization interval. A decoder cannot recover that position. This loss is why the method is called <b>lossy</b>. JPEG also uses quantization, but it quantizes transformed image blocks rather than individual pixels.'}
@@ -5229,7 +5239,7 @@ const SC = [
   ], right:[
     {t:'fig', frame:true, svg:()=>figBanding(),
       caption:'One row of a smooth gradient, quantized at $256$ levels and at $8$. The fine quantizer follows the ramp so closely that the two cannot be told apart; the coarse one replaces it with flat steps, and each step edge is a band boundary the eye sees as a line that is not in the scene.'},
-    {t:'small', html:'The step height here is $\\Delta=2m_{\\max}/L$, exactly as in section 1.3 — an image is not a new kind of quantizer, only a great many samples of one.'}
+    {t:'small', html:'The step height here is $\\Delta=2m_{\\max}/L$, exactly as in section 1.3. An image is not a new kind of quantizer, only a great many samples of one.'}
   ]}
 ]},
 
@@ -5239,7 +5249,7 @@ const SC = [
   keywords:'summary sampling quantization pcm results bit rate sqnr',
   steps:0, blocks:[
   {t:'eyebrow', text:'Module 1 · Summary'},
-  {t:'title', text:'What carries forward'},
+  {t:'title', text:'What Module 1 established'},
   {t:'grid', cols:2, gap:'26px', items:[
     [{t:'card', head:'Sampling', items:[
       {t:'body', html:'<p>Sampling replicates the spectrum every $f_s$. If $f_s\\ge 2W$ the replicas do not overlap and the message survives exactly; otherwise it does not survive at all.</p>'},
@@ -5250,7 +5260,7 @@ const SC = [
       {t:'eq', plain:true, tex:'g_r(t)=\\sum_n g(nT_s)\\operatorname{sinc}(2Wt-n)'}
     ]}],
     [{t:'card', head:'Quantization', items:[
-      {t:'body', html:'<p>Rounding to $L=2^{R}$ levels costs a mean-square error that is fixed by the step size alone, as long as the step is small compared with how fast the density varies.</p>'},
+      {t:'body', html:'<p>Rounding to $L=2^{R}$ levels costs a mean-square error fixed by the step size alone. This holds as long as the step is small compared with how fast the density varies.</p>'},
       {t:'eq', plain:true, tex:'E[Q^{2}]=\\Delta^{2}/12,\\quad \\Delta=2m_{\\max}/L'}
     ]}],
     [{t:'card', head:'The rate that follows', items:[
@@ -5258,7 +5268,7 @@ const SC = [
       {t:'eq', plain:true, tex:'\\mathrm{SQNR}=\\alpha+6.02R,\\qquad R_b=Rf_s'}
     ]}]
   ]},
-  {t:'note', kind:'ok', head:'The module in one sentence', html:'Turning a signal into bits costs two things and nothing else: you must sample fast enough, or the spectrum folds and cannot be unfolded, and you must round, which adds a small noise whose power falls by a factor of four with every extra bit.'}
+  {t:'note', kind:'ok', head:'The module in one sentence', html:'Turning a signal into bits costs two things and nothing else. You must sample fast enough, or the spectrum folds and cannot be unfolded. And you must round, which adds a small noise whose power falls by a factor of four with every extra bit.'}
 ]}
 
 ];
@@ -5408,12 +5418,12 @@ function figEye(alpha, jitter){
 const SC = [
 
 /* ---------------------------------------------------------------- 2.0 ---- */
-{ id:'m2-open', module:'M2', nav:'The receiver problem', title:'One bit, one waveform, one decision',
+{ id:'m2-open', module:'M2', nav:'The receiver problem', title:'The receiver problem',
   objective:'Frame the three questions the module answers.',
   keywords:'baseband receiver matched filter threshold intersymbol interference opening',
   src:'CH8 s.2–3', steps:2, blocks:[
   {t:'eyebrow', text:'Module 2 · Opening'},
-  {t:'title', text:'Three questions in order'},
+  {t:'title', text:'The receiver problem'},
   {t:'lede', text:'Module 1 produced a bit stream. A transmitter now sends one waveform per bit, a channel adds noise to it, and a receiver has to say which waveform was sent. Everything in this module is one of three questions about that receiver.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p><b>What filter?</b> The receiver observes the waveform for one bit interval and has to compress it to a single number. Some filters make that number more reliable than others, and one of them is best.</p>'},
@@ -5430,7 +5440,7 @@ const SC = [
 ]},
 
 /* ---------------------------------------------------------------- 2.1 ---- */
-{ id:'m2-model', module:'M2', nav:'The peak pulse SNR', title:'What the filter is being asked to do',
+{ id:'m2-model', module:'M2', nav:'The peak pulse SNR', title:'The peak pulse signal-to-noise ratio',
   objective:'Define the quantity the filter is chosen to maximise.',
   keywords:'received signal white gaussian noise peak pulse signal to noise ratio filter output',
   src:'CH8 s.3–6', steps:2, blocks:[
@@ -5448,7 +5458,7 @@ const SC = [
     {t:'reveal', at:2, items:[
       {t:'body', html:'Both parts can be written in terms of $H(f)$. The signal part is an inverse transform evaluated at $t=T$; the noise part is the area under the filtered noise density.'},
       {t:'eq', tex:'(\\mathrm{SNR})_o=\\frac{\\left|\\int_{-\\infty}^{\\infty}G(f)H(f)e^{j2\\pi fT}\\,df\\right|^{2}}{\\dfrac{N_0}{2}\\int_{-\\infty}^{\\infty}|H(f)|^{2}\\,df}'},
-      {t:'note', kind:'warn', head:'The problem, stated', html:'For a given $G(f)$, find the $H(f)$ that maximises this ratio. Both the numerator and the denominator grow when $H$ is scaled up, so the answer cannot be "make $H$ large" — it has to be about the <em>shape</em> of $H$.'}
+      {t:'note', kind:'warn', head:'The problem, stated', html:'For a given $G(f)$, find the $H(f)$ that maximises this ratio. Both the numerator and the denominator grow when $H$ is scaled up, so the answer cannot be "make $H$ large". It has to be about the <em>shape</em> of $H$.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>{
@@ -5466,12 +5476,13 @@ const SC = [
   ]}
 ]},
 
-{ id:'m2-schwarz', module:'M2', nav:'The bound', title:'A bound that does not depend on the filter',
+{ id:'m2-schwarz', module:'M2', nav:'The bound', title:'The bound on the output SNR',
   objective:'Apply Schwarz\'s inequality to bound the output SNR.',
   keywords:'schwarz inequality bound optimisation equality condition energy',
   src:'CH8 s.7–8', steps:2, blocks:[
   {t:'eyebrow', text:'Module 2 · The matched filter'},
-  {t:'title', text:'Where the bound comes from'},
+  {t:'title', text:'The bound on the output SNR'},
+  {t:'lede', text:'A bound that does not depend on the filter.'},
   {t:'note', kind:'def', head:'Schwarz\'s inequality', html:'For two finite-energy signals $\\phi_1$ and $\\phi_2$, $$\\left|\\int\\phi_1(x)\\phi_2(x)\\,dx\\right|^{2}\\le\\int|\\phi_1(x)|^{2}dx\\int|\\phi_2(x)|^{2}dx,$$ with equality if and only if $\\phi_1(x)=k\\,\\phi_2^{*}(x)$ for some constant $k$.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'Take $\\phi_1(f)=H(f)$ and $\\phi_2(f)=G(f)e^{j2\\pi fT}$. The numerator of the ratio is exactly the left-hand side, and $|e^{j2\\pi fT}|=1$, so'},
@@ -5490,12 +5501,13 @@ const SC = [
   ]}
 ]},
 
-{ id:'m2-matched', module:'M2', nav:'The matched filter', title:'The filter is the signal, backwards',
+{ id:'m2-matched', module:'M2', nav:'The matched filter', title:'The matched filter',
   objective:'Derive the impulse response of the matched filter.',
   keywords:'matched filter impulse response time reversed shifted conjugate',
   src:'CH8 s.9', steps:2, blocks:[
   {t:'eyebrow', text:'Module 2 · The matched filter'},
   {t:'title', text:'The matched filter'},
+  {t:'lede', text:'The filter is the signal, backwards.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'Take the inverse transform of the optimum $H(f)$. Since $g$ is real, $G^{*}(f)=G(-f)$, and the exponential is a shift:'},
     {t:'eq', tex:'h_{\\mathrm{opt}}(t)=\\int k\\,G(-f)\\,e^{-j2\\pi f(T-t)}\\,df'},
@@ -5514,12 +5526,13 @@ const SC = [
   ]}
 ]},
 
-{ id:'m2-props', module:'M2', nav:'What the matched filter achieves', title:'Energy, not shape',
+{ id:'m2-props', module:'M2', nav:'What the matched filter achieves', title:'Properties of the matched filter',
   objective:'Establish that the output SNR depends only on the energy-to-density ratio.',
   keywords:'output snr energy noise spectral density unitless shape independent',
   src:'CH8 s.12–13', steps:2, blocks:[
   {t:'eyebrow', text:'Module 2 · The matched filter'},
-  {t:'title', text:'The result the module is built on'},
+  {t:'title', text:'Properties of the matched filter'},
+  {t:'lede', text:'Energy, not shape.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'Substituting $H(f)=kG^{*}(f)e^{-j2\\pi fT}$ back into the two parts gives, by Parseval,'},
     {t:'eq', tex:'g_0(T)=k\\int|G(f)|^{2}df=k\\,E,\\qquad E[n^{2}(t)]=\\frac{k^{2}N_0}{2}E'},
@@ -5555,12 +5568,12 @@ const SC = [
 ]},
 
 /* ---------------------------------------------------------------- 2.2 ---- */
-{ id:'m2-basis', module:'M2', nav:'One basis, two symbols', title:'Writing both symbols on one axis',
+{ id:'m2-basis', module:'M2', nav:'One basis, two symbols', title:'One basis, two symbols',
   objective:'Introduce the unit-energy basis and antipodal signalling.',
   keywords:'basis function unit energy polar nrz antipodal signalling one dimensional',
   src:'CH8 s.17', steps:2, blocks:[
   {t:'eyebrow', text:'Module 2 · The demodulator'},
-  {t:'title', text:'Both symbols on one axis'},
+  {t:'title', text:'One basis, two symbols'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'Both waveforms of a binary baseband system are multiples of the same rectangular shape, so one unit-energy function carries both:'},
     {t:'eq', tex:'\\psi(t)=\\begin{cases}\\dfrac{1}{\\sqrt{T_b}}, & 0\\le t\\le T_b\\\\[4pt] 0,&\\text{otherwise}\\end{cases}\\qquad \\int_0^{T_b}\\psi^{2}(t)\\,dt=1'},
@@ -5594,12 +5607,13 @@ const SC = [
   ]}
 ]},
 
-{ id:'m2-correlator', module:'M2', nav:'Two demodulators, one number', title:'Two demodulators that agree',
+{ id:'m2-correlator', module:'M2', nav:'Two demodulators, one number', title:'Correlator and matched-filter demodulators',
   objective:'Show that the correlator and the matched filter give the same statistic.',
   keywords:'correlator demodulator matched filter equivalent decision statistic sample',
   src:'CH8 s.19–20', steps:2, blocks:[
   {t:'eyebrow', text:'Module 2 · The demodulator'},
-  {t:'title', text:'The same number by two routes'},
+  {t:'title', text:'Correlator and matched-filter demodulators'},
+  {t:'lede', text:'Two demodulators, one number.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'The <b>matched-filter</b> demodulator filters with $h_{\\mathrm{opt}}(t)=\\psi(T_b-t)$ and samples at $t=T_b$. The <b>correlator</b> multiplies by $\\psi(t)$ and integrates over the interval:'},
     {t:'eq', tex:'y=\\int_0^{T_b}x(\\tau)\\,\\psi(\\tau)\\,d\\tau'},
@@ -5609,7 +5623,7 @@ const SC = [
       {t:'note', kind:'ok', head:'They are the same at the sampling instant', html:'Convolving with a time-reversed function and evaluating at $T_b$ <em>is</em> correlating over the interval. The two demodulators differ in how they are built and not in what they produce, and both reduce the received waveform to one number.'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'warn', head:'They agree at one instant only', html:'For $t\\ne T_b$ the two outputs are different signals. The equivalence is at the sampling instant, and it is another reason that instant matters: sample early and the two demodulators do not even agree with each other.'}
+      {t:'note', kind:'warn', head:'They agree at one instant only', html:'For $t\\ne T_b$ the two outputs are different signals. The equivalence holds at the sampling instant, and it is another reason that instant matters. Sample early and the two demodulators do not even agree with each other.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>P.blocks({w:640,h:260,items:[
@@ -5636,12 +5650,13 @@ const SC = [
 ]},
 
 /* ---------------------------------------------------------------- 2.3 ---- */
-{ id:'m2-stat', module:'M2', nav:'The decision statistic', title:'What the detector is given',
+{ id:'m2-stat', module:'M2', nav:'The decision statistic', title:'The decision statistic',
   objective:'Establish the distribution of the decision statistic.',
   keywords:'decision statistic gaussian variance conditional density noise projection',
   src:'CH8 s.21–22', steps:2, blocks:[
   {t:'eyebrow', text:'Module 2 · The decision'},
-  {t:'title', text:'One Gaussian number'},
+  {t:'title', text:'The decision statistic'},
+  {t:'lede', text:'Everything the detector is given is one Gaussian number.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'The noise term is a projection of a Gaussian process onto a fixed function, so it is a Gaussian random variable. Its variance follows from the autocorrelation of white noise:'},
     {t:'eq', tex:'\\sigma_n^{2}=E\\!\\left[\\left(\\int_0^{T_b}\\!w(\\tau)\\psi(\\tau)d\\tau\\right)^{2}\\right]=\\frac{N_0}{2}\\int_0^{T_b}\\!\\psi^{2}(\\tau)d\\tau=\\frac{N_0}{2}'},
@@ -5659,12 +5674,12 @@ const SC = [
   ]}
 ]},
 
-{ id:'m2-threshold', module:'M2', nav:'The optimal threshold', title:'Where the threshold goes',
+{ id:'m2-threshold', module:'M2', nav:'The optimal threshold', title:'The optimal threshold',
   objective:'Derive the optimal threshold for unequal priors.',
   keywords:'threshold optimum priors leibniz likelihood unequal probabilities log ratio',
   src:'CH8 s.24–26', steps:3, blocks:[
   {t:'eyebrow', text:'Module 2 · The decision'},
-  {t:'title', text:'The threshold that minimises the error'},
+  {t:'title', text:'The optimal threshold'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'The detector decides "1" when $y>\\lambda$. By total probability,'},
     {t:'eq', tex:'P_e=P(s_0)\\!\\int_{\\lambda}^{\\infty}\\!f_Y(y\\mid s_0)dy+P(s_1)\\!\\int_{-\\infty}^{\\lambda}\\!f_Y(y\\mid s_1)dy'},
@@ -5685,7 +5700,7 @@ const SC = [
   ]}
 ]},
 
-{ id:'m2-pe', module:'M2', nav:'The error probability', title:'The result of the module',
+{ id:'m2-pe', module:'M2', nav:'The error probability', title:'The bit error probability',
   objective:'Derive the bit error probability of antipodal signalling.',
   keywords:'probability of error antipodal q function energy per bit noise density',
   src:'CH8 s.29–31', steps:3, blocks:[
@@ -5703,7 +5718,7 @@ const SC = [
       {t:'note', kind:'ok', head:'What it depends on', html:'Not on $A$, not on $T_b$, not on the pulse shape — only on $E_b/N_0$. Doubling the amplitude and quartering the bit duration leave it unchanged, because they leave the energy per bit unchanged.'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'err', head:'The factor of two that lives here', html:'$Q\\!\\left(\\sqrt{E_b/N_0}\\right)$ — the same expression without the two — is the error probability of <em>orthogonal</em> binary signalling, and it is $3$ dB worse. Which of the two is right depends on whether the two waveforms are opposites or merely different, and the noise convention has to be the two-sided one throughout for either to come out.'}
+      {t:'note', kind:'err', head:'The factor of two that lives here', html:'$Q\\!\\left(\\sqrt{E_b/N_0}\\right)$ — the same expression without the two — is the error probability of <em>orthogonal</em> binary signalling, and it is $3$ dB worse. Which of the two is right depends on whether the two waveforms are opposites or merely different. And the noise convention has to be the two-sided one throughout for either to come out.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:figPe, caption:'The bit error probability against $E_b/N_0$ in decibels, on a logarithmic scale. The curve falls faster than any straight line: past about $8$ dB, every extra decibel costs the channel roughly an order of magnitude in errors.'}
@@ -5715,7 +5730,7 @@ const SC = [
   keywords:'worked example unequal priors threshold error probability binary pam',
   src:'CH8 s.32–34', steps:3, blocks:[
   {t:'eyebrow', text:'Module 2 · The decision'},
-  {t:'title', text:'Worked example'},
+  {t:'title', text:'Worked example: unequal priors'},
   {t:'wex', rows:[
     ['Given','A binary PAM system whose correlator output is $y=\\pm\\sqrt{E_b}+n$, with $P(s_1)=0.3$, $E_b=1$ and $N_0=0.1$.'],
     ['Find','The optimal threshold, and the average error probability at that threshold.']
@@ -5751,12 +5766,13 @@ const SC = [
 ]},
 
 /* ---------------------------------------------------------------- 2.4 ---- */
-{ id:'m2-isi', module:'M2', nav:'Intersymbol interference', title:'When the pulses overlap',
+{ id:'m2-isi', module:'M2', nav:'Intersymbol interference', title:'Intersymbol interference',
   objective:'Show where intersymbol interference comes from.',
   keywords:'intersymbol interference bandlimited channel dispersion residual effect sampling instant',
   src:'CH8 s.35–37', steps:2, blocks:[
   {t:'eyebrow', text:'Module 2 · Intersymbol interference'},
-  {t:'title', text:'The error noise did not cause'},
+  {t:'title', text:'Intersymbol interference'},
+  {t:'lede', text:'When the pulses overlap: the error that noise did not cause.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'Everything so far assumed an ideal channel. A real channel is bandlimited, and a bandlimited channel spreads a pulse in time. Write the received signal as a train of the overall pulse shape $p$:'},
     {t:'eq', tex:'y(t)=\\mu\\sum_k a_k\\,p(t-kT_b)+n(t),\\qquad \\mu\\,p(t)=g(t)*h(t)*c(t)'},
@@ -5765,7 +5781,7 @@ const SC = [
       {t:'eq', key:true, tex:'y(t_i)=\\underbrace{\\mu a_i}_{\\text{wanted}}+\\underbrace{\\mu\\sum_{k\\ne i}a_k\\,p\\bigl((i-k)T_b\\bigr)}_{\\text{intersymbol interference}}+\\;n(t_i)'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'err', head:'Why this is a different problem', html:'The middle term is not noise. It is deterministic, it is caused by the data itself, and it does not go away when the transmitter turns up its power — raising the amplitude raises the interference by the same factor. At high signal-to-noise ratio it is the <em>only</em> thing limiting the system, which is why it needs a solution of its own rather than more energy.'}
+      {t:'note', kind:'err', head:'Why this is a different problem', html:'The middle term is not noise. It is deterministic, it is caused by the data itself, and it does not go away when the transmitter turns up its power. Raising the amplitude raises the interference by the same factor. At high signal-to-noise ratio it is the <em>only</em> thing limiting the system. That is why it needs a solution of its own rather than more energy.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figIsi(1.0), caption:'Eight bits through a channel whose pulse decays quickly. Each pulse is drawn faintly and their sum heavily; the dots are the sampling instants. Here every neighbouring pulse is zero at every other instant, so the dots sit exactly on $\\pm1$.'},
@@ -5773,19 +5789,20 @@ const SC = [
   ]}
 ]},
 
-{ id:'m2-eye', module:'M2', nav:'The eye diagram', title:'Every bit pattern at once',
+{ id:'m2-eye', module:'M2', nav:'The eye diagram', title:'The eye diagram',
   objective:'Read the four measurements an eye diagram carries.',
   keywords:'eye diagram eye pattern jitter margin noise timing sensitivity superposition',
   src:'CH8 s.38–41', steps:2, blocks:[
   {t:'eyebrow', text:'Module 2 · Intersymbol interference'},
   {t:'title', text:'The eye diagram'},
+  {t:'lede', text:'Every bit pattern at once.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'note', kind:'def', head:'Eye pattern', html:'Cut the received waveform into bit-length pieces and draw them all on top of each other, synchronised to the clock. The result is a synchronised superposition of every realisation of the signal within one signalling interval.'},
     {t:'reveal', at:1, items:[
       {t:'body', html:'<p>The diagram shows four measurements directly:</p><ul><li>The <b>height of the opening</b> at the sampling instant is the margin over noise.</li><li>The <b>width of the opening</b> is how far the sampling instant can move before a decision goes wrong.</li><li>The <b>slope</b> at the crossings shows sensitivity to a timing error.</li><li>The <b>spread of the crossings</b> is the timing jitter.</li></ul>'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'warn', head:'What a closed eye means', html:'When the opening shrinks to nothing there is no sampling instant at which every bit pattern is decided correctly, and no threshold placement helps. The system has failed for a reason that has nothing to do with the noise level, and the eye is where that is seen before it is measured.'}
+      {t:'note', kind:'warn', head:'What a closed eye means', html:'When the opening shrinks to nothing there is no sampling instant at which every bit pattern is decided correctly, and no threshold placement helps. The system has failed for a reason that has nothing to do with the noise level. The eye is where that is seen before it is measured.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figEye(1.0, 0.06), caption:'A wide-open eye: a pulse that decays quickly, and light noise. Every trace passes close to $\\pm1$ at the centre of the interval.'},
@@ -5824,7 +5841,7 @@ const SC = [
       {t:'note', kind:'ok', head:'The rate a bandwidth supports', html:'A channel of bandwidth $W$ carries at most $2W$ symbols per second with no interference. That number is the counterpart of the sampling theorem, arrived at from the other end.'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'err', head:'Why the ideal channel cannot be built', html:'A rectangular spectrum has abrupt edges and is not physically realisable. Worse, its pulse decays only as $1/t$, so a small timing error lets a long tail of neighbours contribute at once and the interference does not settle. The next scene buys a solution with bandwidth.'}
+      {t:'note', kind:'err', head:'Why the ideal channel cannot be built', html:'A rectangular spectrum has abrupt edges and is not physically realisable. Worse, its pulse decays only as $1/t$. A small timing error then lets a long tail of neighbours contribute at once, and the interference does not settle. The next scene buys a solution with bandwidth.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>{
@@ -5845,12 +5862,13 @@ const SC = [
   ]}
 ]},
 
-{ id:'m2-rcos', module:'M2', nav:'The raised cosine', title:'Buying decay with bandwidth',
+{ id:'m2-rcos', module:'M2', nav:'The raised cosine', title:'The raised cosine',
   objective:'Give the raised-cosine spectrum and what the roll-off controls.',
   keywords:'raised cosine roll off factor excess bandwidth transmission bandwidth decay',
   src:'CH8 s.46–48', steps:2, blocks:[
   {t:'eyebrow', text:'Module 2 · Nyquist and the raised cosine'},
   {t:'title', text:'The raised cosine'},
+  {t:'lede', text:'Buying decay with bandwidth.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'Widen the spectrum from $W$ towards $2W$ and taper the edges, keeping the tiling property:'},
     {t:'eq', tex:'P(f)=\\begin{cases}\\dfrac{1}{2W}, & 0\\le|f|\\le f_1\\\\[6pt] \\dfrac{1}{4W}\\left[1-\\sin\\dfrac{\\pi(|f|-W)}{2W-2f_1}\\right], & f_1\\le|f|<2W-f_1\\\\[6pt] 0,&\\text{otherwise}\\end{cases}'},
@@ -5896,7 +5914,7 @@ const SC = [
   keywords:'summary matched filter threshold error probability nyquist raised cosine',
   steps:0, blocks:[
   {t:'eyebrow', text:'Module 2 · Summary'},
-  {t:'title', text:'What carries forward'},
+  {t:'title', text:'What Module 2 established'},
   {t:'grid', cols:2, gap:'26px', items:[
     [{t:'card', head:'The filter', items:[
       {t:'body', html:'<p>The matched filter maximises the output signal-to-noise ratio, and what it achieves depends on the energy of the pulse and not on its shape.</p>'},
@@ -5915,7 +5933,7 @@ const SC = [
       {t:'eq', plain:true, tex:'R_b\\sum_n P(f-nR_b)=1,\\quad B_T=(1+\\alpha)W'}
     ]}]
   ]},
-  {t:'note', kind:'ok', head:'The module in one sentence', html:'Two things can go wrong on the way to the decision, and they are fixed separately: noise is dealt with by the matched filter, which extracts as much of the pulse energy as there is to extract, and interference from neighbouring symbols is dealt with by choosing a pulse whose spectrum tiles the axis at the symbol rate.'}
+  {t:'note', kind:'ok', head:'The module in one sentence', html:'Two things can go wrong on the way to the decision, and they are fixed separately. Noise is handled by the matched filter, which extracts all the pulse energy there is to extract. Interference from neighbouring symbols is handled by choosing a pulse whose spectrum tiles the axis at the symbol rate.'}
 ]}
 
 ];
@@ -5974,12 +5992,12 @@ function figConstellation(pts, opts){
 const SC = [
 
 /* ---------------------------------------------------------------- 3.0 ---- */
-{ id:'m3-open', module:'M3', nav:'Why one axis is not enough', title:'When one axis is not enough',
+{ id:'m3-open', module:'M3', nav:'Why one axis is not enough', title:'Why one axis is not enough',
   objective:'Show the problem two unrelated waveforms create for the Module 2 receiver.',
   keywords:'geometric representation two matched filters basis signal space opening',
   src:'CH9 s.2–3', steps:2, blocks:[
   {t:'eyebrow', text:'Module 3 · Opening'},
-  {t:'title', text:'Two waveforms that do not fit on one line'},
+  {t:'title', text:'Why one axis is not enough'},
   {t:'lede', text:'In Module 2 the two waveforms were opposites, so one shape represented both and the receiver needed one number. What happens when neither waveform is a multiple of the other?'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>Take $s_0(t)$ and $s_1(t)$ below. Neither is a multiple of the other, so no single function $\\psi(t)$ can write both as $s_m\\psi(t)$. The receiver of Module 2 does not apply, and none of its results do either.</p>'},
@@ -6012,12 +6030,12 @@ const SC = [
 ]},
 
 /* ---------------------------------------------------------------- 3.1 ---- */
-{ id:'m3-ortho', module:'M3', nav:'An orthonormal basis', title:'Axes made of functions',
+{ id:'m3-ortho', module:'M3', nav:'An orthonormal basis', title:'An orthonormal basis',
   objective:'Define an orthonormal basis for signals by analogy with vectors.',
   keywords:'orthonormal basis inner product norm orthogonal unit energy functions',
   src:'CH9 s.4–5', steps:3, blocks:[
   {t:'eyebrow', text:'Module 3 · Signals as vectors'},
-  {t:'title', text:'Axes made of functions'},
+  {t:'title', text:'An orthonormal basis'},
   {t:'lede', text:'Everything in this section is one analogy. A vector is a list of numbers because it has been written against a set of axes. A signal can be a list of numbers for exactly the same reason.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p><b>For vectors.</b> With unit axes $\\mathbf{e}_1,\\ldots,\\mathbf{e}_N$, any $\\mathbf{a}$ is $\\sum_k a_k\\mathbf{e}_k$, and two operations do all the work:</p>'},
@@ -6053,12 +6071,13 @@ const SC = [
   ]}
 ]},
 
-{ id:'m3-project', module:'M3', nav:'Coordinates', title:'How a waveform becomes a list of numbers',
+{ id:'m3-project', module:'M3', nav:'Coordinates', title:'The coordinates of a waveform',
   objective:'Give the projection formula and the property that makes it useful.',
   keywords:'projection coordinates synthesis analysis inner product preserved key property',
   src:'CH9 s.6–8', steps:3, blocks:[
   {t:'eyebrow', text:'Module 3 · Signals as vectors'},
-  {t:'title', text:'Coordinates'},
+  {t:'title', text:'The coordinates of a waveform'},
+  {t:'lede', text:'How a waveform becomes a list of numbers.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'Once the axes are fixed, a signal is written against them the same way a vector is:'},
     {t:'eq', key:true, label:'analysis', tex:'s_{ij}=\\int_{0}^{T}s_i(t)\\,\\psi_j(t)\\,dt'},
@@ -6068,7 +6087,7 @@ const SC = [
       {t:'note', kind:'def', head:'The property that makes this worth doing', html:'Inner products survive the translation. If $x$ has coordinates $\\mathbf{x}$ and $y$ has coordinates $\\mathbf{y}$, then $$\\int_{-\\infty}^{\\infty}x(t)y(t)\\,dt=\\sum_{k=1}^{N}x_ky_k=\\langle\\mathbf{x},\\mathbf{y}\\rangle.$$'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'small', html:'<b>Why.</b> Expand both sums, exchange the integral and the sums, and use orthonormality: every cross term $\\int\\psi_j\\psi_k$ with $j\\ne k$ is zero and every term with $j=k$ is one. What is left is $\\sum_k x_ky_k$.'},
+      {t:'small', html:'<b>Why.</b> Expand both sums, exchange the integral and the sums, and use orthonormality. Every cross term $\\int\\psi_j\\psi_k$ with $j\\ne k$ is zero, and every term with $j=k$ is one. What is left is $\\sum_k x_ky_k$.'},
       {t:'body', html:'An integral over waveforms has become a sum over $N$ numbers.'}
     ]},
     {t:'reveal', at:3, items:[
@@ -6091,12 +6110,13 @@ const SC = [
   ]}
 ]},
 
-{ id:'m3-energy', module:'M3', nav:'Energy and distance', title:'Energy is length, difference is distance',
+{ id:'m3-energy', module:'M3', nav:'Energy and distance', title:'Energy and distance',
   objective:'Identify energy with squared norm and signal difference with Euclidean distance.',
   keywords:'energy squared norm euclidean distance constellation L2 norm',
   src:'CH9 s.11–12', steps:2, blocks:[
   {t:'eyebrow', text:'Module 3 · Signals as vectors'},
-  {t:'title', text:'Two quantities shown by the picture'},
+  {t:'title', text:'Energy and distance'},
+  {t:'lede', text:'Energy is length; the difference of two signals is distance.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'Put $y=x$ in the property of the last scene and the energy of a signal is the squared length of its vector:'},
     {t:'eq', key:true, tex:'E_{s_i}=\\int_0^{T}s_i^{2}(t)\\,dt=\\sum_{j=1}^{N}s_{ij}^{2}=\\|\\mathbf{s}_i\\|^{2}'},
@@ -6105,7 +6125,7 @@ const SC = [
       {t:'eq', key:true, tex:'\\|\\mathbf{s}_i-\\mathbf{s}_k\\|^{2}=\\int_0^{T}\\bigl(s_i(t)-s_k(t)\\bigr)^{2}dt=\\sum_{j=1}^{N}(s_{ij}-s_{kj})^{2}'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'ok', head:'Why these two matter more than anything else in the module', html:'<b>Energy is how far the point is from the origin.</b> That is what the transmitter pays for. <b>Distance is how far two points are from each other.</b> That is what decides how often the receiver confuses them. Module 2 already showed this for two points on a line: antipodal signalling beats on-off by $3$ dB because its points are further apart at the same average energy. Module 4 makes it the general rule.'}
+      {t:'note', kind:'ok', head:'Why these two matter more than anything else in the module', html:'<b>Energy is how far the point is from the origin.</b> That is what the transmitter pays for. <b>Distance is how far two points are from each other.</b> That is what decides how often the receiver confuses them. Module 2 already showed this for two points on a line. Antipodal signalling beats on-off by $3$ dB, because its points are further apart at the same average energy. Module 4 makes it the general rule.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>{
@@ -6146,12 +6166,12 @@ const SC = [
 ]},
 
 /* ---------------------------------------------------------------- 3.3 ---- */
-{ id:'m3-gs', module:'M3', nav:'Gram–Schmidt', title:'Finding the axes',
+{ id:'m3-gs', module:'M3', nav:'Gram–Schmidt', title:'The Gram–Schmidt procedure',
   objective:'State the Gram–Schmidt procedure as three repeated steps.',
   keywords:'gram schmidt orthogonalization procedure basis normalise subtract remainder',
   src:'CH9 s.16–18', steps:3, blocks:[
   {t:'eyebrow', text:'Module 3 · Gram–Schmidt'},
-  {t:'title', text:'Finding the axes'},
+  {t:'title', text:'The Gram–Schmidt procedure'},
   {t:'lede', text:'The axes have been assumed so far. Gram–Schmidt is the recipe that produces them from any set of waveforms, and it is three steps repeated until there is nothing left.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p><b>The first axis is the first signal, scaled to unit energy.</b></p>'},
@@ -6162,10 +6182,10 @@ const SC = [
       {t:'eq', tex:'E_{g_k}=\\int g_k^{2}(t)\\,dt,\\qquad \\psi_k(t)=\\frac{g_k(t)}{\\sqrt{E_{g_k}}}'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'ok', head:'The step that ends it', html:'If $g_k(t)=0$, that signal was already a combination of the axes found so far and <b>no new axis is added</b>. The procedure stops when every signal has been used, and the number of axes $N$ is at most the number of signals $M$ — often fewer.'}
+      {t:'note', kind:'ok', head:'The step that ends it', html:'If $g_k(t)=0$, that signal was already a combination of the axes found so far and <b>no new axis is added</b>. The procedure stops when every signal has been used. The number of axes $N$ is at most the number of signals $M$, and often fewer.'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'warn', head:'The order matters, the answer does not', html:'Starting from a different signal gives a different set of axes. It gives the same number of them, the same energies and the same distances, so the constellation is the same picture seen from a different angle — and every result that depends only on distances is unchanged.'}
+      {t:'note', kind:'warn', head:'The order matters, the answer does not', html:'Starting from a different signal gives a different set of axes. It gives the same number of them, the same energies and the same distances. The constellation is the same picture seen from a different angle, and every result that depends only on distances is unchanged.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>{
@@ -6189,7 +6209,7 @@ const SC = [
   keywords:'worked example gram schmidt three signals two basis functions constellation',
   src:'CH9 s.19–21', steps:4, blocks:[
   {t:'eyebrow', text:'Module 3 · Gram–Schmidt'},
-  {t:'title', text:'Worked example'},
+  {t:'title', text:'Worked example: three pulses, two axes'},
   {t:'cols', ratio:'c-6-6', vcenter:false, left:[
     {t:'wex', rows:[
       ['Given','$s_1(t)=1$ on $[0,2]$; $s_2(t)=1$ on $[2,3]$; $s_3(t)=1$ on $[0,3]$; each zero elsewhere.'],
@@ -6215,7 +6235,7 @@ const SC = [
       {t:'wex', rows:[
         ['Check','Energies from the vectors: $\\|\\mathbf{s}_1\\|^{2}=2$, $\\|\\mathbf{s}_2\\|^{2}=1$, $\\|\\mathbf{s}_3\\|^{2}=3$. Energies from the waveforms: $s_1$ is $1$ for two seconds, so $2$; $s_2$ is $1$ for one second, so $1$; $s_3$ is $1$ for three seconds, so $3$. They agree, and that agreement is the whole content of "energy is squared length".']
       ]},
-      {t:'note', kind:'ok', head:'Read the answer', html:'Three waveforms needed only two axes, because the third was the sum of the other two — $s_3=s_1+s_2$, visible in the pictures before any integral is computed. The receiver needs two matched filters, not three.'}
+      {t:'note', kind:'ok', head:'Read the answer', html:'Three waveforms needed only two axes, because the third was the sum of the other two. $s_3=s_1+s_2$ is visible in the pictures before any integral is computed. The receiver needs two matched filters, not three.'}
     ]}
   ], right:[
     {t:'grid', cols:3, gap:'14px', items:[
@@ -6236,23 +6256,23 @@ const SC = [
   steps:0, blocks:[
   {t:'eyebrow', text:'Module 3 · Gram–Schmidt'},
   {t:'title', text:'Laboratory F · From waveform to basis'},
-  {t:'body', html:'Choose a set of waveforms and watch the procedure run on it: the basis functions it produces, how many there are, and where the signals land. Reorder the set and the axes change while the constellation keeps its shape.'},
+  {t:'body', html:'Choose a set of waveforms and watch the procedure run on it. It shows the basis functions it produces, how many there are, and where the signals land. Reorder the set and the axes change while the constellation keeps its shape.'},
   {t:'lab', id:'F'}
 ]},
 
-{ id:'m3-remarks', module:'M3', nav:'What the geometry decides', title:'What the picture does and does not fix',
+{ id:'m3-remarks', module:'M3', nav:'What the geometry decides', title:'What the geometry decides',
   objective:'State what the constellation determines and what it leaves open.',
   keywords:'remarks same geometry different waveforms performance receiver structure bandwidth',
   src:'CH9 s.15', steps:2, blocks:[
   {t:'eyebrow', text:'Module 3 · Constellations'},
-  {t:'title', text:'What the picture fixes'},
+  {t:'title', text:'What the geometry decides'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'note', kind:'def', head:'Two statements worth remembering', html:'<ol><li><b>Two entirely different signal sets can have the same geometric representation.</b> Different shapes, different durations, the same points.</li><li><b>The geometry determines the performance and the receiver structure.</b> How many filters, how the decision is made, and how often it is wrong.</li></ol>'},
     {t:'reveal', at:1, items:[
       {t:'body', html:'<p>Put together: if two signal sets give the same constellation, they have the same error probability and the same receiver. Nothing about the waveforms themselves survives into the answer.</p>'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'warn', head:'What the picture does not fix', html:'Bandwidth. Two sets with the same constellation can occupy very different amounts of spectrum — Module 2 already showed a whole family of pulses with the same energy and very different bandwidths. Which one to build is decided outside this picture; how well it works is decided inside it.'}
+      {t:'note', kind:'warn', head:'What the picture does not fix', html:'Bandwidth. Two sets with the same constellation can occupy very different amounts of spectrum. Module 2 already showed a whole family of pulses with the same energy and very different bandwidths. Which one to build is decided outside this picture; how well it works is decided inside it.'}
     ]}
   ], right:[
     {t:'grid', cols:2, gap:'18px', items:[
@@ -6273,7 +6293,7 @@ const SC = [
   keywords:'summary basis coordinates energy distance constellation gram schmidt',
   steps:0, blocks:[
   {t:'eyebrow', text:'Module 3 · Summary'},
-  {t:'title', text:'What carries forward'},
+  {t:'title', text:'What Module 3 established'},
   {t:'grid', cols:2, gap:'26px', items:[
     [{t:'card', head:'The translation', items:[
       {t:'body', html:'<p>A waveform becomes a list of numbers by integrating it against each basis function, and comes back by adding the pieces up.</p>'},
@@ -6391,12 +6411,13 @@ const SC = [
 ]},
 
 /* ---------------------------------------------------------------- 4.1 ---- */
-{ id:'m4-observe', module:'M4', nav:'What the receiver keeps', title:'The receiver keeps $N$ numbers',
+{ id:'m4-observe', module:'M4', nav:'What the receiver keeps', title:'The observation vector',
   objective:'Show that the correlator bank loses nothing that matters.',
   keywords:'correlator bank observation vector irrelevant noise component projection',
   src:'CH9 s.24–25', steps:3, blocks:[
   {t:'eyebrow', text:'Module 4 · The observation'},
-  {t:'title', text:'The receiver keeps $N$ numbers'},
+  {t:'title', text:'The observation vector'},
+  {t:'lede', text:'The receiver keeps $N$ numbers, and loses nothing that matters.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>The receiver has $N$ correlators, one per basis function. Each returns one number:</p>'},
     {t:'eq', tex:'r_k=\\int_0^{T}r(t)\\,\\psi_k(t)\\,dt=\\underbrace{\\int_0^T s_i\\psi_k\\,dt}_{s_{ik}}+\\underbrace{\\int_0^T n\\psi_k\\,dt}_{n_k}=s_{ik}+n_k'},
@@ -6406,7 +6427,7 @@ const SC = [
       {t:'eq', tex:'r(t)=\\sum_{k=1}^{N}r_k\\psi_k(t)+n_0(t)'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'ok', head:'Why $n_0(t)$ can be thrown away', html:'It contains no signal at all — every signal is a combination of the $N$ basis functions, so none of them has any component outside that space. And it is independent of the $N$ numbers the receiver kept. A quantity that carries no information about the answer and is unrelated to what was kept cannot help, so discarding it costs nothing.'}
+      {t:'note', kind:'ok', head:'Why $n_0(t)$ can be thrown away', html:'It contains no signal at all. Every signal is a combination of the $N$ basis functions, so none of them has any component outside that space. And it is independent of the $N$ numbers the receiver kept. A quantity that carries no information about the answer and is unrelated to what was kept cannot help, so discarding it costs nothing.'}
     ]},
     {t:'reveal', at:3, items:[
       {t:'note', kind:'warn', head:'What this does not say', html:'The result does not say that the noise is small or that the correlators remove it. The receiver keeps all noise components inside the signal space. It discards only the component that cannot help distinguish the signals.'}
@@ -6428,12 +6449,13 @@ const SC = [
   ]}
 ]},
 
-{ id:'m4-noise', module:'M4', nav:'The noise on each axis', title:'One independent Gaussian per axis',
+{ id:'m4-noise', module:'M4', nav:'The noise on each axis', title:'The noise vector',
   objective:'Establish the distribution of the noise vector.',
   keywords:'noise vector independent gaussian variance uncorrelated joint density',
   src:'CH9 s.26–27', steps:2, blocks:[
   {t:'eyebrow', text:'Module 4 · The observation'},
-  {t:'title', text:'One independent Gaussian per axis'},
+  {t:'title', text:'The noise vector'},
+  {t:'lede', text:'One independent Gaussian per axis.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>Each $n_k$ is a projection of a Gaussian process onto a fixed function, so it is Gaussian with zero mean. The useful part is what happens between two of them:</p>'},
     {t:'eq', tex:'E[n_jn_k]=\\frac{N_0}{2}\\int_0^{T}\\psi_j(u)\\psi_k(u)\\,du=\\begin{cases}\\dfrac{N_0}{2},&j=k\\\\[4pt]0,&j\\ne k\\end{cases}'},
@@ -6443,7 +6465,7 @@ const SC = [
       {t:'eq', key:true, tex:'f_{\\mathbf{n}}(n_1,\\ldots,n_N)=(\\pi N_0)^{-N/2}\\exp\\!\\left(-\\sum_{k=1}^{N}\\frac{n_k^{2}}{N_0}\\right)'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'ok', head:'What the picture looks like', html:'Because every axis has the same variance and the axes are independent, the noise cloud is a <b>circle</b> — a sphere in $N$ dimensions — and not an ellipse. That symmetry is what makes "nearest point" the right rule in the next section. If the variances differed, the nearest point in the ordinary sense would not be the best answer.'}
+      {t:'note', kind:'ok', head:'What the picture looks like', html:'Every axis has the same variance and the axes are independent. The noise cloud is therefore a <b>circle</b> — a sphere in $N$ dimensions — and not an ellipse. That symmetry is what makes "nearest point" the right rule in the next section. If the variances differed, the nearest point in the ordinary sense would not be the best answer.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>{
@@ -6462,12 +6484,12 @@ const SC = [
 ]},
 
 /* ---------------------------------------------------------------- 4.2 ---- */
-{ id:'m4-map', module:'M4', nav:'MAP and ML', title:'Two rules, and when they agree',
+{ id:'m4-map', module:'M4', nav:'MAP and ML', title:'The MAP and ML rules',
   objective:'State the MAP and ML rules and the relation between them.',
   keywords:'maximum a posteriori maximum likelihood bayes prior posterior decision rule',
   src:'CH9 s.29–30', steps:3, blocks:[
   {t:'eyebrow', text:'Module 4 · The decision rule'},
-  {t:'title', text:'Two rules, and when they agree'},
+  {t:'title', text:'The MAP and ML rules'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>The receiver should choose the signal that is most likely <em>given what it saw</em>. That is the posterior probability $P(\\mathbf{s}_i\\mid\\mathbf{r})$, and by Bayes\' rule</p>'},
     {t:'eq', tex:'P(\\mathbf{s}_i\\mid\\mathbf{r})=\\frac{P(\\mathbf{s}_i)\\,f_{\\mathbf{r}}(\\mathbf{r}\\mid\\mathbf{s}_i)}{f_{\\mathbf{r}}(\\mathbf{r})}'},
@@ -6491,12 +6513,13 @@ const SC = [
   ]}
 ]},
 
-{ id:'m4-mindist', module:'M4', nav:'Minimum distance', title:'The rule is: choose the nearest point',
+{ id:'m4-mindist', module:'M4', nav:'Minimum distance', title:'Minimum-distance detection',
   objective:'Reduce the ML rule to minimum-distance detection.',
   keywords:'minimum distance detection log likelihood euclidean squared distance nearest',
   src:'CH9 s.31–34', steps:3, blocks:[
   {t:'eyebrow', text:'Module 4 · The decision rule'},
-  {t:'title', text:'Choose the nearest point'},
+  {t:'title', text:'Minimum-distance detection'},
+  {t:'lede', text:'The rule is: choose the nearest point.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>Put the noise density from the last section into the likelihood. Each $r_k$ is $s_{ik}$ plus independent noise of variance $N_0/2$, so</p>'},
     {t:'eq', tex:'f_{\\mathbf{r}}(\\mathbf{r}\\mid\\mathbf{s}_i)=(\\pi N_0)^{-N/2}\\exp\\!\\left(-\\sum_{k=1}^{N}\\frac{(r_k-s_{ik})^{2}}{N_0}\\right)'},
@@ -6508,7 +6531,7 @@ const SC = [
     {t:'reveal', at:2, items:[
       {t:'eq', key:true, label:'ML detection', tex:'\\hat{s}=\\arg\\min_{i}\\;\\|\\mathbf{r}-\\mathbf{s}_i\\|^{2}'},
       {t:'eq', key:true, label:'MAP detection', tex:'\\hat{s}=\\arg\\min_{i}\\;\\Bigl\\{\\|\\mathbf{r}-\\mathbf{s}_i\\|^{2}-N_0\\ln P(\\mathbf{s}_i)\\Bigr\\}'},
-      {t:'note', kind:'ok', head:'Say it in words', html:'<b>Choose the signal point closest to what arrived.</b> With unequal priors, subtract a fixed handicap from each distance first — a more likely symbol gets a larger handicap and so wins from further away.'}
+      {t:'note', kind:'ok', head:'Say it in words', html:'<b>Choose the signal point closest to what arrived.</b> With unequal priors, subtract a fixed handicap from each distance first. A more likely symbol gets a larger handicap and so wins from further away.'}
     ]},
     {t:'reveal', at:3, items:[
       {t:'note', kind:'warn', head:'Where the handicap goes', html:'$-N_0\\ln P(\\mathbf{s}_i)$ is <em>subtracted</em>, and $\\ln P$ is negative, so the term is positive and smaller for the more likely symbol. Getting the sign wrong shrinks the region of the likely symbol instead of growing it, and the error probability rises rather than falls.'}
@@ -6532,12 +6555,13 @@ const SC = [
   ]}
 ]},
 
-{ id:'m4-metric', module:'M4', nav:'The receiver that computes it', title:'The receiver, in the form it is built',
+{ id:'m4-metric', module:'M4', nav:'The receiver that computes it', title:'The correlation metric',
   objective:'Turn the distance rule into the correlation metric a receiver computes.',
   keywords:'correlation metric receiver structure energy bias equal energy signals',
   src:'CH9 s.35–36', steps:3, blocks:[
   {t:'eyebrow', text:'Module 4 · The decision rule'},
-  {t:'title', text:'What the receiver actually computes'},
+  {t:'title', text:'The correlation metric'},
+  {t:'lede', text:'The receiver, in the form it is built.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>Expanding the squared distance gives three terms:</p>'},
     {t:'eq', tex:'\\|\\mathbf{r}-\\mathbf{s}_i\\|^{2}=\\underbrace{\\|\\mathbf{r}\\|^{2}}_{\\text{same for every }i}-2\\,\\mathbf{r}\\!\\cdot\\!\\mathbf{s}_i+\\underbrace{\\|\\mathbf{s}_i\\|^{2}}_{E_i}'},
@@ -6577,12 +6601,13 @@ const SC = [
 ]},
 
 /* ---------------------------------------------------------------- 4.3 ---- */
-{ id:'m4-regions', module:'M4', nav:'Decision regions', title:'The rule, drawn',
+{ id:'m4-regions', module:'M4', nav:'Decision regions', title:'Decision regions',
   objective:'Show that decision boundaries are perpendicular bisectors.',
   keywords:'decision regions perpendicular bisector boundaries unequal priors shrink',
   src:'CH9 s.47, 50', steps:2, blocks:[
   {t:'eyebrow', text:'Module 4 · Decision regions'},
-  {t:'title', text:'The rule, drawn'},
+  {t:'title', text:'Decision regions'},
+  {t:'lede', text:'The rule, drawn.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>The rule assigns every possible observation to one signal. Collecting the observations that give the same answer divides the space into $M$ pieces:</p>'},
     {t:'eq', tex:'R_i=\\left\\{\\mathbf{r}\\;:\\;\\|\\mathbf{r}-\\mathbf{s}_i\\|^{2}\\le\\|\\mathbf{r}-\\mathbf{s}_j\\|^{2}\\ \\text{for all }j\\ne i\\right\\}'},
@@ -6591,7 +6616,7 @@ const SC = [
     ]},
     {t:'reveal', at:2, items:[
       {t:'body', html:'<p>The first two are the definition of a perpendicular bisector: the set of points equidistant from two fixed points <em>is</em> that bisector. Nothing has to be calculated once the rule is "nearest point".</p>'},
-      {t:'note', kind:'warn', head:'A region need not be bounded', html:'Only the nearest neighbours contribute boundaries. A point in the middle of a constellation has a bounded region; a point on the outside has one that runs off to infinity, and that is why outer points make fewer errors than inner ones.'}
+      {t:'note', kind:'warn', head:'A region need not be bounded', html:'Only the nearest neighbours contribute boundaries. A point in the middle of a constellation has a bounded region. A point on the outside has one that runs off to infinity, and that is why outer points make fewer errors than inner ones.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figRegions(
@@ -6600,12 +6625,12 @@ const SC = [
   ]}
 ]},
 
-{ id:'m4-binary', module:'M4', nav:'The binary case', title:'The binary case, worked through',
+{ id:'m4-binary', module:'M4', nav:'The binary case', title:'The binary case',
   objective:'Derive the binary error probability from the geometry alone.',
   keywords:'binary decision distance error probability q function geometry antipodal',
   src:'CH9 s.48–55', steps:3, blocks:[
   {t:'eyebrow', text:'Module 4 · Decision regions'},
-  {t:'title', text:'Two points, and the answer Module 2 already had'},
+  {t:'title', text:'The binary case'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>Take two equally likely points a distance $d$ apart. Put the origin midway, so they sit at $\\pm d/2$ on the line joining them, and the boundary is at zero.</p>'},
     {t:'body', html:'<p>An error happens when the noise along that line carries the observation across the boundary — a distance of $d/2$. The noise on any one axis is $\\mathcal{N}(0,N_0/2)$, so</p>'},
@@ -6649,17 +6674,18 @@ const SC = [
   steps:0, blocks:[
   {t:'eyebrow', text:'Module 4 · Decision regions'},
   {t:'title', text:'Laboratory G · Constellations and decision regions'},
-  {t:'body', html:'Choose a constellation and a noise level. The laboratory draws the decision regions from the rule, scatters the observations the receiver would actually see, counts how many land in the wrong region, and compares that count with the union bound. Move the points closer and both numbers rise together.'},
+  {t:'body', html:'Choose a constellation and a noise level. The laboratory draws the decision regions from the rule and scatters the observations the receiver would actually see. It counts how many land in the wrong region, and compares that count with the union bound. Move the points closer and both numbers rise together.'},
   {t:'lab', id:'G'}
 ]},
 
 /* ---------------------------------------------------------------- 4.4 ---- */
-{ id:'m4-pe', module:'M4', nav:'The exact answer', title:'The exact answer, and why it is not usable',
+{ id:'m4-pe', module:'M4', nav:'The exact answer', title:'The exact error probability',
   objective:'Give the general error expression and explain the difficulty.',
   keywords:'general expression probability of error integral decision region multidimensional',
   src:'CH9 s.51, 56', steps:2, blocks:[
   {t:'eyebrow', text:'Module 4 · The union bound'},
-  {t:'title', text:'The exact answer, and why it is not usable'},
+  {t:'title', text:'The exact error probability'},
+  {t:'lede', text:'The exact answer, and why it is not usable.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>A decision is correct when the observation lands in the right region. Averaging over the symbols:</p>'},
     {t:'eq', tex:'P(C)=\\sum_{i=1}^{M}P\\bigl(\\mathbf{r}\\in R_i\\mid\\mathbf{s}_i\\bigr)P(\\mathbf{s}_i),\\qquad P_e=1-P(C)'},
@@ -6707,12 +6733,12 @@ const SC = [
   ]}
 ]},
 
-{ id:'m4-dmin', module:'M4', nav:'The usable forms', title:'The two forms actually used',
+{ id:'m4-dmin', module:'M4', nav:'The usable forms', title:'The minimum-distance and nearest-neighbour forms',
   objective:'Give the minimum-distance bound and the nearest-neighbour approximation.',
   keywords:'minimum distance bound nearest neighbour approximation number of neighbours',
   src:'CH9 s.60–61', steps:3, blocks:[
   {t:'eyebrow', text:'Module 4 · The union bound'},
-  {t:'title', text:'The two forms actually used'},
+  {t:'title', text:'The minimum-distance and nearest-neighbour forms'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>$Q$ decreases, so replacing every distance by the smallest one can only make each term larger. Write</p>'},
     {t:'eq', tex:'d_{\\min}=\\min_{k\\ne j}\\;d_{kj}'},
@@ -6727,7 +6753,7 @@ const SC = [
       {t:'small', html:'This approximation is useful at high signal-to-noise ratios. More distant points have much smaller pairwise terms, so the nearest neighbours dominate the error probability.'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'ok', head:'What to take away', html:'A constellation is judged by two numbers: $d_{\\min}$, which sets the exponent and therefore almost everything, and $N_{\\min}$, which multiplies it and matters far less. Designing a good constellation means pushing $d_{\\min}$ as far as possible at a fixed average energy.'}
+      {t:'note', kind:'ok', head:'What to take away', html:'A constellation is judged by two numbers. $d_{\\min}$ sets the exponent and therefore almost everything; $N_{\\min}$ multiplies it and matters far less. Designing a good constellation means pushing $d_{\\min}$ as far as possible at a fixed average energy.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>{
@@ -6748,14 +6774,14 @@ const SC = [
   ]}
 ]},
 
-{ id:'m4-intel', module:'M4', nav:'The intelligent bound', title:'Only the neighbours the region touches',
+{ id:'m4-intel', module:'M4', nav:'The intelligent bound', title:'The intelligent union bound',
   objective:'Tighten the union bound by dropping the points whose bisectors form no face of the region.',
   keywords:'intelligent union bound decision region faces neighbours tighter maximum likelihood',
   src:'CH9 s.59–60', steps:3, blocks:[
   {t:'eyebrow', text:'Module 4 · The union bound'},
-  {t:'title', text:'Only the neighbours the region touches'},
+  {t:'title', text:'The intelligent union bound'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
-    {t:'body', html:'<p>The union bound adds one term for every other signal point. Look at what most of those points are doing. To land nearer a far-away point, the observation has to leave its own region first — and it leaves through a <b>face</b>, a piece of boundary shared with one particular neighbour. A point that shares no face with the region cannot be the first one reached.</p>'},
+    {t:'body', html:'<p>The union bound adds one term for every other signal point. Look at what most of those points are doing. To land nearer a far-away point, the observation has to leave its own region first. And it leaves through a <b>face</b>: a piece of boundary shared with one particular neighbour. A point that shares no face with the region cannot be the first one reached.</p>'},
     {t:'note', kind:'def', head:'The set that matters', html:'Write $\\mathcal{N}(k)$ for the neighbours of $\\mathbf{s}_k$ whose perpendicular bisectors form the faces of the decision region $R_k$. These are the only points that bound the region, so they are the only ones an error has to cross.'},
     {t:'reveal', at:1, items:[
       {t:'body', html:'<p>Leaving $R_k$ means crossing at least one of its faces, so the union over the faces already covers every error. Summing over that smaller set is still an upper bound:</p>'},
@@ -6771,7 +6797,7 @@ const SC = [
       ]}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'warn', head:'Not the same statement as the nearest-neighbour form', html:'Here the two give the same expression, because both faces happen to sit at $d_{\\min}$. They still say different things. This one <em>counts faces</em> and is an upper bound, so a system built to it is safe. The nearest-neighbour form of the last scene <em>counts points at $d_{\\min}$</em> and is an approximation, so it can sit below the truth. They part company whenever a face is shared with a point further away than $d_{\\min}$ — that face is a real way out of the region, and only this bound keeps it.'}
+      {t:'note', kind:'warn', head:'Not the same statement as the nearest-neighbour form', html:'Here the two give the same expression, because both faces happen to sit at $d_{\\min}$. They still say different things. This one <em>counts faces</em> and is an upper bound, so a system built to it is safe. The nearest-neighbour form of the last scene <em>counts points at $d_{\\min}$</em> and is an approximation, so it can sit below the truth. They part company whenever a face is shared with a point further away than $d_{\\min}$. That face is a real way out of the region, and only this bound keeps it.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figRegions(
@@ -6794,7 +6820,7 @@ const SC = [
   keywords:'worked example union bound four points square distances general form',
   src:'CH9 s.62–63', steps:2, blocks:[
   {t:'eyebrow', text:'Module 4 · The union bound'},
-  {t:'title', text:'Worked example, part one'},
+  {t:'title', text:'Worked example: the union bound'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'wex', rows:[
       ['Given','Four equally likely points at $(\\pm d/2,\\,\\pm d/2)$: neighbouring points are $d$ apart, diagonal ones $d\\sqrt{2}$.'],
@@ -6822,7 +6848,7 @@ const SC = [
   keywords:'worked example nearest neighbour minimum distance comparison numbers',
   src:'CH9 s.64–65', steps:3, blocks:[
   {t:'eyebrow', text:'Module 4 · The union bound'},
-  {t:'title', text:'Worked example, part two'},
+  {t:'title', text:'Worked example: the two simpler forms'},
   {t:'lede', text:'The same constellation, with the two forms that are actually used, and the three answers side by side.'},
   {t:'reveal', at:1, items:[
     {t:'wex', rows:[
@@ -6836,7 +6862,7 @@ const SC = [
     ]}
   ]},
   {t:'reveal', at:3, items:[
-    {t:'note', kind:'ok', head:'The lesson', html:'The two useful forms differ by less than one per cent: the diagonal term is worth $0.4\\%$ and dropping it is safe. The loose form is half again too large, because pretending the diagonal point is a nearest neighbour adds a whole extra term at the smallest distance. All three are the same $Q$ with a different count in front, so none of them moves the curve sideways — the signal-to-noise ratio needed for a given error rate is almost the same whichever is used.'}
+    {t:'note', kind:'ok', head:'The lesson', html:'The two useful forms differ by less than one per cent: the diagonal term is worth $0.4\\%$ and dropping it is safe. The loose form is half again too large. Pretending the diagonal point is a nearest neighbour adds a whole extra term at the smallest distance. All three are the same $Q$ with a different count in front, so none of them moves the curve sideways. The signal-to-noise ratio needed for a given error rate is almost the same whichever is used.'}
   ]}
 ]},
 
@@ -6846,7 +6872,7 @@ const SC = [
   keywords:'summary optimal receiver minimum distance union bound dmin nearest neighbours',
   steps:0, blocks:[
   {t:'eyebrow', text:'Module 4 · Summary'},
-  {t:'title', text:'What carries forward'},
+  {t:'title', text:'What Module 4 established'},
   {t:'grid', cols:2, gap:'26px', items:[
     [{t:'card', head:'The receiver', items:[
       {t:'body', html:'<p>Correlate against each signal, correct for its energy and its prior, and take the largest. With equal energies and equal priors, take the largest correlation.</p>'},
@@ -6865,7 +6891,7 @@ const SC = [
       {t:'eq', plain:true, tex:'P_e\\approx N_{\\min}Q\\!\\left(\\sqrt{d_{\\min}^{2}/2N_0}\\right)'}
     ]}]
   ]},
-  {t:'note', kind:'ok', head:'What Module 5 does with this', html:'It applies the result to the constellations that are actually used — amplitude, phase and quadrature modulation — and asks which of them gets the largest $d_{\\min}$ for a given average energy and a given number of bits per symbol.'}
+  {t:'note', kind:'ok', head:'What Module 5 does with this', html:'It applies the result to the constellations that are actually used: amplitude, phase and quadrature modulation. The question is which of them gets the largest $d_{\\min}$ for a given average energy and a given number of bits per symbol.'}
 ]}
 
 ];
@@ -6942,13 +6968,13 @@ const PAM = M => Array.from({length:M},(_,k)=>[(2*k-(M-1))/(M-1)*1.4, 0]);
 const SC = [
 
 /* ---------------------------------------------------------------- 5.0 ---- */
-{ id:'m5-open', module:'M5', nav:'Three things to switch', title:'Three things a carrier has',
+{ id:'m5-open', module:'M5', nav:'Three things to switch', title:'Amplitude, frequency, phase',
   objective:'Frame the module as one question asked of three carrier parameters.',
   keywords:'digital modulation amplitude frequency phase keying ask fsk psk opening',
   src:'CH9 s.65', steps:2, blocks:[
   {t:'eyebrow', text:'Module 5 · Opening'},
   {t:'title', text:'Amplitude, frequency, phase'},
-  {t:'lede', text:'A sinusoidal carrier has an amplitude, a frequency and a phase. Switching any one of them according to the data is a digital modulation scheme, and there are three families because there are three things to switch.'},
+  {t:'lede', text:'A sinusoidal carrier has an amplitude, a frequency and a phase. Switching any one of them according to the data is a digital modulation scheme. There are three families because there are three things to switch.'},
   /* The three waveforms go side by side rather than stacked. Three figures in
      one column is taller than the stage; three across uses the width the scene
      has spare and leaves the type at the size it was designed at. */
@@ -6986,7 +7012,7 @@ const SC = [
       {t:'eq', key:true, tex:'d_{\\min}=2\\sqrt{E_b},\\qquad P_b=Q\\!\\left(\\sqrt{\\frac{2E_b}{N_0}}\\right)'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'ok', head:'This is the antipodal case again', html:'Exactly the constellation of Module 2 and Module 4, now carried on a carrier. The modulation has moved the signal to a frequency band; it has not changed the geometry, and so it has not changed the error probability by a decibel.'}
+      {t:'note', kind:'ok', head:'This is the antipodal case again', html:'Exactly the constellation of Module 2 and Module 4, now carried on a carrier. The modulation has moved the signal to a frequency band. It has not changed the geometry, and so it has not changed the error probability by a decibel.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figCarrier('bpsk'),
@@ -7006,7 +7032,7 @@ const SC = [
     {t:'body', html:'Two frequencies, one per bit, at the same amplitude:'},
     {t:'eq', tex:'s_i(t)=\\sqrt{\\frac{2E_b}{T_b}}\\cos(2\\pi f_it),\\qquad i=0,1'},
     {t:'reveal', at:1, items:[
-      {t:'note', kind:'def', head:'How far apart the frequencies must be', html:'The two waveforms are made <b>orthogonal</b> by choosing $$f_1=f_0+\\frac{1}{2T_b}.$$ Any closer and their inner product is non-zero, which pulls the two constellation points together; any further apart is wasted bandwidth for no gain in distance.'}
+      {t:'note', kind:'def', head:'How far apart the frequencies must be', html:'The two waveforms are made <b>orthogonal</b> by choosing $$f_1=f_0+\\frac{1}{2T_b}.$$ Any closer and their inner product is non-zero, which pulls the two constellation points together. Any further apart is wasted bandwidth for no gain in distance.'}
     ]},
     {t:'reveal', at:2, items:[
       {t:'body', html:'Two orthogonal waveforms need two axes, so the constellation is two-dimensional with one point on each:'},
@@ -7014,7 +7040,7 @@ const SC = [
       {t:'eq', key:true, tex:'d_{\\min}=\\sqrt{2E_b},\\qquad P_b=Q\\!\\left(\\sqrt{\\frac{E_b}{N_0}}\\right)'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'warn', head:'The three decibels, and where they went', html:'BFSK needs <b>twice the energy per bit</b> of BPSK for the same error probability. The reason is in the picture: two perpendicular points of length $\\sqrt{E_b}$ are $\\sqrt{2E_b}$ apart, while two opposite points of the same length are $2\\sqrt{E_b}$ apart. Perpendicular is closer than opposite, by a factor of $\\sqrt2$ in distance and a factor of two in energy.'}
+      {t:'note', kind:'warn', head:'The three decibels, and where they went', html:'BFSK needs <b>twice the energy per bit</b> of BPSK for the same error probability. The reason is in the picture. Two perpendicular points of length $\\sqrt{E_b}$ are $\\sqrt{2E_b}$ apart; two opposite points of the same length are $2\\sqrt{E_b}$ apart. Perpendicular is closer than opposite, by a factor of $\\sqrt2$ in distance and a factor of two in energy.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figCarrier('bfsk'),
@@ -7043,7 +7069,7 @@ const SC = [
       {t:'body', html:'The same answer as BFSK, and for the same reason: the same distance at the same average energy.'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'ok', head:'Two schemes, one geometry', html:'BASK puts its points at $0$ and $\\sqrt{2E_b}$ on a line; BFSK puts them at $(\\sqrt{E_b},0)$ and $(0,\\sqrt{E_b})$ in a plane. Different pictures, the same separation at the same average energy, and therefore the same error probability. Module 3 said two signal sets with the same geometry perform identically — here are two with <em>different</em> geometry and the same distance, which is all the performance depends on.'}
+      {t:'note', kind:'ok', head:'Two schemes, one geometry', html:'BASK puts its points at $0$ and $\\sqrt{2E_b}$ on a line; BFSK puts them at $(\\sqrt{E_b},0)$ and $(0,\\sqrt{E_b})$ in a plane. Different pictures, the same separation at the same average energy, and therefore the same error probability. Module 3 said two signal sets with the same geometry perform identically. Here are two with <em>different</em> geometry and the same distance, which is all the performance depends on.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figCarrier('bask'),
@@ -7063,7 +7089,7 @@ const SC = [
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'Keep the amplitude fixed and use $M$ phases instead of two:'},
     {t:'eq', tex:'s_i(t)=\\sqrt{\\frac{2E_s}{T_s}}\\cos\\!\\left(2\\pi f_ct+\\frac{2\\pi(i-1)}{M}\\right),\\quad i=1,\\ldots,M'},
-    {t:'small', html:'Two basis functions — a cosine and a sine at the carrier frequency — carry all $M$ of them, so the constellation is $M$ points evenly spaced on a circle of radius $\\sqrt{E_s}$, whatever $M$ is.'},
+    {t:'small', html:'Two basis functions — a cosine and a sine at the carrier frequency — carry all $M$ of them. The constellation is therefore $M$ points evenly spaced on a circle of radius $\\sqrt{E_s}$, whatever $M$ is.'},
     {t:'reveal', at:1, items:[
       {t:'body', html:'Neighbouring points subtend $2\\pi/M$ at the centre. The cosine rule gives the chord between them:'},
       {t:'eq', tex:'d_{\\min}^{2}=E_s+E_s-2E_s\\cos\\frac{2\\pi}{M}=2E_s\\left(1-\\cos\\frac{2\\pi}{M}\\right)'},
@@ -7086,12 +7112,13 @@ const SC = [
   ]}
 ]},
 
-{ id:'m5-mpsk-pe', module:'M5', nav:'What M-PSK costs', title:'What each extra bit costs',
+{ id:'m5-mpsk-pe', module:'M5', nav:'What M-PSK costs', title:'The error probability of M-ary PSK',
   objective:'Give the M-PSK error probability and the cost of increasing M.',
   keywords:'m-psk error probability energy per bit cost of doubling M decibels',
   src:'CH9 s.78', steps:3, blocks:[
   {t:'eyebrow', text:'Module 5 · Phase-shift keying'},
-  {t:'title', text:'What each extra bit costs'},
+  {t:'title', text:'The error probability of M-ary PSK'},
+  {t:'lede', text:'What each extra bit costs.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'Put the distance into the nearest-neighbour approximation of Module 4:'},
     {t:'eq', key:true, tex:'P_e\\approx 2\\,Q\\!\\left(\\sqrt{\\frac{2E_s}{N_0}}\\,\\sin\\frac{\\pi}{M}\\right)'},
@@ -7120,7 +7147,7 @@ const SC = [
       return a.svg();
     }, caption:'Symbol error probability against energy per bit, for four sizes of PSK. The curves move steadily to the right as $M$ grows, and the gaps widen.'},
     {t:'legend', items:[['in','$M=2$'],['out','$M=4$'],['h','$M=8$'],['err','$M=16$']]},
-    {t:'small', html:'$M=2$ and $M=4$ lie almost on top of each other — QPSK carries two bits a symbol for the same energy per bit as BPSK, which is why it is everywhere.'}
+    {t:'small', html:'$M=2$ and $M=4$ lie almost on top of each other. QPSK carries two bits a symbol for the same energy per bit as BPSK, which is why it is everywhere.'}
   ]}
 ]},
 
@@ -7163,7 +7190,7 @@ const SC = [
   {t:'title', text:'Quadrature amplitude modulation'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'note', kind:'def', head:'The idea in one line', html:'Run one amplitude-modulated signal on the cosine and an independent one on the sine. Two axes, two independent $\\sqrt{M}$-level constellations, and $M$ points on a square grid.'},
-    {t:'body', html:'<p>That is why the material states $M$-QAM as two-dimensional $M$-ASK: it is literally two amplitude constellations at right angles, and the receiver decides each axis separately.</p>'},
+    {t:'body', html:'<p>That is why the material states $M$-QAM as two-dimensional $M$-ASK. It is literally two amplitude constellations at right angles, and the receiver decides each axis separately.</p>'},
     {t:'reveal', at:1, items:[
       {t:'body', html:'With neighbouring points a distance $d$ apart on the grid,'},
       {t:'eq', tex:'E_{s,\\text{avg}}=\\frac{(M-1)d^{2}}{6}\\quad\\Longrightarrow\\quad d_{\\min}=d=\\sqrt{\\frac{6\\,E_{s,\\text{avg}}}{M-1}}'},
@@ -7174,7 +7201,7 @@ const SC = [
       {t:'eq', key:true, tex:'P_e\\approx N_{\\min}\\,Q\\!\\left(\\sqrt{\\frac{d_{\\min}^{2}}{2N_0}}\\right)'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'ok', head:'Why QAM wins for large alphabets', html:'At sixteen points, PAM has $d_{\\min}^{2}=12E_s/255$ and QAM has $6E_s/15$ — larger by a factor of $8.5$, or $9.3$ dB, at the same energy and the same four bits a symbol. Two dimensions are worth having, and QAM is how they are used.'}
+      {t:'note', kind:'ok', head:'Why QAM wins for large alphabets', html:'At sixteen points, PAM has $d_{\\min}^{2}=12E_s/255$ and QAM has $6E_s/15$. That is larger by a factor of $8.5$, or $9.3$ dB, at the same energy and the same four bits a symbol. Two dimensions are worth having, and QAM is how they are used.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figConst(QAM16,{lim:1.35,w:360,h:300,r:4.5,n:88}),
@@ -7211,7 +7238,7 @@ const SC = [
       {t:'note', kind:'ok', head:'The distance does not shrink', html:'This is the opposite of every other family in the module. In PSK and QAM the points crowd together as $M$ grows and $d_{\\min}$ falls; here the separation stays at $\\sqrt{2E_s}$ however large $M$ becomes. Only the number of ways to be wrong grows, and that costs a factor in front of the $Q$ rather than inside it.'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'warn', head:'What it costs instead', html:'Bandwidth. Each new symbol needs a new frequency, so the occupied band grows in proportion to $M$, while PSK and QAM keep the same two dimensions however many points they place in them. Frequency-shift keying spends bandwidth to save power; the others spend power to save bandwidth. Which is the right trade depends entirely on which of the two is scarce.'}
+      {t:'note', kind:'warn', head:'What it costs instead', html:'Bandwidth. Each new symbol needs a new frequency, so the occupied band grows in proportion to $M$. PSK and QAM keep the same two dimensions however many points they place in them. Frequency-shift keying spends bandwidth to save power; the others spend power to save bandwidth. Which is the right trade depends entirely on which of the two is scarce.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>{
@@ -7232,7 +7259,8 @@ const SC = [
   keywords:'comparison psk qam pam fsk bandwidth power efficiency trade',
   src:'CH9 s.95–101', steps:2, blocks:[
   {t:'eyebrow', text:'Module 5 · Comparison'},
-  {t:'title', text:'Which family to use'},
+  {t:'title', text:'Comparing the families'},
+  {t:'lede', text:'Which family to use, and what each one spends.'},
   {t:'body', html:'Every scheme in this module carries $\\log_2 M$ bits a symbol. What separates them is how much energy that costs and how much bandwidth.'},
   {t:'grid', cols:2, gap:'26px', items:[
     [{t:'card', head:'PAM — one dimension', items:[
@@ -7249,10 +7277,10 @@ const SC = [
     ]}]
   ]},
   {t:'reveal', at:1, items:[
-    {t:'note', kind:'ok', head:'One sentence to take away', html:'Every family answers the same question — how to place $M$ points as far apart as possible for a given average energy — and they differ in how many dimensions they are allowed to use. More dimensions mean more room and more bandwidth, and that is the whole trade.'}
+    {t:'note', kind:'ok', head:'One sentence to take away', html:'Every family answers the same question: how to place $M$ points as far apart as possible for a given average energy. They differ in how many dimensions they are allowed to use. More dimensions mean more room and more bandwidth, and that is the whole trade.'}
   ]},
   {t:'reveal', at:2, items:[
-    {t:'note', kind:'warn', head:'What none of this settles', html:'The comparison is on error probability and bandwidth alone. A real choice also weighs how hard the transmitter is to build, whether the amplifier can be run at saturation, and how much the receiver has to know about the carrier phase. PSK survives against QAM in some systems for the second of those reasons and no other.'}
+    {t:'note', kind:'warn', head:'What none of this settles', html:'The comparison is on error probability and bandwidth alone. A real choice weighs three more things. How hard is the transmitter to build, can the amplifier run at saturation, and how much must the receiver know about the carrier phase? PSK survives against QAM in some systems for the second of those reasons and no other.'}
   ]}
 ]},
 
@@ -7262,10 +7290,10 @@ const SC = [
   keywords:'summary modulation families minimum distance error probability comparison',
   steps:0, blocks:[
   {t:'eyebrow', text:'Module 5 · Summary'},
-  {t:'title', text:'What carries forward'},
+  {t:'title', text:'What Module 5 established'},
   {t:'grid', cols:2, gap:'26px', items:[
     [{t:'card', head:'The binary three', items:[
-      {t:'body', html:'<p>BPSK is antipodal and best. BFSK and BASK are both $3$ dB worse, and for the same reason: their two points are $\\sqrt2$ closer at the same average energy per bit.</p>'},
+      {t:'body', html:'<p>BPSK is antipodal and best. BFSK and BASK are both $3$ dB worse, for the same reason: their points are $\\sqrt2$ closer at the same average energy per bit.</p>'},
       {t:'eq', plain:true, tex:'Q\\!\\left(\\sqrt{2E_b/N_0}\\right)\\ \\text{vs}\\ Q\\!\\left(\\sqrt{E_b/N_0}\\right)'}
     ]}],
     [{t:'card', head:'The M-ary families', items:[
@@ -7282,7 +7310,7 @@ const SC = [
       {t:'body', html:'<p>More bits a symbol costs power in PSK, PAM and QAM, and bandwidth in FSK. Which to spend is a question about the channel, not about the mathematics.</p>'}
     ]}]
   ]},
-  {t:'note', kind:'ok', head:'What Module 6 asks instead', html:'Every scheme here is judged against the noise. Module 6 asks a different question: how much information the source produced in the first place, and how fast a channel can carry it at all — a limit no modulation scheme can pass.'}
+  {t:'note', kind:'ok', head:'What Module 6 asks instead', html:'Every scheme here is judged against the noise. Module 6 asks a different question: how much information did the source produce, and how fast can a channel carry it at all? That limit no modulation scheme can pass.'}
 ]}
 
 ];
@@ -7514,17 +7542,18 @@ window.SCENES_M6 = [
   ], right:[
     {t:'fig', frame:true, svg:()=>figSelf(),
       caption:'A rare symbol carries many bits and a common one carries few. The lower curve is the first weighted by how often it happens — and the area under that weighting, summed over the alphabet, is the entropy.'},
-    {t:'small', html:'The two curves already say why the answer is an average and not a maximum: a symbol so rare that it carries twenty bits contributes almost nothing, because it almost never arrives.'}
+    {t:'small', html:'The two curves already say why the answer is an average and not a maximum. A symbol so rare that it carries twenty bits contributes almost nothing, because it almost never arrives.'}
   ]}
 ]},
 
 /* ---------------------------------------------------------------- 6.1 ---- */
-{ id:'m6-selfinfo', module:'M6', nav:'Self-information', title:'The information in one symbol',
+{ id:'m6-selfinfo', module:'M6', nav:'Self-information', title:'Self-information',
   objective:'Define self-information and give its three properties.',
   keywords:'self information logarithm bits nats hartleys properties independent',
   src:'CH10 s.4', steps:2, blocks:[
   {t:'eyebrow', text:'Module 6 · An introduction to information theory'},
-  {t:'title', text:'The information in one symbol'},
+  {t:'title', text:'Self-information'},
+  {t:'lede', text:'The information in one symbol.'},
   {t:'cols', ratio:'c-7-5', vcenter:true, left:[
     {t:'body', html:'<p>How much do you learn when a symbol arrives? If it was certain, nothing. If it was almost impossible, a great deal. So the measure has to fall as the probability rises, and it has to reach zero at probability one.</p>'},
     {t:'eq', key:true, label:'self-information',
@@ -7549,12 +7578,12 @@ window.SCENES_M6 = [
 ]},
 
 /* ---------------------------------------------------------------- 6.2 ---- */
-{ id:'m6-entropy', module:'M6', nav:'Entropy', title:'Entropy: the average over the alphabet',
+{ id:'m6-entropy', module:'M6', nav:'Entropy', title:'Entropy',
   objective:'Define entropy, give its bounds, and work the standard example.',
   keywords:'entropy average bits per symbol bounds maximum uniform binary entropy function',
   src:'CH10 s.5–6', steps:3, blocks:[
   {t:'eyebrow', text:'Module 6 · An introduction to information theory'},
-  {t:'title', text:'Entropy: the average over the alphabet'},
+  {t:'title', text:'Entropy'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>Self-information describes one symbol. Average it over the alphabet, weighting each symbol by how often it happens, and the result describes the source.</p>'},
     {t:'eq', key:true, label:'entropy',
@@ -7584,12 +7613,13 @@ window.SCENES_M6 = [
 ]},
 
 /* ---------------------------------------------------------------- 6.3 ---- */
-{ id:'m6-extension', module:'M6', nav:'Extended sources', title:'Taking symbols in blocks',
+{ id:'m6-extension', module:'M6', nav:'Extended sources', title:'Extended sources',
   objective:'Show that the n-th extension has n times the entropy.',
   keywords:'extension extended source blocks n times entropy independent',
   src:'CH10 s.7', steps:2, blocks:[
   {t:'eyebrow', text:'Module 6 · An introduction to information theory'},
-  {t:'title', text:'Taking symbols in blocks'},
+  {t:'title', text:'Extended sources'},
+  {t:'lede', text:'Taking symbols in blocks.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>Nothing forces a coder to handle one symbol at a time. Group them in $n$s and treat each block as one symbol of a new, larger alphabet. That alphabet is the <b>$n$-th extension</b>, written $S^n$, and it has $K^n$ symbols.</p>'},
     {t:'eq', key:true, label:'extension', tex:'H(S^{n})=n\\,H(S)'},
@@ -7604,13 +7634,13 @@ window.SCENES_M6 = [
       ]}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'ok', head:'Why bother', html:'Per symbol nothing changed — $2.3136$ over two symbols is still $1.1568$ each. What changes is what a coder can do with it. A code has to use a whole number of bits for each thing it codes, and that rounding costs less when it is spread over a block than over a single symbol. Scene $6.7$ turns that into a bound.'}
+      {t:'note', kind:'ok', head:'Why bother', html:'Per symbol nothing changed — $2.3136$ over two symbols is still $1.1568$ each. What changes is what a coder can do with it. A code has to use a whole number of bits for each thing it codes. That rounding costs less when it is spread over a block than over a single symbol. Scene $6.7$ turns that into a bound.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figBars(
       [0.49,0.14,0.07,0.14,0.04,0.02,0.07,0.02,0.01], []),
       caption:'The nine symbols of $S^2$, in the order $s_1s_1,\\,s_1s_2,\\,s_1s_3,\\,s_2s_1,\\ldots$ The dashed line is $H(S^2)=2.3136$ bits a block, exactly twice the line in the last scene.'},
-    {t:'note', kind:'warn', head:'Only because it is memoryless', html:'If the source had memory — as English does, where $q$ is followed by $u$ — the block probabilities would not be products and the entropy of the extension would be <em>less</em> than $nH(S)$. That is precisely the redundancy real compressors live on.'}
+    {t:'note', kind:'warn', head:'Only because it is memoryless', html:'If the source had memory — as English does, where $q$ is followed by $u$ — the block probabilities would not be products. The entropy of the extension would then be <em>less</em> than $nH(S)$. That is precisely the redundancy real compressors live on.'}
   ]}
 ]},
 
@@ -7621,7 +7651,7 @@ window.SCENES_M6 = [
   steps:0, blocks:[
   {t:'eyebrow', text:'Module 6 · An introduction to information theory'},
   {t:'title', text:'Laboratory I · Entropy of a source'},
-  {t:'body', html:'Move the probabilities of a four-symbol source and watch three things at once: the information each symbol carries, the entropy, and how far it sits below its own ceiling of $\\log_2 K$.'},
+  {t:'body', html:'Move the probabilities of a four-symbol source and watch three things at once. The display shows the information each symbol carries, the entropy, and how far it sits below its own ceiling of $\\log_2 K$.'},
   {t:'lab', id:'I'}
 ]},
 
@@ -7633,7 +7663,7 @@ window.SCENES_M6 = [
   {t:'eyebrow', text:'Module 6 · An introduction to information theory'},
   {t:'title', text:'What a code costs'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
-    {t:'body', html:'<p>A source encoder turns each symbol into a string of bits, called its <b>codeword</b>. There is no need for every codeword to be the same length, and the good idea of this module is that they should not be: give the common symbols short codewords and the rare ones long ones.</p>'},
+    {t:'body', html:'<p>A source encoder turns each symbol into a string of bits, called its <b>codeword</b>. There is no need for every codeword to be the same length, and the good idea of this module is that they should not be. Give the common symbols short codewords, and the rare ones long ones.</p>'},
     {t:'eq', key:true, label:'average length',
       tex:'\\bar{L}=\\sum_{k=1}^{K}p_k\\,l_k\\quad\\text{bits a symbol}'},
     {t:'small', html:'$l_k$ is the length of the codeword for symbol $k$. $\\bar{L}$ is what the code actually costs, averaged over a long message.'},
@@ -7668,12 +7698,13 @@ window.SCENES_M6 = [
 ]},
 
 /* ---------------------------------------------------------------- 6.5 ---- */
-{ id:'m6-prefix', module:'M6', nav:'Prefix codes', title:'Codes that can be read back',
+{ id:'m6-prefix', module:'M6', nav:'Prefix codes', title:'Prefix codes',
   objective:'Define uniquely decodable and prefix codes and separate the two.',
   keywords:'uniquely decodable prefix code instantaneous tree decoding ambiguity',
   src:'CH10 s.12–14', steps:3, blocks:[
   {t:'eyebrow', text:'Module 6 · An introduction to information theory'},
-  {t:'title', text:'Codes that can be read back'},
+  {t:'title', text:'Prefix codes'},
+  {t:'lede', text:'Codes that can be read back.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>Short codewords are worth nothing if the receiver cannot tell where one ends and the next begins. Two conditions matter, and they are not the same condition.</p>'},
     {t:'grid', cols:2, gap:'16px', items:[
@@ -7692,10 +7723,10 @@ window.SCENES_M6 = [
       ]}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'small', html:'<b>Code I</b> is not a prefix code — $0$ begins $00$ — and it is not uniquely decodable either: the string $00$ is both $s_3$ and $s_1s_1$. <b>Code II</b> is a prefix code. <b>Code III</b> is not a prefix code, since $0$ begins all three of the others.'}
+      {t:'small', html:'<b>Code I</b> is not a prefix code, since $0$ begins $00$. It is not uniquely decodable either: the string $00$ is both $s_3$ and $s_1s_1$. <b>Code II</b> is a prefix code. <b>Code III</b> is not a prefix code, since $0$ begins all three of the others.'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'warn', head:'Code III is the interesting one', html:'It <em>can</em> be read back: every codeword starts with the only $0$ and is then named by how many $1$s follow, so a long string parses one way and one way only. What it cannot do is decode on the fly — after reading $011$ the decoder still does not know whether it has $s_3$ or the start of $s_4$, and it has to wait for the next $0$. Uniquely decodable, but not instantaneous.'}
+      {t:'note', kind:'warn', head:'Code III is the interesting one', html:'It <em>can</em> be read back. Every codeword starts with the only $0$ and is then named by how many $1$s follow, so a long string parses one way and one way only. What it cannot do is decode on the fly. After reading $011$ the decoder still does not know whether it has $s_3$ or the start of $s_4$, and it has to wait for the next $0$. Uniquely decodable, but not instantaneous.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figTree(['0','10','110','111'],['s_1','s_2','s_3','s_4'],{w:430,h:130}),
@@ -7706,12 +7737,13 @@ window.SCENES_M6 = [
 ]},
 
 /* ---------------------------------------------------------------- 6.6 ---- */
-{ id:'m6-kraft', module:'M6', nav:'The Kraft inequality', title:'Which sets of lengths are possible',
+{ id:'m6-kraft', module:'M6', nav:'The Kraft inequality', title:'The Kraft inequality',
   objective:'State the Kraft inequality and show it is necessary but not sufficient.',
   keywords:'kraft inequality codeword lengths necessary sufficient prefix budget',
   src:'CH10 s.15–16', steps:3, blocks:[
   {t:'eyebrow', text:'Module 6 · An introduction to information theory'},
-  {t:'title', text:'Which sets of lengths are possible'},
+  {t:'title', text:'The Kraft inequality'},
+  {t:'lede', text:'Which sets of lengths are possible.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>Before choosing any codewords, ask whether the <em>lengths</em> can work at all. Short codewords use up the tree quickly, and there is only so much tree.</p>'},
     {t:'eq', key:true, label:'Kraft', tex:'\\sum_{k=1}^{K}2^{-l_k}\\le 1'},
@@ -7737,12 +7769,13 @@ window.SCENES_M6 = [
 ]},
 
 /* ---------------------------------------------------------------- 6.7 ---- */
-{ id:'m6-bound', module:'M6', nav:'How close to the entropy', title:'The bound, and how to beat the rounding',
+{ id:'m6-bound', module:'M6', nav:'How close to the entropy', title:'How close a code can get',
   objective:'State H ≤ L̄ < H+1 and show blocking closes the gap.',
   keywords:'bound entropy plus one dyadic extension converges rounding block coding',
   src:'CH10 s.17–18', steps:3, blocks:[
   {t:'eyebrow', text:'Module 6 · An introduction to information theory'},
-  {t:'title', text:'The bound, and how to beat the rounding'},
+  {t:'title', text:'How close a code can get'},
+  {t:'lede', text:'The bound, and how to beat the rounding.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>The source-coding theorem says no code beats $H(S)$. The complementary result says a prefix code always gets within one bit of it.</p>'},
     {t:'eq', key:true, label:'the two-sided bound', tex:'H(S)\\le\\bar{L}< H(S)+1'},
@@ -7800,7 +7833,7 @@ window.SCENES_M6 = [
       {t:'eq', key:true, tex:'\\eta=\\frac{H(S)}{\\bar{L}}=\\frac{2.1219}{2.2}=0.9645'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'ok', head:'What that number says', html:'The code spends $3.68\\%$ more bits than the source strictly needs, and no other prefix code on single symbols does better. To close the remaining gap the coder would have to work on blocks, as the last scene described — and the bound already said the gain available is at most $1/n$.'}
+      {t:'note', kind:'ok', head:'What that number says', html:'The code spends $3.68\\%$ more bits than the source strictly needs, and no other prefix code on single symbols does better. To close the remaining gap the coder would have to work on blocks, as the last scene described. And the bound already said the gain available is at most $1/n$.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figTree(['00','10','11','010','011'],HLAB,{w:470,h:150}),
@@ -7811,12 +7844,13 @@ window.SCENES_M6 = [
 ]},
 
 /* ---------------------------------------------------------------- 6.9 ---- */
-{ id:'m6-huffman-var', module:'M6', nav:'Ties and variance', title:'The same length, a different code',
+{ id:'m6-huffman-var', module:'M6', nav:'Ties and variance', title:'Ties and variance',
   objective:'Show Huffman is not unique and that variance separates the choices.',
   keywords:'huffman not unique ties variance codeword length minimum variance buffer',
   src:'CH10 s.21–22', steps:3, blocks:[
   {t:'eyebrow', text:'Module 6 · An introduction to information theory'},
-  {t:'title', text:'The same length, a different code'},
+  {t:'title', text:'Ties and variance'},
+  {t:'lede', text:'The same length, a different code.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>Two choices in the algorithm are free. Which of the merged pair gets $0$ is arbitrary. And when a merged symbol ties with one already in the list, either may be placed first. Different choices give different codes.</p>'},
     {t:'reveal', at:1, items:[
@@ -7847,7 +7881,7 @@ window.SCENES_M6 = [
   steps:0, blocks:[
   {t:'eyebrow', text:'Module 6 · An introduction to information theory'},
   {t:'title', text:'Laboratory J · Building a Huffman code'},
-  {t:'body', html:'Set the probabilities, then step through the merges one at a time. The tree, the codewords, the average length, the efficiency and the variance are all recomputed as the algorithm runs, and the tie-breaking rule can be switched to see the two codes of the last scene appear.'},
+  {t:'body', html:'Set the probabilities, then step through the merges one at a time. The tree, the codewords, the average length, the efficiency and the variance are all recomputed as the algorithm runs. The tie-breaking rule can be switched to see the two codes of the last scene appear.'},
   {t:'lab', id:'J'}
 ]},
 
@@ -7863,19 +7897,20 @@ window.SCENES_M6 = [
   steps:0, blocks:[
   {t:'eyebrow', text:'Module 6 · Question types'},
   {t:'title', text:'Three more shapes, for the rest of the module'},
-  {t:'lede', text:'The taxonomy at the head of the module named six shapes, all of them about the source. The rest of the module brings three more: one on the universal code of the next scene, and two on the channel. They are collected here for the same reason the first six were collected there: it is easier to read new material when the questions it will be asked are already known.'},
+  {t:'lede', text:'The taxonomy at the head of the module named six shapes, all of them about the source. The rest of the module brings three more: one on the universal code of the next scene, and two on the channel. They are collected here for the same reason the first six were collected there. It is easier to read new material when the questions it will be asked are already known.'},
   {t:'drilltypes', module:'M6', from:6, style:'grid-template-columns:repeat(3,minmax(0,1fr));gap:26px 44px'}
 ]},
 
-{ id:'m6-lz', module:'M6', nav:'Lempel–Ziv coding', title:'A code that learns the source',
+{ id:'m6-lz', module:'M6', nav:'Lempel–Ziv coding', title:'Lempel–Ziv coding',
   objective:'Show how a code reaches the entropy without being told the probabilities.',
   keywords:'lempel ziv universal coding parsing dictionary pointer innovation compression zip',
   src:'CH10 w.12', steps:3, blocks:[
   {t:'eyebrow', text:'Module 6 · Universal coding'},
-  {t:'title', text:'A code that learns the source'},
+  {t:'title', text:'Lempel–Ziv coding'},
+  {t:'lede', text:'A code that learns the source.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>Huffman coding has one practical weakness, and it is not its length. It needs the probabilities <em>before</em> it can build the tree. For a file arriving over a wire nobody knows them in advance, and measuring them means reading everything twice.</p>'},
-    {t:'note', kind:'def', head:'The Lempel–Ziv idea', html:'Read the stream once. Each time, take the <b>shortest run of bits that has not been seen before</b>, and store it. Because it is the shortest new one, everything but its last bit is already stored — so it can be sent as a <b>pointer</b> to that earlier entry plus the one new bit, the <b>innovation</b>. The dictionary is built by the encoder and rebuilt identically by the decoder, so it never has to be transmitted.'},
+    {t:'note', kind:'def', head:'The Lempel–Ziv idea', html:'Read the stream once. Each time, take the <b>shortest run of bits that has not been seen before</b>, and store it. Because it is the shortest new one, everything but its last bit is already stored. So it can be sent as a <b>pointer</b> to that earlier entry plus the one new bit, the <b>innovation</b>. The dictionary is built by the encoder and rebuilt identically by the decoder, so it never has to be transmitted.'},
     {t:'reveal', at:1, items:[
       {t:'wex', head:'Parsing a stream', rows:[
         ['Stream','$0\\;1\\;00\\;011\\;1\\ldots$, parsed left to right into pieces not seen before.'],
@@ -7883,13 +7918,13 @@ window.SCENES_M6 = [
         ['Sending $00$','Its first bit is the entry at position $1$, and its new bit is $0$. Send the position in binary, then the bit: $001\\,0$.'],
         ['Sending $011$','Its start $01$ is at position $4$ and its new bit is $1$, so the block is $100\\,1$.']
       ]},
-      {t:'small', html:'With a fixed block of four bits, seven pieces cost $28$ bits where the raw stream was $18$. The method <em>loses</em> on a short stream and that is not a flaw — the dictionary has to be paid for before it can pay back.'}
+      {t:'small', html:'With a fixed block of four bits, seven pieces cost $28$ bits where the raw stream was $18$. The method <em>loses</em> on a short stream, and that is not a flaw. The dictionary has to be paid for before it can pay back.'}
     ]},
     {t:'reveal', at:2, items:[
       {t:'note', kind:'ok', head:'Decoding needs nothing extra', html:'Receive the block $1101$. The last bit is the innovation, $1$. The first three bits are $110$, which is $6$ in binary, so the piece is entry $6$ followed by $1$. The decoder has entry $6$ already, because it built the same dictionary from the same blocks in the same order. Nothing about the source was ever sent.'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'warn', head:'Where it wins, and why the course meets it here', html:'The longer the stream, the longer the stored pieces become, and the more original bits each fixed-size block carries. In practice the block is $12$ bits, giving a dictionary of $2^{12}=4096$ entries, and a file compresses to roughly two thirds of its size. It is the algorithm behind the ordinary compressed archive. It belongs in this module because it reaches the same limit Huffman does — the entropy — while being told nothing about the source at all.'}
+      {t:'note', kind:'warn', head:'Where it wins, and why the course meets it here', html:'The longer the stream, the longer the stored pieces become, and the more original bits each fixed-size block carries. In practice the block is $12$ bits, giving a dictionary of $2^{12}=4096$ entries, and a file compresses to roughly two thirds of its size. It is the algorithm behind the ordinary compressed archive. It belongs in this module because it reaches the same limit Huffman does, the entropy, while being told nothing about the source at all.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figTree(['0','1','00','011'],['1','2','3','4'],{w:440,h:170}),
@@ -7899,13 +7934,13 @@ window.SCENES_M6 = [
 ]},
 
 /* ---------------------------------------------------------------- 6.6 ---- */
-{ id:'m6-dmc', module:'M6', nav:'The discrete channel', title:'Writing a channel down',
+{ id:'m6-dmc', module:'M6', nav:'The discrete channel', title:'The discrete memoryless channel',
   objective:'Define the discrete memoryless channel and its matrix.',
   keywords:'discrete memoryless channel transition probabilities channel matrix joint marginal',
   src:'CH10 w.13', steps:3, blocks:[
   {t:'eyebrow', text:'Module 6 · The discrete memoryless channel'},
-  {t:'title', text:'Writing a channel down'},
-  {t:'lede', text:'The module so far has been about the source alone. The rest is about what a channel does to it — and the first job is to say what a channel <em>is</em>, in a form that can be calculated with.'},
+  {t:'title', text:'The discrete memoryless channel'},
+  {t:'lede', text:'The module so far has been about the source alone. The rest is about what a channel does to it. The first job is to say what a channel <em>is</em>, in a form that can be calculated with.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>A <b>discrete memoryless channel</b> takes one symbol from a finite input alphabet and produces one from a finite output alphabet. It is described by one number for each pair:</p>'},
     {t:'eq', key:true, label:'transition probability', tex:'p(y_k\\mid x_j)=P\\bigl(Y=y_k\\mid X=x_j\\bigr)'},
@@ -7917,7 +7952,7 @@ window.SCENES_M6 = [
       {t:'small', html:'Every <em>row</em> sums to one, because something must come out when a symbol goes in. The columns do not, and expecting them to is the usual first mistake.'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'warn', head:'The matrix is not enough on its own', html:'It says what the channel does to each symbol. It does not say what comes out, because that depends on how often each symbol is sent — and that is the transmitter\'s business, not the channel\'s. The next scene adds it.'}
+      {t:'note', kind:'warn', head:'The matrix is not enough on its own', html:'It says what the channel does to each symbol. It does not say what comes out, because that depends on how often each symbol is sent. That is the transmitter\'s business, not the channel\'s. The next scene adds it.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figChannel([[0.8,0.2],[0.3,0.7]],['x_0','x_1'],['y_0','y_1'],
@@ -7927,12 +7962,13 @@ window.SCENES_M6 = [
   ]}
 ]},
 
-{ id:'m6-inputdist', module:'M6', nav:'What comes out', title:'The transmitter has a say too',
+{ id:'m6-inputdist', module:'M6', nav:'What comes out', title:'The input distribution',
   objective:'Combine the channel matrix with an input distribution to get the joint and output distributions.',
   keywords:'input distribution a priori joint pmf marginal output distribution transmitter choice',
   src:'CH10 w.13', steps:3, blocks:[
   {t:'eyebrow', text:'Module 6 · The discrete memoryless channel'},
-  {t:'title', text:'The transmitter has a say too'},
+  {t:'title', text:'The input distribution'},
+  {t:'lede', text:'The transmitter has a say too.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>Add one more list of numbers: how often the transmitter sends each input symbol. These are the <b>a priori probabilities</b>, and they are chosen, not given.</p>'},
     {t:'eq', tex:'p(x_j)=P(X=x_j),\\qquad j=0,1,\\ldots,J-1'},
@@ -7951,7 +7987,7 @@ window.SCENES_M6 = [
       ]}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'ok', head:'Two things, kept apart', html:'The matrix belongs to the <b>channel</b> and the engineer cannot change it. The input distribution belongs to the <b>transmitter</b> and the engineer chooses it. Everything from here to the end of the module is about what the second can buy against a fixed first — and that split is the reason capacity, when it arrives, is defined as a maximum.'}
+      {t:'note', kind:'ok', head:'Two things, kept apart', html:'The matrix belongs to the <b>channel</b> and the engineer cannot change it. The input distribution belongs to the <b>transmitter</b> and the engineer chooses it. Everything from here to the end of the module is about what the second can buy against a fixed first. That split is the reason capacity, when it arrives, is defined as a maximum.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>{
@@ -7987,7 +8023,7 @@ window.SCENES_M6 = [
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>One channel is used more than all the others put together. It has two inputs, two outputs, and one number: the probability $p$ that a bit is flipped, called the <b>crossover probability</b>.</p>'},
     {t:'eq', key:true, label:'the BSC matrix', tex:'\\mathbf{P}=\\begin{bmatrix}1-p&p\\\\ p&1-p\\end{bmatrix}'},
-    {t:'note', kind:'def', head:'Where it comes from', html:'It is not an abstraction invented for this chapter. Take the binary receiver of Module 2, send antipodal signals through white Gaussian noise, and the probability of a wrong decision is $p=Q\\!\\left(\\sqrt{2E_b/N_0}\\right)$ — the same for a transmitted $0$ as for a transmitted $1$. That receiver, seen from outside, <em>is</em> a binary symmetric channel.'},
+    {t:'note', kind:'def', head:'Where it comes from', html:'It is not an abstraction invented for this chapter. Take the binary receiver of Module 2 and send antipodal signals through white Gaussian noise. The probability of a wrong decision is $p=Q\\!\\left(\\sqrt{2E_b/N_0}\\right)$, the same for a transmitted $0$ as for a transmitted $1$. That receiver, seen from outside, <em>is</em> a binary symmetric channel.'},
     {t:'reveal', at:1, items:[
       {t:'wex', head:'What comes out, with equally likely inputs', rows:[
         ['Given','$p(x_0)=p(x_1)=\\tfrac12$.'],
@@ -8007,12 +8043,13 @@ window.SCENES_M6 = [
 ]},
 
 /* ---------------------------------------------------------------- 6.7 ---- */
-{ id:'m6-condent', module:'M6', nav:'Conditional entropy', title:'What is left in doubt',
+{ id:'m6-condent', module:'M6', nav:'Conditional entropy', title:'Conditional entropy',
   objective:'Define conditional entropy as the uncertainty remaining after the output is seen.',
   keywords:'conditional entropy uncertainty remaining channel output equivocation average',
   src:'CH10 w.13', steps:3, blocks:[
   {t:'eyebrow', text:'Module 6 · Mutual information'},
-  {t:'title', text:'What is left in doubt'},
+  {t:'title', text:'Conditional entropy'},
+  {t:'lede', text:'What is left in doubt.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>Before anything arrives, the receiver\'s uncertainty about the input is $H(X)$. Then one output symbol arrives. It rarely settles the question, but it changes the odds. The uncertainty that remains is an entropy like any other — computed from the probabilities that now apply:</p>'},
     {t:'eq', tex:'H(X\\mid Y=y_k)=-\\sum_{j=0}^{J-1}p(x_j\\mid y_k)\\log_2 p(x_j\\mid y_k)'},
@@ -8025,7 +8062,7 @@ window.SCENES_M6 = [
       {t:'note', kind:'def', head:'The two extremes fix the meaning', html:'On a perfect channel the output names the input, so nothing is left in doubt and $H(X\\mid Y)=0$. On a useless channel the output says nothing, the conditional probabilities are the original ones, and $H(X\\mid Y)=H(X)$ — the arrival changed nothing. Every real channel sits between the two.'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'warn', head:'Not the same as $H(Y\\mid X)$', html:'$H(Y\\mid X)$ is the uncertainty about the <em>output</em> given the input, and it is a property of the channel alone — for the BSC it is $H(p)$, whatever the transmitter does. $H(X\\mid Y)$ is the uncertainty about the <em>input</em> given the output, and it depends on the input distribution too. The two are equal only when the alphabets are balanced, and swapping them is the mistake this section is built to prevent.'}
+      {t:'note', kind:'warn', head:'Not the same as $H(Y\\mid X)$', html:'$H(Y\\mid X)$ is the uncertainty about the <em>output</em> given the input, and it is a property of the channel alone. For the BSC it is $H(p)$, whatever the transmitter does. $H(X\\mid Y)$ is the uncertainty about the <em>input</em> given the output, and it depends on the input distribution too. The two are equal only when the alphabets are balanced, and swapping them is the mistake this section is built to prevent.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figHb(0.1),
@@ -8034,12 +8071,13 @@ window.SCENES_M6 = [
   ]}
 ]},
 
-{ id:'m6-mutual', module:'M6', nav:'Mutual information', title:'What actually got through',
+{ id:'m6-mutual', module:'M6', nav:'Mutual information', title:'Mutual information',
   objective:'Define mutual information as the uncertainty the output removes.',
   keywords:'mutual information definition uncertainty resolved channel bits per use',
   src:'CH10 w.13', steps:3, blocks:[
   {t:'eyebrow', text:'Module 6 · Mutual information'},
-  {t:'title', text:'What actually got through'},
+  {t:'title', text:'Mutual information'},
+  {t:'lede', text:'What actually got through.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>Two numbers are now in hand: the uncertainty before, and the uncertainty after. The information the channel delivered is the difference — what the observation removed.</p>'},
     {t:'eq', key:true, label:'mutual information', tex:'I(X;Y)=H(X)-H(X\\mid Y)'},
@@ -8069,12 +8107,13 @@ window.SCENES_M6 = [
   ]}
 ]},
 
-{ id:'m6-mutual-props', module:'M6', nav:'Its three properties', title:'Symmetric, never negative, and joint',
+{ id:'m6-mutual-props', module:'M6', nav:'Its three properties', title:'Properties of mutual information',
   objective:'Give the properties of mutual information and the joint-entropy relation.',
   keywords:'mutual information properties symmetry non-negative joint entropy bayes rule',
   src:'CH10 w.13', steps:3, blocks:[
   {t:'eyebrow', text:'Module 6 · Mutual information'},
-  {t:'title', text:'Symmetric, never negative, and joint'},
+  {t:'title', text:'Properties of mutual information'},
+  {t:'lede', text:'Symmetric, never negative, and joint.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>Written as one sum over both alphabets, mutual information is</p>'},
     {t:'eq', tex:'I(X;Y)=\\sum_{j}\\sum_{k}p(x_j,y_k)\\log_2\\frac{p(x_j\\mid y_k)}{p(x_j)}'},
@@ -8100,12 +8139,13 @@ window.SCENES_M6 = [
 ]},
 
 /* ---------------------------------------------------------------- 6.8 ---- */
-{ id:'m6-capacity', module:'M6', nav:'Channel capacity', title:'The best the channel can do',
+{ id:'m6-capacity', module:'M6', nav:'Channel capacity', title:'Channel capacity',
   objective:'Define capacity as the maximum of mutual information over input distributions.',
   keywords:'channel capacity definition maximum mutual information input distribution bits per use',
   src:'CH10 w.13', steps:2, blocks:[
   {t:'eyebrow', text:'Module 6 · Channel capacity'},
-  {t:'title', text:'The best the channel can do'},
+  {t:'title', text:'Channel capacity'},
+  {t:'lede', text:'The best the channel can do.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>Mutual information measures one transmitter on one channel. Change how often the transmitter sends each symbol and the number moves. The channel is fixed; the input distribution is the engineer\'s to choose. So take the best choice:</p>'},
     {t:'eq', key:true, label:'channel capacity', tex:'C=\\max_{\\{p(x_j)\\}}I(X;Y)\\quad\\text{bits per channel use}'},
@@ -8157,7 +8197,7 @@ window.SCENES_M6 = [
       ]}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'warn', head:'The shape is the lesson, not the formula', html:'The curve is flat near $p=0$: a channel with one error in a thousand has capacity $0.9886$, so the first errors cost almost nothing. It then falls away steeply and reaches zero at a half. Halving the error probability of an already-good channel buys very little; the effort belongs where the curve is steep.'}
+      {t:'note', kind:'warn', head:'The shape is the lesson, not the formula', html:'The curve is flat near $p=0$. A channel with one error in a thousand has capacity $0.9886$, so the first errors cost almost nothing. It then falls away steeply and reaches zero at a half. Halving the error probability of an already-good channel buys very little; the effort belongs where the curve is steep.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>{
@@ -8182,16 +8222,16 @@ window.SCENES_M6 = [
   steps:0, blocks:[
   {t:'eyebrow', text:'Module 6 · Channel capacity'},
   {t:'title', text:'Laboratory K · Channel capacity'},
-  {t:'body', html:'Choose a channel, set how noisy it is, and then move the input distribution by hand. The channel matrix, the three entropies and the mutual information are recomputed from the definitions each time, and the capacity is found by searching the input distribution, so the peak on the curve and the number in the readout cannot disagree.'},
+  {t:'body', html:'Choose a channel, set how noisy it is, and then move the input distribution by hand. The channel matrix, the three entropies and the mutual information are recomputed from the definitions each time. The capacity is found by searching the input distribution, so the peak on the curve and the number in the readout cannot disagree.'},
   {t:'lab', id:'K'}
 ]},
 
-{ id:'m6-ex-zchannel', module:'M6', nav:'Worked example: the Z-channel', title:'Worked example: a channel that is not symmetric',
+{ id:'m6-ex-zchannel', module:'M6', nav:'Worked example: the Z-channel', title:'Worked example: the Z-channel',
   objective:'Find the capacity of the Z-channel and the input distribution that achieves it.',
   keywords:'z channel capacity worked example asymmetric optimum input distribution derivative',
   src:'CH10 w.13', steps:3, blocks:[
   {t:'eyebrow', text:'Module 6 · Channel capacity'},
-  {t:'title', text:'Worked example: a channel that is not symmetric'},
+  {t:'title', text:'Worked example: the Z-channel'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>A $0$ always arrives as a $0$. A $1$ arrives correctly half the time and as a $0$ the other half. Nothing is symmetric here, so the equally likely input is no longer the right guess — it has to be found.</p>'},
     {t:'wex', head:'Setting it up', rows:[
@@ -8229,21 +8269,22 @@ window.SCENES_M6 = [
   ]}
 ]},
 
-{ id:'m6-coding-thm', module:'M6', nav:'The channel coding theorem', title:'What capacity promises',
+{ id:'m6-coding-thm', module:'M6', nav:'The channel coding theorem', title:'The channel coding theorem',
   objective:'State the channel coding theorem and say what it does and does not offer.',
   keywords:'channel coding theorem transmission rate reliable communication converse shannon',
   src:'CH10 w.14', steps:3, blocks:[
   {t:'eyebrow', text:'Module 6 · Channel capacity'},
-  {t:'title', text:'What capacity promises'},
+  {t:'title', text:'The channel coding theorem'},
+  {t:'lede', text:'What capacity promises.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
-    {t:'body', html:'<p>Capacity was defined as a maximum of a quantity measured in bits. It would be a curiosity if that were all. The theorem that makes it matter says the number is an <em>operational</em> limit: it is exactly the rate at which the channel can be used reliably.</p>'},
+    {t:'body', html:'<p>Capacity was defined as a maximum of a quantity measured in bits. It would be a curiosity if that were all. The theorem that makes it matter says the number is an <em>operational</em> limit. It is exactly the rate at which the channel can be used reliably.</p>'},
     {t:'note', kind:'def', head:'The channel coding theorem', html:'If the transmission rate satisfies $R_b<C$, there is a coding scheme whose probability of error is as small as required. If $R_b>C$, there is not — no coding scheme, however long or however clever, keeps the error probability down.'},
     {t:'reveal', at:1, items:[
       {t:'eq', key:true, label:'the condition', tex:'R_b<C'},
       {t:'small', html:'An error-free data rate can never exceed the capacity. That is not a statement about today\'s codes; it is a statement about all codes that will ever exist.'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'warn', head:'What the theorem does not give', html:'It says a code exists. It does not say what the code is, how long its blocks have to be, or how much computation the decoder needs. The proof shows that <em>almost every</em> long code works, which is a strange kind of guidance: it promises the answer is common without pointing at one. Finding codes that come close and can also be decoded took the fifty years after the theorem.'}
+      {t:'note', kind:'warn', head:'What the theorem does not give', html:'It says a code exists. It does not say what the code is, how long its blocks have to be, or how much computation the decoder needs. The proof shows that <em>almost every</em> long code works, which is a strange kind of guidance. It promises the answer is common without pointing at one. Finding codes that come close and can also be decoded took the fifty years after the theorem.'}
     ]},
     {t:'reveal', at:3, items:[
       {t:'note', kind:'ok', head:'Where this closes the course', html:'Module 6 opened with the source-coding theorem: no code carries a source in fewer than $H(S)$ bits a symbol. It closes with the channel-coding theorem: no code carries more than $C$ bits per use across a channel. Between the two sits everything Modules 1 to 5 built. A system is possible exactly when $H(S)$ fits inside $C$, and the rest is engineering.'}
@@ -8266,18 +8307,19 @@ window.SCENES_M6 = [
 ]},
 
 /* ---------------------------------------------------------------- 6.9 ---- */
-{ id:'m6-shannon', module:'M6', nav:'The bandlimited channel', title:'Bandwidth, power and the rate they buy',
+{ id:'m6-shannon', module:'M6', nav:'The bandlimited channel', title:'The capacity of the bandlimited channel',
   objective:'State the information capacity law and read the trade it describes.',
   keywords:'information capacity law shannon hartley bandwidth signal to noise continuous channel',
   src:'CH10 w.14', steps:3, blocks:[
   {t:'eyebrow', text:'Module 6 · The bandlimited channel'},
-  {t:'title', text:'Bandwidth, power and the rate they buy'},
+  {t:'title', text:'The capacity of the bandlimited channel'},
+  {t:'lede', text:'Bandwidth, power, and the rate they buy.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
-    {t:'body', html:'<p>Everything so far counted symbols. A real channel is not given as a matrix: it is given as a bandwidth in hertz, a transmitted power in watts, and a noise density. The capacity of that channel is one of the most quoted results in engineering.</p>'},
+    {t:'body', html:'<p>Everything so far counted symbols. A real channel is not given as a matrix. It is given as a bandwidth in hertz, a transmitted power in watts, and a noise density. The capacity of that channel is one of the most quoted results in engineering.</p>'},
     {t:'eq', key:true, label:'information capacity law', tex:'C=B\\log_2\\!\\left(1+\\frac{P}{N_0B}\\right)\\quad\\text{bits per second}'},
     {t:'note', kind:'def', head:'What each symbol is', html:'$B$ is the bandwidth in hertz. $P$ is the average transmitted power. $N_0/2$ is the two-sided noise density, so $N_0B$ is the noise power in the band. The ratio $P/(N_0B)$ is the received signal-to-noise ratio used by this channel model.'},
     {t:'reveal', at:1, items:[
-      {t:'note', kind:'ok', head:'Read the two knobs', html:'$C$ grows <b>linearly</b> with bandwidth and only <b>logarithmically</b> with power. Doubling the bandwidth at fixed noise density roughly doubles the rate; doubling the power adds one bit per second per hertz at best, and much less when the ratio is already large. Bandwidth is the better buy, and it is the one that is regulated and scarce.'}
+      {t:'note', kind:'ok', head:'Read the two knobs', html:'$C$ grows <b>linearly</b> with bandwidth and only <b>logarithmically</b> with power. Doubling the bandwidth at fixed noise density roughly doubles the rate. Doubling the power adds one bit per second per hertz at best, and much less when the ratio is already large. Bandwidth is the better buy, and it is the one that is regulated and scarce.'}
     ]},
     {t:'reveal', at:2, items:[
       {t:'body', html:'<p>Write $P=E_bC$ — the power is the energy per bit times the bits per second — and divide by $B$:</p>'},
@@ -8312,12 +8354,13 @@ window.SCENES_M6 = [
   ]}
 ]},
 
-{ id:'m6-limit', module:'M6', nav:'The Shannon limit', title:'The floor beneath every system',
+{ id:'m6-limit', module:'M6', nav:'The Shannon limit', title:'The Shannon limit',
   objective:'Derive the -1.6 dB limit and say what it does and does not forbid.',
   keywords:'shannon limit minus 1.6 dB infinite bandwidth energy per bit floor natural logarithm',
   src:'CH10 w.14', steps:3, blocks:[
   {t:'eyebrow', text:'Module 6 · The bandlimited channel'},
-  {t:'title', text:'The floor beneath every system'},
+  {t:'title', text:'The Shannon limit'},
+  {t:'lede', text:'The floor beneath every system.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>The last relation says the energy per bit a system needs falls as its bandwidth efficiency falls. Spend bandwidth freely and the cost per bit drops. The question is whether it drops to nothing.</p>'},
     {t:'body', html:'<p>Let $C/B\\to0$ — unlimited bandwidth for a fixed rate — and take the limit:</p>'},
@@ -8327,7 +8370,7 @@ window.SCENES_M6 = [
       {t:'note', kind:'ok', head:'What it says', html:'No system of any kind communicates reliably with less than $-1.59$ dB of energy per bit against noise density. Not a better code, not a better modulation, not a better receiver. It is the floor of the whole subject, and every scheme in Module 5 sits well above it.'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'warn', head:'What it does not say', html:'It does not say the limit is reachable. Reaching it needs infinite bandwidth, and the rate per hertz goes to zero on the way. It is a floor that is approached and never touched, and a system designed near it pays in bandwidth for every decibel it saves in power.'}
+      {t:'note', kind:'warn', head:'What it does not say', html:'It does not say the limit is reachable. Reaching it needs infinite bandwidth, and the rate per hertz goes to zero on the way. It is a floor that is approached and never touched. A system designed near it pays in bandwidth for every decibel it saves in power.'}
     ]},
     {t:'reveal', at:3, items:[
       {t:'note', kind:'def', head:'How far the course got from it', html:'Coherent binary PSK needs about $9.6$ dB for an error probability of $10^{-5}$, so it sits some $11$ dB above the floor. That gap is what channel coding was invented to close, and closing most of it is what the fifty years after the theorem achieved. This course stops at the uncoded schemes, which is where the gap is widest and easiest to see.'}
@@ -8352,12 +8395,12 @@ window.SCENES_M6 = [
 ]},
 
 /* ---------------------------------------------------------------- 6.10 --- */
-{ id:'m6-synth', module:'M6', nav:'Summary', title:'Module 6 in one page',
+{ id:'m6-synth', module:'M6', nav:'Summary', title:'What Module 6 established',
   objective:'Collect the definitions, the bounds, the algorithms and the two limits.',
   keywords:'summary module 6 entropy source coding kraft huffman efficiency capacity mutual information shannon',
   src:'CH10 s.4–22, w.12–14', steps:1, blocks:[
   {t:'eyebrow', text:'Module 6 · An introduction to information theory'},
-  {t:'title', text:'Module 6 in one page'},
+  {t:'title', text:'What Module 6 established'},
   {t:'grid', cols:2, gap:'26px', items:[
     [{t:'card', head:'How much information there is', items:[
       {t:'eq', plain:true, tex:'I(s_k)=-\\log_2 p_k,\\qquad H(S)=-\\sum_k p_k\\log_2 p_k'},
@@ -8377,7 +8420,7 @@ window.SCENES_M6 = [
     ]}],
     [{t:'card', head:'What a channel lets through', items:[
       {t:'eq', plain:true, tex:'I(X;Y)=H(X)-H(X\\mid Y)=H(Y)-H(Y\\mid X)'},
-      {t:'body', html:'<p>Symmetric and never negative. A channel is a matrix of $p(y_k\\mid x_j)$ whose rows sum to one; the transmitter supplies $p(x_j)$, and only the pair of them fixes $I(X;Y)$.</p>'}
+      {t:'body', html:'<p>Symmetric and never negative. A channel is a matrix of $p(y_k\\mid x_j)$ whose rows sum to one. The transmitter supplies $p(x_j)$, and only the pair of them fixes $I(X;Y)$.</p>'}
     ]}],
     [{t:'card', head:'The two limits', items:[
       {t:'eq', plain:true, tex:'C=\\max_{\\{p(x_j)\\}}I(X;Y),\\qquad C=B\\log_2\\!\\left(1+\\frac{P}{N_0B}\\right)'},
@@ -8385,7 +8428,7 @@ window.SCENES_M6 = [
     ]}]
   ]},
   {t:'reveal', at:1, items:[
-    {t:'note', kind:'ok', head:'What the course adds up to', html:'Module 1 turned a waveform into bits. Modules 2 to 5 got those bits across a channel and counted the errors. Module 6 put a number on both ends of that: $H(S)$, the fewest bits the message can be written in, and $C$, the most bits the channel will carry. A system is possible exactly when the first fits inside the second. Every stage between them is engineering; the two limits are not.'}
+    {t:'note', kind:'ok', head:'What the course adds up to', html:'Module 1 turned a waveform into bits. Modules 2 to 5 got those bits across a channel and counted the errors. Module 6 put a number on both ends of that. $H(S)$ is the fewest bits the message can be written in; $C$ is the most bits the channel will carry. A system is possible exactly when the first fits inside the second. Every stage between them is engineering; the two limits are not.'}
   ]}
 ]}
 

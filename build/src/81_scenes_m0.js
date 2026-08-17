@@ -82,7 +82,7 @@ const SC = [
   steps:2, blocks:[
   {t:'eyebrow', text:'Module 0 · The frame of the course'},
   {t:'title', text:'One question, asked in seven ways'},
-  {t:'lede', text:'A transmitter is given a symbol and sends a waveform. A channel adds noise to that waveform. A receiver observes the sum and decides which symbol was sent. Everything in this course is either a way of choosing the waveforms, a way of making the decision, or a way of working out how often the decision is wrong.'},
+  {t:'lede', text:'A transmitter is given a symbol and sends a waveform. A channel adds noise to that waveform. A receiver observes the sum and decides which symbol was sent. Everything in this course is one of three things. It is a way of choosing the waveforms, a way of making the decision, or a way of working out how often the decision is wrong.'},
   {t:'fig', frame:true, svg:()=>figChain(),
     caption:'The system, and the three places a module can work on it. The transmitter chooses the waveforms; the channel is given and cannot be argued with; the receiver decides.'},
   {t:'reveal', at:1, items:[
@@ -108,13 +108,13 @@ const SC = [
   {t:'eyebrow', text:'Module 0 · The frame of the course'},
   {t:'title', text:'Why send digits at all'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
-    {t:'body', html:'<p>An analog signal that travels through a long link picks up noise at every stage, and there is nothing to be done about it: an amplifier cannot tell the signal from what has been added to it, so it amplifies both. After twenty hops the noise has been added twenty times.</p>'},
+    {t:'body', html:'<p>An analog signal that travels through a long link picks up noise at every stage, and there is nothing to be done about it. An amplifier cannot tell the signal from what has been added to it, so it amplifies both. After twenty hops the noise has been added twenty times.</p>'},
     {t:'reveal', at:1, items:[
       {t:'note', kind:'ok', head:'The one reason', html:'A digital receiver does not amplify what it receives — it <b>decides</b>. If the decision is right, the waveform it sends on is the original one, exactly, with no trace of the noise the last hop added. Twenty hops with a decision at each one are no worse than one hop, as long as every decision is right.'},
       {t:'body', html:'<p>That is the whole argument, and it is why the rest of the course is about how often a decision is wrong. A small error probability at each hop is what buys the perfect regeneration.</p>'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'warn', head:'And the price', html:'Sending digits costs <b>bandwidth</b>, because a sharp pulse needs more of it than the smooth signal it replaced, and it costs <b>accuracy</b>, because a continuous value has to be rounded to one of a finite set before it can be sent at all. Module 1 is the study of that rounding and Module 2 of that bandwidth.'}
+      {t:'note', kind:'warn', head:'And the price', html:'Sending digits costs <b>bandwidth</b>, because a sharp pulse needs more of it than the smooth signal it replaced. And it costs <b>accuracy</b>, because a continuous value has to be rounded to one of a finite set before it can be sent at all. Module 1 is the study of that rounding and Module 2 of that bandwidth.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>{
@@ -161,7 +161,7 @@ const SC = [
       {t:'note', kind:'def', head:'What depends on what', html:'Modules 1 and 2 stand on their own. Module 3 is needed for 4, and 4 for 5 — those three should be read in order and not sampled. Module 6 depends on nothing else here and can be read at any point.'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'ok', head:'Ten laboratories and a hundred and twenty questions', html:'Each module carries one or two laboratories, where every control changes the mathematics rather than the picture, and twenty practice questions whose solutions are worked rather than stated. The questions follow the shapes the papers actually set, and each module names those shapes before it starts.'}
+      {t:'note', kind:'ok', head:'Ten laboratories and a hundred and twenty questions', html:'Each module carries one or two laboratories, where every control changes the mathematics rather than the picture. It also carries twenty practice questions whose solutions are worked rather than stated. The questions follow the shapes the papers actually set, and each module names those shapes before it starts.'}
     ]}
   ]}
 ]},
@@ -174,8 +174,8 @@ const SC = [
   {t:'eyebrow', text:'Module 0 · The frame of the course'},
   {t:'title', text:'How to read this, and where the numbers come from'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
-    {t:'note', kind:'def', head:'Scenes build in steps', html:'Most scenes reveal themselves a piece at a time. Space or the right arrow takes the next step, and a scene with three steps says so at the bottom right. The point is to leave time to answer a question before its answer appears, so it is worth pausing at each step rather than pressing through.'},
-    {t:'note', kind:'def', head:'The laboratories are live', html:'Every control in a laboratory changes the mathematics and not the drawing. The numbers beside a figure are computed from the definitions at the moment the control moves, so a reading taken from a laboratory is a reading of the same formulas the scenes derive.'},
+    {t:'note', kind:'def', head:'Scenes build in steps', html:'Most scenes reveal themselves a piece at a time. Space or the right arrow takes the next step, and a scene with three steps says so at the bottom right. The point is to leave time to answer a question before its answer appears. It is worth pausing at each step rather than pressing through.'},
+    {t:'note', kind:'def', head:'The laboratories are live', html:'Every control in a laboratory changes the mathematics and not the drawing. The numbers beside a figure are computed from the definitions at the moment the control moves. A reading taken from a laboratory is therefore a reading of the same formulas the scenes derive.'},
     {t:'reveal', at:1, items:[
       {t:'note', kind:'ok', head:'Four ways to read it', html:'<b>Normal</b> shows everything. <b>Lecture</b> hides the practice questions. <b>Self-study</b> opens the solutions by default. <b>Student</b> and <b>instructor</b> differ in whether the teaching notes appear. The controls are along the top, and the choice is remembered.'}
     ]},
@@ -184,9 +184,9 @@ const SC = [
     ]}
   ], right:[
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'def', head:'Where the textbook is', html:'Most scenes carry a small chip beside their address pointing into the course textbook. The chip is a marker followed by a chapter and section, such as <b>PS CH8.4.1</b>, and the marker is there because this artifact numbers its own chapters the same way — without it a reader cannot tell which of the two an address belongs to.'},
-      {t:'small', html:'A scene with no chip is one the textbook does not cover in that form, and a few scenes carry two addresses. The chip points at the section that states the same result, not at a page a figure came from — nothing here came from a page.'},
-      {t:'note', kind:'ok', head:'And where the numbers come from', html:'Every number stated in a scene or a solution is recomputed by a separate program that reaches it a different way: constellations are rebuilt from their definitions rather than from the formula printed beside them, Huffman codes are built twice by two different algorithms, and every error probability is simulated against its formula. A number that appears here has survived that.'}
+      {t:'note', kind:'def', head:'Where the textbook is', html:'Most scenes carry a small chip beside their address pointing into the course textbook. The chip is a marker followed by a chapter and section, such as <b>PS CH8.4.1</b>. The marker is there because this artifact numbers its own chapters the same way. Without it a reader cannot tell which of the two an address belongs to.'},
+      {t:'small', html:'A scene with no chip is one the textbook does not cover in that form, and a few scenes carry two addresses. The chip points at the section that states the same result, not at a page a figure came from. Nothing here came from a page.'},
+      {t:'note', kind:'ok', head:'And where the numbers come from', html:'Every number stated in a scene or a solution is recomputed by a separate program that reaches it a different way. Constellations are rebuilt from their definitions rather than from the formula printed beside them. Huffman codes are built twice by two different algorithms. Every error probability is simulated against its formula. A number that appears here has survived that.'}
     ]}
   ]}
 ]}

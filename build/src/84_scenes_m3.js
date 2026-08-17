@@ -46,12 +46,12 @@ function figConstellation(pts, opts){
 const SC = [
 
 /* ---------------------------------------------------------------- 3.0 ---- */
-{ id:'m3-open', module:'M3', nav:'Why one axis is not enough', title:'When one axis is not enough',
+{ id:'m3-open', module:'M3', nav:'Why one axis is not enough', title:'Why one axis is not enough',
   objective:'Show the problem two unrelated waveforms create for the Module 2 receiver.',
   keywords:'geometric representation two matched filters basis signal space opening',
   src:'CH9 s.2–3', steps:2, blocks:[
   {t:'eyebrow', text:'Module 3 · Opening'},
-  {t:'title', text:'Two waveforms that do not fit on one line'},
+  {t:'title', text:'Why one axis is not enough'},
   {t:'lede', text:'In Module 2 the two waveforms were opposites, so one shape represented both and the receiver needed one number. What happens when neither waveform is a multiple of the other?'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>Take $s_0(t)$ and $s_1(t)$ below. Neither is a multiple of the other, so no single function $\\psi(t)$ can write both as $s_m\\psi(t)$. The receiver of Module 2 does not apply, and none of its results do either.</p>'},
@@ -84,12 +84,12 @@ const SC = [
 ]},
 
 /* ---------------------------------------------------------------- 3.1 ---- */
-{ id:'m3-ortho', module:'M3', nav:'An orthonormal basis', title:'Axes made of functions',
+{ id:'m3-ortho', module:'M3', nav:'An orthonormal basis', title:'An orthonormal basis',
   objective:'Define an orthonormal basis for signals by analogy with vectors.',
   keywords:'orthonormal basis inner product norm orthogonal unit energy functions',
   src:'CH9 s.4–5', steps:3, blocks:[
   {t:'eyebrow', text:'Module 3 · Signals as vectors'},
-  {t:'title', text:'Axes made of functions'},
+  {t:'title', text:'An orthonormal basis'},
   {t:'lede', text:'Everything in this section is one analogy. A vector is a list of numbers because it has been written against a set of axes. A signal can be a list of numbers for exactly the same reason.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p><b>For vectors.</b> With unit axes $\\mathbf{e}_1,\\ldots,\\mathbf{e}_N$, any $\\mathbf{a}$ is $\\sum_k a_k\\mathbf{e}_k$, and two operations do all the work:</p>'},
@@ -125,12 +125,13 @@ const SC = [
   ]}
 ]},
 
-{ id:'m3-project', module:'M3', nav:'Coordinates', title:'How a waveform becomes a list of numbers',
+{ id:'m3-project', module:'M3', nav:'Coordinates', title:'The coordinates of a waveform',
   objective:'Give the projection formula and the property that makes it useful.',
   keywords:'projection coordinates synthesis analysis inner product preserved key property',
   src:'CH9 s.6–8', steps:3, blocks:[
   {t:'eyebrow', text:'Module 3 · Signals as vectors'},
-  {t:'title', text:'Coordinates'},
+  {t:'title', text:'The coordinates of a waveform'},
+  {t:'lede', text:'How a waveform becomes a list of numbers.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'Once the axes are fixed, a signal is written against them the same way a vector is:'},
     {t:'eq', key:true, label:'analysis', tex:'s_{ij}=\\int_{0}^{T}s_i(t)\\,\\psi_j(t)\\,dt'},
@@ -140,7 +141,7 @@ const SC = [
       {t:'note', kind:'def', head:'The property that makes this worth doing', html:'Inner products survive the translation. If $x$ has coordinates $\\mathbf{x}$ and $y$ has coordinates $\\mathbf{y}$, then $$\\int_{-\\infty}^{\\infty}x(t)y(t)\\,dt=\\sum_{k=1}^{N}x_ky_k=\\langle\\mathbf{x},\\mathbf{y}\\rangle.$$'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'small', html:'<b>Why.</b> Expand both sums, exchange the integral and the sums, and use orthonormality: every cross term $\\int\\psi_j\\psi_k$ with $j\\ne k$ is zero and every term with $j=k$ is one. What is left is $\\sum_k x_ky_k$.'},
+      {t:'small', html:'<b>Why.</b> Expand both sums, exchange the integral and the sums, and use orthonormality. Every cross term $\\int\\psi_j\\psi_k$ with $j\\ne k$ is zero, and every term with $j=k$ is one. What is left is $\\sum_k x_ky_k$.'},
       {t:'body', html:'An integral over waveforms has become a sum over $N$ numbers.'}
     ]},
     {t:'reveal', at:3, items:[
@@ -163,12 +164,13 @@ const SC = [
   ]}
 ]},
 
-{ id:'m3-energy', module:'M3', nav:'Energy and distance', title:'Energy is length, difference is distance',
+{ id:'m3-energy', module:'M3', nav:'Energy and distance', title:'Energy and distance',
   objective:'Identify energy with squared norm and signal difference with Euclidean distance.',
   keywords:'energy squared norm euclidean distance constellation L2 norm',
   src:'CH9 s.11–12', steps:2, blocks:[
   {t:'eyebrow', text:'Module 3 · Signals as vectors'},
-  {t:'title', text:'Two quantities shown by the picture'},
+  {t:'title', text:'Energy and distance'},
+  {t:'lede', text:'Energy is length; the difference of two signals is distance.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'Put $y=x$ in the property of the last scene and the energy of a signal is the squared length of its vector:'},
     {t:'eq', key:true, tex:'E_{s_i}=\\int_0^{T}s_i^{2}(t)\\,dt=\\sum_{j=1}^{N}s_{ij}^{2}=\\|\\mathbf{s}_i\\|^{2}'},
@@ -177,7 +179,7 @@ const SC = [
       {t:'eq', key:true, tex:'\\|\\mathbf{s}_i-\\mathbf{s}_k\\|^{2}=\\int_0^{T}\\bigl(s_i(t)-s_k(t)\\bigr)^{2}dt=\\sum_{j=1}^{N}(s_{ij}-s_{kj})^{2}'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'ok', head:'Why these two matter more than anything else in the module', html:'<b>Energy is how far the point is from the origin.</b> That is what the transmitter pays for. <b>Distance is how far two points are from each other.</b> That is what decides how often the receiver confuses them. Module 2 already showed this for two points on a line: antipodal signalling beats on-off by $3$ dB because its points are further apart at the same average energy. Module 4 makes it the general rule.'}
+      {t:'note', kind:'ok', head:'Why these two matter more than anything else in the module', html:'<b>Energy is how far the point is from the origin.</b> That is what the transmitter pays for. <b>Distance is how far two points are from each other.</b> That is what decides how often the receiver confuses them. Module 2 already showed this for two points on a line. Antipodal signalling beats on-off by $3$ dB, because its points are further apart at the same average energy. Module 4 makes it the general rule.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>{
@@ -218,12 +220,12 @@ const SC = [
 ]},
 
 /* ---------------------------------------------------------------- 3.3 ---- */
-{ id:'m3-gs', module:'M3', nav:'Gram–Schmidt', title:'Finding the axes',
+{ id:'m3-gs', module:'M3', nav:'Gram–Schmidt', title:'The Gram–Schmidt procedure',
   objective:'State the Gram–Schmidt procedure as three repeated steps.',
   keywords:'gram schmidt orthogonalization procedure basis normalise subtract remainder',
   src:'CH9 s.16–18', steps:3, blocks:[
   {t:'eyebrow', text:'Module 3 · Gram–Schmidt'},
-  {t:'title', text:'Finding the axes'},
+  {t:'title', text:'The Gram–Schmidt procedure'},
   {t:'lede', text:'The axes have been assumed so far. Gram–Schmidt is the recipe that produces them from any set of waveforms, and it is three steps repeated until there is nothing left.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p><b>The first axis is the first signal, scaled to unit energy.</b></p>'},
@@ -234,10 +236,10 @@ const SC = [
       {t:'eq', tex:'E_{g_k}=\\int g_k^{2}(t)\\,dt,\\qquad \\psi_k(t)=\\frac{g_k(t)}{\\sqrt{E_{g_k}}}'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'ok', head:'The step that ends it', html:'If $g_k(t)=0$, that signal was already a combination of the axes found so far and <b>no new axis is added</b>. The procedure stops when every signal has been used, and the number of axes $N$ is at most the number of signals $M$ — often fewer.'}
+      {t:'note', kind:'ok', head:'The step that ends it', html:'If $g_k(t)=0$, that signal was already a combination of the axes found so far and <b>no new axis is added</b>. The procedure stops when every signal has been used. The number of axes $N$ is at most the number of signals $M$, and often fewer.'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'warn', head:'The order matters, the answer does not', html:'Starting from a different signal gives a different set of axes. It gives the same number of them, the same energies and the same distances, so the constellation is the same picture seen from a different angle — and every result that depends only on distances is unchanged.'}
+      {t:'note', kind:'warn', head:'The order matters, the answer does not', html:'Starting from a different signal gives a different set of axes. It gives the same number of them, the same energies and the same distances. The constellation is the same picture seen from a different angle, and every result that depends only on distances is unchanged.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>{
@@ -261,7 +263,7 @@ const SC = [
   keywords:'worked example gram schmidt three signals two basis functions constellation',
   src:'CH9 s.19–21', steps:4, blocks:[
   {t:'eyebrow', text:'Module 3 · Gram–Schmidt'},
-  {t:'title', text:'Worked example'},
+  {t:'title', text:'Worked example: three pulses, two axes'},
   {t:'cols', ratio:'c-6-6', vcenter:false, left:[
     {t:'wex', rows:[
       ['Given','$s_1(t)=1$ on $[0,2]$; $s_2(t)=1$ on $[2,3]$; $s_3(t)=1$ on $[0,3]$; each zero elsewhere.'],
@@ -287,7 +289,7 @@ const SC = [
       {t:'wex', rows:[
         ['Check','Energies from the vectors: $\\|\\mathbf{s}_1\\|^{2}=2$, $\\|\\mathbf{s}_2\\|^{2}=1$, $\\|\\mathbf{s}_3\\|^{2}=3$. Energies from the waveforms: $s_1$ is $1$ for two seconds, so $2$; $s_2$ is $1$ for one second, so $1$; $s_3$ is $1$ for three seconds, so $3$. They agree, and that agreement is the whole content of "energy is squared length".']
       ]},
-      {t:'note', kind:'ok', head:'Read the answer', html:'Three waveforms needed only two axes, because the third was the sum of the other two — $s_3=s_1+s_2$, visible in the pictures before any integral is computed. The receiver needs two matched filters, not three.'}
+      {t:'note', kind:'ok', head:'Read the answer', html:'Three waveforms needed only two axes, because the third was the sum of the other two. $s_3=s_1+s_2$ is visible in the pictures before any integral is computed. The receiver needs two matched filters, not three.'}
     ]}
   ], right:[
     {t:'grid', cols:3, gap:'14px', items:[
@@ -308,23 +310,23 @@ const SC = [
   steps:0, blocks:[
   {t:'eyebrow', text:'Module 3 · Gram–Schmidt'},
   {t:'title', text:'Laboratory F · From waveform to basis'},
-  {t:'body', html:'Choose a set of waveforms and watch the procedure run on it: the basis functions it produces, how many there are, and where the signals land. Reorder the set and the axes change while the constellation keeps its shape.'},
+  {t:'body', html:'Choose a set of waveforms and watch the procedure run on it. It shows the basis functions it produces, how many there are, and where the signals land. Reorder the set and the axes change while the constellation keeps its shape.'},
   {t:'lab', id:'F'}
 ]},
 
-{ id:'m3-remarks', module:'M3', nav:'What the geometry decides', title:'What the picture does and does not fix',
+{ id:'m3-remarks', module:'M3', nav:'What the geometry decides', title:'What the geometry decides',
   objective:'State what the constellation determines and what it leaves open.',
   keywords:'remarks same geometry different waveforms performance receiver structure bandwidth',
   src:'CH9 s.15', steps:2, blocks:[
   {t:'eyebrow', text:'Module 3 · Constellations'},
-  {t:'title', text:'What the picture fixes'},
+  {t:'title', text:'What the geometry decides'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'note', kind:'def', head:'Two statements worth remembering', html:'<ol><li><b>Two entirely different signal sets can have the same geometric representation.</b> Different shapes, different durations, the same points.</li><li><b>The geometry determines the performance and the receiver structure.</b> How many filters, how the decision is made, and how often it is wrong.</li></ol>'},
     {t:'reveal', at:1, items:[
       {t:'body', html:'<p>Put together: if two signal sets give the same constellation, they have the same error probability and the same receiver. Nothing about the waveforms themselves survives into the answer.</p>'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'warn', head:'What the picture does not fix', html:'Bandwidth. Two sets with the same constellation can occupy very different amounts of spectrum — Module 2 already showed a whole family of pulses with the same energy and very different bandwidths. Which one to build is decided outside this picture; how well it works is decided inside it.'}
+      {t:'note', kind:'warn', head:'What the picture does not fix', html:'Bandwidth. Two sets with the same constellation can occupy very different amounts of spectrum. Module 2 already showed a whole family of pulses with the same energy and very different bandwidths. Which one to build is decided outside this picture; how well it works is decided inside it.'}
     ]}
   ], right:[
     {t:'grid', cols:2, gap:'18px', items:[
@@ -345,7 +347,7 @@ const SC = [
   keywords:'summary basis coordinates energy distance constellation gram schmidt',
   steps:0, blocks:[
   {t:'eyebrow', text:'Module 3 · Summary'},
-  {t:'title', text:'What carries forward'},
+  {t:'title', text:'What Module 3 established'},
   {t:'grid', cols:2, gap:'26px', items:[
     [{t:'card', head:'The translation', items:[
       {t:'body', html:'<p>A waveform becomes a list of numbers by integrating it against each basis function, and comes back by adding the pieces up.</p>'},

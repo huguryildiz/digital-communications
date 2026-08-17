@@ -137,12 +137,12 @@ function figEye(alpha, jitter){
 const SC = [
 
 /* ---------------------------------------------------------------- 2.0 ---- */
-{ id:'m2-open', module:'M2', nav:'The receiver problem', title:'One bit, one waveform, one decision',
+{ id:'m2-open', module:'M2', nav:'The receiver problem', title:'The receiver problem',
   objective:'Frame the three questions the module answers.',
   keywords:'baseband receiver matched filter threshold intersymbol interference opening',
   src:'CH8 s.2–3', steps:2, blocks:[
   {t:'eyebrow', text:'Module 2 · Opening'},
-  {t:'title', text:'Three questions in order'},
+  {t:'title', text:'The receiver problem'},
   {t:'lede', text:'Module 1 produced a bit stream. A transmitter now sends one waveform per bit, a channel adds noise to it, and a receiver has to say which waveform was sent. Everything in this module is one of three questions about that receiver.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p><b>What filter?</b> The receiver observes the waveform for one bit interval and has to compress it to a single number. Some filters make that number more reliable than others, and one of them is best.</p>'},
@@ -159,7 +159,7 @@ const SC = [
 ]},
 
 /* ---------------------------------------------------------------- 2.1 ---- */
-{ id:'m2-model', module:'M2', nav:'The peak pulse SNR', title:'What the filter is being asked to do',
+{ id:'m2-model', module:'M2', nav:'The peak pulse SNR', title:'The peak pulse signal-to-noise ratio',
   objective:'Define the quantity the filter is chosen to maximise.',
   keywords:'received signal white gaussian noise peak pulse signal to noise ratio filter output',
   src:'CH8 s.3–6', steps:2, blocks:[
@@ -177,7 +177,7 @@ const SC = [
     {t:'reveal', at:2, items:[
       {t:'body', html:'Both parts can be written in terms of $H(f)$. The signal part is an inverse transform evaluated at $t=T$; the noise part is the area under the filtered noise density.'},
       {t:'eq', tex:'(\\mathrm{SNR})_o=\\frac{\\left|\\int_{-\\infty}^{\\infty}G(f)H(f)e^{j2\\pi fT}\\,df\\right|^{2}}{\\dfrac{N_0}{2}\\int_{-\\infty}^{\\infty}|H(f)|^{2}\\,df}'},
-      {t:'note', kind:'warn', head:'The problem, stated', html:'For a given $G(f)$, find the $H(f)$ that maximises this ratio. Both the numerator and the denominator grow when $H$ is scaled up, so the answer cannot be "make $H$ large" — it has to be about the <em>shape</em> of $H$.'}
+      {t:'note', kind:'warn', head:'The problem, stated', html:'For a given $G(f)$, find the $H(f)$ that maximises this ratio. Both the numerator and the denominator grow when $H$ is scaled up, so the answer cannot be "make $H$ large". It has to be about the <em>shape</em> of $H$.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>{
@@ -195,12 +195,13 @@ const SC = [
   ]}
 ]},
 
-{ id:'m2-schwarz', module:'M2', nav:'The bound', title:'A bound that does not depend on the filter',
+{ id:'m2-schwarz', module:'M2', nav:'The bound', title:'The bound on the output SNR',
   objective:'Apply Schwarz\'s inequality to bound the output SNR.',
   keywords:'schwarz inequality bound optimisation equality condition energy',
   src:'CH8 s.7–8', steps:2, blocks:[
   {t:'eyebrow', text:'Module 2 · The matched filter'},
-  {t:'title', text:'Where the bound comes from'},
+  {t:'title', text:'The bound on the output SNR'},
+  {t:'lede', text:'A bound that does not depend on the filter.'},
   {t:'note', kind:'def', head:'Schwarz\'s inequality', html:'For two finite-energy signals $\\phi_1$ and $\\phi_2$, $$\\left|\\int\\phi_1(x)\\phi_2(x)\\,dx\\right|^{2}\\le\\int|\\phi_1(x)|^{2}dx\\int|\\phi_2(x)|^{2}dx,$$ with equality if and only if $\\phi_1(x)=k\\,\\phi_2^{*}(x)$ for some constant $k$.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'Take $\\phi_1(f)=H(f)$ and $\\phi_2(f)=G(f)e^{j2\\pi fT}$. The numerator of the ratio is exactly the left-hand side, and $|e^{j2\\pi fT}|=1$, so'},
@@ -219,12 +220,13 @@ const SC = [
   ]}
 ]},
 
-{ id:'m2-matched', module:'M2', nav:'The matched filter', title:'The filter is the signal, backwards',
+{ id:'m2-matched', module:'M2', nav:'The matched filter', title:'The matched filter',
   objective:'Derive the impulse response of the matched filter.',
   keywords:'matched filter impulse response time reversed shifted conjugate',
   src:'CH8 s.9', steps:2, blocks:[
   {t:'eyebrow', text:'Module 2 · The matched filter'},
   {t:'title', text:'The matched filter'},
+  {t:'lede', text:'The filter is the signal, backwards.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'Take the inverse transform of the optimum $H(f)$. Since $g$ is real, $G^{*}(f)=G(-f)$, and the exponential is a shift:'},
     {t:'eq', tex:'h_{\\mathrm{opt}}(t)=\\int k\\,G(-f)\\,e^{-j2\\pi f(T-t)}\\,df'},
@@ -243,12 +245,13 @@ const SC = [
   ]}
 ]},
 
-{ id:'m2-props', module:'M2', nav:'What the matched filter achieves', title:'Energy, not shape',
+{ id:'m2-props', module:'M2', nav:'What the matched filter achieves', title:'Properties of the matched filter',
   objective:'Establish that the output SNR depends only on the energy-to-density ratio.',
   keywords:'output snr energy noise spectral density unitless shape independent',
   src:'CH8 s.12–13', steps:2, blocks:[
   {t:'eyebrow', text:'Module 2 · The matched filter'},
-  {t:'title', text:'The result the module is built on'},
+  {t:'title', text:'Properties of the matched filter'},
+  {t:'lede', text:'Energy, not shape.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'Substituting $H(f)=kG^{*}(f)e^{-j2\\pi fT}$ back into the two parts gives, by Parseval,'},
     {t:'eq', tex:'g_0(T)=k\\int|G(f)|^{2}df=k\\,E,\\qquad E[n^{2}(t)]=\\frac{k^{2}N_0}{2}E'},
@@ -284,12 +287,12 @@ const SC = [
 ]},
 
 /* ---------------------------------------------------------------- 2.2 ---- */
-{ id:'m2-basis', module:'M2', nav:'One basis, two symbols', title:'Writing both symbols on one axis',
+{ id:'m2-basis', module:'M2', nav:'One basis, two symbols', title:'One basis, two symbols',
   objective:'Introduce the unit-energy basis and antipodal signalling.',
   keywords:'basis function unit energy polar nrz antipodal signalling one dimensional',
   src:'CH8 s.17', steps:2, blocks:[
   {t:'eyebrow', text:'Module 2 · The demodulator'},
-  {t:'title', text:'Both symbols on one axis'},
+  {t:'title', text:'One basis, two symbols'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'Both waveforms of a binary baseband system are multiples of the same rectangular shape, so one unit-energy function carries both:'},
     {t:'eq', tex:'\\psi(t)=\\begin{cases}\\dfrac{1}{\\sqrt{T_b}}, & 0\\le t\\le T_b\\\\[4pt] 0,&\\text{otherwise}\\end{cases}\\qquad \\int_0^{T_b}\\psi^{2}(t)\\,dt=1'},
@@ -323,12 +326,13 @@ const SC = [
   ]}
 ]},
 
-{ id:'m2-correlator', module:'M2', nav:'Two demodulators, one number', title:'Two demodulators that agree',
+{ id:'m2-correlator', module:'M2', nav:'Two demodulators, one number', title:'Correlator and matched-filter demodulators',
   objective:'Show that the correlator and the matched filter give the same statistic.',
   keywords:'correlator demodulator matched filter equivalent decision statistic sample',
   src:'CH8 s.19–20', steps:2, blocks:[
   {t:'eyebrow', text:'Module 2 · The demodulator'},
-  {t:'title', text:'The same number by two routes'},
+  {t:'title', text:'Correlator and matched-filter demodulators'},
+  {t:'lede', text:'Two demodulators, one number.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'The <b>matched-filter</b> demodulator filters with $h_{\\mathrm{opt}}(t)=\\psi(T_b-t)$ and samples at $t=T_b$. The <b>correlator</b> multiplies by $\\psi(t)$ and integrates over the interval:'},
     {t:'eq', tex:'y=\\int_0^{T_b}x(\\tau)\\,\\psi(\\tau)\\,d\\tau'},
@@ -338,7 +342,7 @@ const SC = [
       {t:'note', kind:'ok', head:'They are the same at the sampling instant', html:'Convolving with a time-reversed function and evaluating at $T_b$ <em>is</em> correlating over the interval. The two demodulators differ in how they are built and not in what they produce, and both reduce the received waveform to one number.'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'warn', head:'They agree at one instant only', html:'For $t\\ne T_b$ the two outputs are different signals. The equivalence is at the sampling instant, and it is another reason that instant matters: sample early and the two demodulators do not even agree with each other.'}
+      {t:'note', kind:'warn', head:'They agree at one instant only', html:'For $t\\ne T_b$ the two outputs are different signals. The equivalence holds at the sampling instant, and it is another reason that instant matters. Sample early and the two demodulators do not even agree with each other.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>P.blocks({w:640,h:260,items:[
@@ -365,12 +369,13 @@ const SC = [
 ]},
 
 /* ---------------------------------------------------------------- 2.3 ---- */
-{ id:'m2-stat', module:'M2', nav:'The decision statistic', title:'What the detector is given',
+{ id:'m2-stat', module:'M2', nav:'The decision statistic', title:'The decision statistic',
   objective:'Establish the distribution of the decision statistic.',
   keywords:'decision statistic gaussian variance conditional density noise projection',
   src:'CH8 s.21–22', steps:2, blocks:[
   {t:'eyebrow', text:'Module 2 · The decision'},
-  {t:'title', text:'One Gaussian number'},
+  {t:'title', text:'The decision statistic'},
+  {t:'lede', text:'Everything the detector is given is one Gaussian number.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'The noise term is a projection of a Gaussian process onto a fixed function, so it is a Gaussian random variable. Its variance follows from the autocorrelation of white noise:'},
     {t:'eq', tex:'\\sigma_n^{2}=E\\!\\left[\\left(\\int_0^{T_b}\\!w(\\tau)\\psi(\\tau)d\\tau\\right)^{2}\\right]=\\frac{N_0}{2}\\int_0^{T_b}\\!\\psi^{2}(\\tau)d\\tau=\\frac{N_0}{2}'},
@@ -388,12 +393,12 @@ const SC = [
   ]}
 ]},
 
-{ id:'m2-threshold', module:'M2', nav:'The optimal threshold', title:'Where the threshold goes',
+{ id:'m2-threshold', module:'M2', nav:'The optimal threshold', title:'The optimal threshold',
   objective:'Derive the optimal threshold for unequal priors.',
   keywords:'threshold optimum priors leibniz likelihood unequal probabilities log ratio',
   src:'CH8 s.24–26', steps:3, blocks:[
   {t:'eyebrow', text:'Module 2 · The decision'},
-  {t:'title', text:'The threshold that minimises the error'},
+  {t:'title', text:'The optimal threshold'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'The detector decides "1" when $y>\\lambda$. By total probability,'},
     {t:'eq', tex:'P_e=P(s_0)\\!\\int_{\\lambda}^{\\infty}\\!f_Y(y\\mid s_0)dy+P(s_1)\\!\\int_{-\\infty}^{\\lambda}\\!f_Y(y\\mid s_1)dy'},
@@ -414,7 +419,7 @@ const SC = [
   ]}
 ]},
 
-{ id:'m2-pe', module:'M2', nav:'The error probability', title:'The result of the module',
+{ id:'m2-pe', module:'M2', nav:'The error probability', title:'The bit error probability',
   objective:'Derive the bit error probability of antipodal signalling.',
   keywords:'probability of error antipodal q function energy per bit noise density',
   src:'CH8 s.29–31', steps:3, blocks:[
@@ -432,7 +437,7 @@ const SC = [
       {t:'note', kind:'ok', head:'What it depends on', html:'Not on $A$, not on $T_b$, not on the pulse shape — only on $E_b/N_0$. Doubling the amplitude and quartering the bit duration leave it unchanged, because they leave the energy per bit unchanged.'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'err', head:'The factor of two that lives here', html:'$Q\\!\\left(\\sqrt{E_b/N_0}\\right)$ — the same expression without the two — is the error probability of <em>orthogonal</em> binary signalling, and it is $3$ dB worse. Which of the two is right depends on whether the two waveforms are opposites or merely different, and the noise convention has to be the two-sided one throughout for either to come out.'}
+      {t:'note', kind:'err', head:'The factor of two that lives here', html:'$Q\\!\\left(\\sqrt{E_b/N_0}\\right)$ — the same expression without the two — is the error probability of <em>orthogonal</em> binary signalling, and it is $3$ dB worse. Which of the two is right depends on whether the two waveforms are opposites or merely different. And the noise convention has to be the two-sided one throughout for either to come out.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:figPe, caption:'The bit error probability against $E_b/N_0$ in decibels, on a logarithmic scale. The curve falls faster than any straight line: past about $8$ dB, every extra decibel costs the channel roughly an order of magnitude in errors.'}
@@ -444,7 +449,7 @@ const SC = [
   keywords:'worked example unequal priors threshold error probability binary pam',
   src:'CH8 s.32–34', steps:3, blocks:[
   {t:'eyebrow', text:'Module 2 · The decision'},
-  {t:'title', text:'Worked example'},
+  {t:'title', text:'Worked example: unequal priors'},
   {t:'wex', rows:[
     ['Given','A binary PAM system whose correlator output is $y=\\pm\\sqrt{E_b}+n$, with $P(s_1)=0.3$, $E_b=1$ and $N_0=0.1$.'],
     ['Find','The optimal threshold, and the average error probability at that threshold.']
@@ -480,12 +485,13 @@ const SC = [
 ]},
 
 /* ---------------------------------------------------------------- 2.4 ---- */
-{ id:'m2-isi', module:'M2', nav:'Intersymbol interference', title:'When the pulses overlap',
+{ id:'m2-isi', module:'M2', nav:'Intersymbol interference', title:'Intersymbol interference',
   objective:'Show where intersymbol interference comes from.',
   keywords:'intersymbol interference bandlimited channel dispersion residual effect sampling instant',
   src:'CH8 s.35–37', steps:2, blocks:[
   {t:'eyebrow', text:'Module 2 · Intersymbol interference'},
-  {t:'title', text:'The error noise did not cause'},
+  {t:'title', text:'Intersymbol interference'},
+  {t:'lede', text:'When the pulses overlap: the error that noise did not cause.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'Everything so far assumed an ideal channel. A real channel is bandlimited, and a bandlimited channel spreads a pulse in time. Write the received signal as a train of the overall pulse shape $p$:'},
     {t:'eq', tex:'y(t)=\\mu\\sum_k a_k\\,p(t-kT_b)+n(t),\\qquad \\mu\\,p(t)=g(t)*h(t)*c(t)'},
@@ -494,7 +500,7 @@ const SC = [
       {t:'eq', key:true, tex:'y(t_i)=\\underbrace{\\mu a_i}_{\\text{wanted}}+\\underbrace{\\mu\\sum_{k\\ne i}a_k\\,p\\bigl((i-k)T_b\\bigr)}_{\\text{intersymbol interference}}+\\;n(t_i)'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'err', head:'Why this is a different problem', html:'The middle term is not noise. It is deterministic, it is caused by the data itself, and it does not go away when the transmitter turns up its power — raising the amplitude raises the interference by the same factor. At high signal-to-noise ratio it is the <em>only</em> thing limiting the system, which is why it needs a solution of its own rather than more energy.'}
+      {t:'note', kind:'err', head:'Why this is a different problem', html:'The middle term is not noise. It is deterministic, it is caused by the data itself, and it does not go away when the transmitter turns up its power. Raising the amplitude raises the interference by the same factor. At high signal-to-noise ratio it is the <em>only</em> thing limiting the system. That is why it needs a solution of its own rather than more energy.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figIsi(1.0), caption:'Eight bits through a channel whose pulse decays quickly. Each pulse is drawn faintly and their sum heavily; the dots are the sampling instants. Here every neighbouring pulse is zero at every other instant, so the dots sit exactly on $\\pm1$.'},
@@ -502,19 +508,20 @@ const SC = [
   ]}
 ]},
 
-{ id:'m2-eye', module:'M2', nav:'The eye diagram', title:'Every bit pattern at once',
+{ id:'m2-eye', module:'M2', nav:'The eye diagram', title:'The eye diagram',
   objective:'Read the four measurements an eye diagram carries.',
   keywords:'eye diagram eye pattern jitter margin noise timing sensitivity superposition',
   src:'CH8 s.38–41', steps:2, blocks:[
   {t:'eyebrow', text:'Module 2 · Intersymbol interference'},
   {t:'title', text:'The eye diagram'},
+  {t:'lede', text:'Every bit pattern at once.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'note', kind:'def', head:'Eye pattern', html:'Cut the received waveform into bit-length pieces and draw them all on top of each other, synchronised to the clock. The result is a synchronised superposition of every realisation of the signal within one signalling interval.'},
     {t:'reveal', at:1, items:[
       {t:'body', html:'<p>The diagram shows four measurements directly:</p><ul><li>The <b>height of the opening</b> at the sampling instant is the margin over noise.</li><li>The <b>width of the opening</b> is how far the sampling instant can move before a decision goes wrong.</li><li>The <b>slope</b> at the crossings shows sensitivity to a timing error.</li><li>The <b>spread of the crossings</b> is the timing jitter.</li></ul>'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'warn', head:'What a closed eye means', html:'When the opening shrinks to nothing there is no sampling instant at which every bit pattern is decided correctly, and no threshold placement helps. The system has failed for a reason that has nothing to do with the noise level, and the eye is where that is seen before it is measured.'}
+      {t:'note', kind:'warn', head:'What a closed eye means', html:'When the opening shrinks to nothing there is no sampling instant at which every bit pattern is decided correctly, and no threshold placement helps. The system has failed for a reason that has nothing to do with the noise level. The eye is where that is seen before it is measured.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figEye(1.0, 0.06), caption:'A wide-open eye: a pulse that decays quickly, and light noise. Every trace passes close to $\\pm1$ at the centre of the interval.'},
@@ -553,7 +560,7 @@ const SC = [
       {t:'note', kind:'ok', head:'The rate a bandwidth supports', html:'A channel of bandwidth $W$ carries at most $2W$ symbols per second with no interference. That number is the counterpart of the sampling theorem, arrived at from the other end.'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'err', head:'Why the ideal channel cannot be built', html:'A rectangular spectrum has abrupt edges and is not physically realisable. Worse, its pulse decays only as $1/t$, so a small timing error lets a long tail of neighbours contribute at once and the interference does not settle. The next scene buys a solution with bandwidth.'}
+      {t:'note', kind:'err', head:'Why the ideal channel cannot be built', html:'A rectangular spectrum has abrupt edges and is not physically realisable. Worse, its pulse decays only as $1/t$. A small timing error then lets a long tail of neighbours contribute at once, and the interference does not settle. The next scene buys a solution with bandwidth.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>{
@@ -574,12 +581,13 @@ const SC = [
   ]}
 ]},
 
-{ id:'m2-rcos', module:'M2', nav:'The raised cosine', title:'Buying decay with bandwidth',
+{ id:'m2-rcos', module:'M2', nav:'The raised cosine', title:'The raised cosine',
   objective:'Give the raised-cosine spectrum and what the roll-off controls.',
   keywords:'raised cosine roll off factor excess bandwidth transmission bandwidth decay',
   src:'CH8 s.46–48', steps:2, blocks:[
   {t:'eyebrow', text:'Module 2 · Nyquist and the raised cosine'},
   {t:'title', text:'The raised cosine'},
+  {t:'lede', text:'Buying decay with bandwidth.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'Widen the spectrum from $W$ towards $2W$ and taper the edges, keeping the tiling property:'},
     {t:'eq', tex:'P(f)=\\begin{cases}\\dfrac{1}{2W}, & 0\\le|f|\\le f_1\\\\[6pt] \\dfrac{1}{4W}\\left[1-\\sin\\dfrac{\\pi(|f|-W)}{2W-2f_1}\\right], & f_1\\le|f|<2W-f_1\\\\[6pt] 0,&\\text{otherwise}\\end{cases}'},
@@ -625,7 +633,7 @@ const SC = [
   keywords:'summary matched filter threshold error probability nyquist raised cosine',
   steps:0, blocks:[
   {t:'eyebrow', text:'Module 2 · Summary'},
-  {t:'title', text:'What carries forward'},
+  {t:'title', text:'What Module 2 established'},
   {t:'grid', cols:2, gap:'26px', items:[
     [{t:'card', head:'The filter', items:[
       {t:'body', html:'<p>The matched filter maximises the output signal-to-noise ratio, and what it achieves depends on the energy of the pulse and not on its shape.</p>'},
@@ -644,7 +652,7 @@ const SC = [
       {t:'eq', plain:true, tex:'R_b\\sum_n P(f-nR_b)=1,\\quad B_T=(1+\\alpha)W'}
     ]}]
   ]},
-  {t:'note', kind:'ok', head:'The module in one sentence', html:'Two things can go wrong on the way to the decision, and they are fixed separately: noise is dealt with by the matched filter, which extracts as much of the pulse energy as there is to extract, and interference from neighbouring symbols is dealt with by choosing a pulse whose spectrum tiles the axis at the symbol rate.'}
+  {t:'note', kind:'ok', head:'The module in one sentence', html:'Two things can go wrong on the way to the decision, and they are fixed separately. Noise is handled by the matched filter, which extracts all the pulse energy there is to extract. Interference from neighbouring symbols is handled by choosing a pulse whose spectrum tiles the axis at the symbol rate.'}
 ]}
 
 ];

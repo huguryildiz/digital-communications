@@ -87,12 +87,13 @@ const SC = [
 ]},
 
 /* ---------------------------------------------------------------- 4.1 ---- */
-{ id:'m4-observe', module:'M4', nav:'What the receiver keeps', title:'The receiver keeps $N$ numbers',
+{ id:'m4-observe', module:'M4', nav:'What the receiver keeps', title:'The observation vector',
   objective:'Show that the correlator bank loses nothing that matters.',
   keywords:'correlator bank observation vector irrelevant noise component projection',
   src:'CH9 s.24–25', steps:3, blocks:[
   {t:'eyebrow', text:'Module 4 · The observation'},
-  {t:'title', text:'The receiver keeps $N$ numbers'},
+  {t:'title', text:'The observation vector'},
+  {t:'lede', text:'The receiver keeps $N$ numbers, and loses nothing that matters.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>The receiver has $N$ correlators, one per basis function. Each returns one number:</p>'},
     {t:'eq', tex:'r_k=\\int_0^{T}r(t)\\,\\psi_k(t)\\,dt=\\underbrace{\\int_0^T s_i\\psi_k\\,dt}_{s_{ik}}+\\underbrace{\\int_0^T n\\psi_k\\,dt}_{n_k}=s_{ik}+n_k'},
@@ -102,7 +103,7 @@ const SC = [
       {t:'eq', tex:'r(t)=\\sum_{k=1}^{N}r_k\\psi_k(t)+n_0(t)'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'ok', head:'Why $n_0(t)$ can be thrown away', html:'It contains no signal at all — every signal is a combination of the $N$ basis functions, so none of them has any component outside that space. And it is independent of the $N$ numbers the receiver kept. A quantity that carries no information about the answer and is unrelated to what was kept cannot help, so discarding it costs nothing.'}
+      {t:'note', kind:'ok', head:'Why $n_0(t)$ can be thrown away', html:'It contains no signal at all. Every signal is a combination of the $N$ basis functions, so none of them has any component outside that space. And it is independent of the $N$ numbers the receiver kept. A quantity that carries no information about the answer and is unrelated to what was kept cannot help, so discarding it costs nothing.'}
     ]},
     {t:'reveal', at:3, items:[
       {t:'note', kind:'warn', head:'What this does not say', html:'The result does not say that the noise is small or that the correlators remove it. The receiver keeps all noise components inside the signal space. It discards only the component that cannot help distinguish the signals.'}
@@ -124,12 +125,13 @@ const SC = [
   ]}
 ]},
 
-{ id:'m4-noise', module:'M4', nav:'The noise on each axis', title:'One independent Gaussian per axis',
+{ id:'m4-noise', module:'M4', nav:'The noise on each axis', title:'The noise vector',
   objective:'Establish the distribution of the noise vector.',
   keywords:'noise vector independent gaussian variance uncorrelated joint density',
   src:'CH9 s.26–27', steps:2, blocks:[
   {t:'eyebrow', text:'Module 4 · The observation'},
-  {t:'title', text:'One independent Gaussian per axis'},
+  {t:'title', text:'The noise vector'},
+  {t:'lede', text:'One independent Gaussian per axis.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>Each $n_k$ is a projection of a Gaussian process onto a fixed function, so it is Gaussian with zero mean. The useful part is what happens between two of them:</p>'},
     {t:'eq', tex:'E[n_jn_k]=\\frac{N_0}{2}\\int_0^{T}\\psi_j(u)\\psi_k(u)\\,du=\\begin{cases}\\dfrac{N_0}{2},&j=k\\\\[4pt]0,&j\\ne k\\end{cases}'},
@@ -139,7 +141,7 @@ const SC = [
       {t:'eq', key:true, tex:'f_{\\mathbf{n}}(n_1,\\ldots,n_N)=(\\pi N_0)^{-N/2}\\exp\\!\\left(-\\sum_{k=1}^{N}\\frac{n_k^{2}}{N_0}\\right)'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'ok', head:'What the picture looks like', html:'Because every axis has the same variance and the axes are independent, the noise cloud is a <b>circle</b> — a sphere in $N$ dimensions — and not an ellipse. That symmetry is what makes "nearest point" the right rule in the next section. If the variances differed, the nearest point in the ordinary sense would not be the best answer.'}
+      {t:'note', kind:'ok', head:'What the picture looks like', html:'Every axis has the same variance and the axes are independent. The noise cloud is therefore a <b>circle</b> — a sphere in $N$ dimensions — and not an ellipse. That symmetry is what makes "nearest point" the right rule in the next section. If the variances differed, the nearest point in the ordinary sense would not be the best answer.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>{
@@ -158,12 +160,12 @@ const SC = [
 ]},
 
 /* ---------------------------------------------------------------- 4.2 ---- */
-{ id:'m4-map', module:'M4', nav:'MAP and ML', title:'Two rules, and when they agree',
+{ id:'m4-map', module:'M4', nav:'MAP and ML', title:'The MAP and ML rules',
   objective:'State the MAP and ML rules and the relation between them.',
   keywords:'maximum a posteriori maximum likelihood bayes prior posterior decision rule',
   src:'CH9 s.29–30', steps:3, blocks:[
   {t:'eyebrow', text:'Module 4 · The decision rule'},
-  {t:'title', text:'Two rules, and when they agree'},
+  {t:'title', text:'The MAP and ML rules'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>The receiver should choose the signal that is most likely <em>given what it saw</em>. That is the posterior probability $P(\\mathbf{s}_i\\mid\\mathbf{r})$, and by Bayes\' rule</p>'},
     {t:'eq', tex:'P(\\mathbf{s}_i\\mid\\mathbf{r})=\\frac{P(\\mathbf{s}_i)\\,f_{\\mathbf{r}}(\\mathbf{r}\\mid\\mathbf{s}_i)}{f_{\\mathbf{r}}(\\mathbf{r})}'},
@@ -187,12 +189,13 @@ const SC = [
   ]}
 ]},
 
-{ id:'m4-mindist', module:'M4', nav:'Minimum distance', title:'The rule is: choose the nearest point',
+{ id:'m4-mindist', module:'M4', nav:'Minimum distance', title:'Minimum-distance detection',
   objective:'Reduce the ML rule to minimum-distance detection.',
   keywords:'minimum distance detection log likelihood euclidean squared distance nearest',
   src:'CH9 s.31–34', steps:3, blocks:[
   {t:'eyebrow', text:'Module 4 · The decision rule'},
-  {t:'title', text:'Choose the nearest point'},
+  {t:'title', text:'Minimum-distance detection'},
+  {t:'lede', text:'The rule is: choose the nearest point.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>Put the noise density from the last section into the likelihood. Each $r_k$ is $s_{ik}$ plus independent noise of variance $N_0/2$, so</p>'},
     {t:'eq', tex:'f_{\\mathbf{r}}(\\mathbf{r}\\mid\\mathbf{s}_i)=(\\pi N_0)^{-N/2}\\exp\\!\\left(-\\sum_{k=1}^{N}\\frac{(r_k-s_{ik})^{2}}{N_0}\\right)'},
@@ -204,7 +207,7 @@ const SC = [
     {t:'reveal', at:2, items:[
       {t:'eq', key:true, label:'ML detection', tex:'\\hat{s}=\\arg\\min_{i}\\;\\|\\mathbf{r}-\\mathbf{s}_i\\|^{2}'},
       {t:'eq', key:true, label:'MAP detection', tex:'\\hat{s}=\\arg\\min_{i}\\;\\Bigl\\{\\|\\mathbf{r}-\\mathbf{s}_i\\|^{2}-N_0\\ln P(\\mathbf{s}_i)\\Bigr\\}'},
-      {t:'note', kind:'ok', head:'Say it in words', html:'<b>Choose the signal point closest to what arrived.</b> With unequal priors, subtract a fixed handicap from each distance first — a more likely symbol gets a larger handicap and so wins from further away.'}
+      {t:'note', kind:'ok', head:'Say it in words', html:'<b>Choose the signal point closest to what arrived.</b> With unequal priors, subtract a fixed handicap from each distance first. A more likely symbol gets a larger handicap and so wins from further away.'}
     ]},
     {t:'reveal', at:3, items:[
       {t:'note', kind:'warn', head:'Where the handicap goes', html:'$-N_0\\ln P(\\mathbf{s}_i)$ is <em>subtracted</em>, and $\\ln P$ is negative, so the term is positive and smaller for the more likely symbol. Getting the sign wrong shrinks the region of the likely symbol instead of growing it, and the error probability rises rather than falls.'}
@@ -228,12 +231,13 @@ const SC = [
   ]}
 ]},
 
-{ id:'m4-metric', module:'M4', nav:'The receiver that computes it', title:'The receiver, in the form it is built',
+{ id:'m4-metric', module:'M4', nav:'The receiver that computes it', title:'The correlation metric',
   objective:'Turn the distance rule into the correlation metric a receiver computes.',
   keywords:'correlation metric receiver structure energy bias equal energy signals',
   src:'CH9 s.35–36', steps:3, blocks:[
   {t:'eyebrow', text:'Module 4 · The decision rule'},
-  {t:'title', text:'What the receiver actually computes'},
+  {t:'title', text:'The correlation metric'},
+  {t:'lede', text:'The receiver, in the form it is built.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>Expanding the squared distance gives three terms:</p>'},
     {t:'eq', tex:'\\|\\mathbf{r}-\\mathbf{s}_i\\|^{2}=\\underbrace{\\|\\mathbf{r}\\|^{2}}_{\\text{same for every }i}-2\\,\\mathbf{r}\\!\\cdot\\!\\mathbf{s}_i+\\underbrace{\\|\\mathbf{s}_i\\|^{2}}_{E_i}'},
@@ -273,12 +277,13 @@ const SC = [
 ]},
 
 /* ---------------------------------------------------------------- 4.3 ---- */
-{ id:'m4-regions', module:'M4', nav:'Decision regions', title:'The rule, drawn',
+{ id:'m4-regions', module:'M4', nav:'Decision regions', title:'Decision regions',
   objective:'Show that decision boundaries are perpendicular bisectors.',
   keywords:'decision regions perpendicular bisector boundaries unequal priors shrink',
   src:'CH9 s.47, 50', steps:2, blocks:[
   {t:'eyebrow', text:'Module 4 · Decision regions'},
-  {t:'title', text:'The rule, drawn'},
+  {t:'title', text:'Decision regions'},
+  {t:'lede', text:'The rule, drawn.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>The rule assigns every possible observation to one signal. Collecting the observations that give the same answer divides the space into $M$ pieces:</p>'},
     {t:'eq', tex:'R_i=\\left\\{\\mathbf{r}\\;:\\;\\|\\mathbf{r}-\\mathbf{s}_i\\|^{2}\\le\\|\\mathbf{r}-\\mathbf{s}_j\\|^{2}\\ \\text{for all }j\\ne i\\right\\}'},
@@ -287,7 +292,7 @@ const SC = [
     ]},
     {t:'reveal', at:2, items:[
       {t:'body', html:'<p>The first two are the definition of a perpendicular bisector: the set of points equidistant from two fixed points <em>is</em> that bisector. Nothing has to be calculated once the rule is "nearest point".</p>'},
-      {t:'note', kind:'warn', head:'A region need not be bounded', html:'Only the nearest neighbours contribute boundaries. A point in the middle of a constellation has a bounded region; a point on the outside has one that runs off to infinity, and that is why outer points make fewer errors than inner ones.'}
+      {t:'note', kind:'warn', head:'A region need not be bounded', html:'Only the nearest neighbours contribute boundaries. A point in the middle of a constellation has a bounded region. A point on the outside has one that runs off to infinity, and that is why outer points make fewer errors than inner ones.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figRegions(
@@ -296,12 +301,12 @@ const SC = [
   ]}
 ]},
 
-{ id:'m4-binary', module:'M4', nav:'The binary case', title:'The binary case, worked through',
+{ id:'m4-binary', module:'M4', nav:'The binary case', title:'The binary case',
   objective:'Derive the binary error probability from the geometry alone.',
   keywords:'binary decision distance error probability q function geometry antipodal',
   src:'CH9 s.48–55', steps:3, blocks:[
   {t:'eyebrow', text:'Module 4 · Decision regions'},
-  {t:'title', text:'Two points, and the answer Module 2 already had'},
+  {t:'title', text:'The binary case'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>Take two equally likely points a distance $d$ apart. Put the origin midway, so they sit at $\\pm d/2$ on the line joining them, and the boundary is at zero.</p>'},
     {t:'body', html:'<p>An error happens when the noise along that line carries the observation across the boundary — a distance of $d/2$. The noise on any one axis is $\\mathcal{N}(0,N_0/2)$, so</p>'},
@@ -345,17 +350,18 @@ const SC = [
   steps:0, blocks:[
   {t:'eyebrow', text:'Module 4 · Decision regions'},
   {t:'title', text:'Laboratory G · Constellations and decision regions'},
-  {t:'body', html:'Choose a constellation and a noise level. The laboratory draws the decision regions from the rule, scatters the observations the receiver would actually see, counts how many land in the wrong region, and compares that count with the union bound. Move the points closer and both numbers rise together.'},
+  {t:'body', html:'Choose a constellation and a noise level. The laboratory draws the decision regions from the rule and scatters the observations the receiver would actually see. It counts how many land in the wrong region, and compares that count with the union bound. Move the points closer and both numbers rise together.'},
   {t:'lab', id:'G'}
 ]},
 
 /* ---------------------------------------------------------------- 4.4 ---- */
-{ id:'m4-pe', module:'M4', nav:'The exact answer', title:'The exact answer, and why it is not usable',
+{ id:'m4-pe', module:'M4', nav:'The exact answer', title:'The exact error probability',
   objective:'Give the general error expression and explain the difficulty.',
   keywords:'general expression probability of error integral decision region multidimensional',
   src:'CH9 s.51, 56', steps:2, blocks:[
   {t:'eyebrow', text:'Module 4 · The union bound'},
-  {t:'title', text:'The exact answer, and why it is not usable'},
+  {t:'title', text:'The exact error probability'},
+  {t:'lede', text:'The exact answer, and why it is not usable.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>A decision is correct when the observation lands in the right region. Averaging over the symbols:</p>'},
     {t:'eq', tex:'P(C)=\\sum_{i=1}^{M}P\\bigl(\\mathbf{r}\\in R_i\\mid\\mathbf{s}_i\\bigr)P(\\mathbf{s}_i),\\qquad P_e=1-P(C)'},
@@ -403,12 +409,12 @@ const SC = [
   ]}
 ]},
 
-{ id:'m4-dmin', module:'M4', nav:'The usable forms', title:'The two forms actually used',
+{ id:'m4-dmin', module:'M4', nav:'The usable forms', title:'The minimum-distance and nearest-neighbour forms',
   objective:'Give the minimum-distance bound and the nearest-neighbour approximation.',
   keywords:'minimum distance bound nearest neighbour approximation number of neighbours',
   src:'CH9 s.60–61', steps:3, blocks:[
   {t:'eyebrow', text:'Module 4 · The union bound'},
-  {t:'title', text:'The two forms actually used'},
+  {t:'title', text:'The minimum-distance and nearest-neighbour forms'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>$Q$ decreases, so replacing every distance by the smallest one can only make each term larger. Write</p>'},
     {t:'eq', tex:'d_{\\min}=\\min_{k\\ne j}\\;d_{kj}'},
@@ -423,7 +429,7 @@ const SC = [
       {t:'small', html:'This approximation is useful at high signal-to-noise ratios. More distant points have much smaller pairwise terms, so the nearest neighbours dominate the error probability.'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'ok', head:'What to take away', html:'A constellation is judged by two numbers: $d_{\\min}$, which sets the exponent and therefore almost everything, and $N_{\\min}$, which multiplies it and matters far less. Designing a good constellation means pushing $d_{\\min}$ as far as possible at a fixed average energy.'}
+      {t:'note', kind:'ok', head:'What to take away', html:'A constellation is judged by two numbers. $d_{\\min}$ sets the exponent and therefore almost everything; $N_{\\min}$ multiplies it and matters far less. Designing a good constellation means pushing $d_{\\min}$ as far as possible at a fixed average energy.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>{
@@ -444,14 +450,14 @@ const SC = [
   ]}
 ]},
 
-{ id:'m4-intel', module:'M4', nav:'The intelligent bound', title:'Only the neighbours the region touches',
+{ id:'m4-intel', module:'M4', nav:'The intelligent bound', title:'The intelligent union bound',
   objective:'Tighten the union bound by dropping the points whose bisectors form no face of the region.',
   keywords:'intelligent union bound decision region faces neighbours tighter maximum likelihood',
   src:'CH9 s.59–60', steps:3, blocks:[
   {t:'eyebrow', text:'Module 4 · The union bound'},
-  {t:'title', text:'Only the neighbours the region touches'},
+  {t:'title', text:'The intelligent union bound'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
-    {t:'body', html:'<p>The union bound adds one term for every other signal point. Look at what most of those points are doing. To land nearer a far-away point, the observation has to leave its own region first — and it leaves through a <b>face</b>, a piece of boundary shared with one particular neighbour. A point that shares no face with the region cannot be the first one reached.</p>'},
+    {t:'body', html:'<p>The union bound adds one term for every other signal point. Look at what most of those points are doing. To land nearer a far-away point, the observation has to leave its own region first. And it leaves through a <b>face</b>: a piece of boundary shared with one particular neighbour. A point that shares no face with the region cannot be the first one reached.</p>'},
     {t:'note', kind:'def', head:'The set that matters', html:'Write $\\mathcal{N}(k)$ for the neighbours of $\\mathbf{s}_k$ whose perpendicular bisectors form the faces of the decision region $R_k$. These are the only points that bound the region, so they are the only ones an error has to cross.'},
     {t:'reveal', at:1, items:[
       {t:'body', html:'<p>Leaving $R_k$ means crossing at least one of its faces, so the union over the faces already covers every error. Summing over that smaller set is still an upper bound:</p>'},
@@ -467,7 +473,7 @@ const SC = [
       ]}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'warn', head:'Not the same statement as the nearest-neighbour form', html:'Here the two give the same expression, because both faces happen to sit at $d_{\\min}$. They still say different things. This one <em>counts faces</em> and is an upper bound, so a system built to it is safe. The nearest-neighbour form of the last scene <em>counts points at $d_{\\min}$</em> and is an approximation, so it can sit below the truth. They part company whenever a face is shared with a point further away than $d_{\\min}$ — that face is a real way out of the region, and only this bound keeps it.'}
+      {t:'note', kind:'warn', head:'Not the same statement as the nearest-neighbour form', html:'Here the two give the same expression, because both faces happen to sit at $d_{\\min}$. They still say different things. This one <em>counts faces</em> and is an upper bound, so a system built to it is safe. The nearest-neighbour form of the last scene <em>counts points at $d_{\\min}$</em> and is an approximation, so it can sit below the truth. They part company whenever a face is shared with a point further away than $d_{\\min}$. That face is a real way out of the region, and only this bound keeps it.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figRegions(
@@ -490,7 +496,7 @@ const SC = [
   keywords:'worked example union bound four points square distances general form',
   src:'CH9 s.62–63', steps:2, blocks:[
   {t:'eyebrow', text:'Module 4 · The union bound'},
-  {t:'title', text:'Worked example, part one'},
+  {t:'title', text:'Worked example: the union bound'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'wex', rows:[
       ['Given','Four equally likely points at $(\\pm d/2,\\,\\pm d/2)$: neighbouring points are $d$ apart, diagonal ones $d\\sqrt{2}$.'],
@@ -518,7 +524,7 @@ const SC = [
   keywords:'worked example nearest neighbour minimum distance comparison numbers',
   src:'CH9 s.64–65', steps:3, blocks:[
   {t:'eyebrow', text:'Module 4 · The union bound'},
-  {t:'title', text:'Worked example, part two'},
+  {t:'title', text:'Worked example: the two simpler forms'},
   {t:'lede', text:'The same constellation, with the two forms that are actually used, and the three answers side by side.'},
   {t:'reveal', at:1, items:[
     {t:'wex', rows:[
@@ -532,7 +538,7 @@ const SC = [
     ]}
   ]},
   {t:'reveal', at:3, items:[
-    {t:'note', kind:'ok', head:'The lesson', html:'The two useful forms differ by less than one per cent: the diagonal term is worth $0.4\\%$ and dropping it is safe. The loose form is half again too large, because pretending the diagonal point is a nearest neighbour adds a whole extra term at the smallest distance. All three are the same $Q$ with a different count in front, so none of them moves the curve sideways — the signal-to-noise ratio needed for a given error rate is almost the same whichever is used.'}
+    {t:'note', kind:'ok', head:'The lesson', html:'The two useful forms differ by less than one per cent: the diagonal term is worth $0.4\\%$ and dropping it is safe. The loose form is half again too large. Pretending the diagonal point is a nearest neighbour adds a whole extra term at the smallest distance. All three are the same $Q$ with a different count in front, so none of them moves the curve sideways. The signal-to-noise ratio needed for a given error rate is almost the same whichever is used.'}
   ]}
 ]},
 
@@ -542,7 +548,7 @@ const SC = [
   keywords:'summary optimal receiver minimum distance union bound dmin nearest neighbours',
   steps:0, blocks:[
   {t:'eyebrow', text:'Module 4 · Summary'},
-  {t:'title', text:'What carries forward'},
+  {t:'title', text:'What Module 4 established'},
   {t:'grid', cols:2, gap:'26px', items:[
     [{t:'card', head:'The receiver', items:[
       {t:'body', html:'<p>Correlate against each signal, correct for its energy and its prior, and take the largest. With equal energies and equal priors, take the largest correlation.</p>'},
@@ -561,7 +567,7 @@ const SC = [
       {t:'eq', plain:true, tex:'P_e\\approx N_{\\min}Q\\!\\left(\\sqrt{d_{\\min}^{2}/2N_0}\\right)'}
     ]}]
   ]},
-  {t:'note', kind:'ok', head:'What Module 5 does with this', html:'It applies the result to the constellations that are actually used — amplitude, phase and quadrature modulation — and asks which of them gets the largest $d_{\\min}$ for a given average energy and a given number of bits per symbol.'}
+  {t:'note', kind:'ok', head:'What Module 5 does with this', html:'It applies the result to the constellations that are actually used: amplitude, phase and quadrature modulation. The question is which of them gets the largest $d_{\\min}$ for a given average energy and a given number of bits per symbol.'}
 ]}
 
 ];
