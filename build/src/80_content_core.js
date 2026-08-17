@@ -14,7 +14,7 @@ const CONTENT = {
   META: {
     course:'Digital Communications',
     title:'Digital Communications',
-    version:'1.2',
+    version:'1.3',
     language:'Academic English',
     /* Both are stated once on the page, in the scene where they are first
        needed, and repeated here so the conventions panel can show them without

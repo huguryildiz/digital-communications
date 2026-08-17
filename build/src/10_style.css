@@ -153,6 +153,29 @@ body[data-display=projector][data-theme=dark]{ --rule:#3A4754; }
 body[data-display=projector] .scene{ padding:44px 76px 60px; }
 body[data-display=projector] .cols{ gap:34px; }
 
+/* the laser pointer of projector mode. The canvas is created by the core the
+   first time projector mode is entered; it never takes a click. The system
+   arrow is hidden only while the laser is the pointer, and only where there
+   is a real mouse to hide it from — on a touch screen there is nothing to
+   replace it with. */
+#laser{
+  position:fixed; inset:0; display:none;
+  pointer-events:none; z-index:90;
+}
+@media (pointer:fine){
+  body[data-display=projector][data-pointer=laser],
+  body[data-display=projector][data-pointer=laser] *{ cursor:none; }
+}
+/* drawing with the button held would otherwise sweep a text selection across
+   the scene; the fields the reader types into keep theirs */
+body[data-display=projector][data-pointer=laser]{ user-select:none; -webkit-user-select:none; }
+body[data-display=projector][data-pointer=laser] input,
+body[data-display=projector][data-pointer=laser] textarea{ user-select:text; -webkit-user-select:text; }
+
+/* the two pointer controls belong to projector mode and are hidden outside it */
+#appheader .proj-only{ display:none; }
+body[data-display=projector] #appheader .proj-only{ display:block; }
+
 *,*::before,*::after{ box-sizing:border-box; }
 
 html,body{
@@ -214,6 +237,8 @@ body[data-motion=reduced] #appheader .eelogo path{ animation:none; filter:none; 
 }
 #appheader button:hover{ color:var(--ink); background:var(--paper-3); }
 #appheader button[aria-pressed=true]{ color:var(--coral); }
+#appheader button:disabled{ opacity:.4; cursor:default; }
+#appheader button:disabled:hover{ color:var(--muted); background:transparent; }
 #sbtoggle{ font-size:15px !important; line-height:1; padding:5px 9px !important; }
 
 /* --- left contents rail ---------------------------------------------- */

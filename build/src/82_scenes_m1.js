@@ -164,6 +164,38 @@ function figLineCode(i){
   return a.svg();
 }
 
+/* Every pair a two-sample block can take, with the pairs a smooth signal can
+   actually produce shaded. Nothing is sampled or simulated: a cell is shaded
+   when the two indices differ by at most one, which is the condition the scene
+   states, so the count in the caption is the count the figure draws. */
+function figPairLattice(L){
+  const a = P.Axes({w:440,h:330,xr:[0,L],yr:[0,L],
+    xlabel:'\\text{sample }n', ylabel:'\\text{sample }n+1',
+    pad:{l:58,r:22,t:22,b:46}, xticksOverride:[0,4,8,12,16], yticksOverride:[0,4,8,12,16],
+    grid:false});
+  for(let i=0;i<L;i++) for(let j=0;j<L;j++){
+    const near = Math.abs(i-j) <= 1;
+    a.rect(i, j, i+1, j+1,
+      {fill: near ? C.dec.in : 'none', stroke: near ? C.in : C.rule});
+  }
+  return a.svg();
+}
+
+/* One row of a smooth gradient at two level counts. The coarse staircase is
+   what a reader sees as banding: the step edges are boundaries the scene never
+   had. Both curves are the same quantizer rule with a different L. */
+function figBanding(){
+  const a = P.Axes({w:470,h:300,xr:[0,1],yr:[-0.06,1.10],
+    xlabel:'\\text{position across the image}', ylabel:'\\text{brightness}',
+    pad:{l:62,r:22,t:22,b:46}, xtarget:5, ytarget:5});
+  const q = (v,L) => (Math.min(L-1, Math.floor(v*L)) + 0.5)/L;
+  a.curve(x => q(x, 256), {color:C.in, width:2.0, n:1400});
+  a.curve(x => q(x, 8),   {color:C.mid, width:2.2, n:1400});
+  a.note(0.06, 0.96, 'L=256', {tex:true, fs:12, color:C.in});
+  a.note(0.62, 0.30, 'L=8', {tex:true, fs:12, color:C.mid});
+  return a.svg();
+}
+
 function figPcmExample(){
   const sinc = x => Math.abs(x)<1e-9 ? 1 : Math.sin(Math.PI*x)/(Math.PI*x);
   const m = t => 8*Math.abs(sinc(t-2));
@@ -236,7 +268,7 @@ const SC = [
       {t:'eq', key:true, tex:'g_\\delta(t)=\\sum_{n=-\\infty}^{\\infty}g(nT_s)\\,\\delta(t-nT_s)'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'warn', head:'What this object is and is not', html:'$g_\\delta(t)$ is not a sequence of numbers. It is a continuous-time signal built from impulses, and it has a Fourier transform. That is the whole reason for writing sampling this way: the next scene takes that transform, and the sampling theorem falls out of it.'}
+      {t:'note', kind:'warn', head:'What this object is and is not', html:'$g_\\delta(t)$ is not a sequence of numbers. It is a continuous-time signal built from impulses, so it has a Fourier transform. We use this form because the next scene takes that transform and leads directly to the sampling theorem.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:figSampling, caption:'The message and its ideal samples. Each impulse carries the value of $g$ at its own instant as its weight; between the instants the sampled signal is zero.'}
@@ -415,7 +447,7 @@ const SC = [
       {t:'body', html:'The two conditions refer to each other, which is why they are applied by turns rather than solved at once. A uniform quantizer satisfies the first by construction; it satisfies the second only when the input is uniformly distributed.'}
     ]}
   ], right:[
-    {t:'fig', frame:true, svg:()=>figQuantizer('midrise'), caption:'A uniform mid-rise quantizer with $L=8$ over $[-4,4]$, so $\\Delta = 8/8 = 1$. Each tread is $\\Delta$ wide and its output sits at the middle of the tread — the midpoint condition, read off the picture.'}
+    {t:'fig', frame:true, svg:()=>figQuantizer('midrise'), caption:'A uniform mid-rise quantizer with $L=8$ over $[-4,4]$, so $\\Delta = 8/8 = 1$. Each tread is $\\Delta$ wide. Its output lies at the middle of the tread, as the midpoint condition requires.'}
   ]}
 ]},
 
@@ -728,6 +760,67 @@ const SC = [
 ]},
 
 /* ---------------------------------------------------------------- 1.7 ---- */
+{ id:'m1-vq', module:'M1', nav:'Vector quantization', title:'Quantizing samples together',
+  objective:'Show why quantizing a block of samples beats quantizing each one alone.',
+  keywords:'vector quantization scalar codebook block image compression jpeg lossy levels',
+  src:'CH7 s.37', steps:3, blocks:[
+  {t:'eyebrow', text:'Module 1 · Vector quantization'},
+  {t:'title', text:'Quantizing samples together'},
+  {t:'cols', ratio:'c-6-6', vcenter:true, left:[
+    {t:'body', html:'<p>Every quantizer so far has rounded one sample on its own. That is <b>scalar</b> quantization, and it throws something away before it starts: real signals do not jump about from one sample to the next, and a quantizer looking at one sample at a time cannot know that.</p>'},
+    {t:'note', kind:'def', head:'What vector quantization is', html:'Take $n$ samples at a time and treat them as one point in $n$ dimensions. Choose a <b>codebook</b> of allowed points, and round the whole block to the nearest one. With $n=1$ this is the quantizer of section 1.3. With $n=2$ the allowed points are places in a plane, and they can be put wherever the signal actually goes.'},
+    {t:'reveal', at:1, items:[
+      {t:'body', html:'<p>Here is the whole argument, in a case small enough to count. Take $L=16$ levels and look at <em>pairs</em> of neighbouring samples. A scalar quantizer allows every combination:</p>'},
+      {t:'eq', tex:'L^{2}=16^{2}=256\\ \\text{pairs},\\qquad \\log_2 256 = 8\\ \\text{bits a pair}=4\\ \\text{bits a sample}'},
+      {t:'body', html:'<p>Now suppose the signal is smooth enough that a sample never moves by more than one step from the one before it. Then only the pairs on and beside the diagonal can ever occur:</p>'},
+      {t:'eq', key:true, tex:'3L-2=46\\ \\text{pairs},\\qquad \\lceil\\log_2 46\\rceil = 6\\ \\text{bits a pair}=3\\ \\text{bits a sample}'}
+    ]},
+    {t:'reveal', at:2, items:[
+      {t:'note', kind:'ok', head:'A quarter of the rate, at the same distortion', html:'The cells did not change size, so the rounding error did not change. The code now omits the $210$ combinations that this signal model never produces. Vector quantization uses its codebook only in regions that the signal can reach.'}
+    ]},
+    {t:'reveal', at:3, items:[
+      {t:'small', html:'The next scene takes the case this is actually used on, where the samples are the pixels of an image and there are a quarter of a million of them.'}
+    ]}
+  ], right:[
+    {t:'fig', frame:true, svg:()=>figPairLattice(16),
+      caption:'Every pair of neighbouring samples a $16$-level quantizer can produce. A scalar quantizer pays for all $256$ squares. If a sample never moves by more than one step, only the $46$ shaded ones ever occur, and the codebook needs $6$ bits a pair instead of $8$.'},
+    {t:'small', html:'Almost all of the saving comes from neighbouring samples being alike. A small gain survives even for independent samples, because better-shaped cells pack the space more efficiently than squares, but it is under a quarter of a bit a sample and this course does not pursue it.'}
+  ]}
+]},
+
+{ id:'m1-vq-image', module:'M1', nav:'Quantizing an image', title:'What quantization saves, and what it costs',
+  objective:'Work the bit rate of a quantized image and name what is lost.',
+  keywords:'image quantization bits per pixel compression ratio banding contouring jpeg lossy',
+  src:'CH7 s.37', steps:3, blocks:[
+  {t:'eyebrow', text:'Module 1 · Vector quantization'},
+  {t:'title', text:'What quantization saves, and what it costs'},
+  {t:'cols', ratio:'c-6-6', vcenter:true, left:[
+    {t:'body', html:'<p>An image is the case where this matters, because there are so many samples. Each pixel is one sample of brightness, and the arithmetic of section 1.6 applies to it unchanged.</p>'},
+    {t:'wex', head:'A greyscale image, quantized', rows:[
+      ['Given','$512\\times512$ pixels at $8$ bits a pixel, so $L=256$ levels.'],
+      ['Uncoded','$512^{2}(8)=2\\,097\\,152$ bits, which is $256$ KiB.'],
+      ['At $L=32$','$R=\\log_2 32=5$ bits a pixel: $1\\,310\\,720$ bits, or $160$ KiB.'],
+      ['Saved','$3$ bits of every $8$, so $37.5\\%$ of the file.']
+    ]},
+    {t:'reveal', at:1, items:[
+      {t:'body', html:'<p>What that costs is the same number section 1.4 gives, and it is large:</p>'},
+      {t:'eq', key:true, tex:'\\Delta\\mathrm{SQNR}=6.02(8-5)=18.06\\ \\text{dB}'},
+      {t:'note', kind:'warn', head:'And it is visible, not just measurable', html:'A smooth gradient — a sky, a shadow across a wall — is a slow ramp in brightness. Quantize it coarsely and the ramp becomes a staircase, so the picture shows <b>bands</b> of flat tone with hard edges between them where there was no edge in the scene. The eye finds those invented edges easily, which is why an image tolerates far fewer bits in a noisy region than in a smooth one.'}
+    ]},
+    {t:'reveal', at:2, items:[
+      {t:'note', kind:'def', head:'This is lossy compression', html:'The removed information is not recoverable. The omitted bits described where the pixel lay inside its quantization interval. A decoder cannot recover that position. This loss is why the method is called <b>lossy</b>. JPEG also uses quantization, but it quantizes transformed image blocks rather than individual pixels.'}
+    ]},
+    {t:'reveal', at:3, items:[
+      {t:'note', kind:'ok', head:'Where the chapter ends', html:'Sampling is reversible when the sampling-theorem conditions hold. Quantization is not reversible. An image makes the second fact visible because coarse levels create bands that were not present before quantization. Later chapters start with the resulting bit stream.'}
+    ]}
+  ], right:[
+    {t:'fig', frame:true, svg:()=>figBanding(),
+      caption:'One row of a smooth gradient, quantized at $256$ levels and at $8$. The fine quantizer follows the ramp so closely that the two cannot be told apart; the coarse one replaces it with flat steps, and each step edge is a band boundary the eye sees as a line that is not in the scene.'},
+    {t:'small', html:'The step height here is $\\Delta=2m_{\\max}/L$, exactly as in section 1.3 — an image is not a new kind of quantizer, only a great many samples of one.'}
+  ]}
+]},
+
+/* ---------------------------------------------------------------- 1.8 ---- */
 { id:'m1-synth', module:'M1', nav:'Summary', title:'What Module 1 established',
   objective:'Collect the results this module contributes to the rest of the course.',
   keywords:'summary sampling quantization pcm results bit rate sqnr',

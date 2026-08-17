@@ -285,6 +285,11 @@ const RENDER = (() => {
       bt.textContent = S.theme==='dark'?'Dark':'Light'; }
     const bd=document.getElementById('btn-display'); if(bd){ bd.setAttribute('aria-pressed', S.display==='projector');
       bd.textContent = S.display==='projector'?'Projector':'Normal'; }
+    const bp=document.getElementById('btn-pointer'); if(bp){ bp.setAttribute('aria-pressed', S.pointer==='laser');
+      bp.textContent = S.pointer==='laser'?'Laser':'Arrow'; }
+    const bi=document.getElementById('btn-trail'); if(bi){ bi.setAttribute('aria-pressed', S.trail!=='off');
+      bi.textContent = 'Trail: '+S.trail;
+      bi.disabled = S.pointer!=='laser'; }
     APP.buildMap();
     APP.buildSidebar();
   }

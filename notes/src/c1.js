@@ -9,6 +9,36 @@ const ax=o=>P.Axes(Object.assign({w:700,h:200,pad:{l:48,r:20,t:18,b:32},xtarget:
 const tri=(f,W,h)=>Math.abs(f)<W ? h*(1-Math.abs(f)/W) : 0;
 const sinc=x=>Math.abs(x)<1e-12?1:Math.sin(Math.PI*x)/(Math.PI*x);
 
+/* Every pair a two-sample block can take, with the pairs a smooth signal can
+   actually produce shaded. A cell is shaded when the two indices differ by at
+   most one, which is the condition the text states, so the count in the caption
+   is the count the figure draws. */
+function lattice(L){
+  const a=ax({w:400,h:300,xr:[0,L],yr:[0,L],
+    xlabel:'\\text{sample }n',ylabel:'\\text{sample }n+1',
+    pad:{l:56,r:20,t:20,b:42},
+    xticksOverride:[0,4,8,12,16],yticksOverride:[0,4,8,12,16],grid:false});
+  for(let i=0;i<L;i++) for(let j=0;j<L;j++){
+    const near=Math.abs(i-j)<=1;
+    a.rect(i,j,i+1,j+1,{fill:near?C.dec.in:'none',stroke:near?C.in:C.rule});
+  }
+  return a.svg();
+}
+
+/* One row of a smooth gradient at two level counts: the coarse staircase is
+   what a reader sees as banding. */
+function banding(){
+  const a=ax({w:400,h:280,xr:[0,1],yr:[-0.06,1.10],
+    xlabel:'\\text{position across the image}',ylabel:'\\text{brightness}',
+    pad:{l:58,r:20,t:20,b:42},xtarget:5,ytarget:5});
+  const q=(v,L)=>(Math.min(L-1,Math.floor(v*L))+0.5)/L;
+  a.curve(x=>q(x,256),{color:C.in,width:2.0,n:1400});
+  a.curve(x=>q(x,8),{color:C.mid,width:2.2,n:1400});
+  a.note(0.06,0.96,'L=256',{tex:true,fs:11,color:C.in});
+  a.note(0.62,0.30,'L=8',{tex:true,fs:11,color:C.mid});
+  return a.svg();
+}
+
 window.C1 = [
 
 /* ---------------- title ---------------- */
@@ -210,7 +240,29 @@ window.C1 = [
  ['Check','The sample at $t=3$ is $8|\\operatorname{sinc}(1)|=0$ exactly, because $\\operatorname{sinc}$ vanishes at every non-zero integer — the same fact the interpolation formula rests on, met again at the other end of the chapter.']
 ]},
 
-{t:'h2', num:'1.7', text:'Summary'},
+{t:'h2', num:'1.7', text:'Vector quantization'},
+{t:'p', text:'Every quantizer so far has rounded one sample on its own. That is <b>scalar</b> quantization, and it throws something away before it starts: real signals do not jump about from one sample to the next, and a quantizer looking at one sample at a time cannot know that. <b>Vector quantization</b> takes $n$ samples at a time, treats them as one point in $n$ dimensions, and rounds the whole block to the nearest entry of a <b>codebook</b>. With $n=1$ it is the quantizer of section 1.3; with $n=2$ the codebook entries are places in a plane, and they can be put wherever the signal actually goes.'},
+{t:'ex', hd:'Example 1.5 \u2014 pairs of neighbouring samples', rows:[
+ ['Given','$L=16$ levels, and a signal smooth enough that a sample never moves more than one step from the one before it.'],
+ ['Find','What a pair costs, quantized separately and quantized together.'],
+ ['Method','Count the pairs each scheme has to be able to name, and take the base-two logarithm.'],
+ ['Solution','Separately, every combination is allowed: $L^{2}=256$ pairs, $\\log_2 256=8$ bits a pair, or $4$ bits a sample. Together, only the pairs with $|i-j|\\le1$ can occur, and there are $3L-2=46$ of them: $\\lceil\\log_2 46\\rceil=6$ bits a pair, or $3$ bits a sample.'],
+ ['Check','The cells did not change size, so the rounding error did not change either \u2014 the saving is a quarter of the rate at the same distortion. What was dropped is the cost of naming the $210$ combinations the signal never produces. That is the whole idea: <b>spend the codebook where the signal goes.</b>']
+]},
+{t:'figrow', items:[
+ {svg:()=>lattice(16), cap:'Every pair a $16$-level quantizer can produce. A scalar quantizer pays for all $256$ squares; if a sample never moves by more than one step, only the $46$ shaded ones ever occur.'},
+ {svg:()=>banding(), cap:'One row of a smooth gradient at $256$ levels and at $8$. The coarse staircase is banding: each step edge is a boundary the eye reads as a line that was not in the scene.'}
+]},
+{t:'box', kind:'warn', hd:'The gain is in the dependence, mostly', html:'Almost all of the saving comes from neighbouring samples being alike. A small gain survives even for independent samples, because better-shaped cells pack the space more efficiently than squares, but it is under a quarter of a bit a sample and this course does not pursue it. For a source that really is independent and evenly spread, scalar quantization is close to the best there is.'},
+{t:'ex', hd:'Example 1.6 \u2014 quantizing an image', rows:[
+ ['Given','A $512\\times512$ greyscale image at $8$ bits a pixel, so $L=256$ levels.'],
+ ['Find','The size of the file, and the size and the cost at $L=32$.'],
+ ['Solution','$512^{2}(8)=2\\,097\\,152$ bits, which is $256$ KiB. At $L=32$ the rate is $R=\\log_2 32=5$ bits a pixel, so $1\\,310\\,720$ bits or $160$ KiB \u2014 $37.5\\%$ smaller.'],
+ ['What it costs','$\\Delta\\mathrm{SQNR}=6.02(8-5)=18.06$ dB, and it is visible as well as measurable: a smooth gradient becomes a staircase, and the picture shows flat bands with hard edges where the scene had none.'],
+ ['Check','Nothing here is recoverable. The bits dropped described where inside its level each pixel really sat, and no decoder invents them back. That is what <b>lossy</b> names, and it is the trade every image format makes \u2014 JPEG among them, which quantizes a transform of each block rather than the pixels themselves, but quantizes all the same.']
+]},
+
+{t:'h2', num:'1.8', text:'Summary'},
 {t:'table', head:['Result','Statement','Anchor'], rows:[
  ['Replication','$G_\\delta(f)=f_s\\sum_n G(f-nf_s)$','PS CH7.1.1'],
  ['Sampling theorem','$f_s\\ge 2W$ for a message bandlimited to $W$','PS CH7.1.1'],
@@ -218,7 +270,8 @@ window.C1 = [
  ['Step size','$\\Delta=2m_{\\max}/L$, $\\;L=2^{R}$','PS CH7.2.1'],
  ['Error power','$E[Q^{2}]=\\Delta^{2}/12$, when the step is small','PS CH7.2.1'],
  ['Signal-to-noise','$\\mathrm{SQNR}\\;[\\mathrm{dB}]=\\alpha+6.02R$','PS CH7.2.1'],
- ['Bit rate','$R_b=Rf_s$','PS CH7.3, 7.4.1']
+ ['Bit rate','$R_b=Rf_s$','PS CH7.3, 7.4.1'],
+ ['Vector quantization','round $n$ samples together; spend the codebook where the signal goes','PS CH7.2.2']
 ]},
 {t:'p', text:'Sampling is reversible and quantization is not. Everything after this chapter takes the bit stream as given and asks what the channel does to it.'}
 

@@ -2,7 +2,7 @@
    Practice questions — Module 1.
 
    The module opens with a taxonomy of the question shapes that keep coming
-   back and closes with twenty open-ended questions in those shapes. Every
+   back and closes with twenty-one open-ended questions in those shapes. Every
    worked solution is hidden until the reader asks for it, so a first pass
    shows the target and not the answer.
 
@@ -54,7 +54,8 @@ CONTENT.DRILLTYPES.M1 = [
     asks:'A signal, a sampling interval and a quantizer are given. Produce the samples, the levels, the code words and the bit rate.',
     method:['Evaluate the signal at each sampling instant. Do not read the values off a sketch.',
             'Find which tread each sample falls in: the index is $\\lfloor (m-m_{\\min})/\\Delta\\rfloor$, capped at $L-1$.',
-            'Write the index as an $R$-bit word, in natural binary unless Gray coding is asked for. The bit rate is $Rf_s$ and one bit lasts $T_b=T_s/R$.'],
+            'Write the index as an $R$-bit word, in natural binary unless Gray coding is asked for. The bit rate is $Rf_s$ and one bit lasts $T_b=T_s/R$.',
+            'If the question codes samples in blocks, count the blocks that can actually occur rather than all $L^{n}$ of them, and take $\\lceil\\log_2(\\cdot)\\rceil$ — a codeword is a whole number of bits.'],
     go:'m1-ex-pcm' },
 
   { k:'full', name:'A full-length question combining several of the shapes above',
@@ -390,7 +391,24 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
      +'<b>Solution — (d).</b> Polar NRZ sends $+A$ for a one and $-A$ for a zero, each held for a full $T_b$. The first six bits are $000\\,100$, so the waveform holds $-A$ for three bit intervals, rises to $+A$ for one, and returns to $-A$ for two — a total of $0.8$ s, which is two sampling intervals.<br>'
      +'<b>Check.</b> The signal is symmetric about $t=1$, and so are the samples and therefore the code words, read forwards or backwards. The sample at $t=0$ is $6|\\operatorname{sinc}(-1)|=0$ exactly, because $\\operatorname{sinc}$ vanishes at every non-zero integer — the same fact the interpolation formula rests on. Every quantization error is at most half a step. The smallest is $|5.613-5.625|=0.012$; the largest is at $t=0$ and $t=2$, where the sample is exactly zero and the level below it is $0.375$, so the error is $0.375=\\Delta/2$ exactly. A sample sitting on the bottom edge of the first tread is the worst case a mid-tread level list allows, and it is the reason the bound is stated as $\\le\\Delta/2$ rather than $<$.',
   err:'Placing the eight levels at $0,\\,0.75,\\,\\ldots,\\,5.25$ rather than at the tread midpoints. The sample at $t=0$ then encodes correctly by luck, and every other one is off by half a step.',
-  teach:'The symmetry noted in the check is the quickest way to mark this question: the word list must read the same in both directions, and a student whose does not has made an arithmetic slip somewhere in the middle.' }
+  teach:'The symmetry noted in the check is the quickest way to mark this question: the word list must read the same in both directions, and a student whose does not has made an arithmetic slip somewhere in the middle.' },
+
+{ id:'D1-21', module:'M1', type:'pcm', src:'CH7 s.37',
+  stem:'A $512\\times512$ greyscale image is stored at $8$ bits a pixel. It is then requantized more coarsely, and finally coded in pairs of neighbouring pixels.',
+  parts:['Give the stored size at $8$ bits a pixel, in bits and in KiB.',
+         'Give the size at $L=32$ levels, the fraction saved, and what it costs in SQNR.',
+         'At $L=16$, neighbouring pixels never differ by more than one level. Give the number of pairs a coder must be able to name if it ignores that, and the number if it does not.',
+         'Give the bits a pixel each of those two needs, and say what the saving was bought with.'],
+  sol:'<b>Given.</b> $512\\times512$ pixels; $8$ bits a pixel, then $L=32$, then $L=16$ in pairs.<br>'
+     +'<b>Find.</b> Two file sizes, the SQNR cost, two pair counts and two rates.<br>'
+     +'<b>Method.</b> Rate times pixel count for a size; $6.02$ dB a bit for the cost; for the pairs, count what can occur and take $\\lceil\\log_2(\\cdot)\\rceil$.<br>'
+     +'<b>Solution — (a).</b> $512^{2}=262\\,144$ pixels, so $262\\,144(8)=2\\,097\\,152$ bits. Dividing by eight gives $262\\,144$ bytes, which is $256$ KiB.<br>'
+     +'<b>Solution — (b).</b> $R=\\log_2 32=5$ bits a pixel, so $1\\,310\\,720$ bits or $160$ KiB. Three bits of every eight are gone, so $37.5\\%$ is saved, and it costs $6.02(8-5)=18.06$ dB.<br>'
+     +'<b>Solution — (c).</b> Ignoring the dependence, every combination has to be nameable: $L^{2}=256$ pairs. Using it, only the pairs with $|i-j|\\le1$ occur — the diagonal has $L$, and each neighbouring diagonal has $L-1$ — so $3L-2=46$.<br>'
+     +'<b>Solution — (d).</b> $\\log_2 256=8$ bits a pair, which is $4$ bits a pixel. For the other, $\\log_2 46=5.52$, so $6$ bits a pair, which is $3$ bits a pixel. The quarter saved was bought with the <em>dependence</em> between neighbouring pixels, and with nothing else: the cells are the same size in both, so the rounding error is the same.<br>'
+     +'<b>Check.</b> Five bits a pair would name only $32$ pairs and there are $46$, so six is the smallest whole number that works — and $46$ is comfortably under $64$, so a little dependence is being left unclaimed. Part (b) and part (d) are two different ways of spending less: (b) makes the cells bigger and accepts more error, (d) keeps the cells and stops paying for combinations that never happen. Only the first is lossy in the sense of adding distortion.',
+  err:'Quoting $\\log_2 46=5.52$ bits a pair as the answer. A codeword is a whole number of bits, so it is $6$ — and the leftover is why coding longer blocks does better still.',
+  teach:'Part (d) is Module 6 arriving three months early. The count of what can actually occur, turned into a logarithm, is exactly the entropy argument, and a student who sees the connection here will recognise the source-coding theorem when it arrives rather than meeting it cold.' }
 
 ]);
 
@@ -420,10 +438,10 @@ window.DRILL_M1 = [
 
 { id:'m1-drill', module:'M1', nav:'Module 1 · practice questions',
   title:'Module 1 — practice questions',
-  objective:'Twenty open-ended questions with worked solutions, in the form they are asked in.',
+  objective:'Twenty-one open-ended questions with worked solutions, in the form they are asked in.',
   keywords:'practice questions module 1 sampling nyquist quantization sqnr step size bit rate pcm gray code aliasing',
   steps:0, blocks:[
-  {t:'eyebrow', text:'Module 1 · Practice D1-01 … D1-20'},
+  {t:'eyebrow', text:'Module 1 · Practice D1-01 … D1-21'},
   {t:'title', text:'Practice questions'},
   {t:'small', html:'Work each question on paper before opening its solution. Every solution ends with a <b>Check</b> step. In this module the cheap checks are: a bit rate must be the resolution times the sampling rate, an SQNR must move by $6.02$ dB when a bit is added and by nothing else, every quantization error must be under half a step, and a level count derived from an accuracy requirement must be rounded up.'},
   {t:'rule', short:true},

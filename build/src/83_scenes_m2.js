@@ -210,7 +210,7 @@ const SC = [
       {t:'eq', key:true, tex:'(\\mathrm{SNR})_o\\le\\frac{2}{N_0}\\int_{-\\infty}^{\\infty}|G(f)|^{2}\\,df=\\frac{2E}{N_0}'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'ok', head:'Read what has just happened', html:'The bound contains no $H$ at all. Whatever filter the receiver uses, it cannot do better than $2E/N_0$ — and the bound depends on the <b>energy</b> of the transmitted waveform, not on its shape. Two completely different pulses of the same energy are equally good.'}
+      {t:'note', kind:'ok', head:'Interpret the bound', html:'The bound contains no $H$. In white Gaussian noise, no linear filter can give an output ratio greater than $2E/N_0$. A matched filter reaches this bound. Thus, pulses with the same energy give the same maximum output ratio when each pulse uses its own matched filter.'}
     ]}
   ], right:[
     {t:'body', html:'<p>The condition for equality is what identifies the filter:</p>'},
@@ -299,7 +299,7 @@ const SC = [
       {t:'eq', tex:'E_{s_0}=E_{s_1}=\\int_0^{T_b}A^{2}dt=A^{2}T_b\\;\\triangleq\\;E_b,\\qquad A\\sqrt{T_b}=\\sqrt{E_b}'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'ok', head:'Why this is worth the notation', html:'Two waveforms have become two <em>numbers</em>, $\\pm\\sqrt{E_b}$, on a single axis. The whole of Module 3 is the observation that this works for any signal set, with as many axes as the set needs, and Module 4 is what the receiver looks like once it does.'}
+      {t:'note', kind:'ok', head:'Why this notation helps', html:'Two waveforms have become two <em>numbers</em>, $\\pm\\sqrt{E_b}$, on one axis. Module 3 extends this method to any finite signal set by using the required number of axes. Module 4 then builds the receiver in this signal space.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>{
@@ -511,7 +511,7 @@ const SC = [
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'note', kind:'def', head:'Eye pattern', html:'Cut the received waveform into bit-length pieces and draw them all on top of each other, synchronised to the clock. The result is a synchronised superposition of every realisation of the signal within one signalling interval.'},
     {t:'reveal', at:1, items:[
-      {t:'body', html:'<p>Four measurements are read off it directly:</p><ul><li>The <b>height of the opening</b> at the sampling instant is the margin over noise.</li><li>The <b>width of the opening</b> is how far the sampling instant may drift before a decision goes wrong.</li><li>The <b>slope</b> at the crossings is the sensitivity to a timing error.</li><li>The <b>spread of the crossings</b> is the timing jitter.</li></ul>'}
+      {t:'body', html:'<p>The diagram shows four measurements directly:</p><ul><li>The <b>height of the opening</b> at the sampling instant is the margin over noise.</li><li>The <b>width of the opening</b> is how far the sampling instant can move before a decision goes wrong.</li><li>The <b>slope</b> at the crossings shows sensitivity to a timing error.</li><li>The <b>spread of the crossings</b> is the timing jitter.</li></ul>'}
     ]},
     {t:'reveal', at:2, items:[
       {t:'note', kind:'warn', head:'What a closed eye means', html:'When the opening shrinks to nothing there is no sampling instant at which every bit pattern is decided correctly, and no threshold placement helps. The system has failed for a reason that has nothing to do with the noise level, and the eye is where that is seen before it is measured.'}
