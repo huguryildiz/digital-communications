@@ -13,17 +13,22 @@ const P = PLOT, C = P.COL;
    have — modules 3 to 5 are one argument told in three passes, and the ring
    shows that better than a column of numbers. */
 function figMap(){
-  const R = 1.0;
-  const a = P.Axes({w:520,h:416,xr:[-2.0,2.0],yr:[-1.6,1.6],
+  const R = 0.95;
+  /* The ring is drawn inside a wider frame than the circle needs, because the
+     labels beside it are the chapter titles rather than short tags. Each title
+     is centred over its point rather than run outwards from it: centred, a
+     title spends half its width on each side, so a font that measures wider
+     than this one does cannot push it off the frame. */
+  const a = P.Axes({w:570,h:416,xr:[-2.24,2.24],yr:[-1.6,1.6],
     pad:{l:12,r:12,t:12,b:12}, xticksOverride:[], yticksOverride:[],
     grid:false, zeroAxes:false, arrows:false});
   const items = [
-    ['1', 'Analog to digital', C.in],
-    ['2', 'Baseband',          C.out],
-    ['3', 'Signal space',      C.h],
-    ['4', 'The receiver',      C.err],
-    ['5', 'Modulation',        C.in],
-    ['6', 'Information',       C.out]
+    ['1', 'Analog to digital',        C.in],
+    ['2', 'Baseband transmission',    C.out],
+    ['3', 'Geometric representation', C.h],
+    ['4', 'The optimal receiver',     C.err],
+    ['5', 'Digital modulation',       C.in],
+    ['6', 'Information theory',       C.out]
   ];
   items.forEach((it,i)=>{
     const th = Math.PI/2 - i*2*Math.PI/6;
@@ -33,9 +38,12 @@ function figMap(){
     /* The number, so the ring and the cards beside it can be matched without
        reading a label twice. */
     a.note(x, y - 0.055, it[0], {fs:15, color:C.paper, anchor:'middle'});
-    const out = 1.26;
-    a.note(x*out, y*out + (Math.abs(y) < 0.2 ? 0 : (y > 0 ? 0.17 : -0.17)), it[1],
-      {fs:12.5, color:C.dim, anchor: Math.abs(x) < 0.2 ? 'middle' : (x > 0 ? 'start' : 'end')});
+    /* The title sits outside the point, clear of it above or below depending
+       on which half of the ring the point is in. No point of a six-point ring
+       lies on the horizontal axis, so there is no third case. */
+    const out = 1.28;
+    a.note(x*out, y*out + (y > 0 ? 0.24 : -0.24), it[1],
+      {fs:12.5, color:C.dim, anchor:'middle'});
   });
   a.point(0, 0, {color:C.ink, r:5});
   a.note(0, -0.22, 'one question', {fs:12.5, color:C.dim, anchor:'middle'});
@@ -58,6 +66,39 @@ function figChain(){
     {t:'text',x:372,y:144,label:'adds noise',fs:12},
     {t:'text',x:578,y:144,label:'names the symbol',fs:12}
   ]});
+}
+
+/* ---- pictograms for the how-to-read strip ----
+   Four small emblems, one per habit the reader needs. Each is a shape, not a
+   diagram: it marks the card the way an icon marks a control. */
+function mini(w,h,xr,yr){ return P.Axes({w:w,h:h,xr:xr,yr:yr,pad:{l:10,r:10,t:8,b:8},
+  xticksOverride:[], yticksOverride:[], grid:false, zeroAxes:false, arrows:false}); }
+function icoSteps(){
+  const a = mini(300,64,[0,10],[-1.2,1.2]);
+  a.point(2,0,{color:C.ink,r:6}); a.point(5,0,{color:C.ink,r:6});
+  a.point(8,0,{color:C.grid,r:6});
+  a.poly([[2.8,0],[4.2,0]],{color:C.grid,width:1.6});
+  a.poly([[5.8,0],[7.2,0]],{color:C.grid,width:1.6});
+  return a.svg();
+}
+function icoLab(){
+  const a = mini(300,64,[0,10],[-1.4,1.4]);
+  a.poly([[1,0.6],[9,0.6]],{color:C.grid,width:2});
+  a.point(6.2,0.6,{color:C.h,r:6});
+  a.poly([[1,-0.7],[9,-0.7]],{color:C.grid,width:2});
+  a.point(3.4,-0.7,{color:C.h,r:6});
+  return a.svg();
+}
+function icoModes(){
+  const a = mini(300,64,[0,10],[-1.2,1.2]);
+  [[0.8,C.dec.in],[3.1,C.dec.out],[5.4,C.dec.mid],[7.7,C.dec.h]].forEach(([x,f])=>
+    a.rect(x,-0.85,x+1.6,0.85,{fill:f}));
+  return a.svg();
+}
+function icoGauss(){
+  const a = mini(300,64,[-3,3],[0,1.15]);
+  a.curve(x=>Math.exp(-x*x/1.1),{color:C.ink,width:2});
+  return a.svg();
 }
 
 const SC = [
@@ -144,17 +185,17 @@ const SC = [
       caption:'The six modules and the one question at the centre of them. Modules 3, 4 and 5 are one argument told three times: make the distance meaningful, prove it decides, then measure it.'}
   ], right:[
     {t:'grid', cols:2, gap:'16px', items:[
-      [{t:'card', head:'1 · Analog to digital', items:[
+      [{t:'card', head:'1 · The transition from analog to digital', items:[
         {t:'small', html:'Sampling, the reconstruction that follows from it, quantization and the noise it adds, and pulse-code modulation. Where the bits come from.'}]}],
-      [{t:'card', head:'2 · Baseband', items:[
+      [{t:'card', head:'2 · Baseband transmission of digital signals', items:[
         {t:'small', html:'The matched filter, the demodulator, intersymbol interference, and the Nyquist condition that removes it. How a pulse train survives a channel.'}]}],
-      [{t:'card', head:'3 · Signal space', items:[
+      [{t:'card', head:'3 · Geometric representation of signal waveforms', items:[
         {t:'small', html:'A signal as a point. Energy becomes a squared length and difference becomes a distance, which is the move the rest of the course rests on.'}]}],
-      [{t:'card', head:'4 · The receiver', items:[
+      [{t:'card', head:'4 · The optimal receiver in AWGN', items:[
         {t:'small', html:'The rule that makes the fewest mistakes, the regions it draws, and the union bound that turns geometry into a number.'}]}],
-      [{t:'card', head:'5 · Modulation', items:[
+      [{t:'card', head:'5 · Digital modulation methods', items:[
         {t:'small', html:'PSK, PAM, QAM and FSK: place the points, measure the distance, read the error probability off Module 4. Nothing new is needed.'}]}],
-      [{t:'card', head:'6 · Information theory', items:[
+      [{t:'card', head:'6 · An introduction to information theory', items:[
         {t:'small', html:'Entropy, the source-coding theorem, prefix codes and Huffman. How few bits the message needed in the first place.'}]}]
     ]},
     {t:'reveal', at:1, items:[
@@ -170,23 +211,31 @@ const SC = [
 { id:'m0-how', module:'M0', nav:'How to read this', title:'How to read this, and where the numbers come from',
   objective:'Explain the reveal, the laboratories, the editions and the textbook anchor convention.',
   keywords:'how to read reveal steps laboratories editions anchors textbook convention notation',
-  steps:3, blocks:[
+  steps:1, blocks:[
   {t:'eyebrow', text:'Module 0 · The frame of the course'},
   {t:'title', text:'How to read this, and where the numbers come from'},
-  {t:'cols', ratio:'c-6-6', vcenter:true, left:[
-    {t:'note', kind:'def', head:'Scenes build in steps', html:'Most scenes reveal themselves a piece at a time. Space or the right arrow takes the next step, and a scene with three steps says so at the bottom right. The point is to leave time to answer a question before its answer appears. It is worth pausing at each step rather than pressing through.'},
-    {t:'note', kind:'def', head:'The laboratories are live', html:'Every control in a laboratory changes the mathematics and not the drawing. The numbers beside a figure are computed from the definitions at the moment the control moves. A reading taken from a laboratory is therefore a reading of the same formulas the scenes derive.'},
-    {t:'reveal', at:1, items:[
-      {t:'note', kind:'ok', head:'Four ways to read it', html:'<b>Normal</b> shows everything. <b>Lecture</b> hides the practice questions. <b>Self-study</b> opens the solutions by default. <b>Student</b> and <b>instructor</b> differ in whether the teaching notes appear. The controls are along the top, and the choice is remembered.'}
-    ]},
-    {t:'reveal', at:2, items:[
-      {t:'note', kind:'def', head:'The conventions are fixed and stated once', html:'Noise is white and Gaussian with two-sided density $N_0/2$; $Q(x)=\\tfrac12\\operatorname{erfc}(x/\\sqrt2)$; energy is normalised so that no resistance appears; $\\log$ without a base means base two. The notation panel along the top repeats all of them. Half the factor-of-two errors in this subject come from mixing two conventions in one line.'}
-    ]}
-  ], right:[
-    {t:'reveal', at:3, items:[
-      {t:'note', kind:'def', head:'Where the textbook is', html:'Most scenes carry a small chip beside their address pointing into the course textbook. The chip is a marker followed by a chapter and section, such as <b>PS CH8.4.1</b>. The marker is there because this artifact numbers its own chapters the same way. Without it a reader cannot tell which of the two an address belongs to.'},
-      {t:'small', html:'A scene with no chip is one the textbook does not cover in that form, and a few scenes carry two addresses. The chip points at the section that states the same result, not at a page a figure came from. Nothing here came from a page.'},
-      {t:'note', kind:'ok', head:'And where the numbers come from', html:'Every number stated in a scene or a solution is recomputed by a separate program that reaches it a different way. Constellations are rebuilt from their definitions rather than from the formula printed beside them. Huffman codes are built twice by two different algorithms. Every error probability is simulated against its formula. A number that appears here has survived that.'}
+  {t:'grid', cols:4, gap:'20px', items:[
+    [{t:'card', head:'Scenes build in steps', items:[
+      {t:'fig', svg:icoSteps},
+      {t:'small', html:'Space or the right arrow takes the next step. Pause at each one: a question is worth answering before its answer appears.'}
+    ]}],
+    [{t:'card', head:'The laboratories are live', items:[
+      {t:'fig', svg:icoLab},
+      {t:'small', html:'Every control changes the mathematics, not the drawing. The numbers beside a figure are recomputed the moment a control moves.'}
+    ]}],
+    [{t:'card', head:'Four ways to read it', items:[
+      {t:'fig', svg:icoModes},
+      {t:'small', html:'<b>Normal</b>, <b>lecture</b>, <b>self-study</b>, and <b>student</b> or <b>instructor</b>. The controls are along the top, and the choice is remembered.'}
+    ]}],
+    [{t:'card', head:'The conventions are fixed', items:[
+      {t:'fig', svg:icoGauss},
+      {t:'small', html:'Noise is white Gaussian with two-sided density $N_0/2$; $Q(x)=\\tfrac12\\operatorname{erfc}(x/\\sqrt2)$; $\\log$ means base two. The notation panel repeats all of them.'}
+    ]}]
+  ]},
+  {t:'reveal', at:1, items:[
+    {t:'grid', cols:2, gap:'24px', items:[
+      [{t:'note', kind:'def', head:'Where the textbook is', html:'Most scenes carry a small chip beside their address, such as <b>PS CH8.4.1</b>, pointing into the course textbook; the marker says the address belongs to the book and not to this artifact. A scene with no chip is one the textbook does not cover in that form.'}],
+      [{t:'note', kind:'ok', head:'And where the numbers come from', html:'Every number stated in a scene or a solution is recomputed by a separate program that reaches it a different way. Constellations are rebuilt from their definitions, Huffman codes are built twice by two different algorithms, and every error probability is simulated against its formula.'}]
     ]}
   ]}
 ]}

@@ -1,0 +1,79 @@
+Third-party software bundled in this repository
+===============================================
+
+Two pieces of other people's work are carried inside this repository, both
+under the MIT licence. The MIT licence requires their copyright notices to
+travel with the code, which is what this file is for. Neither notice may be
+removed from a copy or a fork.
+
+
+KaTeX 0.16.11
+-------------
+https://katex.org · https://github.com/KaTeX/KaTeX
+
+KaTeX typesets every equation in the artifact. It is inlined, minified, into
+build/src/30_katex.js and build/src/20_katex.css, and from there into
+dist/Digital_Communications.html. The minified build carries no comment of
+its own, so its notice is reproduced here in full.
+
+    Copyright (c) 2013-2020 Khan Academy and other contributors
+
+    Permission is hereby granted, free of charge, to any person obtaining a
+    copy of this software and associated documentation files (the
+    "Software"), to deal in the Software without restriction, including
+    without limitation the rights to use, copy, modify, merge, publish,
+    distribute, sublicense, and/or sell copies of the Software, and to permit
+    persons to whom the Software is furnished to do so, subject to the
+    following conditions:
+
+    The above copyright notice and this permission notice shall be included
+    in all copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+    OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+    NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+    DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+    USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+The twenty KaTeX font faces are embedded in build/src/20_katex.css as base64
+woff2 data, which is why the artifact typesets mathematics with no network.
+They are redistributed as part of the KaTeX release above and under the same
+notice. Parts of that font work descend from Computer Modern and are noted
+upstream under the SIL Open Font Licence 1.1 (https://scripts.sil.org/OFL);
+if you extract the font files on their own rather than as part of KaTeX,
+check the upstream terms for the face you are taking.
+
+
+Kinetic Grid, from Radiant Shaders
+----------------------------------
+https://github.com/pbakaus/radiant
+
+The hero background of the public page, site/grid.js, is adapted from Paul
+Bakaus's Kinetic Grid. What was changed is written at the top of that file.
+
+    Copyright (c) 2025 Paul Bakaus
+
+    Permission is hereby granted, free of charge, to any person obtaining a
+    copy of this software and associated documentation files (the
+    "Software"), to deal in the Software without restriction, including
+    without limitation the rights to use, copy, modify, merge, publish,
+    distribute, sublicense, and/or sell copies of the Software, and to permit
+    persons to whom the Software is furnished to do so, subject to the
+    following conditions:
+
+    The above copyright notice and this permission notice shall be included
+    in all copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+    OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+    NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+    DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+    USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+
+Nothing else is bundled. The artifact loads no script, no stylesheet and no
+font from another host at run time; it is one file and it works offline.

@@ -364,21 +364,6 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 ]);
 
-window.DRILLMAP_M2 = [
-
-{ id:'m2-drill-map', module:'M2', nav:'Module 2 · question types',
-  title:'Module 2 — what a question looks like',
-  objective:'Name the six recurring question shapes before the module is read.',
-  keywords:'question types module 2 matched filter threshold error probability nyquist taxonomy practice',
-  steps:0, blocks:[
-  {t:'eyebrow', text:'Module 2 · Question types'},
-  {t:'title', text:'Six shapes, and the method each one wants'},
-  {t:'lede', text:'Questions on baseband transmission come in six shapes. Read them now, before the module: you are not expected to answer them yet, only to recognise them when they arrive.'},
-  {t:'drilltypes', module:'M2', style:'grid-template-columns:repeat(3,minmax(0,1fr));gap:26px 44px'}
-]}
-
-];
-
 window.DRILL_M2 = [
 
 { id:'m2-drill', module:'M2', nav:'Module 2 · practice questions',

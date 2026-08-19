@@ -61,6 +61,70 @@ const PSK = M => Array.from({length:M},(_,k)=>[Math.cos(2*Math.PI*k/M), -Math.si
 const QAM16 = [].concat(...[-3,-1,1,3].map(x=>[-3,-1,1,3].map(y=>[x/3.35,y/3.35])));
 const PAM = M => Array.from({length:M},(_,k)=>[(2*k-(M-1))/(M-1)*1.4, 0]);
 
+/* ---- summary-card miniatures ----
+   Each recalls the key figure of its section, stripped to the shape alone. */
+function mini(w,h,xr,yr){ return P.Axes({w:w,h:h,xr:xr,yr:yr,pad:{l:10,r:10,t:8,b:8},
+  xticksOverride:[], yticksOverride:[], grid:false, zeroAxes:false, arrows:false}); }
+function miniBinaryThree(){
+  const a = mini(520,100,[-1.7,1.7],[-0.55,1.35]);
+  a.poly([[-1.2,0],[1.2,0]],{color:C.rule,width:1.1,dash:'3 4'});
+  a.point(-1.2,0,{color:C.in,r:5}); a.point(1.2,0,{color:C.in,r:5});
+  a.point(0,1.1,{color:C.h,r:5});
+  a.poly([[0,0],[0,1.1]],{color:C.rule,width:1.1,dash:'3 4'});
+  return a.svg();
+}
+function miniPSK8(){
+  /* the x-range matches the pixel aspect of the frame, so the circle is round */
+  const a = mini(520,130,[-5.48,5.48],[-1.25,1.25]);
+  const ring=[]; for(let i=0;i<=48;i++){const t=2*Math.PI*i/48; ring.push([Math.cos(t),Math.sin(t)]);}
+  a.poly(ring,{color:C.rule,width:1.1,dash:'3 4'});
+  for(let k=0;k<8;k++) a.point(Math.cos(Math.PI*k/4),Math.sin(Math.PI*k/4),{color:C.in,r:4.5});
+  return a.svg();
+}
+function miniQAMGrid(){
+  const a = mini(520,100,[-1.7,1.7],[-1.25,1.25]);
+  const c=[-0.9,-0.3,0.3,0.9];
+  c.forEach(x=>c.forEach(y=>a.point(x,y,{color:C.out,r:4})));
+  a.poly([[-0.9,-0.3],[-0.9,0.3]],{color:C.err,width:2});
+  return a.svg();
+}
+function miniTrade(){
+  const a = mini(520,100,[0,5],[0,26]);
+  a.poly([[1,9.6],[2,10],[3,13.5],[4,18]],{color:C.mid,width:2});
+  a.poly([[1,12.6],[2,10],[3,8.6],[4,7.7]],{color:C.h,width:2});
+  return a.svg();
+}
+
+/* The families on one chart: for each scheme, the energy per bit that the
+   union-bound approximation of Module 4 requires to reach P_e = 1e-5, computed
+   here from the family's own d_min. The numbers are not typed in, so the chart
+   and the formulas cannot drift apart. */
+function figCompare(){
+  const target = 1e-5;
+  /* invert N_min·Q(x) = target by bisection; Q falls, so the interval is safe */
+  const xFor = Nmin => {
+    let lo = 0, hi = 12;
+    for(let i=0;i<80;i++){ const m=(lo+hi)/2; if(Qf(m)*Nmin > target) lo=m; else hi=m; }
+    return (lo+hi)/2;
+  };
+  /* d_min² = c·E_s  →  E_s/N_0 = 2x²/c, and E_b = E_s / log2(M) */
+  const ebno = (c, Nmin, k) => { const x = xFor(Nmin); return 10*Math.log10(2*x*x/(c*k)); };
+  const lg = M => Math.log2(M);
+  const fam = {
+    pam: [2,4,8,16].map(M => [lg(M), ebno(12/(M*M-1), 2*(M-1)/M, lg(M))]),
+    psk: [2,4,8,16,32].map(M => [lg(M), ebno(4*Math.sin(Math.PI/M)**2, M===2?1:2, lg(M))]),
+    qam: [4,16,64].map(M => [lg(M), ebno(6/(M-1), 4*(1-1/Math.sqrt(M)), lg(M))]),
+    fsk: [2,4,8,16,32].map(M => [lg(M), ebno(2, M-1, lg(M))])
+  };
+  const a = P.Axes({w:640,h:430,xr:[0.6,6.4],yr:[4,26],
+    xlabel:'\\log_2 M', ylabel:'E_b/N_0\\ \\text{(dB)}',
+    pad:{l:56,r:26,t:24,b:44}, xtarget:6, ytarget:5});
+  const draw = (pts, col) => { a.poly(pts,{color:col,width:2.2});
+    pts.forEach(p=>a.point(p[0],p[1],{color:col,r:4.5})); };
+  draw(fam.pam, C.mid); draw(fam.psk, C.in); draw(fam.qam, C.out); draw(fam.fsk, C.h);
+  return a.svg();
+}
+
 const SC = [
 
 /* ---------------------------------------------------------------- 5.0 ---- */
@@ -357,26 +421,23 @@ const SC = [
   {t:'eyebrow', text:'Module 5 · Comparison'},
   {t:'title', text:'Comparing the families'},
   {t:'lede', text:'Which family to use, and what each one spends.'},
-  {t:'body', html:'Every scheme in this module carries $\\log_2 M$ bits a symbol. What separates them is how much energy that costs and how much bandwidth.'},
-  {t:'grid', cols:2, gap:'26px', items:[
-    [{t:'card', head:'PAM — one dimension', items:[
-      {t:'body', html:'<p>$d_{\\min}^{2}=\\dfrac{12E_s}{M^{2}-1}$. Cheapest in bandwidth, and the distance collapses fastest: about $6$ dB for each doubling of $M$. Used where only one dimension is available, as in baseband.</p>'}
-    ]}],
-    [{t:'card', head:'PSK — two dimensions, one circle', items:[
-      {t:'body', html:'<p>$d_{\\min}=2\\sqrt{E_s}\\sin(\\pi/M)$. Constant envelope, which suits an amplifier driven hard. Above eight points the circle is crowded and the cost per extra bit climbs past $5$ dB.</p>'}
-    ]}],
-    [{t:'card', head:'QAM — two dimensions, a grid', items:[
-      {t:'body', html:'<p>$d_{\\min}^{2}=\\dfrac{6E_s}{M-1}$. The denominator is linear in $M$ rather than quadratic, so QAM beats PAM by a widening margin and PSK above eight points. It is what a modern link uses.</p>'}
-    ]}],
-    [{t:'card', head:'FSK — M dimensions', items:[
-      {t:'body', html:'<p>$d_{\\min}=\\sqrt{2E_s}$, and it does not shrink. Bandwidth grows with $M$ instead. The only family here that spends bandwidth to save power.</p>'}
-    ]}]
-  ]},
-  {t:'reveal', at:1, items:[
-    {t:'note', kind:'ok', head:'One sentence to take away', html:'Every family answers the same question: how to place $M$ points as far apart as possible for a given average energy. They differ in how many dimensions they are allowed to use. More dimensions mean more room and more bandwidth, and that is the whole trade.'}
-  ]},
-  {t:'reveal', at:2, items:[
-    {t:'note', kind:'warn', head:'What none of this settles', html:'The comparison is on error probability and bandwidth alone. A real choice weighs three more things. How hard is the transmitter to build, can the amplifier run at saturation, and how much must the receiver know about the carrier phase? PSK survives against QAM in some systems for the second of those reasons and no other.'}
+  {t:'cols', ratio:'c-5-7', vcenter:true, left:[
+    {t:'body', html:'Every scheme carries $\\log_2 M$ bits a symbol. The chart puts the families on one scale: the energy per bit each one needs to reach $P_e=10^{-5}$, computed from the distance of each family.'},
+    {t:'wex', rows:[
+      ['PAM','$d_{\\min}^{2}=12E_s/(M^{2}-1)$ — the distance collapses fastest, about $6$ dB per doubling of $M$.'],
+      ['PSK','$d_{\\min}=2\\sqrt{E_s}\\sin(\\pi/M)$ — one circle; past eight points it is crowded.'],
+      ['QAM','$d_{\\min}^{2}=6E_s/(M-1)$ — linear in $M$, so its curve climbs slowest. It is what a modern link uses.'],
+      ['FSK','$d_{\\min}=\\sqrt{2E_s}$ — the distance does not shrink. It spends bandwidth instead: the band grows with $M$.']
+    ]},
+    {t:'reveal', at:1, items:[
+      {t:'note', kind:'ok', head:'One sentence to take away', html:'Every family places $M$ points as far apart as it can for a given average energy; they differ in how many dimensions they may use. More dimensions mean more room — and more bandwidth. That is the whole trade.'}
+    ]},
+    {t:'reveal', at:2, items:[
+      {t:'note', kind:'warn', head:'What the chart does not settle', html:'How hard the transmitter is to build, whether the amplifier can run at saturation, and how much the receiver must know about the carrier phase. PSK survives against QAM in some systems for the amplifier alone.'}
+    ]}
+  ], right:[
+    {t:'fig', frame:true, svg:figCompare, caption:'The energy price of each extra bit, computed from the distances above with the approximation $P_e\\approx N_{\\min}Q\\big(\\sqrt{d_{\\min}^{2}/2N_0}\\big)$ of Module 4, at $P_e=10^{-5}$. Three families climb; orthogonal FSK descends, because its distance holds while its bandwidth grows.'},
+    {t:'legend', items:[['in','PSK'],['mid','PAM'],['out','QAM'],['h','FSK']]}
   ]}
 ]},
 
@@ -389,21 +450,23 @@ const SC = [
   {t:'title', text:'What Module 5 established'},
   {t:'grid', cols:2, gap:'26px', items:[
     [{t:'card', head:'The binary three', items:[
-      {t:'body', html:'<p>BPSK is antipodal and best. BFSK and BASK are both $3$ dB worse, for the same reason: their points are $\\sqrt2$ closer at the same average energy per bit.</p>'},
-      {t:'eq', plain:true, tex:'Q\\!\\left(\\sqrt{2E_b/N_0}\\right)\\ \\text{vs}\\ Q\\!\\left(\\sqrt{E_b/N_0}\\right)'}
+      {t:'fig', svg:miniBinaryThree},
+      {t:'eq', plain:true, tex:'Q\\!\\left(\\sqrt{2E_b/N_0}\\right)\\ \\text{vs}\\ Q\\!\\left(\\sqrt{E_b/N_0}\\right)'},
+      {t:'small', html:'BPSK is antipodal and best; BFSK and BASK are both $3$ dB worse, because their points are $\\sqrt2$ closer.'}
     ]}],
     [{t:'card', head:'The M-ary families', items:[
-      {t:'body', html:'<p>Each is a constellation, and Module 4 supplies the answer once the distance is measured.</p>'},
-      {t:'eq', plain:true, tex:'P_e\\approx N_{\\min}Q\\!\\left(\\sqrt{d_{\\min}^{2}/2N_0}\\right)'}
+      {t:'fig', svg:miniPSK8},
+      {t:'eq', plain:true, tex:'P_e\\approx N_{\\min}Q\\!\\left(\\sqrt{d_{\\min}^{2}/2N_0}\\right)'},
+      {t:'small', html:'Each is a constellation, and Module 4 supplies the answer once the distance is measured.'}
     ]}],
     [{t:'card', head:'The distances', items:[
-      {t:'body', html:'<p>Three formulas cover the module.</p>'},
-      {t:'eq', plain:true, tex:'\\text{PSK: }2\\sqrt{E_s}\\sin\\tfrac{\\pi}{M}'},
-      {t:'eq', plain:true, tex:'\\text{PAM: }\\sqrt{12E_s/(M^{2}-1)}'},
-      {t:'eq', plain:true, tex:'\\text{QAM: }\\sqrt{6E_s/(M-1)}'}
+      {t:'fig', svg:miniQAMGrid},
+      {t:'eq', plain:true, tex:'\\text{PSK: }2\\sqrt{E_s}\\sin\\tfrac{\\pi}{M}\\quad \\text{PAM: }\\sqrt{\\tfrac{12E_s}{M^{2}-1}}\\quad \\text{QAM: }\\sqrt{\\tfrac{6E_s}{M-1}}'},
+      {t:'small', html:'Three formulas cover the module.'}
     ]}],
     [{t:'card', head:'The trade', items:[
-      {t:'body', html:'<p>More bits a symbol costs power in PSK, PAM and QAM, and bandwidth in FSK. Which to spend is a question about the channel, not about the mathematics.</p>'}
+      {t:'fig', svg:miniTrade},
+      {t:'small', html:'More bits a symbol costs power in PSK, PAM and QAM, and bandwidth in FSK. Which to spend is a question about the channel.'}
     ]}]
   ]},
   {t:'note', kind:'ok', head:'What Module 6 asks instead', html:'Every scheme here is judged against the noise. Module 6 asks a different question: how much information did the source produce, and how fast can a channel carry it at all? That limit no modulation scheme can pass.'}

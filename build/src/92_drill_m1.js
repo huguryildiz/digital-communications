@@ -413,27 +413,8 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 ]);
 
 /* ======================================================================
-   The two scenes that carry them.
+   The scene that carries them.
    ====================================================================== */
-window.DRILLMAP_M1 = [
-
-{ id:'m1-drill-map', module:'M1', nav:'Module 1 · question types',
-  title:'Module 1 — what a question looks like',
-  objective:'Name the six recurring question shapes before the module is read.',
-  keywords:'question types module 1 sampling rate quantization sqnr reconstruction pcm taxonomy practice',
-  steps:0, blocks:[
-  {t:'eyebrow', text:'Module 1 · Question types'},
-  {t:'title', text:'Six shapes, and the method each one wants'},
-  {t:'lede', text:'Questions on sampling and quantization come in six shapes. Read them now, before the module: you are not expected to answer them yet, only to recognise them when they arrive.'},
-  /* Six columns of this width overflow the stage and the whole scene is then
-     scaled down to fit, which shrinks every formula on the page. Three columns
-     over two rows use the height the scene has spare and leave the type at the
-     size it was designed at. */
-  {t:'drilltypes', module:'M1', style:'grid-template-columns:repeat(3,minmax(0,1fr));gap:26px 44px'}
-]}
-
-];
-
 window.DRILL_M1 = [
 
 { id:'m1-drill', module:'M1', nav:'Module 1 · practice questions',

@@ -1,22 +1,20 @@
 <script>
 /* ---------- assemble the scene list from the content modules ---------- */
 (function(){
-  /* Each module opens with the taxonomy of the question types that recur, and
-     closes with the questions themselves. The map is read before the work; the
-     work is done after the module has been taught. Both carry the module id of
-     the module they belong to, so the contents rail and the module list need no
-     separate entry.
+  /* Each module closes with the questions themselves, worked after the module
+     has been taught. That scene carries the module id of the module it belongs
+     to, so the contents rail and the module list need no separate entry.
 
      A scene array that is not named here never appears, whatever else is true
      of it. */
   const SCENES = [].concat(
     window.SCENES_M0||[],
-    window.DRILLMAP_M1||[], window.SCENES_M1||[], window.DRILL_M1||[],
-    window.DRILLMAP_M2||[], window.SCENES_M2||[], window.DRILL_M2||[],
-    window.DRILLMAP_M3||[], window.SCENES_M3||[], window.DRILL_M3||[],
-    window.DRILLMAP_M4||[], window.SCENES_M4||[], window.DRILL_M4||[],
-    window.DRILLMAP_M5||[], window.SCENES_M5||[], window.DRILL_M5||[],
-  window.DRILLMAP_M6||[], window.SCENES_M6||[], window.DRILL_M6||[],
+    window.SCENES_M1||[], window.DRILL_M1||[],
+    window.SCENES_M2||[], window.DRILL_M2||[],
+    window.SCENES_M3||[], window.DRILL_M3||[],
+    window.SCENES_M4||[], window.DRILL_M4||[],
+    window.SCENES_M5||[], window.DRILL_M5||[],
+  window.SCENES_M6||[], window.DRILL_M6||[],
     window.SCENES_END||[]
   );
 
@@ -24,7 +22,7 @@
   const gh = document.getElementById('glosshost');
   gh.innerHTML = Object.entries(CONTENT.GLOSS).map(([k,v])=>
     `<div class="gitem" id="g-${k}"><div class="gs">${RENDER.tex(v.s, false)}</div>
-      <div class="gd">${v.d}${v.go?` <a data-act="goto" data-id="${v.go}">go to definition →</a>`:''}</div></div>`).join('');
+      <div class="gd">${RENDER.md(v.d)}${v.go?` <a data-act="goto" data-id="${v.go}">go to definition →</a>`:''}</div></div>`).join('');
   /* The two conventions that carry a factor of two between them are stated
      first, because a result read under the wrong one is wrong by exactly that
      factor and looks entirely reasonable on the page. */
@@ -33,8 +31,8 @@
     ['Q(x)',  CONTENT.META.conventions.q]
   ].map(([n,t])=>`<div class="gitem"><div class="gs"><span class="eq-label">${n}</span></div>
       <div class="gd">${RENDER.tex(t,false)}</div></div>`).join('')
-    + `<div class="gitem"><div class="gs"><span class="eq-label">energy</span></div><div class="gd">${CONTENT.META.conventions.energy}</div></div>`
-    + `<div class="gitem"><div class="gs"><span class="eq-label">log</span></div><div class="gd">${CONTENT.META.conventions.log}</div></div>`;
+    + `<div class="gitem"><div class="gs"><span class="eq-label">energy</span></div><div class="gd">${RENDER.md(CONTENT.META.conventions.energy)}</div></div>`
+    + `<div class="gitem"><div class="gs"><span class="eq-label">log</span></div><div class="gd">${RENDER.md(CONTENT.META.conventions.log)}</div></div>`;
   document.getElementById('helphost').innerHTML = [
     ['→ / space','Advance one reveal state, then one scene'],
     ['←','Step back one reveal state, then one scene'],

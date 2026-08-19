@@ -181,13 +181,20 @@ const PLOT = (() => {
        further down; the name above its own baseline is one line tall. Leaving the
        name 45 below the axis keeps a clear gap between the two, so the last tick
        number and the name never touch even at the right-hand edge, where they
-       share the same column. */
-    const XNAME_DROP = 45;
+       share the same column.
+       Every one of those distances is a label size, so all of them are measured
+       in labels: the tick row is set at 20·LBLS and the name is one NAMEBOX
+       tall, and a drop left at a flat 45 closes the gap as soon as the labels
+       are enlarged. At the ordinary label scale the numbers below are exactly
+       the ones above, so nothing on a normal screen or in print moves; what
+       they fix is the projected room and the phone, where the labels are
+       drawn larger and the name was landing on the last tick number. */
+    const XNAME_DROP = 45*LBLS;
     const xnameY = (Pb) => {
       const yy0 = H - Pb;
       if(!zeroInside) return yy0 + XNAME_DROP + 1;
       const zeroPx = (0-ya)/(yb-ya)*(H - P.t - Pb);
-      return Math.max(yy0 + 16, yy0 - zeroPx + XNAME_DROP);
+      return Math.max(yy0 + 16*LBLS, yy0 - zeroPx + XNAME_DROP);
     };
     if(o.xlabel){
       P.b = Math.max(P.b, 24);

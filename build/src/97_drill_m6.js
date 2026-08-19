@@ -463,21 +463,6 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 ]);
 
-window.DRILLMAP_M6 = [
-
-{ id:'m6-drill-map', module:'M6', nav:'Module 6 · question types',
-  title:'Module 6 — what a question looks like',
-  objective:'Name the six source-side question shapes before the module is read.',
-  keywords:'question types module 6 entropy extension code kraft huffman channel capacity taxonomy',
-  steps:0, blocks:[
-  {t:'eyebrow', text:'Module 6 · Question types'},
-  {t:'title', text:'Six shapes for the source, and the method each one wants'},
-  {t:'lede', text:'Questions on information theory come in nine shapes. The six here are about the source — how much information it makes and how few bits will carry it. The other three are about the channel it is sent over, and they are collected at the head of section 6.5, where that half of the module begins.'},
-  {t:'drilltypes', module:'M6', to:6, style:'grid-template-columns:repeat(3,minmax(0,1fr));gap:26px 44px'}
-]}
-
-];
-
 window.DRILL_M6 = [
 
 { id:'m6-drill', module:'M6', nav:'Module 6 · practice questions',

@@ -134,6 +134,37 @@ function figEye(alpha, jitter){
   return a.svg();
 }
 
+/* ---- summary-card miniatures ----
+   Each recalls the key figure of its section, stripped to the shape alone. */
+function mini(w,h,xr,yr){ return P.Axes({w:w,h:h,xr:xr,yr:yr,pad:{l:10,r:10,t:8,b:8},
+  xticksOverride:[], yticksOverride:[], grid:false, zeroAxes:false, arrows:false}); }
+function miniMatched(){
+  const a = mini(520,96,[-0.2,2.4],[-0.15,1.2]);
+  a.curve(t=>(t>0&&t<1)? t : 0,{color:C.in,width:2});
+  a.curve(t=>(t>1.2&&t<2.2)? 2.2-t : 0,{color:C.h,width:2});
+  return a.svg();
+}
+function miniThreshold(){
+  const a = mini(520,96,[-3.4,3.4],[0,1.15]);
+  const g=(x,m)=>Math.exp(-(x-m)*(x-m)/0.9);
+  a.curve(x=>g(x,-1.4),{color:C.in,width:2});
+  a.curve(x=>g(x,1.4),{color:C.mid,width:2});
+  a.vline(0.2,{color:C.ink,dash:'4 3'});
+  return a.svg();
+}
+function miniPe(){
+  const a = mini(520,96,[0,12],[-7,0]);
+  a.curve(d=>Math.log10(Math.max(1e-12,Qf(Math.sqrt(2*Math.pow(10,d/10))))),{color:C.in,width:2});
+  return a.svg();
+}
+function miniRcos(){
+  const a = mini(520,96,[-1.3,1.3],[0,1.18]);
+  const rc=(f,al)=>{const x=Math.abs(f),f1=(1-al)/2,f2=(1+al)/2;
+    return x<=f1?1:x>=f2?0:0.5*(1+Math.cos(Math.PI*(x-f1)/Math.max(al,1e-9)));};
+  [[0,C.in],[0.5,C.h],[1,C.out]].forEach(([al,c])=>a.curve(f=>rc(f,al),{color:c,width:2}));
+  return a.svg();
+}
+
 const SC = [
 
 /* ---------------------------------------------------------------- 2.0 ---- */
@@ -216,7 +247,15 @@ const SC = [
   ], right:[
     {t:'body', html:'<p>The condition for equality is what identifies the filter:</p>'},
     {t:'eq', key:true, tex:'H(f)=k\\,\\phi_2^{*}(f)=k\\,G^{*}(f)e^{-j2\\pi fT}'},
-    {t:'body', html:'<p>The optimum filter has the transfer function of the complex conjugate of the spectrum of the signal it is looking for. The next scene takes the inverse transform of that and finds something simpler than it looks.</p>'}
+    {t:'fig', frame:true, svg:()=>{
+      const a = P.Axes({w:470,h:190,xr:[-2.6,2.6],yr:[-0.08,1.25],
+        xlabel:'f', ylabel:'|G(f)|,\\;|H(f)|',
+        pad:{l:56,r:22,t:22,b:40}, xtarget:4, ytarget:3, ytickfmt:()=>''});
+      const g = f => Math.exp(-f*f/1.1)*(0.72+0.28*Math.cos(2.1*f));
+      a.curve(g,{color:C.in,width:2.3});
+      a.curve(f=>0.8*g(f),{color:C.h,width:2.0,dash:'6 4'});
+      return a.svg();
+    }, caption:'The equality condition drawn: the magnitude of the best filter traces the magnitude of the signal spectrum, scaled by $k$. Where the signal has little energy, the filter listens less. The next scene takes the inverse transform and finds something simpler than it looks.'}
   ]}
 ]},
 
@@ -636,20 +675,24 @@ const SC = [
   {t:'title', text:'What Module 2 established'},
   {t:'grid', cols:2, gap:'26px', items:[
     [{t:'card', head:'The filter', items:[
-      {t:'body', html:'<p>The matched filter maximises the output signal-to-noise ratio, and what it achieves depends on the energy of the pulse and not on its shape.</p>'},
-      {t:'eq', plain:true, tex:'h_{\\mathrm{opt}}(t)=g(T-t),\\quad(\\mathrm{SNR})_o=\\frac{2E}{N_0}'}
+      {t:'fig', svg:miniMatched},
+      {t:'eq', plain:true, tex:'h_{\\mathrm{opt}}(t)=g(T-t),\\quad(\\mathrm{SNR})_o=\\frac{2E}{N_0}'},
+      {t:'small', html:'The matched filter maximises the output signal-to-noise ratio; the result depends on the pulse energy, not its shape.'}
     ]}],
     [{t:'card', head:'The decision', items:[
-      {t:'body', html:'<p>The demodulator returns one Gaussian number. The threshold that minimises the error is the log-ratio of the priors, scaled by the noise density.</p>'},
-      {t:'eq', plain:true, tex:'y=s_m+n,\\quad \\lambda_{\\mathrm{opt}}=\\frac{N_0}{4\\sqrt{E_b}}\\ln\\frac{P(s_0)}{P(s_1)}'}
+      {t:'fig', svg:miniThreshold},
+      {t:'eq', plain:true, tex:'y=s_m+n,\\quad \\lambda_{\\mathrm{opt}}=\\frac{N_0}{4\\sqrt{E_b}}\\ln\\frac{P(s_0)}{P(s_1)}'},
+      {t:'small', html:'One Gaussian number; the best threshold is the log-ratio of the priors, scaled by the noise density.'}
     ]}],
     [{t:'card', head:'The error probability', items:[
-      {t:'body', html:'<p>For antipodal signalling with equal priors it depends on one number, and Module 4 shows that number is really a distance.</p>'},
-      {t:'eq', plain:true, tex:'P_b=Q\\!\\left(\\sqrt{2E_b/N_0}\\right)'}
+      {t:'fig', svg:miniPe},
+      {t:'eq', plain:true, tex:'P_b=Q\\!\\left(\\sqrt{2E_b/N_0}\\right)'},
+      {t:'small', html:'Antipodal signalling depends on one number, and Module 4 shows that number is really a distance.'}
     ]}],
     [{t:'card', head:'The bandwidth', items:[
-      {t:'body', html:'<p>Zero interference requires the pulse spectrum to tile the axis at the symbol rate. A bandwidth $W$ carries $2W$ symbols per second at best, and the raised cosine buys practicality with the excess $\\alpha W$.</p>'},
-      {t:'eq', plain:true, tex:'R_b\\sum_n P(f-nR_b)=1,\\quad B_T=(1+\\alpha)W'}
+      {t:'fig', svg:miniRcos},
+      {t:'eq', plain:true, tex:'R_b\\sum_n P(f-nR_b)=1,\\quad B_T=(1+\\alpha)W'},
+      {t:'small', html:'Zero interference needs the spectrum to tile the axis at the symbol rate; the raised cosine buys practicality with the excess $\\alpha W$.'}
     ]}]
   ]},
   {t:'note', kind:'ok', head:'The module in one sentence', html:'Two things can go wrong on the way to the decision, and they are fixed separately. Noise is handled by the matched filter, which extracts all the pulse energy there is to extract. Interference from neighbouring symbols is handled by choosing a pulse whose spectrum tiles the axis at the symbol rate.'}

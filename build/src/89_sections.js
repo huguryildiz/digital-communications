@@ -118,8 +118,7 @@ CONTENT.SECTIONS = {
     { n:'6.3', title:'Prefix codes and the Kraft inequality', ids:[
         'm6-prefix','m6-kraft','m6-bound'] },
     { n:'6.4', title:'Huffman coding',                 ids:['m6-huffman','m6-huffman-var','m6-lab-j'] },
-    { n:'6.5', title:'Universal coding',               ids:[
-        'm6-drill-types-b','m6-lz'] },
+    { n:'6.5', title:'Universal coding',               ids:['m6-lz'] },
     { n:'6.6', title:'The discrete memoryless channel', ids:[
         'm6-dmc','m6-inputdist','m6-bsc'] },
     { n:'6.7', title:'Mutual information',             ids:[
@@ -233,10 +232,10 @@ CONTENT.BOOK = {
    written down twice, so a section that gains a scene renumbers by itself and
    cannot drift out of step with the declaration.
 
-   Three id shapes take a space of their own rather than an ordinal, because
+   Two id shapes take a space of their own rather than an ordinal, because
    they are not teaching scenes: a laboratory (`*-lab-*`) takes `L`, and the
-   two question scenes of a module take `Q1` and `Q2`. Each counts from 1
-   within its chapter. */
+   question scene of a module takes `Q1`. Each counts from 1 within its
+   chapter. */
 window.applyNumbering = function(scenes){
   const byId = {};
   scenes.forEach(s=>{ byId[s.id] = s; });
@@ -246,14 +245,11 @@ window.applyNumbering = function(scenes){
     let labN = 0;
     const out = { n:ch.n, title:ch.title, module:ch.module, flat:!!ch.flat, sections:[] };
 
-    /* The question scenes bracket the chapter: the taxonomy is read before the
-       teaching scenes and the questions are worked after them. They are listed
-       where they occur, so they are collected from the scene array rather than
-       from the declaration. */
-    const q = { map:byId[ch.module.toLowerCase()+'-drill-map'],
-                drill:byId[ch.module.toLowerCase()+'-drill'] };
-    if(q.map)   q.map.sec   = ch.n+'.Q1';
-    if(q.drill) q.drill.sec = ch.n+'.Q2';
+    /* The questions close the chapter: they are worked after the teaching
+       scenes. The scene is listed where it occurs, so it is collected from the
+       scene array rather than from the declaration. */
+    const q = { drill:byId[ch.module.toLowerCase()+'-drill'] };
+    if(q.drill) q.drill.sec = ch.n+'.Q1';
 
     secs.forEach(sec=>{
       const entries = [];
