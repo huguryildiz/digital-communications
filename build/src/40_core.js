@@ -35,8 +35,34 @@ const APP = (() => {
     trail:   'fade',    // 'fade' | 'hold' | 'off' — ink drawn while the button is held
     quiz: {},           // qid -> {picked, correct, attempts, revealed}
     drillPage: {},      // module id -> index of the drill question on screen
-    secOpen: {}         // section number -> the reader's own open/closed choice
+    secOpen: {},        // section number -> the reader's own open/closed choice
+    layout: 'wide',     // 'wide' | 'phone' — read from the screen, never stored
+    rail: 'on'          // the rail as the wide layout left it; this is what is stored
   };
+
+  /* ---------- the two layouts ----------
+     The stage below is a fixed 1920×1080 drawing scaled to fit whatever room
+     it is given. That works down to a small laptop window and fails on a phone
+     held upright: at 390 px of width the factor is about a fifth, and nothing
+     on the page can be read. Below the width where the factor stops being
+     honest the stage is not shrunk further — it is dropped. The scene becomes
+     one fluid column of real pixels that scrolls, the contents rail becomes a
+     drawer over it, and the header keeps only the controls a thumb reaches for.
+     The measure is content-driven, and there are three ways to fail it. A
+     window narrower than 760 px cannot hold the two-column editorial grid or a
+     readable line at the scale the basis is then reduced to, whatever is
+     showing it. A screen under 480 px tall with a finger on it is a phone
+     lying on its side, where the factor is set by the height and comes out
+     smaller still. A screen up to 1024 px wide, upright, with a finger on it is
+     a tablet held as a page, which the stage fits at about two fifths — small
+     print at arm's length. Every one of the three asks for the same thing: the
+     column, in real pixels. A laptop window is none of them, because a mouse is
+     not a finger. */
+  const NARROW = matchMedia(
+    '(max-width:760px),'
+  + '(max-height:480px) and (pointer:coarse),'
+  + '(max-width:1024px) and (orientation:portrait) and (pointer:coarse)');
+  const layoutNow = () => NARROW.matches ? 'phone' : 'wide';
 
   let SCENES = [], MODULES = [], CHAPTERS = [], onRender = ()=>{};
 
@@ -57,7 +83,16 @@ const APP = (() => {
       quiz: saved.quiz || {},
       drillPage: saved.drillPage || {}
     });
+    /* The layout is a fact about the screen, not a preference, so it is read
+       here and never restored from storage. A drawer opens closed — and the
+       reader's own choice about the rail is put aside rather than overwritten,
+       so that reading a chapter on a phone does not close the rail on the
+       desktop the same reader comes back to. */
+    state.layout = layoutNow();
+    state.rail = state.sidebar;
+    if(state.layout==='phone') state.sidebar = 'off';
     applyBodyFlags();
+    relayoutChrome();
     bindKeys();
     bindChrome();
     window.addEventListener('hashchange', fromHash);
@@ -67,7 +102,9 @@ const APP = (() => {
   }
 
   function persist(){
-    store.write({ mode:state.mode, edition:state.edition, motion:state.motion, sidebar:state.sidebar,
+    /* what is stored for the rail is always the wide-layout choice */
+    if(state.layout!=='phone') state.rail = state.sidebar;
+    store.write({ mode:state.mode, edition:state.edition, motion:state.motion, sidebar:state.rail,
                   theme:state.theme, display:state.display, pointer:state.pointer, trail:state.trail,
                   visited:state.visited, quiz:state.quiz, drillPage:state.drillPage,
                   at:SCENES[state.i]&&SCENES[state.i].id });
@@ -81,7 +118,38 @@ const APP = (() => {
     document.body.dataset.display = state.display;
     document.body.dataset.pointer = state.pointer;
     document.body.dataset.trail = state.trail;
+    document.body.dataset.layout = state.layout;
     laser.sync();
+  }
+
+  /* ---------- where the header controls live ----------
+     The bar carries thirteen controls, and a phone has room for four. On a
+     phone the ones a reader touches while reading — the contents, search and
+     the notation list — stay in the bar, and the rest move to the foot of the
+     contents drawer, where there is room to label them and to hit them. The
+     click handler is delegated on the document, so a control works exactly the
+     same wherever it is sitting; only its styling has to follow it, which the
+     `hmoved` class does. The laser and its ink belong to a projector and are
+     dropped on a phone altogether.
+     Each control's first home is recorded the first time it is moved, so the
+     way back is the DOM as it was authored rather than a second guess at it. */
+  const HANDOFF = ['btn-display','btn-theme','btn-mode','btn-edition','btn-motion'];
+  let _home = null;
+  function relayoutChrome(){
+    const hd = document.getElementById('appheader');
+    const foot = document.querySelector('#sidebar .sfoot');
+    if(!hd || !foot) return;
+    const items = HANDOFF.map(id=>document.getElementById(id))
+      .concat([hd.querySelector('[data-act=help]'),
+               document.querySelector('#chrome .byline')])
+      .filter(Boolean);
+    if(!_home) _home = items.map(el=>({el, parent:el.parentNode, next:el.nextSibling}));
+    if(state.layout==='phone'){
+      const reset = foot.querySelector('[data-act=reset]');
+      items.forEach(el=>{ el.classList.add('hmoved'); foot.insertBefore(el, reset); });
+    } else {
+      _home.forEach(h=>{ h.el.classList.remove('hmoved'); h.parent.insertBefore(h.el, h.next); });
+    }
   }
 
   /* ---------- laser pointer, projector mode only ----------
@@ -244,6 +312,11 @@ const APP = (() => {
     const stage = document.getElementById('stage');
     const wrap  = document.getElementById('stagewrap');
     if(!stage||!wrap) return;
+    /* On a phone there is no scaled stage to place: the scene is laid out in
+       real pixels and scrolls. Any transform left over from the wide layout is
+       cleared here, so turning a phone from landscape to portrait does not
+       leave the column shrunk. */
+    if(state.layout==='phone'){ stage.style.transform=''; stage.dataset.k='1'; return; }
     /* measure the painted box, not the window: inside a panel, an iframe or a
        zoomed view, window.innerWidth does not describe the area we can use. */
     const r = wrap.getBoundingClientRect();
@@ -265,6 +338,19 @@ const APP = (() => {
     }
     window.addEventListener('resize', fit);
     window.addEventListener('orientationchange', fit);
+    /* Crossing the width where the two layouts change hands is a different
+       event from a resize: the whole page is rebuilt on the other side of it. */
+    const onLayout = () => {
+      const L = layoutNow();
+      if(L === state.layout) return;
+      if(L === 'phone'){ state.rail = state.sidebar; state.sidebar = 'off'; }
+      else state.sidebar = state.rail || 'on';
+      state.layout = L;
+      applyBodyFlags(); relayoutChrome();
+      requestAnimationFrame(()=>{ fit(); onRender(); });
+    };
+    if(NARROW.addEventListener) NARROW.addEventListener('change', onLayout);
+    else if(NARROW.addListener) NARROW.addListener(onLayout);   /* older Safari */
     document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) fit(); });
     if(document.fonts && document.fonts.ready) document.fonts.ready.then(fit).catch(()=>{});
     [60,250,900].forEach(ms=>setTimeout(fit, ms));
@@ -288,14 +374,21 @@ const APP = (() => {
 
   function go(i, opt={}){
     if(i<0||i>=SCENES.length) return;
+    const moved = (i !== state.i);
     /* ink belongs to the scene it was drawn over, not to the next one */
-    if(i!==state.i) laser.clear();
+    if(moved) laser.clear();
     state.i = i;
     state.step = opt.step!=null ? opt.step : 0;
     state.visited[SCENES[i].id] = 1;
     if(!opt.silent) syncHash(opt.replace);
     persist();
     onRender();
+    /* A phone scrolls the scene rather than fitting it, so a new scene has to
+       start at its own first line. A reveal step inside the scene leaves the
+       reader where they were, because what appears is below them. */
+    if(moved && state.layout==='phone'){
+      const w = document.getElementById('stagewrap'); if(w) w.scrollTop = 0;
+    }
   }
   const next = () => {
     const s = SCENES[state.i];
@@ -315,6 +408,10 @@ const APP = (() => {
   /* ---------- overlays ---------- */
   function open(id){
     closeAll();
+    /* On a phone a sheet fills the screen and the drawer lies over the screen.
+       Two of those at once is one too many, and the header can start a sheet
+       while the drawer is open, so opening one puts the drawer away. */
+    if(state.layout==='phone' && state.sidebar==='on') toggleSidebar();
     const el=document.getElementById(id); if(!el) return;
     el.classList.add('open');
     const f = el.querySelector('input,button,a'); if(f) f.focus();
@@ -361,8 +458,10 @@ const APP = (() => {
   function toggleDisplay(){
     state.display = state.display==='normal'?'projector':'normal';
     /* the rail costs ~19% of linear size; give the scene the full width when
-       projecting, and give it back when returning to normal */
-    state.sidebar = state.display==='projector' ? 'off' : 'on';
+       projecting, and give it back when returning to normal. On a phone the
+       rail is a drawer that covers the scene either way, so it stays shut. */
+    if(state.layout!=='phone')
+      state.sidebar = state.display==='projector' ? 'off' : 'on';
     applyBodyFlags(); persist();
     requestAnimationFrame(()=>{ fit(); onRender(); });
   }
@@ -400,7 +499,9 @@ const APP = (() => {
       else if(a==='display') toggleDisplay();
       else if(a==='pointer') togglePointer();
       else if(a==='trail') toggleTrail();
-      else if(a==='goto') goId(t.dataset.id, parseInt(t.dataset.step||'0',10));
+      else if(a==='goto'){ goId(t.dataset.id, parseInt(t.dataset.step||'0',10));
+        /* a drawer has done its job once a scene is chosen */
+        if(state.layout==='phone' && state.sidebar==='on') toggleSidebar(); }
       else if(a==='sec'){ const n=t.dataset.sec;
         state.secOpen[n] = !secIsOpen(n); buildSidebar(); }
       else if(a==='reset'){ store.clear(); state.visited={}; state.quiz={}; persist(); onRender(); buildMap(); buildSidebar(); }
@@ -408,6 +509,16 @@ const APP = (() => {
     document.querySelectorAll('.overlay').forEach(ov=>{
       ov.addEventListener('click', e=>{ if(e.target===ov) closeAll(); });
     });
+    /* On a phone the open drawer dims the scene behind it. That dimmed sheet is
+       the drawer's way out: a tap on it closes the drawer and does nothing
+       else, which is why the tap is caught on the way down and stopped there
+       rather than being allowed to reach the control it landed on. */
+    const wrap = document.getElementById('stagewrap');
+    if(wrap) wrap.addEventListener('click', e=>{
+      if(state.layout==='phone' && state.sidebar==='on'){
+        e.stopPropagation(); e.preventDefault(); toggleSidebar();
+      }
+    }, true);
   }
 
   /* ---------- contents, shared by the rail and the map ----------
@@ -433,13 +544,11 @@ const APP = (() => {
     const cur = SCENES[state.i];
     return !!(cur && cur.sec && cur.sec.indexOf(n+'.') === 0);
   }
-  /* The question scenes bracket a chapter: the taxonomy of question types is
-     read before the teaching scenes, the questions themselves are worked after
-     them. `row` is given the scene, not a position, so both surfaces place
-     them the same way. */
+  /* A chapter's questions close it: they are worked after the teaching scenes.
+     `row` is given the scene, not a position, so both surfaces place it the
+     same way. */
   function chapterRows(ch, row, head, collapse){
     const out = [];
-    if(ch.q.map) out.push(row(ch.q.map));
     ch.sections.forEach(sec=>{
       const titled = !ch.flat && sec.title;
       const open = !collapse || !titled || secIsOpen(sec.n);

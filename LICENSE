@@ -1,0 +1,91 @@
+Copyright (c) 2026 Hüseyin Uğur Yıldız
+https://www.huguryildiz.com/
+
+This repository holds two different kinds of work, and each carries its own
+licence. Read the table before you copy anything out of it.
+
+--------------------------------------------------------------------------
+1. THE SOFTWARE — MIT licence
+--------------------------------------------------------------------------
+
+The engine that presents the course, the build scripts, the checking gates
+and the public page are licensed under the MIT licence, printed in full
+below. This covers:
+
+    build/build.js, build/pw.js and every checking gate in build/
+    build/src/00_head.html, 10_style.css, 40_core.js, 60_plot.js,
+        70_labs.js, 90_app.js, 99_tail.html
+    notes/build.js, notes/topdf.js, notes/editions.js, notes/mathscan.js
+    verify/*.py
+    tools/*.py
+    site/*
+    vercel.json, .vercelignore
+
+--------------------------------------------------------------------------
+2. THE COURSE MATERIAL — CC BY-NC-SA 4.0
+--------------------------------------------------------------------------
+
+The teaching material itself — the text, the figures, the laboratories, the
+practice questions and their worked solutions, and the lecture notes — is
+licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0
+International licence:
+
+    https://creativecommons.org/licenses/by-nc-sa/4.0/
+    Legal code: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+
+This covers:
+
+    build/src/80_content_core.js, 89_sections.js
+    build/src/8N_scenes_mM.js       (every teaching scene)
+    build/src/7N_labs_mM.js         (every laboratory)
+    build/src/9N_drill_mM.js        (every question section)
+    notes/src/*
+    dist/*                          (the rendered artifact and documents)
+
+In plain words, you may use this material to teach, copy it, and build on
+it, on three conditions:
+
+    Attribution   — name the author and link back to this repository, and
+                    say whether you changed anything.
+    NonCommercial — you may not sell it or use it for commercial advantage.
+    ShareAlike    — if you build on it, release your version under this
+                    same licence.
+
+--------------------------------------------------------------------------
+3. WHAT IS NOT LICENSED HERE
+--------------------------------------------------------------------------
+
+The mark in assets/icon.svg is the author's personal mark. Neither licence
+above grants a right to use it as your own identifier. Keep it where it
+appears in an unchanged copy; replace it in anything you fork and publish.
+
+Third-party code is bundled in this repository under its own terms. See
+NOTICE for what it is and what it requires.
+
+The material this course was written from — the textbook and the lecture
+recordings under source/ — is not part of this repository, is not
+redistributed by it, and is not covered by anything above.
+
+--------------------------------------------------------------------------
+MIT LICENCE (for part 1 above)
+--------------------------------------------------------------------------
+
+Copyright (c) 2026 Hüseyin Uğur Yıldız
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

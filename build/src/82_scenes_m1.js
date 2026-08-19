@@ -19,20 +19,74 @@ const P = PLOT, C = P.COL;
    three cases and in the reconstruction figure. */
 const tri = (f,W,h) => Math.abs(f) < W ? h*(1-Math.abs(f)/W) : 0;
 
+/* One copy of that spectrum in a sampled-spectrum figure, drawn from its own
+   three corners instead of from tri() sampled across the whole axis. tri() is
+   zero outside its band and curve() draws that zero, so every copy laid a
+   coloured line along the axis and the axis of G_delta(f) came out in the
+   colour of the signal. Drawn from its corners a copy stops where its band
+   stops. Corners outside the view are clipped, so a partial copy at the edge
+   still enters from the edge. */
+const copy = (a, c, W, peak, opts) => a.poly([[c-W,0],[c,peak],[c+W,0]], opts);
+
 /* The message used in every time-domain figure of the sampling sections. It is
    drawn from its own definition rather than from a table of points, so the
    samples in one figure and the curve in the next cannot drift apart. */
 const g = t => 0.85*Math.sin(1.15*t) + 0.35*Math.sin(2.7*t + 0.8);
 
-function figSampling(){
-  const a = P.Axes({w:660,h:250,xr:[-0.4,10.4],yr:[-1.5,1.6],
-    xlabel:'t',ylabel:'g(t),\\;g_\\delta(t)',pad:{l:50,r:26,t:24,b:40},xtarget:6,ytarget:4});
+/* Sampling is a product of two signals, so it is drawn as three panels on one
+   time axis: the message, the train that multiplies it, and the product. The
+   panels share w, xr and pad.l, so a sample instant sits at the same place in
+   all three and the reader can read straight down a column. Each panel names
+   itself on its own axis, so no panel needs a label inside the drawing. */
+function figSamplingStack(){
+  const Ts = 1.0, N = 10;
+  const common = {w:660, xr:[-0.4,10.4], xtarget:6, pad:{l:52,r:26,t:24,b:16}};
+  const mute = f => Object.assign({}, common, f);
+
+  /* 1 — the message */
+  const a = P.Axes(mute({h:150, yr:[-1.45,1.55], ylabel:'g(t)', ytarget:4}));
   a.curve(g,{color:C.in});
-  const Ts = 1.0;
-  for(let n=0;n<=10;n++) a.impulse(n*Ts, g(n*Ts), {color:C.mid, label:false});
-  a.note(6.3,1.32,'g(t)',{tex:true,fs:15,color:C.in});
-  a.note(1.15,-1.32,'g(nT_s)\\,\\delta(t-nT_s)',{tex:true,fs:14,color:C.mid});
-  return a.svg();
+
+  /* 2 — the sampling train. Every impulse has weight one: the train carries no
+     information, it only marks the instants. */
+  const b = P.Axes(mute({h:120, yr:[-0.45,1.60], ylabel:'p(t)', ytarget:2}));
+  for(let n=0;n<=N;n++) b.impulse(n*Ts, 1, {color:C.h, label:false});
+  b.span(4*Ts, 5*Ts, 1.28, 'T_s', {tex:true, fs:13, color:C.h});
+
+  /* 3 — the product. The message is repeated as a dashed line, because the
+     height of each impulse is read off it. */
+  const c = P.Axes(mute({h:168, yr:[-1.45,1.55], xlabel:'t',
+    ylabel:'g_\\delta(t)=g(t)\\,p(t)', ytarget:4, pad:{l:52,r:26,t:24,b:16}}));
+  c.curve(g,{color:C.in, width:1.4, dash:'4 6', opacity:0.55});
+  for(let n=0;n<=N;n++) c.impulse(n*Ts, g(n*Ts), {color:C.mid, label:false});
+
+  return a.svg() + b.svg() + c.svg();
+}
+
+/* The pair drawn in the replication scene: the message spectrum, and the same
+   spectrum after sampling. The two panels share w, xr and pad.l, so a frequency
+   sits at the same place in both and the reader can read straight down and see
+   which shape was copied. The sampled spectrum is one signal, so every copy in
+   it takes one colour; and its axis is marked at f_s, because f_s is what sets
+   where the copies land. */
+function figSpectrumPair(){
+  const W = 1, fs = 3, top = fs;
+  const common = {w:640, xr:[-3.3*W,3.3*W], xlabel:'f', xtarget:6,
+                  pad:{l:52,r:26,t:22,b:40}, ytickfmt:()=>''};
+  const sgn = v => v<0 ? '-' : '';
+
+  const a = P.Axes(Object.assign({}, common, {h:150, yr:[-0.12,1.34],
+    ylabel:'G(f)', ytarget:2,
+    xticksOverride:[-W,W], xtickfmt:v=>sgn(v)+'W'}));
+  a.curve(f=>tri(f,W,1),{color:C.in,width:2.4});
+
+  const b = P.Axes(Object.assign({}, common, {h:210, yr:[-0.12*top,1.28*top],
+    ylabel:'G_\\delta(f)', ytarget:3,
+    xticksOverride:[-fs,-W,W,fs],
+    xtickfmt:v=>sgn(v)+(Math.abs(Math.abs(v)-fs)<1e-9 ? 'f\u209b' : 'W')}));
+  for(let n=-3;n<=3;n++) copy(b, n*fs, W, fs, {color:C.mid,width:2.2});
+
+  return {msg:a.svg(), sampled:b.svg()};
 }
 
 function figReplicas(fs, W, label){
@@ -41,7 +95,7 @@ function figReplicas(fs, W, label){
     xlabel:'f',ylabel:'G_\\delta(f)',pad:{l:52,r:26,t:24,b:40},
     xtarget:6,ytarget:3,xtickfmt:v=>P.fmt(v/W,2)+'W',ytickfmt:()=>''});
   for(let n=-3;n<=3;n++)
-    a.curve(f=>fs*tri(f-n*fs,W,h),{color:n===0?C.in:C.mid,width:n===0?2.4:1.9});
+    copy(a, n*fs, W, fs*h, {color:C.mid,width:2.2});
   if(label) a.note(0,1.12*top,label,{tex:true,fs:14,color:C.muted,anchor:'middle'});
   return a;
 }
@@ -50,6 +104,13 @@ function figCase(kind){
   const W = 1;
   const fs = kind==='over' ? 3 : kind==='nyq' ? 2 : 1.5;
   const a = figReplicas(fs, W, null);
+  if(kind==='over'){
+    /* The gap between the edge of the message and the edge of the first
+       replica is the guard band. It is a distance, not a signal, so the
+       bracket takes the muted label tone and no signal colour. */
+    for(const c of [-1,1])
+      a.span(c*W, c*(fs-W), 0.14*fs, c>0?'\\text{guard band }(f_g)':null, {tex:true, fs:12, color:C.muted});
+  }
   if(kind==='under'){
     /* The overlap is the error, so it takes the error colour and nothing else
        in the figure does. It is filled between the edges of the two triangles
@@ -60,6 +121,25 @@ function figCase(kind){
       a.area(f=>Math.min(fs*tri(f,W,1), fs*tri(f-c*fs,W,1)),
              Math.max(-W, c*fs-W), Math.min(W, c*fs+W),
              {color:C.dec.err, stroke:C.err});
+    /* A ring around each overlap points at the aliasing the fill marks. The
+       ring is drawn through raw() because the plot kit has no ellipse, so its
+       radii are computed here from the same geometry as the fill: the overlap
+       is centred at f_s/2 and its peak is the height of either triangle there. */
+    const pk = fs*(1 - fs/(2*W));
+    for(const c of [-1,1]){
+      const cx = a.sx(c*fs/2), cy = a.sy(pk/2);
+      const rx = a.sx(c*fs/2 + (W - fs/2) + 0.12) - cx;
+      const ry = cy - a.sy(pk/2 + pk/2 + 0.08);
+      a.raw(`<ellipse cx="${cx.toFixed(2)}" cy="${cy.toFixed(2)}" rx="${Math.abs(rx).toFixed(2)}" ry="${Math.abs(ry).toFixed(2)}"
+        fill="none" stroke="${C.err}" stroke-width="1.8"/>`);
+    }
+    /* One label for the pair, set at the height labels take in this figure
+       family, where nothing is drawn, and joined to the right-hand ring by a
+       leader. The leader stops above the point where the two triangles cross,
+       so it stands in empty space and covers no curve. */
+    a.note(fs/2, 1.12*fs, '\\text{aliasing}', {tex:true, fs:12, color:C.err, anchor:'middle'});
+    a.poly([[fs/2, 1.05*fs],[fs/2, pk + 0.13]],
+           {color:C.err, width:1, dash:'3 3'});
   }
   return a.svg();
 }
@@ -69,24 +149,77 @@ function figLpf(){
   const a = P.Axes({w:640,h:230,xr:[-3.3,3.3],yr:[-0.12*top,1.3*top],
     xlabel:'f',ylabel:'G_\\delta(f),\\;H_{\\mathrm{LPF}}(f)',pad:{l:56,r:26,t:26,b:40},
     xtarget:6,ytarget:3,xtickfmt:v=>P.fmt(v,2)+'W',ytickfmt:()=>''});
-  for(let n=-1;n<=1;n++) a.curve(f=>fs*tri(f-n*fs,W,1),{color:n===0?C.in:C.mid,width:n===0?2.4:1.9});
+  for(let n=-1;n<=1;n++) copy(a, n*fs, W, fs, {color:C.mid,width:2.2});
   a.poly([[-3.2,0],[-W,0],[-W,1.12*fs],[W,1.12*fs],[W,0],[3.2,0]],{color:C.h,width:2.4});
   a.note(0,1.19*fs,'H_{\\mathrm{LPF}}(f)',{tex:true,fs:14,color:C.h,anchor:'middle'});
   return a.svg();
 }
 
+/* The impulse response of the reconstruction filter on its own time axis: one
+   at the origin, zero at every non-zero multiple of 1/(2W). The filter keeps
+   its colour — amber in frequency, amber in time — and the zeros are marked as
+   points because they are the fact the interpolation scene uses next. The tick
+   numbers are suppressed: the axis is graduated in 1/(2W), and the span names
+   that unit the way the sampling stack names T_s. */
+function figSinc(){
+  const sinc = x => Math.abs(x)<1e-9 ? 1 : Math.sin(Math.PI*x)/(Math.PI*x);
+  const a = P.Axes({w:640,h:210,xr:[-3.6,3.6],yr:[-0.42,1.30],
+    xlabel:'t',ylabel:'h_{\\mathrm{LPF}}(t)',pad:{l:56,r:26,t:26,b:40},
+    xticksOverride:[-3,-2,-1,1,2,3],xtickfmt:()=>'',ytarget:3,ytickfmt:()=>''});
+  a.curve(t=>sinc(t),{color:C.h,width:2.4});
+  for(let n=-3;n<=3;n++) if(n) a.point(n,0,{color:C.h,r:3});
+  a.span(2,3,-0.30,'\\tfrac{1}{2W}',{tex:true,fs:13,color:C.h});
+  a.note(0.14,1.14,'\\operatorname{sinc}(2Wt)',{tex:true,fs:14,color:C.h});
+  return a.svg();
+}
+
+/* Interactive: each term is wrapped in a group carrying its sample index, so
+   the style sheet can lift one sinc out of the crowd — the idle roll call and
+   the pointer handling at the foot of this file drive the `on`/`pick`
+   classes. While a term is lifted, its zeros at the other sampling instants
+   are drawn, because those zeros are why the sum passes through every sample.
+   The figure itself stays a plain string of SVG, rebuilt on every render. */
 function figInterp(){
   const W = 0.5, Ts = 1/(2*W);          /* T_s = 1 s, so the picture reads directly */
   const a = P.Axes({w:660,h:260,xr:[-0.4,8.4],yr:[-1.5,1.6],
     xlabel:'t',ylabel:'g(t),\\;g_r(t)',pad:{l:50,r:26,t:24,b:40},xtarget:6,ytarget:4});
   const sinc = x => Math.abs(x)<1e-9 ? 1 : Math.sin(Math.PI*x)/(Math.PI*x);
-  for(let n=0;n<=8;n++)
+  for(let n=0;n<=8;n++){
+    a.raw(`<g class="st" data-st="${n}">`);
     a.curve(t=>g(n*Ts)*sinc((t-n*Ts)/Ts),{color:C.mid,width:1.1,opacity:0.55,dash:'3 3'});
+    for(let k=0;k<=8;k++) if(k!==n)
+      a.raw(`<circle class="st-z" cx="${a.sx(k*Ts).toFixed(2)}" cy="${a.sy(0).toFixed(2)}"
+        r="3" fill="none" stroke="${C.mid}" stroke-width="1.5"/>`);
+    a.raw('</g>');
+  }
   a.curve(t=>{ let s=0; for(let n=-6;n<=14;n++) s += g(n*Ts)*sinc((t-n*Ts)/Ts); return s; },
           {color:C.out,width:2.6});
-  for(let n=0;n<=8;n++) a.point(n*Ts, g(n*Ts), {color:C.in, r:3.6});
+  for(let n=0;n<=8;n++){
+    a.raw(`<g class="st-dot" data-st="${n}">`);
+    a.point(n*Ts, g(n*Ts), {color:C.in, r:3.6});
+    /* an invisible disc widens the pointer target to a finger's width */
+    a.raw(`<circle cx="${a.sx(n*Ts).toFixed(2)}" cy="${a.sy(g(n*Ts)).toFixed(2)}"
+      r="20" fill="transparent"/>`);
+    a.raw('</g>');
+  }
+  /* One expression per term, all at the spot the resting caption occupies;
+     the style sheet shows only the lifted term's line, so the reader sees
+     the exact summand the highlighted curve draws. With T_s = 1 and 2W = 1
+     the general term g(nT_s) sinc(2W(t-nT_s)) reads g(n) sinc(t-n), which is
+     why the label can stay this short. The value is rounded, so it is joined
+     with \approx and not an equals sign. */
+  for(let n=0;n<=8;n++){
+    const arg = n===0 ? 't' : `t-${n}`;
+    a.raw(`<g class="st-eq" data-st="${n}">`);
+    a.note(0.15,1.34,
+      `g(${n})\\,\\operatorname{sinc}(${arg})\\approx ${P.fmt(g(n*Ts),2)}\\,\\operatorname{sinc}(${arg})`,
+      {tex:true,fs:13,color:C.mid});
+    a.raw('</g>');
+  }
+  a.raw('<g class="sp-note">');
   a.note(0.15,1.34,'\\text{one shifted }\\operatorname{sinc}\\text{ per sample}',{tex:true,fs:13,color:C.mid});
-  return a.svg();
+  a.raw('</g>');
+  return a.svg().replace('<svg ','<svg class="sincpick" ');
 }
 
 function figQuantizer(kind){
@@ -168,13 +301,16 @@ function figLineCode(i){
    actually produce shaded. Nothing is sampled or simulated: a cell is shaded
    when the two indices differ by at most one, which is the condition the scene
    states, so the count in the caption is the count the figure draws. */
-function figPairLattice(L){
+function figPairLattice(L, shade){
+  /* `shade` marks the near-diagonal cells; the scene turns it on at the step
+     where the smooth-signal restriction is introduced, so the figure changes
+     when the argument does. */
   const a = P.Axes({w:440,h:330,xr:[0,L],yr:[0,L],
     xlabel:'\\text{sample }n', ylabel:'\\text{sample }n+1',
     pad:{l:58,r:22,t:22,b:46}, xticksOverride:[0,4,8,12,16], yticksOverride:[0,4,8,12,16],
     grid:false});
   for(let i=0;i<L;i++) for(let j=0;j<L;j++){
-    const near = Math.abs(i-j) <= 1;
+    const near = shade && Math.abs(i-j) <= 1;
     a.rect(i, j, i+1, j+1,
       {fill: near ? C.dec.in : 'none', stroke: near ? C.in : C.rule});
   }
@@ -211,6 +347,35 @@ function figPcmExample(){
     a.point(t, q(v), {color:C.mid, r:4});
   }
   a.note(1.8, 8.35, '\\Delta=1\\ \\mathrm{V},\\;L=8', {tex:true,fs:14,color:C.muted,anchor:'middle'});
+  return a.svg();
+}
+
+/* ---- summary-card miniatures ----
+   Each recalls the key figure of its section, stripped to the shape alone:
+   no ticks, no labels, one object a card. */
+function mini(w,h,xr,yr){ return P.Axes({w:w,h:h,xr:xr,yr:yr,pad:{l:10,r:10,t:8,b:8},
+  xticksOverride:[], yticksOverride:[], grid:false, zeroAxes:false, arrows:false}); }
+function miniSampling(){
+  const a = mini(520,96,[-3.4,3.4],[0,1.25]);
+  for(let n=-1;n<=1;n++) copy(a, 2.2*n, 1, 1, {color:C.mid,width:2});
+  return a.svg();
+}
+function miniSinc(){
+  const a = mini(520,96,[-3,3],[-0.35,1.15]);
+  a.curve(t=>{const x=2*t; return Math.abs(x)<1e-6?1:Math.sin(Math.PI*x)/(Math.PI*x);},{color:C.h,width:2});
+  return a.svg();
+}
+function miniQuant(){
+  const a = mini(520,96,[-1.15,1.15],[-1.25,1.25]);
+  a.poly([[-1.1,-1.1],[1.1,1.1]],{color:C.rule,width:1.2,dash:'3 4'});
+  for(let k=-3;k<3;k++) a.poly([[k/3,(k+0.5)/3*1.05],[(k+1)/3,(k+0.5)/3*1.05]],{color:C.mid,width:2.4});
+  return a.svg();
+}
+function miniRate(){
+  const a = mini(520,96,[0,4.4],[0,30]);
+  const pts=[1,2,3,4].map(R=>[R,1.8+6.02*R]);
+  a.poly(pts,{color:C.out,width:2});
+  pts.forEach(p=>a.point(p[0],p[1],{color:C.out,r:3.5}));
   return a.svg();
 }
 
@@ -272,7 +437,7 @@ const SC = [
       {t:'note', kind:'warn', head:'What this object is and is not', html:'$g_\\delta(t)$ is not a sequence of numbers. It is a continuous-time signal built from impulses, so it has a Fourier transform. We use this form because the next scene takes that transform and leads directly to the sampling theorem.'}
     ]}
   ], right:[
-    {t:'fig', frame:true, svg:figSampling, caption:'The message and its ideal samples. Each impulse carries the value of $g$ at its own instant as its weight; between the instants the sampled signal is zero.'}
+    {t:'fig', frame:true, svg:figSamplingStack, caption:'The three signals on one time axis: the message, the sampling train, and their product. Each impulse of $g_\\delta(t)$ carries the value of $g$ at its own instant as its weight; between the instants the sampled signal is zero.'}
   ]}
 ]},
 
@@ -287,13 +452,18 @@ const SC = [
     {t:'eq', tex:'P(f)=\\frac{1}{T_s}\\sum_{n=-\\infty}^{\\infty}\\delta(f-nf_s)=f_s\\sum_{n=-\\infty}^{\\infty}\\delta(f-nf_s)'},
     {t:'reveal', at:1, items:[
       {t:'small', html:'The coefficient is the Fourier-series coefficient of $p(t)$: $a_k=\\frac{1}{T_s}\\int_{-T_s/2}^{T_s/2}\\delta(t)e^{-j2\\pi kf_0t}\\,dt=\\frac{1}{T_s}$ for every $k$, by the sifting property.'},
+      {t:'eq', tex:'\\begin{aligned}G_\\delta(f)&=G(f)*\\Big[\\frac{1}{T_s}\\sum_{n=-\\infty}^{\\infty}\\delta(f-nf_s)\\Big]\\\\[2pt]&=\\frac{1}{T_s}\\sum_{n=-\\infty}^{\\infty}G(f)*\\delta(f-nf_s)\\end{aligned}'},
+      {t:'small', html:'Write each convolution out, then use that the impulse is even, $\\delta(-u)=\\delta(u)$:'},
+      {t:'eq', tex:'\\begin{aligned}G(f)*\\delta(f-nf_s)&=\\int G(\\theta)\\,\\delta(f-nf_s-\\theta)\\,d\\theta\\\\[2pt]&=\\int G(\\theta)\\,\\delta\\bigl(-[\\theta-(f-nf_s)]\\bigr)\\,d\\theta\\\\[2pt]&=\\int G(\\theta)\\,\\delta\\bigl(\\theta-(f-nf_s)\\bigr)\\,d\\theta\\\\[2pt]&=G(f-nf_s)\\end{aligned}'},
+      {t:'small', html:'The last line is the sifting property. Each impulse shifts one copy of $G$ to its own $nf_s$.'},
       {t:'eq', key:true, tex:'G_\\delta(f)=f_s\\sum_{n=-\\infty}^{\\infty}G(f-nf_s)'}
     ]},
     {t:'reveal', at:2, items:[
       {t:'note', kind:'def', head:'Read the result', html:'Sampling copies the spectrum to every multiple of $f_s$ and scales it by $f_s$. Nothing is lost <em>provided the copies do not overlap</em>. That proviso is the sampling theorem.'}
     ]}
   ], right:[
-    {t:'fig', frame:true, svg:()=>figReplicas(3,1,null).svg(), caption:'The spectrum of the sampled signal when $f_s=3W$. The copy at the origin is the message; the others are the replicas sampling has created.'}
+    {t:'fig', frame:true, svg:()=>figSpectrumPair().msg, caption:'The message spectrum before sampling. It is zero outside $|f|<W$, which is what &ldquo;bandlimited to $W$&rdquo; means.'},
+    {t:'fig', frame:true, svg:()=>figSpectrumPair().sampled, caption:'The same spectrum after sampling at $f_s=3W$. The shape above now sits at every multiple of $f_s$ and is $f_s$ times as tall. The copy at the origin is the message; the others are the replicas sampling has created.'}
   ]}
 ]},
 
@@ -304,9 +474,9 @@ const SC = [
   {t:'eyebrow', text:'Module 1 · The sampling theorem'},
   {t:'title', text:'Three sampling rates'},
   {t:'grid', cols:3, gap:'26px', items:[
-    [{t:'fig', svg:()=>figCase('over'), caption:'<b>$f_s>2W$.</b> The replicas are separated by a gap. The message can be filtered out unchanged.'}],
-    [{t:'fig', svg:()=>figCase('nyq'), caption:'<b>$f_s=2W$.</b> The replicas touch and do not overlap. This is the lowest rate that still works.'}],
-    [{t:'fig', svg:()=>figCase('under'), caption:'<b>$f_s<2W$.</b> The replicas overlap. The sum in the overlap cannot be separated back into its parts.'}]
+    [{t:'fig', svg:()=>figCase('over'), caption:'<b>Oversampling: $f_s>2W$.</b> The replicas are separated by a gap — the <b>guard band</b>. The message can be filtered out unchanged.'}],
+    [{t:'fig', svg:()=>figCase('nyq'), caption:'<b>Nyquist sampling: $f_s=2W$.</b> The replicas touch and do not overlap. This is the lowest rate that still works.'}],
+    [{t:'fig', svg:()=>figCase('under'), caption:'<b>Undersampling: $f_s<2W$.</b> The replicas overlap. The sum in the overlap cannot be separated back into its parts.'}]
   ]},
   {t:'reveal', at:1, items:[
     {t:'note', kind:'err', head:'Aliasing', html:'In the third case a high frequency of the message has been added to a low frequency of a replica. No filter can undo the addition. The original signal cannot be recovered from its samples — not by a better filter, not by more computation.'}
@@ -329,6 +499,8 @@ const SC = [
       {t:'note', kind:'warn', head:'Twice the highest frequency, not twice the bandwidth', html:'For a lowpass signal the two coincide, and that is the only case treated here. For a signal whose band does not reach down to zero, the two are different numbers. The rate that matters is still set by the geometry of the replicas, not by either name.'}
     ]}
   ], right:[
+    {t:'fig', frame:true, svg:()=>figCase('nyq'),
+      caption:'The theorem drawn: at $f_s=2W$ the replicas just touch. Any slower and they overlap; any faster and a gap opens.'},
     {t:'eq', label:'Nyquist rate', key:true, tex:'f_s^{\\min}=2W'},
     {t:'eq', label:'Nyquist interval', tex:'T_s^{\\max}=\\frac{1}{2W}'}
   ]}
@@ -354,29 +526,37 @@ const SC = [
       {t:'note', kind:'warn', head:'Why the gain is $1/2W$', html:'Sampling multiplied the spectrum by $f_s=2W$. The filter has to divide it back. A reconstruction filter of unit gain returns a signal $2W$ times too large. That scaling error shows on no plot of the spectrum shape.'}
     ]}
   ], right:[
-    {t:'fig', frame:true, svg:figLpf, caption:'The filter passes the copy at the origin and rejects the replicas. At exactly the Nyquist rate the replicas touch the edge of the passband, which is why an ideal filter is needed there and a gentler one suffices when the rate is higher.'}
+    {t:'fig', frame:true, svg:figLpf, caption:'The filter passes the copy at the origin and rejects the replicas. At exactly the Nyquist rate the replicas touch the edge of the passband, which is why an ideal filter is needed there and a gentler one suffices when the rate is higher.'},
+    {t:'reveal', at:1, items:[
+      {t:'fig', frame:true, svg:figSinc, caption:'The same filter in time. The pulse is one at $t=0$ and zero at every non-zero multiple of $1/(2W)$ — exactly the sampling instants. The next scene builds the reconstruction out of shifted copies of this pulse.'}
+    ]}
   ]}
 ]},
 
 { id:'m1-interp', module:'M1', nav:'Interpolation', title:'The interpolation formula',
   objective:'Show the interpolation formula as a sum of shifted sinc functions.',
   keywords:'interpolation formula sinc shifted samples reconstruction sum',
-  src:'CH7 s.11–12', steps:2, blocks:[
+  src:'CH7 s.11–12', steps:3, blocks:[
   {t:'eyebrow', text:'Module 1 · Reconstruction'},
   {t:'title', text:'The interpolation formula'},
   {t:'lede', text:'Every sample carries one sinc, and the sum of them is the message between the samples.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
-    {t:'body', html:'Filtering in frequency is convolution in time. Convolving the impulse train with $h_{\\mathrm{LPF}}$ and using the sifting property once more gives'},
-    {t:'eq', key:true, tex:'g_r(t)=\\sum_{n=-\\infty}^{\\infty}g(nT_s)\\operatorname{sinc}\\!\\bigl(2W(t-nT_s)\\bigr)'},
+    {t:'body', html:'Filtering in frequency is convolution in time. Convolving the impulse train with $h_{\\mathrm{LPF}}$ is one integral:'},
+    {t:'eq', label:'Convolution integral', tex:'g_r(t)=\\int_{-\\infty}^{\\infty}\\overbrace{\\sum_{n=-\\infty}^{\\infty}g(nT_s)\\,\\delta(\\tau-nT_s)}^{=\\,g_\\delta(\\tau)}\\operatorname{sinc}\\!\\bigl(2W(t-\\tau)\\bigr)\\,d\\tau'},
     {t:'reveal', at:1, items:[
+      {t:'body', html:'The sum does not depend on $\\tau$, so it moves outside the integral. What is left inside is a sinc against a shifted impulse, and the sifting property replaces $\\tau$ by $nT_s$:'},
+      {t:'eq', tex:'g_r(t)=\\sum_{n=-\\infty}^{\\infty}g(nT_s)\\underbrace{\\int_{-\\infty}^{\\infty}\\operatorname{sinc}\\!\\bigl(2W(t-\\tau)\\bigr)\\,\\delta(\\tau-nT_s)\\,d\\tau}_{=\\,\\operatorname{sinc}\\!\\bigl(2W(t-nT_s)\\bigr)}'},
+      {t:'eq', key:true, tex:'g_r(t)=\\sum_{n=-\\infty}^{\\infty}g(nT_s)\\operatorname{sinc}\\!\\bigl(2W(t-nT_s)\\bigr)'}
+    ]},
+    {t:'reveal', at:2, items:[
       {t:'body', html:'At the Nyquist rate $T_s=1/(2W)$ this reads'},
       {t:'eq', tex:'g_r(t)=\\sum_{n=-\\infty}^{\\infty}g\\!\\left(\\frac{n}{2W}\\right)\\operatorname{sinc}(2Wt-n)'}
     ]},
-    {t:'reveal', at:2, items:[
+    {t:'reveal', at:3, items:[
       {t:'note', kind:'ok', head:'Why the sum passes through the samples', html:'At $t=kT_s$ every term vanishes except the one with $n=k$, because $\\operatorname{sinc}$ is zero at every non-zero integer. So $g_r(kT_s)=g(kT_s)$ exactly, and the interpolation is not an approximation between the samples either — it is the message.'}
     ]}
   ], right:[
-    {t:'fig', frame:true, svg:figInterp, caption:'Each sample contributes one sinc scaled by its own value. Their sum is drawn heavy; it passes through every sample because each sinc is zero at all the other sampling instants.'}
+    {t:'fig', frame:true, svg:figInterp, caption:'Each sample contributes one sinc scaled by its own value. Their sum is drawn heavy; it passes through every sample because each sinc is zero at all the other sampling instants. Point to a sample — or touch it — to see its own sinc alone, with those zeros marked.'}
   ]}
 ]},
 
@@ -791,9 +971,9 @@ const SC = [
       {t:'small', html:'The next scene takes the case this is actually used on. There the samples are the pixels of an image, and there are a quarter of a million of them.'}
     ]}
   ], right:[
-    {t:'fig', frame:true, svg:()=>figPairLattice(16),
-      caption:'Every pair of neighbouring samples a $16$-level quantizer can produce. A scalar quantizer pays for all $256$ squares. If a sample never moves by more than one step, only the $46$ shaded ones ever occur, and the codebook needs $6$ bits a pair instead of $8$.'},
-    {t:'small', html:'Almost all of the saving comes from neighbouring samples being alike. A small gain survives even for independent samples, because better-shaped cells pack the space more efficiently than squares. But it is under a quarter of a bit a sample, and this course does not pursue it.'}
+    {t:'fig', frame:true, svg:()=>figPairLattice(16, APP.state.step>=1),
+      caption:'Every pair of neighbouring samples a $16$-level quantizer can produce: $256$ squares, and a scalar quantizer pays for all of them. Once the smooth-signal restriction arrives, only the $46$ near-diagonal squares ever occur, and the codebook needs $6$ bits a pair instead of $8$.'},
+    {t:'small', html:'A small gain survives even for independent samples, because better-shaped cells pack the space more efficiently than squares — but it is under a quarter of a bit a sample, and this course does not pursue it.'}
   ]}
 ]},
 
@@ -821,7 +1001,7 @@ const SC = [
       {t:'note', kind:'def', head:'This is lossy compression', html:'The removed information is not recoverable. The omitted bits described where the pixel lay inside its quantization interval. A decoder cannot recover that position. This loss is why the method is called <b>lossy</b>. JPEG also uses quantization, but it quantizes transformed image blocks rather than individual pixels.'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'ok', head:'Where the chapter ends', html:'Sampling is reversible when the sampling-theorem conditions hold. Quantization is not reversible. An image makes the second fact visible because coarse levels create bands that were not present before quantization. Later chapters start with the resulting bit stream.'}
+      {t:'small', html:'<b>Where the chapter ends:</b> sampling is reversible when the sampling-theorem conditions hold; quantization is not. An image makes the second fact visible, and later chapters start with the resulting bit stream.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figBanding(),
@@ -839,26 +1019,78 @@ const SC = [
   {t:'title', text:'What Module 1 established'},
   {t:'grid', cols:2, gap:'26px', items:[
     [{t:'card', head:'Sampling', items:[
-      {t:'body', html:'<p>Sampling replicates the spectrum every $f_s$. If $f_s\\ge 2W$ the replicas do not overlap and the message survives exactly; otherwise it does not survive at all.</p>'},
-      {t:'eq', plain:true, tex:'G_\\delta(f)=f_s\\sum_n G(f-nf_s)'}
+      {t:'fig', svg:miniSampling},
+      {t:'eq', plain:true, tex:'G_\\delta(f)=f_s\\sum_n G(f-nf_s)'},
+      {t:'small', html:'Replicas every $f_s$. With $f_s\\ge 2W$ they do not overlap and the message survives exactly.'}
     ]}],
     [{t:'card', head:'Reconstruction', items:[
-      {t:'body', html:'<p>One lowpass filter of gain $1/2W$ recovers the message, and its impulse response is what interpolates between the samples.</p>'},
-      {t:'eq', plain:true, tex:'g_r(t)=\\sum_n g(nT_s)\\operatorname{sinc}(2Wt-n)'}
+      {t:'fig', svg:miniSinc},
+      {t:'eq', plain:true, tex:'g_r(t)=\\sum_n g(nT_s)\\operatorname{sinc}(2Wt-n)'},
+      {t:'small', html:'One lowpass filter recovers the message; its impulse response interpolates between the samples.'}
     ]}],
     [{t:'card', head:'Quantization', items:[
-      {t:'body', html:'<p>Rounding to $L=2^{R}$ levels costs a mean-square error fixed by the step size alone. This holds as long as the step is small compared with how fast the density varies.</p>'},
-      {t:'eq', plain:true, tex:'E[Q^{2}]=\\Delta^{2}/12,\\quad \\Delta=2m_{\\max}/L'}
+      {t:'fig', svg:miniQuant},
+      {t:'eq', plain:true, tex:'E[Q^{2}]=\\Delta^{2}/12,\\quad \\Delta=2m_{\\max}/L'},
+      {t:'small', html:'Rounding to $L=2^{R}$ levels costs a mean-square error set by the step size alone.'}
     ]}],
     [{t:'card', head:'The rate that follows', items:[
-      {t:'body', html:'<p>Every bit per sample buys $6.02$ dB and costs $f_s$ bits per second. Module 2 takes that bit stream and asks what the channel does to it.</p>'},
-      {t:'eq', plain:true, tex:'\\mathrm{SQNR}=\\alpha+6.02R,\\qquad R_b=Rf_s'}
+      {t:'fig', svg:miniRate},
+      {t:'eq', plain:true, tex:'\\mathrm{SQNR}=\\alpha+6.02R,\\qquad R_b=Rf_s'},
+      {t:'small', html:'Every bit per sample buys $6.02$ dB and costs $f_s$ bits per second.'}
     ]}]
   ]},
   {t:'note', kind:'ok', head:'The module in one sentence', html:'Turning a signal into bits costs two things and nothing else. You must sample fast enough, or the spectrum folds and cannot be unfolded. And you must round, which adds a small noise whose power falls by a factor of four with every extra bit.'}
 ]}
 
 ];
+
+/* ---- the interpolation figure comes alive -------------------------------
+   A slow roll call lifts each sample's sinc in turn, so the crowd of dashed
+   terms reads as nine individuals rather than a blur. Pointing at a sample
+   pins its sinc; on a touch screen a tap pins it and a second tap on the
+   same sample releases it. Leaving the figure lets the roll call continue.
+   The state lives here, not in the SVG, because the scene is re-rendered on
+   every step and theme change and the figure string is rebuilt from scratch.
+   The roll call defers to the course's own motion switch (body[data-motion]),
+   which is initialised from prefers-reduced-motion; the pointer interaction
+   stays live either way. */
+const SP = { n:null, held:false, i:-1 };
+const spRoot  = () => document.querySelector('svg.sincpick');
+function spApply(sv){
+  if(!sv) return;
+  sv.classList.toggle('pick', SP.n!=null);
+  sv.querySelectorAll('[data-st]').forEach(el=>
+    el.classList.toggle('on', el.dataset.st===String(SP.n)));
+}
+setInterval(()=>{
+  if(document.hidden || SP.held) return;
+  if(document.body.dataset.motion==='reduced') return;
+  const sv = spRoot();
+  if(!sv){ SP.n=null; SP.i=-1; return; }
+  SP.i=(SP.i+1)%9; SP.n=SP.i; spApply(sv);
+}, 1700);
+document.addEventListener('pointerover', e=>{
+  if(e.pointerType!=='mouse' || !(e.target instanceof Element)) return;
+  const d = e.target.closest('svg.sincpick .st-dot');
+  if(!d) return;
+  SP.held=true; SP.n=+d.dataset.st; spApply(spRoot());
+});
+document.addEventListener('pointerout', e=>{
+  if(!SP.held || e.pointerType!=='mouse' || !(e.target instanceof Element)) return;
+  const sv = e.target.closest('svg.sincpick');
+  if(sv && !(e.relatedTarget instanceof Element && sv.contains(e.relatedTarget)))
+    SP.held=false;      /* the roll call takes over on its next tick */
+});
+document.addEventListener('click', e=>{
+  /* a mouse pins by pointing; its click must not immediately release the pin */
+  if(e.pointerType==='mouse' || !(e.target instanceof Element)) return;
+  const d = e.target.closest('svg.sincpick .st-dot');
+  if(!d) return;
+  const n=+d.dataset.st;
+  if(SP.held && SP.n===n){ SP.held=false; SP.n=null; }
+  else { SP.held=true; SP.n=n; }
+  spApply(spRoot());
+});
 
 window.SCENES_M1 = SC;
 })();

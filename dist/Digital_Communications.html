@@ -155,9 +155,9 @@ body[data-display=projector] .qid,
 body[data-display=projector] .ctrl label,
 body[data-display=projector] .readout dt{ font-size:calc(14px * var(--ts)); }
 body[data-display=projector] .legend{ font-size:calc(17px * var(--ts)); }
-body[data-display=projector] .eq .katex{ font-size:1.42em; }
-body[data-display=projector] .eq.lg .katex{ font-size:1.66em; }
-body[data-display=projector] .eq.sm .katex{ font-size:1.18em; }
+body[data-display=projector] .eq .katex{ font-size:1.60em; }
+body[data-display=projector] .eq.lg .katex{ font-size:1.87em; }
+body[data-display=projector] .eq.sm .katex{ font-size:1.33em; }
 body[data-display=projector] .katex{ font-size:1.10em; }
 body[data-display=projector]{ --rule:#C2BCB0; }      /* stronger hairlines */
 body[data-display=projector][data-theme=dark]{ --rule:#3A4754; }
@@ -439,22 +439,27 @@ h3.sub{
 /* ==========================================================================
    Equations — first-class visual elements
    ========================================================================== */
+/* The type inside an equation box is set larger than the running text, because
+   an equation is what the scene is for and it is read from across a room. The
+   box gives that height back at its edges rather than taking it from the scene:
+   the padding and the margin below are what the larger type grew into, so a
+   scene of equations is no taller than it was before. */
 .eq{
-  position:relative; margin:10px 0; padding:14px 22px 14px 26px;
+  position:relative; margin:7px 0; padding:10px 22px 10px 26px;
   background:var(--paper-2);
   border:1px solid var(--rule);
   border-left:3px solid var(--coral);
   border-radius:var(--radius);
 }
-.eq.plain{ background:transparent; border:0; border-left:0; padding:10px 0; }
+.eq.plain{ background:transparent; border:0; border-left:0; padding:8px 0; }
 .eq.key{ background:linear-gradient(0deg,rgba(190,85,57,.045),rgba(190,85,57,.045)),var(--paper-2); }
 .eq .katex-display{ margin:0; }
-.eq .katex{ font-size:1.26em; }
-.eq.lg .katex{ font-size:1.5em; }
-.eq.sm .katex{ font-size:1.06em; }
+.eq .katex{ font-size:1.42em; }
+.eq.lg .katex{ font-size:1.66em; }
+.eq.sm .katex{ font-size:1.18em; }
 .eq-label{
   font-family:var(--mono); font-size:calc(12px * var(--ts)); letter-spacing:.12em;
-  text-transform:uppercase; color:var(--slate); margin-bottom:6px;
+  text-transform:uppercase; color:var(--slate); margin-bottom:5px;
 }
 .eq-note{ font-size:calc(15px * var(--ts)); color:var(--muted); margin-top:8px; line-height:1.45; }
 .scene.dark .eq{ background:rgba(255,255,255,.045); border-color:rgba(239,231,216,.18); }
@@ -550,6 +555,26 @@ figcaption b{ color:var(--graphite); font-weight:600; }
   background:var(--paper-2); border:1px solid var(--rule);
   border-radius:var(--radius); padding:12px 15px;
 }
+
+/* --- the interpolation figure: a roll call of sincs. One term is lifted at a
+       time — by the idle cycle in the module script or by the reader's
+       pointer — and while it is lifted its zeros at the other sampling
+       instants are drawn, because those zeros are why the sum passes through
+       every sample. The base state, with no `on` and no `pick`, is exactly
+       the printed figure. --- */
+svg.sincpick .st path{ transition:opacity .3s var(--ease), stroke-width .3s var(--ease); }
+svg.sincpick.pick .st path{ opacity:.14; }
+svg.sincpick .st.on path{ opacity:1; stroke-width:2; stroke-dasharray:none; }
+svg.sincpick .st-z{ opacity:0; transition:opacity .3s var(--ease); }
+svg.sincpick .st.on .st-z{ opacity:.85; }
+svg.sincpick .st-dot{ cursor:pointer; }
+svg.sincpick .st-dot circle{ transition:opacity .3s var(--ease); }
+svg.sincpick.pick .st-dot:not(.on) circle:first-child{ opacity:.35; }
+/* the lifted term's own expression replaces the resting caption; display, not
+   opacity, so the eight hidden lines have no geometry for textclash to see */
+svg.sincpick .st-eq{ display:none; }
+svg.sincpick .st-eq.on{ display:inline; }
+svg.sincpick.pick .sp-note{ display:none; }
 
 /* --- title motif: the figure draws itself once, then one highlight per cycle
        follows the signal through the system. Every animation ends on the
@@ -758,6 +783,10 @@ body[data-edition=instructor] .instr-inline{ display:inline; }
   transition:width var(--dur) var(--ease); }
 #chrome .crumb{ letter-spacing:.1em; text-transform:uppercase; color:var(--slate); }
 #chrome .spacer{ flex:1; }
+#chrome .byline{ color:var(--faint); letter-spacing:.06em;
+  margin-right:10px; white-space:nowrap; }
+#chrome .byline a{ color:inherit; text-decoration:none; }
+#chrome .byline a:hover{ color:var(--slate); text-decoration:underline; }
 #chrome button{
   font-family:var(--mono); font-size:11.5px; letter-spacing:.08em; text-transform:uppercase;
   background:transparent; border:0; color:var(--muted); cursor:pointer; padding:6px 8px;
@@ -888,6 +917,306 @@ body[data-motion=reduced] *{ transition-duration:1ms !important; animation-durat
   *{ transition-duration:1ms !important; animation-duration:1ms !important; }
 }
 
+/* ==========================================================================
+   Portrait phone — the fixed stage is dropped, not shrunk
+   --------------------------------------------------------------------------
+   Everything above is written against a 1920×1080 page that is scaled to fit
+   the room it is given. On a phone held upright that factor is about a fifth,
+   and a fifth of an 19 px paragraph is four pixels. So below 760 px of width
+   the page stops being a scaled drawing and becomes what a phone is good at:
+   one column of real pixels, top to bottom, that scrolls. The contents rail
+   becomes a drawer over the scene, the header keeps the three controls a thumb
+   reaches for, and the foot of the page carries two large targets and nothing
+   else. `data-layout` is set by the engine from one media query, so the
+   stylesheet and the code that lays the scene out never disagree about which
+   of the two layouts is in force.
+   ========================================================================== */
+body[data-layout=phone]{
+  /* the spacing scale was measured on the 1920-wide stage; a phone reads the
+     same rhythm at about a fifth of the page margin */
+  --s5:30px; --s6:22px; --s7:34px; --s8:18px;
+  --flow:13px;
+}
+
+/* --- the frame: one column, and a foot that sizes to its buttons --------- */
+body[data-layout=phone] #viewport{
+  inset:0 0 auto 0; height:100dvh;
+  /* `1fr` alone is `minmax(auto,1fr)`, and the automatic minimum of a grid item
+     is the width its content refuses to go below. One long formula in one scene
+     would widen that track, and with it the header, the foot and every line of
+     text on the page. The track is pinned to the screen instead, and each of
+     the three areas is allowed to be narrower than what is inside it. */
+  grid-template-columns:minmax(0,1fr);
+  grid-template-rows:auto 1fr auto;
+  grid-template-areas:"hd" "main" "ft";
+}
+body[data-layout=phone] #appheader,
+body[data-layout=phone] #stagewrap,
+body[data-layout=phone] #chrome{ min-width:0; }
+body[data-layout=phone] #stage{ max-width:100%; }
+
+/* --- top bar ------------------------------------------------------------ */
+body[data-layout=phone] #appheader{
+  gap:2px; padding:0 4px 0 2px;
+  padding-top:env(safe-area-inset-top);
+  min-height:calc(50px + env(safe-area-inset-top));
+}
+body[data-layout=phone] #appheader .sep{ display:none; }
+/* the laser and its ink are instruments for a projected room */
+body[data-layout=phone] #appheader .proj-only{ display:none !important; }
+body[data-layout=phone] #appheader button{ padding:12px 10px; font-size:11px; min-height:42px; }
+body[data-layout=phone] #sbtoggle{ font-size:20px !important; padding:9px 12px !important; }
+/* the mark and the name shrink before any control does, and the name is cut
+   with an ellipsis rather than pushing a button off the bar */
+body[data-layout=phone] #appheader .brand{
+  font-size:10px; letter-spacing:.1em; padding-left:2px;
+  flex:0 1 auto; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+
+/* --- the contents, as a drawer over the scene --------------------------- */
+body[data-layout=phone] #sidebar{
+  position:fixed; z-index:60; left:0;
+  top:calc(50px + env(safe-area-inset-top)); bottom:0;
+  width:min(86vw,340px);
+  border-right:1px solid var(--rule-strong);
+  box-shadow:0 0 60px rgba(0,0,0,.30);
+  animation:drawer-in 200ms var(--ease);
+  padding-bottom:env(safe-area-inset-bottom);
+}
+@keyframes drawer-in{ from{ transform:translateX(-100%) } to{ transform:none } }
+/* the sheet the drawer lies on. It belongs to the scene box, so a tap on it is
+   a tap on the scene — which is what the engine listens for to close the
+   drawer again. */
+body[data-layout=phone][data-sidebar=on] #stagewrap::before{
+  content:""; position:fixed; z-index:55;
+  top:calc(50px + env(safe-area-inset-top)); right:0; bottom:0; left:0;
+  background:rgba(20,18,15,.46);
+}
+/* a contents entry is touched, not clicked at */
+body[data-layout=phone] #sidenav{ padding:12px 8px 8px 10px; }
+body[data-layout=phone] #sidenav a{ padding:11px 10px 11px 12px; font-size:15px; }
+body[data-layout=phone] #sidenav .csec button{ padding:11px 8px 11px 10px; font-size:11px; }
+body[data-layout=phone] #sidenav .sgh{ font-size:11px; }
+/* The foot of the drawer holds the settings the header handed over. It is
+   pinned rather than pushed to the end of the contents: a reader looking for
+   the dark theme should not have to scroll past a hundred and twenty scene
+   titles to find it. The contents scroll inside the drawer instead of the
+   drawer scrolling as a whole. */
+body[data-layout=phone] #sidebar{ overflow:hidden; }
+body[data-layout=phone] #sidenav{ flex:1 1 auto; min-height:0; overflow:hidden auto; }
+body[data-layout=phone] #sidebar .sfoot{
+  flex:none; max-height:44vh; overflow:auto;
+  display:flex; flex-wrap:wrap; gap:6px; align-items:center;
+  padding:10px 10px calc(12px + env(safe-area-inset-bottom));
+}
+/* clearing the progress stored on this device is a rare and destructive
+   thing, and is set as the quietest line in the drawer rather than the
+   loudest — it is not what the reader came here for */
+body[data-layout=phone] #sidebar .sfoot .btn[data-act=reset]{
+  width:auto; flex:1 1 100%; padding:4px 2px 0; font-size:11.5px; font-weight:400;
+  text-align:left; color:var(--faint); border:0;
+}
+body[data-layout=phone] .hmoved{
+  font-family:var(--mono); font-size:10.5px; letter-spacing:.06em; text-transform:uppercase;
+  background:transparent; border:1px solid var(--rule); border-radius:var(--radius);
+  color:var(--muted); padding:9px 10px; cursor:pointer; flex:0 1 auto; text-align:center;
+  min-height:42px; min-width:42px;      /* a control is hit with a thumb */
+}
+body[data-layout=phone] .hmoved[aria-pressed=true]{ color:var(--coral); border-color:var(--coral); }
+body[data-layout=phone] .hmoved:disabled{ opacity:.4; }
+/* the byline is a line of text among buttons, and is set as one */
+/* the byline is a line of text among buttons, and keeps the quiet link it has
+   in the foot of the wide page rather than falling back to a browser default */
+body[data-layout=phone] .byline.hmoved{
+  border:0; flex:1 1 100%; text-align:left; padding:8px 2px 0; min-height:0;
+  text-transform:none; letter-spacing:.04em; color:var(--faint); font-size:10.5px;
+}
+body[data-layout=phone] .byline.hmoved a{ color:inherit; text-decoration:none; }
+
+/* --- the scene: a fluid column that scrolls ----------------------------- */
+body[data-layout=phone] #stagewrap{
+  overflow:hidden auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain;
+}
+body[data-layout=phone] #stage{
+  position:relative; width:100%; height:auto; min-height:100%;
+  transform:none !important;
+}
+body[data-layout=phone] .scene{
+  position:relative; inset:auto; min-height:100%;
+  padding:16px var(--s8) 30px;
+  opacity:1; visibility:visible; display:none;
+}
+body[data-layout=phone] .scene.is-active{ display:block; }
+/* the fit-to-page factor is not applied here, and neither is the full-height
+   column it needs; both are cleared in code as well, and stated again so that
+   a scene rendered before the layout changed cannot keep them */
+body[data-layout=phone] .scene-inner{
+  display:block; height:auto !important; width:auto !important; transform:none !important;
+  /* On a phone the column is the screen. On a tablet held upright, or a phone
+     on its side, the screen is wide enough that a line of prose run edge to
+     edge would be too long to read, so the column stops growing and centres. */
+  max-width:680px; margin-inline:auto;
+}
+
+/* --- type: the display sizes fall further than the reading sizes -------- */
+body[data-layout=phone] h1.display{ font-size:calc(34px * var(--ts)); line-height:1.1; margin-bottom:13px; }
+body[data-layout=phone] h2.title{ font-size:calc(25px * var(--ts)); line-height:1.16; margin-bottom:10px; }
+body[data-layout=phone] h3.sub{ font-size:calc(17px * var(--ts)); }
+body[data-layout=phone] .lede{ font-size:calc(17.5px * var(--ts)); line-height:1.4; margin-bottom:var(--s3); }
+body[data-layout=phone] .body{ font-size:calc(16.5px * var(--ts)); line-height:1.5; }
+body[data-layout=phone] .small{ font-size:calc(14px * var(--ts)); }
+body[data-layout=phone] .note{ font-size:calc(16px * var(--ts)); padding-left:13px; }
+body[data-layout=phone] .note.err{ padding:12px 13px 12px 15px; }
+body[data-layout=phone] .note-h{ font-size:calc(11.5px * var(--ts)); letter-spacing:.1em; }
+body[data-layout=phone] .eyebrow{
+  font-size:calc(11.5px * var(--ts)); letter-spacing:.1em; gap:7px; margin-bottom:12px; flex-wrap:wrap;
+}
+body[data-layout=phone] .eyebrow .tick{ width:14px; }
+body[data-layout=phone] .eyebrow .src{ display:none; }
+body[data-layout=phone] figcaption{ font-size:calc(12.5px * var(--ts)); }
+body[data-layout=phone] .legend{ font-size:calc(13.5px * var(--ts)); gap:7px 16px; }
+body[data-layout=phone] .card{ padding:15px 15px 14px; }
+body[data-layout=phone] .card-h{ font-size:calc(16px * var(--ts)); margin-bottom:10px; padding-bottom:8px; }
+body[data-layout=phone] .qstem{ font-size:calc(17.5px * var(--ts)); }
+body[data-layout=phone] .btn{ font-size:calc(15px * var(--ts)); padding:12px 16px; }
+
+/* --- every grid of columns becomes one column --------------------------- */
+/* `.gblk` writes its column count inline, so the rule that overrides it has to
+   carry weight; the rest are stylesheet declarations and do not. */
+/* `minmax(0,1fr)` and not `1fr`: a bare `1fr` lets the track grow to whatever
+   is inside it, and one wide figure would push the single column past the edge
+   of the screen. */
+body[data-layout=phone] .cols{ grid-template-columns:minmax(0,1fr); gap:var(--s3); }
+body[data-layout=phone] .gblk{ grid-template-columns:minmax(0,1fr) !important; gap:18px !important; }
+body[data-layout=phone] .ctrls{ grid-template-columns:minmax(0,1fr); gap:14px; padding:14px 15px; }
+body[data-layout=phone] .dr-types{ grid-template-columns:minmax(0,1fr); gap:20px; }
+body[data-layout=phone] .dr-pair{ flex-direction:column; gap:10px; }
+body[data-layout=phone] .dr-pair > div{ width:100%; }
+/* the worked-example ladder puts its key above the step rather than beside it:
+   a 136 px label column and a 200 px value column is not a table, it is two
+   words a line */
+body[data-layout=phone] .wex-row{ grid-template-columns:minmax(0,1fr); gap:2px; }
+/* A step of a worked example can be one long line of mathematics set in the
+   run of the prose, and inline mathematics does not break. On the narrowest
+   screens the step is given a scroll of its own so that the line is reachable
+   rather than cut off at the margin. */
+body[data-layout=phone] .wex-v{
+  border-top:0; padding-top:0; font-size:calc(16px * var(--ts));
+  min-width:0; overflow-x:auto;
+}
+
+/* --- mathematics: a formula pans rather than being cut ------------------ */
+body[data-layout=phone] .eq{ padding:11px 13px 11px 15px; overflow-x:auto; overflow-y:hidden; }
+body[data-layout=phone] .eq.plain{ padding:9px 0; }
+body[data-layout=phone] .eq .katex{ font-size:1.22em; }
+body[data-layout=phone] .eq.lg .katex{ font-size:1.38em; }
+body[data-layout=phone] .eq.sm .katex{ font-size:1.08em; }
+/* the displayed formula must not clip itself: overflow on one axis turns the
+   other from `visible` into `auto`, and a formula that scrolls inside its own
+   box never reaches the box outside it, which is the one measured and faded */
+body[data-layout=phone] .katex-display{ overflow:visible; }
+/* the one formula in a hundred that is still wider than the column at the
+   smallest size it may be set: its right edge is faded, so that the reader can
+   see there is more of it and push it across */
+body[data-layout=phone] .eq.pans{
+  -webkit-mask-image:linear-gradient(90deg,#000 90%,rgba(0,0,0,.28) 100%);
+          mask-image:linear-gradient(90deg,#000 90%,rgba(0,0,0,.28) 100%);
+}
+/* prose can hold a long symbol or a file name; it breaks rather than pushing
+   the column out from the inside */
+body[data-layout=phone] .body,
+body[data-layout=phone] .note,
+body[data-layout=phone] .wex-v,
+body[data-layout=phone] .qstem{ overflow-wrap:break-word; }
+
+/* --- figures ------------------------------------------------------------ */
+/* Most drawings fill the column. The few too wide to stay legible in it are
+   printed at the width their labels need and panned; `.pans` is set by the
+   renderer on exactly those, and marks the edge so the reader can see that
+   there is more of the figure to the right. */
+body[data-layout=phone] figure.fig{ overflow-x:auto; overflow-y:hidden; }
+body[data-layout=phone] figure.fig.pans{
+  -webkit-mask-image:linear-gradient(90deg,#000 88%,rgba(0,0,0,.35) 100%);
+          mask-image:linear-gradient(90deg,#000 88%,rgba(0,0,0,.35) 100%);
+}
+body[data-layout=phone] .fig-frame{ padding:10px 11px; }
+
+/* --- laboratories ------------------------------------------------------- */
+/* A slider is dragged with a finger, so its track and its handle are drawn at
+   the size a finger can land on. */
+body[data-layout=phone] input[type=range]{ height:34px; }
+body[data-layout=phone] input[type=range]::-webkit-slider-thumb{ width:24px; height:24px; margin-top:-10.5px; }
+body[data-layout=phone] input[type=range]::-moz-range-thumb{ width:22px; height:22px; }
+body[data-layout=phone] .seg button,
+body[data-layout=phone] .runbar button{
+  padding:11px 13px; font-size:calc(12.5px * var(--ts)); min-height:44px;
+}
+/* A segmented control is written inside its own label, and on the wide page
+   the name and the three choices share one line. A phone cannot hold both, so
+   the label wraps and the control takes the width under its name, with the
+   choices sharing it equally — a choice half cut off by the edge of the panel
+   is a choice the reader cannot read. */
+body[data-layout=phone] .ctrl label{ flex-wrap:wrap; }
+body[data-layout=phone] .ctrl label .seg{ display:flex; flex:1 1 100%; margin-top:2px; }
+body[data-layout=phone] .ctrl label .seg button{ flex:1 1 0; min-width:0; padding:11px 6px; }
+body[data-layout=phone] .ctrl-run{ flex-wrap:wrap; }
+body[data-layout=phone] .ctrl-run input[type=range]{ flex:1 1 100%; }
+body[data-layout=phone] .readout div{ padding:10px 12px; }
+body[data-layout=phone] .readout dd{ font-size:calc(17px * var(--ts)); }
+
+/* --- practice questions ------------------------------------------------- */
+/* On the wide page a question scrolls inside the fixed stage. Here the page
+   itself scrolls, so the inner scroller is taken out — two nested scrollers on
+   a touch screen fight each other. */
+body[data-layout=phone] .dr-page{ overflow:visible; flex:none; padding-right:0; }
+body[data-layout=phone] .dr-pager{ flex-wrap:wrap; gap:10px; }
+body[data-layout=phone] .dr-pager .btn{ flex:1 1 auto; }
+body[data-layout=phone] .dr-count{ order:-1; flex:1 1 100%; font-size:12px; }
+body[data-layout=phone] .dr-seen{ flex:1 1 100%; margin-left:0; font-size:13px; }
+body[data-layout=phone] .drill .dr-parts{ padding-left:24px; font-size:calc(16.5px * var(--ts)); }
+body[data-layout=phone] .drill .dr-parts li::before{ left:-24px; }
+body[data-layout=phone] .dr-type-h{ font-size:calc(18px * var(--ts)); }
+body[data-layout=phone] .dr-type-asks{ font-size:calc(15px * var(--ts)); }
+body[data-layout=phone] .dr-type-m{ font-size:calc(14px * var(--ts)); }
+
+/* --- overlays fill the screen ------------------------------------------- */
+body[data-layout=phone] .overlay{ padding:0; align-items:stretch; }
+body[data-layout=phone] .sheet{
+  max-width:none; max-height:none; min-height:100%; border-radius:0;
+  padding:calc(20px + env(safe-area-inset-top)) 16px calc(30px + env(safe-area-inset-bottom));
+}
+body[data-layout=phone] .sheet h2{ font-size:26px; }
+/* The way out of a full-screen sheet is the first thing in it and stays in
+   reach while the sheet is scrolled. It is a block of its own rather than a
+   corner overlay, so it can never come to rest on top of the heading. */
+body[data-layout=phone] .sheet .close{
+  position:sticky; top:0; z-index:3;
+  display:block; width:fit-content; margin:0 0 10px auto; padding:11px 13px;
+  background:var(--paper); border:1px solid var(--rule); border-radius:var(--radius);
+}
+body[data-layout=phone] #searchbox{ font-size:19px; padding:12px 2px; }
+body[data-layout=phone] .sresults{ max-height:none; }
+body[data-layout=phone] .sres{ padding:14px 12px; }
+body[data-layout=phone] .mapgrid{ grid-template-columns:1fr; gap:18px; }
+body[data-layout=phone] .gloss{ grid-template-columns:1fr !important; gap:2px; }
+body[data-layout=phone] .gitem{ grid-template-columns:74px 1fr; gap:12px; padding:11px 0; }
+body[data-layout=phone] .gitem .gd{ font-size:14.5px; }
+
+/* --- the foot: two targets, and where the reader is --------------------- */
+body[data-layout=phone] #chrome{
+  gap:8px; padding:7px 10px calc(7px + env(safe-area-inset-bottom));
+}
+/* The address and the title of the scene are the first line of the scene
+   itself, two centimetres above this bar, so repeating them here buys nothing
+   and costs the room the two targets need. */
+body[data-layout=phone] #chrome .srcref,
+body[data-layout=phone] #chrome .crumb{ display:none; }
+body[data-layout=phone] #chrome button{
+  padding:12px 14px; font-size:12px; min-width:76px; min-height:44px;
+  border:1px solid var(--rule-strong); border-radius:var(--radius);
+}
+body[data-layout=phone] #counter{ font-size:10px; white-space:nowrap; }
+
 /* print / PDF: one scene per landscape page */
 @media print{
   html,body{ background:#fff; overflow:visible; }
@@ -957,6 +1286,8 @@ body[data-motion=reduced] *{ transition-duration:1ms !important; animation-durat
     <span class="crumb" id="crumb"></span>
     <span class="srcref" id="srcref"></span>
     <span class="spacer"></span>
+    <span class="byline">&#169; 2026 <a href="https://www.huguryildiz.com/" target="_blank"
+       rel="noopener noreferrer" title="huguryildiz.com">H&#252;seyin U&#287;ur Y&#305;ld&#305;z</a></span>
     <button data-act="prev" title="Previous (←)">Prev</button>
     <button data-act="next" title="Next (→)">Next</button>
     <span id="counter"></span>
@@ -1192,13 +1523,20 @@ const PLOT = (() => {
        further down; the name above its own baseline is one line tall. Leaving the
        name 45 below the axis keeps a clear gap between the two, so the last tick
        number and the name never touch even at the right-hand edge, where they
-       share the same column. */
-    const XNAME_DROP = 45;
+       share the same column.
+       Every one of those distances is a label size, so all of them are measured
+       in labels: the tick row is set at 20·LBLS and the name is one NAMEBOX
+       tall, and a drop left at a flat 45 closes the gap as soon as the labels
+       are enlarged. At the ordinary label scale the numbers below are exactly
+       the ones above, so nothing on a normal screen or in print moves; what
+       they fix is the projected room and the phone, where the labels are
+       drawn larger and the name was landing on the last tick number. */
+    const XNAME_DROP = 45*LBLS;
     const xnameY = (Pb) => {
       const yy0 = H - Pb;
       if(!zeroInside) return yy0 + XNAME_DROP + 1;
       const zeroPx = (0-ya)/(yb-ya)*(H - P.t - Pb);
-      return Math.max(yy0 + 16, yy0 - zeroPx + XNAME_DROP);
+      return Math.max(yy0 + 16*LBLS, yy0 - zeroPx + XNAME_DROP);
     };
     if(o.xlabel){
       P.b = Math.max(P.b, 24);
@@ -1635,8 +1973,34 @@ const APP = (() => {
     trail:   'fade',    // 'fade' | 'hold' | 'off' — ink drawn while the button is held
     quiz: {},           // qid -> {picked, correct, attempts, revealed}
     drillPage: {},      // module id -> index of the drill question on screen
-    secOpen: {}         // section number -> the reader's own open/closed choice
+    secOpen: {},        // section number -> the reader's own open/closed choice
+    layout: 'wide',     // 'wide' | 'phone' — read from the screen, never stored
+    rail: 'on'          // the rail as the wide layout left it; this is what is stored
   };
+
+  /* ---------- the two layouts ----------
+     The stage below is a fixed 1920×1080 drawing scaled to fit whatever room
+     it is given. That works down to a small laptop window and fails on a phone
+     held upright: at 390 px of width the factor is about a fifth, and nothing
+     on the page can be read. Below the width where the factor stops being
+     honest the stage is not shrunk further — it is dropped. The scene becomes
+     one fluid column of real pixels that scrolls, the contents rail becomes a
+     drawer over it, and the header keeps only the controls a thumb reaches for.
+     The measure is content-driven, and there are three ways to fail it. A
+     window narrower than 760 px cannot hold the two-column editorial grid or a
+     readable line at the scale the basis is then reduced to, whatever is
+     showing it. A screen under 480 px tall with a finger on it is a phone
+     lying on its side, where the factor is set by the height and comes out
+     smaller still. A screen up to 1024 px wide, upright, with a finger on it is
+     a tablet held as a page, which the stage fits at about two fifths — small
+     print at arm's length. Every one of the three asks for the same thing: the
+     column, in real pixels. A laptop window is none of them, because a mouse is
+     not a finger. */
+  const NARROW = matchMedia(
+    '(max-width:760px),'
+  + '(max-height:480px) and (pointer:coarse),'
+  + '(max-width:1024px) and (orientation:portrait) and (pointer:coarse)');
+  const layoutNow = () => NARROW.matches ? 'phone' : 'wide';
 
   let SCENES = [], MODULES = [], CHAPTERS = [], onRender = ()=>{};
 
@@ -1657,7 +2021,16 @@ const APP = (() => {
       quiz: saved.quiz || {},
       drillPage: saved.drillPage || {}
     });
+    /* The layout is a fact about the screen, not a preference, so it is read
+       here and never restored from storage. A drawer opens closed — and the
+       reader's own choice about the rail is put aside rather than overwritten,
+       so that reading a chapter on a phone does not close the rail on the
+       desktop the same reader comes back to. */
+    state.layout = layoutNow();
+    state.rail = state.sidebar;
+    if(state.layout==='phone') state.sidebar = 'off';
     applyBodyFlags();
+    relayoutChrome();
     bindKeys();
     bindChrome();
     window.addEventListener('hashchange', fromHash);
@@ -1667,7 +2040,9 @@ const APP = (() => {
   }
 
   function persist(){
-    store.write({ mode:state.mode, edition:state.edition, motion:state.motion, sidebar:state.sidebar,
+    /* what is stored for the rail is always the wide-layout choice */
+    if(state.layout!=='phone') state.rail = state.sidebar;
+    store.write({ mode:state.mode, edition:state.edition, motion:state.motion, sidebar:state.rail,
                   theme:state.theme, display:state.display, pointer:state.pointer, trail:state.trail,
                   visited:state.visited, quiz:state.quiz, drillPage:state.drillPage,
                   at:SCENES[state.i]&&SCENES[state.i].id });
@@ -1681,7 +2056,38 @@ const APP = (() => {
     document.body.dataset.display = state.display;
     document.body.dataset.pointer = state.pointer;
     document.body.dataset.trail = state.trail;
+    document.body.dataset.layout = state.layout;
     laser.sync();
+  }
+
+  /* ---------- where the header controls live ----------
+     The bar carries thirteen controls, and a phone has room for four. On a
+     phone the ones a reader touches while reading — the contents, search and
+     the notation list — stay in the bar, and the rest move to the foot of the
+     contents drawer, where there is room to label them and to hit them. The
+     click handler is delegated on the document, so a control works exactly the
+     same wherever it is sitting; only its styling has to follow it, which the
+     `hmoved` class does. The laser and its ink belong to a projector and are
+     dropped on a phone altogether.
+     Each control's first home is recorded the first time it is moved, so the
+     way back is the DOM as it was authored rather than a second guess at it. */
+  const HANDOFF = ['btn-display','btn-theme','btn-mode','btn-edition','btn-motion'];
+  let _home = null;
+  function relayoutChrome(){
+    const hd = document.getElementById('appheader');
+    const foot = document.querySelector('#sidebar .sfoot');
+    if(!hd || !foot) return;
+    const items = HANDOFF.map(id=>document.getElementById(id))
+      .concat([hd.querySelector('[data-act=help]'),
+               document.querySelector('#chrome .byline')])
+      .filter(Boolean);
+    if(!_home) _home = items.map(el=>({el, parent:el.parentNode, next:el.nextSibling}));
+    if(state.layout==='phone'){
+      const reset = foot.querySelector('[data-act=reset]');
+      items.forEach(el=>{ el.classList.add('hmoved'); foot.insertBefore(el, reset); });
+    } else {
+      _home.forEach(h=>{ h.el.classList.remove('hmoved'); h.parent.insertBefore(h.el, h.next); });
+    }
   }
 
   /* ---------- laser pointer, projector mode only ----------
@@ -1844,6 +2250,11 @@ const APP = (() => {
     const stage = document.getElementById('stage');
     const wrap  = document.getElementById('stagewrap');
     if(!stage||!wrap) return;
+    /* On a phone there is no scaled stage to place: the scene is laid out in
+       real pixels and scrolls. Any transform left over from the wide layout is
+       cleared here, so turning a phone from landscape to portrait does not
+       leave the column shrunk. */
+    if(state.layout==='phone'){ stage.style.transform=''; stage.dataset.k='1'; return; }
     /* measure the painted box, not the window: inside a panel, an iframe or a
        zoomed view, window.innerWidth does not describe the area we can use. */
     const r = wrap.getBoundingClientRect();
@@ -1865,6 +2276,19 @@ const APP = (() => {
     }
     window.addEventListener('resize', fit);
     window.addEventListener('orientationchange', fit);
+    /* Crossing the width where the two layouts change hands is a different
+       event from a resize: the whole page is rebuilt on the other side of it. */
+    const onLayout = () => {
+      const L = layoutNow();
+      if(L === state.layout) return;
+      if(L === 'phone'){ state.rail = state.sidebar; state.sidebar = 'off'; }
+      else state.sidebar = state.rail || 'on';
+      state.layout = L;
+      applyBodyFlags(); relayoutChrome();
+      requestAnimationFrame(()=>{ fit(); onRender(); });
+    };
+    if(NARROW.addEventListener) NARROW.addEventListener('change', onLayout);
+    else if(NARROW.addListener) NARROW.addListener(onLayout);   /* older Safari */
     document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) fit(); });
     if(document.fonts && document.fonts.ready) document.fonts.ready.then(fit).catch(()=>{});
     [60,250,900].forEach(ms=>setTimeout(fit, ms));
@@ -1888,14 +2312,21 @@ const APP = (() => {
 
   function go(i, opt={}){
     if(i<0||i>=SCENES.length) return;
+    const moved = (i !== state.i);
     /* ink belongs to the scene it was drawn over, not to the next one */
-    if(i!==state.i) laser.clear();
+    if(moved) laser.clear();
     state.i = i;
     state.step = opt.step!=null ? opt.step : 0;
     state.visited[SCENES[i].id] = 1;
     if(!opt.silent) syncHash(opt.replace);
     persist();
     onRender();
+    /* A phone scrolls the scene rather than fitting it, so a new scene has to
+       start at its own first line. A reveal step inside the scene leaves the
+       reader where they were, because what appears is below them. */
+    if(moved && state.layout==='phone'){
+      const w = document.getElementById('stagewrap'); if(w) w.scrollTop = 0;
+    }
   }
   const next = () => {
     const s = SCENES[state.i];
@@ -1915,6 +2346,10 @@ const APP = (() => {
   /* ---------- overlays ---------- */
   function open(id){
     closeAll();
+    /* On a phone a sheet fills the screen and the drawer lies over the screen.
+       Two of those at once is one too many, and the header can start a sheet
+       while the drawer is open, so opening one puts the drawer away. */
+    if(state.layout==='phone' && state.sidebar==='on') toggleSidebar();
     const el=document.getElementById(id); if(!el) return;
     el.classList.add('open');
     const f = el.querySelector('input,button,a'); if(f) f.focus();
@@ -1961,8 +2396,10 @@ const APP = (() => {
   function toggleDisplay(){
     state.display = state.display==='normal'?'projector':'normal';
     /* the rail costs ~19% of linear size; give the scene the full width when
-       projecting, and give it back when returning to normal */
-    state.sidebar = state.display==='projector' ? 'off' : 'on';
+       projecting, and give it back when returning to normal. On a phone the
+       rail is a drawer that covers the scene either way, so it stays shut. */
+    if(state.layout!=='phone')
+      state.sidebar = state.display==='projector' ? 'off' : 'on';
     applyBodyFlags(); persist();
     requestAnimationFrame(()=>{ fit(); onRender(); });
   }
@@ -2000,7 +2437,9 @@ const APP = (() => {
       else if(a==='display') toggleDisplay();
       else if(a==='pointer') togglePointer();
       else if(a==='trail') toggleTrail();
-      else if(a==='goto') goId(t.dataset.id, parseInt(t.dataset.step||'0',10));
+      else if(a==='goto'){ goId(t.dataset.id, parseInt(t.dataset.step||'0',10));
+        /* a drawer has done its job once a scene is chosen */
+        if(state.layout==='phone' && state.sidebar==='on') toggleSidebar(); }
       else if(a==='sec'){ const n=t.dataset.sec;
         state.secOpen[n] = !secIsOpen(n); buildSidebar(); }
       else if(a==='reset'){ store.clear(); state.visited={}; state.quiz={}; persist(); onRender(); buildMap(); buildSidebar(); }
@@ -2008,6 +2447,16 @@ const APP = (() => {
     document.querySelectorAll('.overlay').forEach(ov=>{
       ov.addEventListener('click', e=>{ if(e.target===ov) closeAll(); });
     });
+    /* On a phone the open drawer dims the scene behind it. That dimmed sheet is
+       the drawer's way out: a tap on it closes the drawer and does nothing
+       else, which is why the tap is caught on the way down and stopped there
+       rather than being allowed to reach the control it landed on. */
+    const wrap = document.getElementById('stagewrap');
+    if(wrap) wrap.addEventListener('click', e=>{
+      if(state.layout==='phone' && state.sidebar==='on'){
+        e.stopPropagation(); e.preventDefault(); toggleSidebar();
+      }
+    }, true);
   }
 
   /* ---------- contents, shared by the rail and the map ----------
@@ -2033,13 +2482,11 @@ const APP = (() => {
     const cur = SCENES[state.i];
     return !!(cur && cur.sec && cur.sec.indexOf(n+'.') === 0);
   }
-  /* The question scenes bracket a chapter: the taxonomy of question types is
-     read before the teaching scenes, the questions themselves are worked after
-     them. `row` is given the scene, not a position, so both surfaces place
-     them the same way. */
+  /* A chapter's questions close it: they are worked after the teaching scenes.
+     `row` is given the scene, not a position, so both surfaces place it the
+     same way. */
   function chapterRows(ch, row, head, collapse){
     const out = [];
-    if(ch.q.map) out.push(row(ch.q.map));
     ch.sections.forEach(sec=>{
       const titled = !ch.flat && sec.title;
       const open = !collapse || !titled || secIsOpen(sec.n);
@@ -2278,9 +2725,11 @@ const RENDER = (() => {
   }
 
   /* ---------- glossary symbol linking ---------- */
+  /* A `title` is plain text, so the mathematics in a glossary entry cannot be
+     typeset there. Its `$` delimiters are dropped rather than shown. */
   function symLinks(html){
     return html.replace(/\{\{sym:([a-zA-Z0-9_]+)\|([^}]+)\}\}/g,
-      (m,k,label)=>`<span class="sym" data-sym="${k}" title="${(CONTENT.GLOSS[k]||{}).d||''}">${label}</span>`);
+      (m,k,label)=>`<span class="sym" data-sym="${k}" title="${((CONTENT.GLOSS[k]||{}).d||'').replace(/\$/g,'')}">${label}</span>`);
   }
 
   /* ---------- block renderers ---------- */
@@ -2305,7 +2754,11 @@ const RENDER = (() => {
     fig:     b => `<figure class="fig ${b.frame?'fig-frame':''}">
         ${typeof b.svg==='function'?b.svg():b.svg}
         ${b.caption?`<figcaption>${md(b.caption)}</figcaption>`:''}</figure>`,
-    grid:    b => `<div style="display:grid;grid-template-columns:repeat(${b.cols||2},minmax(0,1fr));gap:${b.gap||'28px'};${b.style||''}">
+    /* The column count is written inline because it is content, not style. The
+       class is what lets the phone layout collapse the block to one column:
+       a stylesheet rule can only beat an inline declaration if it has something
+       to select. */
+    grid:    b => `<div class="gblk" style="display:grid;grid-template-columns:repeat(${b.cols||2},minmax(0,1fr));gap:${b.gap||'28px'};${b.style||''}">
         ${b.items.map(it=>`<div class="gcell">${blocks(it)}</div>`).join('')}</div>`,
     cols:    b => `<div class="cols ${b.ratio||'c-6-6'}" style="${b.style||''}">
         <div class="col ${b.vcenter?'center':''}">${blocks(b.left)}</div>
@@ -2409,8 +2862,16 @@ const RENDER = (() => {
 
   /* ---------- scene drawing ---------- */
   function draw(){
+    /* A figure is drawn on its own grid — 480 units wide for a typical one —
+       and printed at whatever width the column gives it. A desktop column is
+       about 700 px, so the drawing is enlarged and its labels come out larger
+       than the size they were written at. A phone column is about 350 px, which
+       halves them instead. The label scale projector mode already uses puts
+       them back where they belong, and it is a scale the figures are known to
+       survive, so the phone borrows it rather than inventing a second one. */
     if(typeof PLOT!=='undefined' && PLOT.setTheme)
-      PLOT.setTheme({ dark: S.theme==='dark', scale: S.display==='projector' ? 1.36 : 1 });
+      PLOT.setTheme({ dark: S.theme==='dark',
+        scale: (S.display==='projector' || S.layout==='phone') ? 1.36 : 1 });
     const sc = APP.scenes()[S.i];
     const host = document.getElementById('scene-host');
     if(!sc||!host) return;
@@ -2449,6 +2910,17 @@ const RENDER = (() => {
     const figs = Array.from(inner.querySelectorAll('figure.fig > svg'));
     figs.forEach(s => s.style.maxHeight = '');
     delete host.dataset.capped;
+    /* A phone has no fixed page to fit a scene into: the scene is as tall as it
+       needs to be and the reader scrolls it. Nothing is scaled, so every inline
+       size this function may have written on a wider screen is cleared, and the
+       figures are given their own treatment instead. */
+    if(S.layout==='phone'){
+      inner.style.transform=''; inner.style.width=''; inner.style.height='';
+      delete host.dataset.fit;
+      phoneFigures(figs);
+      phoneMath(inner);
+      return;
+    }
     if(host.querySelector('.dr-page')){   /* a question page scrolls, never scales */
       inner.style.transform=''; inner.style.width=''; inner.style.height='100%';
       delete host.dataset.fit; return; }
@@ -2514,6 +2986,64 @@ const RENDER = (() => {
       inner.style.height = '100%';
       delete host.dataset.fit;
     }
+  }
+
+  /* ---- figures on a phone ----
+     A drawing that fills its column is legible while the column is wide enough
+     for the labels in it. The tick numbers of a figure are written at 13 units
+     and drawn at the phone's label scale, so a figure w units wide printed
+     p pixels wide shows them at 13 · 1.36 · p/w pixels. Below about 11 px they
+     stop being readable at arm's length, which sets the narrowest the drawing
+     may be printed: p = 13 · 1.36 · w / 11, a little under 0.62 w. Most figures
+     are inside that already and simply fill the column. The wide ones — a long
+     time axis, a two-panel comparison — are printed at that width instead and
+     pan sideways inside their own frame, because a drawing too small to read is
+     worth less than one the reader moves across. */
+  function phoneFigures(figs){
+    figs.forEach(svg=>{
+      svg.style.minWidth = '';
+      const vb = (svg.getAttribute('viewBox')||'').split(/[\s,]+/);
+      const w = parseFloat(vb[2]);
+      if(!isFinite(w) || w<=0) return;
+      const room = svg.parentNode.clientWidth;
+      const need = Math.round(0.62 * w);
+      const fig  = svg.closest('figure.fig');
+      if(fig) fig.classList.toggle('pans', need > room + 1);
+      if(need > room + 1) svg.style.minWidth = need + 'px';
+    });
+  }
+
+  /* ---- displayed mathematics on a phone ----
+     A formula is one object: a reader who can see only two thirds of an
+     equation cannot read it at all, however easy it is to push the rest into
+     view. So a formula wider than the column is set smaller until it fits,
+     down to about seven tenths of the reading size — below that the subscripts
+     go, and a formula that is still too wide at the floor is left to pan with
+     its right edge marked, which is the honest outcome for the two or three
+     longest lines in the course. */
+  function phoneMath(root){
+    root.querySelectorAll('.eq').forEach(eq=>{
+      const k = eq.querySelector('.katex-display');
+      if(!k) return;
+      k.style.fontSize = '';
+      eq.classList.remove('pans');
+      /* the box a formula has to fit in is the content box, and what a scroll
+         container reports as its scrolled width carries the left padding with
+         it; both are taken off, or the closing bracket lands on the border */
+      const cs = getComputedStyle(eq);
+      const padL = parseFloat(cs.paddingLeft), padR = parseFloat(cs.paddingRight);
+      const room = () => eq.clientWidth - padL - padR;
+      const need = () => eq.scrollWidth - padL;
+      let f = 1;
+      for(let pass=0; pass<4; pass++){
+        if(need() <= room()) break;
+        const next = Math.max(0.70, f * room() / need());
+        const settled = next >= f - 0.005;
+        f = next; k.style.fontSize = f.toFixed(3) + 'em';
+        if(settled) break;
+      }
+      if(need() > room() + 1) eq.classList.add('pans');
+    });
   }
 
   function chrome(sc){
@@ -4225,17 +4755,22 @@ const P = PLOT, C = P.COL;
    have — modules 3 to 5 are one argument told in three passes, and the ring
    shows that better than a column of numbers. */
 function figMap(){
-  const R = 1.0;
-  const a = P.Axes({w:520,h:416,xr:[-2.0,2.0],yr:[-1.6,1.6],
+  const R = 0.95;
+  /* The ring is drawn inside a wider frame than the circle needs, because the
+     labels beside it are the chapter titles rather than short tags. Each title
+     is centred over its point rather than run outwards from it: centred, a
+     title spends half its width on each side, so a font that measures wider
+     than this one does cannot push it off the frame. */
+  const a = P.Axes({w:570,h:416,xr:[-2.24,2.24],yr:[-1.6,1.6],
     pad:{l:12,r:12,t:12,b:12}, xticksOverride:[], yticksOverride:[],
     grid:false, zeroAxes:false, arrows:false});
   const items = [
-    ['1', 'Analog to digital', C.in],
-    ['2', 'Baseband',          C.out],
-    ['3', 'Signal space',      C.h],
-    ['4', 'The receiver',      C.err],
-    ['5', 'Modulation',        C.in],
-    ['6', 'Information',       C.out]
+    ['1', 'Analog to digital',        C.in],
+    ['2', 'Baseband transmission',    C.out],
+    ['3', 'Geometric representation', C.h],
+    ['4', 'The optimal receiver',     C.err],
+    ['5', 'Digital modulation',       C.in],
+    ['6', 'Information theory',       C.out]
   ];
   items.forEach((it,i)=>{
     const th = Math.PI/2 - i*2*Math.PI/6;
@@ -4245,9 +4780,12 @@ function figMap(){
     /* The number, so the ring and the cards beside it can be matched without
        reading a label twice. */
     a.note(x, y - 0.055, it[0], {fs:15, color:C.paper, anchor:'middle'});
-    const out = 1.26;
-    a.note(x*out, y*out + (Math.abs(y) < 0.2 ? 0 : (y > 0 ? 0.17 : -0.17)), it[1],
-      {fs:12.5, color:C.dim, anchor: Math.abs(x) < 0.2 ? 'middle' : (x > 0 ? 'start' : 'end')});
+    /* The title sits outside the point, clear of it above or below depending
+       on which half of the ring the point is in. No point of a six-point ring
+       lies on the horizontal axis, so there is no third case. */
+    const out = 1.28;
+    a.note(x*out, y*out + (y > 0 ? 0.24 : -0.24), it[1],
+      {fs:12.5, color:C.dim, anchor:'middle'});
   });
   a.point(0, 0, {color:C.ink, r:5});
   a.note(0, -0.22, 'one question', {fs:12.5, color:C.dim, anchor:'middle'});
@@ -4270,6 +4808,39 @@ function figChain(){
     {t:'text',x:372,y:144,label:'adds noise',fs:12},
     {t:'text',x:578,y:144,label:'names the symbol',fs:12}
   ]});
+}
+
+/* ---- pictograms for the how-to-read strip ----
+   Four small emblems, one per habit the reader needs. Each is a shape, not a
+   diagram: it marks the card the way an icon marks a control. */
+function mini(w,h,xr,yr){ return P.Axes({w:w,h:h,xr:xr,yr:yr,pad:{l:10,r:10,t:8,b:8},
+  xticksOverride:[], yticksOverride:[], grid:false, zeroAxes:false, arrows:false}); }
+function icoSteps(){
+  const a = mini(300,64,[0,10],[-1.2,1.2]);
+  a.point(2,0,{color:C.ink,r:6}); a.point(5,0,{color:C.ink,r:6});
+  a.point(8,0,{color:C.grid,r:6});
+  a.poly([[2.8,0],[4.2,0]],{color:C.grid,width:1.6});
+  a.poly([[5.8,0],[7.2,0]],{color:C.grid,width:1.6});
+  return a.svg();
+}
+function icoLab(){
+  const a = mini(300,64,[0,10],[-1.4,1.4]);
+  a.poly([[1,0.6],[9,0.6]],{color:C.grid,width:2});
+  a.point(6.2,0.6,{color:C.h,r:6});
+  a.poly([[1,-0.7],[9,-0.7]],{color:C.grid,width:2});
+  a.point(3.4,-0.7,{color:C.h,r:6});
+  return a.svg();
+}
+function icoModes(){
+  const a = mini(300,64,[0,10],[-1.2,1.2]);
+  [[0.8,C.dec.in],[3.1,C.dec.out],[5.4,C.dec.mid],[7.7,C.dec.h]].forEach(([x,f])=>
+    a.rect(x,-0.85,x+1.6,0.85,{fill:f}));
+  return a.svg();
+}
+function icoGauss(){
+  const a = mini(300,64,[-3,3],[0,1.15]);
+  a.curve(x=>Math.exp(-x*x/1.1),{color:C.ink,width:2});
+  return a.svg();
 }
 
 const SC = [
@@ -4356,17 +4927,17 @@ const SC = [
       caption:'The six modules and the one question at the centre of them. Modules 3, 4 and 5 are one argument told three times: make the distance meaningful, prove it decides, then measure it.'}
   ], right:[
     {t:'grid', cols:2, gap:'16px', items:[
-      [{t:'card', head:'1 · Analog to digital', items:[
+      [{t:'card', head:'1 · The transition from analog to digital', items:[
         {t:'small', html:'Sampling, the reconstruction that follows from it, quantization and the noise it adds, and pulse-code modulation. Where the bits come from.'}]}],
-      [{t:'card', head:'2 · Baseband', items:[
+      [{t:'card', head:'2 · Baseband transmission of digital signals', items:[
         {t:'small', html:'The matched filter, the demodulator, intersymbol interference, and the Nyquist condition that removes it. How a pulse train survives a channel.'}]}],
-      [{t:'card', head:'3 · Signal space', items:[
+      [{t:'card', head:'3 · Geometric representation of signal waveforms', items:[
         {t:'small', html:'A signal as a point. Energy becomes a squared length and difference becomes a distance, which is the move the rest of the course rests on.'}]}],
-      [{t:'card', head:'4 · The receiver', items:[
+      [{t:'card', head:'4 · The optimal receiver in AWGN', items:[
         {t:'small', html:'The rule that makes the fewest mistakes, the regions it draws, and the union bound that turns geometry into a number.'}]}],
-      [{t:'card', head:'5 · Modulation', items:[
+      [{t:'card', head:'5 · Digital modulation methods', items:[
         {t:'small', html:'PSK, PAM, QAM and FSK: place the points, measure the distance, read the error probability off Module 4. Nothing new is needed.'}]}],
-      [{t:'card', head:'6 · Information theory', items:[
+      [{t:'card', head:'6 · An introduction to information theory', items:[
         {t:'small', html:'Entropy, the source-coding theorem, prefix codes and Huffman. How few bits the message needed in the first place.'}]}]
     ]},
     {t:'reveal', at:1, items:[
@@ -4382,23 +4953,31 @@ const SC = [
 { id:'m0-how', module:'M0', nav:'How to read this', title:'How to read this, and where the numbers come from',
   objective:'Explain the reveal, the laboratories, the editions and the textbook anchor convention.',
   keywords:'how to read reveal steps laboratories editions anchors textbook convention notation',
-  steps:3, blocks:[
+  steps:1, blocks:[
   {t:'eyebrow', text:'Module 0 · The frame of the course'},
   {t:'title', text:'How to read this, and where the numbers come from'},
-  {t:'cols', ratio:'c-6-6', vcenter:true, left:[
-    {t:'note', kind:'def', head:'Scenes build in steps', html:'Most scenes reveal themselves a piece at a time. Space or the right arrow takes the next step, and a scene with three steps says so at the bottom right. The point is to leave time to answer a question before its answer appears. It is worth pausing at each step rather than pressing through.'},
-    {t:'note', kind:'def', head:'The laboratories are live', html:'Every control in a laboratory changes the mathematics and not the drawing. The numbers beside a figure are computed from the definitions at the moment the control moves. A reading taken from a laboratory is therefore a reading of the same formulas the scenes derive.'},
-    {t:'reveal', at:1, items:[
-      {t:'note', kind:'ok', head:'Four ways to read it', html:'<b>Normal</b> shows everything. <b>Lecture</b> hides the practice questions. <b>Self-study</b> opens the solutions by default. <b>Student</b> and <b>instructor</b> differ in whether the teaching notes appear. The controls are along the top, and the choice is remembered.'}
-    ]},
-    {t:'reveal', at:2, items:[
-      {t:'note', kind:'def', head:'The conventions are fixed and stated once', html:'Noise is white and Gaussian with two-sided density $N_0/2$; $Q(x)=\\tfrac12\\operatorname{erfc}(x/\\sqrt2)$; energy is normalised so that no resistance appears; $\\log$ without a base means base two. The notation panel along the top repeats all of them. Half the factor-of-two errors in this subject come from mixing two conventions in one line.'}
-    ]}
-  ], right:[
-    {t:'reveal', at:3, items:[
-      {t:'note', kind:'def', head:'Where the textbook is', html:'Most scenes carry a small chip beside their address pointing into the course textbook. The chip is a marker followed by a chapter and section, such as <b>PS CH8.4.1</b>. The marker is there because this artifact numbers its own chapters the same way. Without it a reader cannot tell which of the two an address belongs to.'},
-      {t:'small', html:'A scene with no chip is one the textbook does not cover in that form, and a few scenes carry two addresses. The chip points at the section that states the same result, not at a page a figure came from. Nothing here came from a page.'},
-      {t:'note', kind:'ok', head:'And where the numbers come from', html:'Every number stated in a scene or a solution is recomputed by a separate program that reaches it a different way. Constellations are rebuilt from their definitions rather than from the formula printed beside them. Huffman codes are built twice by two different algorithms. Every error probability is simulated against its formula. A number that appears here has survived that.'}
+  {t:'grid', cols:4, gap:'20px', items:[
+    [{t:'card', head:'Scenes build in steps', items:[
+      {t:'fig', svg:icoSteps},
+      {t:'small', html:'Space or the right arrow takes the next step. Pause at each one: a question is worth answering before its answer appears.'}
+    ]}],
+    [{t:'card', head:'The laboratories are live', items:[
+      {t:'fig', svg:icoLab},
+      {t:'small', html:'Every control changes the mathematics, not the drawing. The numbers beside a figure are recomputed the moment a control moves.'}
+    ]}],
+    [{t:'card', head:'Four ways to read it', items:[
+      {t:'fig', svg:icoModes},
+      {t:'small', html:'<b>Normal</b>, <b>lecture</b>, <b>self-study</b>, and <b>student</b> or <b>instructor</b>. The controls are along the top, and the choice is remembered.'}
+    ]}],
+    [{t:'card', head:'The conventions are fixed', items:[
+      {t:'fig', svg:icoGauss},
+      {t:'small', html:'Noise is white Gaussian with two-sided density $N_0/2$; $Q(x)=\\tfrac12\\operatorname{erfc}(x/\\sqrt2)$; $\\log$ means base two. The notation panel repeats all of them.'}
+    ]}]
+  ]},
+  {t:'reveal', at:1, items:[
+    {t:'grid', cols:2, gap:'24px', items:[
+      [{t:'note', kind:'def', head:'Where the textbook is', html:'Most scenes carry a small chip beside their address, such as <b>PS CH8.4.1</b>, pointing into the course textbook; the marker says the address belongs to the book and not to this artifact. A scene with no chip is one the textbook does not cover in that form.'}],
+      [{t:'note', kind:'ok', head:'And where the numbers come from', html:'Every number stated in a scene or a solution is recomputed by a separate program that reaches it a different way. Constellations are rebuilt from their definitions, Huffman codes are built twice by two different algorithms, and every error probability is simulated against its formula.'}]
     ]}
   ]}
 ]}
@@ -4432,20 +5011,74 @@ const P = PLOT, C = P.COL;
    three cases and in the reconstruction figure. */
 const tri = (f,W,h) => Math.abs(f) < W ? h*(1-Math.abs(f)/W) : 0;
 
+/* One copy of that spectrum in a sampled-spectrum figure, drawn from its own
+   three corners instead of from tri() sampled across the whole axis. tri() is
+   zero outside its band and curve() draws that zero, so every copy laid a
+   coloured line along the axis and the axis of G_delta(f) came out in the
+   colour of the signal. Drawn from its corners a copy stops where its band
+   stops. Corners outside the view are clipped, so a partial copy at the edge
+   still enters from the edge. */
+const copy = (a, c, W, peak, opts) => a.poly([[c-W,0],[c,peak],[c+W,0]], opts);
+
 /* The message used in every time-domain figure of the sampling sections. It is
    drawn from its own definition rather than from a table of points, so the
    samples in one figure and the curve in the next cannot drift apart. */
 const g = t => 0.85*Math.sin(1.15*t) + 0.35*Math.sin(2.7*t + 0.8);
 
-function figSampling(){
-  const a = P.Axes({w:660,h:250,xr:[-0.4,10.4],yr:[-1.5,1.6],
-    xlabel:'t',ylabel:'g(t),\\;g_\\delta(t)',pad:{l:50,r:26,t:24,b:40},xtarget:6,ytarget:4});
+/* Sampling is a product of two signals, so it is drawn as three panels on one
+   time axis: the message, the train that multiplies it, and the product. The
+   panels share w, xr and pad.l, so a sample instant sits at the same place in
+   all three and the reader can read straight down a column. Each panel names
+   itself on its own axis, so no panel needs a label inside the drawing. */
+function figSamplingStack(){
+  const Ts = 1.0, N = 10;
+  const common = {w:660, xr:[-0.4,10.4], xtarget:6, pad:{l:52,r:26,t:24,b:16}};
+  const mute = f => Object.assign({}, common, f);
+
+  /* 1 — the message */
+  const a = P.Axes(mute({h:150, yr:[-1.45,1.55], ylabel:'g(t)', ytarget:4}));
   a.curve(g,{color:C.in});
-  const Ts = 1.0;
-  for(let n=0;n<=10;n++) a.impulse(n*Ts, g(n*Ts), {color:C.mid, label:false});
-  a.note(6.3,1.32,'g(t)',{tex:true,fs:15,color:C.in});
-  a.note(1.15,-1.32,'g(nT_s)\\,\\delta(t-nT_s)',{tex:true,fs:14,color:C.mid});
-  return a.svg();
+
+  /* 2 — the sampling train. Every impulse has weight one: the train carries no
+     information, it only marks the instants. */
+  const b = P.Axes(mute({h:120, yr:[-0.45,1.60], ylabel:'p(t)', ytarget:2}));
+  for(let n=0;n<=N;n++) b.impulse(n*Ts, 1, {color:C.h, label:false});
+  b.span(4*Ts, 5*Ts, 1.28, 'T_s', {tex:true, fs:13, color:C.h});
+
+  /* 3 — the product. The message is repeated as a dashed line, because the
+     height of each impulse is read off it. */
+  const c = P.Axes(mute({h:168, yr:[-1.45,1.55], xlabel:'t',
+    ylabel:'g_\\delta(t)=g(t)\\,p(t)', ytarget:4, pad:{l:52,r:26,t:24,b:16}}));
+  c.curve(g,{color:C.in, width:1.4, dash:'4 6', opacity:0.55});
+  for(let n=0;n<=N;n++) c.impulse(n*Ts, g(n*Ts), {color:C.mid, label:false});
+
+  return a.svg() + b.svg() + c.svg();
+}
+
+/* The pair drawn in the replication scene: the message spectrum, and the same
+   spectrum after sampling. The two panels share w, xr and pad.l, so a frequency
+   sits at the same place in both and the reader can read straight down and see
+   which shape was copied. The sampled spectrum is one signal, so every copy in
+   it takes one colour; and its axis is marked at f_s, because f_s is what sets
+   where the copies land. */
+function figSpectrumPair(){
+  const W = 1, fs = 3, top = fs;
+  const common = {w:640, xr:[-3.3*W,3.3*W], xlabel:'f', xtarget:6,
+                  pad:{l:52,r:26,t:22,b:40}, ytickfmt:()=>''};
+  const sgn = v => v<0 ? '-' : '';
+
+  const a = P.Axes(Object.assign({}, common, {h:150, yr:[-0.12,1.34],
+    ylabel:'G(f)', ytarget:2,
+    xticksOverride:[-W,W], xtickfmt:v=>sgn(v)+'W'}));
+  a.curve(f=>tri(f,W,1),{color:C.in,width:2.4});
+
+  const b = P.Axes(Object.assign({}, common, {h:210, yr:[-0.12*top,1.28*top],
+    ylabel:'G_\\delta(f)', ytarget:3,
+    xticksOverride:[-fs,-W,W,fs],
+    xtickfmt:v=>sgn(v)+(Math.abs(Math.abs(v)-fs)<1e-9 ? 'f\u209b' : 'W')}));
+  for(let n=-3;n<=3;n++) copy(b, n*fs, W, fs, {color:C.mid,width:2.2});
+
+  return {msg:a.svg(), sampled:b.svg()};
 }
 
 function figReplicas(fs, W, label){
@@ -4454,7 +5087,7 @@ function figReplicas(fs, W, label){
     xlabel:'f',ylabel:'G_\\delta(f)',pad:{l:52,r:26,t:24,b:40},
     xtarget:6,ytarget:3,xtickfmt:v=>P.fmt(v/W,2)+'W',ytickfmt:()=>''});
   for(let n=-3;n<=3;n++)
-    a.curve(f=>fs*tri(f-n*fs,W,h),{color:n===0?C.in:C.mid,width:n===0?2.4:1.9});
+    copy(a, n*fs, W, fs*h, {color:C.mid,width:2.2});
   if(label) a.note(0,1.12*top,label,{tex:true,fs:14,color:C.muted,anchor:'middle'});
   return a;
 }
@@ -4463,6 +5096,13 @@ function figCase(kind){
   const W = 1;
   const fs = kind==='over' ? 3 : kind==='nyq' ? 2 : 1.5;
   const a = figReplicas(fs, W, null);
+  if(kind==='over'){
+    /* The gap between the edge of the message and the edge of the first
+       replica is the guard band. It is a distance, not a signal, so the
+       bracket takes the muted label tone and no signal colour. */
+    for(const c of [-1,1])
+      a.span(c*W, c*(fs-W), 0.14*fs, c>0?'\\text{guard band }(f_g)':null, {tex:true, fs:12, color:C.muted});
+  }
   if(kind==='under'){
     /* The overlap is the error, so it takes the error colour and nothing else
        in the figure does. It is filled between the edges of the two triangles
@@ -4473,6 +5113,25 @@ function figCase(kind){
       a.area(f=>Math.min(fs*tri(f,W,1), fs*tri(f-c*fs,W,1)),
              Math.max(-W, c*fs-W), Math.min(W, c*fs+W),
              {color:C.dec.err, stroke:C.err});
+    /* A ring around each overlap points at the aliasing the fill marks. The
+       ring is drawn through raw() because the plot kit has no ellipse, so its
+       radii are computed here from the same geometry as the fill: the overlap
+       is centred at f_s/2 and its peak is the height of either triangle there. */
+    const pk = fs*(1 - fs/(2*W));
+    for(const c of [-1,1]){
+      const cx = a.sx(c*fs/2), cy = a.sy(pk/2);
+      const rx = a.sx(c*fs/2 + (W - fs/2) + 0.12) - cx;
+      const ry = cy - a.sy(pk/2 + pk/2 + 0.08);
+      a.raw(`<ellipse cx="${cx.toFixed(2)}" cy="${cy.toFixed(2)}" rx="${Math.abs(rx).toFixed(2)}" ry="${Math.abs(ry).toFixed(2)}"
+        fill="none" stroke="${C.err}" stroke-width="1.8"/>`);
+    }
+    /* One label for the pair, set at the height labels take in this figure
+       family, where nothing is drawn, and joined to the right-hand ring by a
+       leader. The leader stops above the point where the two triangles cross,
+       so it stands in empty space and covers no curve. */
+    a.note(fs/2, 1.12*fs, '\\text{aliasing}', {tex:true, fs:12, color:C.err, anchor:'middle'});
+    a.poly([[fs/2, 1.05*fs],[fs/2, pk + 0.13]],
+           {color:C.err, width:1, dash:'3 3'});
   }
   return a.svg();
 }
@@ -4482,24 +5141,77 @@ function figLpf(){
   const a = P.Axes({w:640,h:230,xr:[-3.3,3.3],yr:[-0.12*top,1.3*top],
     xlabel:'f',ylabel:'G_\\delta(f),\\;H_{\\mathrm{LPF}}(f)',pad:{l:56,r:26,t:26,b:40},
     xtarget:6,ytarget:3,xtickfmt:v=>P.fmt(v,2)+'W',ytickfmt:()=>''});
-  for(let n=-1;n<=1;n++) a.curve(f=>fs*tri(f-n*fs,W,1),{color:n===0?C.in:C.mid,width:n===0?2.4:1.9});
+  for(let n=-1;n<=1;n++) copy(a, n*fs, W, fs, {color:C.mid,width:2.2});
   a.poly([[-3.2,0],[-W,0],[-W,1.12*fs],[W,1.12*fs],[W,0],[3.2,0]],{color:C.h,width:2.4});
   a.note(0,1.19*fs,'H_{\\mathrm{LPF}}(f)',{tex:true,fs:14,color:C.h,anchor:'middle'});
   return a.svg();
 }
 
+/* The impulse response of the reconstruction filter on its own time axis: one
+   at the origin, zero at every non-zero multiple of 1/(2W). The filter keeps
+   its colour — amber in frequency, amber in time — and the zeros are marked as
+   points because they are the fact the interpolation scene uses next. The tick
+   numbers are suppressed: the axis is graduated in 1/(2W), and the span names
+   that unit the way the sampling stack names T_s. */
+function figSinc(){
+  const sinc = x => Math.abs(x)<1e-9 ? 1 : Math.sin(Math.PI*x)/(Math.PI*x);
+  const a = P.Axes({w:640,h:210,xr:[-3.6,3.6],yr:[-0.42,1.30],
+    xlabel:'t',ylabel:'h_{\\mathrm{LPF}}(t)',pad:{l:56,r:26,t:26,b:40},
+    xticksOverride:[-3,-2,-1,1,2,3],xtickfmt:()=>'',ytarget:3,ytickfmt:()=>''});
+  a.curve(t=>sinc(t),{color:C.h,width:2.4});
+  for(let n=-3;n<=3;n++) if(n) a.point(n,0,{color:C.h,r:3});
+  a.span(2,3,-0.30,'\\tfrac{1}{2W}',{tex:true,fs:13,color:C.h});
+  a.note(0.14,1.14,'\\operatorname{sinc}(2Wt)',{tex:true,fs:14,color:C.h});
+  return a.svg();
+}
+
+/* Interactive: each term is wrapped in a group carrying its sample index, so
+   the style sheet can lift one sinc out of the crowd — the idle roll call and
+   the pointer handling at the foot of this file drive the `on`/`pick`
+   classes. While a term is lifted, its zeros at the other sampling instants
+   are drawn, because those zeros are why the sum passes through every sample.
+   The figure itself stays a plain string of SVG, rebuilt on every render. */
 function figInterp(){
   const W = 0.5, Ts = 1/(2*W);          /* T_s = 1 s, so the picture reads directly */
   const a = P.Axes({w:660,h:260,xr:[-0.4,8.4],yr:[-1.5,1.6],
     xlabel:'t',ylabel:'g(t),\\;g_r(t)',pad:{l:50,r:26,t:24,b:40},xtarget:6,ytarget:4});
   const sinc = x => Math.abs(x)<1e-9 ? 1 : Math.sin(Math.PI*x)/(Math.PI*x);
-  for(let n=0;n<=8;n++)
+  for(let n=0;n<=8;n++){
+    a.raw(`<g class="st" data-st="${n}">`);
     a.curve(t=>g(n*Ts)*sinc((t-n*Ts)/Ts),{color:C.mid,width:1.1,opacity:0.55,dash:'3 3'});
+    for(let k=0;k<=8;k++) if(k!==n)
+      a.raw(`<circle class="st-z" cx="${a.sx(k*Ts).toFixed(2)}" cy="${a.sy(0).toFixed(2)}"
+        r="3" fill="none" stroke="${C.mid}" stroke-width="1.5"/>`);
+    a.raw('</g>');
+  }
   a.curve(t=>{ let s=0; for(let n=-6;n<=14;n++) s += g(n*Ts)*sinc((t-n*Ts)/Ts); return s; },
           {color:C.out,width:2.6});
-  for(let n=0;n<=8;n++) a.point(n*Ts, g(n*Ts), {color:C.in, r:3.6});
+  for(let n=0;n<=8;n++){
+    a.raw(`<g class="st-dot" data-st="${n}">`);
+    a.point(n*Ts, g(n*Ts), {color:C.in, r:3.6});
+    /* an invisible disc widens the pointer target to a finger's width */
+    a.raw(`<circle cx="${a.sx(n*Ts).toFixed(2)}" cy="${a.sy(g(n*Ts)).toFixed(2)}"
+      r="20" fill="transparent"/>`);
+    a.raw('</g>');
+  }
+  /* One expression per term, all at the spot the resting caption occupies;
+     the style sheet shows only the lifted term's line, so the reader sees
+     the exact summand the highlighted curve draws. With T_s = 1 and 2W = 1
+     the general term g(nT_s) sinc(2W(t-nT_s)) reads g(n) sinc(t-n), which is
+     why the label can stay this short. The value is rounded, so it is joined
+     with \approx and not an equals sign. */
+  for(let n=0;n<=8;n++){
+    const arg = n===0 ? 't' : `t-${n}`;
+    a.raw(`<g class="st-eq" data-st="${n}">`);
+    a.note(0.15,1.34,
+      `g(${n})\\,\\operatorname{sinc}(${arg})\\approx ${P.fmt(g(n*Ts),2)}\\,\\operatorname{sinc}(${arg})`,
+      {tex:true,fs:13,color:C.mid});
+    a.raw('</g>');
+  }
+  a.raw('<g class="sp-note">');
   a.note(0.15,1.34,'\\text{one shifted }\\operatorname{sinc}\\text{ per sample}',{tex:true,fs:13,color:C.mid});
-  return a.svg();
+  a.raw('</g>');
+  return a.svg().replace('<svg ','<svg class="sincpick" ');
 }
 
 function figQuantizer(kind){
@@ -4581,13 +5293,16 @@ function figLineCode(i){
    actually produce shaded. Nothing is sampled or simulated: a cell is shaded
    when the two indices differ by at most one, which is the condition the scene
    states, so the count in the caption is the count the figure draws. */
-function figPairLattice(L){
+function figPairLattice(L, shade){
+  /* `shade` marks the near-diagonal cells; the scene turns it on at the step
+     where the smooth-signal restriction is introduced, so the figure changes
+     when the argument does. */
   const a = P.Axes({w:440,h:330,xr:[0,L],yr:[0,L],
     xlabel:'\\text{sample }n', ylabel:'\\text{sample }n+1',
     pad:{l:58,r:22,t:22,b:46}, xticksOverride:[0,4,8,12,16], yticksOverride:[0,4,8,12,16],
     grid:false});
   for(let i=0;i<L;i++) for(let j=0;j<L;j++){
-    const near = Math.abs(i-j) <= 1;
+    const near = shade && Math.abs(i-j) <= 1;
     a.rect(i, j, i+1, j+1,
       {fill: near ? C.dec.in : 'none', stroke: near ? C.in : C.rule});
   }
@@ -4624,6 +5339,35 @@ function figPcmExample(){
     a.point(t, q(v), {color:C.mid, r:4});
   }
   a.note(1.8, 8.35, '\\Delta=1\\ \\mathrm{V},\\;L=8', {tex:true,fs:14,color:C.muted,anchor:'middle'});
+  return a.svg();
+}
+
+/* ---- summary-card miniatures ----
+   Each recalls the key figure of its section, stripped to the shape alone:
+   no ticks, no labels, one object a card. */
+function mini(w,h,xr,yr){ return P.Axes({w:w,h:h,xr:xr,yr:yr,pad:{l:10,r:10,t:8,b:8},
+  xticksOverride:[], yticksOverride:[], grid:false, zeroAxes:false, arrows:false}); }
+function miniSampling(){
+  const a = mini(520,96,[-3.4,3.4],[0,1.25]);
+  for(let n=-1;n<=1;n++) copy(a, 2.2*n, 1, 1, {color:C.mid,width:2});
+  return a.svg();
+}
+function miniSinc(){
+  const a = mini(520,96,[-3,3],[-0.35,1.15]);
+  a.curve(t=>{const x=2*t; return Math.abs(x)<1e-6?1:Math.sin(Math.PI*x)/(Math.PI*x);},{color:C.h,width:2});
+  return a.svg();
+}
+function miniQuant(){
+  const a = mini(520,96,[-1.15,1.15],[-1.25,1.25]);
+  a.poly([[-1.1,-1.1],[1.1,1.1]],{color:C.rule,width:1.2,dash:'3 4'});
+  for(let k=-3;k<3;k++) a.poly([[k/3,(k+0.5)/3*1.05],[(k+1)/3,(k+0.5)/3*1.05]],{color:C.mid,width:2.4});
+  return a.svg();
+}
+function miniRate(){
+  const a = mini(520,96,[0,4.4],[0,30]);
+  const pts=[1,2,3,4].map(R=>[R,1.8+6.02*R]);
+  a.poly(pts,{color:C.out,width:2});
+  pts.forEach(p=>a.point(p[0],p[1],{color:C.out,r:3.5}));
   return a.svg();
 }
 
@@ -4685,7 +5429,7 @@ const SC = [
       {t:'note', kind:'warn', head:'What this object is and is not', html:'$g_\\delta(t)$ is not a sequence of numbers. It is a continuous-time signal built from impulses, so it has a Fourier transform. We use this form because the next scene takes that transform and leads directly to the sampling theorem.'}
     ]}
   ], right:[
-    {t:'fig', frame:true, svg:figSampling, caption:'The message and its ideal samples. Each impulse carries the value of $g$ at its own instant as its weight; between the instants the sampled signal is zero.'}
+    {t:'fig', frame:true, svg:figSamplingStack, caption:'The three signals on one time axis: the message, the sampling train, and their product. Each impulse of $g_\\delta(t)$ carries the value of $g$ at its own instant as its weight; between the instants the sampled signal is zero.'}
   ]}
 ]},
 
@@ -4700,13 +5444,18 @@ const SC = [
     {t:'eq', tex:'P(f)=\\frac{1}{T_s}\\sum_{n=-\\infty}^{\\infty}\\delta(f-nf_s)=f_s\\sum_{n=-\\infty}^{\\infty}\\delta(f-nf_s)'},
     {t:'reveal', at:1, items:[
       {t:'small', html:'The coefficient is the Fourier-series coefficient of $p(t)$: $a_k=\\frac{1}{T_s}\\int_{-T_s/2}^{T_s/2}\\delta(t)e^{-j2\\pi kf_0t}\\,dt=\\frac{1}{T_s}$ for every $k$, by the sifting property.'},
+      {t:'eq', tex:'\\begin{aligned}G_\\delta(f)&=G(f)*\\Big[\\frac{1}{T_s}\\sum_{n=-\\infty}^{\\infty}\\delta(f-nf_s)\\Big]\\\\[2pt]&=\\frac{1}{T_s}\\sum_{n=-\\infty}^{\\infty}G(f)*\\delta(f-nf_s)\\end{aligned}'},
+      {t:'small', html:'Write each convolution out, then use that the impulse is even, $\\delta(-u)=\\delta(u)$:'},
+      {t:'eq', tex:'\\begin{aligned}G(f)*\\delta(f-nf_s)&=\\int G(\\theta)\\,\\delta(f-nf_s-\\theta)\\,d\\theta\\\\[2pt]&=\\int G(\\theta)\\,\\delta\\bigl(-[\\theta-(f-nf_s)]\\bigr)\\,d\\theta\\\\[2pt]&=\\int G(\\theta)\\,\\delta\\bigl(\\theta-(f-nf_s)\\bigr)\\,d\\theta\\\\[2pt]&=G(f-nf_s)\\end{aligned}'},
+      {t:'small', html:'The last line is the sifting property. Each impulse shifts one copy of $G$ to its own $nf_s$.'},
       {t:'eq', key:true, tex:'G_\\delta(f)=f_s\\sum_{n=-\\infty}^{\\infty}G(f-nf_s)'}
     ]},
     {t:'reveal', at:2, items:[
       {t:'note', kind:'def', head:'Read the result', html:'Sampling copies the spectrum to every multiple of $f_s$ and scales it by $f_s$. Nothing is lost <em>provided the copies do not overlap</em>. That proviso is the sampling theorem.'}
     ]}
   ], right:[
-    {t:'fig', frame:true, svg:()=>figReplicas(3,1,null).svg(), caption:'The spectrum of the sampled signal when $f_s=3W$. The copy at the origin is the message; the others are the replicas sampling has created.'}
+    {t:'fig', frame:true, svg:()=>figSpectrumPair().msg, caption:'The message spectrum before sampling. It is zero outside $|f|<W$, which is what &ldquo;bandlimited to $W$&rdquo; means.'},
+    {t:'fig', frame:true, svg:()=>figSpectrumPair().sampled, caption:'The same spectrum after sampling at $f_s=3W$. The shape above now sits at every multiple of $f_s$ and is $f_s$ times as tall. The copy at the origin is the message; the others are the replicas sampling has created.'}
   ]}
 ]},
 
@@ -4717,9 +5466,9 @@ const SC = [
   {t:'eyebrow', text:'Module 1 · The sampling theorem'},
   {t:'title', text:'Three sampling rates'},
   {t:'grid', cols:3, gap:'26px', items:[
-    [{t:'fig', svg:()=>figCase('over'), caption:'<b>$f_s>2W$.</b> The replicas are separated by a gap. The message can be filtered out unchanged.'}],
-    [{t:'fig', svg:()=>figCase('nyq'), caption:'<b>$f_s=2W$.</b> The replicas touch and do not overlap. This is the lowest rate that still works.'}],
-    [{t:'fig', svg:()=>figCase('under'), caption:'<b>$f_s<2W$.</b> The replicas overlap. The sum in the overlap cannot be separated back into its parts.'}]
+    [{t:'fig', svg:()=>figCase('over'), caption:'<b>Oversampling: $f_s>2W$.</b> The replicas are separated by a gap — the <b>guard band</b>. The message can be filtered out unchanged.'}],
+    [{t:'fig', svg:()=>figCase('nyq'), caption:'<b>Nyquist sampling: $f_s=2W$.</b> The replicas touch and do not overlap. This is the lowest rate that still works.'}],
+    [{t:'fig', svg:()=>figCase('under'), caption:'<b>Undersampling: $f_s<2W$.</b> The replicas overlap. The sum in the overlap cannot be separated back into its parts.'}]
   ]},
   {t:'reveal', at:1, items:[
     {t:'note', kind:'err', head:'Aliasing', html:'In the third case a high frequency of the message has been added to a low frequency of a replica. No filter can undo the addition. The original signal cannot be recovered from its samples — not by a better filter, not by more computation.'}
@@ -4742,6 +5491,8 @@ const SC = [
       {t:'note', kind:'warn', head:'Twice the highest frequency, not twice the bandwidth', html:'For a lowpass signal the two coincide, and that is the only case treated here. For a signal whose band does not reach down to zero, the two are different numbers. The rate that matters is still set by the geometry of the replicas, not by either name.'}
     ]}
   ], right:[
+    {t:'fig', frame:true, svg:()=>figCase('nyq'),
+      caption:'The theorem drawn: at $f_s=2W$ the replicas just touch. Any slower and they overlap; any faster and a gap opens.'},
     {t:'eq', label:'Nyquist rate', key:true, tex:'f_s^{\\min}=2W'},
     {t:'eq', label:'Nyquist interval', tex:'T_s^{\\max}=\\frac{1}{2W}'}
   ]}
@@ -4767,29 +5518,37 @@ const SC = [
       {t:'note', kind:'warn', head:'Why the gain is $1/2W$', html:'Sampling multiplied the spectrum by $f_s=2W$. The filter has to divide it back. A reconstruction filter of unit gain returns a signal $2W$ times too large. That scaling error shows on no plot of the spectrum shape.'}
     ]}
   ], right:[
-    {t:'fig', frame:true, svg:figLpf, caption:'The filter passes the copy at the origin and rejects the replicas. At exactly the Nyquist rate the replicas touch the edge of the passband, which is why an ideal filter is needed there and a gentler one suffices when the rate is higher.'}
+    {t:'fig', frame:true, svg:figLpf, caption:'The filter passes the copy at the origin and rejects the replicas. At exactly the Nyquist rate the replicas touch the edge of the passband, which is why an ideal filter is needed there and a gentler one suffices when the rate is higher.'},
+    {t:'reveal', at:1, items:[
+      {t:'fig', frame:true, svg:figSinc, caption:'The same filter in time. The pulse is one at $t=0$ and zero at every non-zero multiple of $1/(2W)$ — exactly the sampling instants. The next scene builds the reconstruction out of shifted copies of this pulse.'}
+    ]}
   ]}
 ]},
 
 { id:'m1-interp', module:'M1', nav:'Interpolation', title:'The interpolation formula',
   objective:'Show the interpolation formula as a sum of shifted sinc functions.',
   keywords:'interpolation formula sinc shifted samples reconstruction sum',
-  src:'CH7 s.11–12', steps:2, blocks:[
+  src:'CH7 s.11–12', steps:3, blocks:[
   {t:'eyebrow', text:'Module 1 · Reconstruction'},
   {t:'title', text:'The interpolation formula'},
   {t:'lede', text:'Every sample carries one sinc, and the sum of them is the message between the samples.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
-    {t:'body', html:'Filtering in frequency is convolution in time. Convolving the impulse train with $h_{\\mathrm{LPF}}$ and using the sifting property once more gives'},
-    {t:'eq', key:true, tex:'g_r(t)=\\sum_{n=-\\infty}^{\\infty}g(nT_s)\\operatorname{sinc}\\!\\bigl(2W(t-nT_s)\\bigr)'},
+    {t:'body', html:'Filtering in frequency is convolution in time. Convolving the impulse train with $h_{\\mathrm{LPF}}$ is one integral:'},
+    {t:'eq', label:'Convolution integral', tex:'g_r(t)=\\int_{-\\infty}^{\\infty}\\overbrace{\\sum_{n=-\\infty}^{\\infty}g(nT_s)\\,\\delta(\\tau-nT_s)}^{=\\,g_\\delta(\\tau)}\\operatorname{sinc}\\!\\bigl(2W(t-\\tau)\\bigr)\\,d\\tau'},
     {t:'reveal', at:1, items:[
+      {t:'body', html:'The sum does not depend on $\\tau$, so it moves outside the integral. What is left inside is a sinc against a shifted impulse, and the sifting property replaces $\\tau$ by $nT_s$:'},
+      {t:'eq', tex:'g_r(t)=\\sum_{n=-\\infty}^{\\infty}g(nT_s)\\underbrace{\\int_{-\\infty}^{\\infty}\\operatorname{sinc}\\!\\bigl(2W(t-\\tau)\\bigr)\\,\\delta(\\tau-nT_s)\\,d\\tau}_{=\\,\\operatorname{sinc}\\!\\bigl(2W(t-nT_s)\\bigr)}'},
+      {t:'eq', key:true, tex:'g_r(t)=\\sum_{n=-\\infty}^{\\infty}g(nT_s)\\operatorname{sinc}\\!\\bigl(2W(t-nT_s)\\bigr)'}
+    ]},
+    {t:'reveal', at:2, items:[
       {t:'body', html:'At the Nyquist rate $T_s=1/(2W)$ this reads'},
       {t:'eq', tex:'g_r(t)=\\sum_{n=-\\infty}^{\\infty}g\\!\\left(\\frac{n}{2W}\\right)\\operatorname{sinc}(2Wt-n)'}
     ]},
-    {t:'reveal', at:2, items:[
+    {t:'reveal', at:3, items:[
       {t:'note', kind:'ok', head:'Why the sum passes through the samples', html:'At $t=kT_s$ every term vanishes except the one with $n=k$, because $\\operatorname{sinc}$ is zero at every non-zero integer. So $g_r(kT_s)=g(kT_s)$ exactly, and the interpolation is not an approximation between the samples either — it is the message.'}
     ]}
   ], right:[
-    {t:'fig', frame:true, svg:figInterp, caption:'Each sample contributes one sinc scaled by its own value. Their sum is drawn heavy; it passes through every sample because each sinc is zero at all the other sampling instants.'}
+    {t:'fig', frame:true, svg:figInterp, caption:'Each sample contributes one sinc scaled by its own value. Their sum is drawn heavy; it passes through every sample because each sinc is zero at all the other sampling instants. Point to a sample — or touch it — to see its own sinc alone, with those zeros marked.'}
   ]}
 ]},
 
@@ -5204,9 +5963,9 @@ const SC = [
       {t:'small', html:'The next scene takes the case this is actually used on. There the samples are the pixels of an image, and there are a quarter of a million of them.'}
     ]}
   ], right:[
-    {t:'fig', frame:true, svg:()=>figPairLattice(16),
-      caption:'Every pair of neighbouring samples a $16$-level quantizer can produce. A scalar quantizer pays for all $256$ squares. If a sample never moves by more than one step, only the $46$ shaded ones ever occur, and the codebook needs $6$ bits a pair instead of $8$.'},
-    {t:'small', html:'Almost all of the saving comes from neighbouring samples being alike. A small gain survives even for independent samples, because better-shaped cells pack the space more efficiently than squares. But it is under a quarter of a bit a sample, and this course does not pursue it.'}
+    {t:'fig', frame:true, svg:()=>figPairLattice(16, APP.state.step>=1),
+      caption:'Every pair of neighbouring samples a $16$-level quantizer can produce: $256$ squares, and a scalar quantizer pays for all of them. Once the smooth-signal restriction arrives, only the $46$ near-diagonal squares ever occur, and the codebook needs $6$ bits a pair instead of $8$.'},
+    {t:'small', html:'A small gain survives even for independent samples, because better-shaped cells pack the space more efficiently than squares — but it is under a quarter of a bit a sample, and this course does not pursue it.'}
   ]}
 ]},
 
@@ -5234,7 +5993,7 @@ const SC = [
       {t:'note', kind:'def', head:'This is lossy compression', html:'The removed information is not recoverable. The omitted bits described where the pixel lay inside its quantization interval. A decoder cannot recover that position. This loss is why the method is called <b>lossy</b>. JPEG also uses quantization, but it quantizes transformed image blocks rather than individual pixels.'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'ok', head:'Where the chapter ends', html:'Sampling is reversible when the sampling-theorem conditions hold. Quantization is not reversible. An image makes the second fact visible because coarse levels create bands that were not present before quantization. Later chapters start with the resulting bit stream.'}
+      {t:'small', html:'<b>Where the chapter ends:</b> sampling is reversible when the sampling-theorem conditions hold; quantization is not. An image makes the second fact visible, and later chapters start with the resulting bit stream.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figBanding(),
@@ -5252,26 +6011,78 @@ const SC = [
   {t:'title', text:'What Module 1 established'},
   {t:'grid', cols:2, gap:'26px', items:[
     [{t:'card', head:'Sampling', items:[
-      {t:'body', html:'<p>Sampling replicates the spectrum every $f_s$. If $f_s\\ge 2W$ the replicas do not overlap and the message survives exactly; otherwise it does not survive at all.</p>'},
-      {t:'eq', plain:true, tex:'G_\\delta(f)=f_s\\sum_n G(f-nf_s)'}
+      {t:'fig', svg:miniSampling},
+      {t:'eq', plain:true, tex:'G_\\delta(f)=f_s\\sum_n G(f-nf_s)'},
+      {t:'small', html:'Replicas every $f_s$. With $f_s\\ge 2W$ they do not overlap and the message survives exactly.'}
     ]}],
     [{t:'card', head:'Reconstruction', items:[
-      {t:'body', html:'<p>One lowpass filter of gain $1/2W$ recovers the message, and its impulse response is what interpolates between the samples.</p>'},
-      {t:'eq', plain:true, tex:'g_r(t)=\\sum_n g(nT_s)\\operatorname{sinc}(2Wt-n)'}
+      {t:'fig', svg:miniSinc},
+      {t:'eq', plain:true, tex:'g_r(t)=\\sum_n g(nT_s)\\operatorname{sinc}(2Wt-n)'},
+      {t:'small', html:'One lowpass filter recovers the message; its impulse response interpolates between the samples.'}
     ]}],
     [{t:'card', head:'Quantization', items:[
-      {t:'body', html:'<p>Rounding to $L=2^{R}$ levels costs a mean-square error fixed by the step size alone. This holds as long as the step is small compared with how fast the density varies.</p>'},
-      {t:'eq', plain:true, tex:'E[Q^{2}]=\\Delta^{2}/12,\\quad \\Delta=2m_{\\max}/L'}
+      {t:'fig', svg:miniQuant},
+      {t:'eq', plain:true, tex:'E[Q^{2}]=\\Delta^{2}/12,\\quad \\Delta=2m_{\\max}/L'},
+      {t:'small', html:'Rounding to $L=2^{R}$ levels costs a mean-square error set by the step size alone.'}
     ]}],
     [{t:'card', head:'The rate that follows', items:[
-      {t:'body', html:'<p>Every bit per sample buys $6.02$ dB and costs $f_s$ bits per second. Module 2 takes that bit stream and asks what the channel does to it.</p>'},
-      {t:'eq', plain:true, tex:'\\mathrm{SQNR}=\\alpha+6.02R,\\qquad R_b=Rf_s'}
+      {t:'fig', svg:miniRate},
+      {t:'eq', plain:true, tex:'\\mathrm{SQNR}=\\alpha+6.02R,\\qquad R_b=Rf_s'},
+      {t:'small', html:'Every bit per sample buys $6.02$ dB and costs $f_s$ bits per second.'}
     ]}]
   ]},
   {t:'note', kind:'ok', head:'The module in one sentence', html:'Turning a signal into bits costs two things and nothing else. You must sample fast enough, or the spectrum folds and cannot be unfolded. And you must round, which adds a small noise whose power falls by a factor of four with every extra bit.'}
 ]}
 
 ];
+
+/* ---- the interpolation figure comes alive -------------------------------
+   A slow roll call lifts each sample's sinc in turn, so the crowd of dashed
+   terms reads as nine individuals rather than a blur. Pointing at a sample
+   pins its sinc; on a touch screen a tap pins it and a second tap on the
+   same sample releases it. Leaving the figure lets the roll call continue.
+   The state lives here, not in the SVG, because the scene is re-rendered on
+   every step and theme change and the figure string is rebuilt from scratch.
+   The roll call defers to the course's own motion switch (body[data-motion]),
+   which is initialised from prefers-reduced-motion; the pointer interaction
+   stays live either way. */
+const SP = { n:null, held:false, i:-1 };
+const spRoot  = () => document.querySelector('svg.sincpick');
+function spApply(sv){
+  if(!sv) return;
+  sv.classList.toggle('pick', SP.n!=null);
+  sv.querySelectorAll('[data-st]').forEach(el=>
+    el.classList.toggle('on', el.dataset.st===String(SP.n)));
+}
+setInterval(()=>{
+  if(document.hidden || SP.held) return;
+  if(document.body.dataset.motion==='reduced') return;
+  const sv = spRoot();
+  if(!sv){ SP.n=null; SP.i=-1; return; }
+  SP.i=(SP.i+1)%9; SP.n=SP.i; spApply(sv);
+}, 1700);
+document.addEventListener('pointerover', e=>{
+  if(e.pointerType!=='mouse' || !(e.target instanceof Element)) return;
+  const d = e.target.closest('svg.sincpick .st-dot');
+  if(!d) return;
+  SP.held=true; SP.n=+d.dataset.st; spApply(spRoot());
+});
+document.addEventListener('pointerout', e=>{
+  if(!SP.held || e.pointerType!=='mouse' || !(e.target instanceof Element)) return;
+  const sv = e.target.closest('svg.sincpick');
+  if(sv && !(e.relatedTarget instanceof Element && sv.contains(e.relatedTarget)))
+    SP.held=false;      /* the roll call takes over on its next tick */
+});
+document.addEventListener('click', e=>{
+  /* a mouse pins by pointing; its click must not immediately release the pin */
+  if(e.pointerType==='mouse' || !(e.target instanceof Element)) return;
+  const d = e.target.closest('svg.sincpick .st-dot');
+  if(!d) return;
+  const n=+d.dataset.st;
+  if(SP.held && SP.n===n){ SP.held=false; SP.n=null; }
+  else { SP.held=true; SP.n=n; }
+  spApply(spRoot());
+});
 
 window.SCENES_M1 = SC;
 })();
@@ -5415,6 +6226,37 @@ function figEye(alpha, jitter){
   return a.svg();
 }
 
+/* ---- summary-card miniatures ----
+   Each recalls the key figure of its section, stripped to the shape alone. */
+function mini(w,h,xr,yr){ return P.Axes({w:w,h:h,xr:xr,yr:yr,pad:{l:10,r:10,t:8,b:8},
+  xticksOverride:[], yticksOverride:[], grid:false, zeroAxes:false, arrows:false}); }
+function miniMatched(){
+  const a = mini(520,96,[-0.2,2.4],[-0.15,1.2]);
+  a.curve(t=>(t>0&&t<1)? t : 0,{color:C.in,width:2});
+  a.curve(t=>(t>1.2&&t<2.2)? 2.2-t : 0,{color:C.h,width:2});
+  return a.svg();
+}
+function miniThreshold(){
+  const a = mini(520,96,[-3.4,3.4],[0,1.15]);
+  const g=(x,m)=>Math.exp(-(x-m)*(x-m)/0.9);
+  a.curve(x=>g(x,-1.4),{color:C.in,width:2});
+  a.curve(x=>g(x,1.4),{color:C.mid,width:2});
+  a.vline(0.2,{color:C.ink,dash:'4 3'});
+  return a.svg();
+}
+function miniPe(){
+  const a = mini(520,96,[0,12],[-7,0]);
+  a.curve(d=>Math.log10(Math.max(1e-12,Qf(Math.sqrt(2*Math.pow(10,d/10))))),{color:C.in,width:2});
+  return a.svg();
+}
+function miniRcos(){
+  const a = mini(520,96,[-1.3,1.3],[0,1.18]);
+  const rc=(f,al)=>{const x=Math.abs(f),f1=(1-al)/2,f2=(1+al)/2;
+    return x<=f1?1:x>=f2?0:0.5*(1+Math.cos(Math.PI*(x-f1)/Math.max(al,1e-9)));};
+  [[0,C.in],[0.5,C.h],[1,C.out]].forEach(([al,c])=>a.curve(f=>rc(f,al),{color:c,width:2}));
+  return a.svg();
+}
+
 const SC = [
 
 /* ---------------------------------------------------------------- 2.0 ---- */
@@ -5497,7 +6339,15 @@ const SC = [
   ], right:[
     {t:'body', html:'<p>The condition for equality is what identifies the filter:</p>'},
     {t:'eq', key:true, tex:'H(f)=k\\,\\phi_2^{*}(f)=k\\,G^{*}(f)e^{-j2\\pi fT}'},
-    {t:'body', html:'<p>The optimum filter has the transfer function of the complex conjugate of the spectrum of the signal it is looking for. The next scene takes the inverse transform of that and finds something simpler than it looks.</p>'}
+    {t:'fig', frame:true, svg:()=>{
+      const a = P.Axes({w:470,h:190,xr:[-2.6,2.6],yr:[-0.08,1.25],
+        xlabel:'f', ylabel:'|G(f)|,\\;|H(f)|',
+        pad:{l:56,r:22,t:22,b:40}, xtarget:4, ytarget:3, ytickfmt:()=>''});
+      const g = f => Math.exp(-f*f/1.1)*(0.72+0.28*Math.cos(2.1*f));
+      a.curve(g,{color:C.in,width:2.3});
+      a.curve(f=>0.8*g(f),{color:C.h,width:2.0,dash:'6 4'});
+      return a.svg();
+    }, caption:'The equality condition drawn: the magnitude of the best filter traces the magnitude of the signal spectrum, scaled by $k$. Where the signal has little energy, the filter listens less. The next scene takes the inverse transform and finds something simpler than it looks.'}
   ]}
 ]},
 
@@ -5917,20 +6767,24 @@ const SC = [
   {t:'title', text:'What Module 2 established'},
   {t:'grid', cols:2, gap:'26px', items:[
     [{t:'card', head:'The filter', items:[
-      {t:'body', html:'<p>The matched filter maximises the output signal-to-noise ratio, and what it achieves depends on the energy of the pulse and not on its shape.</p>'},
-      {t:'eq', plain:true, tex:'h_{\\mathrm{opt}}(t)=g(T-t),\\quad(\\mathrm{SNR})_o=\\frac{2E}{N_0}'}
+      {t:'fig', svg:miniMatched},
+      {t:'eq', plain:true, tex:'h_{\\mathrm{opt}}(t)=g(T-t),\\quad(\\mathrm{SNR})_o=\\frac{2E}{N_0}'},
+      {t:'small', html:'The matched filter maximises the output signal-to-noise ratio; the result depends on the pulse energy, not its shape.'}
     ]}],
     [{t:'card', head:'The decision', items:[
-      {t:'body', html:'<p>The demodulator returns one Gaussian number. The threshold that minimises the error is the log-ratio of the priors, scaled by the noise density.</p>'},
-      {t:'eq', plain:true, tex:'y=s_m+n,\\quad \\lambda_{\\mathrm{opt}}=\\frac{N_0}{4\\sqrt{E_b}}\\ln\\frac{P(s_0)}{P(s_1)}'}
+      {t:'fig', svg:miniThreshold},
+      {t:'eq', plain:true, tex:'y=s_m+n,\\quad \\lambda_{\\mathrm{opt}}=\\frac{N_0}{4\\sqrt{E_b}}\\ln\\frac{P(s_0)}{P(s_1)}'},
+      {t:'small', html:'One Gaussian number; the best threshold is the log-ratio of the priors, scaled by the noise density.'}
     ]}],
     [{t:'card', head:'The error probability', items:[
-      {t:'body', html:'<p>For antipodal signalling with equal priors it depends on one number, and Module 4 shows that number is really a distance.</p>'},
-      {t:'eq', plain:true, tex:'P_b=Q\\!\\left(\\sqrt{2E_b/N_0}\\right)'}
+      {t:'fig', svg:miniPe},
+      {t:'eq', plain:true, tex:'P_b=Q\\!\\left(\\sqrt{2E_b/N_0}\\right)'},
+      {t:'small', html:'Antipodal signalling depends on one number, and Module 4 shows that number is really a distance.'}
     ]}],
     [{t:'card', head:'The bandwidth', items:[
-      {t:'body', html:'<p>Zero interference requires the pulse spectrum to tile the axis at the symbol rate. A bandwidth $W$ carries $2W$ symbols per second at best, and the raised cosine buys practicality with the excess $\\alpha W$.</p>'},
-      {t:'eq', plain:true, tex:'R_b\\sum_n P(f-nR_b)=1,\\quad B_T=(1+\\alpha)W'}
+      {t:'fig', svg:miniRcos},
+      {t:'eq', plain:true, tex:'R_b\\sum_n P(f-nR_b)=1,\\quad B_T=(1+\\alpha)W'},
+      {t:'small', html:'Zero interference needs the spectrum to tile the axis at the symbol rate; the raised cosine buys practicality with the excess $\\alpha W$.'}
     ]}]
   ]},
   {t:'note', kind:'ok', head:'The module in one sentence', html:'Two things can go wrong on the way to the decision, and they are fixed separately. Noise is handled by the matched filter, which extracts all the pulse energy there is to extract. Interference from neighbouring symbols is handled by choosing a pulse whose spectrum tiles the axis at the symbol rate.'}
@@ -5986,6 +6840,45 @@ function figConstellation(pts, opts){
     a.point(p.x,p.y,{color:p.c||C.in,r:6});
     a.note(p.x, p.y+0.16, p.l, {tex:true,fs:14,color:p.c||C.in,anchor:'middle'});
   });
+  return a.svg();
+}
+
+/* ---- summary-card miniatures ----
+   Each recalls the key figure of its section, stripped to the shape alone. */
+function mini(w,h,xr,yr){ return P.Axes({w:w,h:h,xr:xr,yr:yr,pad:{l:10,r:10,t:8,b:8},
+  xticksOverride:[], yticksOverride:[], grid:false, zeroAxes:false, arrows:false}); }
+function miniProject(){
+  const a = mini(520,100,[-0.25,2.6],[-0.2,1.5]);
+  a.poly([[0,0],[2.4,0]],{color:C.grid,width:1.4});
+  a.poly([[0,0],[0,1.4]],{color:C.grid,width:1.4});
+  a.poly([[0,0],[1.8,1.05]],{color:C.in,width:2.2});
+  a.poly([[1.8,1.05],[1.8,0]],{color:C.rule,width:1.2,dash:'3 4'});
+  a.poly([[1.8,1.05],[0,1.05]],{color:C.rule,width:1.2,dash:'3 4'});
+  a.point(1.8,1.05,{color:C.in,r:4.5});
+  return a.svg();
+}
+function miniInner(){
+  const a = mini(520,100,[-0.25,2.6],[-0.2,1.5]);
+  a.poly([[0,0],[2.3,0.35]],{color:C.in,width:2.2});
+  a.poly([[0,0],[1.2,1.3]],{color:C.out,width:2.2});
+  a.point(2.3,0.35,{color:C.in,r:4.5}); a.point(1.2,1.3,{color:C.out,r:4.5});
+  return a.svg();
+}
+function miniGS(){
+  const a = mini(520,100,[-0.25,2.6],[-0.2,1.5]);
+  a.poly([[0,0],[2.2,1.2]],{color:C.in,width:2.2});
+  a.poly([[0,0],[2.2,0]],{color:C.rule,width:1.6,dash:'3 4'});
+  a.poly([[2.2,0],[2.2,1.2]],{color:C.h,width:2.2});
+  a.point(2.2,1.2,{color:C.in,r:4.5});
+  return a.svg();
+}
+function miniNearest(){
+  const a = mini(520,100,[-1.4,1.4],[-1.15,1.15]);
+  a.rect(-1.4,-1.15,0,0,{fill:C.dec.in}); a.rect(0,-1.15,1.4,0,{fill:C.dec.out});
+  a.rect(-1.4,0,0,1.15,{fill:C.dec.mid}); a.rect(0,0,1.4,1.15,{fill:C.dec.h});
+  a.poly([[0,-1.15],[0,1.15]],{color:C.grid,width:1.2});
+  a.poly([[-1.4,0],[1.4,0]],{color:C.grid,width:1.2});
+  [[-0.7,-0.55],[0.7,-0.55],[-0.7,0.55],[0.7,0.55]].forEach(p=>a.point(p[0],p[1],{color:C.ink,r:4}));
   return a.svg();
 }
 
@@ -6296,19 +7189,23 @@ const SC = [
   {t:'title', text:'What Module 3 established'},
   {t:'grid', cols:2, gap:'26px', items:[
     [{t:'card', head:'The translation', items:[
-      {t:'body', html:'<p>A waveform becomes a list of numbers by integrating it against each basis function, and comes back by adding the pieces up.</p>'},
-      {t:'eq', plain:true, tex:'s_{ij}=\\int_0^T s_i\\psi_j\\,dt,\\quad s_i(t)=\\sum_j s_{ij}\\psi_j(t)'}
+      {t:'fig', svg:miniProject},
+      {t:'eq', plain:true, tex:'s_{ij}=\\int_0^T s_i\\psi_j\\,dt,\\quad s_i(t)=\\sum_j s_{ij}\\psi_j(t)'},
+      {t:'small', html:'Integrate against each basis function to get the numbers; add the pieces up to get the waveform back.'}
     ]}],
     [{t:'card', head:'What survives it', items:[
-      {t:'body', html:'<p>Inner products, and therefore energies and distances. Everything the receiver needs is one of those.</p>'},
-      {t:'eq', plain:true, tex:'\\int xy\\,dt=\\langle\\mathbf{x},\\mathbf{y}\\rangle,\\quad E_i=\\|\\mathbf{s}_i\\|^{2}'}
+      {t:'fig', svg:miniInner},
+      {t:'eq', plain:true, tex:'\\int xy\\,dt=\\langle\\mathbf{x},\\mathbf{y}\\rangle,\\quad E_i=\\|\\mathbf{s}_i\\|^{2}'},
+      {t:'small', html:'Inner products — and therefore energies and distances. Everything the receiver needs is one of those.'}
     ]}],
     [{t:'card', head:'Finding the axes', items:[
-      {t:'body', html:'<p>Gram–Schmidt: normalise the first signal, then repeatedly subtract what is already known and normalise the remainder. A zero remainder adds no axis.</p>'},
-      {t:'eq', plain:true, tex:'g_k=s_k-\\textstyle\\sum_{i<k}s_{ki}\\psi_i,\\quad \\psi_k=g_k/\\sqrt{E_{g_k}}'}
+      {t:'fig', svg:miniGS},
+      {t:'eq', plain:true, tex:'g_k=s_k-\\textstyle\\sum_{i<k}s_{ki}\\psi_i,\\quad \\psi_k=g_k/\\sqrt{E_{g_k}}'},
+      {t:'small', html:'Gram–Schmidt: subtract what is already known, normalise the remainder. A zero remainder adds no axis.'}
     ]}],
     [{t:'card', head:'What comes next', items:[
-      {t:'body', html:'<p>Module 4 builds the receiver for this picture: it computes the coordinates of what arrives and picks the nearest point. The error probability then depends on the distances, and on nothing else.</p>'}
+      {t:'fig', svg:miniNearest},
+      {t:'small', html:'Module 4 computes the coordinates of what arrives and picks the nearest point. The error probability then depends on the distances, and on nothing else.'}
     ]}]
   ]},
   {t:'note', kind:'ok', head:'The module in one sentence', html:'Choose an orthonormal basis and write each signal as a list of coordinates. In this representation, signal energy is squared length. The energy of a signal difference is squared distance.'}
@@ -6380,6 +7277,47 @@ function figRegions(pts, opts){
      a label — draws it here, on the same axes, rather than building a second
      figure that would have to repeat the grid. */
   if(opts.over) opts.over(a);
+  return a.svg();
+}
+
+/* ---- summary-card miniatures ----
+   Each recalls the key figure of its section, stripped to the shape alone. */
+function mini(w,h,xr,yr){ return P.Axes({w:w,h:h,xr:xr,yr:yr,pad:{l:10,r:10,t:8,b:8},
+  xticksOverride:[], yticksOverride:[], grid:false, zeroAxes:false, arrows:false}); }
+function miniRule(){
+  const a = mini(520,100,[-1.5,1.5],[-1.1,1.1]);
+  const pts=[[-0.9,-0.5],[0.9,-0.5],[0,0.75]];
+  const r=[0.28,0.42];
+  a.poly([r,pts[2]],{color:C.out,width:1.8,dash:'4 3'});
+  pts.forEach(p=>a.point(p[0],p[1],{color:C.ink,r:4.5}));
+  a.point(r[0],r[1],{color:C.mid,r:5});
+  return a.svg();
+}
+function miniRegions(){
+  const a = mini(320,84,[-1.5,1.5],[-1.1,1.1]);
+  a.rect(-1.5,-1.1,0,0,{fill:C.dec.in}); a.rect(0,-1.1,1.5,0,{fill:C.dec.out});
+  a.rect(-1.5,0,0,1.1,{fill:C.dec.mid}); a.rect(0,0,1.5,1.1,{fill:C.dec.h});
+  a.poly([[0,-1.1],[0,1.1]],{color:C.grid,width:1.2});
+  a.poly([[-1.5,0],[1.5,0]],{color:C.grid,width:1.2});
+  [[-0.75,-0.5],[0.75,-0.5],[-0.75,0.5],[0.75,0.5]].forEach(p=>a.point(p[0],p[1],{color:C.ink,r:4}));
+  return a.svg();
+}
+function miniBinaryD(){
+  const a = mini(520,100,[-1.6,1.6],[-0.6,0.9]);
+  a.poly([[-1,0],[1,0]],{color:C.err,width:2});
+  a.point(-1,0,{color:C.ink,r:5}); a.point(1,0,{color:C.ink,r:5});
+  a.poly([[0,-0.4],[0,0.55]],{color:C.rule,width:1.2,dash:'3 4'});
+  a.note(0,0.62,'d',{tex:true,fs:12,color:C.err,anchor:'middle'});
+  return a.svg();
+}
+function miniUnion(){
+  /* the x-range matches the pixel aspect of the frame, so the ring is round */
+  const a = mini(520,130,[-5.26,5.26],[-1.2,1.2]);
+  const R=0.85;
+  const ring=[]; for(let i=0;i<=48;i++){const t=2*Math.PI*i/48; ring.push([R*Math.cos(t),R*Math.sin(t)]);}
+  a.poly(ring,{color:C.rule,width:1.2,dash:'3 4'});
+  a.point(0,0,{color:C.ink,r:5});
+  [[R,0],[-R,0],[0,R],[0,-R]].forEach(p=>a.point(p[0],p[1],{color:C.mid,r:4}));
   return a.svg();
 }
 
@@ -6501,7 +7439,7 @@ const SC = [
       {t:'note', kind:'def', head:'The ML rule', html:'If all $M$ signals are equally likely, every prior is $1/M$ and the priors cannot change the answer either. What is left is: choose the $\\mathbf{s}_i$ that maximises the likelihood $f_{\\mathbf{r}}(\\mathbf{r}\\mid\\mathbf{s}_i)$.'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'warn', head:'Which one to use', html:'MAP minimizes the probability of error when the signal probabilities and likelihood model are known and all decision errors have equal cost. ML gives the same decision when the signal probabilities are equal. If the probabilities are unknown, ML does not use them. With known unequal probabilities, MAP can give a lower error probability.'}
+      {t:'small', html:'<b>Which one to use:</b> MAP minimizes the probability of error when the priors are known and all errors cost the same. ML gives the same decision when the priors are equal, and is what remains when they are unknown. With known unequal priors, MAP can give a lower error probability.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figRegions(
@@ -6875,20 +7813,24 @@ const SC = [
   {t:'title', text:'What Module 4 established'},
   {t:'grid', cols:2, gap:'26px', items:[
     [{t:'card', head:'The receiver', items:[
-      {t:'body', html:'<p>Correlate against each signal, correct for its energy and its prior, and take the largest. With equal energies and equal priors, take the largest correlation.</p>'},
-      {t:'eq', plain:true, tex:'\\hat{s}=\\arg\\max_i\\Bigl\\{\\mathbf{r}\\!\\cdot\\!\\mathbf{s}_i-\\tfrac{E_i}{2}+\\tfrac{N_0}{2}\\ln P(\\mathbf{s}_i)\\Bigr\\}'}
+      {t:'fig', svg:miniRule},
+      {t:'eq', plain:true, tex:'\\hat{s}=\\arg\\max_i\\Bigl\\{\\mathbf{r}\\!\\cdot\\!\\mathbf{s}_i-\\tfrac{E_i}{2}+\\tfrac{N_0}{2}\\ln P(\\mathbf{s}_i)\\Bigr\\}'},
+      {t:'small', html:'Correlate against each signal, correct for energy and prior, take the largest.'}
     ]}],
     [{t:'card', head:'The picture', items:[
-      {t:'body', html:'<p>The same rule drawn: choose the nearest point. Boundaries are perpendicular bisectors, and a less likely symbol gets a smaller region.</p>'},
-      {t:'eq', plain:true, tex:'\\hat{s}=\\arg\\min_i\\|\\mathbf{r}-\\mathbf{s}_i\\|^{2}'}
+      {t:'fig', svg:miniRegions},
+      {t:'eq', plain:true, tex:'\\hat{s}=\\arg\\min_i\\|\\mathbf{r}-\\mathbf{s}_i\\|^{2}'},
+      {t:'small', html:'Choose the nearest point. Boundaries are perpendicular bisectors; a less likely symbol gets a smaller region.'}
     ]}],
     [{t:'card', head:'Binary', items:[
-      {t:'body', html:'<p>Two points, one distance, one $Q$. Everything Module 2 derived by integration follows from this in a line.</p>'},
-      {t:'eq', plain:true, tex:'P_e=Q\\!\\left(\\sqrt{d^{2}/2N_0}\\right)'}
+      {t:'fig', svg:miniBinaryD},
+      {t:'eq', plain:true, tex:'P_e=Q\\!\\left(\\sqrt{d^{2}/2N_0}\\right)'},
+      {t:'small', html:'Two points, one distance, one $Q$ — everything Module 2 derived by integration follows in a line.'}
     ]}],
     [{t:'card', head:'M-ary', items:[
-      {t:'body', html:'<p>The exact answer is an integral nobody can do. The bound is a sum of $Q$ functions everybody can, and in practice only the nearest neighbours are kept.</p>'},
-      {t:'eq', plain:true, tex:'P_e\\approx N_{\\min}Q\\!\\left(\\sqrt{d_{\\min}^{2}/2N_0}\\right)'}
+      {t:'fig', svg:miniUnion},
+      {t:'eq', plain:true, tex:'P_e\\approx N_{\\min}Q\\!\\left(\\sqrt{d_{\\min}^{2}/2N_0}\\right)'},
+      {t:'small', html:'The exact answer is an integral nobody can do; the bound keeps only the nearest neighbours.'}
     ]}]
   ]},
   {t:'note', kind:'ok', head:'What Module 5 does with this', html:'It applies the result to the constellations that are actually used: amplitude, phase and quadrature modulation. The question is which of them gets the largest $d_{\\min}$ for a given average energy and a given number of bits per symbol.'}
@@ -6964,6 +7906,70 @@ function figCarrier(kind){
 const PSK = M => Array.from({length:M},(_,k)=>[Math.cos(2*Math.PI*k/M), -Math.sin(2*Math.PI*k/M)]);
 const QAM16 = [].concat(...[-3,-1,1,3].map(x=>[-3,-1,1,3].map(y=>[x/3.35,y/3.35])));
 const PAM = M => Array.from({length:M},(_,k)=>[(2*k-(M-1))/(M-1)*1.4, 0]);
+
+/* ---- summary-card miniatures ----
+   Each recalls the key figure of its section, stripped to the shape alone. */
+function mini(w,h,xr,yr){ return P.Axes({w:w,h:h,xr:xr,yr:yr,pad:{l:10,r:10,t:8,b:8},
+  xticksOverride:[], yticksOverride:[], grid:false, zeroAxes:false, arrows:false}); }
+function miniBinaryThree(){
+  const a = mini(520,100,[-1.7,1.7],[-0.55,1.35]);
+  a.poly([[-1.2,0],[1.2,0]],{color:C.rule,width:1.1,dash:'3 4'});
+  a.point(-1.2,0,{color:C.in,r:5}); a.point(1.2,0,{color:C.in,r:5});
+  a.point(0,1.1,{color:C.h,r:5});
+  a.poly([[0,0],[0,1.1]],{color:C.rule,width:1.1,dash:'3 4'});
+  return a.svg();
+}
+function miniPSK8(){
+  /* the x-range matches the pixel aspect of the frame, so the circle is round */
+  const a = mini(520,130,[-5.48,5.48],[-1.25,1.25]);
+  const ring=[]; for(let i=0;i<=48;i++){const t=2*Math.PI*i/48; ring.push([Math.cos(t),Math.sin(t)]);}
+  a.poly(ring,{color:C.rule,width:1.1,dash:'3 4'});
+  for(let k=0;k<8;k++) a.point(Math.cos(Math.PI*k/4),Math.sin(Math.PI*k/4),{color:C.in,r:4.5});
+  return a.svg();
+}
+function miniQAMGrid(){
+  const a = mini(520,100,[-1.7,1.7],[-1.25,1.25]);
+  const c=[-0.9,-0.3,0.3,0.9];
+  c.forEach(x=>c.forEach(y=>a.point(x,y,{color:C.out,r:4})));
+  a.poly([[-0.9,-0.3],[-0.9,0.3]],{color:C.err,width:2});
+  return a.svg();
+}
+function miniTrade(){
+  const a = mini(520,100,[0,5],[0,26]);
+  a.poly([[1,9.6],[2,10],[3,13.5],[4,18]],{color:C.mid,width:2});
+  a.poly([[1,12.6],[2,10],[3,8.6],[4,7.7]],{color:C.h,width:2});
+  return a.svg();
+}
+
+/* The families on one chart: for each scheme, the energy per bit that the
+   union-bound approximation of Module 4 requires to reach P_e = 1e-5, computed
+   here from the family's own d_min. The numbers are not typed in, so the chart
+   and the formulas cannot drift apart. */
+function figCompare(){
+  const target = 1e-5;
+  /* invert N_min·Q(x) = target by bisection; Q falls, so the interval is safe */
+  const xFor = Nmin => {
+    let lo = 0, hi = 12;
+    for(let i=0;i<80;i++){ const m=(lo+hi)/2; if(Qf(m)*Nmin > target) lo=m; else hi=m; }
+    return (lo+hi)/2;
+  };
+  /* d_min² = c·E_s  →  E_s/N_0 = 2x²/c, and E_b = E_s / log2(M) */
+  const ebno = (c, Nmin, k) => { const x = xFor(Nmin); return 10*Math.log10(2*x*x/(c*k)); };
+  const lg = M => Math.log2(M);
+  const fam = {
+    pam: [2,4,8,16].map(M => [lg(M), ebno(12/(M*M-1), 2*(M-1)/M, lg(M))]),
+    psk: [2,4,8,16,32].map(M => [lg(M), ebno(4*Math.sin(Math.PI/M)**2, M===2?1:2, lg(M))]),
+    qam: [4,16,64].map(M => [lg(M), ebno(6/(M-1), 4*(1-1/Math.sqrt(M)), lg(M))]),
+    fsk: [2,4,8,16,32].map(M => [lg(M), ebno(2, M-1, lg(M))])
+  };
+  const a = P.Axes({w:640,h:430,xr:[0.6,6.4],yr:[4,26],
+    xlabel:'\\log_2 M', ylabel:'E_b/N_0\\ \\text{(dB)}',
+    pad:{l:56,r:26,t:24,b:44}, xtarget:6, ytarget:5});
+  const draw = (pts, col) => { a.poly(pts,{color:col,width:2.2});
+    pts.forEach(p=>a.point(p[0],p[1],{color:col,r:4.5})); };
+  draw(fam.pam, C.mid); draw(fam.psk, C.in); draw(fam.qam, C.out); draw(fam.fsk, C.h);
+  return a.svg();
+}
 
 const SC = [
 
@@ -7261,26 +8267,23 @@ const SC = [
   {t:'eyebrow', text:'Module 5 · Comparison'},
   {t:'title', text:'Comparing the families'},
   {t:'lede', text:'Which family to use, and what each one spends.'},
-  {t:'body', html:'Every scheme in this module carries $\\log_2 M$ bits a symbol. What separates them is how much energy that costs and how much bandwidth.'},
-  {t:'grid', cols:2, gap:'26px', items:[
-    [{t:'card', head:'PAM — one dimension', items:[
-      {t:'body', html:'<p>$d_{\\min}^{2}=\\dfrac{12E_s}{M^{2}-1}$. Cheapest in bandwidth, and the distance collapses fastest: about $6$ dB for each doubling of $M$. Used where only one dimension is available, as in baseband.</p>'}
-    ]}],
-    [{t:'card', head:'PSK — two dimensions, one circle', items:[
-      {t:'body', html:'<p>$d_{\\min}=2\\sqrt{E_s}\\sin(\\pi/M)$. Constant envelope, which suits an amplifier driven hard. Above eight points the circle is crowded and the cost per extra bit climbs past $5$ dB.</p>'}
-    ]}],
-    [{t:'card', head:'QAM — two dimensions, a grid', items:[
-      {t:'body', html:'<p>$d_{\\min}^{2}=\\dfrac{6E_s}{M-1}$. The denominator is linear in $M$ rather than quadratic, so QAM beats PAM by a widening margin and PSK above eight points. It is what a modern link uses.</p>'}
-    ]}],
-    [{t:'card', head:'FSK — M dimensions', items:[
-      {t:'body', html:'<p>$d_{\\min}=\\sqrt{2E_s}$, and it does not shrink. Bandwidth grows with $M$ instead. The only family here that spends bandwidth to save power.</p>'}
-    ]}]
-  ]},
-  {t:'reveal', at:1, items:[
-    {t:'note', kind:'ok', head:'One sentence to take away', html:'Every family answers the same question: how to place $M$ points as far apart as possible for a given average energy. They differ in how many dimensions they are allowed to use. More dimensions mean more room and more bandwidth, and that is the whole trade.'}
-  ]},
-  {t:'reveal', at:2, items:[
-    {t:'note', kind:'warn', head:'What none of this settles', html:'The comparison is on error probability and bandwidth alone. A real choice weighs three more things. How hard is the transmitter to build, can the amplifier run at saturation, and how much must the receiver know about the carrier phase? PSK survives against QAM in some systems for the second of those reasons and no other.'}
+  {t:'cols', ratio:'c-5-7', vcenter:true, left:[
+    {t:'body', html:'Every scheme carries $\\log_2 M$ bits a symbol. The chart puts the families on one scale: the energy per bit each one needs to reach $P_e=10^{-5}$, computed from the distance of each family.'},
+    {t:'wex', rows:[
+      ['PAM','$d_{\\min}^{2}=12E_s/(M^{2}-1)$ — the distance collapses fastest, about $6$ dB per doubling of $M$.'],
+      ['PSK','$d_{\\min}=2\\sqrt{E_s}\\sin(\\pi/M)$ — one circle; past eight points it is crowded.'],
+      ['QAM','$d_{\\min}^{2}=6E_s/(M-1)$ — linear in $M$, so its curve climbs slowest. It is what a modern link uses.'],
+      ['FSK','$d_{\\min}=\\sqrt{2E_s}$ — the distance does not shrink. It spends bandwidth instead: the band grows with $M$.']
+    ]},
+    {t:'reveal', at:1, items:[
+      {t:'note', kind:'ok', head:'One sentence to take away', html:'Every family places $M$ points as far apart as it can for a given average energy; they differ in how many dimensions they may use. More dimensions mean more room — and more bandwidth. That is the whole trade.'}
+    ]},
+    {t:'reveal', at:2, items:[
+      {t:'note', kind:'warn', head:'What the chart does not settle', html:'How hard the transmitter is to build, whether the amplifier can run at saturation, and how much the receiver must know about the carrier phase. PSK survives against QAM in some systems for the amplifier alone.'}
+    ]}
+  ], right:[
+    {t:'fig', frame:true, svg:figCompare, caption:'The energy price of each extra bit, computed from the distances above with the approximation $P_e\\approx N_{\\min}Q\\big(\\sqrt{d_{\\min}^{2}/2N_0}\\big)$ of Module 4, at $P_e=10^{-5}$. Three families climb; orthogonal FSK descends, because its distance holds while its bandwidth grows.'},
+    {t:'legend', items:[['in','PSK'],['mid','PAM'],['out','QAM'],['h','FSK']]}
   ]}
 ]},
 
@@ -7293,21 +8296,23 @@ const SC = [
   {t:'title', text:'What Module 5 established'},
   {t:'grid', cols:2, gap:'26px', items:[
     [{t:'card', head:'The binary three', items:[
-      {t:'body', html:'<p>BPSK is antipodal and best. BFSK and BASK are both $3$ dB worse, for the same reason: their points are $\\sqrt2$ closer at the same average energy per bit.</p>'},
-      {t:'eq', plain:true, tex:'Q\\!\\left(\\sqrt{2E_b/N_0}\\right)\\ \\text{vs}\\ Q\\!\\left(\\sqrt{E_b/N_0}\\right)'}
+      {t:'fig', svg:miniBinaryThree},
+      {t:'eq', plain:true, tex:'Q\\!\\left(\\sqrt{2E_b/N_0}\\right)\\ \\text{vs}\\ Q\\!\\left(\\sqrt{E_b/N_0}\\right)'},
+      {t:'small', html:'BPSK is antipodal and best; BFSK and BASK are both $3$ dB worse, because their points are $\\sqrt2$ closer.'}
     ]}],
     [{t:'card', head:'The M-ary families', items:[
-      {t:'body', html:'<p>Each is a constellation, and Module 4 supplies the answer once the distance is measured.</p>'},
-      {t:'eq', plain:true, tex:'P_e\\approx N_{\\min}Q\\!\\left(\\sqrt{d_{\\min}^{2}/2N_0}\\right)'}
+      {t:'fig', svg:miniPSK8},
+      {t:'eq', plain:true, tex:'P_e\\approx N_{\\min}Q\\!\\left(\\sqrt{d_{\\min}^{2}/2N_0}\\right)'},
+      {t:'small', html:'Each is a constellation, and Module 4 supplies the answer once the distance is measured.'}
     ]}],
     [{t:'card', head:'The distances', items:[
-      {t:'body', html:'<p>Three formulas cover the module.</p>'},
-      {t:'eq', plain:true, tex:'\\text{PSK: }2\\sqrt{E_s}\\sin\\tfrac{\\pi}{M}'},
-      {t:'eq', plain:true, tex:'\\text{PAM: }\\sqrt{12E_s/(M^{2}-1)}'},
-      {t:'eq', plain:true, tex:'\\text{QAM: }\\sqrt{6E_s/(M-1)}'}
+      {t:'fig', svg:miniQAMGrid},
+      {t:'eq', plain:true, tex:'\\text{PSK: }2\\sqrt{E_s}\\sin\\tfrac{\\pi}{M}\\quad \\text{PAM: }\\sqrt{\\tfrac{12E_s}{M^{2}-1}}\\quad \\text{QAM: }\\sqrt{\\tfrac{6E_s}{M-1}}'},
+      {t:'small', html:'Three formulas cover the module.'}
     ]}],
     [{t:'card', head:'The trade', items:[
-      {t:'body', html:'<p>More bits a symbol costs power in PSK, PAM and QAM, and bandwidth in FSK. Which to spend is a question about the channel, not about the mathematics.</p>'}
+      {t:'fig', svg:miniTrade},
+      {t:'small', html:'More bits a symbol costs power in PSK, PAM and QAM, and bandwidth in FSK. Which to spend is a question about the channel.'}
     ]}]
   ]},
   {t:'note', kind:'ok', head:'What Module 6 asks instead', html:'Every scheme here is judged against the noise. Module 6 asks a different question: how much information did the source produce, and how fast can a channel carry it at all? That limit no modulation scheme can pass.'}
@@ -7420,19 +8425,57 @@ function figTree(codes, labels, opts){
     if(n === '') return;
     const par = n.slice(0,-1);
     a.poly([[par.length, Y(par)],[n.length, Y(n)]], {color:C.grid, width:1.4});
-    a.note((par.length+n.length)/2, (Y(par)+Y(n))/2 + span*0.055,
+    /* `opts.bare` drops the edge-bit labels — a card miniature has no room
+       for them and needs only the shape. */
+    if(!opts.bare) a.note((par.length+n.length)/2, (Y(par)+Y(n))/2 + span*0.055,
       n.slice(-1), {fs:11, color:C.dim, anchor:'middle'});
   });
   Array.from(nodes).forEach(n=>{
     const leaf = codes.indexOf(n);
-    a.point(n.length, Y(n), {color: leaf>=0 ? C.ink : C.grid, r: leaf>=0 ? 5 : 2.6});
-    if(leaf >= 0) a.note(n.length + 0.14, Y(n), labels[leaf], {tex:true, fs:12, color:C.ink});
+    /* `opts.hot` names one codeword to draw in the intermediate colour — the
+       piece a step-driven scene has just added. */
+    const hot = leaf>=0 && opts.hot === n;
+    a.point(n.length, Y(n), {color: leaf>=0 ? (hot ? C.mid : C.ink) : C.grid, r: leaf>=0 ? (hot ? 6 : 5) : 2.6});
+    if(leaf >= 0) a.note(n.length + 0.14, Y(n), labels[leaf], {tex:true, fs:12, color: hot ? C.mid : C.ink});
   });
   return a.svg();
 }
 
 const HUFF = [0.4, 0.2, 0.2, 0.1, 0.1];
 const HLAB = ['s_1','s_2','s_3','s_4','s_5'];
+
+/* ---- summary-card miniatures ----
+   Each recalls the key figure of its section, stripped to the shape alone. */
+function mini(w,h,xr,yr){ return P.Axes({w:w,h:h,xr:xr,yr:yr,pad:{l:10,r:10,t:8,b:8},
+  xticksOverride:[], yticksOverride:[], grid:false, zeroAxes:false, arrows:false}); }
+function miniEntropy(){
+  const a = mini(300,80,[-0.06,1.06],[0,1.18]);
+  a.curve(p=>(p<=0||p>=1)?0:-p*Math.log2(p)-(1-p)*Math.log2(1-p),{color:C.in,width:2});
+  return a.svg();
+}
+function miniLengths(){
+  const a = mini(300,80,[0,6],[0,3.6]);
+  [2,2,2,3,3].forEach((l,k)=>a.rect(k+0.62,0,k+1.38,l,{fill:C.dec.mid}));
+  a.hline(2.1219,{color:C.err,dash:'4 3'});
+  return a.svg();
+}
+function miniKraftTree(){ return figTree(['00','01','10','110'],['','','',''],{w:300,h:80,bare:true}); }
+function miniHuffTree(){ return figTree(['00','10','11','010','011'],['','','','',''],{w:300,h:80,bare:true}); }
+function miniChannelX(){
+  const a = mini(300,80,[0,3],[-0.2,1.2]);
+  a.poly([[0.4,1],[2.6,1]],{color:C.out,width:2});
+  a.poly([[0.4,0],[2.6,0]],{color:C.out,width:2});
+  a.poly([[0.4,1],[2.6,0]],{color:C.err,width:1.6,dash:'4 3'});
+  a.poly([[0.4,0],[2.6,1]],{color:C.err,width:1.6,dash:'4 3'});
+  [[0.4,0],[0.4,1]].forEach(p=>a.point(p[0],p[1],{color:C.in,r:4.5}));
+  [[2.6,0],[2.6,1]].forEach(p=>a.point(p[0],p[1],{color:C.mid,r:4.5}));
+  return a.svg();
+}
+function miniShannon(){
+  const a = mini(300,80,[0,8],[0,3.4]);
+  a.curve(x=>Math.log2(1+x),{color:C.out,width:2});
+  return a.svg();
+}
 
 /* ---- the channel half of the chapter ------------------------------------
    Everything below is computed from a channel matrix `Pyx`, whose row j is the
@@ -7707,9 +8750,9 @@ window.SCENES_M6 = [
   {t:'lede', text:'Codes that can be read back.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>Short codewords are worth nothing if the receiver cannot tell where one ends and the next begins. Two conditions matter, and they are not the same condition.</p>'},
-    {t:'grid', cols:2, gap:'16px', items:[
-      [{t:'note', kind:'def', head:'Uniquely decodable', html:'Every string of bits the code can produce comes from exactly one string of symbols. Without this the code is unusable.'}],
-      [{t:'note', kind:'def', head:'Prefix code', html:'No codeword begins any other. Stronger, and it buys something: the decoder can name a symbol the moment its last bit arrives. Also called <b>instantaneous</b>.'}]
+    {t:'wex', rows:[
+      ['Uniquely decodable','Every string of bits the code can produce comes from exactly one string of symbols. Without this the code is unusable.'],
+      ['Prefix code','No codeword begins any other. Stronger, and it buys something: the decoder can name a symbol the moment its last bit arrives. Also called <b>instantaneous</b>.']
     ]},
     {t:'reveal', at:1, items:[
       {t:'body', html:'<p>Compare three codes for a four-symbol source.</p>'},
@@ -7764,7 +8807,7 @@ window.SCENES_M6 = [
   ], right:[
     {t:'fig', frame:true, svg:()=>figTree(['0','10','110','1110'],['s_1','s_2','s_3','s_4'],{w:430,h:135}),
       caption:'A prefix code with Code III\'s lengths $1,2,3,4$, which the Kraft inequality promised must exist. Every symbol is at a leaf, and one branch is left unused — the $0.0625$ of the budget that was never spent.'},
-    {t:'note', kind:'ok', head:'When the sum is exactly one', html:'The tree is completely used and the code is <b>complete</b>: no length can be shortened without breaking the prefix property. Code II is like this. A sum below one always means some codeword is longer than it needs to be.'}
+    {t:'small', html:'<b>When the sum is exactly one</b> the tree is completely used and the code is <b>complete</b>: no length can be shortened without breaking the prefix property. Code II is like this. A sum below one always means some codeword is longer than it needs to be.'}
   ]}
 ]},
 
@@ -7805,7 +8848,7 @@ window.SCENES_M6 = [
       return a.svg();
     },
       caption:'The ceiling on $L_n/n$ against the block length, for the source $0.7,0.2,0.1$. At $n=1$ a code may waste a whole bit; at $n=10$ it may waste a tenth. The floor, in red, never moves.'},
-    {t:'note', kind:'warn', head:'What it costs', html:'The $n$-th extension has $K^n$ symbols, so a block of ten from a three-symbol source needs a codebook of $59\\,049$ entries. The bound improves as $1/n$ and the work grows as $K^n$, which is why real compressors do something cleverer than this.'}
+    {t:'small', html:'<b>What it costs:</b> the $n$-th extension has $K^n$ symbols, so a block of ten from a three-symbol source needs a codebook of $59\\,049$ entries. The bound improves as $1/n$ and the work grows as $K^n$, which is why real compressors do something cleverer than this.'}
   ]}
 ]},
 
@@ -7890,17 +8933,6 @@ window.SCENES_M6 = [
    has no slide behind it, so `src` names the teaching week rather than a slide
    number. The scheme changes because the source does, not because the record
    was relaxed. */
-{ id:'m6-drill-types-b', module:'M6', nav:'Three more question shapes',
-  title:'Three more shapes, for the rest of the module',
-  objective:'Name the channel-side question shapes before the channel material is read.',
-  keywords:'question types channel capacity lempel ziv taxonomy module 6 second half',
-  steps:0, blocks:[
-  {t:'eyebrow', text:'Module 6 · Question types'},
-  {t:'title', text:'Three more shapes, for the rest of the module'},
-  {t:'lede', text:'The taxonomy at the head of the module named six shapes, all of them about the source. The rest of the module brings three more: one on the universal code of the next scene, and two on the channel. They are collected here for the same reason the first six were collected there. It is easier to read new material when the questions it will be asked are already known.'},
-  {t:'drilltypes', module:'M6', from:6, style:'grid-template-columns:repeat(3,minmax(0,1fr));gap:26px 44px'}
-]},
-
 { id:'m6-lz', module:'M6', nav:'Lempel–Ziv coding', title:'Lempel–Ziv coding',
   objective:'Show how a code reaches the entropy without being told the probabilities.',
   keywords:'lempel ziv universal coding parsing dictionary pointer innovation compression zip',
@@ -7909,8 +8941,8 @@ window.SCENES_M6 = [
   {t:'title', text:'Lempel–Ziv coding'},
   {t:'lede', text:'A code that learns the source.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
-    {t:'body', html:'<p>Huffman coding has one practical weakness, and it is not its length. It needs the probabilities <em>before</em> it can build the tree. For a file arriving over a wire nobody knows them in advance, and measuring them means reading everything twice.</p>'},
-    {t:'note', kind:'def', head:'The Lempel–Ziv idea', html:'Read the stream once. Each time, take the <b>shortest run of bits that has not been seen before</b>, and store it. Because it is the shortest new one, everything but its last bit is already stored. So it can be sent as a <b>pointer</b> to that earlier entry plus the one new bit, the <b>innovation</b>. The dictionary is built by the encoder and rebuilt identically by the decoder, so it never has to be transmitted.'},
+    {t:'body', html:'<p>Huffman coding needs the probabilities <em>before</em> it can build the tree. For a file arriving over a wire nobody knows them in advance, and measuring them means reading everything twice.</p>'},
+    {t:'note', kind:'def', head:'The Lempel–Ziv idea', html:'Read the stream once. Each time, take the <b>shortest run of bits that has not been seen before</b>, and store it. Everything but its last bit is then already stored, so the run is sent as a <b>pointer</b> to that earlier entry plus one new bit, the <b>innovation</b>. The decoder builds the same dictionary in the same order, so the dictionary is never transmitted.'},
     {t:'reveal', at:1, items:[
       {t:'wex', head:'Parsing a stream', rows:[
         ['Stream','$0\\;1\\;00\\;011\\;1\\ldots$, parsed left to right into pieces not seen before.'],
@@ -7918,18 +8950,21 @@ window.SCENES_M6 = [
         ['Sending $00$','Its first bit is the entry at position $1$, and its new bit is $0$. Send the position in binary, then the bit: $001\\,0$.'],
         ['Sending $011$','Its start $01$ is at position $4$ and its new bit is $1$, so the block is $100\\,1$.']
       ]},
-      {t:'small', html:'With a fixed block of four bits, seven pieces cost $28$ bits where the raw stream was $18$. The method <em>loses</em> on a short stream, and that is not a flaw. The dictionary has to be paid for before it can pay back.'}
+      {t:'small', html:'With a fixed block of four bits, seven pieces cost $28$ bits where the raw stream was $18$. The method <em>loses</em> on a short stream: the dictionary has to be paid for before it can pay back.'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'ok', head:'Decoding needs nothing extra', html:'Receive the block $1101$. The last bit is the innovation, $1$. The first three bits are $110$, which is $6$ in binary, so the piece is entry $6$ followed by $1$. The decoder has entry $6$ already, because it built the same dictionary from the same blocks in the same order. Nothing about the source was ever sent.'}
-    ]},
-    {t:'reveal', at:3, items:[
-      {t:'note', kind:'warn', head:'Where it wins, and why the course meets it here', html:'The longer the stream, the longer the stored pieces become, and the more original bits each fixed-size block carries. In practice the block is $12$ bits, giving a dictionary of $2^{12}=4096$ entries, and a file compresses to roughly two thirds of its size. It is the algorithm behind the ordinary compressed archive. It belongs in this module because it reaches the same limit Huffman does, the entropy, while being told nothing about the source at all.'}
+      {t:'small', html:'<b>Decoding needs nothing extra.</b> Receive the block $1101$: the last bit is the innovation, $1$; the first three bits are $110$, which is $6$ in binary, so the piece is entry $6$ followed by $1$. The decoder already has entry $6$, because it built the same dictionary from the same blocks. Nothing about the source was ever sent.'}
     ]}
   ], right:[
-    {t:'fig', frame:true, svg:()=>figTree(['0','1','00','011'],['1','2','3','4'],{w:440,h:170}),
-      caption:'The first four pieces as a tree. Each new piece hangs one bit below a piece already stored, which is exactly what "shortest run not seen before" guarantees — and it is why a pointer and one bit are enough to name it.'},
-    {t:'note', kind:'def', head:'What "universal" means', html:'A universal code is one that reaches the entropy of the source without being given the source. Huffman is optimal but not universal; Lempel–Ziv is universal but reaches the limit only in the long run. That trade is the whole difference between them.'}
+    {t:'fig', frame:true, svg:()=>{
+      const st = APP.state.step || 0;
+      const pieces = ['0','1','00','011'].slice(0, st>=2 ? 4 : st>=1 ? 3 : 2);
+      const hot = st===1 ? '00' : st===2 ? '011' : null;
+      return figTree(pieces, ['1','2','3','4'].slice(0, pieces.length), {w:440,h:170,hot});
+    }, caption:'The dictionary as a tree, drawn as the parse runs. Each new piece hangs one bit below a piece already stored — exactly what "shortest run not seen before" guarantees, and why a pointer and one bit are enough to name it.'},
+    {t:'reveal', at:3, items:[
+      {t:'note', kind:'def', head:'Where it wins, and what "universal" means', html:'The longer the stream, the longer the stored pieces, and the more original bits each fixed-size block carries. In practice the block is $12$ bits — a dictionary of $2^{12}=4096$ entries — and a file compresses to roughly two thirds of its size; it is the algorithm behind the ordinary compressed archive. A code with this property is called <b>universal</b>: it reaches the entropy without being given the source. Huffman is optimal but not universal; Lempel–Ziv is universal, but only in the long run.'}
+    ]}
   ]}
 ]},
 
@@ -8038,7 +9073,7 @@ window.SCENES_M6 = [
     {t:'fig', frame:true, svg:()=>figChannel(BSC(0.15),['x_0','x_1'],['y_0','y_1'],
       {tex:[['1-p','p'],['p','1-p']]}),
       caption:'The binary symmetric channel. One number describes it, and the two ways of being wrong are equally likely — which is what "symmetric" names.'},
-    {t:'note', kind:'ok', head:'It joins this course to the last four modules', html:'Modules 2 to 5 computed $P_e$ for one scheme after another. Every one of those numbers is a crossover probability, so every one of those systems can be handed to this chapter as a channel matrix. That is the join between the two halves of the course.'}
+    {t:'small', html:'<b>It joins this course to the last four modules.</b> Modules 2 to 5 computed $P_e$ for one scheme after another. Every one of those numbers is a crossover probability, so every one of those systems can be handed to this chapter as a channel matrix.'}
   ]}
 ]},
 
@@ -8134,7 +9169,7 @@ window.SCENES_M6 = [
       return figInfoBar(r.HX + r.HYX, r.HX - r.I, r.I, r.HYX);
     },
       caption:'The same bar at $p=0.25$. The shared middle has shrunk to $0.189$ bits and the private ends have grown; the total, $H(X,Y)=1.811$ bits, has grown with them. A noisier channel does not destroy uncertainty — it moves it out of the shared part.'},
-    {t:'note', kind:'warn', head:'Symmetric does not mean interchangeable', html:'$I(X;Y)=I(Y;X)$ is a statement about one number. It does not say $H(X\\mid Y)=H(Y\\mid X)$, and those two are usually different. Only the overlap is shared; the two ends are not.'}
+    {t:'small', html:'<b>Symmetric does not mean interchangeable.</b> $I(X;Y)=I(Y;X)$ is a statement about one number. It does not say $H(X\\mid Y)=H(Y\\mid X)$, and those two are usually different. Only the overlap is shared; the two ends are not.'}
   ]}
 ]},
 
@@ -8151,7 +9186,7 @@ window.SCENES_M6 = [
     {t:'eq', key:true, label:'channel capacity', tex:'C=\\max_{\\{p(x_j)\\}}I(X;Y)\\quad\\text{bits per channel use}'},
     {t:'note', kind:'def', head:'What is being maximised, and over what', html:'The maximisation runs over every input distribution — every set of $p(x_j)$ that is non-negative and sums to one. What comes out depends on the channel matrix alone, because the one thing that was free has been optimised away. <b>Capacity is a property of the channel.</b> Mutual information is not.'},
     {t:'reveal', at:1, items:[
-      {t:'note', kind:'ok', head:'Why a maximum and not an average', html:'A poor transmitter can waste a good channel — send one symbol nine times in ten and most of the alphabet is going unused. That is the transmitter\'s failure, not the channel\'s. Capacity asks what the channel would carry for the best transmitter, which is the only question whose answer describes the channel.'}
+      {t:'small', html:'<b>Why a maximum and not an average:</b> a poor transmitter can waste a good channel — send one symbol nine times in ten and most of the alphabet goes unused. That is the transmitter\'s failure, not the channel\'s. Capacity asks what the channel would carry for the best transmitter.'}
     ]},
     {t:'reveal', at:2, items:[
       {t:'note', kind:'warn', head:'"Per channel use", and what that costs', html:'The unit is bits per use of the channel, not bits per second. To reach bits per second, multiply by how many times a second the channel is used. Reporting a capacity without saying which unit it is in is the most common way of being out by a factor nobody notices.'}
@@ -8287,7 +9322,7 @@ window.SCENES_M6 = [
       {t:'note', kind:'warn', head:'What the theorem does not give', html:'It says a code exists. It does not say what the code is, how long its blocks have to be, or how much computation the decoder needs. The proof shows that <em>almost every</em> long code works, which is a strange kind of guidance. It promises the answer is common without pointing at one. Finding codes that come close and can also be decoded took the fifty years after the theorem.'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'ok', head:'Where this closes the course', html:'Module 6 opened with the source-coding theorem: no code carries a source in fewer than $H(S)$ bits a symbol. It closes with the channel-coding theorem: no code carries more than $C$ bits per use across a channel. Between the two sits everything Modules 1 to 5 built. A system is possible exactly when $H(S)$ fits inside $C$, and the rest is engineering.'}
+      {t:'small', html:'<b>Where this closes the course:</b> the module opened with the source-coding theorem — no code carries a source in fewer than $H(S)$ bits a symbol — and closes with this one. A system is possible exactly when $H(S)$ fits inside $C$, and the rest is engineering.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>{
@@ -8373,7 +9408,7 @@ window.SCENES_M6 = [
       {t:'note', kind:'warn', head:'What it does not say', html:'It does not say the limit is reachable. Reaching it needs infinite bandwidth, and the rate per hertz goes to zero on the way. It is a floor that is approached and never touched. A system designed near it pays in bandwidth for every decibel it saves in power.'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'def', head:'How far the course got from it', html:'Coherent binary PSK needs about $9.6$ dB for an error probability of $10^{-5}$, so it sits some $11$ dB above the floor. That gap is what channel coding was invented to close, and closing most of it is what the fifty years after the theorem achieved. This course stops at the uncoded schemes, which is where the gap is widest and easiest to see.'}
+      {t:'small', html:'<b>How far the course got from it:</b> coherent binary PSK needs about $9.6$ dB for an error probability of $10^{-5}$, some $11$ dB above the floor. That gap is what channel coding was invented to close; this course stops at the uncoded schemes, where the gap is widest and easiest to see.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>{
@@ -8401,30 +9436,36 @@ window.SCENES_M6 = [
   src:'CH10 s.4–22, w.12–14', steps:1, blocks:[
   {t:'eyebrow', text:'Module 6 · An introduction to information theory'},
   {t:'title', text:'What Module 6 established'},
-  {t:'grid', cols:2, gap:'26px', items:[
+  {t:'grid', cols:3, gap:'24px', items:[
     [{t:'card', head:'How much information there is', items:[
-      {t:'eq', plain:true, tex:'I(s_k)=-\\log_2 p_k,\\qquad H(S)=-\\sum_k p_k\\log_2 p_k'},
-      {t:'body', html:'<p>Bounded by $0\\le H(S)\\le\\log_2 K$, largest when the symbols are equally likely. Blocks of $n$ carry $nH(S)$ because the source is memoryless.</p>'}
+      {t:'fig', svg:miniEntropy},
+      {t:'eq', plain:true, tex:'H(S)=-\\sum_k p_k\\log_2 p_k'},
+      {t:'small', html:'Bounded by $0\\le H(S)\\le\\log_2 K$, largest when the symbols are equally likely.'}
     ]}],
     [{t:'card', head:'What it costs to write down', items:[
+      {t:'fig', svg:miniLengths},
       {t:'eq', plain:true, tex:'\\bar{L}=\\sum_k p_k l_k,\\qquad \\eta=\\frac{H(S)}{\\bar{L}}\\le 1'},
-      {t:'body', html:'<p>No code beats $H(S)$; a prefix code always reaches within one bit of it; blocking cuts that bit to $1/n$.</p>'}
+      {t:'small', html:'No code beats $H(S)$; a prefix code reaches within one bit of it, and blocking cuts that bit to $1/n$.'}
     ]}],
     [{t:'card', head:'Which codes can be read back', items:[
+      {t:'fig', svg:miniKraftTree},
       {t:'eq', plain:true, tex:'\\sum_k 2^{-l_k}\\le 1'},
-      {t:'body', html:'<p>Necessary for a prefix code, never sufficient. Uniquely decodable is the weaker requirement; prefix, or instantaneous, is the stronger one and is what is used.</p>'}
+      {t:'small', html:'Necessary for a prefix code, never sufficient. Prefix, or instantaneous, is what is used.'}
     ]}],
     [{t:'card', head:'How to build the best one', items:[
-      {t:'body', html:'<p>Huffman: merge the two least likely, label $0$ and $1$, repeat. Optimal in average length, not unique, and placing merged symbols high gives the least variance. Lempel–Ziv reaches the same limit without being told the probabilities.</p>'},
-      {t:'eq', plain:true, tex:'\\sigma^{2}=\\sum_k p_k(l_k-\\bar{L})^{2}'}
+      {t:'fig', svg:miniHuffTree},
+      {t:'eq', plain:true, tex:'\\sigma^{2}=\\sum_k p_k(l_k-\\bar{L})^{2}'},
+      {t:'small', html:'Huffman: merge the two least likely, repeat; on a tie place the merged symbol high. Lempel–Ziv reaches the same limit without being told the probabilities.'}
     ]}],
     [{t:'card', head:'What a channel lets through', items:[
+      {t:'fig', svg:miniChannelX},
       {t:'eq', plain:true, tex:'I(X;Y)=H(X)-H(X\\mid Y)=H(Y)-H(Y\\mid X)'},
-      {t:'body', html:'<p>Symmetric and never negative. A channel is a matrix of $p(y_k\\mid x_j)$ whose rows sum to one. The transmitter supplies $p(x_j)$, and only the pair of them fixes $I(X;Y)$.</p>'}
+      {t:'small', html:'Symmetric and never negative; the channel matrix and the input distribution together fix it.'}
     ]}],
     [{t:'card', head:'The two limits', items:[
+      {t:'fig', svg:miniShannon},
       {t:'eq', plain:true, tex:'C=\\max_{\\{p(x_j)\\}}I(X;Y),\\qquad C=B\\log_2\\!\\left(1+\\frac{P}{N_0B}\\right)'},
-      {t:'body', html:'<p>For the binary symmetric channel $C=1-H(p)$. Reliable communication is possible exactly when $R_b<C$, and no system works below $E_b/N_0=-1.59$ dB.</p>'}
+      {t:'small', html:'Reliable communication is possible exactly when $R_b<C$, and no system works below $E_b/N_0=-1.59$ dB.'}
     ]}]
   ]},
   {t:'reveal', at:1, items:[
@@ -8558,8 +9599,7 @@ CONTENT.SECTIONS = {
     { n:'6.3', title:'Prefix codes and the Kraft inequality', ids:[
         'm6-prefix','m6-kraft','m6-bound'] },
     { n:'6.4', title:'Huffman coding',                 ids:['m6-huffman','m6-huffman-var','m6-lab-j'] },
-    { n:'6.5', title:'Universal coding',               ids:[
-        'm6-drill-types-b','m6-lz'] },
+    { n:'6.5', title:'Universal coding',               ids:['m6-lz'] },
     { n:'6.6', title:'The discrete memoryless channel', ids:[
         'm6-dmc','m6-inputdist','m6-bsc'] },
     { n:'6.7', title:'Mutual information',             ids:[
@@ -8673,10 +9713,10 @@ CONTENT.BOOK = {
    written down twice, so a section that gains a scene renumbers by itself and
    cannot drift out of step with the declaration.
 
-   Three id shapes take a space of their own rather than an ordinal, because
+   Two id shapes take a space of their own rather than an ordinal, because
    they are not teaching scenes: a laboratory (`*-lab-*`) takes `L`, and the
-   two question scenes of a module take `Q1` and `Q2`. Each counts from 1
-   within its chapter. */
+   question scene of a module takes `Q1`. Each counts from 1 within its
+   chapter. */
 window.applyNumbering = function(scenes){
   const byId = {};
   scenes.forEach(s=>{ byId[s.id] = s; });
@@ -8686,14 +9726,11 @@ window.applyNumbering = function(scenes){
     let labN = 0;
     const out = { n:ch.n, title:ch.title, module:ch.module, flat:!!ch.flat, sections:[] };
 
-    /* The question scenes bracket the chapter: the taxonomy is read before the
-       teaching scenes and the questions are worked after them. They are listed
-       where they occur, so they are collected from the scene array rather than
-       from the declaration. */
-    const q = { map:byId[ch.module.toLowerCase()+'-drill-map'],
-                drill:byId[ch.module.toLowerCase()+'-drill'] };
-    if(q.map)   q.map.sec   = ch.n+'.Q1';
-    if(q.drill) q.drill.sec = ch.n+'.Q2';
+    /* The questions close the chapter: they are worked after the teaching
+       scenes. The scene is listed where it occurs, so it is collected from the
+       scene array rather than from the declaration. */
+    const q = { drill:byId[ch.module.toLowerCase()+'-drill'] };
+    if(q.drill) q.drill.sec = ch.n+'.Q1';
 
     secs.forEach(sec=>{
       const entries = [];
@@ -9135,27 +10172,8 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 ]);
 
 /* ======================================================================
-   The two scenes that carry them.
+   The scene that carries them.
    ====================================================================== */
-window.DRILLMAP_M1 = [
-
-{ id:'m1-drill-map', module:'M1', nav:'Module 1 · question types',
-  title:'Module 1 — what a question looks like',
-  objective:'Name the six recurring question shapes before the module is read.',
-  keywords:'question types module 1 sampling rate quantization sqnr reconstruction pcm taxonomy practice',
-  steps:0, blocks:[
-  {t:'eyebrow', text:'Module 1 · Question types'},
-  {t:'title', text:'Six shapes, and the method each one wants'},
-  {t:'lede', text:'Questions on sampling and quantization come in six shapes. Read them now, before the module: you are not expected to answer them yet, only to recognise them when they arrive.'},
-  /* Six columns of this width overflow the stage and the whole scene is then
-     scaled down to fit, which shrinks every formula on the page. Three columns
-     over two rows use the height the scene has spare and leave the type at the
-     size it was designed at. */
-  {t:'drilltypes', module:'M1', style:'grid-template-columns:repeat(3,minmax(0,1fr));gap:26px 44px'}
-]}
-
-];
-
 window.DRILL_M1 = [
 
 { id:'m1-drill', module:'M1', nav:'Module 1 · practice questions',
@@ -9542,21 +10560,6 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 ]);
 
-window.DRILLMAP_M2 = [
-
-{ id:'m2-drill-map', module:'M2', nav:'Module 2 · question types',
-  title:'Module 2 — what a question looks like',
-  objective:'Name the six recurring question shapes before the module is read.',
-  keywords:'question types module 2 matched filter threshold error probability nyquist taxonomy practice',
-  steps:0, blocks:[
-  {t:'eyebrow', text:'Module 2 · Question types'},
-  {t:'title', text:'Six shapes, and the method each one wants'},
-  {t:'lede', text:'Questions on baseband transmission come in six shapes. Read them now, before the module: you are not expected to answer them yet, only to recognise them when they arrive.'},
-  {t:'drilltypes', module:'M2', style:'grid-template-columns:repeat(3,minmax(0,1fr));gap:26px 44px'}
-]}
-
-];
-
 window.DRILL_M2 = [
 
 { id:'m2-drill', module:'M2', nav:'Module 2 · practice questions',
@@ -9940,21 +10943,6 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   teach:'This question exists to be answered in words. It is the clearest test of whether the reader has understood what the geometric representation captures and what it deliberately throws away.' }
 
 ]);
-
-window.DRILLMAP_M3 = [
-
-{ id:'m3-drill-map', module:'M3', nav:'Module 3 · question types',
-  title:'Module 3 — what a question looks like',
-  objective:'Name the recurring question shapes, and say where they come from.',
-  keywords:'question types module 3 orthonormal basis gram schmidt constellation dimension taxonomy practice',
-  steps:0, blocks:[
-  {t:'eyebrow', text:'Module 3 · Question types'},
-  {t:'title', text:'Six shapes, and the method each one wants'},
-  {t:'lede', text:'Questions on the geometric representation come in six shapes. They are shorter than the questions of the modules on either side, because this material usually appears as the first step of a longer question rather than on its own.'},
-  {t:'drilltypes', module:'M3', style:'grid-template-columns:repeat(3,minmax(0,1fr));gap:26px 44px'}
-]}
-
-];
 
 window.DRILL_M3 = [
 
@@ -10361,21 +11349,6 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 ]);
 
-window.DRILLMAP_M4 = [
-
-{ id:'m4-drill-map', module:'M4', nav:'Module 4 · question types',
-  title:'Module 4 — what a question looks like',
-  objective:'Name the six recurring question shapes before the module is read.',
-  keywords:'question types module 4 decision rule regions union bound constellation design taxonomy',
-  steps:0, blocks:[
-  {t:'eyebrow', text:'Module 4 · Question types'},
-  {t:'title', text:'Six shapes, and the method each one wants'},
-  {t:'lede', text:'Questions on the optimal receiver come in six shapes. One of them is the constellation question the papers set; the others are the pieces it is built from.'},
-  {t:'drilltypes', module:'M4', style:'grid-template-columns:repeat(3,minmax(0,1fr));gap:26px 44px'}
-]}
-
-];
-
 window.DRILL_M4 = [
 
 { id:'m4-drill', module:'M4', nav:'Module 4 · practice questions',
@@ -10749,21 +11722,6 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   teach:'The gap between QPSK and $8$-PSK is the interesting one: QPSK beats the target by more than two orders of magnitude and $8$-PSK misses it. Ask how much extra energy would rescue $8$-PSK — about $0.9$ dB — and the question turns into a design decision instead of an arithmetic one.' }
 
 ]);
-
-window.DRILLMAP_M5 = [
-
-{ id:'m5-drill-map', module:'M5', nav:'Module 5 · question types',
-  title:'Module 5 — what a question looks like',
-  objective:'Name the six recurring question shapes before the module is read.',
-  keywords:'question types module 5 binary schemes psk pam qam comparison taxonomy',
-  steps:0, blocks:[
-  {t:'eyebrow', text:'Module 5 · Question types'},
-  {t:'title', text:'Six shapes, and the method each one wants'},
-  {t:'lede', text:'Questions on modulation come in six shapes. Each one is the same two moves in a different costume: place the points, then measure the distance between them.'},
-  {t:'drilltypes', module:'M5', style:'grid-template-columns:repeat(3,minmax(0,1fr));gap:26px 44px'}
-]}
-
-];
 
 window.DRILL_M5 = [
 
@@ -11250,21 +12208,6 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 ]);
 
-window.DRILLMAP_M6 = [
-
-{ id:'m6-drill-map', module:'M6', nav:'Module 6 · question types',
-  title:'Module 6 — what a question looks like',
-  objective:'Name the six source-side question shapes before the module is read.',
-  keywords:'question types module 6 entropy extension code kraft huffman channel capacity taxonomy',
-  steps:0, blocks:[
-  {t:'eyebrow', text:'Module 6 · Question types'},
-  {t:'title', text:'Six shapes for the source, and the method each one wants'},
-  {t:'lede', text:'Questions on information theory come in nine shapes. The six here are about the source — how much information it makes and how few bits will carry it. The other three are about the channel it is sent over, and they are collected at the head of section 6.5, where that half of the module begins.'},
-  {t:'drilltypes', module:'M6', to:6, style:'grid-template-columns:repeat(3,minmax(0,1fr));gap:26px 44px'}
-]}
-
-];
-
 window.DRILL_M6 = [
 
 { id:'m6-drill', module:'M6', nav:'Module 6 · practice questions',
@@ -11286,22 +12229,20 @@ window.DRILL_M6 = [
 <script>
 /* ---------- assemble the scene list from the content modules ---------- */
 (function(){
-  /* Each module opens with the taxonomy of the question types that recur, and
-     closes with the questions themselves. The map is read before the work; the
-     work is done after the module has been taught. Both carry the module id of
-     the module they belong to, so the contents rail and the module list need no
-     separate entry.
+  /* Each module closes with the questions themselves, worked after the module
+     has been taught. That scene carries the module id of the module it belongs
+     to, so the contents rail and the module list need no separate entry.
 
      A scene array that is not named here never appears, whatever else is true
      of it. */
   const SCENES = [].concat(
     window.SCENES_M0||[],
-    window.DRILLMAP_M1||[], window.SCENES_M1||[], window.DRILL_M1||[],
-    window.DRILLMAP_M2||[], window.SCENES_M2||[], window.DRILL_M2||[],
-    window.DRILLMAP_M3||[], window.SCENES_M3||[], window.DRILL_M3||[],
-    window.DRILLMAP_M4||[], window.SCENES_M4||[], window.DRILL_M4||[],
-    window.DRILLMAP_M5||[], window.SCENES_M5||[], window.DRILL_M5||[],
-  window.DRILLMAP_M6||[], window.SCENES_M6||[], window.DRILL_M6||[],
+    window.SCENES_M1||[], window.DRILL_M1||[],
+    window.SCENES_M2||[], window.DRILL_M2||[],
+    window.SCENES_M3||[], window.DRILL_M3||[],
+    window.SCENES_M4||[], window.DRILL_M4||[],
+    window.SCENES_M5||[], window.DRILL_M5||[],
+  window.SCENES_M6||[], window.DRILL_M6||[],
     window.SCENES_END||[]
   );
 
@@ -11309,7 +12250,7 @@ window.DRILL_M6 = [
   const gh = document.getElementById('glosshost');
   gh.innerHTML = Object.entries(CONTENT.GLOSS).map(([k,v])=>
     `<div class="gitem" id="g-${k}"><div class="gs">${RENDER.tex(v.s, false)}</div>
-      <div class="gd">${v.d}${v.go?` <a data-act="goto" data-id="${v.go}">go to definition →</a>`:''}</div></div>`).join('');
+      <div class="gd">${RENDER.md(v.d)}${v.go?` <a data-act="goto" data-id="${v.go}">go to definition →</a>`:''}</div></div>`).join('');
   /* The two conventions that carry a factor of two between them are stated
      first, because a result read under the wrong one is wrong by exactly that
      factor and looks entirely reasonable on the page. */
@@ -11318,8 +12259,8 @@ window.DRILL_M6 = [
     ['Q(x)',  CONTENT.META.conventions.q]
   ].map(([n,t])=>`<div class="gitem"><div class="gs"><span class="eq-label">${n}</span></div>
       <div class="gd">${RENDER.tex(t,false)}</div></div>`).join('')
-    + `<div class="gitem"><div class="gs"><span class="eq-label">energy</span></div><div class="gd">${CONTENT.META.conventions.energy}</div></div>`
-    + `<div class="gitem"><div class="gs"><span class="eq-label">log</span></div><div class="gd">${CONTENT.META.conventions.log}</div></div>`;
+    + `<div class="gitem"><div class="gs"><span class="eq-label">energy</span></div><div class="gd">${RENDER.md(CONTENT.META.conventions.energy)}</div></div>`
+    + `<div class="gitem"><div class="gs"><span class="eq-label">log</span></div><div class="gd">${RENDER.md(CONTENT.META.conventions.log)}</div></div>`;
   document.getElementById('helphost').innerHTML = [
     ['→ / space','Advance one reveal state, then one scene'],
     ['←','Step back one reveal state, then one scene'],

@@ -362,21 +362,6 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 ]);
 
-window.DRILLMAP_M3 = [
-
-{ id:'m3-drill-map', module:'M3', nav:'Module 3 · question types',
-  title:'Module 3 — what a question looks like',
-  objective:'Name the recurring question shapes, and say where they come from.',
-  keywords:'question types module 3 orthonormal basis gram schmidt constellation dimension taxonomy practice',
-  steps:0, blocks:[
-  {t:'eyebrow', text:'Module 3 · Question types'},
-  {t:'title', text:'Six shapes, and the method each one wants'},
-  {t:'lede', text:'Questions on the geometric representation come in six shapes. They are shorter than the questions of the modules on either side, because this material usually appears as the first step of a longer question rather than on its own.'},
-  {t:'drilltypes', module:'M3', style:'grid-template-columns:repeat(3,minmax(0,1fr));gap:26px 44px'}
-]}
-
-];
-
 window.DRILL_M3 = [
 
 { id:'m3-drill', module:'M3', nav:'Module 3 · practice questions',

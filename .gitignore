@@ -17,6 +17,7 @@ dist/Formula_Reference.*
 .venv/
 node_modules/
 shots/
+shots-m/
 pages/
 textclash.json
 __pycache__/
@@ -28,3 +29,4 @@ __pycache__/
 # Working notes for the agents that build this, not part of what is published.
 AGENTS.md
 CLAUDE.md
+.Codex/notes/

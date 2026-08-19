@@ -97,19 +97,57 @@ function figTree(codes, labels, opts){
     if(n === '') return;
     const par = n.slice(0,-1);
     a.poly([[par.length, Y(par)],[n.length, Y(n)]], {color:C.grid, width:1.4});
-    a.note((par.length+n.length)/2, (Y(par)+Y(n))/2 + span*0.055,
+    /* `opts.bare` drops the edge-bit labels — a card miniature has no room
+       for them and needs only the shape. */
+    if(!opts.bare) a.note((par.length+n.length)/2, (Y(par)+Y(n))/2 + span*0.055,
       n.slice(-1), {fs:11, color:C.dim, anchor:'middle'});
   });
   Array.from(nodes).forEach(n=>{
     const leaf = codes.indexOf(n);
-    a.point(n.length, Y(n), {color: leaf>=0 ? C.ink : C.grid, r: leaf>=0 ? 5 : 2.6});
-    if(leaf >= 0) a.note(n.length + 0.14, Y(n), labels[leaf], {tex:true, fs:12, color:C.ink});
+    /* `opts.hot` names one codeword to draw in the intermediate colour — the
+       piece a step-driven scene has just added. */
+    const hot = leaf>=0 && opts.hot === n;
+    a.point(n.length, Y(n), {color: leaf>=0 ? (hot ? C.mid : C.ink) : C.grid, r: leaf>=0 ? (hot ? 6 : 5) : 2.6});
+    if(leaf >= 0) a.note(n.length + 0.14, Y(n), labels[leaf], {tex:true, fs:12, color: hot ? C.mid : C.ink});
   });
   return a.svg();
 }
 
 const HUFF = [0.4, 0.2, 0.2, 0.1, 0.1];
 const HLAB = ['s_1','s_2','s_3','s_4','s_5'];
+
+/* ---- summary-card miniatures ----
+   Each recalls the key figure of its section, stripped to the shape alone. */
+function mini(w,h,xr,yr){ return P.Axes({w:w,h:h,xr:xr,yr:yr,pad:{l:10,r:10,t:8,b:8},
+  xticksOverride:[], yticksOverride:[], grid:false, zeroAxes:false, arrows:false}); }
+function miniEntropy(){
+  const a = mini(300,80,[-0.06,1.06],[0,1.18]);
+  a.curve(p=>(p<=0||p>=1)?0:-p*Math.log2(p)-(1-p)*Math.log2(1-p),{color:C.in,width:2});
+  return a.svg();
+}
+function miniLengths(){
+  const a = mini(300,80,[0,6],[0,3.6]);
+  [2,2,2,3,3].forEach((l,k)=>a.rect(k+0.62,0,k+1.38,l,{fill:C.dec.mid}));
+  a.hline(2.1219,{color:C.err,dash:'4 3'});
+  return a.svg();
+}
+function miniKraftTree(){ return figTree(['00','01','10','110'],['','','',''],{w:300,h:80,bare:true}); }
+function miniHuffTree(){ return figTree(['00','10','11','010','011'],['','','','',''],{w:300,h:80,bare:true}); }
+function miniChannelX(){
+  const a = mini(300,80,[0,3],[-0.2,1.2]);
+  a.poly([[0.4,1],[2.6,1]],{color:C.out,width:2});
+  a.poly([[0.4,0],[2.6,0]],{color:C.out,width:2});
+  a.poly([[0.4,1],[2.6,0]],{color:C.err,width:1.6,dash:'4 3'});
+  a.poly([[0.4,0],[2.6,1]],{color:C.err,width:1.6,dash:'4 3'});
+  [[0.4,0],[0.4,1]].forEach(p=>a.point(p[0],p[1],{color:C.in,r:4.5}));
+  [[2.6,0],[2.6,1]].forEach(p=>a.point(p[0],p[1],{color:C.mid,r:4.5}));
+  return a.svg();
+}
+function miniShannon(){
+  const a = mini(300,80,[0,8],[0,3.4]);
+  a.curve(x=>Math.log2(1+x),{color:C.out,width:2});
+  return a.svg();
+}
 
 /* ---- the channel half of the chapter ------------------------------------
    Everything below is computed from a channel matrix `Pyx`, whose row j is the
@@ -384,9 +422,9 @@ window.SCENES_M6 = [
   {t:'lede', text:'Codes that can be read back.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>Short codewords are worth nothing if the receiver cannot tell where one ends and the next begins. Two conditions matter, and they are not the same condition.</p>'},
-    {t:'grid', cols:2, gap:'16px', items:[
-      [{t:'note', kind:'def', head:'Uniquely decodable', html:'Every string of bits the code can produce comes from exactly one string of symbols. Without this the code is unusable.'}],
-      [{t:'note', kind:'def', head:'Prefix code', html:'No codeword begins any other. Stronger, and it buys something: the decoder can name a symbol the moment its last bit arrives. Also called <b>instantaneous</b>.'}]
+    {t:'wex', rows:[
+      ['Uniquely decodable','Every string of bits the code can produce comes from exactly one string of symbols. Without this the code is unusable.'],
+      ['Prefix code','No codeword begins any other. Stronger, and it buys something: the decoder can name a symbol the moment its last bit arrives. Also called <b>instantaneous</b>.']
     ]},
     {t:'reveal', at:1, items:[
       {t:'body', html:'<p>Compare three codes for a four-symbol source.</p>'},
@@ -441,7 +479,7 @@ window.SCENES_M6 = [
   ], right:[
     {t:'fig', frame:true, svg:()=>figTree(['0','10','110','1110'],['s_1','s_2','s_3','s_4'],{w:430,h:135}),
       caption:'A prefix code with Code III\'s lengths $1,2,3,4$, which the Kraft inequality promised must exist. Every symbol is at a leaf, and one branch is left unused — the $0.0625$ of the budget that was never spent.'},
-    {t:'note', kind:'ok', head:'When the sum is exactly one', html:'The tree is completely used and the code is <b>complete</b>: no length can be shortened without breaking the prefix property. Code II is like this. A sum below one always means some codeword is longer than it needs to be.'}
+    {t:'small', html:'<b>When the sum is exactly one</b> the tree is completely used and the code is <b>complete</b>: no length can be shortened without breaking the prefix property. Code II is like this. A sum below one always means some codeword is longer than it needs to be.'}
   ]}
 ]},
 
@@ -482,7 +520,7 @@ window.SCENES_M6 = [
       return a.svg();
     },
       caption:'The ceiling on $L_n/n$ against the block length, for the source $0.7,0.2,0.1$. At $n=1$ a code may waste a whole bit; at $n=10$ it may waste a tenth. The floor, in red, never moves.'},
-    {t:'note', kind:'warn', head:'What it costs', html:'The $n$-th extension has $K^n$ symbols, so a block of ten from a three-symbol source needs a codebook of $59\\,049$ entries. The bound improves as $1/n$ and the work grows as $K^n$, which is why real compressors do something cleverer than this.'}
+    {t:'small', html:'<b>What it costs:</b> the $n$-th extension has $K^n$ symbols, so a block of ten from a three-symbol source needs a codebook of $59\\,049$ entries. The bound improves as $1/n$ and the work grows as $K^n$, which is why real compressors do something cleverer than this.'}
   ]}
 ]},
 
@@ -567,17 +605,6 @@ window.SCENES_M6 = [
    has no slide behind it, so `src` names the teaching week rather than a slide
    number. The scheme changes because the source does, not because the record
    was relaxed. */
-{ id:'m6-drill-types-b', module:'M6', nav:'Three more question shapes',
-  title:'Three more shapes, for the rest of the module',
-  objective:'Name the channel-side question shapes before the channel material is read.',
-  keywords:'question types channel capacity lempel ziv taxonomy module 6 second half',
-  steps:0, blocks:[
-  {t:'eyebrow', text:'Module 6 · Question types'},
-  {t:'title', text:'Three more shapes, for the rest of the module'},
-  {t:'lede', text:'The taxonomy at the head of the module named six shapes, all of them about the source. The rest of the module brings three more: one on the universal code of the next scene, and two on the channel. They are collected here for the same reason the first six were collected there. It is easier to read new material when the questions it will be asked are already known.'},
-  {t:'drilltypes', module:'M6', from:6, style:'grid-template-columns:repeat(3,minmax(0,1fr));gap:26px 44px'}
-]},
-
 { id:'m6-lz', module:'M6', nav:'Lempel–Ziv coding', title:'Lempel–Ziv coding',
   objective:'Show how a code reaches the entropy without being told the probabilities.',
   keywords:'lempel ziv universal coding parsing dictionary pointer innovation compression zip',
@@ -586,8 +613,8 @@ window.SCENES_M6 = [
   {t:'title', text:'Lempel–Ziv coding'},
   {t:'lede', text:'A code that learns the source.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
-    {t:'body', html:'<p>Huffman coding has one practical weakness, and it is not its length. It needs the probabilities <em>before</em> it can build the tree. For a file arriving over a wire nobody knows them in advance, and measuring them means reading everything twice.</p>'},
-    {t:'note', kind:'def', head:'The Lempel–Ziv idea', html:'Read the stream once. Each time, take the <b>shortest run of bits that has not been seen before</b>, and store it. Because it is the shortest new one, everything but its last bit is already stored. So it can be sent as a <b>pointer</b> to that earlier entry plus the one new bit, the <b>innovation</b>. The dictionary is built by the encoder and rebuilt identically by the decoder, so it never has to be transmitted.'},
+    {t:'body', html:'<p>Huffman coding needs the probabilities <em>before</em> it can build the tree. For a file arriving over a wire nobody knows them in advance, and measuring them means reading everything twice.</p>'},
+    {t:'note', kind:'def', head:'The Lempel–Ziv idea', html:'Read the stream once. Each time, take the <b>shortest run of bits that has not been seen before</b>, and store it. Everything but its last bit is then already stored, so the run is sent as a <b>pointer</b> to that earlier entry plus one new bit, the <b>innovation</b>. The decoder builds the same dictionary in the same order, so the dictionary is never transmitted.'},
     {t:'reveal', at:1, items:[
       {t:'wex', head:'Parsing a stream', rows:[
         ['Stream','$0\\;1\\;00\\;011\\;1\\ldots$, parsed left to right into pieces not seen before.'],
@@ -595,18 +622,21 @@ window.SCENES_M6 = [
         ['Sending $00$','Its first bit is the entry at position $1$, and its new bit is $0$. Send the position in binary, then the bit: $001\\,0$.'],
         ['Sending $011$','Its start $01$ is at position $4$ and its new bit is $1$, so the block is $100\\,1$.']
       ]},
-      {t:'small', html:'With a fixed block of four bits, seven pieces cost $28$ bits where the raw stream was $18$. The method <em>loses</em> on a short stream, and that is not a flaw. The dictionary has to be paid for before it can pay back.'}
+      {t:'small', html:'With a fixed block of four bits, seven pieces cost $28$ bits where the raw stream was $18$. The method <em>loses</em> on a short stream: the dictionary has to be paid for before it can pay back.'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'ok', head:'Decoding needs nothing extra', html:'Receive the block $1101$. The last bit is the innovation, $1$. The first three bits are $110$, which is $6$ in binary, so the piece is entry $6$ followed by $1$. The decoder has entry $6$ already, because it built the same dictionary from the same blocks in the same order. Nothing about the source was ever sent.'}
-    ]},
-    {t:'reveal', at:3, items:[
-      {t:'note', kind:'warn', head:'Where it wins, and why the course meets it here', html:'The longer the stream, the longer the stored pieces become, and the more original bits each fixed-size block carries. In practice the block is $12$ bits, giving a dictionary of $2^{12}=4096$ entries, and a file compresses to roughly two thirds of its size. It is the algorithm behind the ordinary compressed archive. It belongs in this module because it reaches the same limit Huffman does, the entropy, while being told nothing about the source at all.'}
+      {t:'small', html:'<b>Decoding needs nothing extra.</b> Receive the block $1101$: the last bit is the innovation, $1$; the first three bits are $110$, which is $6$ in binary, so the piece is entry $6$ followed by $1$. The decoder already has entry $6$, because it built the same dictionary from the same blocks. Nothing about the source was ever sent.'}
     ]}
   ], right:[
-    {t:'fig', frame:true, svg:()=>figTree(['0','1','00','011'],['1','2','3','4'],{w:440,h:170}),
-      caption:'The first four pieces as a tree. Each new piece hangs one bit below a piece already stored, which is exactly what "shortest run not seen before" guarantees — and it is why a pointer and one bit are enough to name it.'},
-    {t:'note', kind:'def', head:'What "universal" means', html:'A universal code is one that reaches the entropy of the source without being given the source. Huffman is optimal but not universal; Lempel–Ziv is universal but reaches the limit only in the long run. That trade is the whole difference between them.'}
+    {t:'fig', frame:true, svg:()=>{
+      const st = APP.state.step || 0;
+      const pieces = ['0','1','00','011'].slice(0, st>=2 ? 4 : st>=1 ? 3 : 2);
+      const hot = st===1 ? '00' : st===2 ? '011' : null;
+      return figTree(pieces, ['1','2','3','4'].slice(0, pieces.length), {w:440,h:170,hot});
+    }, caption:'The dictionary as a tree, drawn as the parse runs. Each new piece hangs one bit below a piece already stored — exactly what "shortest run not seen before" guarantees, and why a pointer and one bit are enough to name it.'},
+    {t:'reveal', at:3, items:[
+      {t:'note', kind:'def', head:'Where it wins, and what "universal" means', html:'The longer the stream, the longer the stored pieces, and the more original bits each fixed-size block carries. In practice the block is $12$ bits — a dictionary of $2^{12}=4096$ entries — and a file compresses to roughly two thirds of its size; it is the algorithm behind the ordinary compressed archive. A code with this property is called <b>universal</b>: it reaches the entropy without being given the source. Huffman is optimal but not universal; Lempel–Ziv is universal, but only in the long run.'}
+    ]}
   ]}
 ]},
 
@@ -715,7 +745,7 @@ window.SCENES_M6 = [
     {t:'fig', frame:true, svg:()=>figChannel(BSC(0.15),['x_0','x_1'],['y_0','y_1'],
       {tex:[['1-p','p'],['p','1-p']]}),
       caption:'The binary symmetric channel. One number describes it, and the two ways of being wrong are equally likely — which is what "symmetric" names.'},
-    {t:'note', kind:'ok', head:'It joins this course to the last four modules', html:'Modules 2 to 5 computed $P_e$ for one scheme after another. Every one of those numbers is a crossover probability, so every one of those systems can be handed to this chapter as a channel matrix. That is the join between the two halves of the course.'}
+    {t:'small', html:'<b>It joins this course to the last four modules.</b> Modules 2 to 5 computed $P_e$ for one scheme after another. Every one of those numbers is a crossover probability, so every one of those systems can be handed to this chapter as a channel matrix.'}
   ]}
 ]},
 
@@ -811,7 +841,7 @@ window.SCENES_M6 = [
       return figInfoBar(r.HX + r.HYX, r.HX - r.I, r.I, r.HYX);
     },
       caption:'The same bar at $p=0.25$. The shared middle has shrunk to $0.189$ bits and the private ends have grown; the total, $H(X,Y)=1.811$ bits, has grown with them. A noisier channel does not destroy uncertainty — it moves it out of the shared part.'},
-    {t:'note', kind:'warn', head:'Symmetric does not mean interchangeable', html:'$I(X;Y)=I(Y;X)$ is a statement about one number. It does not say $H(X\\mid Y)=H(Y\\mid X)$, and those two are usually different. Only the overlap is shared; the two ends are not.'}
+    {t:'small', html:'<b>Symmetric does not mean interchangeable.</b> $I(X;Y)=I(Y;X)$ is a statement about one number. It does not say $H(X\\mid Y)=H(Y\\mid X)$, and those two are usually different. Only the overlap is shared; the two ends are not.'}
   ]}
 ]},
 
@@ -828,7 +858,7 @@ window.SCENES_M6 = [
     {t:'eq', key:true, label:'channel capacity', tex:'C=\\max_{\\{p(x_j)\\}}I(X;Y)\\quad\\text{bits per channel use}'},
     {t:'note', kind:'def', head:'What is being maximised, and over what', html:'The maximisation runs over every input distribution — every set of $p(x_j)$ that is non-negative and sums to one. What comes out depends on the channel matrix alone, because the one thing that was free has been optimised away. <b>Capacity is a property of the channel.</b> Mutual information is not.'},
     {t:'reveal', at:1, items:[
-      {t:'note', kind:'ok', head:'Why a maximum and not an average', html:'A poor transmitter can waste a good channel — send one symbol nine times in ten and most of the alphabet is going unused. That is the transmitter\'s failure, not the channel\'s. Capacity asks what the channel would carry for the best transmitter, which is the only question whose answer describes the channel.'}
+      {t:'small', html:'<b>Why a maximum and not an average:</b> a poor transmitter can waste a good channel — send one symbol nine times in ten and most of the alphabet goes unused. That is the transmitter\'s failure, not the channel\'s. Capacity asks what the channel would carry for the best transmitter.'}
     ]},
     {t:'reveal', at:2, items:[
       {t:'note', kind:'warn', head:'"Per channel use", and what that costs', html:'The unit is bits per use of the channel, not bits per second. To reach bits per second, multiply by how many times a second the channel is used. Reporting a capacity without saying which unit it is in is the most common way of being out by a factor nobody notices.'}
@@ -964,7 +994,7 @@ window.SCENES_M6 = [
       {t:'note', kind:'warn', head:'What the theorem does not give', html:'It says a code exists. It does not say what the code is, how long its blocks have to be, or how much computation the decoder needs. The proof shows that <em>almost every</em> long code works, which is a strange kind of guidance. It promises the answer is common without pointing at one. Finding codes that come close and can also be decoded took the fifty years after the theorem.'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'ok', head:'Where this closes the course', html:'Module 6 opened with the source-coding theorem: no code carries a source in fewer than $H(S)$ bits a symbol. It closes with the channel-coding theorem: no code carries more than $C$ bits per use across a channel. Between the two sits everything Modules 1 to 5 built. A system is possible exactly when $H(S)$ fits inside $C$, and the rest is engineering.'}
+      {t:'small', html:'<b>Where this closes the course:</b> the module opened with the source-coding theorem — no code carries a source in fewer than $H(S)$ bits a symbol — and closes with this one. A system is possible exactly when $H(S)$ fits inside $C$, and the rest is engineering.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>{
@@ -1050,7 +1080,7 @@ window.SCENES_M6 = [
       {t:'note', kind:'warn', head:'What it does not say', html:'It does not say the limit is reachable. Reaching it needs infinite bandwidth, and the rate per hertz goes to zero on the way. It is a floor that is approached and never touched. A system designed near it pays in bandwidth for every decibel it saves in power.'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'def', head:'How far the course got from it', html:'Coherent binary PSK needs about $9.6$ dB for an error probability of $10^{-5}$, so it sits some $11$ dB above the floor. That gap is what channel coding was invented to close, and closing most of it is what the fifty years after the theorem achieved. This course stops at the uncoded schemes, which is where the gap is widest and easiest to see.'}
+      {t:'small', html:'<b>How far the course got from it:</b> coherent binary PSK needs about $9.6$ dB for an error probability of $10^{-5}$, some $11$ dB above the floor. That gap is what channel coding was invented to close; this course stops at the uncoded schemes, where the gap is widest and easiest to see.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>{
@@ -1078,30 +1108,36 @@ window.SCENES_M6 = [
   src:'CH10 s.4–22, w.12–14', steps:1, blocks:[
   {t:'eyebrow', text:'Module 6 · An introduction to information theory'},
   {t:'title', text:'What Module 6 established'},
-  {t:'grid', cols:2, gap:'26px', items:[
+  {t:'grid', cols:3, gap:'24px', items:[
     [{t:'card', head:'How much information there is', items:[
-      {t:'eq', plain:true, tex:'I(s_k)=-\\log_2 p_k,\\qquad H(S)=-\\sum_k p_k\\log_2 p_k'},
-      {t:'body', html:'<p>Bounded by $0\\le H(S)\\le\\log_2 K$, largest when the symbols are equally likely. Blocks of $n$ carry $nH(S)$ because the source is memoryless.</p>'}
+      {t:'fig', svg:miniEntropy},
+      {t:'eq', plain:true, tex:'H(S)=-\\sum_k p_k\\log_2 p_k'},
+      {t:'small', html:'Bounded by $0\\le H(S)\\le\\log_2 K$, largest when the symbols are equally likely.'}
     ]}],
     [{t:'card', head:'What it costs to write down', items:[
+      {t:'fig', svg:miniLengths},
       {t:'eq', plain:true, tex:'\\bar{L}=\\sum_k p_k l_k,\\qquad \\eta=\\frac{H(S)}{\\bar{L}}\\le 1'},
-      {t:'body', html:'<p>No code beats $H(S)$; a prefix code always reaches within one bit of it; blocking cuts that bit to $1/n$.</p>'}
+      {t:'small', html:'No code beats $H(S)$; a prefix code reaches within one bit of it, and blocking cuts that bit to $1/n$.'}
     ]}],
     [{t:'card', head:'Which codes can be read back', items:[
+      {t:'fig', svg:miniKraftTree},
       {t:'eq', plain:true, tex:'\\sum_k 2^{-l_k}\\le 1'},
-      {t:'body', html:'<p>Necessary for a prefix code, never sufficient. Uniquely decodable is the weaker requirement; prefix, or instantaneous, is the stronger one and is what is used.</p>'}
+      {t:'small', html:'Necessary for a prefix code, never sufficient. Prefix, or instantaneous, is what is used.'}
     ]}],
     [{t:'card', head:'How to build the best one', items:[
-      {t:'body', html:'<p>Huffman: merge the two least likely, label $0$ and $1$, repeat. Optimal in average length, not unique, and placing merged symbols high gives the least variance. Lempel–Ziv reaches the same limit without being told the probabilities.</p>'},
-      {t:'eq', plain:true, tex:'\\sigma^{2}=\\sum_k p_k(l_k-\\bar{L})^{2}'}
+      {t:'fig', svg:miniHuffTree},
+      {t:'eq', plain:true, tex:'\\sigma^{2}=\\sum_k p_k(l_k-\\bar{L})^{2}'},
+      {t:'small', html:'Huffman: merge the two least likely, repeat; on a tie place the merged symbol high. Lempel–Ziv reaches the same limit without being told the probabilities.'}
     ]}],
     [{t:'card', head:'What a channel lets through', items:[
+      {t:'fig', svg:miniChannelX},
       {t:'eq', plain:true, tex:'I(X;Y)=H(X)-H(X\\mid Y)=H(Y)-H(Y\\mid X)'},
-      {t:'body', html:'<p>Symmetric and never negative. A channel is a matrix of $p(y_k\\mid x_j)$ whose rows sum to one. The transmitter supplies $p(x_j)$, and only the pair of them fixes $I(X;Y)$.</p>'}
+      {t:'small', html:'Symmetric and never negative; the channel matrix and the input distribution together fix it.'}
     ]}],
     [{t:'card', head:'The two limits', items:[
+      {t:'fig', svg:miniShannon},
       {t:'eq', plain:true, tex:'C=\\max_{\\{p(x_j)\\}}I(X;Y),\\qquad C=B\\log_2\\!\\left(1+\\frac{P}{N_0B}\\right)'},
-      {t:'body', html:'<p>For the binary symmetric channel $C=1-H(p)$. Reliable communication is possible exactly when $R_b<C$, and no system works below $E_b/N_0=-1.59$ dB.</p>'}
+      {t:'small', html:'Reliable communication is possible exactly when $R_b<C$, and no system works below $E_b/N_0=-1.59$ dB.'}
     ]}]
   ]},
   {t:'reveal', at:1, items:[

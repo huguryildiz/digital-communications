@@ -383,21 +383,6 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 ]);
 
-window.DRILLMAP_M4 = [
-
-{ id:'m4-drill-map', module:'M4', nav:'Module 4 · question types',
-  title:'Module 4 — what a question looks like',
-  objective:'Name the six recurring question shapes before the module is read.',
-  keywords:'question types module 4 decision rule regions union bound constellation design taxonomy',
-  steps:0, blocks:[
-  {t:'eyebrow', text:'Module 4 · Question types'},
-  {t:'title', text:'Six shapes, and the method each one wants'},
-  {t:'lede', text:'Questions on the optimal receiver come in six shapes. One of them is the constellation question the papers set; the others are the pieces it is built from.'},
-  {t:'drilltypes', module:'M4', style:'grid-template-columns:repeat(3,minmax(0,1fr));gap:26px 44px'}
-]}
-
-];
-
 window.DRILL_M4 = [
 
 { id:'m4-drill', module:'M4', nav:'Module 4 · practice questions',

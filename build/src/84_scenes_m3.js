@@ -43,6 +43,45 @@ function figConstellation(pts, opts){
   return a.svg();
 }
 
+/* ---- summary-card miniatures ----
+   Each recalls the key figure of its section, stripped to the shape alone. */
+function mini(w,h,xr,yr){ return P.Axes({w:w,h:h,xr:xr,yr:yr,pad:{l:10,r:10,t:8,b:8},
+  xticksOverride:[], yticksOverride:[], grid:false, zeroAxes:false, arrows:false}); }
+function miniProject(){
+  const a = mini(520,100,[-0.25,2.6],[-0.2,1.5]);
+  a.poly([[0,0],[2.4,0]],{color:C.grid,width:1.4});
+  a.poly([[0,0],[0,1.4]],{color:C.grid,width:1.4});
+  a.poly([[0,0],[1.8,1.05]],{color:C.in,width:2.2});
+  a.poly([[1.8,1.05],[1.8,0]],{color:C.rule,width:1.2,dash:'3 4'});
+  a.poly([[1.8,1.05],[0,1.05]],{color:C.rule,width:1.2,dash:'3 4'});
+  a.point(1.8,1.05,{color:C.in,r:4.5});
+  return a.svg();
+}
+function miniInner(){
+  const a = mini(520,100,[-0.25,2.6],[-0.2,1.5]);
+  a.poly([[0,0],[2.3,0.35]],{color:C.in,width:2.2});
+  a.poly([[0,0],[1.2,1.3]],{color:C.out,width:2.2});
+  a.point(2.3,0.35,{color:C.in,r:4.5}); a.point(1.2,1.3,{color:C.out,r:4.5});
+  return a.svg();
+}
+function miniGS(){
+  const a = mini(520,100,[-0.25,2.6],[-0.2,1.5]);
+  a.poly([[0,0],[2.2,1.2]],{color:C.in,width:2.2});
+  a.poly([[0,0],[2.2,0]],{color:C.rule,width:1.6,dash:'3 4'});
+  a.poly([[2.2,0],[2.2,1.2]],{color:C.h,width:2.2});
+  a.point(2.2,1.2,{color:C.in,r:4.5});
+  return a.svg();
+}
+function miniNearest(){
+  const a = mini(520,100,[-1.4,1.4],[-1.15,1.15]);
+  a.rect(-1.4,-1.15,0,0,{fill:C.dec.in}); a.rect(0,-1.15,1.4,0,{fill:C.dec.out});
+  a.rect(-1.4,0,0,1.15,{fill:C.dec.mid}); a.rect(0,0,1.4,1.15,{fill:C.dec.h});
+  a.poly([[0,-1.15],[0,1.15]],{color:C.grid,width:1.2});
+  a.poly([[-1.4,0],[1.4,0]],{color:C.grid,width:1.2});
+  [[-0.7,-0.55],[0.7,-0.55],[-0.7,0.55],[0.7,0.55]].forEach(p=>a.point(p[0],p[1],{color:C.ink,r:4}));
+  return a.svg();
+}
+
 const SC = [
 
 /* ---------------------------------------------------------------- 3.0 ---- */
@@ -350,19 +389,23 @@ const SC = [
   {t:'title', text:'What Module 3 established'},
   {t:'grid', cols:2, gap:'26px', items:[
     [{t:'card', head:'The translation', items:[
-      {t:'body', html:'<p>A waveform becomes a list of numbers by integrating it against each basis function, and comes back by adding the pieces up.</p>'},
-      {t:'eq', plain:true, tex:'s_{ij}=\\int_0^T s_i\\psi_j\\,dt,\\quad s_i(t)=\\sum_j s_{ij}\\psi_j(t)'}
+      {t:'fig', svg:miniProject},
+      {t:'eq', plain:true, tex:'s_{ij}=\\int_0^T s_i\\psi_j\\,dt,\\quad s_i(t)=\\sum_j s_{ij}\\psi_j(t)'},
+      {t:'small', html:'Integrate against each basis function to get the numbers; add the pieces up to get the waveform back.'}
     ]}],
     [{t:'card', head:'What survives it', items:[
-      {t:'body', html:'<p>Inner products, and therefore energies and distances. Everything the receiver needs is one of those.</p>'},
-      {t:'eq', plain:true, tex:'\\int xy\\,dt=\\langle\\mathbf{x},\\mathbf{y}\\rangle,\\quad E_i=\\|\\mathbf{s}_i\\|^{2}'}
+      {t:'fig', svg:miniInner},
+      {t:'eq', plain:true, tex:'\\int xy\\,dt=\\langle\\mathbf{x},\\mathbf{y}\\rangle,\\quad E_i=\\|\\mathbf{s}_i\\|^{2}'},
+      {t:'small', html:'Inner products — and therefore energies and distances. Everything the receiver needs is one of those.'}
     ]}],
     [{t:'card', head:'Finding the axes', items:[
-      {t:'body', html:'<p>Gram–Schmidt: normalise the first signal, then repeatedly subtract what is already known and normalise the remainder. A zero remainder adds no axis.</p>'},
-      {t:'eq', plain:true, tex:'g_k=s_k-\\textstyle\\sum_{i<k}s_{ki}\\psi_i,\\quad \\psi_k=g_k/\\sqrt{E_{g_k}}'}
+      {t:'fig', svg:miniGS},
+      {t:'eq', plain:true, tex:'g_k=s_k-\\textstyle\\sum_{i<k}s_{ki}\\psi_i,\\quad \\psi_k=g_k/\\sqrt{E_{g_k}}'},
+      {t:'small', html:'Gram–Schmidt: subtract what is already known, normalise the remainder. A zero remainder adds no axis.'}
     ]}],
     [{t:'card', head:'What comes next', items:[
-      {t:'body', html:'<p>Module 4 builds the receiver for this picture: it computes the coordinates of what arrives and picks the nearest point. The error probability then depends on the distances, and on nothing else.</p>'}
+      {t:'fig', svg:miniNearest},
+      {t:'small', html:'Module 4 computes the coordinates of what arrives and picks the nearest point. The error probability then depends on the distances, and on nothing else.'}
     ]}]
   ]},
   {t:'note', kind:'ok', head:'The module in one sentence', html:'Choose an orthonormal basis and write each signal as a list of coordinates. In this representation, signal energy is squared length. The energy of a signal difference is squared distance.'}

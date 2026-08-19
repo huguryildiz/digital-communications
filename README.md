@@ -420,6 +420,29 @@ scene of Module 2 — because no section of the text states those results in the
 
 ---
 
+## Licence
+
+Two kinds of work live here, and each carries its own licence.
+
+- **The software** — the engine, the build scripts, the gates and the public page — is under the
+  **MIT licence**.
+- **The course material** — the text, the figures, the laboratories, the questions, the worked
+  solutions and the lecture notes — is under **CC BY-NC-SA 4.0**: use it to teach, name the author and
+  link back, do not sell it, and release anything you build on it under the same terms.
+
+[LICENSE](LICENSE) says exactly which paths fall on which side. The mark in `assets/icon.svg` is a
+personal mark and neither licence grants it away.
+
+KaTeX (MIT) and Paul Bakaus's Kinetic Grid (MIT) are bundled here under their own terms; their notices
+are kept in [NOTICE](NOTICE). The lecture material and the textbook under `source/` are not part of
+this repository and are never redistributed by it.
+
+Errata are the most useful thing you can send. [CONTRIBUTING.md](CONTRIBUTING.md) says how.
+
+© 2026 [Hüseyin Uğur Yıldız](https://www.huguryildiz.com/)
+
+---
+
 <p align="center">
   <strong>Digital Communications</strong><br>
   <sub>📡 One file, offline, and readable on the first pass.</sub>

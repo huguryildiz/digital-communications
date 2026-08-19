@@ -38,8 +38,25 @@ const fs = require('fs'), path = require('path');
         const k = host.dataset.fit ? +host.dataset.fit : 1;
         const vy = Math.round(inner.scrollHeight * k - availH);
         const vx = Math.round(inner.scrollWidth * k - availW);
+        /* Visible prose at the last step, counted without the typeset
+           mathematics. This is the "one idea a scene" companion to `dense`:
+           `dense` measures height, this measures words. */
+        let words = 0;
+        inner.querySelectorAll('.body, .lede, .small, .note, figcaption, .wex-v, .eq-note')
+          .forEach(el => {
+            const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, {
+              acceptNode: n => n.parentElement.closest('.katex')
+                ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT });
+            let t = '';
+            while (w.nextNode()) t += w.currentNode.nodeValue + ' ';
+            words += (t.match(/[A-Za-z][A-Za-z'-]*/g) || []).length;
+          });
+        const isLab = !!inner.querySelector('.lab');
+        const isDrill = !!inner.querySelector('.dr-page, .dr-types');
+        const hasFig = !!inner.querySelector('figure.fig svg');
         return { overflow: (!sc && (vy > 2 || vx > 2)), vy: sc?0:vy, vx: sc?0:vx,
-                 fit: k, capped: host.dataset.capped ? +host.dataset.capped : 0 };
+                 fit: k, capped: host.dataset.capped ? +host.dataset.capped : 0,
+                 words, isLab, isDrill, hasFig };
       });
       report.push({ id: s.id, step: st, ...metrics });
       if (!only) await page.screenshot({ path: path.join(outDir, `${s.id}__s${st}.png`) });
@@ -53,8 +70,17 @@ const fs = require('fs'), path = require('path');
   const dense = report.filter(r => r.fit < 0.90 || r.capped)
                       .map(r => [r.id, r.step, r.fit,
                                  r.capped ? `figures cut ${Math.round(r.capped*100)}%` : 'scaled']);
+  /* Two informational lists in the spirit of `scaled`: neither turns the sweep
+     red. `wordy` names teaching scenes showing more than 220 words of prose at
+     the last step; `nofig` names teaching scenes with no drawn figure at all.
+     Laboratories, question pages and worked examples are exempt — a laboratory
+     is its own figure and a worked example is a table by design. */
+  const teach = r => !r.isLab && !r.isDrill && !/-ex-|^title$/.test(r.id);
+  const wordy = report.filter(r => teach(r) && r.words > 220)
+                      .map(r => [r.id, r.words]).sort((a,b)=>b[1]-a[1]);
+  const nofig = report.filter(r => teach(r) && !r.hasFig).map(r => r.id);
   console.log(JSON.stringify({ sceneCount: scenes.length, errors: errors.slice(0, 25),
-    overflow: report.filter(r => r.overflow), dense,
+    overflow: report.filter(r => r.overflow), dense, wordy, nofig,
     scaled: report.filter(r=>r.fit<0.999).map(r=>[r.id,r.step,r.fit]) }, null, 1));
   await browser.close();
 })();

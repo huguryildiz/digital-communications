@@ -144,9 +144,9 @@ body[data-display=projector] .qid,
 body[data-display=projector] .ctrl label,
 body[data-display=projector] .readout dt{ font-size:calc(14px * var(--ts)); }
 body[data-display=projector] .legend{ font-size:calc(17px * var(--ts)); }
-body[data-display=projector] .eq .katex{ font-size:1.42em; }
-body[data-display=projector] .eq.lg .katex{ font-size:1.66em; }
-body[data-display=projector] .eq.sm .katex{ font-size:1.18em; }
+body[data-display=projector] .eq .katex{ font-size:1.60em; }
+body[data-display=projector] .eq.lg .katex{ font-size:1.87em; }
+body[data-display=projector] .eq.sm .katex{ font-size:1.33em; }
 body[data-display=projector] .katex{ font-size:1.10em; }
 body[data-display=projector]{ --rule:#C2BCB0; }      /* stronger hairlines */
 body[data-display=projector][data-theme=dark]{ --rule:#3A4754; }
@@ -428,22 +428,27 @@ h3.sub{
 /* ==========================================================================
    Equations — first-class visual elements
    ========================================================================== */
+/* The type inside an equation box is set larger than the running text, because
+   an equation is what the scene is for and it is read from across a room. The
+   box gives that height back at its edges rather than taking it from the scene:
+   the padding and the margin below are what the larger type grew into, so a
+   scene of equations is no taller than it was before. */
 .eq{
-  position:relative; margin:10px 0; padding:14px 22px 14px 26px;
+  position:relative; margin:7px 0; padding:10px 22px 10px 26px;
   background:var(--paper-2);
   border:1px solid var(--rule);
   border-left:3px solid var(--coral);
   border-radius:var(--radius);
 }
-.eq.plain{ background:transparent; border:0; border-left:0; padding:10px 0; }
+.eq.plain{ background:transparent; border:0; border-left:0; padding:8px 0; }
 .eq.key{ background:linear-gradient(0deg,rgba(190,85,57,.045),rgba(190,85,57,.045)),var(--paper-2); }
 .eq .katex-display{ margin:0; }
-.eq .katex{ font-size:1.26em; }
-.eq.lg .katex{ font-size:1.5em; }
-.eq.sm .katex{ font-size:1.06em; }
+.eq .katex{ font-size:1.42em; }
+.eq.lg .katex{ font-size:1.66em; }
+.eq.sm .katex{ font-size:1.18em; }
 .eq-label{
   font-family:var(--mono); font-size:calc(12px * var(--ts)); letter-spacing:.12em;
-  text-transform:uppercase; color:var(--slate); margin-bottom:6px;
+  text-transform:uppercase; color:var(--slate); margin-bottom:5px;
 }
 .eq-note{ font-size:calc(15px * var(--ts)); color:var(--muted); margin-top:8px; line-height:1.45; }
 .scene.dark .eq{ background:rgba(255,255,255,.045); border-color:rgba(239,231,216,.18); }
@@ -539,6 +544,26 @@ figcaption b{ color:var(--graphite); font-weight:600; }
   background:var(--paper-2); border:1px solid var(--rule);
   border-radius:var(--radius); padding:12px 15px;
 }
+
+/* --- the interpolation figure: a roll call of sincs. One term is lifted at a
+       time — by the idle cycle in the module script or by the reader's
+       pointer — and while it is lifted its zeros at the other sampling
+       instants are drawn, because those zeros are why the sum passes through
+       every sample. The base state, with no `on` and no `pick`, is exactly
+       the printed figure. --- */
+svg.sincpick .st path{ transition:opacity .3s var(--ease), stroke-width .3s var(--ease); }
+svg.sincpick.pick .st path{ opacity:.14; }
+svg.sincpick .st.on path{ opacity:1; stroke-width:2; stroke-dasharray:none; }
+svg.sincpick .st-z{ opacity:0; transition:opacity .3s var(--ease); }
+svg.sincpick .st.on .st-z{ opacity:.85; }
+svg.sincpick .st-dot{ cursor:pointer; }
+svg.sincpick .st-dot circle{ transition:opacity .3s var(--ease); }
+svg.sincpick.pick .st-dot:not(.on) circle:first-child{ opacity:.35; }
+/* the lifted term's own expression replaces the resting caption; display, not
+   opacity, so the eight hidden lines have no geometry for textclash to see */
+svg.sincpick .st-eq{ display:none; }
+svg.sincpick .st-eq.on{ display:inline; }
+svg.sincpick.pick .sp-note{ display:none; }
 
 /* --- title motif: the figure draws itself once, then one highlight per cycle
        follows the signal through the system. Every animation ends on the
@@ -747,6 +772,10 @@ body[data-edition=instructor] .instr-inline{ display:inline; }
   transition:width var(--dur) var(--ease); }
 #chrome .crumb{ letter-spacing:.1em; text-transform:uppercase; color:var(--slate); }
 #chrome .spacer{ flex:1; }
+#chrome .byline{ color:var(--faint); letter-spacing:.06em;
+  margin-right:10px; white-space:nowrap; }
+#chrome .byline a{ color:inherit; text-decoration:none; }
+#chrome .byline a:hover{ color:var(--slate); text-decoration:underline; }
 #chrome button{
   font-family:var(--mono); font-size:11.5px; letter-spacing:.08em; text-transform:uppercase;
   background:transparent; border:0; color:var(--muted); cursor:pointer; padding:6px 8px;
@@ -876,6 +905,306 @@ body[data-motion=reduced] *{ transition-duration:1ms !important; animation-durat
 @media (prefers-reduced-motion:reduce){
   *{ transition-duration:1ms !important; animation-duration:1ms !important; }
 }
+
+/* ==========================================================================
+   Portrait phone — the fixed stage is dropped, not shrunk
+   --------------------------------------------------------------------------
+   Everything above is written against a 1920×1080 page that is scaled to fit
+   the room it is given. On a phone held upright that factor is about a fifth,
+   and a fifth of an 19 px paragraph is four pixels. So below 760 px of width
+   the page stops being a scaled drawing and becomes what a phone is good at:
+   one column of real pixels, top to bottom, that scrolls. The contents rail
+   becomes a drawer over the scene, the header keeps the three controls a thumb
+   reaches for, and the foot of the page carries two large targets and nothing
+   else. `data-layout` is set by the engine from one media query, so the
+   stylesheet and the code that lays the scene out never disagree about which
+   of the two layouts is in force.
+   ========================================================================== */
+body[data-layout=phone]{
+  /* the spacing scale was measured on the 1920-wide stage; a phone reads the
+     same rhythm at about a fifth of the page margin */
+  --s5:30px; --s6:22px; --s7:34px; --s8:18px;
+  --flow:13px;
+}
+
+/* --- the frame: one column, and a foot that sizes to its buttons --------- */
+body[data-layout=phone] #viewport{
+  inset:0 0 auto 0; height:100dvh;
+  /* `1fr` alone is `minmax(auto,1fr)`, and the automatic minimum of a grid item
+     is the width its content refuses to go below. One long formula in one scene
+     would widen that track, and with it the header, the foot and every line of
+     text on the page. The track is pinned to the screen instead, and each of
+     the three areas is allowed to be narrower than what is inside it. */
+  grid-template-columns:minmax(0,1fr);
+  grid-template-rows:auto 1fr auto;
+  grid-template-areas:"hd" "main" "ft";
+}
+body[data-layout=phone] #appheader,
+body[data-layout=phone] #stagewrap,
+body[data-layout=phone] #chrome{ min-width:0; }
+body[data-layout=phone] #stage{ max-width:100%; }
+
+/* --- top bar ------------------------------------------------------------ */
+body[data-layout=phone] #appheader{
+  gap:2px; padding:0 4px 0 2px;
+  padding-top:env(safe-area-inset-top);
+  min-height:calc(50px + env(safe-area-inset-top));
+}
+body[data-layout=phone] #appheader .sep{ display:none; }
+/* the laser and its ink are instruments for a projected room */
+body[data-layout=phone] #appheader .proj-only{ display:none !important; }
+body[data-layout=phone] #appheader button{ padding:12px 10px; font-size:11px; min-height:42px; }
+body[data-layout=phone] #sbtoggle{ font-size:20px !important; padding:9px 12px !important; }
+/* the mark and the name shrink before any control does, and the name is cut
+   with an ellipsis rather than pushing a button off the bar */
+body[data-layout=phone] #appheader .brand{
+  font-size:10px; letter-spacing:.1em; padding-left:2px;
+  flex:0 1 auto; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+
+/* --- the contents, as a drawer over the scene --------------------------- */
+body[data-layout=phone] #sidebar{
+  position:fixed; z-index:60; left:0;
+  top:calc(50px + env(safe-area-inset-top)); bottom:0;
+  width:min(86vw,340px);
+  border-right:1px solid var(--rule-strong);
+  box-shadow:0 0 60px rgba(0,0,0,.30);
+  animation:drawer-in 200ms var(--ease);
+  padding-bottom:env(safe-area-inset-bottom);
+}
+@keyframes drawer-in{ from{ transform:translateX(-100%) } to{ transform:none } }
+/* the sheet the drawer lies on. It belongs to the scene box, so a tap on it is
+   a tap on the scene — which is what the engine listens for to close the
+   drawer again. */
+body[data-layout=phone][data-sidebar=on] #stagewrap::before{
+  content:""; position:fixed; z-index:55;
+  top:calc(50px + env(safe-area-inset-top)); right:0; bottom:0; left:0;
+  background:rgba(20,18,15,.46);
+}
+/* a contents entry is touched, not clicked at */
+body[data-layout=phone] #sidenav{ padding:12px 8px 8px 10px; }
+body[data-layout=phone] #sidenav a{ padding:11px 10px 11px 12px; font-size:15px; }
+body[data-layout=phone] #sidenav .csec button{ padding:11px 8px 11px 10px; font-size:11px; }
+body[data-layout=phone] #sidenav .sgh{ font-size:11px; }
+/* The foot of the drawer holds the settings the header handed over. It is
+   pinned rather than pushed to the end of the contents: a reader looking for
+   the dark theme should not have to scroll past a hundred and twenty scene
+   titles to find it. The contents scroll inside the drawer instead of the
+   drawer scrolling as a whole. */
+body[data-layout=phone] #sidebar{ overflow:hidden; }
+body[data-layout=phone] #sidenav{ flex:1 1 auto; min-height:0; overflow:hidden auto; }
+body[data-layout=phone] #sidebar .sfoot{
+  flex:none; max-height:44vh; overflow:auto;
+  display:flex; flex-wrap:wrap; gap:6px; align-items:center;
+  padding:10px 10px calc(12px + env(safe-area-inset-bottom));
+}
+/* clearing the progress stored on this device is a rare and destructive
+   thing, and is set as the quietest line in the drawer rather than the
+   loudest — it is not what the reader came here for */
+body[data-layout=phone] #sidebar .sfoot .btn[data-act=reset]{
+  width:auto; flex:1 1 100%; padding:4px 2px 0; font-size:11.5px; font-weight:400;
+  text-align:left; color:var(--faint); border:0;
+}
+body[data-layout=phone] .hmoved{
+  font-family:var(--mono); font-size:10.5px; letter-spacing:.06em; text-transform:uppercase;
+  background:transparent; border:1px solid var(--rule); border-radius:var(--radius);
+  color:var(--muted); padding:9px 10px; cursor:pointer; flex:0 1 auto; text-align:center;
+  min-height:42px; min-width:42px;      /* a control is hit with a thumb */
+}
+body[data-layout=phone] .hmoved[aria-pressed=true]{ color:var(--coral); border-color:var(--coral); }
+body[data-layout=phone] .hmoved:disabled{ opacity:.4; }
+/* the byline is a line of text among buttons, and is set as one */
+/* the byline is a line of text among buttons, and keeps the quiet link it has
+   in the foot of the wide page rather than falling back to a browser default */
+body[data-layout=phone] .byline.hmoved{
+  border:0; flex:1 1 100%; text-align:left; padding:8px 2px 0; min-height:0;
+  text-transform:none; letter-spacing:.04em; color:var(--faint); font-size:10.5px;
+}
+body[data-layout=phone] .byline.hmoved a{ color:inherit; text-decoration:none; }
+
+/* --- the scene: a fluid column that scrolls ----------------------------- */
+body[data-layout=phone] #stagewrap{
+  overflow:hidden auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain;
+}
+body[data-layout=phone] #stage{
+  position:relative; width:100%; height:auto; min-height:100%;
+  transform:none !important;
+}
+body[data-layout=phone] .scene{
+  position:relative; inset:auto; min-height:100%;
+  padding:16px var(--s8) 30px;
+  opacity:1; visibility:visible; display:none;
+}
+body[data-layout=phone] .scene.is-active{ display:block; }
+/* the fit-to-page factor is not applied here, and neither is the full-height
+   column it needs; both are cleared in code as well, and stated again so that
+   a scene rendered before the layout changed cannot keep them */
+body[data-layout=phone] .scene-inner{
+  display:block; height:auto !important; width:auto !important; transform:none !important;
+  /* On a phone the column is the screen. On a tablet held upright, or a phone
+     on its side, the screen is wide enough that a line of prose run edge to
+     edge would be too long to read, so the column stops growing and centres. */
+  max-width:680px; margin-inline:auto;
+}
+
+/* --- type: the display sizes fall further than the reading sizes -------- */
+body[data-layout=phone] h1.display{ font-size:calc(34px * var(--ts)); line-height:1.1; margin-bottom:13px; }
+body[data-layout=phone] h2.title{ font-size:calc(25px * var(--ts)); line-height:1.16; margin-bottom:10px; }
+body[data-layout=phone] h3.sub{ font-size:calc(17px * var(--ts)); }
+body[data-layout=phone] .lede{ font-size:calc(17.5px * var(--ts)); line-height:1.4; margin-bottom:var(--s3); }
+body[data-layout=phone] .body{ font-size:calc(16.5px * var(--ts)); line-height:1.5; }
+body[data-layout=phone] .small{ font-size:calc(14px * var(--ts)); }
+body[data-layout=phone] .note{ font-size:calc(16px * var(--ts)); padding-left:13px; }
+body[data-layout=phone] .note.err{ padding:12px 13px 12px 15px; }
+body[data-layout=phone] .note-h{ font-size:calc(11.5px * var(--ts)); letter-spacing:.1em; }
+body[data-layout=phone] .eyebrow{
+  font-size:calc(11.5px * var(--ts)); letter-spacing:.1em; gap:7px; margin-bottom:12px; flex-wrap:wrap;
+}
+body[data-layout=phone] .eyebrow .tick{ width:14px; }
+body[data-layout=phone] .eyebrow .src{ display:none; }
+body[data-layout=phone] figcaption{ font-size:calc(12.5px * var(--ts)); }
+body[data-layout=phone] .legend{ font-size:calc(13.5px * var(--ts)); gap:7px 16px; }
+body[data-layout=phone] .card{ padding:15px 15px 14px; }
+body[data-layout=phone] .card-h{ font-size:calc(16px * var(--ts)); margin-bottom:10px; padding-bottom:8px; }
+body[data-layout=phone] .qstem{ font-size:calc(17.5px * var(--ts)); }
+body[data-layout=phone] .btn{ font-size:calc(15px * var(--ts)); padding:12px 16px; }
+
+/* --- every grid of columns becomes one column --------------------------- */
+/* `.gblk` writes its column count inline, so the rule that overrides it has to
+   carry weight; the rest are stylesheet declarations and do not. */
+/* `minmax(0,1fr)` and not `1fr`: a bare `1fr` lets the track grow to whatever
+   is inside it, and one wide figure would push the single column past the edge
+   of the screen. */
+body[data-layout=phone] .cols{ grid-template-columns:minmax(0,1fr); gap:var(--s3); }
+body[data-layout=phone] .gblk{ grid-template-columns:minmax(0,1fr) !important; gap:18px !important; }
+body[data-layout=phone] .ctrls{ grid-template-columns:minmax(0,1fr); gap:14px; padding:14px 15px; }
+body[data-layout=phone] .dr-types{ grid-template-columns:minmax(0,1fr); gap:20px; }
+body[data-layout=phone] .dr-pair{ flex-direction:column; gap:10px; }
+body[data-layout=phone] .dr-pair > div{ width:100%; }
+/* the worked-example ladder puts its key above the step rather than beside it:
+   a 136 px label column and a 200 px value column is not a table, it is two
+   words a line */
+body[data-layout=phone] .wex-row{ grid-template-columns:minmax(0,1fr); gap:2px; }
+/* A step of a worked example can be one long line of mathematics set in the
+   run of the prose, and inline mathematics does not break. On the narrowest
+   screens the step is given a scroll of its own so that the line is reachable
+   rather than cut off at the margin. */
+body[data-layout=phone] .wex-v{
+  border-top:0; padding-top:0; font-size:calc(16px * var(--ts));
+  min-width:0; overflow-x:auto;
+}
+
+/* --- mathematics: a formula pans rather than being cut ------------------ */
+body[data-layout=phone] .eq{ padding:11px 13px 11px 15px; overflow-x:auto; overflow-y:hidden; }
+body[data-layout=phone] .eq.plain{ padding:9px 0; }
+body[data-layout=phone] .eq .katex{ font-size:1.22em; }
+body[data-layout=phone] .eq.lg .katex{ font-size:1.38em; }
+body[data-layout=phone] .eq.sm .katex{ font-size:1.08em; }
+/* the displayed formula must not clip itself: overflow on one axis turns the
+   other from `visible` into `auto`, and a formula that scrolls inside its own
+   box never reaches the box outside it, which is the one measured and faded */
+body[data-layout=phone] .katex-display{ overflow:visible; }
+/* the one formula in a hundred that is still wider than the column at the
+   smallest size it may be set: its right edge is faded, so that the reader can
+   see there is more of it and push it across */
+body[data-layout=phone] .eq.pans{
+  -webkit-mask-image:linear-gradient(90deg,#000 90%,rgba(0,0,0,.28) 100%);
+          mask-image:linear-gradient(90deg,#000 90%,rgba(0,0,0,.28) 100%);
+}
+/* prose can hold a long symbol or a file name; it breaks rather than pushing
+   the column out from the inside */
+body[data-layout=phone] .body,
+body[data-layout=phone] .note,
+body[data-layout=phone] .wex-v,
+body[data-layout=phone] .qstem{ overflow-wrap:break-word; }
+
+/* --- figures ------------------------------------------------------------ */
+/* Most drawings fill the column. The few too wide to stay legible in it are
+   printed at the width their labels need and panned; `.pans` is set by the
+   renderer on exactly those, and marks the edge so the reader can see that
+   there is more of the figure to the right. */
+body[data-layout=phone] figure.fig{ overflow-x:auto; overflow-y:hidden; }
+body[data-layout=phone] figure.fig.pans{
+  -webkit-mask-image:linear-gradient(90deg,#000 88%,rgba(0,0,0,.35) 100%);
+          mask-image:linear-gradient(90deg,#000 88%,rgba(0,0,0,.35) 100%);
+}
+body[data-layout=phone] .fig-frame{ padding:10px 11px; }
+
+/* --- laboratories ------------------------------------------------------- */
+/* A slider is dragged with a finger, so its track and its handle are drawn at
+   the size a finger can land on. */
+body[data-layout=phone] input[type=range]{ height:34px; }
+body[data-layout=phone] input[type=range]::-webkit-slider-thumb{ width:24px; height:24px; margin-top:-10.5px; }
+body[data-layout=phone] input[type=range]::-moz-range-thumb{ width:22px; height:22px; }
+body[data-layout=phone] .seg button,
+body[data-layout=phone] .runbar button{
+  padding:11px 13px; font-size:calc(12.5px * var(--ts)); min-height:44px;
+}
+/* A segmented control is written inside its own label, and on the wide page
+   the name and the three choices share one line. A phone cannot hold both, so
+   the label wraps and the control takes the width under its name, with the
+   choices sharing it equally — a choice half cut off by the edge of the panel
+   is a choice the reader cannot read. */
+body[data-layout=phone] .ctrl label{ flex-wrap:wrap; }
+body[data-layout=phone] .ctrl label .seg{ display:flex; flex:1 1 100%; margin-top:2px; }
+body[data-layout=phone] .ctrl label .seg button{ flex:1 1 0; min-width:0; padding:11px 6px; }
+body[data-layout=phone] .ctrl-run{ flex-wrap:wrap; }
+body[data-layout=phone] .ctrl-run input[type=range]{ flex:1 1 100%; }
+body[data-layout=phone] .readout div{ padding:10px 12px; }
+body[data-layout=phone] .readout dd{ font-size:calc(17px * var(--ts)); }
+
+/* --- practice questions ------------------------------------------------- */
+/* On the wide page a question scrolls inside the fixed stage. Here the page
+   itself scrolls, so the inner scroller is taken out — two nested scrollers on
+   a touch screen fight each other. */
+body[data-layout=phone] .dr-page{ overflow:visible; flex:none; padding-right:0; }
+body[data-layout=phone] .dr-pager{ flex-wrap:wrap; gap:10px; }
+body[data-layout=phone] .dr-pager .btn{ flex:1 1 auto; }
+body[data-layout=phone] .dr-count{ order:-1; flex:1 1 100%; font-size:12px; }
+body[data-layout=phone] .dr-seen{ flex:1 1 100%; margin-left:0; font-size:13px; }
+body[data-layout=phone] .drill .dr-parts{ padding-left:24px; font-size:calc(16.5px * var(--ts)); }
+body[data-layout=phone] .drill .dr-parts li::before{ left:-24px; }
+body[data-layout=phone] .dr-type-h{ font-size:calc(18px * var(--ts)); }
+body[data-layout=phone] .dr-type-asks{ font-size:calc(15px * var(--ts)); }
+body[data-layout=phone] .dr-type-m{ font-size:calc(14px * var(--ts)); }
+
+/* --- overlays fill the screen ------------------------------------------- */
+body[data-layout=phone] .overlay{ padding:0; align-items:stretch; }
+body[data-layout=phone] .sheet{
+  max-width:none; max-height:none; min-height:100%; border-radius:0;
+  padding:calc(20px + env(safe-area-inset-top)) 16px calc(30px + env(safe-area-inset-bottom));
+}
+body[data-layout=phone] .sheet h2{ font-size:26px; }
+/* The way out of a full-screen sheet is the first thing in it and stays in
+   reach while the sheet is scrolled. It is a block of its own rather than a
+   corner overlay, so it can never come to rest on top of the heading. */
+body[data-layout=phone] .sheet .close{
+  position:sticky; top:0; z-index:3;
+  display:block; width:fit-content; margin:0 0 10px auto; padding:11px 13px;
+  background:var(--paper); border:1px solid var(--rule); border-radius:var(--radius);
+}
+body[data-layout=phone] #searchbox{ font-size:19px; padding:12px 2px; }
+body[data-layout=phone] .sresults{ max-height:none; }
+body[data-layout=phone] .sres{ padding:14px 12px; }
+body[data-layout=phone] .mapgrid{ grid-template-columns:1fr; gap:18px; }
+body[data-layout=phone] .gloss{ grid-template-columns:1fr !important; gap:2px; }
+body[data-layout=phone] .gitem{ grid-template-columns:74px 1fr; gap:12px; padding:11px 0; }
+body[data-layout=phone] .gitem .gd{ font-size:14.5px; }
+
+/* --- the foot: two targets, and where the reader is --------------------- */
+body[data-layout=phone] #chrome{
+  gap:8px; padding:7px 10px calc(7px + env(safe-area-inset-bottom));
+}
+/* The address and the title of the scene are the first line of the scene
+   itself, two centimetres above this bar, so repeating them here buys nothing
+   and costs the room the two targets need. */
+body[data-layout=phone] #chrome .srcref,
+body[data-layout=phone] #chrome .crumb{ display:none; }
+body[data-layout=phone] #chrome button{
+  padding:12px 14px; font-size:12px; min-width:76px; min-height:44px;
+  border:1px solid var(--rule-strong); border-radius:var(--radius);
+}
+body[data-layout=phone] #counter{ font-size:10px; white-space:nowrap; }
 
 /* print / PDF: one scene per landscape page */
 @media print{

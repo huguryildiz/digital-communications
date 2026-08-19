@@ -352,21 +352,6 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 ]);
 
-window.DRILLMAP_M5 = [
-
-{ id:'m5-drill-map', module:'M5', nav:'Module 5 · question types',
-  title:'Module 5 — what a question looks like',
-  objective:'Name the six recurring question shapes before the module is read.',
-  keywords:'question types module 5 binary schemes psk pam qam comparison taxonomy',
-  steps:0, blocks:[
-  {t:'eyebrow', text:'Module 5 · Question types'},
-  {t:'title', text:'Six shapes, and the method each one wants'},
-  {t:'lede', text:'Questions on modulation come in six shapes. Each one is the same two moves in a different costume: place the points, then measure the distance between them.'},
-  {t:'drilltypes', module:'M5', style:'grid-template-columns:repeat(3,minmax(0,1fr));gap:26px 44px'}
-]}
-
-];
-
 window.DRILL_M5 = [
 
 { id:'m5-drill', module:'M5', nav:'Module 5 · practice questions',

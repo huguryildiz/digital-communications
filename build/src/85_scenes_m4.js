@@ -59,6 +59,47 @@ function figRegions(pts, opts){
   return a.svg();
 }
 
+/* ---- summary-card miniatures ----
+   Each recalls the key figure of its section, stripped to the shape alone. */
+function mini(w,h,xr,yr){ return P.Axes({w:w,h:h,xr:xr,yr:yr,pad:{l:10,r:10,t:8,b:8},
+  xticksOverride:[], yticksOverride:[], grid:false, zeroAxes:false, arrows:false}); }
+function miniRule(){
+  const a = mini(520,100,[-1.5,1.5],[-1.1,1.1]);
+  const pts=[[-0.9,-0.5],[0.9,-0.5],[0,0.75]];
+  const r=[0.28,0.42];
+  a.poly([r,pts[2]],{color:C.out,width:1.8,dash:'4 3'});
+  pts.forEach(p=>a.point(p[0],p[1],{color:C.ink,r:4.5}));
+  a.point(r[0],r[1],{color:C.mid,r:5});
+  return a.svg();
+}
+function miniRegions(){
+  const a = mini(320,84,[-1.5,1.5],[-1.1,1.1]);
+  a.rect(-1.5,-1.1,0,0,{fill:C.dec.in}); a.rect(0,-1.1,1.5,0,{fill:C.dec.out});
+  a.rect(-1.5,0,0,1.1,{fill:C.dec.mid}); a.rect(0,0,1.5,1.1,{fill:C.dec.h});
+  a.poly([[0,-1.1],[0,1.1]],{color:C.grid,width:1.2});
+  a.poly([[-1.5,0],[1.5,0]],{color:C.grid,width:1.2});
+  [[-0.75,-0.5],[0.75,-0.5],[-0.75,0.5],[0.75,0.5]].forEach(p=>a.point(p[0],p[1],{color:C.ink,r:4}));
+  return a.svg();
+}
+function miniBinaryD(){
+  const a = mini(520,100,[-1.6,1.6],[-0.6,0.9]);
+  a.poly([[-1,0],[1,0]],{color:C.err,width:2});
+  a.point(-1,0,{color:C.ink,r:5}); a.point(1,0,{color:C.ink,r:5});
+  a.poly([[0,-0.4],[0,0.55]],{color:C.rule,width:1.2,dash:'3 4'});
+  a.note(0,0.62,'d',{tex:true,fs:12,color:C.err,anchor:'middle'});
+  return a.svg();
+}
+function miniUnion(){
+  /* the x-range matches the pixel aspect of the frame, so the ring is round */
+  const a = mini(520,130,[-5.26,5.26],[-1.2,1.2]);
+  const R=0.85;
+  const ring=[]; for(let i=0;i<=48;i++){const t=2*Math.PI*i/48; ring.push([R*Math.cos(t),R*Math.sin(t)]);}
+  a.poly(ring,{color:C.rule,width:1.2,dash:'3 4'});
+  a.point(0,0,{color:C.ink,r:5});
+  [[R,0],[-R,0],[0,R],[0,-R]].forEach(p=>a.point(p[0],p[1],{color:C.mid,r:4}));
+  return a.svg();
+}
+
 const SC = [
 
 /* ---------------------------------------------------------------- 4.0 ---- */
@@ -177,7 +218,7 @@ const SC = [
       {t:'note', kind:'def', head:'The ML rule', html:'If all $M$ signals are equally likely, every prior is $1/M$ and the priors cannot change the answer either. What is left is: choose the $\\mathbf{s}_i$ that maximises the likelihood $f_{\\mathbf{r}}(\\mathbf{r}\\mid\\mathbf{s}_i)$.'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'warn', head:'Which one to use', html:'MAP minimizes the probability of error when the signal probabilities and likelihood model are known and all decision errors have equal cost. ML gives the same decision when the signal probabilities are equal. If the probabilities are unknown, ML does not use them. With known unequal probabilities, MAP can give a lower error probability.'}
+      {t:'small', html:'<b>Which one to use:</b> MAP minimizes the probability of error when the priors are known and all errors cost the same. ML gives the same decision when the priors are equal, and is what remains when they are unknown. With known unequal priors, MAP can give a lower error probability.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figRegions(
@@ -551,20 +592,24 @@ const SC = [
   {t:'title', text:'What Module 4 established'},
   {t:'grid', cols:2, gap:'26px', items:[
     [{t:'card', head:'The receiver', items:[
-      {t:'body', html:'<p>Correlate against each signal, correct for its energy and its prior, and take the largest. With equal energies and equal priors, take the largest correlation.</p>'},
-      {t:'eq', plain:true, tex:'\\hat{s}=\\arg\\max_i\\Bigl\\{\\mathbf{r}\\!\\cdot\\!\\mathbf{s}_i-\\tfrac{E_i}{2}+\\tfrac{N_0}{2}\\ln P(\\mathbf{s}_i)\\Bigr\\}'}
+      {t:'fig', svg:miniRule},
+      {t:'eq', plain:true, tex:'\\hat{s}=\\arg\\max_i\\Bigl\\{\\mathbf{r}\\!\\cdot\\!\\mathbf{s}_i-\\tfrac{E_i}{2}+\\tfrac{N_0}{2}\\ln P(\\mathbf{s}_i)\\Bigr\\}'},
+      {t:'small', html:'Correlate against each signal, correct for energy and prior, take the largest.'}
     ]}],
     [{t:'card', head:'The picture', items:[
-      {t:'body', html:'<p>The same rule drawn: choose the nearest point. Boundaries are perpendicular bisectors, and a less likely symbol gets a smaller region.</p>'},
-      {t:'eq', plain:true, tex:'\\hat{s}=\\arg\\min_i\\|\\mathbf{r}-\\mathbf{s}_i\\|^{2}'}
+      {t:'fig', svg:miniRegions},
+      {t:'eq', plain:true, tex:'\\hat{s}=\\arg\\min_i\\|\\mathbf{r}-\\mathbf{s}_i\\|^{2}'},
+      {t:'small', html:'Choose the nearest point. Boundaries are perpendicular bisectors; a less likely symbol gets a smaller region.'}
     ]}],
     [{t:'card', head:'Binary', items:[
-      {t:'body', html:'<p>Two points, one distance, one $Q$. Everything Module 2 derived by integration follows from this in a line.</p>'},
-      {t:'eq', plain:true, tex:'P_e=Q\\!\\left(\\sqrt{d^{2}/2N_0}\\right)'}
+      {t:'fig', svg:miniBinaryD},
+      {t:'eq', plain:true, tex:'P_e=Q\\!\\left(\\sqrt{d^{2}/2N_0}\\right)'},
+      {t:'small', html:'Two points, one distance, one $Q$ — everything Module 2 derived by integration follows in a line.'}
     ]}],
     [{t:'card', head:'M-ary', items:[
-      {t:'body', html:'<p>The exact answer is an integral nobody can do. The bound is a sum of $Q$ functions everybody can, and in practice only the nearest neighbours are kept.</p>'},
-      {t:'eq', plain:true, tex:'P_e\\approx N_{\\min}Q\\!\\left(\\sqrt{d_{\\min}^{2}/2N_0}\\right)'}
+      {t:'fig', svg:miniUnion},
+      {t:'eq', plain:true, tex:'P_e\\approx N_{\\min}Q\\!\\left(\\sqrt{d_{\\min}^{2}/2N_0}\\right)'},
+      {t:'small', html:'The exact answer is an integral nobody can do; the bound keeps only the nearest neighbours.'}
     ]}]
   ]},
   {t:'note', kind:'ok', head:'What Module 5 does with this', html:'It applies the result to the constellations that are actually used: amplitude, phase and quadrature modulation. The question is which of them gets the largest $d_{\\min}$ for a given average energy and a given number of bits per symbol.'}
