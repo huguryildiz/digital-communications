@@ -65,7 +65,7 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 /* ---- single-skill ---------------------------------------------------- */
 
 { id:'D3-01', module:'M3', type:'ortho', src:'CH9 s.5',
-  stem:'Two waveforms are defined on $[0,2]$: $\\;p_1(t)=1$ on $[0,1]$ and zero after; $\\;p_2(t)=1$ on $[1,2]$ and zero before.',
+  stem:'Two waveforms are defined on $[0,2]$: $\\;p_1(t)=1$ on $[0,1]$ and zero after. $\\;p_2(t)=1$ on $[1,2]$ and zero before.',
   parts:['Are they orthogonal?',
          'Are they orthonormal?'],
   sol:'<b>Given.</b> Two unit-height pulses on adjacent intervals.<br>'
@@ -75,7 +75,7 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
      +'<b>Solution — (b).</b> $\\int_0^{1}1^{2}dt=1$ and $\\int_1^{2}1^{2}dt=1$, so both have unit energy. <b>Yes.</b><br>'
      +'<b>Check.</b> No integration was needed for part (a) at all — non-overlapping supports make the product identically zero. That is worth recognising, because most of the orthogonality in this course comes from exactly that.',
   err:'Computing $\\int p_1p_2$ as $1\\times1\\times$ (some width) because both are "equal to one". They are equal to one on <em>different</em> intervals, and the product is zero on both.',
-  teach:'A good place to ask for a pair that is orthogonal but not orthonormal: the same two pulses at height $2$ are orthogonal with energy $4$ each.' },
+  teach:'A good place to ask for a pair that is orthogonal but not orthonormal. The same two pulses at height $2$ are orthogonal with energy $4$ each.' },
 
 { id:'D3-02', module:'M3', type:'ortho', src:'CH9 s.5',
   stem:'On $[0,T]$, take $\\psi_1(t)=\\sqrt{2/T}\\cos(2\\pi t/T)$ and $\\psi_2(t)=\\sqrt{2/T}\\sin(2\\pi t/T)$.',
@@ -83,12 +83,12 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
          'Show that the two are orthogonal.'],
   sol:'<b>Given.</b> A scaled cosine and sine over one full period.<br>'
      +'<b>Find.</b> That the pair is orthonormal.<br>'
-     +'<b>Method.</b> Use $\\cos^{2}\\theta=\\tfrac12(1+\\cos2\\theta)$ and $\\sin\\theta\\cos\\theta=\\tfrac12\\sin2\\theta$; the oscillating parts integrate to zero over a whole number of periods.<br>'
+     +'<b>Method.</b> Use $\\cos^{2}\\theta=\\tfrac12(1+\\cos2\\theta)$ and $\\sin\\theta\\cos\\theta=\\tfrac12\\sin2\\theta$. The oscillating parts integrate to zero over a whole number of periods.<br>'
      +'<b>Solution — (a).</b> $\\displaystyle\\int_0^{T}\\frac{2}{T}\\cos^{2}\\frac{2\\pi t}{T}dt=\\frac{2}{T}\\int_0^{T}\\frac{1+\\cos(4\\pi t/T)}{2}dt=\\frac{2}{T}\\cdot\\frac{T}{2}=1$, and the same for $\\psi_2$.<br>'
      +'<b>Solution — (b).</b> $\\displaystyle\\int_0^{T}\\frac{2}{T}\\cos\\frac{2\\pi t}{T}\\sin\\frac{2\\pi t}{T}dt=\\frac{1}{T}\\int_0^{T}\\sin\\frac{4\\pi t}{T}dt=0$, because the interval holds two whole periods of that sine.<br>'
      +'<b>Check.</b> The factor $\\sqrt{2/T}$ is exactly what unit energy requires: a cosine of amplitude $A$ over $T$ carries $A^{2}T/2$, so $A=\\sqrt{2/T}$ gives $1$. This pair is the basis every carrier-modulated scheme in Module 5 is written against.',
-  err:'Concluding orthogonality from "sine and cosine are different functions". They are orthogonal <em>over a whole number of periods</em>; over $[0,T/4]$ they are not.',
-  teach:'Worth stating that this is the most important orthonormal pair in the course, and that the whole of QAM is two numbers against these two axes.' },
+  err:'Concluding orthogonality from "sine and cosine are different functions". They are orthogonal <em>over a whole number of periods</em>. Over $[0,T/4]$ they are not.',
+  teach:'This orthonormal pair defines the in-phase and quadrature axes. A QAM symbol is represented by one coordinate on each axis.' },
 
 { id:'D3-03', module:'M3', type:'coords', src:'CH9 s.6–8',
   stem:'With the basis $\\psi_1=1/\\sqrt{2}$ on $[0,2]$ and $\\psi_2=1$ on $[2,3]$, a signal is $s(t)=3$ on $[0,2]$ and $s(t)=-2$ on $[2,3]$.',
@@ -96,10 +96,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
          'Give its energy, twice: from the vector and from the waveform.'],
   sol:'<b>Given.</b> A two-piece signal and a two-function basis on the same intervals.<br>'
      +'<b>Find.</b> $\\mathbf{s}$ and $E_s$.<br>'
-     +'<b>Method.</b> One integral per axis; then the squared length, checked against the waveform.<br>'
+     +'<b>Method.</b> One integral per axis. Then the squared length, checked against the waveform.<br>'
      +'<b>Solution — (a).</b> $s_1=\\displaystyle\\int_0^{2}3\\cdot\\frac{1}{\\sqrt{2}}dt=\\frac{6}{\\sqrt{2}}=3\\sqrt{2}$ and $s_2=\\displaystyle\\int_2^{3}(-2)(1)\\,dt=-2$. So $\\mathbf{s}=(3\\sqrt{2},\\,-2)$.<br>'
      +'<b>Solution — (b).</b> From the vector: $\\|\\mathbf{s}\\|^{2}=18+4=22$. From the waveform: $3^{2}(2)+(-2)^{2}(1)=18+4=22$.<br>'
-     +'<b>Check.</b> They agree, which is the statement that energy is squared length. Note that the first coordinate is not $3$: the basis function has height $1/\\sqrt{2}$, not $1$, and the coordinate is the amount of $\\psi_1$ in $s$, not the height of $s$.',
+     +'<b>Check.</b> They agree. This is the statement that energy is squared length. Note that the first coordinate is not $3$. The basis function has height $1/\\sqrt{2}$, not $1$, and the coordinate is the amount of $\\psi_1$ in $s$, not the height of $s$.',
   err:'Reporting $\\mathbf{s}=(3,-2)$ by reading the heights off the waveform. That only works when the basis functions have height one, which $\\psi_1$ does not.',
   teach:'The two routes to the energy in part (b) are the cheapest check in the module and worth insisting on every time.' },
 
@@ -109,12 +109,12 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
          'Give the distance between them and the energy of their difference.'],
   sol:'<b>Given.</b> Two points in a two-dimensional signal space.<br>'
      +'<b>Find.</b> Energies, distance, and the energy of the difference signal.<br>'
-     +'<b>Method.</b> Energy is squared length; distance is ordinary Euclidean distance; the energy of the difference is the squared distance.<br>'
+     +'<b>Method.</b> Energy is squared length. Distance is ordinary Euclidean distance. The energy of the difference is the squared distance.<br>'
      +'<b>Solution — (a).</b> $E_1=3^{2}+4^{2}=25$ and $E_2=(-3)^{2}+4^{2}=25$. Equal energies.<br>'
      +'<b>Solution — (b).</b> $d=\\sqrt{(3-(-3))^{2}+(4-4)^{2}}=6$, so the energy of $s_1-s_2$ is $d^{2}=36$.<br>'
-     +'<b>Check.</b> The two points differ only in the first coordinate, so the difference signal is $6\\psi_1$, whose energy is $36$ — the same number reached without any geometry. Note also that equal energy does not mean the points coincide, and unequal energy does not stop them being close.',
-  err:'Computing the energy of the difference as $E_1-E_2=0$. Energy is not linear; the difference of two equal-energy signals is generally not zero.',
-  teach:'Ask what changes if $\\mathbf{s}_2$ becomes $(-3,-4)$: the energies stay at $25$ and the distance grows to $10$, which is antipodal signalling and the best a pair of points of that energy can do.' },
+     +'<b>Check.</b> The two points differ only in the first coordinate. Therefore, the difference signal is $6\\psi_1$, whose energy is $36$. The same number reached without any geometry. Note also that equal energy does not mean the points coincide, and unequal energy does not stop them being close.',
+  err:'Computing the energy of the difference as $E_1-E_2=0$. Energy is not linear. The difference of two equal-energy signals is generally not zero.',
+  teach:'Ask what changes if $\\mathbf{s}_2$ becomes $(-3,-4)$. The energies stay at $25$ and the distance grows to $10$. This is antipodal signalling and the best a pair of points of that energy can do.' },
 
 { id:'D3-05', module:'M3', type:'dim', src:'CH9 s.17–18',
   stem:'Four waveforms are defined on $[0,4]$: $\\;s_1=1$ on $[0,1]$; $\\;s_2=1$ on $[1,2]$; $\\;s_3=1$ on $[2,3]$; $\\;s_4=s_1+s_2+s_3$.',
@@ -149,9 +149,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
          'Express that distance in terms of the average energy.'],
   sol:'<b>Given.</b> Four points on a square of half-side $a$.<br>'
      +'<b>Find.</b> Energies, the smallest distance, and the relation between them.<br>'
-     +'<b>Method.</b> Squared length for the energy; compare all the pairwise distances and take the smallest.<br>'
+     +'<b>Method.</b> Squared length for the energy. Compare all the pairwise distances and take the smallest.<br>'
      +'<b>Solution — (a).</b> Every point has $E=a^{2}+a^{2}=2a^{2}$, so the average energy is also $E_{\\text{avg}}=2a^{2}$.<br>'
-     +'<b>Solution — (b).</b> Neighbouring points differ in one coordinate by $2a$, giving $d=2a$; the diagonal pairs are $2a\\sqrt{2}$ apart. The smallest is $d_{\\min}=2a$.<br>'
+     +'<b>Solution — (b).</b> Neighbouring points differ in one coordinate by $2a$, giving $d=2a$. The diagonal pairs are $2a\\sqrt{2}$ apart. The smallest is $d_{\\min}=2a$.<br>'
      +'<b>Solution — (c).</b> $a=\\sqrt{E_{\\text{avg}}/2}$, so $d_{\\min}=2\\sqrt{E_{\\text{avg}}/2}=\\sqrt{2E_{\\text{avg}}}$.<br>'
      +'<b>Check.</b> With $M=4$ and two bits a symbol, $E_{\\text{avg}}=2E_b$, so $d_{\\min}=\\sqrt{4E_b}=2\\sqrt{E_b}$ — the same separation antipodal binary signalling has at the same energy per bit. That is not a coincidence and Module 5 explains it: this constellation is two independent antipodal signals, one on each axis.',
   err:'Taking the smallest distance to be the diagonal because it is drawn as one line. The smallest distance is the one that matters and it is always to a nearest neighbour.',
@@ -163,8 +163,8 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
          'Give the distance between any two of them.'],
   sol:'<b>Given.</b> Three points, evenly spaced on a circle.<br>'
      +'<b>Find.</b> Energies and distances.<br>'
-     +'<b>Method.</b> Squared length; then one distance, since symmetry makes them all equal.<br>'
-     +'<b>Solution — (a).</b> $0^{2}+1^{2}=1$; $\\;3/4+1/4=1$; $\\;3/4+1/4=1$. All three have energy $1$.<br>'
+     +'<b>Method.</b> Squared length. Then one distance, since symmetry makes them all equal.<br>'
+     +'<b>Solution — (a).</b> $0^{2}+1^{2}=1$. $\\;3/4+1/4=1$. $\\;3/4+1/4=1$. All three have energy $1$.<br>'
      +'<b>Solution — (b).</b> Between the second and the third: $\\sqrt{(\\sqrt{3})^{2}+0^{2}}=\\sqrt{3}=1.732$. By symmetry every pair is that far apart.<br>'
      +'<b>Check.</b> Three points on a unit circle at $120^{\\circ}$ have chord length $2\\sin(60^{\\circ})=\\sqrt{3}$, which agrees. Compare with two points of the same energy placed antipodally: they are $2$ apart. Carrying a third symbol on the same energy has cost some separation, and that is the trade every $M$-ary scheme makes.',
   err:'Computing the distance as the arc rather than the chord. Distance in signal space is the straight line between the points.',
@@ -179,8 +179,8 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
      +'<b>Method.</b> The first axis is the first signal normalised to unit energy.<br>'
      +'<b>Solution — (a).</b> $E_1=\\int_0^{4}2^{2}dt=16$, so $\\psi_1(t)=s_1(t)/4=0.5$ on $[0,4]$.<br>'
      +'<b>Solution — (b).</b> $s_{11}=\\sqrt{E_1}=4$. Equivalently $\\int_0^{4}2(0.5)\\,dt=4$.<br>'
-     +'<b>Check.</b> $\\psi_1$ must have unit energy: $\\int_0^{4}0.5^{2}dt=0.25(4)=1$. And $s_{11}\\psi_1=4(0.5)=2$ on $[0,4]$, which is $s_1$ — so the coordinate does rebuild the signal.',
-  err:'Taking $\\psi_1=s_1/E_1=s_1/16$. The normalisation divides by $\\sqrt{E_1}$, not by $E_1$; dividing by the energy makes the basis function\'s energy $1/E_1$ rather than one.',
+     +'<b>Check.</b> $\\psi_1$ must have unit energy: $\\int_0^{4}0.5^{2}dt=0.25(4)=1$. $s_{11}\\psi_1=4(0.5)=2$ on $[0,4]$, which is $s_1$ — so the coordinate does rebuild the signal.',
+  err:'Taking $\\psi_1=s_1/E_1=s_1/16$. The normalisation divides by $\\sqrt{E_1}$, not by $E_1$. Dividing by the energy makes the basis function\'s energy $1/E_1$ rather than one.',
   teach:'Both checks in the solution are one line each and catch the two mistakes students actually make. Worth requiring them.' },
 
 { id:'D3-10', module:'M3', type:'gs', src:'CH9 s.17',
@@ -205,8 +205,8 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
      +'<b>Method.</b> Integrate the product; then check each energy.<br>'
      +'<b>Solution — (a).</b> $\\int_0^{2}\\phi_1\\phi_2\\,dt=\\int_0^{1}1\\,dt+\\int_1^{2}(-1)\\,dt=1-1=0$. <b>Orthogonal.</b> They overlap everywhere and are still orthogonal — the positive and negative parts cancel.<br>'
      +'<b>Solution — (b).</b> $\\int_0^{2}\\phi_1^{2}dt=2$ and $\\int_0^{2}\\phi_2^{2}dt=2$, so neither has unit energy. Dividing each by $\\sqrt{2}$ gives the orthonormal pair $\\psi_1=1/\\sqrt{2}$ and $\\psi_2=\\pm1/\\sqrt{2}$.<br>'
-     +'<b>Check.</b> Scaling does not change orthogonality — the integral of the product is scaled but stays zero — so the normalised pair is still orthogonal, and now each has energy $\\tfrac12(2)=1$.',
-  err:'Assuming that overlapping signals cannot be orthogonal. Non-overlap is sufficient and not necessary; cancellation does the same job here.',
+     +'<b>Check.</b> Scaling does not change orthogonality. The integral of the product is scaled but stays zero. So the normalised pair is still orthogonal, and now each has energy $\\tfrac12(2)=1$.',
+  err:'Assuming that overlapping signals cannot be orthogonal. Non-overlap is sufficient and not necessary. Cancellation does the same job here.',
   teach:'This pair is the two-point Hadamard basis, and it is the cleanest example of orthogonality without disjoint support.' },
 
 { id:'D3-12', module:'M3', type:'coords', src:'CH9 s.6',
@@ -225,7 +225,7 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 /* ---- full-length ----------------------------------------------------- */
 
 { id:'D3-13', module:'M3', type:'full', src:'CH9 s.19–21',
-  stem:'Three waveforms are defined on $[0,3]$: $\\;s_1(t)=2$ on $[0,1]$; $\\;s_2(t)=2$ on $[1,3]$; $\\;s_3(t)=2$ on $[0,3]$. Each is zero outside the interval named.',
+  stem:'Three waveforms are defined on $[0,3]$: $\\;s_1(t)=2$ on $[0,1]$. $\\;s_2(t)=2$ on $[1,3]$. $\\;s_3(t)=2$ on $[0,3]$. Each is zero outside the interval named.',
   parts:['Use Gram–Schmidt to find an orthonormal basis.',
          'Give the three signal vectors.',
          'Draw the constellation and give the energy of each signal.',
@@ -237,12 +237,12 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
      +'<b>Solution — (b).</b> $s_{31}=\\int_0^{1}2(1)dt=2$ and $s_{32}=\\int_1^{3}2\\left(1/\\sqrt{2}\\right)dt=4/\\sqrt{2}=2\\sqrt{2}$, and $g_3=s_3-2\\psi_1-2\\sqrt{2}\\,\\psi_2=0$, so there is no third axis. $$\\mathbf{s}_1=(2,\\,0),\\qquad \\mathbf{s}_2=(0,\\,2\\sqrt{2}),\\qquad \\mathbf{s}_3=(2,\\,2\\sqrt{2}).$$<br>'
      +'<b>Solution — (c).</b> The three points sit at the corners of a rectangle missing one corner. Energies: $4$, $8$ and $12$.<br>'
      +'<b>Solution — (d).</b> $\\|\\mathbf{s}_1-\\mathbf{s}_3\\|=2\\sqrt{2}=2.83$, $\\;\\|\\mathbf{s}_2-\\mathbf{s}_3\\|=2$, and $\\|\\mathbf{s}_1-\\mathbf{s}_2\\|=\\sqrt{4+8}=3.46$. The smallest is $2$.<br>'
-     +'<b>Check.</b> Energies from the waveforms: $2^{2}(1)=4$, $2^{2}(2)=8$, $2^{2}(3)=12$. They match the squared lengths. And $s_3=s_1+s_2$ is visible in the pictures, which is why two axes carry three signals.',
+     +'<b>Check.</b> Energies from the waveforms: $2^{2}(1)=4$, $2^{2}(2)=8$, $2^{2}(3)=12$. They match the squared lengths. $s_3=s_1+s_2$ is visible in the pictures, which is why two axes carry three signals.',
   err:'Taking $\\psi_2=s_2$ without normalising, because $\\psi_1$ came out equal to $s_1/2$ and the pattern looks like "divide by the height". $s_2$ has energy $8$, not $1$.',
-  teach:'Part (d) is the one worth marking. Students compute one distance and stop; the question asks for the smallest, which requires all three.' },
+  teach:'Part (d) is the one worth marking. Students compute one distance and stop. The question asks for the smallest, which requires all three.' },
 
 { id:'D3-14', module:'M3', type:'full', src:'CH9 s.19–21',
-  stem:'Three waveforms on $[0,2]$: $\\;s_1(t)=1$ throughout; $\\;s_2(t)=1$ on $[0,1]$ and $-1$ on $[1,2]$; $\\;s_3(t)=2$ on $[0,1]$ and $0$ after.',
+  stem:'Three waveforms on $[0,2]$: $\\;s_1(t)=1$ throughout. $\\;s_2(t)=1$ on $[0,1]$ and $-1$ on $[1,2]$. $\\;s_3(t)=2$ on $[0,1]$ and $0$ after.',
   parts:['Find an orthonormal basis by Gram–Schmidt.',
          'Give the three signal vectors.',
          'Give the energy of each signal from its vector, and check one of them against the waveform.',
@@ -266,14 +266,14 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
          'Compare that distance with the one a square constellation of the same average energy gives.'],
   sol:'<b>Given.</b> Four points on the axes at distance $a$ from the origin.<br>'
      +'<b>Find.</b> Energies, the smallest distance, and a comparison.<br>'
-     +'<b>Method.</b> Squared lengths; then all six pairwise distances, of which only two values occur.<br>'
+     +'<b>Method.</b> Squared lengths. Then all six pairwise distances, of which only two values occur.<br>'
      +'<b>Solution — (a).</b> Every point has $E=a^{2}$, so $E_{\\text{avg}}=a^{2}$.<br>'
      +'<b>Solution — (b).</b> Four symbols carry $\\log_2 4=2$ bits, so $E_b=E_{\\text{avg}}/2=a^{2}/2$.<br>'
-     +'<b>Solution — (c).</b> Neighbouring points, such as $(a,0)$ and $(0,a)$, are $\\sqrt{2a^{2}}=a\\sqrt{2}$ apart; opposite points are $2a$ apart. The smallest is $a\\sqrt{2}=1.414a$.<br>'
-     +'<b>Solution — (d).</b> A square constellation at $(\\pm b,\\pm b)$ has $E_{\\text{avg}}=2b^{2}$; matching $2b^{2}=a^{2}$ gives $b=a/\\sqrt{2}$, and its smallest distance is $2b=a\\sqrt{2}$ — <b>the same</b>.<br>'
-     +'<b>Check.</b> The two constellations are the same four points rotated by $45^{\\circ}$. A rotation changes no length and no distance, so the energies and the separations had to agree, and part (d) is a check on the arithmetic rather than a discovery.',
+     +'<b>Solution — (c).</b> Neighbouring points, such as $(a,0)$ and $(0,a)$, are $\\sqrt{2a^{2}}=a\\sqrt{2}$ apart. Opposite points are $2a$ apart. The smallest is $a\\sqrt{2}=1.414a$.<br>'
+     +'<b>Solution — (d).</b> A square constellation at $(\\pm b,\\pm b)$ has $E_{\\text{avg}}=2b^{2}$. Matching $2b^{2}=a^{2}$ gives $b=a/\\sqrt{2}$, and its smallest distance is $2b=a\\sqrt{2}$ — <b>the same</b>.<br>'
+     +'<b>Check.</b> The two constellations are the same four points rotated by $45^{\\circ}$. A rotation changes no length and no distance. Therefore, the energies and the separations had to agree, and part (d) is a check on the arithmetic rather than a discovery.',
   err:'Taking the smallest distance to be $2a$, the distance between the opposite pair, because those two are the most conspicuous. The nearest neighbours are the ones that matter.',
-  teach:'The rotation observation in the check is worth drawing on the board. It is also the first instance of a rule Module 4 states in general: performance depends on distances, and distances are unchanged by rotating the whole constellation.' },
+  teach:'The rotation observation in the check is worth drawing on the board. It is also the first instance of a rule Module 4 states in general. Performance depends on distances, and distances are unchanged by rotating the whole constellation.' },
 
 { id:'D3-16', module:'M3', type:'full', src:'CH9 s.19–21',
   stem:'Two waveforms on $[0,T]$ are $s_1(t)=A\\cos(2\\pi t/T)$ and $s_2(t)=A\\sin(2\\pi t/T)$.',
@@ -288,9 +288,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
      +'<b>Solution — (b).</b> Each has energy $A^{2}T/2$, so $$\\psi_1(t)=\\sqrt{\\tfrac{2}{T}}\\cos\\tfrac{2\\pi t}{T},\\qquad \\psi_2(t)=\\sqrt{\\tfrac{2}{T}}\\sin\\tfrac{2\\pi t}{T}.$$<br>'
      +'<b>Solution — (c).</b> $\\mathbf{s}_1=(A\\sqrt{T/2},\\,0)$ and $\\mathbf{s}_2=(0,\\,A\\sqrt{T/2})$. Writing $E=A^{2}T/2$, that is $(\\sqrt{E},0)$ and $(0,\\sqrt{E})$, both of energy $E$.<br>'
      +'<b>Solution — (d).</b> $d=\\sqrt{E+E}=\\sqrt{2E}$. An antipodal pair of the same energy sits at $\\pm\\sqrt{E}$ and is $2\\sqrt{E}$ apart, larger by $\\sqrt{2}$.<br>'
-     +'<b>Check.</b> The ratio $\\sqrt{2}$ in distance is the $3$ dB that Module 2 found between antipodal and orthogonal signalling, met here as a picture rather than as an integral. Orthogonal signals are at right angles; antipodal ones point opposite ways, and opposite is further than perpendicular.',
+     +'<b>Check.</b> The distance ratio $\\sqrt{2}$ gives the $3$ dB difference from Module 2. Orthogonal signals form a right angle. Antipodal signals point in opposite directions, so their distance is larger.',
   err:'Concluding that the two are antipodal because one is the other shifted. A quarter-period shift turns a cosine into a sine and gives a right angle in signal space, not a reversal.',
-  teach:'This question ties Modules 2 and 3 together in one line, and the picture makes the $3$ dB obvious in a way the integrals never do.' },
+  teach:'This question connects Modules 2 and 3. The constellation shows that antipodal points are farther apart than orthogonal points by a factor of $\\sqrt{2}$.' },
 
 { id:'D3-17', module:'M3', type:'full', src:'CH9 s.6–12',
   stem:'Against an orthonormal basis $\\{\\psi_1,\\psi_2\\}$, a signal set is $\\mathbf{s}_1=(2,\\,1)$, $\\mathbf{s}_2=(-1,\\,2)$ and $\\mathbf{s}_3=(1,\\,-2)$, with the three symbols equally likely.',
@@ -305,9 +305,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
      +'<b>Solution — (b).</b> $$d_{12}=\\sqrt{9+1}=\\sqrt{10}=3.16,\\quad d_{13}=\\sqrt{1+9}=\\sqrt{10}=3.16,\\quad d_{23}=\\sqrt{4+16}=\\sqrt{20}=4.47.$$<br>'
      +'<b>Solution — (c).</b> The pairs $(\\mathbf{s}_1,\\mathbf{s}_2)$ and $(\\mathbf{s}_1,\\mathbf{s}_3)$, equally: they are the closest, at $3.16$. Noise has to push the observation further to cross the boundary between $\\mathbf{s}_2$ and $\\mathbf{s}_3$, so that confusion is rarer.<br>'
      +'<b>Solution — (d).</b> $s_2(t)=-1\\cdot\\psi_1(t)+2\\cdot\\psi_2(t)$, which is $-1/\\sqrt{2}=-0.707$ on $[0,2]$ and $+2$ on $[2,3]$.<br>'
-     +'<b>Check.</b> The energy of that waveform is $0.5(2)+4(1)=5$, matching $E_2$ from the vector. Note that all three signals have the same energy and are still not equally distinguishable — energy and separation are different quantities, and it is separation the receiver cares about.',
+     +'<b>Check.</b> The energy of that waveform is $0.5(2)+4(1)=5$, matching $E_2$ from the vector. Note that all three signals have the same energy and are still not equally distinguishable. Energy and separation are different quantities, and it is separation the receiver cares about.',
   err:'Answering (c) with "the pair with the largest distance", reading the question as asking which pair is most easily told apart. The closest pair is the vulnerable one.',
-  teach:'Part (d) is the module run backwards, and it is worth asking for: students are quick at analysis and slow at synthesis, and the two are the same formula.' },
+  teach:'Part (d) is the module run backwards, and it is worth asking for. Students are quick at analysis and slow at synthesis, and the two are the same formula.' },
 
 { id:'D3-18', module:'M3', type:'full', src:'CH9 s.17–18',
   stem:'A signal set consists of $M$ waveforms $s_i(t)=A_i\\,p(t)$, all multiples of the same finite-energy pulse $p(t)$ of energy $E_p$.',
@@ -317,14 +317,14 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
          'Give the distance between $s_i$ and $s_k$.'],
   sol:'<b>Given.</b> $M$ scaled copies of one pulse.<br>'
      +'<b>Find.</b> The dimension, the basis, the vectors, energies and distances, in general.<br>'
-     +'<b>Method.</b> Normalise the pulse once; every signal is then a number times that one axis.<br>'
+     +'<b>Method.</b> Normalise the pulse once. Every signal is then a number times that one axis.<br>'
      +'<b>Solution — (a).</b> One, however large $M$ is. Every signal is a multiple of the first, so every remainder after the first step is zero.<br>'
      +'<b>Solution — (b).</b> $\\psi_1(t)=p(t)/\\sqrt{E_p}$, and $s_i=A_i\\sqrt{E_p}$ — a single number.<br>'
      +'<b>Solution — (c).</b> $E_i=s_i^{2}=A_i^{2}E_p$, which is also $\\int A_i^{2}p^{2}dt$ read directly.<br>'
      +'<b>Solution — (d).</b> $d_{ik}=|s_i-s_k|=|A_i-A_k|\\sqrt{E_p}$.<br>'
-     +'<b>Check.</b> The whole constellation is $M$ points on a line, and the receiver needs one matched filter regardless of $M$. This is $M$-ary pulse amplitude modulation, and part (d) says its performance is set by the closest amplitude spacing — which is why the amplitudes are chosen equally spaced.',
+     +'<b>Check.</b> The constellation contains $M$ points on one line. The receiver needs one matched filter for any $M$. This is $M$-ary pulse amplitude modulation. Its performance depends on the closest amplitude spacing, so equal spacing maximizes the minimum distance.',
   err:'Answering (a) with $M$. The number of dimensions counts independent shapes, not signals, and here there is one shape.',
-  teach:'A good question to set immediately before Module 5, which opens with exactly this constellation and then asks what happens on two axes instead of one.' },
+  teach:'A good question to set immediately before Module 5. This opens with exactly this constellation and then asks what happens on two axes instead of one.' },
 
 { id:'D3-19', module:'M3', type:'full', src:'CH9 s.22',
   stem:'Four waveforms on $[0,4]$ are built from the unit pulses $p_k(t)=1$ on $[k-1,k]$, $k=1,2,3,4$: $$s_1=p_1+p_2,\\quad s_2=p_3+p_4,\\quad s_3=p_1+p_3,\\quad s_4=p_2+p_4.$$',
@@ -334,17 +334,17 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
          'How many dimensions does the set $\\{s_1,\\ldots,s_4\\}$ actually need?'],
   sol:'<b>Given.</b> Four signals, each the sum of two of four disjoint unit pulses.<br>'
      +'<b>Find.</b> The basis, the vectors, energies, distances and the true dimension.<br>'
-     +'<b>Method.</b> The $p_k$ are a ready-made basis; then read the vectors off the definitions.<br>'
+     +'<b>Method.</b> The $p_k$ are a ready-made basis. Then read the vectors off the definitions.<br>'
      +'<b>Solution — (a).</b> Yes. Any two of them have disjoint supports, so every cross integral is zero, and each has energy $\\int 1^{2}dt=1$ over its own unit interval.<br>'
      +'<b>Solution — (b).</b> $$\\mathbf{s}_1=(1,1,0,0),\\;\\mathbf{s}_2=(0,0,1,1),\\;\\mathbf{s}_3=(1,0,1,0),\\;\\mathbf{s}_4=(0,1,0,1).$$<br>'
      +'<b>Solution — (c).</b> Every energy is $1+1=2$. The distances come in two values. The two <em>complementary</em> pairs share no pulse at all: $\\mathbf{s}_1-\\mathbf{s}_2=(1,1,-1,-1)$ has length $2$, and so does $\\mathbf{s}_3-\\mathbf{s}_4$. The four <em>mixed</em> pairs share one pulse: $\\mathbf{s}_1-\\mathbf{s}_3=(0,1,-1,0)$ has length $\\sqrt{2}=1.414$, and so do the other three. The smallest distance is therefore $\\sqrt{2}$.<br>'
      +'<b>Solution — (d).</b> Three. The four vectors satisfy $\\mathbf{s}_1+\\mathbf{s}_2=\\mathbf{s}_3+\\mathbf{s}_4=(1,1,1,1)$, so the fourth is determined by the other three and adds no axis.<br>'
-     +'<b>Check.</b> The two values have a reason: two signals that share a pulse differ in only two of the four coordinates, and two that share none differ in all four. Counting the shared pulses predicts the distance without any arithmetic. The pairs at $\\sqrt{2}$ are the vulnerable ones, so the receiver confuses $\\mathbf{s}_1$ with $\\mathbf{s}_3$ far more often than with $\\mathbf{s}_2$ — and a set whose distances are all equal would be better, which is what the next module\'s union bound makes precise.',
-  err:'Reporting one distance and assuming the rest match it. Four points give six pairs, and here they take two different values; the one that matters is the smallest.',
+     +'<b>Check.</b> The two values have a reason. Two signals that share a pulse differ in only two of the four coordinates, and two that share none differ in all four. Counting the shared pulses predicts the distance without any arithmetic. The pairs at $\\sqrt{2}$ are the vulnerable ones. Therefore, the receiver confuses $\\mathbf{s}_1$ with $\\mathbf{s}_3$ far more often than with $\\mathbf{s}_2$. A set whose distances are all equal would be better. This is what the next module\'s union bound makes precise.',
+  err:'Reporting one distance and assuming the rest match it. Four points give six pairs, and here they take two different values. The one that matters is the smallest.',
   teach:'The relation $\\mathbf{s}_1+\\mathbf{s}_2=\\mathbf{s}_3+\\mathbf{s}_4$ is easy to miss and easy to check. Asking students to test it before answering (d) is the whole lesson of that part.' },
 
 { id:'D3-20', module:'M3', type:'full', src:'CH9 s.15',
-  stem:'Two engineers design different waveform sets. The first uses rectangular pulses on $[0,T]$; the second uses half-sine pulses on the same interval. Both sets turn out to have the constellation $\\{(\\sqrt{E},0),\\,(0,\\sqrt{E}),\\,(-\\sqrt{E},0),\\,(0,-\\sqrt{E})\\}$.',
+  stem:'Two engineers design different waveform sets. The first uses rectangular pulses on $[0,T]$. The second uses half-sine pulses on the same interval. Both sets turn out to have the constellation $\\{(\\sqrt{E},0),\\,(0,\\sqrt{E}),\\,(-\\sqrt{E},0),\\,(0,-\\sqrt{E})\\}$.',
   parts:['What is the same about the two systems?',
          'What is not?',
          'Give the average energy per symbol and the smallest distance.',
@@ -353,10 +353,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
      +'<b>Find.</b> What the geometry fixes and what it leaves open.<br>'
      +'<b>Method.</b> Everything that depends only on the points is the same; everything else is not.<br>'
      +'<b>Solution — (a).</b> The number of matched filters, the structure of the receiver, the energies, the distances, and therefore the error probability in white Gaussian noise. Every one of those is read off the constellation.<br>'
-     +'<b>Solution — (b).</b> The waveforms themselves, and everything that depends on their shape rather than their geometry: the bandwidth they occupy, how fast their spectra decay, how sensitive they are to a timing error, and how hard the filters are to build.<br>'
-     +'<b>Solution — (c).</b> Every point has energy $E$, so $E_{\\text{avg}}=E$; the nearest pairs are $\\sqrt{2E}$ apart.<br>'
-     +'<b>Solution — (d).</b> Not on error performance, since that is identical. The half-sine has a smoother spectrum and lower sidelobes, so it fits a bandlimited channel better and interferes less with its neighbours; the rectangular pulse is easier to generate and to time. The choice is made on the criteria of Module 2, not on those of this module.<br>'
-     +'<b>Check.</b> If the answer to (d) had depended on the error probability, one of the earlier parts would be wrong: the constellations are identical and so are all the distances, so there is nothing left for the noise to distinguish.',
+     +'<b>Solution (b).</b> The waveforms themselves, and everything that depends on their shape rather than their geometry. The bandwidth they occupy, how fast their spectra decay, how sensitive they are to a timing error, and how hard the filters are to build.<br>'
+     +'<b>Solution — (c).</b> Every point has energy $E$, so $E_{\\text{avg}}=E$. The nearest pairs are $\\sqrt{2E}$ apart.<br>'
+     +'<b>Solution — (d).</b> Not on error performance, since that is identical. The half-sine has a smoother spectrum and lower sidelobes, so it fits a bandlimited channel better and interferes less with its neighbours. The rectangular pulse is easier to generate and to time. The choice is made on the criteria of Module 2, not on those of this module.<br>'
+     +'<b>Check.</b> If the answer to (d) had depended on the error probability, one of the earlier parts would be wrong. The constellations are identical and so are all the distances. Therefore, there is nothing left for the noise to distinguish.',
   err:'Answering (d) with "the one with lower error probability" and choosing arbitrarily. The two have the same error probability, and saying so is the answer.',
   teach:'This question exists to be answered in words. It is the clearest test of whether the reader has understood what the geometric representation captures and what it deliberately throws away.' }
 
@@ -371,7 +371,7 @@ window.DRILL_M3 = [
   steps:0, blocks:[
   {t:'eyebrow', text:'Module 3 · Practice D3-01 … D3-20'},
   {t:'title', text:'Practice questions'},
-  {t:'small', html:'Work each question on paper before opening its solution. Every solution ends with a <b>Check</b> step. In this module the cheap checks are: a basis function must have unit energy, the energy from the vector must equal the energy from the waveform, the number of axes must be at most the number of signals, and the distance that matters is the smallest one.'},
+  {t:'small', html:'Work each question before opening its solution. Use these checks:<ul><li>Each basis function has unit energy.</li><li>Vector energy equals waveform energy.</li><li>The number of axes cannot exceed the number of signals.</li><li>Receiver performance uses the minimum distance.</li></ul>'},
   {t:'rule', short:true},
   {t:'drill', module:'M3'}
 ]}

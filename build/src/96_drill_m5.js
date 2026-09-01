@@ -14,7 +14,7 @@
 CONTENT.DRILLTYPES.M5 = [
   { k:'binary', name:'A binary scheme',
     asks:'BPSK, BFSK or BASK is named with an energy and a noise level. Find the distance and the bit error probability.',
-    method:['Write the two points down first. Antipodal gives $\\pm\\sqrt{E_b}$ on one axis; orthogonal gives $(\\sqrt{E_b},0)$ and $(0,\\sqrt{E_b})$; on-off gives $0$ and $\\sqrt{2E_b}$ once the average is taken.',
+    method:['Write the two points down first. Antipodal gives $\\pm\\sqrt{E_b}$ on one axis. Orthogonal gives $(\\sqrt{E_b},0)$ and $(0,\\sqrt{E_b})$. On-off gives $0$ and $\\sqrt{2E_b}$ once the average is taken.',
             'Antipodal has $d^{2}=4E_b$ and $P_b=Q\\!\\left(\\sqrt{2E_b/N_0}\\right)$. Orthogonal and on-off both have $d^{2}=2E_b$ and $P_b=Q\\!\\left(\\sqrt{E_b/N_0}\\right)$.',
             'The gap between them is a factor of two inside the square root, which is $3.01$ dB, and it never changes with the noise level.'],
     go:'m5-bpsk' },
@@ -43,15 +43,15 @@ CONTENT.DRILLTYPES.M5 = [
   { k:'compare', name:'Comparing two schemes',
     asks:'Two schemes are named. Compare the energy each needs, the bits each carries, and the bandwidth each occupies.',
     method:['Fix what is being held equal before comparing anything: the same $E_s$, the same $E_b$, or the same error probability. The answer changes with the choice.',
-            'At a fixed error probability, take the ratio of the two $Q$ arguments and turn it into decibels with $10\\log_{10}$ of the ratio of the squares.',
-            'PSK and QAM keep their bandwidth as $M$ grows and pay in energy; FSK keeps its energy and pays in bandwidth. That is the whole trade.'],
+            'For a fixed error probability, calculate the ratio of the two $Q$ arguments. Convert the squared ratio to decibels with $10\\log_{10}$.',
+            'PSK and QAM keep their bandwidth as $M$ grows and pay in energy. FSK keeps its energy and pays in bandwidth. That is the whole trade.'],
     go:'m5-compare' },
 
   { k:'full', name:'A full-length question on one scheme',
     asks:'One scheme, three or four parts: draw the constellation, find the distance, apply the error formula, and compare with an alternative.',
     method:['Draw the constellation to scale first and mark $d_{\\min}$ on the drawing. Everything else is read off it.',
             'State once whether the given energy is per symbol or per bit, convert with $E_s=(\\log_2 M)E_b$, and do not convert again.',
-            'Check the answer against a case you already know: at $M=4$, QAM and PSK are the same constellation, and QPSK needs the same $E_b/N_0$ as BPSK.'] }
+            'Check the answer against a case you already know. At $M=4$, QAM and PSK are the same constellation, and QPSK needs the same $E_b/N_0$ as BPSK.'] }
 ];
 
 CONTENT.DRILL = CONTENT.DRILL.concat([
@@ -69,7 +69,7 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
      +'<b>Solution — (b).</b> $\\dfrac{d_{\\min}^{2}}{2N_0}=\\dfrac{4E_b}{2N_0}=\\dfrac{2E_b}{N_0}$. At $9$ dB, $E_b/N_0=7.943$, so the argument is $\\sqrt{15.887}=3.986$ and $P_b=Q(3.986)=3.36\\times10^{-5}$.<br>'
      +'<b>Check.</b> The two points are the furthest apart that two points of energy $E_b$ can be, so no binary scheme at this energy does better. Any other answer to part (b) that is smaller than this one is wrong for that reason alone.',
   err:'Writing $P_b=Q\\!\\left(\\sqrt{E_b/N_0}\\right)$, which is the orthogonal answer. The factor of two comes from the points being antipodal rather than at right angles.',
-  teach:'Ask for the answer at $12$ dB before computing it. The argument grows as $\\sqrt{\\cdot}$, so three more decibels doubles $2E_b/N_0$ and multiplies the argument by $1.41$ — and $Q$ falls by nearly two orders of magnitude. That steepness is the reason a few decibels matter so much.' },
+  teach:'Ask for the answer at $12$ dB before computing it. The argument grows as $\\sqrt{\\cdot}$. Therefore, three more decibels doubles $2E_b/N_0$ and multiplies the argument by $1.41$. $Q$ falls by nearly two orders of magnitude. That steepness is the reason a few decibels matter so much.' },
 
 { id:'D5-02', module:'M5', type:'binary', src:'CH9 s.72',
   stem:'A binary frequency-shift keying system uses two orthogonal waveforms at the same $E_b/N_0=9$ dB.',
@@ -84,7 +84,7 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
      +'<b>Solution — (c).</b> BPSK reaches the same $P_b$ with half the energy, and $10\\log_{10}2=3.01$ dB.<br>'
      +'<b>Check.</b> The two error probabilities are $3.36\\times10^{-5}$ and $2.41\\times10^{-3}$ — a factor of seventy for the same energy. The $3$ dB is not a small correction.',
   err:'Drawing both points on one axis. Orthogonal waveforms are at a right angle by definition, and putting them on a line turns the answer into the antipodal one.',
-  teach:'Ask where the $\\sqrt{2}$ went. The distance fell from $2\\sqrt{E_b}$ to $\\sqrt{2E_b}$, a factor of $\\sqrt{2}$; squaring it gives the factor of two in the $Q$ argument, which is the $3$ dB. Every appearance of $3$ dB in this module traces back to one $\\sqrt{2}$ in a picture.' },
+  teach:'Ask where the $\\sqrt{2}$ went. The distance fell from $2\\sqrt{E_b}$ to $\\sqrt{2E_b}$, a factor of $\\sqrt{2}$. Squaring it gives the factor of two in the $Q$ argument, which is the $3$ dB. Every appearance of $3$ dB in this module traces back to one $\\sqrt{2}$ in a picture.' },
 
 { id:'D5-03', module:'M5', type:'binary', src:'CH9 s.70',
   stem:'A binary amplitude-shift keying system sends nothing for a $0$ and $\\sqrt{2E/T_b}\\cos(2\\pi f_c t)$ for a $1$, with the two bits equally likely. The system runs at $E_b/N_0=10$ dB, where $E_b$ is the <em>average</em> energy per bit.',
@@ -97,8 +97,8 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
      +'<b>Solution — (a).</b> Half the bits cost $E$ and half cost nothing, so $E_b=E/2$ and $E=2E_b$.<br>'
      +'<b>Solution — (b).</b> The distance is $\\sqrt{E}=\\sqrt{2E_b}$, so $d_{\\min}^{2}=2E_b$ — the same as BFSK.<br>'
      +'<b>Solution — (c).</b> $\\dfrac{d_{\\min}^{2}}{2N_0}=\\dfrac{E_b}{N_0}=10$, so $P_b=Q(3.162)=7.83\\times10^{-4}$.<br>'
-     +'<b>Check.</b> On-off and orthogonal give the same answer by two different routes: one halves the energy and keeps the points on a line, the other keeps the energy and separates the points by a right angle. Both end at $d^{2}=2E_b$.',
-  err:'Using $E$ where $E_b$ is asked for. The transmitted symbol carries $E$, but half the symbols carry nothing, so the average is $E/2$ — and every comparison in this course is at equal average energy.',
+     +'<b>Check.</b> On-off and orthogonal give the same answer by two different routes. One halves the energy and keeps the points on a line, the other keeps the energy and separates the points by a right angle. Both end at $d^{2}=2E_b$.',
+  err:'Using $E$ where $E_b$ is asked for. The transmitted symbol carries $E$. However, half the symbols carry nothing. Therefore, the average is $E/2$. Every comparison in this course is at equal average energy.',
   teach:'Ask which scheme a designer would pick between on-off and BFSK, given that they have the same error probability. On-off needs one basis function and half the bandwidth, but its transmitter switches between zero and full power. The mathematics does not choose; the hardware does.' },
 
 { id:'D5-04', module:'M5', type:'binary', src:'CH9 s.74',
@@ -112,7 +112,7 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
      +'<b>Solution — (b).</b> For BFSK the argument is $\\sqrt{E_b/N_0}$, so $E_b/N_0=18.19$ and in decibels $12.60$ dB.<br>'
      +'<b>Check.</b> The two answers differ by $12.60-9.59=3.01$ dB, which is the gap the geometry predicted before any number was computed.',
   err:'Inverting $Q$ and then forgetting to square. The $x$ that comes out of the inversion is the whole argument, and the energy sits underneath a square root.',
-  teach:'Only one inversion of $Q$ was needed for both parts. Getting used to solving for $x$ first and then handling each scheme separately saves the work of doing it twice, and it makes the $3$ dB fall out on its own.' },
+  teach:'Both parts need the same inverse value of $Q$. Calculate this value once. Then substitute the distance expression for each modulation method. The ratio directly gives the $3$ dB difference.' },
 
 { id:'D5-05', module:'M5', type:'mpsk', src:'CH9 s.79',
   stem:'An $8$-PSK system operates at $E_s/N_0=13$ dB.',
@@ -140,9 +140,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
      +'<b>Solution — (a).</b> $\\sin(\\pi/4)=0.7071$ and $E_s/N_0=15.85$, so the argument is $\\sqrt{31.70}\\times0.7071=3.981$ and $P_e\\approx 2Q(3.981)=6.86\\times10^{-5}$.<br>'
      +'<b>Solution — (b).</b> QPSK carries two bits a symbol, so $E_b=E_s/2$ and $E_b/N_0=12-3.01=8.99$ dB.<br>'
      +'<b>Solution — (c).</b> BPSK at $8.99$ dB gives $P_b=Q\\!\\left(\\sqrt{2\\times7.925}\\right)=Q(3.981)=3.43\\times10^{-5}$ — exactly half the QPSK symbol error.<br>'
-     +'<b>Check.</b> The two $Q$ arguments came out identical, which is the whole reason QPSK is used. It is two BPSK systems sharing one carrier, one on the cosine and one on the sine, so it carries twice the bits at the same energy per bit and the same bit error rate.',
+     +'<b>Check.</b> The two $Q$ arguments came out identical. This is the whole reason QPSK is used. It is two BPSK systems sharing one carrier, one on the cosine and one on the sine. Therefore, it carries twice the bits at the same energy per bit and the same bit error rate.',
   err:'Comparing QPSK and BPSK at the same $E_s/N_0$. That is not the comparison anyone wants: the schemes carry different numbers of bits per symbol, so the fair axis is energy per bit.',
-  teach:'The factor of two between $P_e$ and $P_b$ here is not a coincidence and it is not general either. It holds because a QPSK symbol error is almost always to a neighbour, which differs in exactly one of the two bits — that is Gray coding, and it is why constellations are labelled that way.' },
+  teach:'The factor of two between $P_e$ and $P_b$ here is not a coincidence and it is not general either. It holds because a QPSK symbol error is almost always to a neighbour. This differs in exactly one of the two bits. That is Gray coding, and it is why constellations are labelled that way.' },
 
 { id:'D5-07', module:'M5', type:'mpsk', src:'CH9 s.81',
   stem:'A design moves from QPSK to $8$-PSK, holding the symbol error probability fixed.',
@@ -153,7 +153,7 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
      +'<b>Method.</b> A fixed error probability means a fixed $Q$ argument. Set the two arguments equal and solve for the ratio of the energies.<br>'
      +'<b>Solution — (a).</b> The argument is $\\sqrt{2E_s/N_0}\\,\\sin(\\pi/M)$, so holding it fixed needs $(E_s/N_0)\\sin^{2}(\\pi/M)$ fixed. The ratio is $\\dfrac{\\sin^{2}(\\pi/4)}{\\sin^{2}(\\pi/8)}=\\dfrac{0.5}{0.1464}=3.414$.<br>'
      +'<b>Solution — (b).</b> $10\\log_{10}3.414=5.33$ dB per symbol. Per bit the extra bit helps: $8$-PSK carries three bits where QPSK carries two, so the ratio is $3.414\\times\\frac{2}{3}=2.276$, or $3.57$ dB.<br>'
-     +'<b>Check.</b> Both numbers are positive, so the larger alphabet costs energy either way it is measured — which it must, because the points are closer together at the same radius.',
+     +'<b>Check.</b> Both energy differences are positive. The larger alphabet needs more energy because its points are closer at the same radius.',
   err:'Quoting the per-symbol figure when the question is about a link budget. Link budgets are written in energy per bit, and the two answers differ by nearly two decibels here.',
   teach:'Ask what the same calculation gives from $8$-PSK to $16$-PSK. The ratio of $\\sin^{2}$ is larger again, and each doubling costs more than the last. That is why PSK is rarely seen above eight points and QAM takes over.' },
 
@@ -166,8 +166,8 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
      +'<b>Method.</b> One formula twice.<br>'
      +'<b>Solution — (a).</b> $8$-PSK: $2\\sin(\\pi/8)=0.765$. $16$-PSK: $2\\sin(\\pi/16)=0.390$.<br>'
      +'<b>Solution — (b).</b> The ratio of the squares is $(0.390/0.765)^{2}=0.260$, and $10\\log_{10}0.260=-5.85$ dB.<br>'
-     +'<b>Check.</b> Doubling the number of points on a fixed circle roughly halves the spacing, so the squared distance falls by roughly a factor of four, or $6$ dB. The exact figure of $5.85$ dB is a little better than that, because $\\sin(\\pi/16)$ is more than half of $\\sin(\\pi/8)$: the sine falls below its own angle, and it falls further for the larger angle.',
-  err:'Comparing the distances rather than their squares when converting to decibels. The $Q$ argument contains $d^{2}$, so the decibel figure is $20\\log_{10}$ of a distance ratio or $10\\log_{10}$ of a squared one — the same number, written two ways.',
+     +'<b>Check.</b> Doubling the number of points on a fixed circle roughly halves the spacing. Therefore, the squared distance falls by roughly a factor of four, or $6$ dB. The exact figure of $5.85$ dB is a little better than that. This occurs because $\\sin(\\pi/16)$ is more than half of $\\sin(\\pi/8)$. The sine falls below its own angle, and it falls further for the larger angle.',
+  err:'Comparing the distances rather than their squares when converting to decibels. The $Q$ argument contains $d^{2}$. Therefore, the decibel figure is $20\\log_{10}$ of a distance ratio or $10\\log_{10}$ of a squared one. The same number, written two ways.',
   teach:'The picture says it all: sixteen points on the same circle as eight are packed twice as tightly. Once that is seen, the direction of every answer here is known before the arithmetic starts, and the arithmetic only supplies the size.' },
 
 { id:'D5-09', module:'M5', type:'mpam', src:'CH9 s.85',
@@ -196,7 +196,7 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
      +'<b>Solution — (b).</b> $10\\log_{10}(63/15)=6.23$ dB. Doubling the number of levels costs about six decibels, and that figure holds for every doubling once $M$ is not small.<br>'
      +'<b>Check.</b> For large $M$ the ratio approaches $M_4^{2}/M_8^{2}=1/4$ exactly, which is $6.02$ dB. The extra $0.2$ dB here is the $-1$ in $M^{2}-1$ still mattering at these small sizes.',
   err:'Using $M$ rather than $M^{2}-1$. That gives $3$ dB instead of $6$, and it is the difference between a design that closes and one that does not.',
-  teach:'Six decibels for one extra bit a symbol is the price of packing points onto a line. Question D5-13 asks the same thing of QAM, where two dimensions are available, and the answer is very different — that comparison is the point of both questions.' },
+  teach:'Six decibels for one extra bit a symbol is the price of packing points onto a line. Question D5-13 asks the same thing of QAM, where two dimensions are available, and the answer is very different. That comparison is the point of both questions.' },
 
 { id:'D5-11', module:'M5', type:'mpam', src:'CH9 s.85',
   stem:'An $8$-PAM constellation is used.',
@@ -209,7 +209,7 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
      +'<b>Solution — (b).</b> The two end points. Their decision regions run off to infinity on the outside, so noise pushing them outward never causes an error — only noise pushing them inward can.<br>'
      +'<b>Check.</b> As $M$ grows, $2(M-1)/M$ approaches $2$: the two end points become a smaller and smaller fraction of the constellation, and their advantage stops mattering.',
   err:'Counting the neighbours of one interior point and using that for all of them. The whole reason $N_{\\min}$ is defined as an average is that the points are not alike.',
-  teach:'This is the same idea as the corner points of a QAM square being the safest, and for the same reason: a point on the outside of a constellation has fewer directions in which it can be mistaken.' },
+  teach:'This is the same idea as the corner points of a QAM square being the safest, and for the same reason. A point on the outside of a constellation has fewer directions in which it can be mistaken.' },
 
 { id:'D5-12', module:'M5', type:'qam', src:'CH9 s.92',
   stem:'A $16$-QAM system operates at $E_{s}/N_0=15$ dB.',
@@ -236,8 +236,8 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
      +'<b>Solution — (a).</b> QAM: $6E_s/15=0.400E_s$. PAM: $12E_s/255=0.0471E_s$.<br>'
      +'<b>Solution — (b).</b> The ratio is $0.400/0.0471=8.5$, and $10\\log_{10}8.5=9.29$ dB.<br>'
      +'<b>Check.</b> Both carry four bits a symbol and both use the same average power, so the entire difference is the arrangement of the points. Nine decibels is an enormous return for using the second dimension that was there all along.',
-  err:'Comparing at the same $d_{\\min}$ instead of the same energy. At the same spacing the two constellations do have the same error probability — but PAM then needs eight and a half times the power, which is the same fact stated backwards.',
-  teach:'This one number is the reason QAM exists. Ask what would happen with three dimensions: the same argument would favour a cubic lattice again, and that is exactly what coded modulation does over several symbol periods.' },
+  err:'Comparing at the same $d_{\\min}$ instead of the same energy. At the same spacing the two constellations do have the same error probability. But PAM then needs eight and a half times the power. This is the same fact stated backwards.',
+  teach:'This one number is the reason QAM exists. Ask what would happen with three dimensions. The same argument would favour a cubic lattice again, and that is exactly what coded modulation does over several symbol periods.' },
 
 { id:'D5-14', module:'M5', type:'qam', src:'CH9 s.92',
   stem:'A $64$-QAM constellation is an eight-by-eight square grid.',
@@ -246,7 +246,7 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   sol:'<b>Given.</b> An eight-by-eight grid.<br>'
      +'<b>Find.</b> The neighbour count by position and its average.<br>'
      +'<b>Method.</b> Count the three kinds of position, then average their neighbour counts.<br>'
-     +'<b>Solution — (a).</b> Four corners; the edges have $6$ points on each of the four sides, so $24$ edge points; the interior is a six-by-six block, so $36$ points. Total $4+24+36=64$.<br>'
+     +'<b>Solution — (a).</b> Four corners. The edges have $6$ points on each of the four sides, so $24$ edge points. The interior is a six-by-six block, so $36$ points. Total $4+24+36=64$.<br>'
      +'<b>Solution — (b).</b> $N_{\\min}=\\dfrac{4(2)+24(3)+36(4)}{64}=\\dfrac{8+72+144}{64}=\\dfrac{224}{64}=3.5$.<br>'
      +'<b>Check.</b> Count the neighbouring pairs instead: $2\\times8\\times7=112$ pairs, each giving two ordered pairs, so $224/64=3.5$. The two routes agree, and the second is quicker for any grid.',
   err:'Counting eight points along each side and getting $32$ edge points, which double-counts the corners. Each side contributes $8-2=6$ points that are not corners.',
@@ -263,7 +263,7 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
      +'<b>Solution — (a).</b> Any two points are at a right angle, so $d=\\sqrt{2E_s}$ — for <em>every</em> pair, not just the closest.<br>'
      +'<b>Solution — (b).</b> Every point is at the minimum distance from all the others, so $N_{\\min}=M-1=7$.<br>'
      +'<b>Solution — (c).</b> $\\dfrac{d^{2}}{2N_0}=\\dfrac{E_s}{N_0}=10$, so $P_e\\approx 7\\,Q(3.162)=7\\times7.83\\times10^{-4}=5.48\\times10^{-3}$.<br>'
-     +'<b>Check.</b> Here the union bound is a genuine bound and not just the nearest neighbours, because there are no distant points to leave out — every pair is at the same distance.',
+     +'<b>Check.</b> Here the union bound is a genuine bound and not just the nearest neighbours. This occurs because there are no distant points to leave out. Every pair is at the same distance.',
   err:'Using $N_{\\min}=2$ out of habit from PSK. In $M$-FSK all $M-1$ other points are equally close, and that is what the extra dimensions buy.',
   teach:'The distance $\\sqrt{2E_s}$ does not depend on $M$ at all, which is the striking part. Adding waveforms costs nothing in distance — but each new waveform needs its own frequency slot, so the price is paid in bandwidth instead.' },
 
@@ -278,9 +278,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
      +'<b>Solution — (a).</b> Four bits every $T_s$ into $1/T_s$ hertz: $4$ bits per second per hertz.<br>'
      +'<b>Solution — (b).</b> Four bits every $T_s$ into $16/(2T_s)=8/T_s$ hertz: $4/8=0.5$ bits per second per hertz — eight times worse.<br>'
      +'<b>Solution — (c).</b> QAM keeps the bandwidth fixed as $M$ grows and pays in energy, because the points crowd together. FSK keeps the distance between points fixed and pays in bandwidth, because each waveform needs its own frequency.<br>'
-     +'<b>Check.</b> QAM efficiency is $\\log_2 M$ and grows with $M$; FSK efficiency is $2\\log_2 M/M$ and falls with it. At $M=2$ the two are $1$ and $1$ — the schemes only part company once $M$ grows.',
+     +'<b>Check.</b> QAM efficiency is $\\log_2 M$ and grows with $M$. FSK efficiency is $2\\log_2 M/M$ and falls with it. At $M=2$ the two are $1$ and $1$ — the schemes only part company once $M$ grows.',
   err:'Treating bandwidth as a property of the scheme alone. It is set by the symbol rate as well, and the comparison only means anything with the symbol rate held fixed.',
-  teach:'Ask which one a deep-space link would use and which one a mobile phone would use. Deep space has bandwidth to spare and no energy; a phone has the opposite. The right answer depends entirely on which resource is scarce.' },
+  teach:'Ask which one a deep-space link would use and which one a mobile phone would use. Deep space has bandwidth to spare and no energy. A phone has the opposite. The right answer depends entirely on which resource is scarce.' },
 
 { id:'D5-17', module:'M5', type:'compare', src:'CH9 s.94',
   stem:'A link must achieve a symbol error probability of $10^{-4}$.',
@@ -295,7 +295,7 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
      +'<b>Solution — (c).</b> About $4.2$ dB more energy per bit, in exchange for twice as many bits in the same bandwidth.<br>'
      +'<b>Check.</b> The per-symbol figures differ by $7.2$ dB and the per-bit figures by $4.2$ dB. The $3$ dB between them is the extra bit a symbol paying part of its own way.',
   err:'Inverting $Q$ on the target directly instead of on the target divided by $N_{\\min}$. It looks like a small change but it moves the answer by several tenths of a decibel, and in the wrong direction.',
-  teach:'This is the calculation behind every adaptive modulation scheme. When the signal is strong the link uses $16$-QAM and carries twice the data; when it weakens it drops to QPSK and keeps the errors down. Both settings hit the same error target.' },
+  teach:'This is the calculation behind every adaptive modulation scheme. When the signal is strong the link uses $16$-QAM and carries twice the data. When it weakens it drops to QPSK and keeps the errors down. Both settings hit the same error target.' },
 
 /* ---- full-length ----------------------------------------------------- */
 
@@ -314,7 +314,7 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
      +'<b>Solution — (d).</b> With Gray coding a symbol error almost always changes one bit out of four, so $P_b\\approx P_e/4=1.43\\times10^{-4}$.<br>'
      +'<b>Check.</b> Three decibels more than D5-12 took the symbol error from $1.8\\times10^{-2}$ to $5.7\\times10^{-4}$ — a factor of thirty for a factor of two in power. The curve is steep here, which is exactly where a system is designed to sit.',
   err:'Dividing $P_e$ by $16$ rather than by $4$. The divisor is the number of bits a symbol carries, not the number of symbols.',
-  teach:'Part (d) is an approximation twice over: it assumes the error goes to a neighbour, and it assumes the neighbours are Gray-labelled. Both are good at this error rate and both fail at low signal-to-noise ratio, which is worth saying out loud when the answer is written down.' },
+  teach:'Part (d) is an approximation twice over. It assumes the error goes to a neighbour, and it assumes the neighbours are Gray-labelled. Both are good at this error rate and both fail at low signal-to-noise ratio. This is worth saying out loud when the answer is written down.' },
 
 { id:'D5-19', module:'M5', type:'full', src:'Final Q3',
   stem:'A designer must send three bits a symbol and is choosing between $8$-PSK and $8$-PAM at the same average symbol energy.',
@@ -328,9 +328,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
      +'<b>Solution — (a).</b> $8$-PSK: $d_{\\min}=2\\sqrt{E_s}\\sin(\\pi/8)$, so $d_{\\min}^{2}=0.586E_s$. $8$-PAM: $d_{\\min}^{2}=12E_s/63=0.190E_s$.<br>'
      +'<b>Solution — (b).</b> $8$-PSK has $N_{\\min}=2$; $8$-PAM has $N_{\\min}=2(7)/8=1.75$.<br>'
      +'<b>Solution — (c).</b> At $15$ dB, $E_s/N_0=31.62$. PSK: $\\sqrt{0.586\\times31.62/2}=\\sqrt{9.27}=3.044$, so $P_e\\approx2Q(3.044)=2.33\\times10^{-3}$. PAM: $\\sqrt{0.190\\times31.62/2}=\\sqrt{3.01}=1.735$, so $P_e\\approx1.75\\,Q(1.735)=1.75\\times0.0414=7.24\\times10^{-2}$.<br>'
-     +'<b>Solution — (d).</b> $8$-PSK, by a factor of thirty. Its points are spread over a circle in two dimensions; PAM crowds all eight onto one line, and the smaller $N_{\\min}$ nowhere near makes up for it.<br>'
+     +'<b>Solution — (d).</b> $8$-PSK, by a factor of thirty. Its points are spread over a circle in two dimensions. PAM crowds all eight onto one line, and the smaller $N_{\\min}$ nowhere near makes up for it.<br>'
      +'<b>Check.</b> The distance ratio is $0.586/0.190=3.08$, or $4.9$ dB in favour of PSK. That is the same kind of advantage QAM has over PAM in D5-13, and for the same reason: a second dimension.',
-  err:'Deciding on $N_{\\min}$ alone. It sits outside the $Q$ and scales the answer by less than a factor of two; the distance sits inside and moves it by orders of magnitude.',
+  err:'Deciding on $N_{\\min}$ alone. It sits outside the $Q$ and scales the answer by less than a factor of two. The distance sits inside and moves it by orders of magnitude.',
   teach:'Both parts of the comparison are worth writing on one line: PSK wins on distance and loses on neighbour count, and distance wins. That ordering — geometry first, counting second — decides nearly every question in this module.' },
 
 { id:'D5-20', module:'M5', type:'full', src:'Final Q3',
@@ -346,7 +346,7 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
      +'<b>Solution — (b).</b> $8$-PSK: $E_s/N_0=3\\times10=30$. The argument is $\\sqrt{60}\\times0.3827=2.965$, so $P_e\\approx2Q(2.965)=3.03\\times10^{-3}$. It fails, by a factor of three.<br>'
      +'<b>Solution — (c).</b> $16$-QAM: $E_s/N_0=4\\times10=40$. The argument is $\\sqrt{0.2\\times40}=2.828$, so $P_e\\approx3Q(2.828)=7.03\\times10^{-3}$. It fails, by a factor of seven.<br>'
      +'<b>Solution — (d).</b> QPSK, at two bits a symbol. Nothing larger clears the target at this energy.<br>'
-     +'<b>Check.</b> The three answers rise steadily with $M$ — $7.8\\times10^{-6}$, $3.0\\times10^{-3}$, $7.0\\times10^{-3}$ — which is what a fixed energy per bit must give: more bits a symbol always means points closer together.',
+     +'<b>Check.</b> The three error probabilities increase with $M$: $7.8\\times10^{-6}$, $3.0\\times10^{-3}$, and $7.0\\times10^{-3}$. At fixed energy per bit, more bits per symbol decrease the point spacing.',
   err:'Working the whole question at a fixed $E_s/N_0$. The channel fixes the energy per bit, so every scheme gets a different symbol energy, and that conversion is where the comparison is decided.',
   teach:'The gap between QPSK and $8$-PSK is the interesting one: QPSK beats the target by more than two orders of magnitude and $8$-PSK misses it. Ask how much extra energy would rescue $8$-PSK — about $0.9$ dB — and the question turns into a design decision instead of an arithmetic one.' }
 
@@ -361,7 +361,7 @@ window.DRILL_M5 = [
   steps:0, blocks:[
   {t:'eyebrow', text:'Module 5 · Practice D5-01 … D5-20'},
   {t:'title', text:'Practice questions'},
-  {t:'small', html:'Work each question on paper before opening its solution. Every solution ends with a <b>Check</b> step. In this module the cheap checks are: state once whether the energy is per symbol or per bit and convert only once, $N_{\\min}$ is an average and need not be a whole number, a general formula must reproduce the binary case at $M=2$, and any scheme carrying more bits a symbol at the same energy per bit must come out worse.'},
+  {t:'small', html:'Work each question before opening its solution. Use these checks:<ul><li>State whether each energy is per symbol or per bit.</li><li>$N_{\\min}$ can be noninteger.</li><li>A general formula must give the binary result at $M=2$.</li><li>More bits per symbol at fixed $E_b$ reduce point spacing.</li></ul>'},
   {t:'rule', short:true},
   {t:'drill', module:'M5'}
 ]}

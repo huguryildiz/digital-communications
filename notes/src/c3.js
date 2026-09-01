@@ -26,9 +26,9 @@ window.C3 = [
 {t:'eqbox', cap:'Inner product, energy and orthogonality', tex:[
   '\\langle x,y\\rangle=\\int_{-\\infty}^{\\infty}x(t)\\,y(t)\\,dt',
   '\\int_{-\\infty}^{\\infty}\\psi_j(t)\\psi_k(t)\\,dt=\\begin{cases}1,&j=k\\\\0,&j\\ne k\\end{cases}'],
- after:'The second line defines an <b>orthonormal</b> set. The first case says each function has unit energy; the second says any two of them are orthogonal.'},
-{t:'box', kind:'def', hd:'What orthogonal means here', html:'The same thing it means for arrows: the two signals have nothing of each other in them. Multiply them together, add up the result over all time, and you get zero. Two pulses that never overlap are the clearest case — where one is non-zero the other is zero, so the product is zero everywhere and no integration is needed.'},
-{t:'p', text:'With the axes fixed, a signal is written against them the same way a vector is. One integral per axis takes the waveform apart; adding the pieces back builds it again.'},
+ after:'The second line defines an <b>orthonormal</b> set. The first case says each function has unit energy. The second says any two of them are orthogonal.'},
+{t:'box', kind:'def', hd:'Orthogonal signals', html:'Orthogonal signals have zero inner product. Multiply the signals and integrate the result over all time. Nonoverlapping pulses are a simple example. Where one pulse is nonzero, the other is zero. Therefore, their product is zero everywhere.'},
+{t:'p', text:'With the axes fixed, a signal is written against them the same way a vector is. One integral per axis takes the waveform apart. Adding the pieces back builds it again.'},
 {t:'eqbox', cap:'Coordinates', tex:[
   's_{ij}=\\int_0^{T}s_i(t)\\,\\psi_j(t)\\,dt',
   's_i(t)=\\sum_{j=1}^{N}s_{ij}\\,\\psi_j(t)'],
@@ -40,16 +40,16 @@ window.C3 = [
  after:'<b>Energy is how far a point is from the origin.</b> That is what the transmitter pays for. <b>Distance is how far two points are from each other.</b> That is what decides how often the receiver confuses them.'},
 
 {t:'h2', num:'3.3', text:'The constellation diagram'},
-{t:'p', text:'The constellation is the picture of the signal vectors in the space their basis spans: one point per waveform, one axis per basis function. Three things are read straight off it. The distance from the origin to a point is the square root of that signal\'s energy. The distance between two points is the square root of the energy of their difference. And the number of axes is the number of matched filters the receiver needs.'},
-{t:'box', kind:'warn', hd:'Two statements, and what they mean together', html:'<b>Two entirely different signal sets can have the same geometric representation.</b> Different shapes, different durations, the same points. And <b>the geometry determines the performance and the receiver structure</b>. Put together: if two signal sets give the same constellation, they have the same error probability and the same receiver, and nothing about the waveforms themselves survives into the answer. What the picture does <em>not</em> fix is bandwidth, and that is decided by the criteria of Chapter 2.'},
+{t:'p', text:'The constellation is the picture of the signal vectors in the space their basis spans: one point per waveform, one axis per basis function. Three things are read straight off it. The distance from the origin to a point is the square root of that signal\'s energy. The distance between two points is the square root of the energy of their difference. The number of axes is the number of matched filters the receiver needs.'},
+{t:'box', kind:'warn', hd:'Geometric equivalence', html:'Different waveform sets can have the same constellation. Such sets have the same receiver structure and error probability in white Gaussian noise. The constellation does not determine bandwidth. Waveform shape and the Chapter 2 criteria determine bandwidth.'},
 
 {t:'h2', num:'3.4', text:'The Gram–Schmidt procedure'},
-{t:'p', text:'The axes have been assumed so far. Gram–Schmidt produces them from any set of waveforms. It is one step repeated: take the next signal, remove the part of it that the axes already found can account for, and make an axis out of what is left.'},
+{t:'p', text:'The previous sections assumed known axes. Gram–Schmidt produces them from any waveform set. Take the next signal. Remove its components along the existing axes. Normalize the nonzero remainder to form a new axis.'},
 {t:'eqbox', cap:'The procedure', tex:[
   '\\psi_1(t)=\\frac{s_1(t)}{\\sqrt{E_1}},\\qquad s_{11}=\\sqrt{E_1}',
   'g_k(t)=s_k(t)-\\sum_{i=1}^{k-1}s_{ki}\\psi_i(t),\\qquad \\psi_k(t)=\\frac{g_k(t)}{\\sqrt{E_{g_k}}}'],
  after:'If $g_k(t)=0$ the signal was already a combination of the axes found so far and <b>no new axis is added</b>. The number of axes $N$ is therefore at most the number of signals $M$, and is often fewer.'},
-{t:'box', kind:'ok', hd:'The order changes the axes, not the answer', html:'Starting from a different signal gives a different basis. It gives the same number of axes, the same energies and the same distances, so the constellation is the same picture seen from a different angle. Every result that depends only on distances is unchanged — and in Chapter 4 every result depends only on distances.'},
+{t:'box', kind:'ok', hd:'The order changes the axes, not the answer', html:'Starting from a different signal gives a different basis. It gives the same number of axes, the same energies and the same distances. Therefore, the constellation is the same picture seen from a different angle. Every result that depends only on distances is unchanged. In Chapter 4 every result depends only on distances.'},
 
 {t:'ex', hd:'Example 3.1 — three pulses, two axes', rows:[
  ['Given','$s_1(t)=1$ on $[0,2]$; $s_2(t)=1$ on $[2,3]$; $s_3(t)=1$ on $[0,3]$; each zero elsewhere.'],
@@ -77,7 +77,7 @@ window.C3 = [
     a.point(x,y,{color:c,r:6});
   });
   return a.svg();
-}, cap:'The constellation. Two axes carry three signals. The point furthest from the origin is $\\mathbf{s}_3$, whose energy is $3$; the two nearest points are $\\mathbf{s}_1$ and $\\mathbf{s}_3$, one unit apart.'},
+}, cap:'The constellation. Two axes carry three signals. The point furthest from the origin is $\\mathbf{s}_3$, whose energy is $3$. The two nearest points are $\\mathbf{s}_1$ and $\\mathbf{s}_3$, one unit apart.'},
 
 {t:'h2', num:'3.5', text:'Summary'},
 {t:'table', head:['Result','Statement','Anchor'], rows:[
@@ -88,7 +88,7 @@ window.C3 = [
  ['Distance','$\\|\\mathbf{s}_i-\\mathbf{s}_k\\|^{2}=$ energy of the difference','PS CH8.1'],
  ['Gram–Schmidt','$g_k=s_k-\\sum_{i<k}s_{ki}\\psi_i$, and $\\psi_k=g_k/\\sqrt{E_{g_k}}$','PS CH8.1']
 ]},
-{t:'p', text:'Chapter 4 builds the receiver for this picture. It computes the coordinates of whatever arrives and picks the nearest point, and the error probability then depends on the distances between the points and on nothing else.'}
+{t:'p', text:'Chapter 4 builds the receiver for this constellation. It calculates the received coordinates and selects the nearest point. The error probability then depends on the distances between signal points.'}
 
 ];
 })();

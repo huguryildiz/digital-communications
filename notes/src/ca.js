@@ -20,7 +20,7 @@ window.CA = [
 {t:'eqbox', cap:'Uniform quantization', tex:[
  '\\Delta=\\frac{2V}{L}=\\frac{2V}{2^{n}},\\qquad |e|\\le\\frac{\\Delta}{2}',
  '\\sigma_q^{2}=\\frac{\\Delta^{2}}{12},\\qquad \\mathrm{SQNR}\\big|_{\\mathrm{dB}}=6.02n+1.76'],
- after:'The $1.76$ assumes a full-scale sinusoid. The formula is an approximation at small $n$: at three bits it gives $19.82$ dB where the measured value is $19.09$ dB, and the gap halves with each extra bit.'},
+ after:'The $1.76$ assumes a full-scale sinusoid. The formula is an approximation at small $n$. At three bits it gives $19.82$ dB where the measured value is $19.09$ dB, and the gap halves with each extra bit.'},
 {t:'table', head:['Result','Statement','Chapter'], rows:[
  ['Companding','$\\mu$-law and A-law compress before quantizing so that the signal-to-noise ratio is flat across the range','1'],
  ['PCM rate','$R=nf_s$ bits a second for $n$ bits a sample','1']
@@ -30,13 +30,13 @@ window.CA = [
 {t:'h2', num:'A.2', text:'Baseband transmission — Chapter 2'},
 {t:'eqbox', cap:'The matched filter', tex:[
  'h(t)=s(T-t),\\qquad \\left(\\frac{S}{N}\\right)_{\\max}=\\frac{2E}{N_0}'],
- after:'The filter matched to the pulse maximises the signal-to-noise ratio at the sampling instant, and the maximum depends on the energy of the pulse and not on its shape.'},
+ after:'The matched filter maximizes the signal-to-noise ratio at the sampling instant. The maximum depends on pulse energy, not pulse shape.'},
 {t:'eqbox', cap:'Binary error probability at baseband', tex:[
  'P_b=Q\\!\\left(\\sqrt{\\frac{2E_b}{N_0}}\\right)\\ \\text{(antipodal)},\\qquad P_b=Q\\!\\left(\\sqrt{\\frac{E_b}{N_0}}\\right)\\ \\text{(on-off, orthogonal)}']},
 {t:'eqbox', cap:'Nyquist criterion for zero intersymbol interference', tex:[
  '\\sum_{k}P\\!\\left(f+\\frac{k}{T}\\right)=T\\quad\\text{for all }f',
  'B=\\frac{1+\\alpha}{2T},\\qquad 0\\le\\alpha\\le 1'],
- after:'The raised cosine meets the criterion for every roll-off $\\alpha$. At $\\alpha=0$ the bandwidth is the Nyquist minimum $1/2T$ and the pulse decays slowly; at $\\alpha=1$ it is twice that and the pulse decays quickly.'},
+ after:'The raised cosine meets the criterion for every roll-off $\\alpha$. At $\\alpha=0$ the bandwidth is the Nyquist minimum $1/2T$ and the pulse decays slowly. At $\\alpha=1$ it is twice that and the pulse decays quickly.'},
 
 /* ---------------------------------------------------------------- 3 ------ */
 {t:'h2', num:'A.3', text:'Signal space — Chapter 3'},
@@ -54,7 +54,7 @@ window.CA = [
 {t:'eqbox', cap:'Error probability', tex:[
  'P(\\mathbf{s}_k\\to\\mathbf{s}_j)=Q\\!\\left(\\sqrt{\\frac{d_{kj}^{2}}{2N_0}}\\right)',
  'P_e\\le\\frac{1}{M}\\sum_{k}\\sum_{j\\ne k}Q\\!\\left(\\sqrt{\\frac{d_{kj}^{2}}{2N_0}}\\right),\\qquad P_e\\approx N_{\\min}\\,Q\\!\\left(\\sqrt{\\frac{d_{\\min}^{2}}{2N_0}}\\right)'],
- after:'The first is exact for two points. The second is the union bound, and the third its nearest-neighbour form, where $N_{\\min}$ is the <em>average</em> number of points at the minimum distance and need not be a whole number. The loose form $P_e\\le(M-1)Q(\\cdot)$ needs only $M$ and $d_{\\min}$.'},
+ after:'The first result is exact for two points. The second is the union bound. The third is its nearest-neighbor form. Here, $N_{\\min}$ is the average number of nearest neighbors and can be noninteger. The loose bound needs only $M$ and $d_{\\min}$.'},
 
 /* ---------------------------------------------------------------- 5 ------ */
 {t:'h2', num:'A.5', text:'Digital modulation — Chapter 5'},
@@ -68,7 +68,7 @@ window.CA = [
 ]},
 {t:'eqbox', cap:'Reading the table', tex:[
  'P_e\\approx N_{\\min}\\,Q\\!\\left(\\sqrt{\\frac{d_{\\min}^{2}}{2N_0}}\\right),\\qquad E_s=(\\log_2 M)E_b'],
- after:'Convert once between symbol and bit energy and never twice. BFSK and BASK need $3.01$ dB more than BPSK for the same error probability; doubling $M$ costs about $6$ dB in PAM and about $5.33$ dB going from $4$-PSK to $8$-PSK; and $16$-QAM beats $16$-PAM by $9.29$ dB at the same energy.'},
+ after:'Convert once between symbol and bit energy. BFSK and BASK need $3.01$ dB more than BPSK for the same error probability. Doubling $M$ costs approximately $6$ dB in PAM. Moving from $4$-PSK to $8$-PSK costs $5.33$ dB. At the same energy, $16$-QAM gains $9.29$ dB over $16$-PAM.'},
 
 /* ---------------------------------------------------------------- 6 ------ */
 {t:'h2', num:'A.6', text:'Information theory — Chapter 6'},

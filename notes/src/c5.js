@@ -49,7 +49,7 @@ function carrier(kind){
 window.C5 = [
 
 {t:'h1', num:'CHAPTER 5', text:'Digital modulation methods'},
-{t:'p', lead:true, text:'A baseband pulse cannot be sent over a radio channel, so the bits have to ride on a carrier. There are only three things about a sine wave that can be changed: its amplitude, its phase and its frequency. Every scheme in this chapter changes one of them, or two at once. Chapter 4 already gave the receiver and the error probability; all that is left is to place the points and measure the distance between them.'},
+{t:'p', lead:true, text:'A baseband pulse cannot be sent over a radio channel, so the bits have to ride on a carrier. There are only three things about a sine wave that can be changed: its amplitude, its phase and its frequency. Every scheme in this chapter changes one of them, or two at once. Chapter 4 already gave the receiver and the error probability. All that is left is to place the points and measure the distance between them.'},
 
 {t:'h2', num:'5.1', text:'The three binary schemes'},
 {t:'p', text:'Take one bit at a time and two waveforms. Amplitude-shift keying sends the carrier for a one and nothing for a zero. Phase-shift keying sends the carrier either way and flips its sign. Frequency-shift keying sends one of two frequencies.'},
@@ -62,9 +62,9 @@ window.C5 = [
 {t:'eqbox', cap:'The three distances and the three error probabilities', tex:[
  '\\text{BPSK: } d_{\\min}^{2}=4E_b,\\qquad P_b=Q\\!\\left(\\sqrt{\\tfrac{2E_b}{N_0}}\\right)',
  '\\text{BFSK and BASK: } d_{\\min}^{2}=2E_b,\\qquad P_b=Q\\!\\left(\\sqrt{\\tfrac{E_b}{N_0}}\\right)'],
- after:'The two answers differ by a factor of two inside the square root, which is $3.01$ dB. That gap does not depend on the noise level and cannot be closed by spending more power — it is a fact about where the points are.'},
-{t:'box', kind:'ok', hd:'Where the three decibels come from', html:'Antipodal points are $2\\sqrt{E_b}$ apart. Orthogonal points are $\\sqrt{2E_b}$ apart, which is smaller by $\\sqrt2$. Squaring that $\\sqrt2$ gives the factor of two in the $Q$ argument, and $10\\log_{10}2=3.01$ dB. Every appearance of three decibels in this chapter traces back to one $\\sqrt2$ in a picture.'},
-{t:'box', kind:'warn', hd:'BASK and BFSK reach the same answer by different routes', html:'BASK keeps its points on one line but half its symbols cost nothing, so the average energy is half the peak. BFSK keeps the full energy in every symbol but separates the points by a right angle instead of a straight line. Both end at $d^{2}=2E_b$. The mathematics does not prefer either; the transmitter does, and BASK asks it to switch between zero power and full power.'},
+ after:'The two answers differ by a factor of two inside the square root. This is $3.01$ dB. That gap does not depend on the noise level and cannot be closed by spending more power. It is a fact about where the points are.'},
+{t:'box', kind:'ok', hd:'Three-decibel difference', html:'Antipodal points are $2\\sqrt{E_b}$ apart. Orthogonal points are $\\sqrt{2E_b}$ apart, which is smaller by $\\sqrt2$. Squaring this ratio gives a factor of two. Therefore, the required energy differs by $10\\log_{10}2=3.01$ dB.'},
+{t:'box', kind:'warn', hd:'BASK and BFSK reach the same answer by different routes', html:'BASK keeps its points on one line but half its symbols cost nothing, so the average energy is half the peak. BFSK keeps the full energy in every symbol but separates the points by a right angle instead of a straight line. Both end at $d^{2}=2E_b$. The mathematics does not prefer either. The transmitter does, and BASK asks it to switch between zero power and full power.'},
 
 {t:'h2', num:'5.2', text:'M-ary phase-shift keying'},
 {t:'p', text:'Sending one bit at a time wastes the two dimensions a carrier offers. Use both, keep the energy fixed, and the constellation becomes $M$ points spaced evenly around a circle of radius $\\sqrt{E_s}$. Each symbol now carries $\\log_2 M$ bits.'},
@@ -95,11 +95,11 @@ window.C5 = [
 {t:'eqbox', cap:'M-PAM', tex:[
  'E_{s,\\text{avg}}=\\frac{A^{2}(M^{2}-1)}{3}\\quad\\Longrightarrow\\quad d_{\\min}^{2}=\\frac{12E_{s,\\text{avg}}}{M^{2}-1}',
  'N_{\\min}=\\frac{2(M-1)}{M},\\qquad P_e\\approx N_{\\min}\\,Q\\!\\left(\\sqrt{\\frac{d_{\\min}^{2}}{2N_0}}\\right)'],
- after:'The $M^{2}$ in the denominator is the trouble: doubling $M$ divides the squared distance by roughly four, which is about $6$ dB, and it does so at every doubling.'},
-{t:'box', kind:'def', hd:'Why $N_{\\min}$ is not a whole number', html:'The two points at the ends of the line have one neighbour each; the $M-2$ points between them have two. Averaging over all $M$ equally likely symbols gives $2(M-1)/M$ — $1.5$ at $M=4$, $1.75$ at $M=8$. It is an average over points that differ in how exposed they are, and getting a whole number means the end points were counted as though they had neighbours on both sides.'},
+ after:'The $M^{2}$ in the denominator is the trouble. Doubling $M$ divides the squared distance by roughly four. This is about $6$ dB, and it does so at every doubling.'},
+{t:'box', kind:'def', hd:'Average neighbor count', html:'The two end points have one nearest neighbor each. The other $M-2$ points have two. Averaging over all equally likely symbols gives $N_{\\min}=2(M-1)/M$. Thus, $N_{\\min}=1.5$ for $M=4$ and $1.75$ for $M=8$.'},
 
 {t:'h2', num:'5.4', text:'Quadrature amplitude modulation'},
-{t:'p', text:'Run one amplitude-modulated signal on the cosine and an independent one on the sine. The result is two $\\sqrt{M}$-level constellations at right angles, so $M$ points on a square grid — the lecture material states this as $M$-QAM being two-dimensional $M$-ASK.'},
+{t:'p', text:'Run one amplitude-modulated signal on the cosine and an independent one on the sine. The result is two $\\sqrt{M}$-level constellations at right angles. Therefore, $M$ points on a square grid. The lecture material states this as $M$-QAM being two-dimensional $M$-ASK.'},
 {t:'figrow', items:[
  {svg:()=>con([[0.9,0.9],[-0.9,0.9],[-0.9,-0.9],[0.9,-0.9]],{lim:1.7}),
   cap:'$4$-QAM: two levels a side. These are the four points of QPSK — at $M=4$ the two schemes are the same scheme.'},
@@ -109,23 +109,23 @@ window.C5 = [
 {t:'eqbox', cap:'Square M-QAM', tex:[
  'E_{s,\\text{avg}}=\\frac{(M-1)d^{2}}{6}\\quad\\Longrightarrow\\quad d_{\\min}^{2}=\\frac{6E_{s,\\text{avg}}}{M-1}',
  'N_{\\min}=\\frac{4(2)+8(3)+4(4)}{16}=3\\quad\\text{for }16\\text{-QAM}'],
- after:'Compare the denominators: $M-1$ for QAM against $M^{2}-1$ for PAM. Spreading the same number of points over two dimensions instead of one turns a square into a linear factor, and that is the whole of the difference.'},
+ after:'Compare the denominators: $M-1$ for QAM and $M^{2}-1$ for PAM. Two dimensions reduce the rate at which minimum distance decreases as $M$ increases.'},
 
 {t:'ex', hd:'Example 5.2 — sixteen points on a grid against sixteen on a line', rows:[
  ['Given','$16$-QAM and $16$-PAM at the same average symbol energy. Both carry four bits a symbol.'],
  ['Find','The advantage of QAM in decibels.'],
  ['Method','One formula each, then the ratio of the squared distances.'],
  ['Solution','QAM: $d_{\\min}^{2}=6E_s/15=0.400E_s$. PAM: $d_{\\min}^{2}=12E_s/255=0.0471E_s$. The ratio is $8.5$, and $10\\log_{10}8.5=9.29$ dB.'],
- ['Check','Same number of bits, same average power, and the only difference is where the points were put. Nine decibels is an enormous return for using a second dimension that was there all along, and it is the reason QAM is what modern systems use.']
+ ['Check','Both methods carry the same number of bits at the same average power. Only their point geometry differs. The second dimension gives QAM a $9.3$ dB distance advantage in this example.']
 ]},
 
 {t:'h2', num:'5.5', text:'M-ary frequency-shift keying'},
-{t:'p', text:'Use $M$ frequencies, chosen so that the waveforms are orthogonal. Orthogonal signals need one basis function each, so the constellation lives in $M$ dimensions with one point on each axis at distance $\\sqrt{E_s}$ from the origin.'},
+{t:'p', text:'Use $M$ frequencies, chosen so that the waveforms are orthogonal. Orthogonal signals need one basis function each. Therefore, the constellation lives in $M$ dimensions with one point on each axis at distance $\\sqrt{E_s}$ from the origin.'},
 {t:'eqbox', cap:'M-FSK', tex:[
  'd_{jk}=\\sqrt{2E_s}\\ \\text{ for every pair},\\qquad N_{\\min}=M-1',
  'P_e\\approx (M-1)\\,Q\\!\\left(\\sqrt{\\frac{E_s}{N_0}}\\right)'],
  after:'The distance does not depend on $M$ at all. Adding waveforms costs nothing in distance — but each new waveform needs its own frequency slot, so the price is paid in bandwidth instead.'},
-{t:'box', kind:'ok', hd:'The trade, stated plainly', html:'PSK and QAM hold the bandwidth fixed as $M$ grows and pay in energy, because the points crowd together. FSK holds the distance fixed and pays in bandwidth. A deep-space link, with bandwidth to spare and no power, chooses FSK; a mobile phone, with the opposite problem, chooses QAM. Neither is better in the abstract — it depends entirely on which resource is scarce.'},
+{t:'box', kind:'ok', hd:'The trade, stated plainly', html:'PSK and QAM hold the bandwidth fixed as $M$ grows and pay in energy, because the points crowd together. FSK holds the distance fixed and pays in bandwidth. A deep-space link, with bandwidth to spare and no power, chooses FSK. A mobile phone, with the opposite problem, chooses QAM. Neither is better in the abstract — it depends entirely on which resource is scarce.'},
 
 {t:'fig', svg:()=>{
   const a=ax({w:640,h:320,xr:[0,20],yr:[-6,-0.02],
@@ -138,7 +138,7 @@ window.C5 = [
   });
   return a.svg();
  },
- cap:'Symbol error probability against energy per bit for four sizes of PSK: $M=2,4,8,16$ from left to right. $M=2$ and $M=4$ lie almost on top of each other, which is why QPSK is everywhere — it carries twice the bits of BPSK for the same energy per bit.'},
+ cap:'Symbol error probability against energy per bit for four sizes of PSK. $M=2,4,8,16$ from left to right. $M=2$ and $M=4$ lie almost on top of each other. This is why QPSK is everywhere. It carries twice the bits of BPSK for the same energy per bit.'},
 
 {t:'h2', num:'5.6', text:'Summary'},
 {t:'table', head:['Scheme','$d_{\\min}^{2}$','$N_{\\min}$','Anchor'], rows:[
@@ -149,7 +149,7 @@ window.C5 = [
  ['$M$-QAM','$6E_s/(M-1)$','$3$ at $M=16$','PS CH8.7.1'],
  ['$M$-FSK','$2E_s$','$M-1$','PS CH9.5']
 ]},
-{t:'p', text:'Every row was obtained the same way: write the waveforms down, find the basis functions they need, place the points, measure the shortest distance, count how many pairs sit at it. The error probability then comes from chapter 4 without any further thought about waveforms. Convert once with $E_s=(\\log_2 M)E_b$ when a question is stated per bit, and never convert twice.'},
+{t:'p', text:'Every row was obtained the same way. Write the waveforms down, find the basis functions they need, place the points, measure the shortest distance, count how many pairs sit at it. The error probability then comes from chapter 4 without any further thought about waveforms. Convert once with $E_s=(\\log_2 M)E_b$ when a question is stated per bit, and never convert twice.'},
 {t:'p', text:'What none of this says is how many bits a channel can carry at all. Every scheme here trades energy against bandwidth, and it is reasonable to ask whether there is a limit to the trade. Chapter 6 answers that, and the answer does not depend on which modulation is used.'}
 
 ];

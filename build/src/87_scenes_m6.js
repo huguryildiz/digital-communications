@@ -241,16 +241,16 @@ function figInfoBar(HXY, HXgY, I, HYgX){
 window.SCENES_M6 = [
 
 /* ---------------------------------------------------------------- 6.0 ---- */
-{ id:'m6-open', module:'M6', nav:'Opening', title:'How much is a message worth?',
+{ id:'m6-open', module:'M6', nav:'Opening', title:'Information in a message',
   objective:'Frame the two questions information theory answers for this course.',
   keywords:'information theory source entropy compression limit opening',
   src:'CH10 s.2–3', steps:1, blocks:[
   {t:'eyebrow', text:'Module 6 · An introduction to information theory'},
-  {t:'title', text:'How much is a message worth?'},
+  {t:'title', text:'Information in a message'},
   {t:'lede', text:'Everything so far has been about getting bits across a channel. This module steps back and asks where the bits came from, and how few of them a message really needs.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>A source produces symbols such as letters, samples, or pixels. Some symbols occur often, while others are rare. A rare symbol gives more new information when it occurs. Information theory measures this amount in bits and relates its average to the best possible lossless compression rate.</p>'},
-    {t:'note', kind:'def', head:'What a discrete memoryless source is', html:'A discrete memoryless source emits one of $K$ symbols at each step. The probabilities $p_1,\\ldots,p_K$ remain fixed, and successive symbols are independent. <b>Discrete</b> means that the alphabet is finite. <b>Memoryless</b> means that earlier symbols do not change the next-symbol probabilities. This course uses this basic source model.'},
+    {t:'note', kind:'def', head:'Discrete memoryless source', html:'A discrete memoryless source emits one of $K$ symbols at each step. The probabilities $p_1,\\ldots,p_K$ are fixed, and successive symbols are independent. <b>Discrete</b> means that the alphabet is finite. <b>Memoryless</b> means that earlier symbols do not change the next-symbol probabilities.'},
     {t:'reveal', at:1, items:[
       {t:'note', kind:'ok', head:'The two questions', html:'<b>1.</b> How much information does a source produce on average per symbol? Its <em>entropy</em> measures this amount. <b>2.</b> What average rate can a lossless code approach? For long blocks, the source-coding theorem shows that this rate can approach the entropy but cannot fall below it.'}
     ]}
@@ -321,9 +321,9 @@ window.SCENES_M6 = [
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figHb(),
-      caption:'The entropy of a binary source against $p$. One bit at $p=\\tfrac12$, nothing at either end, and the curve is flat near the top — which is why a slightly unfair coin is almost as good as a fair one.'},
+      caption:'Entropy of a binary source against $p$. The entropy is one bit at $p=\\tfrac12$ and zero at both ends. A small change near $p=\\tfrac12$ causes little entropy loss.'},
     {t:'fig', frame:true, svg:()=>figBars([0.7,0.2,0.1],['s_1','s_2','s_3']),
-      caption:'The example, symbol by symbol. The left bar of each pair is what the symbol carries; the right bar is that weighted by how often it happens. The three right bars add to $H(S)$, marked by the dashed line.'}
+      caption:'Entropy contributions for each symbol. The left bar is the self-information. The right bar is the self-information weighted by the symbol probability. The weighted bars sum to $H(S)$.'}
   ]}
 ]},
 
@@ -349,7 +349,7 @@ window.SCENES_M6 = [
       ]}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'ok', head:'Why bother', html:'Per symbol nothing changed — $2.3136$ over two symbols is still $1.1568$ each. What changes is what a coder can do with it. A code has to use a whole number of bits for each thing it codes. That rounding costs less when it is spread over a block than over a single symbol. Scene $6.7$ turns that into a bound.'}
+      {t:'note', kind:'ok', head:'Block-coding advantage', html:'The entropy remains $1.1568$ bits per symbol. However, codeword lengths must be integers. Coding a block spreads the rounding cost over several symbols. Section $6.7$ gives the resulting bound.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figBars(
@@ -371,12 +371,12 @@ window.SCENES_M6 = [
 ]},
 
 /* ---------------------------------------------------------------- 6.4 ---- */
-{ id:'m6-coding', module:'M6', nav:'Source coding', title:'What a code costs',
+{ id:'m6-coding', module:'M6', nav:'Source coding', title:'Code length',
   objective:'Define average codeword length and coding efficiency.',
   keywords:'source coding encoder average codeword length efficiency variable length',
   src:'CH10 s.8–11', steps:3, blocks:[
   {t:'eyebrow', text:'Module 6 · An introduction to information theory'},
-  {t:'title', text:'What a code costs'},
+  {t:'title', text:'Code length'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>A source encoder turns each symbol into a string of bits, called its <b>codeword</b>. There is no need for every codeword to be the same length, and the good idea of this module is that they should not be. Give the common symbols short codewords, and the rare ones long ones.</p>'},
     {t:'eq', key:true, label:'average length',
@@ -441,7 +441,7 @@ window.SCENES_M6 = [
       {t:'small', html:'<b>Code I</b> is not a prefix code, since $0$ begins $00$. It is not uniquely decodable either: the string $00$ is both $s_3$ and $s_1s_1$. <b>Code II</b> is a prefix code. <b>Code III</b> is not a prefix code, since $0$ begins all three of the others.'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'warn', head:'Code III is the interesting one', html:'It <em>can</em> be read back. Every codeword starts with the only $0$ and is then named by how many $1$s follow, so a long string parses one way and one way only. What it cannot do is decode on the fly. After reading $011$ the decoder still does not know whether it has $s_3$ or the start of $s_4$, and it has to wait for the next $0$. Uniquely decodable, but not instantaneous.'}
+      {t:'note', kind:'warn', head:'Code III', html:'Code III is uniquely decodable because each codeword starts with $0$ and then contains only $1$s. However, it is not instantaneous. After $011$, the decoder must wait for the next bit to distinguish $s_3$ from the start of $s_4$.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figTree(['0','10','110','111'],['s_1','s_2','s_3','s_4'],{w:430,h:130}),
@@ -462,7 +462,7 @@ window.SCENES_M6 = [
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>Before choosing any codewords, ask whether the <em>lengths</em> can work at all. Short codewords use up the tree quickly, and there is only so much tree.</p>'},
     {t:'eq', key:true, label:'Kraft', tex:'\\sum_{k=1}^{K}2^{-l_k}\\le 1'},
-    {t:'note', kind:'def', head:'Read it as a budget', html:'Think of the whole tree as one unit. A codeword of length $l$ claims a branch and everything below it, which is a fraction $2^{-l}$ of the tree. The claims cannot add to more than the tree there is. A codeword of length $1$ costs half of everything; a codeword of length $4$ costs a sixteenth.'},
+    {t:'note', kind:'def', head:'Tree budget', html:'Treat the complete binary tree as one unit. A codeword of length $l$ uses a fraction $2^{-l}$ of the tree. The fractions cannot sum to more than one. Lengths $1$ and $4$ use one half and one sixteenth.'},
     {t:'reveal', at:1, items:[
       {t:'wex', head:'The three codes, tested', rows:[
         ['Code I','lengths $1,1,2,2$: $\\;2^{-1}+2^{-1}+2^{-2}+2^{-2}=1.5>1$. Fails, so no prefix code has these lengths.'],
@@ -474,29 +474,29 @@ window.SCENES_M6 = [
       {t:'note', kind:'warn', head:'Necessary, not sufficient', html:'Code III passes the test and is still not a prefix code. That is not a contradiction: the inequality says a prefix code with those <em>lengths</em> exists, not that the particular codewords chosen are one. Lengths $1,2,3,4$ do admit a prefix code — take $0$, $10$, $110$, $1110$ — but Code III did not use it.'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'small', html:'So the inequality is a filter, not a proof. It rules out length sets quickly; it never certifies a code. To certify one, look at the codewords, or draw the tree.'}
+      {t:'small', html:'The inequality can reject an invalid length set. It cannot prove that a given code is a prefix code. Inspect the codewords or draw the tree to establish that property.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figTree(['0','10','110','1110'],['s_1','s_2','s_3','s_4'],{w:430,h:135}),
       caption:'A prefix code with Code III\'s lengths $1,2,3,4$, which the Kraft inequality promised must exist. Every symbol is at a leaf, and one branch is left unused — the $0.0625$ of the budget that was never spent.'},
-    {t:'small', html:'<b>When the sum is exactly one</b> the tree is completely used and the code is <b>complete</b>: no length can be shortened without breaking the prefix property. Code II is like this. A sum below one always means some codeword is longer than it needs to be.'}
+    {t:'small', html:'A Kraft sum of one uses the complete tree. Such a code is <b>complete</b>. No codeword can be shortened without breaking the prefix property. A sum below one leaves unused tree capacity.'}
   ]}
 ]},
 
 /* ---------------------------------------------------------------- 6.7 ---- */
-{ id:'m6-bound', module:'M6', nav:'How close to the entropy', title:'How close a code can get',
+{ id:'m6-bound', module:'M6', nav:'How close to the entropy', title:'Source-coding bound',
   objective:'State H ≤ L̄ < H+1 and show blocking closes the gap.',
   keywords:'bound entropy plus one dyadic extension converges rounding block coding',
   src:'CH10 s.17–18', steps:3, blocks:[
   {t:'eyebrow', text:'Module 6 · An introduction to information theory'},
-  {t:'title', text:'How close a code can get'},
+  {t:'title', text:'Source-coding bound'},
   {t:'lede', text:'The bound, and how to beat the rounding.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>The source-coding theorem says no code beats $H(S)$. The complementary result says a prefix code always gets within one bit of it.</p>'},
     {t:'eq', key:true, label:'the two-sided bound', tex:'H(S)\\le\\bar{L}< H(S)+1'},
-    {t:'note', kind:'def', head:'Where the extra bit comes from', html:'The ideal length for symbol $k$ is $-\\log_2 p_k$, which is usually not an integer. A codeword must contain an integer number of bits. Choosing $l_k=\\lceil-\\log_2 p_k\\rceil$ adds less than one bit to each ideal length. Averaging gives the $+1$ bound.'},
+    {t:'note', kind:'def', head:'Rounding cost', html:'The ideal length $-\\log_2 p_k$ is usually not an integer. A codeword must contain an integer number of bits. The choice $l_k=\\lceil-\\log_2 p_k\\rceil$ adds less than one bit. Averaging gives the $+1$ bound.'},
     {t:'reveal', at:1, items:[
-      {t:'note', kind:'ok', head:'When the bound is tight', html:'If every probability is a power of two — $p_k=2^{-l_k}$, called a <b>dyadic</b> distribution — nothing needs rounding. Then $\\bar{L}=\\sum p_k l_k=\\sum l_k 2^{-l_k}$ and $H(S)=-\\sum 2^{-l_k}\\log_2 2^{-l_k}=\\sum l_k 2^{-l_k}$: the same sum. So $\\bar{L}=H(S)$ exactly, and the code is perfect.'}
+      {t:'note', kind:'ok', head:'Dyadic probabilities', html:'If each probability has the form $p_k=2^{-l_k}$, the distribution is <b>dyadic</b>. No length requires rounding. Then $\\bar{L}$ and $H(S)$ equal the same sum, so $\\bar{L}=H(S)$.'}
     ]},
     {t:'reveal', at:2, items:[
       {t:'body', html:'<p>When the probabilities are not dyadic, code blocks instead of symbols. Apply the bound to the $n$-th extension, where the entropy is $nH(S)$:</p>'},
@@ -504,7 +504,7 @@ window.SCENES_M6 = [
       {t:'eq', key:true, tex:'\\lim_{n\\to\\infty}\\frac{L_n}{n}=H(S)'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'small', html:'One wasted bit spread over $n$ symbols is $1/n$ bits each. Take blocks of ten and the waste is at most a tenth of a bit a symbol; take a hundred and it is a hundredth. The entropy is reached in the limit, and reached closely long before it.'}
+      {t:'small', html:'A block of $n$ symbols spreads one extra bit over the block. The cost is at most $1/n$ bits per symbol. For $n=10$, the cost is at most $0.1$ bit per symbol.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>{
@@ -519,7 +519,7 @@ window.SCENES_M6 = [
       a.note(3.4, h+0.52, 'H(S)+1/n', {tex:true, fs:13, color:C.out});
       return a.svg();
     },
-      caption:'The ceiling on $L_n/n$ against the block length, for the source $0.7,0.2,0.1$. At $n=1$ a code may waste a whole bit; at $n=10$ it may waste a tenth. The floor, in red, never moves.'},
+      caption:'Bounds on $L_n/n$ for the source probabilities $0.7,0.2,0.1$. For $n=1$, the upper gap is one bit. For $n=10$, it is $0.1$ bit. The entropy lower bound is constant.'},
     {t:'small', html:'<b>What it costs:</b> the $n$-th extension has $K^n$ symbols, so a block of ten from a three-symbol source needs a codebook of $59\\,049$ entries. The bound improves as $1/n$ and the work grows as $K^n$, which is why real compressors do something cleverer than this.'}
   ]}
 ]},
@@ -537,7 +537,7 @@ window.SCENES_M6 = [
     {t:'reveal', at:1, items:[
       {t:'wex', head:'The standard example', rows:[
         ['Given','$p=0.4,\\;0.2,\\;0.2,\\;0.1,\\;0.1$.'],
-        ['Merging','$0.1+0.1=0.2$; then the two smallest are $0.2$ and $0.2$, giving $0.4$; then $0.2$ and $0.4$ give $0.6$; then $0.4$ and $0.6$ finish it.'],
+        ['Merging','First merge $0.1+0.1=0.2$. Then merge $0.2+0.2=0.4$, $0.2+0.4=0.6$, and $0.4+0.6=1$.'],
         ['Lengths','$2,\\;2,\\;2,\\;3,\\;3$.'],
         ['Average','$\\bar{L}=0.4(2)+0.2(2)+0.2(2)+0.1(3)+0.1(3)=2.2$ bits a symbol.']
       ]}
@@ -548,13 +548,13 @@ window.SCENES_M6 = [
       {t:'eq', key:true, tex:'\\eta=\\frac{H(S)}{\\bar{L}}=\\frac{2.1219}{2.2}=0.9645'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'ok', head:'What that number says', html:'The code spends $3.68\\%$ more bits than the source strictly needs, and no other prefix code on single symbols does better. To close the remaining gap the coder would have to work on blocks, as the last scene described. And the bound already said the gain available is at most $1/n$.'}
+      {t:'note', kind:'ok', head:'Coding gap', html:'The code uses $3.68\\%$ more bits than the entropy. No other single-symbol prefix code has a smaller average length. Block coding can reduce the remaining gap to at most $1/n$ bits per symbol.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figTree(['00','10','11','010','011'],HLAB,{w:470,h:150}),
-      caption:'The Huffman code as a tree. The two most likely symbols sit two levels down, the two least likely three levels down, and every symbol is at a leaf — it is a prefix code by construction.'},
+      caption:'Huffman code tree. The two most likely symbols have length two. The two least likely symbols have length three. Every symbol is a leaf, so the code is a prefix code.'},
     {t:'fig', frame:true, svg:()=>figBars(HUFF, HLAB),
-      caption:'The same source by symbol. The dashed line is $H(S)=2.1219$; the code averages $2.2$, which is the line plus the rounding.'}
+      caption:'Entropy and code length for each symbol. The dashed line is $H(S)=2.1219$. The average code length is $2.2$ bits per symbol.'}
   ]}
 ]},
 
@@ -567,7 +567,7 @@ window.SCENES_M6 = [
   {t:'title', text:'Ties and variance'},
   {t:'lede', text:'The same length, a different code.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
-    {t:'body', html:'<p>Two choices in the algorithm are free. Which of the merged pair gets $0$ is arbitrary. And when a merged symbol ties with one already in the list, either may be placed first. Different choices give different codes.</p>'},
+    {t:'body', html:'<p>Two Huffman choices are arbitrary. Either symbol in a merged pair can receive $0$. A merged symbol can also occupy either position during a probability tie. These choices give different codes with the same average length.</p>'},
     {t:'reveal', at:1, items:[
       {t:'body', html:'<p>Placing the merged symbol <em>below</em> the tie in the same example gives lengths $1,2,3,4,4$ instead of $2,2,2,3,3$:</p>'},
       {t:'eq', tex:'\\bar{L}_2=0.4(1)+0.2(2)+0.2(3)+0.1(4)+0.1(4)=2.2\\ \\text{bits a symbol}'},
@@ -579,7 +579,7 @@ window.SCENES_M6 = [
       {t:'eq', tex:'\\sigma_1^{2}=0.16\\qquad\\text{against}\\qquad\\sigma_2^{2}=1.36'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'ok', head:'Why the smaller variance is wanted, and how to get it', html:'The encoder produces bits at a varying rate and the channel takes them at a fixed one, so a buffer sits between them. A code with wildly different lengths makes that buffer fill and empty unpredictably; a code with steady lengths does not. Both cost $2.2$ bits on average, and only one is comfortable to build. <b>The rule:</b> on a tie, move the merged symbol as high as possible in the list, and the result is the minimum-variance Huffman code.'}
+      {t:'note', kind:'ok', head:'Minimum length variance', html:'Variable codeword lengths cause a buffer to fill and empty at changing rates. Smaller length variance reduces these changes. During a probability tie, place the merged symbol as high as possible. This rule gives the minimum-variance Huffman code.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figTree(['00','10','11','010','011'],HLAB,{w:470,h:150}),
@@ -614,7 +614,7 @@ window.SCENES_M6 = [
   {t:'lede', text:'A code that learns the source.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>Huffman coding needs the probabilities <em>before</em> it can build the tree. For a file arriving over a wire nobody knows them in advance, and measuring them means reading everything twice.</p>'},
-    {t:'note', kind:'def', head:'The Lempel–Ziv idea', html:'Read the stream once. Each time, take the <b>shortest run of bits that has not been seen before</b>, and store it. Everything but its last bit is then already stored, so the run is sent as a <b>pointer</b> to that earlier entry plus one new bit, the <b>innovation</b>. The decoder builds the same dictionary in the same order, so the dictionary is never transmitted.'},
+    {t:'note', kind:'def', head:'Lempel–Ziv parsing', html:'Read the stream once. Store the <b>shortest bit sequence that has not appeared before</b>. Its prefix is already in the dictionary. Encode the new sequence as a <b>pointer</b> to that prefix plus one new <b>innovation</b> bit. The decoder builds the same dictionary.'},
     {t:'reveal', at:1, items:[
       {t:'wex', head:'Parsing a stream', rows:[
         ['Stream','$0\\;1\\;00\\;011\\;1\\ldots$, parsed left to right into pieces not seen before.'],
@@ -625,7 +625,7 @@ window.SCENES_M6 = [
       {t:'small', html:'With a fixed block of four bits, seven pieces cost $28$ bits where the raw stream was $18$. The method <em>loses</em> on a short stream: the dictionary has to be paid for before it can pay back.'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'small', html:'<b>Decoding needs nothing extra.</b> Receive the block $1101$: the last bit is the innovation, $1$; the first three bits are $110$, which is $6$ in binary, so the piece is entry $6$ followed by $1$. The decoder already has entry $6$, because it built the same dictionary from the same blocks. Nothing about the source was ever sent.'}
+      {t:'small', html:'For the block $1101$, the last bit is the innovation $1$. The first three bits, $110$, give pointer $6$. The decoder appends $1$ to dictionary entry $6$. Both sides already have the same dictionary.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>{
@@ -633,9 +633,9 @@ window.SCENES_M6 = [
       const pieces = ['0','1','00','011'].slice(0, st>=2 ? 4 : st>=1 ? 3 : 2);
       const hot = st===1 ? '00' : st===2 ? '011' : null;
       return figTree(pieces, ['1','2','3','4'].slice(0, pieces.length), {w:440,h:170,hot});
-    }, caption:'The dictionary as a tree, drawn as the parse runs. Each new piece hangs one bit below a piece already stored — exactly what "shortest run not seen before" guarantees, and why a pointer and one bit are enough to name it.'},
+    }, caption:'Dictionary tree during parsing. Each new entry extends an existing entry by one bit. Therefore, one pointer and one innovation bit identify the new entry.'},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'def', head:'Where it wins, and what "universal" means', html:'The longer the stream, the longer the stored pieces, and the more original bits each fixed-size block carries. In practice the block is $12$ bits — a dictionary of $2^{12}=4096$ entries — and a file compresses to roughly two thirds of its size; it is the algorithm behind the ordinary compressed archive. A code with this property is called <b>universal</b>: it reaches the entropy without being given the source. Huffman is optimal but not universal; Lempel–Ziv is universal, but only in the long run.'}
+      {t:'note', kind:'def', head:'Universal coding', html:'Longer streams produce longer dictionary entries, so each fixed-size code block represents more source bits. A <b>universal</b> code approaches the entropy without prior source probabilities. Huffman coding is optimal for known single-symbol probabilities. Lempel–Ziv is universal for long streams.'}
     ]}
   ]}
 ]},
@@ -651,7 +651,7 @@ window.SCENES_M6 = [
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>A <b>discrete memoryless channel</b> takes one symbol from a finite input alphabet and produces one from a finite output alphabet. It is described by one number for each pair:</p>'},
     {t:'eq', key:true, label:'transition probability', tex:'p(y_k\\mid x_j)=P\\bigl(Y=y_k\\mid X=x_j\\bigr)'},
-    {t:'note', kind:'def', head:'What the two words are doing', html:'<b>Discrete</b>: both alphabets are finite. <b>Memoryless</b>: the output depends only on the input sent at that moment, not on any input before it. Every transition probability is therefore fixed once and for all, and the channel is completely described by the table of them.'},
+    {t:'note', kind:'def', head:'Discrete and memoryless', html:'<b>Discrete</b> means that both alphabets are finite. <b>Memoryless</b> means that the current output depends only on the current input. The transition-probability table then describes the complete channel.'},
     {t:'reveal', at:1, items:[
       {t:'body', html:'<p>Collect the numbers into the <b>channel matrix</b>, one row per input:</p>'},
       {t:'eq', tex:'\\mathbf{P}=\\begin{bmatrix}p(y_0\\mid x_0)&\\cdots&p(y_{K-1}\\mid x_0)\\\\ \\vdots&&\\vdots\\\\ p(y_0\\mid x_{J-1})&\\cdots&p(y_{K-1}\\mid x_{J-1})\\end{bmatrix}'},
@@ -664,7 +664,7 @@ window.SCENES_M6 = [
   ], right:[
     {t:'fig', frame:true, svg:()=>figChannel([[0.8,0.2],[0.3,0.7]],['x_0','x_1'],['y_0','y_1'],
       {tex:[['0.8','0.2'],['0.3','0.7']]}),
-      caption:'A two-by-two channel. The solid lines are the transitions that keep the symbol, the dashed ones the transitions that change it. Each input\'s two numbers add to one; the two numbers arriving at $y_0$ need not.'},
+      caption:'A two-input, two-output channel. Solid lines preserve the symbol, and dashed lines change it. The probabilities from each input sum to one. Probabilities that arrive at one output need not sum to one.'},
     {t:'small', html:'This channel is not symmetric: an $x_0$ survives four times in five, an $x_1$ only seven times in ten. Nothing so far forbids that, and section 6.6.3 takes the symmetric case because it is the one that can be worked through by hand.'}
   ]}
 ]},
@@ -730,9 +730,9 @@ window.SCENES_M6 = [
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>One channel is used more than all the others put together. It has two inputs, two outputs, and one number: the probability $p$ that a bit is flipped, called the <b>crossover probability</b>.</p>'},
     {t:'eq', key:true, label:'the BSC matrix', tex:'\\mathbf{P}=\\begin{bmatrix}1-p&p\\\\ p&1-p\\end{bmatrix}'},
-    {t:'note', kind:'def', head:'Where it comes from', html:'It is not an abstraction invented for this chapter. Take the binary receiver of Module 2 and send antipodal signals through white Gaussian noise. The probability of a wrong decision is $p=Q\\!\\left(\\sqrt{2E_b/N_0}\\right)$, the same for a transmitted $0$ as for a transmitted $1$. That receiver, seen from outside, <em>is</em> a binary symmetric channel.'},
+    {t:'note', kind:'def', head:'Receiver model', html:'An antipodal binary receiver in white Gaussian noise has crossover probability $p=Q\\!\\left(\\sqrt{2E_b/N_0}\\right)$. This probability is equal for transmitted symbols $0$ and $1$. Therefore, the receiver forms a binary symmetric channel.'},
     {t:'reveal', at:1, items:[
-      {t:'wex', head:'What comes out, with equally likely inputs', rows:[
+      {t:'wex', head:'Output probabilities for equal inputs', rows:[
         ['Given','$p(x_0)=p(x_1)=\\tfrac12$.'],
         ['Output','$p(y_0)=(1-p)\\tfrac12+p\\tfrac12=\\tfrac12$, and $p(y_1)=\\tfrac12$ likewise.'],
         ['Reading it','The output is equally likely whatever $p$ is — even at $p=\\tfrac12$, where the channel is destroying everything. A balanced output is no evidence that anything survived.']
@@ -803,14 +803,14 @@ window.SCENES_M6 = [
       ]}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'ok', head:'What that number means', html:'The input contained one bit of uncertainty, and the output resolved $0.531$ bits of it on average. The remaining $0.469$ bits are the uncertainty left after observing the output. No detector can remove this uncertainty without additional information.'}
+      {t:'note', kind:'ok', head:'Interpretation', html:'The input entropy is one bit. The output resolves $0.531$ bits on average. The conditional entropy $0.469$ bits remains after the output is observed. Additional information is required to remove this uncertainty.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>{
       const r = chan(BSC(0.1), [0.5,0.5]);
       return figInfoBar(r.HX + r.HYX, r.HX - r.I, r.I, r.HYX);
     },
-      caption:'The BSC at $p=0.1$, drawn as one bar of total width $H(X,Y)=1.469$ bits. The middle piece is what got through; the two outer pieces are what each end knows that the other does not. Reading the bar from the left gives $H(X)$, from the right $H(Y)$, and the overlap is $I(X;Y)$ either way.'}
+      caption:'Information diagram for a BSC with $p=0.1$. The full width is $H(X,Y)=1.469$ bits. The overlap is $I(X;Y)$. The two outer parts are the conditional entropies.'}
   ]}
 ]},
 
@@ -840,8 +840,8 @@ window.SCENES_M6 = [
       const r = chan(BSC(0.25), [0.5,0.5]);
       return figInfoBar(r.HX + r.HYX, r.HX - r.I, r.I, r.HYX);
     },
-      caption:'The same bar at $p=0.25$. The shared middle has shrunk to $0.189$ bits and the private ends have grown; the total, $H(X,Y)=1.811$ bits, has grown with them. A noisier channel does not destroy uncertainty — it moves it out of the shared part.'},
-    {t:'small', html:'<b>Symmetric does not mean interchangeable.</b> $I(X;Y)=I(Y;X)$ is a statement about one number. It does not say $H(X\\mid Y)=H(Y\\mid X)$, and those two are usually different. Only the overlap is shared; the two ends are not.'}
+      caption:'The same diagram for $p=0.25$. The shared information decreases to $0.189$ bits. The conditional entropies and joint entropy increase.'},
+    {t:'small', html:'Mutual information is symmetric: $I(X;Y)=I(Y;X)$. Conditional entropy is not generally symmetric, so $H(X\\mid Y)$ and $H(Y\\mid X)$ can differ.'}
   ]}
 ]},
 
@@ -854,11 +854,11 @@ window.SCENES_M6 = [
   {t:'title', text:'Channel capacity'},
   {t:'lede', text:'The best the channel can do.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
-    {t:'body', html:'<p>Mutual information measures one transmitter on one channel. Change how often the transmitter sends each symbol and the number moves. The channel is fixed; the input distribution is the engineer\'s to choose. So take the best choice:</p>'},
+    {t:'body', html:'<p>Mutual information depends on the channel and the input distribution. The channel is fixed, but the transmitter can change its symbol probabilities. Capacity uses the input distribution that gives the largest mutual information:</p>'},
     {t:'eq', key:true, label:'channel capacity', tex:'C=\\max_{\\{p(x_j)\\}}I(X;Y)\\quad\\text{bits per channel use}'},
-    {t:'note', kind:'def', head:'What is being maximised, and over what', html:'The maximisation runs over every input distribution — every set of $p(x_j)$ that is non-negative and sums to one. What comes out depends on the channel matrix alone, because the one thing that was free has been optimised away. <b>Capacity is a property of the channel.</b> Mutual information is not.'},
+    {t:'note', kind:'def', head:'Capacity maximization', html:'Maximize over all nonnegative input probabilities that sum to one. After this maximization, the result depends only on the channel matrix. Thus, <b>capacity is a channel property</b>, while mutual information also depends on the transmitter.'},
     {t:'reveal', at:1, items:[
-      {t:'small', html:'<b>Why a maximum and not an average:</b> a poor transmitter can waste a good channel — send one symbol nine times in ten and most of the alphabet goes unused. That is the transmitter\'s failure, not the channel\'s. Capacity asks what the channel would carry for the best transmitter.'}
+      {t:'small', html:'A poor input distribution can waste channel capability. For example, one frequent symbol can leave most of the input alphabet unused. Capacity measures the best input distribution.'}
     ]},
     {t:'reveal', at:2, items:[
       {t:'note', kind:'warn', head:'"Per channel use", and what that costs', html:'The unit is bits per use of the channel, not bits per second. To reach bits per second, multiply by how many times a second the channel is used. Reporting a capacity without saying which unit it is in is the most common way of being out by a factor nobody notices.'}
@@ -877,7 +877,7 @@ window.SCENES_M6 = [
       a.note(0.22, 0.10, '\\text{Z-channel}', {tex:true, fs:12, color:C.h});
       return a.svg();
     },
-      caption:'Mutual information against the input distribution, for two channels. Each curve has one peak and that peak is the capacity. The symmetric channel peaks at $p(x_0)=\\tfrac12$; the Z-channel does not, which is the point of the worked example two scenes on.'}
+      caption:'Mutual information against the input probability for two channels. Each peak gives the channel capacity. The symmetric channel peaks at $p(x_0)=\\tfrac12$. The Z-channel peak occurs at a different probability.'}
   ]}
 ]},
 
@@ -904,7 +904,7 @@ window.SCENES_M6 = [
       ]}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'warn', head:'The shape is the lesson, not the formula', html:'The curve is flat near $p=0$. A channel with one error in a thousand has capacity $0.9886$, so the first errors cost almost nothing. It then falls away steeply and reaches zero at a half. Halving the error probability of an already-good channel buys very little; the effort belongs where the curve is steep.'}
+      {t:'note', kind:'warn', head:'Capacity curve', html:'The curve is flat near $p=0$. A crossover probability of $0.001$ gives capacity $0.9886$. Capacity then decreases rapidly and reaches zero at $p=0.5$. Improving an already small crossover probability gives little capacity gain.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>{
@@ -972,7 +972,7 @@ window.SCENES_M6 = [
       a.note(0.62, 0.345, 'q^{*}=0.6', {tex:true, fs:12, color:C.err});
       return a.svg();
     },
-      caption:'The mutual information against the input distribution. The peak sits at $0.6$, not at a half, and the curve is flat enough near it that a transmitter at $0.5$ still gets $0.3113$ bits — losing about $3\\%$ for guessing.'}
+      caption:'Mutual information against the input probability. The maximum occurs at $0.6$, not at $0.5$. At $0.5$, the mutual information is $0.3113$ bits. This value is about three percent below capacity.'}
   ]}
 ]},
 
@@ -988,13 +988,13 @@ window.SCENES_M6 = [
     {t:'note', kind:'def', head:'The channel coding theorem', html:'If the transmission rate satisfies $R_b<C$, there is a coding scheme whose probability of error is as small as required. If $R_b>C$, there is not — no coding scheme, however long or however clever, keeps the error probability down.'},
     {t:'reveal', at:1, items:[
       {t:'eq', key:true, label:'the condition', tex:'R_b<C'},
-      {t:'small', html:'An error-free data rate can never exceed the capacity. That is not a statement about today\'s codes; it is a statement about all codes that will ever exist.'}
+      {t:'small', html:'No coding method can provide a reliable data rate above capacity. This limit applies to every possible channel code.'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'warn', head:'What the theorem does not give', html:'It says a code exists. It does not say what the code is, how long its blocks have to be, or how much computation the decoder needs. The proof shows that <em>almost every</em> long code works, which is a strange kind of guidance. It promises the answer is common without pointing at one. Finding codes that come close and can also be decoded took the fifty years after the theorem.'}
+      {t:'note', kind:'warn', head:'Theorem limit', html:'The theorem proves that a suitable code exists. It does not specify the code, block length, or decoding cost. Practical codes must approach capacity while keeping encoding and decoding feasible.'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'small', html:'<b>Where this closes the course:</b> the module opened with the source-coding theorem — no code carries a source in fewer than $H(S)$ bits a symbol — and closes with this one. A system is possible exactly when $H(S)$ fits inside $C$, and the rest is engineering.'}
+      {t:'small', html:'The source-coding theorem requires at least $H(S)$ bits per source symbol. The channel-coding theorem permits reliable transmission below $C$. A system is possible when the compressed source rate is less than the channel capacity.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>{
@@ -1009,7 +1009,7 @@ window.SCENES_M6 = [
       a.note(0.63, 0.57, 'R_b=0.5', {tex:true, fs:12, color:C.in});
       return a.svg();
     },
-      caption:'The capacity curve cuts the plane in two. A system at rate $R_b=0.5$ is reliable while the crossover stays below about $0.11$ and impossible above it — and the boundary is sharp, not a gradual worsening.'}
+      caption:'The capacity curve separates possible and impossible rates. At $R_b=0.5$, reliable transmission requires a crossover probability below approximately $0.11$. No code can give reliable transmission above this boundary.'}
   ]}
 ]},
 
@@ -1024,7 +1024,7 @@ window.SCENES_M6 = [
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>Everything so far counted symbols. A real channel is not given as a matrix. It is given as a bandwidth in hertz, a transmitted power in watts, and a noise density. The capacity of that channel is one of the most quoted results in engineering.</p>'},
     {t:'eq', key:true, label:'information capacity law', tex:'C=B\\log_2\\!\\left(1+\\frac{P}{N_0B}\\right)\\quad\\text{bits per second}'},
-    {t:'note', kind:'def', head:'What each symbol is', html:'$B$ is the bandwidth in hertz. $P$ is the average transmitted power. $N_0/2$ is the two-sided noise density, so $N_0B$ is the noise power in the band. The ratio $P/(N_0B)$ is the received signal-to-noise ratio used by this channel model.'},
+    {t:'note', kind:'def', head:'Channel parameters', html:'$B$ is the bandwidth in hertz. $P$ is the average transmitted power. The two-sided noise density is $N_0/2$, so the in-band noise power is $N_0B$. The received signal-to-noise ratio is $P/(N_0B)$.'},
     {t:'reveal', at:1, items:[
       {t:'note', kind:'ok', head:'Read the two knobs', html:'$C$ grows <b>linearly</b> with bandwidth and only <b>logarithmically</b> with power. Doubling the bandwidth at fixed noise density roughly doubles the rate. Doubling the power adds one bit per second per hertz at best, and much less when the ratio is already large. Bandwidth is the better buy, and it is the one that is regulated and scarce.'}
     ]},
@@ -1057,7 +1057,7 @@ window.SCENES_M6 = [
       a.note(1.1, 0.72, '0\\ \\mathrm{dB},\\;1\\ \\mathrm{bit/s/Hz}', {tex:true, fs:11, color:C.out});
       return a.svg();
     },
-      caption:'What each bandwidth efficiency costs in energy per bit. Every working system sits below this curve; nothing sits above it. Climbing from one bit per hertz to six costs about $14$ dB, and the climb gets steeper the whole way.'}
+      caption:'Required energy per bit against bandwidth efficiency. Reliable systems must lie below the capacity boundary. Increasing efficiency from one to six bits per second per hertz costs approximately $14$ dB.'}
   ]}
 ]},
 
@@ -1074,13 +1074,13 @@ window.SCENES_M6 = [
     {t:'eq', tex:'\\lim_{x\\to0}\\frac{2^{x}-1}{x}=\\ln 2=0.693'},
     {t:'reveal', at:1, items:[
       {t:'eq', key:true, label:'the Shannon limit', tex:'\\frac{E_b}{N_0}\\bigg|_{\\min}=\\ln 2=0.693=-1.59\\ \\mathrm{dB}'},
-      {t:'note', kind:'ok', head:'What it says', html:'No system of any kind communicates reliably with less than $-1.59$ dB of energy per bit against noise density. Not a better code, not a better modulation, not a better receiver. It is the floor of the whole subject, and every scheme in Module 5 sits well above it.'}
+      {t:'note', kind:'ok', head:'Energy limit', html:'Reliable communication requires $E_b/N_0\\ge -1.59$ dB. No code, modulation method, or receiver can operate reliably below this limit. The uncoded methods in Module 5 require more energy.'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'warn', head:'What it does not say', html:'It does not say the limit is reachable. Reaching it needs infinite bandwidth, and the rate per hertz goes to zero on the way. It is a floor that is approached and never touched. A system designed near it pays in bandwidth for every decibel it saves in power.'}
+      {t:'note', kind:'warn', head:'Bandwidth at the limit', html:'The limit is approached only as bandwidth tends to infinity. The bandwidth efficiency then tends to zero. Operation near the energy limit therefore requires a large bandwidth.'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'small', html:'<b>How far the course got from it:</b> coherent binary PSK needs about $9.6$ dB for an error probability of $10^{-5}$, some $11$ dB above the floor. That gap is what channel coding was invented to close; this course stops at the uncoded schemes, where the gap is widest and easiest to see.'}
+      {t:'small', html:'Coherent binary PSK needs approximately $9.6$ dB for an error probability of $10^{-5}$. This value is about $11$ dB above the limit. Channel coding can reduce this gap. The modulation methods in this course are uncoded.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>{
@@ -1097,42 +1097,42 @@ window.SCENES_M6 = [
       a.vline(10*Math.log10(Math.log(2)), {color:C.err, width:2});
       return a.svg();
     },
-      caption:'The same curve carried down to where it ends. It never crosses $-1.59$ dB, however much bandwidth is spent, and the shaded strip to the left of that line is a region no communication system has ever occupied or ever will.'}
+      caption:'The capacity boundary approaches $-1.59$ dB as bandwidth increases. It never crosses this value. The shaded region to the left is impossible for reliable communication.'}
   ]}
 ]},
 
 /* ---------------------------------------------------------------- 6.10 --- */
-{ id:'m6-synth', module:'M6', nav:'Summary', title:'What Module 6 established',
+{ id:'m6-synth', module:'M6', nav:'Summary', title:'Module 6 summary',
   objective:'Collect the definitions, the bounds, the algorithms and the two limits.',
   keywords:'summary module 6 entropy source coding kraft huffman efficiency capacity mutual information shannon',
   src:'CH10 s.4–22, w.12–14', steps:1, blocks:[
   {t:'eyebrow', text:'Module 6 · An introduction to information theory'},
-  {t:'title', text:'What Module 6 established'},
+  {t:'title', text:'Module 6 summary'},
   {t:'grid', cols:3, gap:'24px', items:[
-    [{t:'card', head:'How much information there is', items:[
+    [{t:'card', head:'Source information', items:[
       {t:'fig', svg:miniEntropy},
       {t:'eq', plain:true, tex:'H(S)=-\\sum_k p_k\\log_2 p_k'},
       {t:'small', html:'Bounded by $0\\le H(S)\\le\\log_2 K$, largest when the symbols are equally likely.'}
     ]}],
-    [{t:'card', head:'What it costs to write down', items:[
+    [{t:'card', head:'Average code length', items:[
       {t:'fig', svg:miniLengths},
       {t:'eq', plain:true, tex:'\\bar{L}=\\sum_k p_k l_k,\\qquad \\eta=\\frac{H(S)}{\\bar{L}}\\le 1'},
-      {t:'small', html:'No code beats $H(S)$; a prefix code reaches within one bit of it, and blocking cuts that bit to $1/n$.'}
+      {t:'small', html:'No code has average length below $H(S)$. A prefix code can remain within one bit. Block coding reduces this gap to at most $1/n$ bits per symbol.'}
     ]}],
-    [{t:'card', head:'Which codes can be read back', items:[
+    [{t:'card', head:'Decodable codes', items:[
       {t:'fig', svg:miniKraftTree},
       {t:'eq', plain:true, tex:'\\sum_k 2^{-l_k}\\le 1'},
       {t:'small', html:'Necessary for a prefix code, never sufficient. Prefix, or instantaneous, is what is used.'}
     ]}],
-    [{t:'card', head:'How to build the best one', items:[
+    [{t:'card', head:'Code construction', items:[
       {t:'fig', svg:miniHuffTree},
       {t:'eq', plain:true, tex:'\\sigma^{2}=\\sum_k p_k(l_k-\\bar{L})^{2}'},
-      {t:'small', html:'Huffman: merge the two least likely, repeat; on a tie place the merged symbol high. Lempel–Ziv reaches the same limit without being told the probabilities.'}
+      {t:'small', html:'Huffman coding repeatedly merges the two least likely symbols. During a tie, place the merged symbol high. Lempel–Ziv approaches the same limit without known probabilities.'}
     ]}],
-    [{t:'card', head:'What a channel lets through', items:[
+    [{t:'card', head:'Channel information', items:[
       {t:'fig', svg:miniChannelX},
       {t:'eq', plain:true, tex:'I(X;Y)=H(X)-H(X\\mid Y)=H(Y)-H(Y\\mid X)'},
-      {t:'small', html:'Symmetric and never negative; the channel matrix and the input distribution together fix it.'}
+      {t:'small', html:'Mutual information is symmetric and nonnegative. The channel matrix and input distribution determine its value.'}
     ]}],
     [{t:'card', head:'The two limits', items:[
       {t:'fig', svg:miniShannon},
@@ -1141,7 +1141,7 @@ window.SCENES_M6 = [
     ]}]
   ]},
   {t:'reveal', at:1, items:[
-    {t:'note', kind:'ok', head:'What the course adds up to', html:'Module 1 turned a waveform into bits. Modules 2 to 5 got those bits across a channel and counted the errors. Module 6 put a number on both ends of that. $H(S)$ is the fewest bits the message can be written in; $C$ is the most bits the channel will carry. A system is possible exactly when the first fits inside the second. Every stage between them is engineering; the two limits are not.'}
+    {t:'note', kind:'ok', head:'Course result', html:'Module 1 converts a waveform into bits. Modules 2 to 5 transmit those bits and calculate errors. Module 6 gives the source limit $H(S)$ and channel limit $C$. Reliable transmission is possible when the compressed source rate is less than $C$.'}
   ]}
 ]}
 

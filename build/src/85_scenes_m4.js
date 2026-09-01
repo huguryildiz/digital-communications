@@ -103,19 +103,19 @@ function miniUnion(){
 const SC = [
 
 /* ---------------------------------------------------------------- 4.0 ---- */
-{ id:'m4-open', module:'M4', nav:'The receiver problem', title:'Which point did it come from?',
+{ id:'m4-open', module:'M4', nav:'The receiver problem', title:'Signal-point detection',
   objective:'State the problem the module solves and the answer it reaches.',
   keywords:'optimal receiver awgn decision minimum distance opening m-ary',
   src:'CH9 s.23', steps:2, blocks:[
   {t:'eyebrow', text:'Module 4 · Opening'},
-  {t:'title', text:'Which point did it come from?'},
-  {t:'lede', text:'A transmitter picks one of $M$ signals and sends it. The channel adds noise. The receiver sees the sum and has to name the signal. Module 3 turned the signals into points; this module turns the receiver into a rule about those points.'},
+  {t:'title', text:'Signal-point detection'},
+  {t:'lede', text:'A transmitter sends one of $M$ signals. The channel adds noise. The receiver observes the sum and identifies the transmitted signal. Module 3 represented the signals as points. This module derives a decision rule for those points.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>Write what arrives as</p>'},
     {t:'eq', tex:'r(t)=s_i(t)+n(t),\\qquad 0<t<T'},
     {t:'body', html:'<p>with $n(t)$ white Gaussian noise of two-sided density $N_0/2$. The receiver knows the $M$ possible signals. It does not know which was sent, and it never will — it can only choose.</p>'},
     {t:'reveal', at:1, items:[
-      {t:'note', kind:'ok', head:'The answer, in one line', html:'When the $M$ signals are equally likely, the best rule is: <b>compute the coordinates of what arrived and choose the signal point nearest to it.</b> Nothing cleverer helps, and the rest of the module is why that is true and what it costs.'}
+      {t:'note', kind:'ok', head:'Decision rule', html:'For equally likely signals, calculate the coordinates of the received waveform. Then select the nearest signal point. This rule minimizes the probability of error.'}
     ]},
     {t:'reveal', at:2, items:[
       {t:'body', html:'<p>Two results follow under this white Gaussian noise model.</p><ul><li>The coherent-detection error probability depends on the <b>distances</b> between the signal points.</li><li>The exact error probability requires an integral over the decision regions. This integral usually has no simple closed form. The <b>union bound</b> gives a computable upper bound made of $Q$ functions.</li></ul>'}
@@ -144,10 +144,10 @@ const SC = [
       {t:'eq', tex:'r(t)=\\sum_{k=1}^{N}r_k\\psi_k(t)+n_0(t)'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'ok', head:'Why $n_0(t)$ can be thrown away', html:'It contains no signal at all. Every signal is a combination of the $N$ basis functions, so none of them has any component outside that space. And it is independent of the $N$ numbers the receiver kept. A quantity that carries no information about the answer and is unrelated to what was kept cannot help, so discarding it costs nothing.'}
+      {t:'note', kind:'ok', head:'Noise outside the signal space', html:'The component $n_0(t)$ contains no signal. It is also independent of the retained coordinates. Therefore, it contains no information that can help the receiver identify the transmitted signal.'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'warn', head:'What this does not say', html:'The result does not say that the noise is small or that the correlators remove it. The receiver keeps all noise components inside the signal space. It discards only the component that cannot help distinguish the signals.'}
+      {t:'note', kind:'warn', head:'Noise retained by the receiver', html:'The correlators do not remove all noise. The receiver keeps every noise component inside the signal space. It discards only the component that cannot distinguish the signals.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>P.blocks({w:620,h:300,items:[
@@ -176,13 +176,13 @@ const SC = [
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>Each $n_k$ is a projection of a Gaussian process onto a fixed function, so it is Gaussian with zero mean. The useful part is what happens between two of them:</p>'},
     {t:'eq', tex:'E[n_jn_k]=\\frac{N_0}{2}\\int_0^{T}\\psi_j(u)\\psi_k(u)\\,du=\\begin{cases}\\dfrac{N_0}{2},&j=k\\\\[4pt]0,&j\\ne k\\end{cases}'},
-    {t:'small', html:'The middle step uses $E[n(\\tau)n(u)]=\\frac{N_0}{2}\\delta(\\tau-u)$ and the sifting property; the last uses that the basis is orthonormal.'},
+    {t:'small', html:'The middle step uses $E[n(\\tau)n(u)]=\\frac{N_0}{2}\\delta(\\tau-u)$ and the sifting property. The last step uses the orthonormal basis.'},
     {t:'reveal', at:1, items:[
       {t:'note', kind:'def', head:'Uncorrelated, and therefore independent', html:'For jointly Gaussian variables, zero correlation is independence. So the $N$ noise components are independent, each $\\mathcal{N}(0,\\,N_0/2)$, and the joint density is a product:'},
       {t:'eq', key:true, tex:'f_{\\mathbf{n}}(n_1,\\ldots,n_N)=(\\pi N_0)^{-N/2}\\exp\\!\\left(-\\sum_{k=1}^{N}\\frac{n_k^{2}}{N_0}\\right)'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'ok', head:'What the picture looks like', html:'Every axis has the same variance and the axes are independent. The noise cloud is therefore a <b>circle</b> — a sphere in $N$ dimensions — and not an ellipse. That symmetry is what makes "nearest point" the right rule in the next section. If the variances differed, the nearest point in the ordinary sense would not be the best answer.'}
+      {t:'note', kind:'ok', head:'Noise geometry', html:'Each axis has variance $N_0/2$, and the axes are independent. Therefore, the noise cloud is circular in two dimensions and spherical in $N$ dimensions. This symmetry gives the nearest-point rule.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>{
@@ -251,7 +251,7 @@ const SC = [
       {t:'note', kind:'ok', head:'Say it in words', html:'<b>Choose the signal point closest to what arrived.</b> With unequal priors, subtract a fixed handicap from each distance first. A more likely symbol gets a larger handicap and so wins from further away.'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'warn', head:'Where the handicap goes', html:'$-N_0\\ln P(\\mathbf{s}_i)$ is <em>subtracted</em>, and $\\ln P$ is negative, so the term is positive and smaller for the more likely symbol. Getting the sign wrong shrinks the region of the likely symbol instead of growing it, and the error probability rises rather than falls.'}
+      {t:'note', kind:'warn', head:'Prior-probability term', html:'The metric subtracts $N_0\\ln P(\\mathbf{s}_i)$. Because the logarithm is negative, a more likely symbol receives a smaller penalty. A sign error incorrectly shrinks its decision region.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>{
@@ -291,7 +291,7 @@ const SC = [
       {t:'note', kind:'ok', head:'The simplest case, which is the common one', html:'If all $M$ signals are equally likely <b>and</b> have the same energy, both correction terms are the same for every $i$ and drop out. The rule becomes: <b>choose the signal with the largest correlation.</b> That is one multiplier and one integrator per signal, and nothing else.'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'warn', head:'When the energies differ', html:'The $-E_i/2$ term must stay. Without it a high-energy signal wins too often, because a large $\\mathbf{s}_i$ makes $\\mathbf{r}\\cdot\\mathbf{s}_i$ large whatever arrived. On-off signalling is exactly this case, and dropping the term there makes the receiver decide "one" almost always.'}
+      {t:'note', kind:'warn', head:'Unequal signal energies', html:'Keep the term $-E_i/2$ when the signal energies differ. Without it, the correlation metric favors a high-energy signal. This error makes an on-off receiver select the nonzero signal too often.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>P.blocks({w:620,h:320,items:[
@@ -338,7 +338,7 @@ const SC = [
   ], right:[
     {t:'fig', frame:true, svg:()=>figRegions(
       [{x:1.15,y:0},{x:0,y:1.15},{x:-1.15,y:0},{x:0,y:-1.15}],{lim:2.2,w:360,h:210}),
-      caption:'Four points, four regions, four boundaries — each perpendicular to the line joining the two points it separates. Three points on a line would give a strip in the middle and two half planes outside it, which is why a middle symbol is mistaken more often than an outer one.'},
+      caption:'Four points form four decision regions. Each boundary is perpendicular to the line between its two points. For three points on a line, the middle region is a strip. The outer regions are half-planes.'},
   ]}
 ]},
 
@@ -364,7 +364,7 @@ const SC = [
       {t:'small', html:'Equal priors give $\\mu=d/2$. A more likely $\\mathbf{s}_1$ makes the logarithm positive, so $\\mu$ grows, the boundary moves away from $\\mathbf{s}_1$, and its region enlarges.'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'small', html:'Both results of Module 2 follow at once. Antipodal points are $2\\sqrt{E_b}$ apart; on-off points are $\\sqrt{2E_b}$ apart, smaller by $\\sqrt{2}$ — which is the $3$ dB, obtained by measuring a picture.'}
+      {t:'small', html:'The Module 2 results follow from distance. Antipodal points are $2\\sqrt{E_b}$ apart. On-off points are $\\sqrt{2E_b}$ apart. The factor $\\sqrt{2}$ gives the $3$ dB difference.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>{
@@ -409,7 +409,7 @@ const SC = [
     {t:'reveal', at:1, items:[
       {t:'body', html:'<p>Each of those probabilities is an integral of the likelihood over a region:</p>'},
       {t:'eq', key:true, tex:'P_e=1-\\frac{1}{M}\\sum_{i=1}^{M}\\int_{R_i}f_{\\mathbf{r}}(\\mathbf{r}\\mid\\mathbf{s}_i)\\,d\\mathbf{r}'},
-      {t:'note', kind:'err', head:'Why the exact form is difficult', html:'The integral can extend over $N$ dimensions, and the decision region can have several faces. For $M=2$, it reduces to one Gaussian tail. For a general larger constellation, a closed form is usually unavailable and numerical integration can be expensive.'}
+      {t:'note', kind:'err', head:'Exact integral', html:'The integral can have $N$ dimensions, and the decision region can have many faces. For $M=2$, it reduces to one Gaussian tail. Larger constellations usually require numerical integration.'}
     ]},
     {t:'reveal', at:2, items:[
       {t:'note', kind:'ok', head:'Use an upper bound instead', html:'The next scene replaces the exact expression with an upper bound made of $Q$ functions. The bound is often useful at high signal-to-noise ratios. It can be loose at low ratios. Because it is an upper bound, meeting the bound is sufficient to meet the true error requirement.'}
@@ -418,7 +418,7 @@ const SC = [
     {t:'fig', frame:true, svg:()=>figRegions(
       [{x:1.2,y:1.2},{x:-1.2,y:1.2},{x:-1.2,y:-1.2},{x:1.2,y:-1.2},{x:0,y:0}],
       {lim:2.6,cloud:400,sigma:0.42}),
-      caption:'Five points, and the cloud the receiver sees when the top-right one is sent. The exact error probability is the fraction of that cloud outside its own region — a shape with three straight edges here, and a harder one in higher dimensions.'}
+      caption:'Five signal points and the observation cloud for the top-right point. The exact error probability is the fraction of the cloud outside its decision region. Higher-dimensional regions make this calculation more difficult.'}
   ]}
 ]},
 
@@ -429,7 +429,7 @@ const SC = [
   {t:'eyebrow', text:'Module 4 · The union bound'},
   {t:'title', text:'The union bound'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
-    {t:'body', html:'<p>Suppose $\\mathbf{s}_k$ was sent. Let $A_{kj}$ be the event that the observation is closer to $\\mathbf{s}_j$ than to $\\mathbf{s}_k$. An error happens exactly when at least one of those events occurs, and the probability of a union is at most the sum of the probabilities:</p>'},
+    {t:'body', html:'<p>Suppose that $\\mathbf{s}_k$ was sent. Let $A_{kj}$ be the event that the observation is closer to $\\mathbf{s}_j$ than to $\\mathbf{s}_k$. An error occurs when at least one event occurs. The probability of their union is not more than the sum of their probabilities:</p>'},
     {t:'eq', tex:'P(\\text{error}\\mid\\mathbf{s}_k)=P\\!\\left(\\bigcup_{j\\ne k}A_{kj}\\right)\\le\\sum_{j\\ne k}P(A_{kj})'},
     {t:'reveal', at:1, items:[
       {t:'body', html:'<p>Each $P(A_{kj})$ is a <b>binary</b> question — closer to $\\mathbf{s}_j$ or to $\\mathbf{s}_k$, ignoring every other point — and the binary answer is already known:</p>'},
@@ -440,13 +440,13 @@ const SC = [
       {t:'eq', key:true, label:'union bound', tex:'P_e\\le\\frac{1}{M}\\sum_{k=1}^{M}\\sum_{\\substack{j=1\\\\ j\\ne k}}^{M}Q\\!\\left(\\sqrt{\\frac{d_{kj}^{2}}{2N_0}}\\right)'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'warn', head:'Why it is an over-estimate, and when that matters', html:'The events overlap. One observation can be closer to two other points, so the sum can count it twice. The bound is therefore not less than the true probability. At low signal-to-noise ratios, it can even exceed one. At high ratios, the overlap terms become small and the bound is often close to the true result.'}
+      {t:'note', kind:'warn', head:'Union-bound gap', html:'The error events can overlap. The sum then counts one observation more than once. Therefore, the bound can exceed the true probability. At high signal-to-noise ratios, the overlap becomes small.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figRegions(
       [{x:1.2,y:1.2},{x:-1.2,y:1.2},{x:-1.2,y:-1.2},{x:1.2,y:-1.2}],
       {lim:2.6,cloud:340,sigma:0.5}),
-      caption:'The observation when the top-right point is sent. The bound adds up three separate two-point questions — is it closer to the left one, to the bottom one, to the diagonal one — and the region where two of those answers are "yes" is counted twice.'}
+      caption:'Observation regions when the top-right point is sent. The bound compares this point with the left, bottom, and diagonal points separately. Overlap between two pairwise error regions is counted twice.'}
   ]}
 ]},
 
@@ -470,7 +470,7 @@ const SC = [
       {t:'small', html:'This approximation is useful at high signal-to-noise ratios. More distant points have much smaller pairwise terms, so the nearest neighbours dominate the error probability.'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'ok', head:'What to take away', html:'A constellation is judged by two numbers. $d_{\\min}$ sets the exponent and therefore almost everything; $N_{\\min}$ multiplies it and matters far less. Designing a good constellation means pushing $d_{\\min}$ as far as possible at a fixed average energy.'}
+      {t:'note', kind:'ok', head:'Constellation parameters', html:'Two parameters control the nearest-neighbor bound. The minimum distance $d_{\\min}$ controls the argument of $Q$. The count $N_{\\min}$ is a multiplier. Good constellations maximize $d_{\\min}$ for a fixed average energy.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>{
@@ -484,7 +484,7 @@ const SC = [
       a.curve(d=>cl(2*Qf(arg(d))),{color:C.in,width:2.2});
       a.curve(d=>cl(1*Qf(arg(d))),{color:C.muted,width:1.5,dash:'5 4'});
       return a.svg();
-    }, caption:'The two bounds for eight-point phase-shift keying. They are parallel, because both are the same $Q$ with a different multiplier; the gap is a constant factor of $7/2$, under $6$ dB of error rate at any signal-to-noise ratio and never any shift along the horizontal axis.'},
+    }, caption:'Two bounds for eight-point phase-shift keying. Both use the same $Q$ function with different multipliers. Their ratio is the constant $7/2$. Therefore, their horizontal positions are equal.'},
     {t:'legend', items:[['err','minimum-distance bound, $M-1=7$'],
                         ['in','nearest-neighbour, $N_{\\min}=2$'],
                         ['mid','a single pairwise term']]}
@@ -498,7 +498,7 @@ const SC = [
   {t:'eyebrow', text:'Module 4 · The union bound'},
   {t:'title', text:'The intelligent union bound'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
-    {t:'body', html:'<p>The union bound adds one term for every other signal point. Look at what most of those points are doing. To land nearer a far-away point, the observation has to leave its own region first. And it leaves through a <b>face</b>: a piece of boundary shared with one particular neighbour. A point that shares no face with the region cannot be the first one reached.</p>'},
+    {t:'body', html:'<p>The union bound adds one term for every other signal point. An observation must leave its decision region before it can approach another point. It leaves through a <b>face</b> shared with one neighbor. A point without a shared face cannot be the first incorrect decision.</p>'},
     {t:'note', kind:'def', head:'The set that matters', html:'Write $\\mathcal{N}(k)$ for the neighbours of $\\mathbf{s}_k$ whose perpendicular bisectors form the faces of the decision region $R_k$. These are the only points that bound the region, so they are the only ones an error has to cross.'},
     {t:'reveal', at:1, items:[
       {t:'body', html:'<p>Leaving $R_k$ means crossing at least one of its faces, so the union over the faces already covers every error. Summing over that smaller set is still an upper bound:</p>'},
@@ -528,7 +528,7 @@ const SC = [
         a.note(0.16, 2.16, '\\text{face}', {tex:true, fs:12, color:C.h});
         a.note(-2.50, 1.55, '\\text{no face}', {tex:true, fs:12, color:C.muted});
       }}),
-      caption:'The two solid boundaries are the faces of the top-right region, each shared with one neighbour. The dashed line is the bisector against the diagonal point: it separates two other regions and never touches this one, so the term the union bound spent on it was buying nothing.'}
+      caption:'The solid lines bound the top-right decision region. Each line is shared with one nearest neighbor. The dashed diagonal bisector does not touch this region. Therefore, it does not represent a nearest-neighbor error.'}
   ]}
 ]},
 
@@ -579,40 +579,40 @@ const SC = [
     ]}
   ]},
   {t:'reveal', at:3, items:[
-    {t:'note', kind:'ok', head:'The lesson', html:'The two useful forms differ by less than one per cent: the diagonal term is worth $0.4\\%$ and dropping it is safe. The loose form is half again too large. Pretending the diagonal point is a nearest neighbour adds a whole extra term at the smallest distance. All three are the same $Q$ with a different count in front, so none of them moves the curve sideways. The signal-to-noise ratio needed for a given error rate is almost the same whichever is used.'}
+    {t:'note', kind:'ok', head:'Bound comparison', html:'The two useful bounds differ by less than one percent. The diagonal term contributes $0.4\\%$. The loose bound is about $50\\%$ larger. Each form changes only the multiplier of the same $Q$ function.'}
   ]}
 ]},
 
 /* ---------------------------------------------------------------- 4.5 ---- */
-{ id:'m4-synth', module:'M4', nav:'Summary', title:'What Module 4 established',
+{ id:'m4-synth', module:'M4', nav:'Summary', title:'Module 4 summary',
   objective:'Collect the results this module contributes.',
   keywords:'summary optimal receiver minimum distance union bound dmin nearest neighbours',
   steps:0, blocks:[
   {t:'eyebrow', text:'Module 4 · Summary'},
-  {t:'title', text:'What Module 4 established'},
+  {t:'title', text:'Module 4 summary'},
   {t:'grid', cols:2, gap:'26px', items:[
     [{t:'card', head:'The receiver', items:[
       {t:'fig', svg:miniRule},
       {t:'eq', plain:true, tex:'\\hat{s}=\\arg\\max_i\\Bigl\\{\\mathbf{r}\\!\\cdot\\!\\mathbf{s}_i-\\tfrac{E_i}{2}+\\tfrac{N_0}{2}\\ln P(\\mathbf{s}_i)\\Bigr\\}'},
-      {t:'small', html:'Correlate against each signal, correct for energy and prior, take the largest.'}
+      {t:'small', html:'Correlate with each signal. Correct for energy and prior. Select the largest metric.'}
     ]}],
     [{t:'card', head:'The picture', items:[
       {t:'fig', svg:miniRegions},
       {t:'eq', plain:true, tex:'\\hat{s}=\\arg\\min_i\\|\\mathbf{r}-\\mathbf{s}_i\\|^{2}'},
-      {t:'small', html:'Choose the nearest point. Boundaries are perpendicular bisectors; a less likely symbol gets a smaller region.'}
+      {t:'small', html:'Nearest-point boundaries are perpendicular bisectors. Unequal priors change the region sizes.'}
     ]}],
     [{t:'card', head:'Binary', items:[
       {t:'fig', svg:miniBinaryD},
       {t:'eq', plain:true, tex:'P_e=Q\\!\\left(\\sqrt{d^{2}/2N_0}\\right)'},
-      {t:'small', html:'Two points, one distance, one $Q$ — everything Module 2 derived by integration follows in a line.'}
+      {t:'small', html:'For two points, the distance gives the exact error probability.'}
     ]}],
     [{t:'card', head:'M-ary', items:[
       {t:'fig', svg:miniUnion},
       {t:'eq', plain:true, tex:'P_e\\approx N_{\\min}Q\\!\\left(\\sqrt{d_{\\min}^{2}/2N_0}\\right)'},
-      {t:'small', html:'The exact answer is an integral nobody can do; the bound keeps only the nearest neighbours.'}
+      {t:'small', html:'For larger constellations, nearest neighbors give the dominant error terms.'}
     ]}]
   ]},
-  {t:'note', kind:'ok', head:'What Module 5 does with this', html:'It applies the result to the constellations that are actually used: amplitude, phase and quadrature modulation. The question is which of them gets the largest $d_{\\min}$ for a given average energy and a given number of bits per symbol.'}
+  {t:'note', kind:'ok', head:'Connection to Module 5', html:'Module 5 applies these rules to common constellations. It compares their minimum distances at fixed average energy.'}
 ]}
 
 ];

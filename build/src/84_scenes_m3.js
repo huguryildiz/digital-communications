@@ -85,21 +85,21 @@ function miniNearest(){
 const SC = [
 
 /* ---------------------------------------------------------------- 3.0 ---- */
-{ id:'m3-open', module:'M3', nav:'Why one axis is not enough', title:'Why one axis is not enough',
+{ id:'m3-open', module:'M3', nav:'Why one axis is not enough', title:'Multiple signal-space axes',
   objective:'Show the problem two unrelated waveforms create for the Module 2 receiver.',
   keywords:'geometric representation two matched filters basis signal space opening',
   src:'CH9 s.2–3', steps:2, blocks:[
   {t:'eyebrow', text:'Module 3 · Opening'},
-  {t:'title', text:'Why one axis is not enough'},
+  {t:'title', text:'Multiple signal-space axes'},
   {t:'lede', text:'In Module 2 the two waveforms were opposites, so one shape represented both and the receiver needed one number. What happens when neither waveform is a multiple of the other?'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>Take $s_0(t)$ and $s_1(t)$ below. Neither is a multiple of the other, so no single function $\\psi(t)$ can write both as $s_m\\psi(t)$. The receiver of Module 2 does not apply, and none of its results do either.</p>'},
     {t:'reveal', at:1, items:[
       {t:'body', html:'<p>Use <b>two</b> axes to represent these waveforms. The receiver computes one coordinate on each axis and then works with the two resulting numbers.</p>'},
-      {t:'note', kind:'def', head:'The idea of this module', html:'A set of waveforms can be represented by a set of <b>points</b>. The receiver can then use geometry. For equally likely signals in white Gaussian noise, it chooses the signal point nearest to the observation.'}
+      {t:'note', kind:'def', head:'Geometric representation', html:'A set of waveforms can be represented by a set of <b>points</b>. The receiver can then use geometry. For equally likely signals in white Gaussian noise, it selects the nearest signal point.'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'ok', head:'Why the point representation helps', html:'Waveform analysis requires integrals. Point analysis uses arithmetic on coordinates. This module provides the translation, and Modules 4 and 5 use the resulting geometry.'}
+      {t:'note', kind:'ok', head:'Coordinate calculations', html:'Waveform analysis requires integrals. Point analysis uses arithmetic on coordinates. This module gives the conversion. Modules 4 and 5 use the resulting geometry.'}
     ]}
   ], right:[
     {t:'grid', cols:2, gap:'20px', items:[
@@ -139,7 +139,7 @@ const SC = [
       {t:'eq', key:true, tex:'\\langle x,y\\rangle=\\int_{-\\infty}^{\\infty}x(t)\\,y(t)\\,dt'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'def', head:'Orthonormal signal set', html:'A set $\\{\\psi_1,\\ldots,\\psi_N\\}$ is orthonormal when $$\\int_{-\\infty}^{\\infty}\\psi_j(t)\\psi_k(t)\\,dt=\\begin{cases}1,&j=k\\\\0,&j\\ne k.\\end{cases}$$ The first line says each has <b>unit energy</b>; the second says any two are <b>orthogonal</b>.'}
+      {t:'note', kind:'def', head:'Orthonormal signal set', html:'A set $\\{\\psi_1,\\ldots,\\psi_N\\}$ is orthonormal when $$\\int_{-\\infty}^{\\infty}\\psi_j(t)\\psi_k(t)\\,dt=\\begin{cases}1,&j=k\\\\0,&j\\ne k.\\end{cases}$$ The first line gives <b>unit energy</b>. The second line makes each pair <b>orthogonal</b>.'}
     ]},
     {t:'reveal', at:3, items:[
       {t:'note', kind:'ok', head:'Read it in plain words', html:'"Orthogonal" for signals means the same thing it means for arrows: the two have nothing of each other in them. If you multiply them together and add up the result over all time, you get zero. Two non-overlapping pulses are the clearest case — where one is non-zero the other is zero, so their product is zero everywhere.'}
@@ -184,7 +184,7 @@ const SC = [
       {t:'body', html:'An integral over waveforms has become a sum over $N$ numbers.'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'ok', head:'What this means in practice', html:'Nothing about the waveforms is lost and nothing has to be integrated twice. The receiver computes $N$ integrals once, and everything after that — energies, distances, decisions, error probabilities — is arithmetic on $N$ numbers.'}
+      {t:'note', kind:'ok', head:'Receiver calculations', html:'The coordinate representation preserves the waveforms. The receiver calculates $N$ integrals once. It then calculates energies, distances, decisions, and error probabilities from the $N$ coordinates.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>P.blocks({w:620,h:270,items:[
@@ -199,7 +199,7 @@ const SC = [
       {t:'text',x:466,y:76,label:'s_{i1}',tex:true,fs:15},
       {t:'text',x:466,y:196,label:'s_{i2}',tex:true,fs:15},
       {t:'text',x:225,y:250,label:'the analyser: one integral per axis',fs:12.5}
-    ]}), caption:'The analyser. One integral per basis function turns a waveform into its coordinates; the synthesiser runs the same picture backwards.'}
+    ]}), caption:'The analyzer calculates one coordinate for each basis function. The synthesizer uses the coordinates to reconstruct the waveform.'}
   ]}
 ]},
 
@@ -209,7 +209,7 @@ const SC = [
   src:'CH9 s.11–12', steps:2, blocks:[
   {t:'eyebrow', text:'Module 3 · Signals as vectors'},
   {t:'title', text:'Energy and distance'},
-  {t:'lede', text:'Energy is length; the difference of two signals is distance.'},
+  {t:'lede', text:'Signal energy is squared length. The energy of a signal difference is squared distance.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'Put $y=x$ in the property of the last scene and the energy of a signal is the squared length of its vector:'},
     {t:'eq', key:true, tex:'E_{s_i}=\\int_0^{T}s_i^{2}(t)\\,dt=\\sum_{j=1}^{N}s_{ij}^{2}=\\|\\mathbf{s}_i\\|^{2}'},
@@ -218,7 +218,7 @@ const SC = [
       {t:'eq', key:true, tex:'\\|\\mathbf{s}_i-\\mathbf{s}_k\\|^{2}=\\int_0^{T}\\bigl(s_i(t)-s_k(t)\\bigr)^{2}dt=\\sum_{j=1}^{N}(s_{ij}-s_{kj})^{2}'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'ok', head:'Why these two matter more than anything else in the module', html:'<b>Energy is how far the point is from the origin.</b> That is what the transmitter pays for. <b>Distance is how far two points are from each other.</b> That is what decides how often the receiver confuses them. Module 2 already showed this for two points on a line. Antipodal signalling beats on-off by $3$ dB, because its points are further apart at the same average energy. Module 4 makes it the general rule.'}
+      {t:'note', kind:'ok', head:'Energy and distance', html:'<b>Energy is the squared distance from a signal point to the origin.</b> <b>Distance between signal points controls their probability of confusion.</b> Antipodal signaling gains $3$ dB over on-off signaling at the same average energy. Module 4 derives the general rule.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>{
@@ -254,7 +254,7 @@ const SC = [
       [{x:1,y:1,c:C.in,l:'\\mathbf{s}_1'},{x:1,y:-1,c:C.out,l:'\\mathbf{s}_2'},
        {x:-1,y:-1,c:C.mid,l:'\\mathbf{s}_3'},{x:-1,y:1,c:C.h,l:'\\mathbf{s}_4'}],
       {xr:[-1.7,1.7],yr:[-1.7,1.7],dashTo:false}),
-      caption:'Four equal-energy points on a square. Every point is $\\sqrt{2}$ from the origin, so every waveform has energy $2$; the nearest neighbours are $2$ apart, so the squared distance between the closest pair is $8$ when the energy is $4$ per point.'}
+      caption:'Four equal-energy points form a square. Each point is $\\sqrt{2}$ from the origin, so each signal has energy $2$. The nearest-neighbor distance is $2$.'}
   ]}
 ]},
 
@@ -293,7 +293,7 @@ const SC = [
       a.note(1.32,0.62,'g_2',{tex:true,fs:14,color:C.mid});
       a.note(0.6,0.14,'s_{21}\\psi_1',{tex:true,fs:13,color:C.h,anchor:'middle'});
       return a.svg();
-    }, caption:'The second step, drawn. The part of $s_2$ that lies along $\\psi_1$ is subtracted off; what is left, $g_2$, is perpendicular to $\\psi_1$ by construction, and normalising it gives the second axis.'}
+    }, caption:'The second Gram–Schmidt step. Subtract the component of $s_2$ along $\\psi_1$. The remainder $g_2$ is perpendicular to $\\psi_1$. Normalizing $g_2$ gives the second axis.'}
   ]}
 ]},
 
@@ -326,7 +326,7 @@ const SC = [
     ]},
     {t:'reveal', at:4, items:[
       {t:'wex', rows:[
-        ['Check','Energies from the vectors: $\\|\\mathbf{s}_1\\|^{2}=2$, $\\|\\mathbf{s}_2\\|^{2}=1$, $\\|\\mathbf{s}_3\\|^{2}=3$. Energies from the waveforms: $s_1$ is $1$ for two seconds, so $2$; $s_2$ is $1$ for one second, so $1$; $s_3$ is $1$ for three seconds, so $3$. They agree, and that agreement is the whole content of "energy is squared length".']
+        ['Check','The vectors have energies $2$, $1$, and $3$. The corresponding waveform integrals give the same values. This agreement confirms that signal energy equals squared vector length.']
       ]},
       {t:'note', kind:'ok', head:'Read the answer', html:'Three waveforms needed only two axes, because the third was the sum of the other two. $s_3=s_1+s_2$ is visible in the pictures before any integral is computed. The receiver needs two matched filters, not three.'}
     ]}
@@ -353,19 +353,19 @@ const SC = [
   {t:'lab', id:'F'}
 ]},
 
-{ id:'m3-remarks', module:'M3', nav:'What the geometry decides', title:'What the geometry decides',
+{ id:'m3-remarks', module:'M3', nav:'What the geometry decides', title:'Results determined by geometry',
   objective:'State what the constellation determines and what it leaves open.',
   keywords:'remarks same geometry different waveforms performance receiver structure bandwidth',
   src:'CH9 s.15', steps:2, blocks:[
   {t:'eyebrow', text:'Module 3 · Constellations'},
-  {t:'title', text:'What the geometry decides'},
+  {t:'title', text:'Results determined by geometry'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
-    {t:'note', kind:'def', head:'Two statements worth remembering', html:'<ol><li><b>Two entirely different signal sets can have the same geometric representation.</b> Different shapes, different durations, the same points.</li><li><b>The geometry determines the performance and the receiver structure.</b> How many filters, how the decision is made, and how often it is wrong.</li></ol>'},
+    {t:'note', kind:'def', head:'Geometric equivalence', html:'<ol><li>Different waveform sets can have the same constellation.</li><li>The constellation determines receiver structure and error performance.</li></ol>'},
     {t:'reveal', at:1, items:[
       {t:'body', html:'<p>Put together: if two signal sets give the same constellation, they have the same error probability and the same receiver. Nothing about the waveforms themselves survives into the answer.</p>'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'warn', head:'What the picture does not fix', html:'Bandwidth. Two sets with the same constellation can occupy very different amounts of spectrum. Module 2 already showed a whole family of pulses with the same energy and very different bandwidths. Which one to build is decided outside this picture; how well it works is decided inside it.'}
+      {t:'note', kind:'warn', head:'Bandwidth', html:'The constellation does not determine bandwidth. Two waveform sets with the same constellation can use different bandwidths. Geometry determines receiver performance, while the waveform shape determines bandwidth.'}
     ]}
   ], right:[
     {t:'grid', cols:2, gap:'18px', items:[
@@ -381,19 +381,19 @@ const SC = [
 ]},
 
 /* ---------------------------------------------------------------- 3.4 ---- */
-{ id:'m3-synth', module:'M3', nav:'Summary', title:'What Module 3 established',
+{ id:'m3-synth', module:'M3', nav:'Summary', title:'Module 3 summary',
   objective:'Collect the translation this module provides.',
   keywords:'summary basis coordinates energy distance constellation gram schmidt',
   steps:0, blocks:[
   {t:'eyebrow', text:'Module 3 · Summary'},
-  {t:'title', text:'What Module 3 established'},
+  {t:'title', text:'Module 3 summary'},
   {t:'grid', cols:2, gap:'26px', items:[
     [{t:'card', head:'The translation', items:[
       {t:'fig', svg:miniProject},
       {t:'eq', plain:true, tex:'s_{ij}=\\int_0^T s_i\\psi_j\\,dt,\\quad s_i(t)=\\sum_j s_{ij}\\psi_j(t)'},
-      {t:'small', html:'Integrate against each basis function to get the numbers; add the pieces up to get the waveform back.'}
+      {t:'small', html:'Integrate against each basis function to calculate the coordinates. Add the scaled basis functions to reconstruct the waveform.'}
     ]}],
-    [{t:'card', head:'What survives it', items:[
+    [{t:'card', head:'Preserved quantities', items:[
       {t:'fig', svg:miniInner},
       {t:'eq', plain:true, tex:'\\int xy\\,dt=\\langle\\mathbf{x},\\mathbf{y}\\rangle,\\quad E_i=\\|\\mathbf{s}_i\\|^{2}'},
       {t:'small', html:'Inner products — and therefore energies and distances. Everything the receiver needs is one of those.'}
@@ -403,12 +403,12 @@ const SC = [
       {t:'eq', plain:true, tex:'g_k=s_k-\\textstyle\\sum_{i<k}s_{ki}\\psi_i,\\quad \\psi_k=g_k/\\sqrt{E_{g_k}}'},
       {t:'small', html:'Gram–Schmidt: subtract what is already known, normalise the remainder. A zero remainder adds no axis.'}
     ]}],
-    [{t:'card', head:'What comes next', items:[
+    [{t:'card', head:'Receiver decision', items:[
       {t:'fig', svg:miniNearest},
       {t:'small', html:'Module 4 computes the coordinates of what arrives and picks the nearest point. The error probability then depends on the distances, and on nothing else.'}
     ]}]
   ]},
-  {t:'note', kind:'ok', head:'The module in one sentence', html:'Choose an orthonormal basis and write each signal as a list of coordinates. In this representation, signal energy is squared length. The energy of a signal difference is squared distance.'}
+  {t:'note', kind:'ok', head:'Main result', html:'An orthonormal basis converts each signal into coordinates. Signal energy is squared vector length. The energy of a signal difference is squared distance.'}
 ]}
 
 ];

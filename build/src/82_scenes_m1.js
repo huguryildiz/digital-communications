@@ -388,14 +388,14 @@ const SC = [
   src:'CH7 s.3', steps:2, blocks:[
   {t:'eyebrow', text:'Module 1 · Opening'},
   {t:'title', text:'From a waveform to a bit stream'},
-  {t:'lede', text:'A continuous waveform becomes a bit stream in three steps. Each step discards something different, and only one of the three can be undone.'},
+  {t:'lede', text:'A continuous waveform becomes a bit stream by sampling, quantization, and encoding. Sampling can be reversed. Quantization cannot.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p><b>Sampling</b> makes the signal discrete in time. <b>Quantization</b> makes it discrete in amplitude. <b>Encoding</b> replaces each quantized amplitude by a word of $R$ bits.</p>'},
     {t:'reveal', at:1, items:[
-      {t:'note', kind:'ok', head:'Sampling is reversible', html:'If the signal is bandlimited to $W$ and sampled fast enough, the samples carry <em>everything</em>. The original waveform can be rebuilt exactly. This is the sampling theorem, and it is the subject of the next four scenes.'}
+      {t:'note', kind:'ok', head:'Sampling condition', html:'If the signal is bandlimited to $W$ and sampled fast enough, its samples contain all the signal information. An ideal filter can then recover the waveform exactly. The next scenes derive this result.'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'warn', head:'Quantization is not', html:'Rounding an amplitude to one of $L$ levels throws information away and no later stage can recover it. What can be done is to make the loss small and to <em>quantify</em> it, which is what the signal-to-quantization-noise ratio does.'}
+      {t:'note', kind:'warn', head:'Quantization loss', html:'Quantization rounds each amplitude to one of $L$ levels. This operation removes information, so the original amplitudes cannot be recovered exactly. The signal-to-quantization-noise ratio measures the resulting error.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>P.blocks({w:620,h:280,items:[
@@ -413,7 +413,7 @@ const SC = [
       {t:'text',x:545,y:140,label:'bits',fs:12.5},
       {t:'text',x:170,y:170,label:'reversible',fs:12.5},
       {t:'text',x:360,y:170,label:'not reversible',fs:12.5}
-    ]}), caption:'The chain in the order it is applied. The bit rate leaving the encoder is $R_b = R f_s$ bits per second: bits per sample times samples per second.'}
+    ]}), caption:'Sampling, quantization, and encoding occur in this order. The encoder output rate is $R_b = R f_s$: bits per sample times samples per second.'}
   ]}
 ]},
 
@@ -424,7 +424,7 @@ const SC = [
   src:'CH7 s.4', steps:2, blocks:[
   {t:'eyebrow', text:'Module 1 · The sampling theorem'},
   {t:'title', text:'Impulse-train sampling'},
-  {t:'lede', text:'Sampling is written as a multiplication, so that the Fourier transform can be applied to it.'},
+  {t:'lede', text:'Write sampling as multiplication. This form has a Fourier transform and leads to the sampling theorem.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'Sampling every $T_s$ seconds is multiplication by an impulse train:'},
     {t:'eq', tex:'p(t)=\\sum_{n=-\\infty}^{\\infty}\\delta(t-nT_s),\\qquad f_s=\\frac{1}{T_s}'},
@@ -434,10 +434,10 @@ const SC = [
       {t:'eq', key:true, tex:'g_\\delta(t)=\\sum_{n=-\\infty}^{\\infty}g(nT_s)\\,\\delta(t-nT_s)'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'warn', head:'What this object is and is not', html:'$g_\\delta(t)$ is not a sequence of numbers. It is a continuous-time signal built from impulses, so it has a Fourier transform. We use this form because the next scene takes that transform and leads directly to the sampling theorem.'}
+      {t:'note', kind:'def', head:'Sampled signal', html:'$g_\\delta(t)$ is not a sequence of numbers. It is a continuous-time signal made from impulses, so it has a Fourier transform. The next scene takes this transform.'}
     ]}
   ], right:[
-    {t:'fig', frame:true, svg:figSamplingStack, caption:'The three signals on one time axis: the message, the sampling train, and their product. Each impulse of $g_\\delta(t)$ carries the value of $g$ at its own instant as its weight; between the instants the sampled signal is zero.'}
+    {t:'fig', frame:true, svg:figSamplingStack, caption:'The message, the sampling train, and their product share one time axis. Each impulse carries the sample value at its own time. The sampled signal is zero between these times.'}
   ]}
 ]},
 
@@ -459,11 +459,11 @@ const SC = [
       {t:'eq', key:true, tex:'G_\\delta(f)=f_s\\sum_{n=-\\infty}^{\\infty}G(f-nf_s)'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'def', head:'Read the result', html:'Sampling copies the spectrum to every multiple of $f_s$ and scales it by $f_s$. Nothing is lost <em>provided the copies do not overlap</em>. That proviso is the sampling theorem.'}
+      {t:'note', kind:'def', head:'Spectrum replicas', html:'Sampling copies the spectrum to every multiple of $f_s$ and scales each copy by $f_s$. The signal can be recovered if these copies do not overlap.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figSpectrumPair().msg, caption:'The message spectrum before sampling. It is zero outside $|f|<W$, which is what &ldquo;bandlimited to $W$&rdquo; means.'},
-    {t:'fig', frame:true, svg:()=>figSpectrumPair().sampled, caption:'The same spectrum after sampling at $f_s=3W$. The shape above now sits at every multiple of $f_s$ and is $f_s$ times as tall. The copy at the origin is the message; the others are the replicas sampling has created.'}
+    {t:'fig', frame:true, svg:()=>figSpectrumPair().sampled, caption:'The spectrum after sampling at $f_s=3W$. A scaled copy appears at every multiple of $f_s$. The copy at the origin contains the message.'}
   ]}
 ]},
 
@@ -474,15 +474,15 @@ const SC = [
   {t:'eyebrow', text:'Module 1 · The sampling theorem'},
   {t:'title', text:'Three sampling rates'},
   {t:'grid', cols:3, gap:'26px', items:[
-    [{t:'fig', svg:()=>figCase('over'), caption:'<b>Oversampling: $f_s>2W$.</b> The replicas are separated by a gap — the <b>guard band</b>. The message can be filtered out unchanged.'}],
+    [{t:'fig', svg:()=>figCase('over'), caption:'<b>Oversampling: $f_s>2W$.</b> A <b>guard band</b> separates the replicas. A filter can recover the message.'}],
     [{t:'fig', svg:()=>figCase('nyq'), caption:'<b>Nyquist sampling: $f_s=2W$.</b> The replicas touch and do not overlap. This is the lowest rate that still works.'}],
-    [{t:'fig', svg:()=>figCase('under'), caption:'<b>Undersampling: $f_s<2W$.</b> The replicas overlap. The sum in the overlap cannot be separated back into its parts.'}]
+    [{t:'fig', svg:()=>figCase('under'), caption:'<b>Undersampling: $f_s<2W$.</b> The replicas overlap. Their sum cannot be separated into the original parts.'}]
   ]},
   {t:'reveal', at:1, items:[
-    {t:'note', kind:'err', head:'Aliasing', html:'In the third case a high frequency of the message has been added to a low frequency of a replica. No filter can undo the addition. The original signal cannot be recovered from its samples — not by a better filter, not by more computation.'}
+    {t:'note', kind:'err', head:'Aliasing', html:'In the third case, a high message frequency overlaps a low frequency from a replica. No filter can separate the two components. The samples no longer determine the original signal.'}
   ]},
   {t:'reveal', at:2, items:[
-    {t:'body', html:'In practice a real signal is never strictly bandlimited. A <b>guard band</b> $f_g$ is therefore left between the edge of the message and the edge of the first replica. The sampling rate becomes $f_s = 2W + f_g$, and an anti-aliasing filter removes whatever lies above $W$ before the sampler sees it.'}
+    {t:'body', html:'A real signal is not strictly bandlimited. A <b>guard band</b> $f_g$ separates the message from the first replica. Then $f_s = 2W + f_g$. An anti-aliasing filter removes frequencies above $W$ before sampling.'}
   ]}
 ]},
 
@@ -492,15 +492,15 @@ const SC = [
   src:'CH7 s.12', steps:1, blocks:[
   {t:'eyebrow', text:'Module 1 · The sampling theorem'},
   {t:'title', text:'The sampling theorem'},
-  {t:'note', kind:'def', head:'Sampling theorem', html:'If $G(f)=0$ for $|f|\\ge W$ and the sampling rate satisfies $f_s\\ge 2W$, then $g(t)$ is determined completely by its samples $g(nT_s)$ and can be recovered from them exactly. If $f_s<2W$, aliasing occurs and the recovery fails.'},
+  {t:'note', kind:'def', head:'Sampling theorem', html:'If $G(f)=0$ for $|f|\\ge W$ and $f_s\\ge2W$, the samples $g(nT_s)$ determine $g(t)$ exactly. If $f_s<2W$, aliasing occurs and recovery fails.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>The rate $2W$ is the <b>Nyquist rate</b>: twice the highest frequency present. The interval $T_s = 1/(2W)$ at that rate is the <b>Nyquist interval</b>.</p>'},
     {t:'reveal', at:1, items:[
-      {t:'note', kind:'warn', head:'Twice the highest frequency, not twice the bandwidth', html:'For a lowpass signal the two coincide, and that is the only case treated here. For a signal whose band does not reach down to zero, the two are different numbers. The rate that matters is still set by the geometry of the replicas, not by either name.'}
+      {t:'note', kind:'warn', head:'Lowpass assumption', html:'For a lowpass signal, $W$ is both the bandwidth and the highest frequency. This chapter uses that case. For a bandpass signal, these two values are different.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figCase('nyq'),
-      caption:'The theorem drawn: at $f_s=2W$ the replicas just touch. Any slower and they overlap; any faster and a gap opens.'},
+      caption:'At $f_s=2W$, the replicas touch without overlap. A lower rate causes overlap. A higher rate leaves a gap.'},
     {t:'eq', label:'Nyquist rate', key:true, tex:'f_s^{\\min}=2W'},
     {t:'eq', label:'Nyquist interval', tex:'T_s^{\\max}=\\frac{1}{2W}'}
   ]}
@@ -513,7 +513,7 @@ const SC = [
   src:'CH7 s.9–10', steps:2, blocks:[
   {t:'eyebrow', text:'Module 1 · Reconstruction'},
   {t:'title', text:'The reconstruction filter'},
-  {t:'lede', text:'One lowpass filter undoes the replication.'},
+  {t:'lede', text:'An ideal lowpass filter keeps the central spectrum replica and rejects the other replicas.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'Keeping the copy at the origin and rejecting every other one is a lowpass filter. At $f_s=2W$:'},
     {t:'eq', tex:'H_{\\mathrm{LPF}}(f)=\\begin{cases}\\dfrac{1}{2W}, & |f|\\le W\\\\[4pt] 0, & \\text{otherwise}\\end{cases}'},
@@ -523,10 +523,10 @@ const SC = [
       {t:'small', html:'The convention fixed here and used for the rest of the course: $\\operatorname{sinc}(x)=\\dfrac{\\sin(\\pi x)}{\\pi x}$. This makes $\\operatorname{sinc}(x)$ one at $x=0$ and zero at every other integer.'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'warn', head:'Why the gain is $1/2W$', html:'Sampling multiplied the spectrum by $f_s=2W$. The filter has to divide it back. A reconstruction filter of unit gain returns a signal $2W$ times too large. That scaling error shows on no plot of the spectrum shape.'}
+      {t:'note', kind:'warn', head:'Reconstruction-filter gain', html:'Sampling scales the spectrum by $f_s=2W$. The filter must remove this scale factor. A unit-gain filter returns a signal that is $2W$ times too large.'}
     ]}
   ], right:[
-    {t:'fig', frame:true, svg:figLpf, caption:'The filter passes the copy at the origin and rejects the replicas. At exactly the Nyquist rate the replicas touch the edge of the passband, which is why an ideal filter is needed there and a gentler one suffices when the rate is higher.'},
+    {t:'fig', frame:true, svg:figLpf, caption:'The filter passes the copy at the origin and rejects the replicas. At the Nyquist rate, the replicas touch the passband edge. A higher sampling rate permits a wider transition band.'},
     {t:'reveal', at:1, items:[
       {t:'fig', frame:true, svg:figSinc, caption:'The same filter in time. The pulse is one at $t=0$ and zero at every non-zero multiple of $1/(2W)$ — exactly the sampling instants. The next scene builds the reconstruction out of shifted copies of this pulse.'}
     ]}
@@ -539,12 +539,12 @@ const SC = [
   src:'CH7 s.11–12', steps:3, blocks:[
   {t:'eyebrow', text:'Module 1 · Reconstruction'},
   {t:'title', text:'The interpolation formula'},
-  {t:'lede', text:'Every sample carries one sinc, and the sum of them is the message between the samples.'},
+  {t:'lede', text:'Each sample scales one shifted sinc pulse. The sum of these pulses reconstructs the signal between the sample times.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'Filtering in frequency is convolution in time. Convolving the impulse train with $h_{\\mathrm{LPF}}$ is one integral:'},
     {t:'eq', label:'Convolution integral', tex:'g_r(t)=\\int_{-\\infty}^{\\infty}\\overbrace{\\sum_{n=-\\infty}^{\\infty}g(nT_s)\\,\\delta(\\tau-nT_s)}^{=\\,g_\\delta(\\tau)}\\operatorname{sinc}\\!\\bigl(2W(t-\\tau)\\bigr)\\,d\\tau'},
     {t:'reveal', at:1, items:[
-      {t:'body', html:'The sum does not depend on $\\tau$, so it moves outside the integral. What is left inside is a sinc against a shifted impulse, and the sifting property replaces $\\tau$ by $nT_s$:'},
+      {t:'body', html:'Move the sum outside the integral because it does not depend on $\\tau$. The sifting property then replaces $\\tau$ by $nT_s$:'},
       {t:'eq', tex:'g_r(t)=\\sum_{n=-\\infty}^{\\infty}g(nT_s)\\underbrace{\\int_{-\\infty}^{\\infty}\\operatorname{sinc}\\!\\bigl(2W(t-\\tau)\\bigr)\\,\\delta(\\tau-nT_s)\\,d\\tau}_{=\\,\\operatorname{sinc}\\!\\bigl(2W(t-nT_s)\\bigr)}'},
       {t:'eq', key:true, tex:'g_r(t)=\\sum_{n=-\\infty}^{\\infty}g(nT_s)\\operatorname{sinc}\\!\\bigl(2W(t-nT_s)\\bigr)'}
     ]},
@@ -553,10 +553,10 @@ const SC = [
       {t:'eq', tex:'g_r(t)=\\sum_{n=-\\infty}^{\\infty}g\\!\\left(\\frac{n}{2W}\\right)\\operatorname{sinc}(2Wt-n)'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'ok', head:'Why the sum passes through the samples', html:'At $t=kT_s$ every term vanishes except the one with $n=k$, because $\\operatorname{sinc}$ is zero at every non-zero integer. So $g_r(kT_s)=g(kT_s)$ exactly, and the interpolation is not an approximation between the samples either — it is the message.'}
+      {t:'note', kind:'ok', head:'Values at the sample times', html:'At $t=kT_s$, every term is zero except the term with $n=k$. Therefore, $g_r(kT_s)=g(kT_s)$. The same sum also reconstructs the values between the samples.'}
     ]}
   ], right:[
-    {t:'fig', frame:true, svg:figInterp, caption:'Each sample contributes one sinc scaled by its own value. Their sum is drawn heavy; it passes through every sample because each sinc is zero at all the other sampling instants. Point to a sample — or touch it — to see its own sinc alone, with those zeros marked.'}
+    {t:'fig', frame:true, svg:figInterp, caption:'Each sample contributes one scaled sinc pulse. The heavy curve is their sum and passes through every sample. Point to a sample to show its pulse.'}
   ]}
 ]},
 
@@ -568,7 +568,7 @@ const SC = [
   {t:'title', text:'Worked example: three sampling rates'},
   {t:'wex', rows:[
     ['Given','A signal $x(t)$ bandlimited to $W=40$ kHz.'],
-    ['Find','(a) the Nyquist rate; (b) the rate with a $10$ kHz guard band; (c) the Nyquist rate of $y(t)=x(t)\\cos(80000\\pi t)$.']
+    ['Find','Find (a) the Nyquist rate, (b) the rate with a $10$ kHz guard band, and (c) the Nyquist rate of $y(t)=x(t)\\cos(80000\\pi t)$.']
   ]},
   {t:'reveal', at:1, items:[
     {t:'wex', rows:[
@@ -584,9 +584,9 @@ const SC = [
   ]},
   {t:'reveal', at:3, items:[
     {t:'wex', rows:[
-      ['Check','The bandwidth of $y$ is $f_c + W = 40+40 = 80$ kHz, and $2 \\times 80 = 160$ kHz. Doubling the carrier alone would double the rate again, which is the sanity check: the rate follows the highest frequency present, not the width of the message.']
+      ['Check','The highest frequency of $y$ is $f_c+W=80$ kHz. Therefore, its Nyquist rate is $160$ kHz. The rate follows the highest frequency, not the message bandwidth.']
     ]},
-    {t:'note', kind:'warn', head:'The trap in part (c)', html:'Answering $80$ kHz is answering for $x$, not for $y$. Modulation moves the message up the frequency axis, and the sampler has to keep up with where it has moved to.'}
+    {t:'note', kind:'warn', head:'Common error in part (c)', html:'The rate $80$ kHz applies to $x$, not to $y$. Modulation moves the highest frequency to $80$ kHz. Therefore, $y$ needs a sampling rate of $160$ kHz.'}
   ]}
 ]},
 
@@ -597,19 +597,19 @@ const SC = [
   src:'CH7 s.15–16', steps:2, blocks:[
   {t:'eyebrow', text:'Module 1 · Quantization'},
   {t:'title', text:'Uniform quantization'},
-  {t:'lede', text:'Rounding each sample to the nearest of a finite set of levels. The two standard families differ only at zero.'},
+  {t:'lede', text:'Quantization rounds each sample to one of a finite set of levels. The two standard families differ at zero.'},
   {t:'cols', ratio:'c-5-7', vcenter:true, left:[
     {t:'note', kind:'def', head:'Definition', html:'<b>Quantization</b> replaces a sample amplitude by the nearest member of a finite set of $L$ <b>representation levels</b>. In a <b>uniform</b> quantizer the spacing $\\Delta$ between consecutive levels is the same everywhere.'},
     {t:'reveal', at:1, items:[
       {t:'body', html:'<p>The two families differ in what happens at zero. A <b>mid-rise</b> quantizer puts a decision boundary at zero, so no output level is zero. A <b>mid-tread</b> quantizer puts a level at zero, so a small input is quantized to exactly zero.</p>'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'warn', head:'Which one a question means', html:'A silent input is reproduced as silence by a mid-tread quantizer and as a $\\pm\\Delta/2$ chatter by a mid-rise one. Speech coders use mid-tread for that reason. Read the level list before assuming: with $L$ even and levels at $\\pm\\Delta/2, \\pm3\\Delta/2,\\ldots$ the quantizer is mid-rise.'}
+      {t:'note', kind:'warn', head:'Mid-rise or mid-tread', html:'A mid-tread quantizer maps a small input to zero. A mid-rise quantizer maps it to $\\pm\\Delta/2$. If $L$ is even and the levels are $\\pm\\Delta/2,\\pm3\\Delta/2,\\ldots$, the quantizer is mid-rise.'}
     ]}
   ], right:[
     {t:'grid', cols:2, gap:'26px', items:[
-      [{t:'fig', frame:true, svg:()=>figQuantizer('midrise'), caption:'<b>Mid-rise</b>, $L=8$. A boundary at the origin; the output steps up through $\\pm\\Delta/2$.'}],
-      [{t:'fig', frame:true, svg:()=>figQuantizer('midtread'), caption:'<b>Mid-tread</b>, $L=8$. A level at the origin; the tread through zero is one step wide.'}]
+      [{t:'fig', frame:true, svg:()=>figQuantizer('midrise'), caption:'<b>Mid-rise</b>, $L=8$. A boundary is at the origin. The output steps through $\\pm\\Delta/2$.'}],
+      [{t:'fig', frame:true, svg:()=>figQuantizer('midtread'), caption:'<b>Mid-tread</b>, $L=8$. A level is at the origin. The region around zero is one step wide.'}]
     ]}
   ]}
 ]},
@@ -621,14 +621,14 @@ const SC = [
   {t:'eyebrow', text:'Module 1 · Quantization'},
   {t:'title', text:'The quantizer as a function'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
-    {t:'body', html:'A quantizer is a staircase: a partition of the input range into $L$ regions $\\mathcal{J}_k$, and one output value $v_k$ per region.'},
+    {t:'body', html:'A quantizer divides the input range into $L$ regions $\\mathcal{J}_k$. Each region has one output value $v_k$.'},
     {t:'eq', tex:'v=\\mathbb{Q}(m)=v_k \\quad\\text{for}\\quad m\\in\\mathcal{J}_k=\\{m_k< m\\le m_{k+1}\\}'},
     {t:'eq', label:'uniform, symmetric range', key:true, tex:'\\Delta=\\frac{2m_{\\max}}{L}'},
     {t:'reveal', at:1, items:[
       {t:'note', kind:'def', head:'The two optimality conditions', html:'<ol><li>Each boundary is the <b>midpoint</b> of the two levels it separates: $m_k=\\tfrac12(v_{k-1}+v_k)$. Given the levels, this is the rule that minimises the error, because it sends every input to the nearer level.</li><li>Each level is the <b>centroid</b> of its own region: $v_k=E[M\\mid M\\in\\mathcal{J}_k]$. Given the boundaries, this is the value that minimises the mean square error inside the region.</li></ol>'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'body', html:'The two conditions refer to each other, which is why they are applied by turns rather than solved at once. A uniform quantizer satisfies the first by construction; it satisfies the second only when the input is uniformly distributed.'}
+      {t:'body', html:'The two conditions depend on each other, so apply them in turn. A uniform quantizer always satisfies the midpoint condition. It satisfies the centroid condition for a uniform input.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figQuantizer('midrise'), caption:'A uniform mid-rise quantizer with $L=8$ over $[-4,4]$, so $\\Delta = 8/8 = 1$. Each tread is $\\Delta$ wide. Its output lies at the middle of the tread, as the midpoint condition requires.'}
@@ -641,7 +641,7 @@ const SC = [
   steps:0, blocks:[
   {t:'eyebrow', text:'Module 1 · Quantization'},
   {t:'title', text:'Laboratory A · Quantization and SQNR'},
-  {t:'body', html:'Set the number of levels and the amplitude of the input, and read the step size, the mean-square error and the signal-to-quantization-noise ratio. The measured ratio is computed from the waveform itself; the predicted one comes from $\\alpha + 6.02R$. Where they part company is the interesting part.'},
+  {t:'body', html:'Set the number of levels and the input amplitude. Read the step size, mean-square error, and signal-to-quantization-noise ratio. Compare the measured value with the prediction $\\alpha+6.02R$.'},
   {t:'lab', id:'A'}
 ]},
 
@@ -652,7 +652,7 @@ const SC = [
   src:'CH7 s.18–20', steps:3, blocks:[
   {t:'eyebrow', text:'Module 1 · Quantization noise'},
   {t:'title', text:'Quantization noise'},
-  {t:'lede', text:'The rounding error behaves like a small noise, and its power can be computed exactly.'},
+  {t:'lede', text:'For a fine uniform quantizer, the rounding error can be modeled as uniform noise.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'The quantization error is the difference between what went in and what came out:'},
     {t:'eq', tex:'Q=M-V=M-\\mathbb{Q}(M)'},
@@ -668,11 +668,11 @@ const SC = [
     {t:'reveal', at:3, items:[
       {t:'body', html:'Substituting $\\Delta=2m_{\\max}/L$ and $L=2^{R}$ gives the form used for the rest of the module:'},
       {t:'eq', key:true, tex:'E[Q^{2}]=\\frac{1}{12}\\left(\\frac{2m_{\\max}}{L}\\right)^{2}=\\frac{1}{3}\\frac{m_{\\max}^{2}}{L^{2}}=\\frac{m_{\\max}^{2}}{3\\cdot 2^{2R}}'},
-      {t:'note', kind:'def', head:'What this says, in plain words', html:'Rounding to the nearest level adds a small random amount to every sample, and that amount is never more than half a step. Its power is one twelfth of the step squared. The last form says the same thing about bits: every extra bit halves the step, so it divides the noise power by four. That factor of four is the $6$ dB the next scene is about.'}
+      {t:'note', kind:'def', head:'Effect of the bit count', html:'The error magnitude is at most half a step. Its power is $\\Delta^2/12$. Each extra bit halves $\\Delta$ and divides the error power by four.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figQuantError().top, caption:'A sinusoid of amplitude $5$ through an eight-level uniform quantizer, so $\\Delta=1.25$.'},
-    {t:'fig', frame:true, svg:()=>figQuantError().err, caption:'The error. It is bounded by $\\pm\\Delta/2$ everywhere and sweeps that interval as the input crosses the treads — which is the picture the uniform model is drawn from.'}
+    {t:'fig', frame:true, svg:()=>figQuantError().err, caption:'The error stays between $-\\Delta/2$ and $\\Delta/2$. It moves through this interval as the input crosses the quantizer regions.'}
   ]}
 ]},
 
@@ -682,7 +682,7 @@ const SC = [
   src:'CH7 s.21–22', steps:2, blocks:[
   {t:'eyebrow', text:'Module 1 · Quantization noise'},
   {t:'title', text:'Signal-to-quantization-noise ratio'},
-  {t:'lede', text:'Six decibels a bit.'},
+  {t:'lede', text:'Under the uniform-error model, each extra bit increases the SQNR by about $6.02$ dB.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'eq', label:'definition', tex:'\\mathrm{SQNR}=\\frac{P_M}{E[Q^{2}]}=\\frac{E[M^{2}]}{E\\bigl[(M-\\mathbb{Q}(M))^{2}\\bigr]}'},
     {t:'reveal', at:1, items:[
@@ -691,8 +691,8 @@ const SC = [
       {t:'eq', key:true, tex:'\\mathrm{SQNR}\\;[\\mathrm{dB}]=\\underbrace{10\\log_{10}\\frac{3P_M}{m_{\\max}^{2}}}_{\\alpha}+\\;6.02R'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'ok', head:'The rule worth remembering', html:'Every extra bit per sample adds $20\\log_{10}2 = 6.02$ dB. Doubling the number of levels halves the step size, which quarters the error power — and a factor of four is $6.02$ dB.'},
-      {t:'note', kind:'warn', head:'What $\\alpha$ costs', html:'The first term is negative for every signal that does not fill the quantizer range. A sinusoid of amplitude $m_{\\max}$ has $P_M=m_{\\max}^2/2$, so $\\alpha=10\\log_{10}1.5\\approx 1.76$ dB. A signal using a tenth of the range loses $20$ dB of it, and no number of bits buys that back cheaply.'}
+      {t:'note', kind:'ok', head:'Increase per bit', html:'Each extra bit adds $20\\log_{10}2=6.02$ dB. Doubling the level count halves the step size and divides the error power by four.'},
+      {t:'note', kind:'warn', head:'Input-range use', html:'The term $\\alpha$ depends on how the signal uses the quantizer range. A full-scale sinusoid gives $\\alpha\\approx1.76$ dB. Using one tenth of the range reduces the SQNR by $20$ dB.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>{
@@ -704,7 +704,7 @@ const SC = [
       line(1.0, C.mid);         /* uniform over the range */
       line(0.03, C.err);        /* a signal using a fifth of the range */
       return a.svg();
-    }, caption:'Three signals, three values of $\\alpha$, one slope. The slope is $6.02$ dB per bit for all of them; what the signal does is set the intercept.'},
+    }, caption:'All three lines increase by $6.02$ dB per bit. The signal power and peak amplitude set the intercept $\\alpha$.'},
     {t:'legend', items:[['in','sinusoid at full scale'],['mid','uniform over the range'],
                         ['err','using a fifth of the range']]}
   ]}
@@ -736,8 +736,8 @@ const SC = [
     {t:'wex', rows:[
       ['Check','The two answers differ by $6.02$ dB, which is one bit. Independently: $E[Q^{2}]=\\Delta^{2}/12 = 1.25^{2}/12 = 0.1302$, and $10\\log_{10}(12.5/0.1302) = 19.82$ dB. Two routes, one number.']
     ]},
-    {t:'note', kind:'warn', head:'What the formula does not know', html:'Quantize this waveform and measure the error it actually makes, and the answers are $19.09$ dB and $25.31$ dB. That is about $0.7$ dB and $0.5$ dB below what the formula gives. The uniform error model assumes the error is equally likely anywhere in $(-\\Delta/2,\\Delta/2)$. A sinusoid spends most of its time near its peaks, where the error is largest. The gap halves with every extra bit — $0.27$ dB at $R=6$, $0.14$ dB at $R=8$. That is what "$\\Delta$ small enough" means. At the resolutions used in practice the formula is exact for every purpose. At eight levels it is optimistic. Knowing by how much is the difference between using a model and believing it.'},
-    {t:'note', kind:'warn', head:'The factor of two in the step size', html:'The range spanned is $2m_{\\max}=10$ V, not $m_{\\max}$. Writing $\\Delta = m_{\\max}/L$ halves every step size and is the commonest slip in this calculation. It leaves the SQNR in decibels untouched when that is computed from $\\alpha+6.02R$, so the error survives until someone asks for $\\Delta$ itself.'}
+    {t:'note', kind:'warn', head:'Model limit', html:'The measured results are $19.09$ dB and $25.31$ dB. They are below the model by $0.7$ dB and $0.5$ dB. A sinusoid does not produce a uniform error at low resolution. The gap decreases as $R$ increases.'},
+    {t:'note', kind:'warn', head:'Common error: step size', html:'The full input range is $2m_{\\max}=10$ V. Therefore, $\\Delta=2m_{\\max}/L$. Using $m_{\\max}/L$ makes every step half its correct size.'}
   ]}
 ]},
 
@@ -760,9 +760,9 @@ const SC = [
   ]},
   {t:'reveal', at:2, items:[
     {t:'wex', rows:[
-      ['Check','$R=\\log_2 256 = 8$ bits. Here $\\alpha = 10\\log_{10}\\dfrac{3(1/3)}{1}=0$ dB exactly, so $\\mathrm{SQNR}=6.02(8)=48.16$ dB. The two agree, and the reason $\\alpha$ vanishes is that a uniform source over the full range is the one case in which the uniform quantizer is also the optimal one.']
+      ['Check','$R=\\log_2 256=8$ bits and $\\alpha=0$ dB. Thus, $\\mathrm{SQNR}=6.02(8)=48.16$ dB. A uniform quantizer is optimal for a uniform source over the full range.']
     ]},
-    {t:'note', kind:'ok', head:'Why the uniform model is exact here', html:'For every other input distribution, $E[Q^{2}]=\\Delta^{2}/12$ is an approximation that holds when $\\Delta$ is small. For a uniform input spanning the range it is not an approximation at all: the error really is uniform on $(-\\Delta/2,\\Delta/2)$.'}
+    {t:'note', kind:'ok', head:'Uniform-source case', html:'For a uniform input that spans the quantizer range, the error is uniform on $(-\\Delta/2,\\Delta/2)$. Therefore, $E[Q^2]=\\Delta^2/12$ is exact in this case.'}
   ]}
 ]},
 
@@ -789,7 +789,7 @@ const SC = [
     ]}
   ]},
   {t:'reveal', at:3, items:[
-    {t:'note', kind:'err', head:'Why $\\Delta^{2}/12$ would have lied', html:'The quantizer is coarse and its outer regions are unbounded, so the error there is not bounded by half a step at all. A sample at $x=120$ is quantized to $30$, and the error is $90$. Applying the uniform model with $\\Delta=20$ would predict $E[Q^{2}]=33.3$ and an SQNR of $10.8$ dB, three times too optimistic. The model is a small-step model, and this is what its failure looks like.'},
+    {t:'note', kind:'err', head:'Model limit', html:'This quantizer is coarse, and its outer regions are unbounded. A sample at $x=120$ has an error of $90$. The formula $\\Delta^2/12$ predicts $10.8$ dB, but direct integration gives $3.27$ dB.'},
     {t:'wex', rows:[
       ['Check','The central region alone contributes $79.50$ of the $188.18$, and it holds $P(|X|<20) = 68\\%$ of the probability mass with an error of up to $20$. That is where a five-level quantizer spends its error, and it is why the answer is a few decibels rather than a few tens.']
     ]}
@@ -803,14 +803,14 @@ const SC = [
   src:'CH7 s.29–30', steps:2, blocks:[
   {t:'eyebrow', text:'Module 1 · Non-uniform quantization'},
   {t:'title', text:'Non-uniform quantization'},
-  {t:'lede', text:'When equal steps are the wrong steps: spend the levels where the signal spends its time.'},
+  {t:'lede', text:'A non-uniform quantizer uses smaller steps where the signal occurs more often.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>Speech spends most of its time at small amplitudes and only occasionally reaches the peak. A uniform quantizer gives the same absolute step to a whisper and to a shout. The whisper is therefore quantized far more coarsely <em>in proportion to itself</em>.</p>'},
     {t:'reveal', at:1, items:[
-      {t:'body', html:'Drop the requirement that the regions have equal length, and the distortion falls at the same level count. Make the regions narrow where the density is high, and wide where it is low. This is what the centroid condition asks for and what a uniform quantizer cannot give.'}
+      {t:'body', html:'Unequal regions can reduce distortion without adding levels. Use narrow regions where the probability density is high. Use wide regions where it is low.'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'def', head:'Companding', html:'Rather than build a non-uniform quantizer, compress the signal with a memoryless non-linearity and quantize the result <em>uniformly</em>. At the receiver, expand with the inverse. <b>Comp</b>ressing plus exp<b>anding</b> is companding, and it is how the non-uniform quantizer is built out of a uniform one.'}
+      {t:'note', kind:'def', head:'Companding', html:'First compress the signal with a memoryless nonlinearity. Then use a uniform quantizer. The receiver applies the inverse expansion. The word <b>companding</b> combines compressing and expanding.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>P.blocks({w:700,h:230,items:[
@@ -824,7 +824,7 @@ const SC = [
       {t:'text',x:635,y:56,label:'\\hat{m}(t)',tex:true,fs:15},
       {t:'text',x:150,y:145,label:'large amplitudes compressed',fs:12},
       {t:'text',x:560,y:145,label:'levels restored',fs:12}
-    ]}), caption:'The compressor gives high gain to weak signals and low gain to strong ones; the expander undoes it exactly, so the pair is transparent and only the quantizer in the middle loses anything.'}
+    ]}), caption:'The compressor gives more gain to small amplitudes than to large amplitudes. The expander applies the inverse function. Only the quantizer removes information.'}
   ]}
 ]},
 
@@ -834,19 +834,19 @@ const SC = [
   src:'CH7 s.31–33', steps:2, blocks:[
   {t:'eyebrow', text:'Module 1 · Non-uniform quantization'},
   {t:'title', text:'A-law and µ-law companding'},
-  {t:'lede', text:'Two laws, one shape.'},
+  {t:'lede', text:'A-law and $\\mu$-law use similar nonlinear compressor functions.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'eq', label:'mu-law', tex:'y=\\frac{\\ln(1+\\mu|x|)}{\\ln(1+\\mu)}\\operatorname{sgn}(x),\\qquad |x|\\le 1'},
     {t:'eq', label:'A-law', tex:'y=\\begin{cases}\\dfrac{A|x|}{1+\\ln A}\\operatorname{sgn}(x), & 0\\le|x|\\le\\dfrac{1}{A}\\\\[8pt] \\dfrac{1+\\ln(A|x|)}{1+\\ln A}\\operatorname{sgn}(x), & \\dfrac{1}{A}<|x|\\le 1\\end{cases}'},
     {t:'reveal', at:1, items:[
-      {t:'body', html:'Both are normalised so that $x=\\pm1$ maps to $y=\\pm1$: the compressor rescales the amplitude distribution without changing the range the quantizer has to cover. The standard parameters are $\\mu=255$ and $A=87.6$.'}
+      {t:'body', html:'Both laws map $x=\\pm1$ to $y=\\pm1$. Thus, the compressor changes the amplitude distribution without changing the quantizer range. The standard parameters are $\\mu=255$ and $A=87.6$.'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'ok', head:'They perform alike', html:'On the same speech and the same eight-bit uniform quantizer the two give signal-to-noise ratios within a hundredth of a decibel of one another. The difference between them is regional, not technical: $\\mu$-law in North America and Japan, $A$-law in most of the rest of the world.'},
-      {t:'body', html:'The one place the difference shows is near zero, where the $A$-law is exactly linear and the $\\mu$-law is not. That makes $A$-law slightly better behaved on very small signals and slightly worse on the ones just above them.'}
+      {t:'note', kind:'ok', head:'Performance and use', html:'For the same speech and eight-bit quantizer, their SQNR values differ by less than $0.01$ dB. North America and Japan use $\\mu$-law. Most other regions use A-law.'},
+      {t:'body', html:'A-law is linear near zero, but $\\mu$-law is not. This difference changes how the laws treat very small amplitudes.'}
     ]}
   ], right:[
-    {t:'fig', frame:true, svg:figCompanding, caption:'The two compressor characteristics against the identity, which is what no companding would give. Both spend most of their output range on the smallest tenth of the input.'}
+    {t:'fig', frame:true, svg:figCompanding, caption:'The dashed identity line shows the result without companding. Both compressor curves use much of the output range for small input amplitudes.'}
   ]}
 ]},
 
@@ -864,7 +864,7 @@ const SC = [
       {t:'body', html:'<p><b>Natural binary coding</b> assigns $0$ to $L-1$ to the levels in increasing order. <b>Gray coding</b> assigns the words so that adjacent levels differ in exactly one bit.</p>'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'ok', head:'Why Gray coding is worth the trouble', html:'When a channel error does occur it almost always moves the decision to a <em>neighbouring</em> level. Under natural binary that can flip several bits at once — level $7$ is $0111$ and level $8$ is $1000$, four bits apart. Under Gray coding a neighbouring level is one bit away by construction, so the same channel error costs one bit instead of four.'}
+      {t:'note', kind:'ok', head:'Gray-code advantage', html:'A small decision error usually selects a neighboring level. Adjacent Gray words differ by one bit. Adjacent natural-binary words can differ by several bits.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>{
@@ -880,7 +880,7 @@ const SC = [
           {fs:14, color:(i===2 && k>0 && k<8)?C.out:C.ink, anchor:'middle'}));
       });
       return a.svg();
-    }, caption:'Eight levels in both codes. Reading down the Gray column, exactly one digit changes at every step; reading down the natural column, three change between $011$ and $100$.'}
+    }, caption:'Both columns encode eight levels. Adjacent Gray words change one bit. The natural words $011$ and $100$ change three bits.'}
   ]}
 ]},
 
@@ -895,10 +895,10 @@ const SC = [
     LINE_CODES.map((c,i)=>[{t:'fig', svg:()=>figLineCode(i), caption:'<b>'+c[0]+'.</b>'}])
   },
   {t:'reveal', at:1, items:[
-    {t:'body', html:'<p><b>Unipolar NRZ</b> is on-off signalling: it is the simplest, and it carries a DC level that causes the waveform to droop through any AC-coupled stage. <b>Polar NRZ</b> is antipodal signalling and has no DC component for balanced data, which is why it is the shape Module 2 analyses.</p>'}
+    {t:'body', html:'<p><b>Unipolar NRZ</b> uses zero and one positive level. Its DC component causes droop in an AC-coupled stage. <b>Polar NRZ</b> uses opposite levels. Balanced polar data has no DC component.</p>'}
   ]},
   {t:'reveal', at:2, items:[
-    {t:'note', kind:'warn', head:'What a long run of one symbol costs', html:'Both NRZ codes go quiet during a long run of identical bits. A receiver that recovers its clock from the waveform then has nothing to lock to. <b>Manchester</b> forces a transition in the middle of every bit, so the clock is always recoverable and there is never a DC component. The price is twice the bandwidth.'}
+    {t:'note', kind:'warn', head:'Clock recovery', html:'A long run of equal NRZ bits has no transitions. A receiver cannot recover its clock from such a segment. Manchester coding adds a transition to every bit but uses twice the bandwidth.'}
   ]}
 ]},
 
@@ -915,12 +915,12 @@ const SC = [
     ]},
     {t:'reveal', at:1, items:[
       {t:'wex', rows:[
-        ['Method','$\\Delta$ from the range and the level count; each sample by direct evaluation; each code word by which of the eight treads the sample falls in.'],
+        ['Method','Calculate $\\Delta$ from the range and level count. Evaluate each sample. Select the code word from the quantization region.'],
         ['Solution','$\\Delta = (8-0)/8 = 1$ V, and the levels sit at the middle of each tread: $0.5, 1.5, \\ldots, 7.5$.']
       ]}
     ]}
   ], right:[
-    {t:'fig', frame:true, svg:figPcmExample, caption:'The message, its samples and the level each is rounded to. The two disagree by less than half a step everywhere, which is the bound of the previous section drawn out.'}
+    {t:'fig', frame:true, svg:figPcmExample, caption:'The plot shows the message, its samples, and the selected levels. Each quantization error is less than half a step.'}
   ]},
   {t:'reveal', at:2, items:[
     {t:'wex', rows:[
@@ -943,7 +943,7 @@ const SC = [
   steps:0, blocks:[
   {t:'eyebrow', text:'Module 1 · Pulse code modulation'},
   {t:'title', text:'Laboratory B · PCM, DPCM and delta modulation'},
-  {t:'body', html:'PCM sends each sample. Differential PCM sends the difference between the sample and a prediction of it. Delta modulation sends one bit: whether the signal went up or down. Choose the method and the step size, and watch where each one fails.'},
+  {t:'body', html:'PCM encodes each sample. Differential PCM encodes the prediction error. Delta modulation sends one bit for an increase or decrease. Compare their errors for the same source and bit rate.'},
   {t:'lab', id:'B'}
 ]},
 
@@ -954,26 +954,26 @@ const SC = [
   src:'CH7 s.37', steps:3, blocks:[
   {t:'eyebrow', text:'Module 1 · Vector quantization'},
   {t:'title', text:'Vector quantization'},
-  {t:'lede', text:'Quantizing a block of samples together, instead of one at a time.'},
+  {t:'lede', text:'Vector quantization processes a block of samples as one point.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
-    {t:'body', html:'<p>Every quantizer so far has rounded one sample on its own. That is <b>scalar</b> quantization, and it throws something away before it starts. Real signals do not jump about from one sample to the next. A quantizer that sees one sample at a time cannot know that.</p>'},
-    {t:'note', kind:'def', head:'What vector quantization is', html:'Take $n$ samples at a time and treat them as one point in $n$ dimensions. Choose a <b>codebook</b> of allowed points, and round the whole block to the nearest one. With $n=1$ this is the quantizer of section 1.3. With $n=2$ the allowed points are places in a plane, and they can be put wherever the signal actually goes.'},
+    {t:'body', html:'<p><b>Scalar quantization</b> processes one sample at a time. It does not use the dependence between neighboring samples.</p>'},
+    {t:'note', kind:'def', head:'Vector quantization', html:'Treat $n$ samples as one point in $n$ dimensions. A <b>codebook</b> contains the allowed output points. The quantizer selects the nearest codebook point. Scalar quantization is the case $n=1$.'},
     {t:'reveal', at:1, items:[
-      {t:'body', html:'<p>Here is the whole argument, in a case small enough to count. Take $L=16$ levels and look at <em>pairs</em> of neighbouring samples. A scalar quantizer allows every combination:</p>'},
+      {t:'body', html:'<p>Take $L=16$ levels and form pairs of neighboring samples. A scalar quantizer allows every combination:</p>'},
       {t:'eq', tex:'L^{2}=16^{2}=256\\ \\text{pairs},\\qquad \\log_2 256 = 8\\ \\text{bits a pair}=4\\ \\text{bits a sample}'},
-      {t:'body', html:'<p>Now suppose the signal is smooth enough that a sample never moves by more than one step from the one before it. Then only the pairs on and beside the diagonal can ever occur:</p>'},
+      {t:'body', html:'<p>Now assume that consecutive samples differ by at most one step. Only the pairs on and beside the diagonal can occur:</p>'},
       {t:'eq', key:true, tex:'3L-2=46\\ \\text{pairs},\\qquad \\lceil\\log_2 46\\rceil = 6\\ \\text{bits a pair}=3\\ \\text{bits a sample}'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'ok', head:'A quarter of the rate, at the same distortion', html:'The cells did not change size, so the rounding error did not change. The code now omits the $210$ combinations that this signal model never produces. Vector quantization uses its codebook only in regions that the signal can reach.'}
+      {t:'note', kind:'ok', head:'Rate reduction', html:'The cell size and rounding error do not change. The code omits $210$ pairs that the signal model cannot produce. The rate decreases from four to three bits per sample.'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'small', html:'The next scene takes the case this is actually used on. There the samples are the pixels of an image, and there are a quarter of a million of them.'}
+      {t:'small', html:'The next scene applies the same calculation to image pixels.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figPairLattice(16, APP.state.step>=1),
-      caption:'Every pair of neighbouring samples a $16$-level quantizer can produce: $256$ squares, and a scalar quantizer pays for all of them. Once the smooth-signal restriction arrives, only the $46$ near-diagonal squares ever occur, and the codebook needs $6$ bits a pair instead of $8$.'},
-    {t:'small', html:'A small gain survives even for independent samples, because better-shaped cells pack the space more efficiently than squares — but it is under a quarter of a bit a sample, and this course does not pursue it.'}
+      caption:'A scalar quantizer represents all $256$ pairs. Under the smooth-signal assumption, only $46$ near-diagonal pairs can occur. These pairs need six bits instead of eight.'},
+    {t:'small', html:'Better cell shapes can also reduce the rate for independent samples. This course does not develop that smaller gain.'}
   ]}
 ]},
 
@@ -983,9 +983,9 @@ const SC = [
   src:'CH7 s.37', steps:3, blocks:[
   {t:'eyebrow', text:'Module 1 · Vector quantization'},
   {t:'title', text:'Quantizing an image'},
-  {t:'lede', text:'What quantization saves, and what it costs.'},
+  {t:'lede', text:'Fewer quantization levels reduce the image size but increase visible error.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
-    {t:'body', html:'<p>An image is the case where this matters, because there are so many samples. Each pixel is one sample of brightness, and the arithmetic of section 1.6 applies to it unchanged.</p>'},
+    {t:'body', html:'<p>Each image pixel is one sample of brightness. The bit-rate relation from section 1.6 applies to these samples.</p>'},
     {t:'wex', head:'A greyscale image, quantized', rows:[
       ['Given','$512\\times512$ pixels at $8$ bits a pixel, so $L=256$ levels.'],
       ['Uncoded','$512^{2}(8)=2\\,097\\,152$ bits, which is $256$ KiB.'],
@@ -993,30 +993,30 @@ const SC = [
       ['Saved','$3$ bits of every $8$, so $37.5\\%$ of the file.']
     ]},
     {t:'reveal', at:1, items:[
-      {t:'body', html:'<p>What that costs is the same number section 1.4 gives, and it is large:</p>'},
+      {t:'body', html:'<p>Reducing the bit count also reduces the SQNR:</p>'},
       {t:'eq', key:true, tex:'\\Delta\\mathrm{SQNR}=6.02(8-5)=18.06\\ \\text{dB}'},
-      {t:'note', kind:'warn', head:'And it is visible, not just measurable', html:'A smooth gradient — a sky, a shadow across a wall — is a slow ramp in brightness. Quantize it coarsely and the ramp becomes a staircase. The picture then shows <b>bands</b> of flat tone, with hard edges between them where the scene had no edge. The eye finds those invented edges easily, which is why an image tolerates far fewer bits in a noisy region than in a smooth one.'}
+      {t:'note', kind:'warn', head:'Banding', html:'Coarse quantization changes a smooth brightness gradient into flat steps. The boundaries between the steps appear as false edges. This visible error is called <b>banding</b>.'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'def', head:'This is lossy compression', html:'The removed information is not recoverable. The omitted bits described where the pixel lay inside its quantization interval. A decoder cannot recover that position. This loss is why the method is called <b>lossy</b>. JPEG also uses quantization, but it quantizes transformed image blocks rather than individual pixels.'}
+      {t:'note', kind:'def', head:'Lossy compression', html:'The decoder cannot recover the position of a pixel inside its quantization interval. Therefore, this compression is <b>lossy</b>. JPEG also uses quantization, but it applies it to transformed image blocks.'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'small', html:'<b>Where the chapter ends:</b> sampling is reversible when the sampling-theorem conditions hold; quantization is not. An image makes the second fact visible, and later chapters start with the resulting bit stream.'}
+      {t:'small', html:'Sampling is reversible when the sampling-theorem conditions hold. Quantization is not reversible. Later modules start with the resulting bit stream.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figBanding(),
-      caption:'One row of a smooth gradient, quantized at $256$ levels and at $8$. The fine quantizer follows the ramp so closely that the two cannot be told apart; the coarse one replaces it with flat steps, and each step edge is a band boundary the eye sees as a line that is not in the scene.'},
-    {t:'small', html:'The step height here is $\\Delta=2m_{\\max}/L$, exactly as in section 1.3. An image is not a new kind of quantizer, only a great many samples of one.'}
+      caption:'The fine quantizer follows the smooth gradient. The coarse quantizer replaces the gradient with flat steps. Each step boundary appears as a false line.'},
+    {t:'small', html:'The step size is $\\Delta=2m_{\\max}/L$, as in section 1.3. Image quantization applies the same operation to many samples.'}
   ]}
 ]},
 
 /* ---------------------------------------------------------------- 1.8 ---- */
-{ id:'m1-synth', module:'M1', nav:'Summary', title:'What Module 1 established',
+{ id:'m1-synth', module:'M1', nav:'Summary', title:'Module 1 summary',
   objective:'Collect the results this module contributes to the rest of the course.',
   keywords:'summary sampling quantization pcm results bit rate sqnr',
   steps:0, blocks:[
   {t:'eyebrow', text:'Module 1 · Summary'},
-  {t:'title', text:'What Module 1 established'},
+  {t:'title', text:'Module 1 summary'},
   {t:'grid', cols:2, gap:'26px', items:[
     [{t:'card', head:'Sampling', items:[
       {t:'fig', svg:miniSampling},
@@ -1026,20 +1026,20 @@ const SC = [
     [{t:'card', head:'Reconstruction', items:[
       {t:'fig', svg:miniSinc},
       {t:'eq', plain:true, tex:'g_r(t)=\\sum_n g(nT_s)\\operatorname{sinc}(2Wt-n)'},
-      {t:'small', html:'One lowpass filter recovers the message; its impulse response interpolates between the samples.'}
+      {t:'small', html:'One lowpass filter recovers the message. Its impulse response interpolates between the samples.'}
     ]}],
     [{t:'card', head:'Quantization', items:[
       {t:'fig', svg:miniQuant},
       {t:'eq', plain:true, tex:'E[Q^{2}]=\\Delta^{2}/12,\\quad \\Delta=2m_{\\max}/L'},
       {t:'small', html:'Rounding to $L=2^{R}$ levels costs a mean-square error set by the step size alone.'}
     ]}],
-    [{t:'card', head:'The rate that follows', items:[
+    [{t:'card', head:'Rate and SQNR', items:[
       {t:'fig', svg:miniRate},
       {t:'eq', plain:true, tex:'\\mathrm{SQNR}=\\alpha+6.02R,\\qquad R_b=Rf_s'},
       {t:'small', html:'Every bit per sample buys $6.02$ dB and costs $f_s$ bits per second.'}
     ]}]
   ]},
-  {t:'note', kind:'ok', head:'The module in one sentence', html:'Turning a signal into bits costs two things and nothing else. You must sample fast enough, or the spectrum folds and cannot be unfolded. And you must round, which adds a small noise whose power falls by a factor of four with every extra bit.'}
+  {t:'note', kind:'ok', head:'Main result', html:'Sample at $f_s\\ge2W$ to prevent aliasing. Quantization then adds an irreversible error. Under the uniform-error model, each extra bit divides the error power by four.'}
 ]}
 
 ];

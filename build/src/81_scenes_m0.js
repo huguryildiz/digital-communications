@@ -123,39 +123,39 @@ const SC = [
   steps:2, blocks:[
   {t:'eyebrow', text:'Module 0 · The frame of the course'},
   {t:'title', text:'One question, asked in seven ways'},
-  {t:'lede', text:'A transmitter is given a symbol and sends a waveform. A channel adds noise to that waveform. A receiver observes the sum and decides which symbol was sent. Everything in this course is one of three things. It is a way of choosing the waveforms, a way of making the decision, or a way of working out how often the decision is wrong.'},
+  {t:'lede', text:'A transmitter sends a waveform for one symbol. A channel adds noise. A receiver observes the result and decides which symbol was sent. The course studies waveform design, receiver decisions, and error probability.'},
   {t:'fig', frame:true, svg:()=>figChain(),
-    caption:'The system, and the three places a module can work on it. The transmitter chooses the waveforms; the channel is given and cannot be argued with; the receiver decides.'},
+    caption:'The transmitter selects a waveform. The channel adds noise. The receiver decides which symbol was sent.'},
   {t:'reveal', at:1, items:[
     {t:'grid', cols:3, gap:'22px', items:[
-      [{t:'card', head:'What is sent', items:[
+      [{t:'card', head:'Transmitted signal', items:[
         {t:'small', html:'A finite set of $M$ waveforms, one for each symbol. Choosing them well is Modules 1, 2 and 5.'}]}],
-      [{t:'card', head:'What arrives', items:[
-        {t:'small', html:'The waveform plus noise. The noise is Gaussian, white, and the same in every direction — which is why distance is the right thing to measure. That is Modules 3 and 4.'}]}],
-      [{t:'card', head:'How often it is wrong', items:[
+      [{t:'card', head:'Received signal', items:[
+        {t:'small', html:'The receiver observes the waveform plus noise. The noise is white and Gaussian. Its symmetry makes distance the correct decision measure. Modules 3 and 4 develop this result.'}]}],
+      [{t:'card', head:'Error probability', items:[
         {t:'small', html:'One number, and almost always one $Q$ of a distance. Every error probability in this course has that shape.'}]}]
     ]}
   ]},
   {t:'reveal', at:2, items:[
-    {t:'note', kind:'ok', head:'The sentence the course keeps returning to', html:'<b>Errors are decided by the distance between the signal points, and by almost nothing else.</b> Module 3 makes the distance meaningful, Module 4 proves that it decides, and Module 5 measures it for every scheme worth using. If one sentence survives the term, it should be this one.'}
+    {t:'note', kind:'ok', head:'Main result', html:'<b>The distance between signal points controls the error probability.</b> Module 3 defines this distance. Module 4 derives the decision rule. Module 5 applies the result to common modulation methods.'}
   ]}
 ]},
 
 /* ---------------------------------------------------------------- 0.2 ---- */
-{ id:'m0-why', module:'M0', nav:'Why digital', title:'Why send digits at all',
+{ id:'m0-why', module:'M0', nav:'Why digital', title:'Digital transmission',
   objective:'Give the one reason digital transmission is used, and its price.',
   keywords:'why digital regeneration repeater noise accumulation bandwidth quantization',
   steps:2, blocks:[
   {t:'eyebrow', text:'Module 0 · The frame of the course'},
-  {t:'title', text:'Why send digits at all'},
+  {t:'title', text:'Digital transmission'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>An analog signal that travels through a long link picks up noise at every stage, and there is nothing to be done about it. An amplifier cannot tell the signal from what has been added to it, so it amplifies both. After twenty hops the noise has been added twenty times.</p>'},
     {t:'reveal', at:1, items:[
-      {t:'note', kind:'ok', head:'The one reason', html:'A digital receiver does not amplify what it receives — it <b>decides</b>. If the decision is right, the waveform it sends on is the original one, exactly, with no trace of the noise the last hop added. Twenty hops with a decision at each one are no worse than one hop, as long as every decision is right.'},
-      {t:'body', html:'<p>That is the whole argument, and it is why the rest of the course is about how often a decision is wrong. A small error probability at each hop is what buys the perfect regeneration.</p>'}
+      {t:'note', kind:'ok', head:'Regeneration', html:'A digital receiver makes a decision instead of amplifying its input. A correct decision produces a clean copy of the transmitted waveform. Therefore, noise from the previous hop does not continue to the next hop.'},
+      {t:'body', html:'<p>This regeneration works only when the decision is correct. The error probability at each hop therefore controls the performance of a long digital link.</p>'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'warn', head:'And the price', html:'Sending digits costs <b>bandwidth</b>, because a sharp pulse needs more of it than the smooth signal it replaced. And it costs <b>accuracy</b>, because a continuous value has to be rounded to one of a finite set before it can be sent at all. Module 1 is the study of that rounding and Module 2 of that bandwidth.'}
+      {t:'note', kind:'warn', head:'Costs', html:'Digital transmission uses <b>bandwidth</b> because sharp pulses contain many frequencies. It also loses <b>accuracy</b> when quantization rounds a continuous value. Module 1 studies quantization. Module 2 studies pulse bandwidth.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>{
@@ -168,18 +168,18 @@ const SC = [
       a.note(18.6, 3.0, 'digital, regenerated', {fs:13, color:C.in, anchor:'end'});
       return a.svg();
     },
-      caption:'Noise power against the number of hops. An analog link adds it at every stage; a digital link that decides correctly at every stage carries none of it forward. The flat line is the whole reason for the course.'},
-    {t:'small', html:'The flat line is not free and it is not exact — it is flat only while every decision is right. A link running at a bit error probability of $10^{-9}$ is flat for practical purposes; one running at $10^{-2}$ is not flat at all.'}
+      caption:'Noise power against the number of hops. An analog link adds noise at each stage. A digital link does not carry previous noise forward after a correct decision.'},
+    {t:'small', html:'The digital curve stays flat only while the decisions are correct. A bit error probability of $10^{-9}$ makes this model practical. A probability of $10^{-2}$ does not.'}
   ]}
 ]},
 
 /* ---------------------------------------------------------------- 0.3 ---- */
-{ id:'m0-map', module:'M0', nav:'The course map', title:'What is in the six modules',
+{ id:'m0-map', module:'M0', nav:'The course map', title:'Course modules',
   objective:'Give the shape of the course and how the modules depend on each other.',
   keywords:'course map modules overview structure dependencies sampling baseband signal space receiver modulation information',
   steps:2, blocks:[
   {t:'eyebrow', text:'Module 0 · The frame of the course'},
-  {t:'title', text:'What is in the six modules'},
+  {t:'title', text:'Course modules'},
   {t:'cols', ratio:'c-5-7', vcenter:true, left:[
     {t:'fig', frame:true, svg:()=>figMap(),
       caption:'The six modules and the one question at the centre of them. Modules 3, 4 and 5 are one argument told three times: make the distance meaningful, prove it decides, then measure it.'}
@@ -199,7 +199,7 @@ const SC = [
         {t:'small', html:'Entropy, the source-coding theorem, prefix codes and Huffman. How few bits the message needed in the first place.'}]}]
     ]},
     {t:'reveal', at:1, items:[
-      {t:'note', kind:'def', head:'What depends on what', html:'Modules 1 and 2 stand on their own. Module 3 is needed for 4, and 4 for 5 — those three should be read in order and not sampled. Module 6 depends on nothing else here and can be read at any point.'}
+      {t:'note', kind:'def', head:'Module order', html:'Modules 1 and 2 are independent. Module 3 is required for Module 4, and Module 4 is required for Module 5. Module 6 does not depend on the other modules.'}
     ]},
     {t:'reveal', at:2, items:[
       {t:'note', kind:'ok', head:'Ten laboratories and a hundred and twenty questions', html:'Each module carries one or two laboratories, where every control changes the mathematics rather than the picture. It also carries twenty practice questions whose solutions are worked rather than stated. The questions follow the shapes the papers actually set, and each module names those shapes before it starts.'}
@@ -208,12 +208,12 @@ const SC = [
 ]},
 
 /* ---------------------------------------------------------------- 0.4 ---- */
-{ id:'m0-how', module:'M0', nav:'How to read this', title:'How to read this, and where the numbers come from',
+{ id:'m0-how', module:'M0', nav:'How to read this', title:'Course controls and conventions',
   objective:'Explain the reveal, the laboratories, the editions and the textbook anchor convention.',
   keywords:'how to read reveal steps laboratories editions anchors textbook convention notation',
   steps:1, blocks:[
   {t:'eyebrow', text:'Module 0 · The frame of the course'},
-  {t:'title', text:'How to read this, and where the numbers come from'},
+  {t:'title', text:'Course controls and conventions'},
   {t:'grid', cols:4, gap:'20px', items:[
     [{t:'card', head:'Scenes build in steps', items:[
       {t:'fig', svg:icoSteps},
@@ -229,13 +229,13 @@ const SC = [
     ]}],
     [{t:'card', head:'The conventions are fixed', items:[
       {t:'fig', svg:icoGauss},
-      {t:'small', html:'Noise is white Gaussian with two-sided density $N_0/2$; $Q(x)=\\tfrac12\\operatorname{erfc}(x/\\sqrt2)$; $\\log$ means base two. The notation panel repeats all of them.'}
+      {t:'small', html:'Noise is white and Gaussian with two-sided density $N_0/2$. Also, $Q(x)=\\tfrac12\\operatorname{erfc}(x/\\sqrt2)$, and $\\log$ means base two. The notation panel lists these conventions.'}
     ]}]
   ]},
   {t:'reveal', at:1, items:[
     {t:'grid', cols:2, gap:'24px', items:[
-      [{t:'note', kind:'def', head:'Where the textbook is', html:'Most scenes carry a small chip beside their address, such as <b>PS CH8.4.1</b>, pointing into the course textbook; the marker says the address belongs to the book and not to this artifact. A scene with no chip is one the textbook does not cover in that form.'}],
-      [{t:'note', kind:'ok', head:'And where the numbers come from', html:'Every number stated in a scene or a solution is recomputed by a separate program that reaches it a different way. Constellations are rebuilt from their definitions, Huffman codes are built twice by two different algorithms, and every error probability is simulated against its formula.'}]
+      [{t:'note', kind:'def', head:'Textbook addresses', html:'Most scenes show a textbook address, such as <b>PS CH8.4.1</b>. The <b>PS</b> mark identifies this address as a textbook section. A scene without this mark has no direct textbook section.'}],
+      [{t:'note', kind:'ok', head:'Numerical checks', html:'A separate calculation checks every numerical result. The checks rebuild constellations, construct Huffman codes with two algorithms, and compare simulated error probabilities with their formulas.'}]
     ]}
   ]}
 ]}

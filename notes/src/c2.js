@@ -11,7 +11,7 @@ function Q(x){ const t=1/(1+0.2316419*Math.abs(x));
 window.C2 = [
 
 {t:'h1', num:'CHAPTER 2', text:'Baseband transmission of digital signals'},
-{t:'p', lead:true, text:'Chapter 1 produced a stream of bits. Now each bit is sent as a waveform, a channel adds noise to it, and a receiver has to say which waveform was sent. This chapter answers three questions in order: what filter the receiver should use, where the decision threshold should go, and what happens when the channel is too narrow and the pulses start to overlap.'},
+{t:'p', lead:true, text:'Chapter 1 produced a stream of bits. Each bit now becomes a waveform, and the channel adds noise. The receiver must identify the transmitted waveform. This chapter selects the receiver filter and decision threshold. It also studies pulse overlap in a bandlimited channel.'},
 
 {t:'h2', num:'2.1', text:'The matched filter'},
 {t:'p', text:'Over one bit interval the receiver sees $x(t)=g(t)+w(t)$, the waveform plus white Gaussian noise of two-sided density $N_0/2$. It passes this through a filter and takes one sample at the end of the interval. Because the filter is linear, its output splits the same way, into a signal part $g_0(t)=g*h$ and a noise part $n(t)=w*h$.'},
@@ -24,7 +24,7 @@ window.C2 = [
   '(\\mathrm{SNR})_o\\le\\frac{2}{N_0}\\int|G(f)|^{2}df=\\frac{2E}{N_0}',
   'H(f)=k\\,G^{*}(f)e^{-j2\\pi fT}\\quad\\Longleftrightarrow\\quad h_{\\mathrm{opt}}(t)=k\\,g(T-t)'],
  after:'The optimum filter is the transmitted waveform reversed in time and shifted into the interval. It is called the <b>matched filter</b>.'},
-{t:'box', kind:'ok', hd:'Two things this says', html:'The best achievable ratio is $2E/N_0$: it depends on the <b>energy</b> of the pulse and on the noise density, and on nothing else about the pulse. Two completely different waveforms of the same energy perform identically. And the constant $k$ cancels, so the filter is fixed only up to a gain.'},
+{t:'box', kind:'ok', hd:'Two things this says', html:'The best achievable ratio is $2E/N_0$. It depends on the <b>energy</b> of the pulse and on the noise density, and on nothing else about the pulse. Two completely different waveforms of the same energy perform identically. The constant $k$ cancels. Therefore, the filter is fixed only up to a gain.'},
 
 {t:'figrow', n:2, items:[
  {svg:()=>{const a=ax({w:330,h:190,xr:[-0.3,2.3],yr:[-0.3,1.35],xlabel:'t/T',
@@ -44,7 +44,7 @@ window.C2 = [
 
 {t:'h2', num:'2.2', text:'From waveform to number'},
 {t:'p', text:'Both waveforms of a binary baseband system are multiples of one shape, so a single unit-energy function carries both. With $\\psi(t)=1/\\sqrt{T_b}$ on the bit interval, polar NRZ is $s_m(t)=s_m\\psi(t)$ with $s_0=-A\\sqrt{T_b}$ and $s_1=+A\\sqrt{T_b}$. Both carry energy $E_b=A^{2}T_b$, so $A\\sqrt{T_b}=\\sqrt{E_b}$ and the two waveforms have become two <em>numbers</em>, $\\pm\\sqrt{E_b}$, on one axis.'},
-{t:'p', text:'The demodulator can be built two ways. The <b>matched filter</b> convolves with $\\psi(T_b-t)$ and samples at $T_b$. The <b>correlator</b> multiplies by $\\psi(t)$ and integrates over the interval. At the sampling instant the two produce the same number, because convolving with a reversed function and evaluating at the end of the interval <em>is</em> correlating over it.'},
+{t:'p', text:'The demodulator can be built two ways. The <b>matched filter</b> convolves with $\\psi(T_b-t)$ and samples at $T_b$. The <b>correlator</b> multiplies by $\\psi(t)$ and integrates over the interval. At the sampling instant the two produce the same number. This occurs because convolving with a reversed function and evaluating at the end of the interval <em>is</em> correlating over it.'},
 {t:'eqbox', cap:'The decision statistic',
  tex:'y=\\int_0^{T_b}x(\\tau)\\psi(\\tau)\\,d\\tau=s_m\\underbrace{\\int_0^{T_b}\\psi^{2}}_{=1}+\\underbrace{\\int_0^{T_b}w\\psi}_{n}=s_m+n',
  after:'They agree at $t=T_b$ and nowhere else, which is one more reason the sampling instant matters.'},
@@ -55,11 +55,11 @@ window.C2 = [
   '\\sigma_n^{2}=\\frac{N_0}{2}\\int_0^{T_b}\\psi^{2}(\\tau)d\\tau=\\frac{N_0}{2}',
   'y=s_m+n\\;\\sim\\;\\mathcal{N}\\!\\left(s_m,\\;\\frac{N_0}{2}\\right)'],
  after:'The two-sided convention arrives here unchanged. Reading the density as one-sided makes every error probability in the course $3$ dB too optimistic, and nothing in the algebra shows it.'},
-{t:'p', text:'The detector decides "1" when $y>\\lambda$. Writing the average error as a sum of two integrals, differentiating with respect to $\\lambda$ by the Leibniz rule and setting the derivative to zero gives a condition that is easy to read: the threshold sits where the two densities, each weighted by its prior, cross.'},
+{t:'p', text:'The detector decides "1" when $y>\\lambda$. Write the average error as two integrals. Differentiate with respect to $\\lambda$ by the Leibniz rule. Set the derivative to zero. The result places the threshold where the two prior-weighted densities cross.'},
 {t:'eqbox', cap:'The optimal threshold', tex:[
   'P(s_1)f_Y(\\lambda\\mid s_1)=P(s_0)f_Y(\\lambda\\mid s_0)',
   '\\lambda_{\\mathrm{opt}}=\\frac{N_0}{4\\sqrt{E_b}}\\ln\\frac{P(s_0)}{P(s_1)}'],
- after:'Equal priors put it midway. If $s_0$ is the more likely symbol the threshold moves in the positive direction, enlarging the region that decides $s_0$ — which is the right way round.'},
+ after:'Equal priors put the threshold at the midpoint. If $s_0$ is more likely, the threshold moves in the positive direction. This movement enlarges the decision region for $s_0$.'},
 
 {t:'figrow', n:2, items:[
  {svg:()=>{const s=Math.sqrt(0.5);
@@ -84,7 +84,7 @@ window.C2 = [
 {t:'eqbox', cap:'The result of the chapter', big:true,
  tex:'P_b=Q\\!\\left(\\sqrt{\\frac{2E_b}{N_0}}\\right)',
  after:'It depends on $E_b/N_0$ and on nothing else — not on the amplitude, not on the bit duration, not on the pulse shape. Doubling the amplitude and quartering the duration change neither the energy per bit nor the answer.'},
-{t:'box', kind:'warn', hd:'The factor of two that lives here', html:'$Q\\!\\left(\\sqrt{E_b/N_0}\\right)$, the same expression without the two, is the error probability of on-off or orthogonal signalling, and it is $3$ dB worse. Which one applies depends on whether the two waveforms are opposites or merely different. For on-off signalling half the bits carry no energy at all, so the average energy per bit is half the peak — and forgetting that is how on-off comes out looking as good as antipodal.'},
+{t:'box', kind:'warn', hd:'Antipodal and orthogonal signals', html:'Antipodal signaling gives $Q\\!\\left(\\sqrt{2E_b/N_0}\\right)$. On-off or orthogonal signaling gives $Q\\!\\left(\\sqrt{E_b/N_0}\\right)$ and needs $3$ dB more energy. For on-off signaling, half the symbols have zero energy. Therefore, average bit energy is half the nonzero-symbol energy.'},
 
 {t:'fig', svg:()=>{
   const a=ax({w:560,h:250,xr:[0,12],yr:[-7,-0.02],xlabel:'E_b/N_0\\;(\\mathrm{dB})',
@@ -97,19 +97,19 @@ window.C2 = [
 {t:'ex', hd:'Example 2.1 — unequal priors', rows:[
  ['Given','A binary PAM system with correlator output $y=\\pm\\sqrt{E_b}+n$, where $P(s_1)=0.3$, $E_b=1$ and $N_0=0.1$.'],
  ['Find','The optimal threshold and the average error probability there.'],
- ['Method','Threshold from the log-ratio of the priors; each conditional error from a Gaussian tail; average by weighting.'],
+ ['Method','Threshold from the log-ratio of the priors. Each conditional error from a Gaussian tail. Average by weighting.'],
  ['Solution','$\\lambda=\\frac{0.1}{4}\\ln\\frac{0.7}{0.3}=0.0212$ and $\\sigma=\\sqrt{0.05}=0.2236$. Then $P(\\text{err}\\mid s_0)=Q(4.567)=2.475\\times10^{-6}$ and $P(\\text{err}\\mid s_1)=Q(4.377)=6.005\\times10^{-6}$, so $P_e=0.7(2.475)+0.3(6.005)$ in units of $10^{-6}$, giving $3.534\\times10^{-6}$.'],
- ['Check','Leaving the threshold at zero would give $Q(\\sqrt{20})=3.872\\times10^{-6}$. Moving it improves the answer by about nine per cent — a real gain and a small one, which is what a shift of a tenth of a standard deviation buys.']
+ ['Check','Leaving the threshold at zero would give $Q(\\sqrt{20})=3.872\\times10^{-6}$. Moving it improves the answer by about nine per cent. A real gain and a small one. This is what a shift of a tenth of a standard deviation buys.']
 ]},
 
 {t:'page'},
 
 {t:'h2', num:'2.4', text:'Intersymbol interference'},
-{t:'p', text:'Everything above assumed an ideal channel. A real channel is bandlimited, and a bandlimited channel spreads each pulse in time, so a pulse meant for one interval leaks into the next. Writing the received signal as a train of the overall pulse $p$ and sampling at $t_i=iT_b$ separates the term that was meant to be there from the ones that were not.'},
+{t:'p', text:'Everything above assumed an ideal channel. A real bandlimited channel spreads each pulse in time. Therefore, one pulse can enter adjacent symbol intervals. Write the received signal as a train of the overall pulse $p$. Sampling at $t_i=iT_b$ separates the wanted pulse from intersymbol interference.'},
 {t:'eqbox', cap:'Where the interference comes from',
  tex:'y(t_i)=\\underbrace{\\mu a_i}_{\\text{wanted}}+\\underbrace{\\mu\\sum_{k\\ne i}a_k\\,p\\bigl((i-k)T_b\\bigr)}_{\\text{intersymbol interference}}+\\;n(t_i)',
  after:'The middle term is not noise. It is caused by the data itself, and raising the transmit power raises it by the same factor, so more power does not help. At high signal-to-noise ratio it is the only thing limiting the system.'},
-{t:'p', text:'The <b>eye pattern</b> is how this is seen rather than calculated. Cut the received waveform into bit-length pieces, draw them all on top of each other synchronised to the clock, and four measurements are readable at once: the height of the opening is the margin over noise, its width is how far the sampling instant may drift, the slope at the crossings is the sensitivity to a timing error, and the spread of the crossings is the timing jitter. When the opening closes there is no sampling instant at which every bit pattern decides correctly, and no threshold placement helps.'},
+{t:'p', text:'An <b>eye pattern</b> shows this interference. Divide the received waveform into bit-length segments. Align the segments with the clock and draw them together. The opening height gives the noise margin. Its width gives the permitted sampling-time error. Crossing slope shows timing sensitivity, and crossing spread shows timing jitter. A closed eye has no sampling time that gives correct decisions for every bit pattern.'},
 
 {t:'figrow', n:2, items:[
  {svg:()=>{
@@ -137,11 +137,11 @@ window.C2 = [
   'R_b\\sum_n P(f-nR_b)=1,\\qquad R_b=\\frac{1}{T_b}'],
  after:'In words: the replicas of the pulse spectrum, spaced by the symbol rate, must add to a constant. The simplest spectrum that does it is a rectangle of width $2W$ with $W=R_b/2$, the <b>Nyquist bandwidth</b>, whose pulse is $\\operatorname{sinc}(2Wt)$.'},
 {t:'box', kind:'ok', hd:'The rate a bandwidth supports', html:'A channel of bandwidth $W$ carries at most $2W$ symbols per second with no interference. This is the counterpart of the sampling theorem, reached from the other end of the same argument.'},
-{t:'p', text:'The ideal Nyquist channel cannot be built: its spectrum has vertical edges, and its pulse decays only as $1/t$, so a small timing error lets a long tail of neighbours contribute at once. The fix is to widen the spectrum and taper its edges while keeping the tiling property.'},
+{t:'p', text:'The ideal Nyquist channel cannot be built. Its spectrum has vertical edges, and its pulse decays only as $1/t$. Therefore, a small timing error lets a long tail of neighbours contribute at once. The fix is to widen the spectrum and taper its edges while keeping the tiling property.'},
 {t:'eqbox', cap:'The raised cosine', tex:[
   'P(f)=\\begin{cases}\\dfrac{1}{2W},&0\\le|f|\\le f_1\\\\[6pt]\\dfrac{1}{4W}\\left[1-\\sin\\dfrac{\\pi(|f|-W)}{2W-2f_1}\\right],&f_1\\le|f|<2W-f_1\\\\[6pt]0,&\\text{otherwise}\\end{cases}',
   'p(t)=\\operatorname{sinc}(2Wt)\\,\\frac{\\cos(2\\pi\\alpha Wt)}{1-16\\alpha^{2}W^{2}t^{2}},\\qquad \\alpha=1-\\frac{f_1}{W}'],
- after:'The first factor keeps the zero crossings at $t=iT_b$, so the criterion still holds; the second decays as $1/t^{2}$. The price is bandwidth: $B_T=(1+\\alpha)W$, an excess of $\\alpha W$ over Nyquist.'},
+ after:'The first factor keeps the zero crossings at $t=iT_b$, so the criterion still holds. The second decays as $1/t^{2}$. The price is bandwidth: $B_T=(1+\\alpha)W$, an excess of $\\alpha W$ over Nyquist.'},
 
 {t:'figrow', n:2, items:[
  {svg:()=>{const a=ax({w:330,h:190,xr:[-2.2,2.2],yr:[-0.12,1.2],xlabel:'f/W',
@@ -157,7 +157,7 @@ window.C2 = [
      return Math.abs(den)<1e-6?sinc(t)*Math.PI/4:sinc(t)*Math.cos(Math.PI*al*t)/den;},
      {color:col,width:2});
    pl(0,C.in); pl(0.5,C.h); pl(1,C.out); return a.svg();},
-  cap:'Their pulses. All three vanish at every non-zero multiple of $T_b$; the tails differ by orders of magnitude.'}
+  cap:'Their pulses. All three vanish at every non-zero multiple of $T_b$. The tails differ by orders of magnitude.'}
 ]},
 
 {t:'ex', hd:'Example 2.2 — fitting a rate into a channel', rows:[
@@ -165,7 +165,7 @@ window.C2 = [
  ['Find','The Nyquist bandwidth and the largest roll-off that fits.'],
  ['Method','$W=R_b/2$, then $(1+\\alpha)W\\le B$.'],
  ['Solution','$W=32$ kHz, and $(1+\\alpha)(32)\\le48$ gives $\\alpha\\le0.5$. At $\\alpha=0.5$ the signal uses the whole $48$ kHz, with an excess of $16$ kHz over the Nyquist bandwidth.'],
- ['Check','At $\\alpha=0$ the signal would need only $32$ kHz and would also fit — and would be a bad choice, because its pulse decays as $1/t$ and its filter cannot be built. Using the whole channel buys a pulse decaying as $1/t^{3}$ and a filter that exists. The spectral efficiency is $64/48=1.33$ bit/s/Hz against the theoretical $2$.']
+ ['Check','At $\\alpha=0$, the signal needs only $32$ kHz and still fits. However, its pulse decays as $1/t$, and its ideal filter cannot be built. Using the available bandwidth gives a pulse that decays as $1/t^{3}$. The spectral efficiency is $64/48=1.33$ bit/s/Hz, below the theoretical maximum of $2$.']
 ]},
 
 {t:'h2', num:'2.6', text:'Summary'},

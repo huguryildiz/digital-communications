@@ -192,7 +192,7 @@ const SC = [
     {t:'body', html:'Two frequencies, one per bit, at the same amplitude:'},
     {t:'eq', tex:'s_i(t)=\\sqrt{\\frac{2E_b}{T_b}}\\cos(2\\pi f_it),\\qquad i=0,1'},
     {t:'reveal', at:1, items:[
-      {t:'note', kind:'def', head:'How far apart the frequencies must be', html:'The two waveforms are made <b>orthogonal</b> by choosing $$f_1=f_0+\\frac{1}{2T_b}.$$ Any closer and their inner product is non-zero, which pulls the two constellation points together. Any further apart is wasted bandwidth for no gain in distance.'}
+      {t:'note', kind:'def', head:'Frequency spacing', html:'Choose $$f_1=f_0+\\frac{1}{2T_b}$$ to make the two waveforms <b>orthogonal</b>. A smaller spacing gives a nonzero inner product and reduces the signal-space distance. A larger spacing uses more bandwidth without increasing the distance.'}
     ]},
     {t:'reveal', at:2, items:[
       {t:'body', html:'Two orthogonal waveforms need two axes, so the constellation is two-dimensional with one point on each:'},
@@ -200,11 +200,11 @@ const SC = [
       {t:'eq', key:true, tex:'d_{\\min}=\\sqrt{2E_b},\\qquad P_b=Q\\!\\left(\\sqrt{\\frac{E_b}{N_0}}\\right)'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'warn', head:'The three decibels, and where they went', html:'BFSK needs <b>twice the energy per bit</b> of BPSK for the same error probability. The reason is in the picture. Two perpendicular points of length $\\sqrt{E_b}$ are $\\sqrt{2E_b}$ apart; two opposite points of the same length are $2\\sqrt{E_b}$ apart. Perpendicular is closer than opposite, by a factor of $\\sqrt2$ in distance and a factor of two in energy.'}
+      {t:'note', kind:'warn', head:'Three-decibel difference', html:'BFSK needs <b>twice the energy per bit</b> of BPSK for the same error probability. Two orthogonal points of length $\\sqrt{E_b}$ are $\\sqrt{2E_b}$ apart. Two antipodal points are $2\\sqrt{E_b}$ apart. This distance ratio gives the factor of two in energy.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figCarrier('bfsk'),
-      caption:'The waveform for $1\\,0\\,1\\,0$. The amplitude never changes; only the rate of oscillation does.'},
+      caption:'The waveform for $1\\,0\\,1\\,0$. Its amplitude is constant. Only the oscillation frequency changes.'},
     {t:'fig', frame:true, svg:()=>figConst([[1.2,0],[0,1.2]],{lim:1.9,w:360,h:200}),
       caption:'The constellation: two points at right angles, and a boundary along the diagonal. Compare the separation with the previous scene — the same energy, the two points closer together.'}
   ]}
@@ -229,7 +229,7 @@ const SC = [
       {t:'body', html:'The same answer as BFSK, and for the same reason: the same distance at the same average energy.'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'ok', head:'Two schemes, one geometry', html:'BASK puts its points at $0$ and $\\sqrt{2E_b}$ on a line; BFSK puts them at $(\\sqrt{E_b},0)$ and $(0,\\sqrt{E_b})$ in a plane. Different pictures, the same separation at the same average energy, and therefore the same error probability. Module 3 said two signal sets with the same geometry perform identically. Here are two with <em>different</em> geometry and the same distance, which is all the performance depends on.'}
+      {t:'note', kind:'ok', head:'Equal-distance schemes', html:'BASK uses the points $0$ and $\\sqrt{2E_b}$ on one axis. BFSK uses $(\\sqrt{E_b},0)$ and $(0,\\sqrt{E_b})$. Both pairs have the same distance and average energy. Therefore, they have the same error probability.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figCarrier('bask'),
@@ -292,7 +292,7 @@ const SC = [
     {t:'reveal', at:3, items:[
       {t:'body', html:'<p>How much? Holding the $Q$ argument fixed while going from $M$ to $2M$ needs</p>'},
       {t:'eq', tex:'\\frac{E_b/N_0\\big|_{2M}}{E_b/N_0\\big|_{M}}=\\frac{\\log_2 M\\;\\sin^{2}(\\pi/M)}{\\log_2 2M\\;\\sin^{2}(\\pi/2M)}'},
-      {t:'small', html:'From $M=4$ to $M=8$ that is $3.41$, or $5.33$ dB in terms of $E_s/N_0$; per bit it is $3.57$ dB. Beyond eight it gets worse each time, and QAM replaces PSK.'}
+      {t:'small', html:'From $M=4$ to $M=8$, the factor is $3.41$. This value equals $5.33$ dB in $E_s/N_0$ or $3.57$ dB in $E_b/N_0$. For larger $M$, QAM gives a larger minimum distance.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>{
@@ -349,7 +349,7 @@ const SC = [
   {t:'eyebrow', text:'Module 5 · Amplitude and quadrature'},
   {t:'title', text:'Quadrature amplitude modulation'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
-    {t:'note', kind:'def', head:'The idea in one line', html:'Run one amplitude-modulated signal on the cosine and an independent one on the sine. Two axes, two independent $\\sqrt{M}$-level constellations, and $M$ points on a square grid.'},
+    {t:'note', kind:'def', head:'QAM structure', html:'Modulate the cosine and sine carriers with independent amplitudes. The two axes each contain $\\sqrt{M}$ levels. Their combinations form $M$ points on a square grid.'},
     {t:'body', html:'<p>That is why the material states $M$-QAM as two-dimensional $M$-ASK. It is literally two amplitude constellations at right angles, and the receiver decides each axis separately.</p>'},
     {t:'reveal', at:1, items:[
       {t:'body', html:'With neighbouring points a distance $d$ apart on the grid,'},
@@ -361,7 +361,7 @@ const SC = [
       {t:'eq', key:true, tex:'P_e\\approx N_{\\min}\\,Q\\!\\left(\\sqrt{\\frac{d_{\\min}^{2}}{2N_0}}\\right)'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'ok', head:'Why QAM wins for large alphabets', html:'At sixteen points, PAM has $d_{\\min}^{2}=12E_s/255$ and QAM has $6E_s/15$. That is larger by a factor of $8.5$, or $9.3$ dB, at the same energy and the same four bits a symbol. Two dimensions are worth having, and QAM is how they are used.'}
+      {t:'note', kind:'ok', head:'QAM distance advantage', html:'For sixteen points, PAM has $d_{\\min}^{2}=12E_s/255$. QAM has $d_{\\min}^{2}=6E_s/15$. The QAM value is $8.5$ times larger, or $9.3$ dB, at the same energy.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>figConst(QAM16,{lim:1.35,w:360,h:300,r:4.5,n:88}),
@@ -395,10 +395,10 @@ const SC = [
       {t:'small', html:'Here the union bound and the nearest-neighbour form are the same expression, because every other point <em>is</em> a nearest neighbour.'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'ok', head:'The distance does not shrink', html:'This is the opposite of every other family in the module. In PSK and QAM the points crowd together as $M$ grows and $d_{\\min}$ falls; here the separation stays at $\\sqrt{2E_s}$ however large $M$ becomes. Only the number of ways to be wrong grows, and that costs a factor in front of the $Q$ rather than inside it.'}
+      {t:'note', kind:'ok', head:'Constant distance', html:'For orthogonal FSK, the separation remains $\\sqrt{2E_s}$ as $M$ increases. In PSK and QAM, the minimum distance decreases. In FSK, only the number of possible pairwise errors increases.'}
     ]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'warn', head:'What it costs instead', html:'Bandwidth. Each new symbol needs a new frequency, so the occupied band grows in proportion to $M$. PSK and QAM keep the same two dimensions however many points they place in them. Frequency-shift keying spends bandwidth to save power; the others spend power to save bandwidth. Which is the right trade depends entirely on which of the two is scarce.'}
+      {t:'note', kind:'warn', head:'Bandwidth cost', html:'Each FSK symbol needs a different frequency, so its bandwidth grows with $M$. PSK and QAM retain two dimensions as $M$ increases. Thus, orthogonal FSK uses more bandwidth to reduce the required energy.'}
     ]}
   ], right:[
     {t:'fig', frame:true, svg:()=>{
@@ -425,34 +425,34 @@ const SC = [
     {t:'body', html:'Every scheme carries $\\log_2 M$ bits a symbol. The chart puts the families on one scale: the energy per bit each one needs to reach $P_e=10^{-5}$, computed from the distance of each family.'},
     {t:'wex', rows:[
       ['PAM','$d_{\\min}^{2}=12E_s/(M^{2}-1)$ — the distance collapses fastest, about $6$ dB per doubling of $M$.'],
-      ['PSK','$d_{\\min}=2\\sqrt{E_s}\\sin(\\pi/M)$ — one circle; past eight points it is crowded.'],
+      ['PSK','$d_{\\min}=2\\sqrt{E_s}\\sin(\\pi/M)$. All points lie on one circle. The minimum distance becomes small for more than eight points.'],
       ['QAM','$d_{\\min}^{2}=6E_s/(M-1)$ — linear in $M$, so its curve climbs slowest. It is what a modern link uses.'],
       ['FSK','$d_{\\min}=\\sqrt{2E_s}$ — the distance does not shrink. It spends bandwidth instead: the band grows with $M$.']
     ]},
     {t:'reveal', at:1, items:[
-      {t:'note', kind:'ok', head:'One sentence to take away', html:'Every family places $M$ points as far apart as it can for a given average energy; they differ in how many dimensions they may use. More dimensions mean more room — and more bandwidth. That is the whole trade.'}
+      {t:'note', kind:'ok', head:'Energy-bandwidth trade-off', html:'Each family separates $M$ points for a fixed average energy. More signal-space dimensions permit larger distances. They also require more bandwidth.'}
     ]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'warn', head:'What the chart does not settle', html:'How hard the transmitter is to build, whether the amplifier can run at saturation, and how much the receiver must know about the carrier phase. PSK survives against QAM in some systems for the amplifier alone.'}
+      {t:'note', kind:'warn', head:'Implementation factors', html:'The chart does not include transmitter complexity, amplifier linearity, or carrier-phase knowledge. A constant-envelope PSK signal can permit a more efficient nonlinear amplifier than QAM.'}
     ]}
   ], right:[
-    {t:'fig', frame:true, svg:figCompare, caption:'The energy price of each extra bit, computed from the distances above with the approximation $P_e\\approx N_{\\min}Q\\big(\\sqrt{d_{\\min}^{2}/2N_0}\\big)$ of Module 4, at $P_e=10^{-5}$. Three families climb; orthogonal FSK descends, because its distance holds while its bandwidth grows.'},
+    {t:'fig', frame:true, svg:figCompare, caption:'Energy per bit for $P_e=10^{-5}$, calculated with the nearest-neighbor approximation. The required energy increases for PAM, PSK, and QAM. It decreases for orthogonal FSK while its bandwidth increases.'},
     {t:'legend', items:[['in','PSK'],['mid','PAM'],['out','QAM'],['h','FSK']]}
   ]}
 ]},
 
 /* ---------------------------------------------------------------- 5.5 ---- */
-{ id:'m5-synth', module:'M5', nav:'Summary', title:'What Module 5 established',
+{ id:'m5-synth', module:'M5', nav:'Summary', title:'Module 5 summary',
   objective:'Collect the modulation results.',
   keywords:'summary modulation families minimum distance error probability comparison',
   steps:0, blocks:[
   {t:'eyebrow', text:'Module 5 · Summary'},
-  {t:'title', text:'What Module 5 established'},
+  {t:'title', text:'Module 5 summary'},
   {t:'grid', cols:2, gap:'26px', items:[
     [{t:'card', head:'The binary three', items:[
       {t:'fig', svg:miniBinaryThree},
       {t:'eq', plain:true, tex:'Q\\!\\left(\\sqrt{2E_b/N_0}\\right)\\ \\text{vs}\\ Q\\!\\left(\\sqrt{E_b/N_0}\\right)'},
-      {t:'small', html:'BPSK is antipodal and best; BFSK and BASK are both $3$ dB worse, because their points are $\\sqrt2$ closer.'}
+      {t:'small', html:'BPSK uses antipodal points. BFSK and BASK require $3$ dB more energy because their points are closer by a factor of $\\sqrt2$.'}
     ]}],
     [{t:'card', head:'The M-ary families', items:[
       {t:'fig', svg:miniPSK8},
@@ -466,10 +466,10 @@ const SC = [
     ]}],
     [{t:'card', head:'The trade', items:[
       {t:'fig', svg:miniTrade},
-      {t:'small', html:'More bits a symbol costs power in PSK, PAM and QAM, and bandwidth in FSK. Which to spend is a question about the channel.'}
+      {t:'small', html:'More bits per symbol require more power in PSK, PAM, and QAM. They require more bandwidth in orthogonal FSK. The available channel resources determine the preferred method.'}
     ]}]
   ]},
-  {t:'note', kind:'ok', head:'What Module 6 asks instead', html:'Every scheme here is judged against the noise. Module 6 asks a different question: how much information did the source produce, and how fast can a channel carry it at all? That limit no modulation scheme can pass.'}
+  {t:'note', kind:'ok', head:'Connection to Module 6', html:'This module compares modulation methods in noise. Module 6 measures source information and channel capacity. No modulation method can exceed the channel capacity.'}
 ]}
 
 ];

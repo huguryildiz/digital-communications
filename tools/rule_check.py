@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""R8: fail on any banned provenance phrase, and on any figure label that is
-mathematics written as something other than LaTeX (R7)."""
+"""R8: fail on any banned provenance phrase, on any figure label that is
+mathematics written as something other than LaTeX (R7), and on prose that a
+second-year reader cannot take in one read (R10)."""
 import re, sys, glob, os
 # The list is matched case-insensitively, so a phrase opening a sentence is
 # caught as readily as one inside it. Write each pattern in lower case.
@@ -203,6 +204,99 @@ def bare_section_marks(path):
                 break
     return hits
 
+# ---------------------------------------------------------------------------
+# R10 prose. The material is written for a second-year undergraduate who may be
+# reading in a second language, so the sentence is the unit that has to stay
+# small. Three things are measured, and all three are mechanical:
+#
+#   1. A student-visible sentence carries at most MAX_WORDS words. Mathematics
+#      inside $...$ counts as one word, because a formula is read as one object
+#      and not as its tokens.
+#   2. A heading names its topic and nothing else. "Uniform quantization",
+#      "MAP rule", "Common error" pass; "What this really means", "Why this
+#      matters", "The one reason" do not. A heading that opens with an
+#      interrogative or a narrator's phrase is telling the reader what to feel
+#      about the material instead of naming it.
+#   3. No semicolon. A semicolon joins two independent clauses, and two
+#      independent clauses are two sentences.
+#
+# None of the three can be satisfied by accident, and none of them needs a
+# human to judge it, which is the point: the voice drifted once already.
+# ---------------------------------------------------------------------------
+MAX_WORDS = 25
+
+# The fields a student reads. `keywords` is a word bag, `src`, `id`, `nav`,
+# `go` and `k` are machinery, and none of the five is prose.
+PROSE_SKIP = re.compile(r"\b(?:keywords|id|src|go|k|kind|color|dash|anchor|"
+                        r"nav|ratio|tex|label|font|align)\s*:\s*$")
+HEAD_FIELD = re.compile(r"\b(?:head|hd)\s*:\s*" + STR)
+TITLE_FIELD = re.compile(r"\btitle\s*:\s*" + STR)
+
+# A heading that opens with any of these is narrating rather than naming.
+NARRATOR_OPEN = re.compile(
+    r'^\s*(?:what|why|where|when|which|how|and\b|that\b|if\b|so\b|'
+    r'the (?:one|whole|first|real|sentence|point|rule|thing|idea|move|price)\b)',
+    re.I)
+# ...and any heading carrying one of these is narrating wherever it sits.
+NARRATOR_IN = re.compile(
+    r'\b(?:really means|worth (?:remembering|carrying|the trouble|writing)|'
+    r'keeps returning|survives the term|in one sentence|to take away|'
+    r'matters more than|is the interesting part|bother)\b', re.I)
+
+def prose_of(s):
+    """The words a reader sees. Mathematics is one word (a formula is read as
+       one object), an HTML tag is nothing, and an entity is its character."""
+    s = re.sub(r'\$[^$]*\$', ' MATH ', s)
+    s = re.sub(r'<[^>]*>', ' ', s)
+    s = (s.replace('&mdash;', '—').replace('&ndash;', '–')
+          .replace('&nbsp;', ' ').replace('&amp;', '&')
+          .replace('&lt;', '<').replace('&gt;', '>'))
+    s = s.replace("\\'", "'").replace('\\\\', '\\')
+    return re.sub(r'\s+', ' ', s).strip()
+
+def sentences(s):
+    """Split on end punctuation that is followed by a new sentence. A decimal
+       point and an abbreviation both fail the test, because neither is
+       followed by a space and a capital."""
+    return [x for x in re.split(r'(?<=[.!?:])\s+(?=[A-Z“"(])', s) if x.strip()]
+
+def words(s):
+    return [w for w in re.split(r'\s+', s) if re.search(r'[A-Za-z0-9]', w)]
+
+def prose_hits(path):
+    hits, in_block = [], False
+    for i, raw in enumerate(open(path, encoding='utf-8'), 1):
+        line, in_block = strip_exempt(SRC_FIELD.sub('src:', raw), in_block)
+        if not line.strip(): continue
+        if any(m in line for m in EXEMPT_MARKERS): continue
+
+        for rx, what in ((HEAD_FIELD, 'head'), (TITLE_FIELD, 'title')):
+            for m in rx.finditer(line):
+                h = prose_of(m.group(1))
+                if not h: continue
+                if NARRATOR_OPEN.search(h) or NARRATOR_IN.search(h):
+                    hits.append((i, f'{what} narrates instead of naming its topic', h[:80]))
+
+        if 'keywords' in line: continue
+        for m in re.finditer(STR, line):
+            s = m.group(1)
+            if len(s) < 45 or ' ' not in s: continue
+            if PROSE_SKIP.search(line[:m.start()]): continue
+            text = prose_of(s)
+            if len(words(text)) < 6: continue
+            # A semicolon that separates the items of a list is punctuation.
+            # One that joins two independent clauses is a sentence boundary
+            # written with the wrong mark, and only that one is a violation.
+            for seg in text.split(';')[1:]:
+                if len(words(seg)) >= 5:
+                    hits.append((i, 'semicolon joining two clauses — write two sentences', text[:80]))
+                    break
+            for snt in sentences(text):
+                n = len(words(snt))
+                if n > MAX_WORDS:
+                    hits.append((i, f'{n}-word sentence (limit {MAX_WORDS})', snt[:96]))
+    return hits
+
 targets = sys.argv[1:] or []
 bad = 0
 for t in targets:
@@ -223,5 +317,10 @@ for t in targets:
             bad += len(g)
             print(f'\n{f}: {len(g)} figure-label hit(s)')
             for i, why, s in g[:40]: print(f'  L{i:<5} {why:<46}  {s}')
+        p = prose_hits(f)
+        if p:
+            bad += len(p)
+            print(f'\n{f}: {len(p)} prose hit(s)')
+            for i, why, s in p[:40]: print(f'  L{i:<5} {why:<46}  {s}')
 print(f'\nTOTAL VIOLATIONS: {bad}')
 sys.exit(1 if bad else 0)

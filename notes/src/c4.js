@@ -34,7 +34,7 @@ function regions(pts,opts){
 window.C4 = [
 
 {t:'h1', num:'CHAPTER 4', text:'The optimal receiver in additive white Gaussian noise'},
-{t:'p', lead:true, text:'A transmitter picks one of $M$ signals and sends it; the channel adds noise; the receiver has to name the signal. Chapter 3 turned the signals into points. This chapter turns the receiver into a rule about those points, and the rule is simple: choose the point nearest to what arrived.'},
+{t:'p', lead:true, text:'A transmitter picks one of $M$ signals and sends it. The channel adds noise. The receiver has to name the signal. Chapter 3 turned the signals into points. This chapter turns the receiver into a rule about those points, and the rule is simple: choose the point nearest to what arrived.'},
 
 {t:'h2', num:'4.1', text:'What the receiver keeps'},
 {t:'p', text:'The received signal is $r(t)=s_i(t)+n(t)$ over one symbol interval. The receiver has $N$ correlators, one for each basis function, and each returns one number.'},
@@ -42,23 +42,23 @@ window.C4 = [
   'r_k=\\int_0^{T}r(t)\\psi_k(t)\\,dt=s_{ik}+n_k',
   '\\mathbf{r}=\\mathbf{s}_i+\\mathbf{n}=(r_1,\\ldots,r_N)'],
  after:'The signal was built from the $N$ basis functions, so the correlators capture all of it. The noise was not: the part of it outside the signal space, written $n_0(t)$, is thrown away.'},
-{t:'box', kind:'ok', hd:'Why throwing $n_0(t)$ away costs nothing', html:'It contains no signal — every signal is a combination of the $N$ basis functions and has no component outside that space. And it is independent of the $N$ numbers the receiver kept. Something that carries no information about the answer and is unrelated to what was kept cannot help. Note what this does <em>not</em> say: the noise inside the signal space is kept in full, and it is all the trouble there is.'},
+{t:'box', kind:'ok', hd:'Noise outside the signal space', html:'The component $n_0(t)$ contains no signal because every signal lies in the basis span. It is also independent of the retained coordinates. Therefore, it cannot help the receiver identify the transmitted signal. The receiver still keeps all noise components inside the signal space.'},
 {t:'p', text:'Each $n_k$ is a projection of a Gaussian process onto a fixed function, so it is Gaussian with zero mean. The useful part is what happens between two of them: using $E[n(\\tau)n(u)]=\\frac{N_0}{2}\\delta(\\tau-u)$ and orthonormality, $E[n_jn_k]$ is $N_0/2$ when $j=k$ and zero otherwise. Uncorrelated jointly Gaussian variables are independent, so the noise components are independent, each $\\mathcal{N}(0,N_0/2)$.'},
-{t:'box', kind:'def', hd:'What that means for the picture', html:'Every axis carries the same variance and the axes are independent, so the noise cloud is a <b>circle</b> — a sphere in $N$ dimensions — with no preferred direction. That symmetry is why the receiver may simply measure distance. If the variances differed, the nearest point in the ordinary sense would not be the best answer.'},
+{t:'box', kind:'def', hd:'Noise geometry', html:'Every axis has the same variance, and the axes are independent. Therefore, the noise cloud is circular in two dimensions and spherical in $N$ dimensions. This symmetry gives the nearest-point decision rule.'},
 
 {t:'h2', num:'4.2', text:'The decision rule'},
 {t:'p', text:'The receiver should choose the signal that is most likely given what it saw. By Bayes\' rule that means maximising $P(\\mathbf{s}_i)f_{\\mathbf{r}}(\\mathbf{r}\\mid\\mathbf{s}_i)$ — the prior times the likelihood. This is the <b>MAP</b> rule, and no rule has a smaller error probability. If all $M$ signals are equally likely the priors cannot change the answer, and what is left is the <b>ML</b> rule: maximise the likelihood alone.'},
-{t:'p', text:'Putting the noise density into the likelihood and taking a logarithm — which is increasing, so it changes no winner — turns the product into a sum and leaves one term that depends on $i$.'},
+{t:'p', text:'Substitute the noise density into the likelihood. Then take its logarithm. The logarithm is increasing, so it does not change the maximizing signal. It converts the product into a sum and isolates the term that depends on $i$.'},
 {t:'eqbox', cap:'Minimum-distance detection', tex:[
   '\\ln f_{\\mathbf{r}}(\\mathbf{r}\\mid\\mathbf{s}_i)=-\\frac{N}{2}\\ln(\\pi N_0)-\\frac{1}{N_0}\\|\\mathbf{r}-\\mathbf{s}_i\\|^{2}',
   '\\hat{s}=\\arg\\min_i\\|\\mathbf{r}-\\mathbf{s}_i\\|^{2}\\quad\\text{(ML)}',
   '\\hat{s}=\\arg\\min_i\\Bigl\\{\\|\\mathbf{r}-\\mathbf{s}_i\\|^{2}-N_0\\ln P(\\mathbf{s}_i)\\Bigr\\}\\quad\\text{(MAP)}'],
- after:'In words: choose the signal point closest to what arrived. With unequal priors, subtract a fixed handicap from each distance first — the term is positive and larger for the more likely symbol, so that symbol wins from further away.'},
-{t:'p', text:'Expanding the squared distance gives the form a receiver is actually built in. The term $\\|\\mathbf{r}\\|^{2}$ is the same for every $i$ and drops out; turning the minimum into a maximum and dividing by two leaves the <b>correlation metric</b>.'},
+ after:'Select the signal point with the smallest metric. For unequal priors, the prior term changes each distance metric. A more likely symbol receives a larger decision region.'},
+{t:'p', text:'Expanding the squared distance gives the form a receiver is actually built in. The term $\\|\\mathbf{r}\\|^{2}$ is the same for every $i$ and drops out. Turning the minimum into a maximum and dividing by two leaves the <b>correlation metric</b>.'},
 {t:'eqbox', cap:'The receiver as it is built',
  tex:'\\hat{s}=\\arg\\max_i\\Bigl\\{\\mathbf{r}\\!\\cdot\\!\\mathbf{s}_i-\\frac{E_i}{2}+\\frac{N_0}{2}\\ln P(\\mathbf{s}_i)\\Bigr\\}',
  after:'And $\\mathbf{r}\\cdot\\mathbf{s}_i=\\int_0^{T}r(t)s_i(t)\\,dt$, so the receiver can correlate against the waveforms directly and never compute coordinates. If the signals are equally likely <b>and</b> have equal energy, both corrections vanish and the rule is: take the largest correlation.'},
-{t:'box', kind:'warn', hd:'When the energies differ, keep the energy term', html:'Without $-E_i/2$ a high-energy signal wins too often, because a large $\\mathbf{s}_i$ makes $\\mathbf{r}\\cdot\\mathbf{s}_i$ large whatever arrived. On-off signalling is exactly this case, and dropping the term there makes the receiver decide "one" almost always. Equal priors remove the prior term; only equal <em>energies</em> remove the energy term.'},
+{t:'box', kind:'warn', hd:'Unequal signal energies', html:'Keep $-E_i/2$ when signal energies differ. Without it, a large $\\mathbf{s}_i$ makes the correlation metric favor a high-energy signal. This error makes an on-off receiver select "one" too often. Equal priors remove only the prior term.'},
 
 {t:'h2', num:'4.3', text:'Decision regions'},
 {t:'p', text:'Collecting the observations that give the same answer divides the space into $M$ regions, $R_i=\\{\\mathbf{r}:\\|\\mathbf{r}-\\mathbf{s}_i\\|\\le\\|\\mathbf{r}-\\mathbf{s}_j\\|\\ \\text{for all}\\ j\\}$. Three facts describe them, and all three follow from the rule being "nearest point".'},
@@ -67,7 +67,7 @@ window.C4 = [
  'With equal priors it crosses that line exactly <b>halfway</b>.',
  'With unequal priors it moves, and <b>the region of the less likely signal shrinks</b>.'
 ]},
-{t:'p', text:'The first two are the definition of a perpendicular bisector: the set of points equidistant from two fixed points <em>is</em> that bisector. Nothing has to be calculated. Only nearest neighbours contribute boundaries, so a point in the middle of a constellation has a bounded region and a point on the outside has one that runs off to infinity — which is why outer points make fewer errors.'},
+{t:'p', text:'A decision boundary is the perpendicular bisector of two signal points. Only nearest neighbors contribute boundaries. An interior point has a bounded decision region. An outer point has an unbounded region and usually fewer nearest neighbors.'},
 
 {t:'figrow', n:3, items:[
  {svg:()=>regions([[-1.1,0],[1.1,0]],{lim:2.2,h:190}),
@@ -83,32 +83,32 @@ window.C4 = [
   'P_e=Q\\!\\left(\\frac{d/2}{\\sqrt{N_0/2}}\\right)=Q\\!\\left(\\sqrt{\\frac{d^{2}}{2N_0}}\\right)',
   '\\mu=\\frac{d}{2}+\\frac{N_0}{2d}\\ln\\frac{P(\\mathbf{s}_1)}{P(\\mathbf{s}_0)}'],
  after:'The second line is where the boundary sits when the priors are unequal, measured from the first point along the line. Equal priors give $\\mu=d/2$.'},
-{t:'box', kind:'ok', hd:'The result this chapter exists for', html:'The error probability of a binary system depends on <b>the distance between the two points and on nothing else</b>. Antipodal points are $2\\sqrt{E_b}$ apart, giving $Q\\!\\left(\\sqrt{2E_b/N_0}\\right)$; on-off or orthogonal points are $\\sqrt{2E_b}$ apart, smaller by $\\sqrt2$ — which is the $3$ dB of Chapter 2, obtained here by measuring a picture instead of integrating two densities.'},
+{t:'box', kind:'ok', hd:'Binary error probability', html:'The binary error probability depends only on the distance between the two signal points. Antipodal points are $2\\sqrt{E_b}$ apart. On-off or orthogonal points are $\\sqrt{2E_b}$ apart. The factor $\\sqrt2$ gives the $3$ dB difference from Chapter 2.'},
 
 {t:'h2', num:'4.4', text:'The union bound'},
-{t:'p', text:'For more than two signals the exact answer is an integral of the likelihood over each decision region, in $N$ dimensions and over a polygon with as many faces as the point has neighbours. There is no closed form. The way round it is to bound the answer instead.'},
+{t:'p', text:'For more than two signals, the exact error is an $N$-dimensional integral over each decision region. A region can have many faces. A simple closed form is usually unavailable. The union bound gives a computable upper bound.'},
 {t:'p', text:'Suppose $\\mathbf{s}_k$ was sent, and let $A_{kj}$ be the event that the observation is closer to $\\mathbf{s}_j$ than to $\\mathbf{s}_k$. An error happens exactly when at least one of those occurs, and the probability of a union is at most the sum of the probabilities. Each term is a two-point question whose answer is already known.'},
 {t:'eqbox', cap:'The union bound and its three usable forms', tex:[
   'P(\\mathbf{s}_k\\to\\mathbf{s}_j)=Q\\!\\left(\\sqrt{\\frac{d_{kj}^{2}}{2N_0}}\\right)',
   'P_e\\le\\frac{1}{M}\\sum_{k}\\sum_{j\\ne k}Q\\!\\left(\\sqrt{\\frac{d_{kj}^{2}}{2N_0}}\\right)',
   'P_e\\le(M-1)Q\\!\\left(\\sqrt{\\frac{d_{\\min}^{2}}{2N_0}}\\right),\\qquad P_e\\approx N_{\\min}Q\\!\\left(\\sqrt{\\frac{d_{\\min}^{2}}{2N_0}}\\right)'],
  after:'$N_{\\min}$ is the <em>average</em> number of points at the minimum distance, and need not be an integer. The last form is the one used in practice.'},
-{t:'p', text:'One more tightening is available, and it costs nothing. To land nearer a different point the observation must leave its own region, and it leaves through a <b>face</b> — a piece of boundary shared with one particular neighbour. A point that shares no face with the region cannot be the first one reached, so the union need only run over the neighbours that bound the region. Write $\\mathcal{N}(k)$ for those.'},
+{t:'p', text:'One more tightening is available, and it costs nothing. To land nearer a different point the observation must leave its own region, and it leaves through a <b>face</b>. A piece of boundary shared with one particular neighbour. A point that shares no face with the region cannot be the first one reached. Therefore, the union need only run over the neighbours that bound the region. Write $\\mathcal{N}(k)$ for those.'},
 {t:'eqbox', cap:'The intelligent union bound', tex:[
   'P(\\text{error}\\mid\\mathbf{s}_k)\\le\\sum_{j\\in\\mathcal{N}(k)}Q\\!\\left(\\sqrt{\\frac{d_{kj}^{2}}{2N_0}}\\right)'],
  after:'Still an upper bound, because leaving the region means crossing one of its faces. It is not the nearest-neighbour form: this one counts <em>faces</em> and bounds, that one counts <em>points at $d_{\\min}$</em> and approximates. They agree whenever every face sits at $d_{\\min}$, and part company when a face is shared with a point further away.'},
-{t:'box', kind:'warn', hd:'Why it is an over-estimate, and when that matters', html:'The events overlap: an observation can be closer to two other points at once, and the sum counts it twice. So the bound is always at least the truth. At low signal-to-noise ratio the overlaps are large and the bound can exceed one, which is useless; at the ratios real systems run at, every term is tiny and the bound is close enough to be quoted as the answer.'},
+{t:'box', kind:'warn', hd:'Union-bound gap', html:'Pairwise error events can overlap, so their sum can count one observation more than once. The bound can exceed one at low signal-to-noise ratio. At high ratios, the overlaps become small and the bound approaches the exact error probability.'},
 
 {t:'ex', hd:'Example 4.1 — four bounds on one constellation', rows:[
  ['Given','Four equally likely points at $(\\pm d/2,\\pm d/2)$: neighbours $d$ apart, diagonals $d\\sqrt2$.'],
  ['Find','The symbol error probability by each of the four forms.'],
- ['Method','Take one point, list its distances to the other three, and add one $Q$ for each — then ask which of those three actually bound its region. Symmetry makes every point give the same answer.'],
+ ['Method','Take one point, list its distances to the other three, and add one $Q$ for each. Then ask which of those three actually bound its region. Symmetry makes every point give the same answer.'],
  ['Solution','General: $P_e\\le 2Q\\!\\left(\\sqrt{d^{2}/2N_0}\\right)+Q\\!\\left(\\sqrt{2d^{2}/2N_0}\\right)$. Intelligent (the region has two faces, both at $d$): $P_e\\le 2Q\\!\\left(\\sqrt{d^{2}/2N_0}\\right)$. Nearest neighbours ($d_{\\min}=d$, $N_{\\min}=2$): $P_e\\approx 2Q\\!\\left(\\sqrt{d^{2}/2N_0}\\right)$. Minimum distance ($M-1=3$): $P_e\\le 3Q\\!\\left(\\sqrt{d^{2}/2N_0}\\right)$.'],
  ['Check','Put $d^{2}/2N_0=9$, so $Q(3)=1.35\\times10^{-3}$ and $Q(4.243)=1.10\\times10^{-5}$. The four answers are $2.71\\times10^{-3}$, $2.70\\times10^{-3}$, $2.70\\times10^{-3}$ and $4.05\\times10^{-3}$: the diagonal term is worth $0.4\\%$, and pretending it is a nearest neighbour costs $50\\%$. The middle two agree here because both faces sit at $d_{\\min}$, and only one of them is a bound. All four are the same $Q$ with a different count in front, so none of them moves the curve sideways.']
 ]},
 
 {t:'fig', svg:()=>regions([[1,1],[-1,1],[-1,-1],[1,-1]],{lim:2.4,w:400,h:280,cloud:340,sigma:0.42}),
- cap:'The constellation, its four regions, and the observations the receiver sees when the top-right point is sent. The exact error probability is the fraction of that cloud outside its own region; the bound adds three separate two-point questions and counts the overlaps twice.'},
+ cap:'The constellation, its four regions, and the observations the receiver sees when the top-right point is sent. The exact error probability is the fraction of that cloud outside its own region. The bound adds three separate two-point questions and counts the overlaps twice.'},
 
 {t:'h2', num:'4.5', text:'Summary'},
 {t:'table', head:['Result','Statement','Anchor'], rows:[
@@ -116,13 +116,13 @@ window.C4 = [
  ['MAP rule','minimise $\\|\\mathbf{r}-\\mathbf{s}_i\\|^{2}-N_0\\ln P(\\mathbf{s}_i)$','PS CH8.4.1'],
  ['ML rule','minimise $\\|\\mathbf{r}-\\mathbf{s}_i\\|^{2}$: choose the nearest point','PS CH8.4.1'],
  ['Receiver','maximise $\\mathbf{r}\\cdot\\mathbf{s}_i-E_i/2+\\frac{N_0}{2}\\ln P(\\mathbf{s}_i)$','PS CH8.4.1'],
- ['Regions','perpendicular bisectors; the less likely region shrinks','PS CH8.4.1'],
+ ['Regions','perpendicular bisectors. The less likely region shrinks','PS CH8.4.1'],
  ['Binary','$P_e=Q\\!\\left(\\sqrt{d^{2}/2N_0}\\right)$','PS CH8.3.3'],
  ['Union bound','$P_e\\le\\frac{1}{M}\\sum_k\\sum_{j\\ne k}Q(\\cdot)$','PS CH8.4.2'],
  ['Intelligent form','sum over the neighbours that give $R_k$ a face','PS CH8.4.2'],
  ['In practice','$P_e\\approx N_{\\min}Q\\!\\left(\\sqrt{d_{\\min}^{2}/2N_0}\\right)$','PS CH8.4.2']
 ]},
-{t:'p', text:'A constellation is judged by two numbers: $d_{\\min}$, which sets the exponent and therefore almost everything, and $N_{\\min}$, which multiplies it and matters far less. Chapter 5 applies this to the constellations that are actually used, and asks which of them gets the largest $d_{\\min}$ for a given average energy and a given number of bits per symbol.'}
+{t:'p', text:'Two parameters describe the nearest-neighbor approximation. The minimum distance $d_{\\min}$ controls the $Q$-function argument. The average neighbor count $N_{\\min}$ is a multiplier. Chapter 5 compares these values for practical constellations at fixed energy and bits per symbol.'}
 
 ];
 })();
