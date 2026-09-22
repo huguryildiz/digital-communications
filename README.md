@@ -13,7 +13,7 @@
 </p>
 
 <p align="center">
-  <a href="https://digital-communications.vercel.app"><img src="https://img.shields.io/badge/digital--communications.vercel.app-04050F?style=for-the-badge&logo=vercel&logoColor=39FF85" alt="The public page"></a>
+  <a href="https://digital-communications-tedu.vercel.app"><img src="https://img.shields.io/badge/digital--communications--tedu.vercel.app-04050F?style=for-the-badge&logo=vercel&logoColor=39FF85" alt="The public page"></a>
   &nbsp;
   <a href="dist/Digital_Communications.html"><img src="https://img.shields.io/badge/Digital__Communications.html-12314E?style=for-the-badge&logo=html5&logoColor=FAF8F4" alt="The interactive artifact"></a>
   &nbsp;
@@ -126,7 +126,7 @@ analog signal → symbols → waveforms → points → decision → error probab
 ## The public page
 
 `site/` is a landing page in front of the course, deployed at
-**[digital-communications.vercel.app](https://digital-communications.vercel.app)**. It is not part of
+**[digital-communications-tedu.vercel.app](https://digital-communications-tedu.vercel.app)**. It is not part of
 the artifact and no gate reads it; a change there is checked by looking at it.
 
 Two things on it move, and both are instruments rather than ornament.
