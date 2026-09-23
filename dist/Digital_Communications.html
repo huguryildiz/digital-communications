@@ -7673,12 +7673,12 @@ const SC = [
 ]},
 
 /* ---------------------------------------------------------------- 0.1 ---- */
-{ id:'m0-open', module:'M0', nav:'What the course asks', title:'One question, asked in seven ways',
+{ id:'m0-open', module:'M0', nav:'The communication problem', title:'The communication problem',
   objective:'State the question the whole course answers before any machinery is introduced.',
   keywords:'opening digital communication noise decision error probability transmitter receiver',
   steps:2, blocks:[
   {t:'eyebrow', text:'Module 0 · The frame of the course'},
-  {t:'title', text:'One question, asked in seven ways'},
+  {t:'title', text:'The communication problem'},
   {t:'lede', text:'A transmitter sends a waveform for one symbol. A channel adds noise. A receiver observes the result and decides which symbol was sent. The course studies waveform design, receiver decisions, and error probability.'},
   {t:'fig', frame:true, svg:()=>figChain(),
     caption:'The transmitter selects a waveform. The channel adds noise. The receiver decides which symbol was sent.'},
@@ -7698,7 +7698,7 @@ const SC = [
 ]},
 
 /* ---------------------------------------------------------------- 0.2 ---- */
-{ id:'m0-why', module:'M0', nav:'Why digital', title:'Digital transmission',
+{ id:'m0-why', module:'M0', nav:'Digital transmission', title:'Digital transmission',
   objective:'Give the one reason digital transmission is used, and its price.',
   keywords:'why digital regeneration repeater noise accumulation bandwidth quantization',
   steps:2, blocks:[
@@ -7764,7 +7764,7 @@ const SC = [
 ]},
 
 /* ---------------------------------------------------------------- 0.4 ---- */
-{ id:'m0-how', module:'M0', nav:'How to read this', title:'Course controls and conventions',
+{ id:'m0-how', module:'M0', nav:'Conventions', title:'Course controls and conventions',
   objective:'Explain the reveal, the laboratories, the editions and the textbook anchor convention.',
   keywords:'how to read reveal steps laboratories editions anchors textbook convention notation',
   steps:1, blocks:[
@@ -8686,12 +8686,12 @@ const SC = [
   ]}
 ]},
 
-{ id:'m1-spectrum', module:'M1', nav:'The sampled spectrum', title:'Sampling replicates the spectrum',
+{ id:'m1-spectrum', module:'M1', nav:'The sampled spectrum', title:'The spectrum of a sampled signal',
   objective:'Derive the replication result that every later statement rests on.',
   keywords:'fourier transform replication convolution impulse train spectrum',
   src:'CH7 s.5–6', slide:true, steps:3, blocks:[
   {t:'eyebrow', text:'Module 1 · The sampling theorem'},
-  {t:'title', text:'Sampling replicates the spectrum'},
+  {t:'title', text:'The spectrum of a sampled signal'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, svg:figSpectrumPair, caption:'The message spectrum, and the spectrum after sampling at $f_s=3W$. A scaled copy sits at every multiple of $f_s$.'}
   ], right:[
@@ -8709,12 +8709,12 @@ const SC = [
   ]}
 ]},
 
-{ id:'m1-spectrum-b', module:'M1', nav:'One copy per impulse', title:'One copy per impulse',
+{ id:'m1-spectrum-b', module:'M1', nav:'Spectral replicas', title:'Spectral replicas',
   objective:'Show that convolving with one shifted impulse shifts the spectrum.',
   keywords:'convolution shifted impulse sifting copy scale factor fs replicas frames',
   src:'CH7 s.6', slide:true, steps:2, blocks:[
   {t:'eyebrow', text:'Module 1 · The sampling theorem'},
-  {t:'title', text:'One copy per impulse'},
+  {t:'title', text:'Spectral replicas'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true,
       frames:{labels:['$G(f)$','$f_s\\,G(f)$','$n=\\pm1$','$n=\\pm2$']},
@@ -8805,12 +8805,12 @@ REAL_SAMPLING,
   ]}
 ]},
 
-{ id:'m1-lpf-b', module:'M1', nav:'The filter in time', title:'The reconstruction filter in time',
+{ id:'m1-lpf-b', module:'M1', nav:'The filter in time', title:'The reconstruction filter in the time domain',
   objective:'Derive the sinc impulse response and fix the sinc convention.',
   keywords:'impulse response sinc inverse fourier rectangle zeros sampling instants convention',
   src:'CH7 s.10', slide:true, steps:3, blocks:[
   {t:'eyebrow', text:'Module 1 · Reconstruction'},
-  {t:'title', text:'The reconstruction filter in time'},
+  {t:'title', text:'The reconstruction filter in the time domain'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true, svg:figSinc,
       caption:'The pulse is one at $t=0$ and zero at every non-zero multiple of $1/(2W)$, which are the sampling instants at the Nyquist rate.'}
@@ -8850,12 +8850,12 @@ REAL_SAMPLING,
   ]}
 ]},
 
-{ id:'m1-interp-b', module:'M1', nav:'Building the sum', title:'Building the interpolation sum',
+{ id:'m1-interp-b', module:'M1', nav:'Partial sums', title:'Partial sums of the interpolation formula',
   objective:'Watch the reconstruction converge as terms are added.',
   keywords:'partial sum interpolation truncation sinc terms nyquist rate frames convergence',
   src:'CH7 s.12', slide:true, steps:2, blocks:[
   {t:'eyebrow', text:'Module 1 · Reconstruction'},
-  {t:'title', text:'Building the interpolation sum'},
+  {t:'title', text:'Partial sums of the interpolation formula'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true,
       frames:{labels:['samples','$n=4$','$n=3,4,5$','$n=1,\\dots,7$','$n=-6,\\dots,14$']},
@@ -9095,12 +9095,12 @@ REAL_QUANT,
   ]}
 ]},
 
-{ id:'m1-ex-cos-b', module:'M1', nav:'Worked example · model and measurement', title:'Worked example: the model and the measurement',
+{ id:'m1-ex-cos-b', module:'M1', nav:'Worked example · predicted and measured SQNR', title:'Worked example: predicted and measured SQNR',
   objective:'Add a bit, check the answer two ways and compare it with a measurement.',
   keywords:'worked example four bits 25.84 db check measured 19.09 25.31 model limit step size error',
   src:'CH7 s.24', slide:true, steps:3, blocks:[
   {t:'eyebrow', text:'Module 1 · Worked example'},
-  {t:'title', text:'Worked example: the model and the measurement'},
+  {t:'title', text:'Worked example: predicted and measured SQNR'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true, svg:figMeasured,
       caption:'The dashed line is $\\alpha+6.02R$. The dots are measured on the quantized waveform, and they approach the line as $R$ grows.'},
@@ -9158,12 +9158,12 @@ REAL_QUANT,
   ]}
 ]},
 
-{ id:'m1-ex-gauss-b', module:'M1', nav:'Worked example · where the error goes', title:'Worked example: where the error goes',
+{ id:'m1-ex-gauss-b', module:'M1', nav:'Worked example · SQNR of a Gaussian source', title:'Worked example: SQNR of a Gaussian source',
   objective:'Finish the Gaussian example and compare it with the uniform model.',
   keywords:'worked example gaussian sqnr 3.28 db model limit 10.8 db central region error',
   src:'CH7 s.28', slide:true, steps:3, blocks:[
   {t:'eyebrow', text:'Module 1 · Worked example'},
-  {t:'title', text:'Worked example: where the error goes'},
+  {t:'title', text:'Worked example: SQNR of a Gaussian source'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true, svg:figGaussErr,
       caption:'The error integrand, region by region. The five areas add to $P_Q=188.17$.'}
@@ -9284,12 +9284,12 @@ REAL_COMPANDING,
   ]}
 ]},
 
-{ id:'m1-ex-pcm', module:'M1', nav:'Worked example · a PCM stream', title:'Worked example: sample, quantize, encode',
+{ id:'m1-ex-pcm', module:'M1', nav:'Worked example · PCM encoding', title:'Worked example: PCM encoding of a sinc pulse',
   objective:'Set up one signal for all three stages: step size, levels and samples.',
   keywords:'worked example pcm sinc sampling quantizing step size levels',
   src:'CH7 s.36', slide:true, steps:3, blocks:[
   {t:'eyebrow', text:'Module 1 · Worked example'},
-  {t:'title', text:'Worked example: sample, quantize, encode'},
+  {t:'title', text:'Worked example: PCM encoding of a sinc pulse'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true, svg:figPcmExample,
       caption:'The message (cyan), its samples every $0.6$ s, and the selected levels (violet). Each error is under half a step.'}
@@ -9305,12 +9305,12 @@ REAL_COMPANDING,
   ]}
 ]},
 
-{ id:'m1-ex-pcm-b', module:'M1', nav:'Worked example · the bit stream', title:'Worked example: the bit stream',
+{ id:'m1-ex-pcm-b', module:'M1', nav:'Worked example · code words and bit rate', title:'Worked example: code words and bit rate',
   objective:'Finish the PCM example: code words, bit rate and a check.',
   keywords:'worked example code words bit rate 5 b/s polar nrz check sinc zero',
   src:'CH7 s.36', slide:true, steps:2, blocks:[
   {t:'eyebrow', text:'Module 1 · Worked example'},
-  {t:'title', text:'Worked example: the bit stream'},
+  {t:'title', text:'Worked example: code words and bit rate'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true, svg:figPcmStream,
       caption:'The seven code words sent as one polar NRZ stream, three bits to a sample.'}
@@ -9361,12 +9361,12 @@ REAL_PCM,
   ]}
 ]},
 
-{ id:'m1-vq-image', module:'M1', nav:'Quantizing an image', title:'Quantizing an image',
+{ id:'m1-vq-image', module:'M1', nav:'Vector quantization of an image', title:'Vector quantization of an image',
   objective:'Work the size of a quantized image and name what is lost.',
   keywords:'image quantization bits per pixel kib banding contouring lossy compression',
   src:'CH7 s.37', slide:true, steps:3, blocks:[
   {t:'eyebrow', text:'Module 1 · Vector quantization'},
-  {t:'title', text:'Quantizing an image'},
+  {t:'title', text:'Vector quantization of an image'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true, svg:()=>figBanding(),
       caption:'One row of a smooth gradient. The fine quantizer follows it; the coarse one replaces it with flat steps, and each step edge shows as a false line.'}
@@ -9880,7 +9880,7 @@ const SC = [
   ]}
 ]},
 
-{ id:'m2-props', module:'M2', nav:'What the matched filter achieves', title:'Properties of the matched filter',
+{ id:'m2-props', module:'M2', nav:'Matched-filter properties', title:'Properties of the matched filter',
   objective:'Establish that the output SNR depends only on the energy-to-density ratio.',
   keywords:'output snr energy noise spectral density unitless shape independent',
   src:'CH8 s.12–13', steps:2, blocks:[
@@ -9922,12 +9922,12 @@ const SC = [
 ]},
 
 /* ---------------------------------------------------------------- 2.2 ---- */
-{ id:'m2-basis', module:'M2', nav:'One basis, two symbols', title:'One basis, two symbols',
+{ id:'m2-basis', module:'M2', nav:'Antipodal signalling', title:'The unit-energy basis and antipodal signalling',
   objective:'Introduce the unit-energy basis and antipodal signalling.',
   keywords:'basis function unit energy polar nrz antipodal signalling one dimensional',
   src:'CH8 s.17', steps:2, blocks:[
   {t:'eyebrow', text:'Module 2 · The demodulator'},
-  {t:'title', text:'One basis, two symbols'},
+  {t:'title', text:'The unit-energy basis and antipodal signalling'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'Both waveforms of a binary baseband system are multiples of the same rectangular shape, so one unit-energy function carries both:'},
     {t:'eq', tex:'\\psi(t)=\\begin{cases}\\dfrac{1}{\\sqrt{T_b}}, & 0\\le t\\le T_b\\\\[4pt] 0,&\\text{otherwise}\\end{cases}\\qquad \\int_0^{T_b}\\psi^{2}(t)\\,dt=1'},
@@ -9961,7 +9961,7 @@ const SC = [
   ]}
 ]},
 
-{ id:'m2-correlator', module:'M2', nav:'Two demodulators, one number', title:'Correlator and matched-filter demodulators',
+{ id:'m2-correlator', module:'M2', nav:'Correlator and matched filter', title:'Correlator and matched-filter demodulators',
   objective:'Show that the correlator and the matched filter give the same statistic.',
   keywords:'correlator demodulator matched filter equivalent decision statistic sample',
   src:'CH8 s.19–20', steps:2, blocks:[
@@ -10175,12 +10175,12 @@ const SC = [
 ]},
 
 /* ---------------------------------------------------------------- 2.5 ---- */
-{ id:'m2-nyquist', module:'M2', nav:'Nyquist\'s criterion', title:'The condition for zero interference',
+{ id:'m2-nyquist', module:'M2', nav:'Nyquist\'s criterion', title:'Nyquist\'s criterion for zero intersymbol interference',
   objective:'State Nyquist\'s criterion in both domains and give the ideal channel.',
   keywords:'nyquist criterion distortionless transmission zero isi bandwidth ideal channel',
   src:'CH8 s.42–45', steps:3, blocks:[
   {t:'eyebrow', text:'Module 2 · Nyquist and the raised cosine'},
-  {t:'title', text:'Nyquist\'s criterion'},
+  {t:'title', text:'Nyquist\'s criterion for zero intersymbol interference'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'The interference term vanishes exactly when the overall pulse is zero at every sampling instant but its own:'},
     {t:'eq', key:true, label:'time domain', tex:'p\\bigl((i-k)T_b\\bigr)=\\begin{cases}1, & i=k\\\\ 0, & i\\ne k\\end{cases}'},
@@ -10389,7 +10389,7 @@ function miniNearest(){
 const SC = [
 
 /* ---------------------------------------------------------------- 3.0 ---- */
-{ id:'m3-open', module:'M3', nav:'Why one axis is not enough', title:'Multiple signal-space axes',
+{ id:'m3-open', module:'M3', nav:'Multiple axes', title:'Multiple signal-space axes',
   objective:'Show the problem two unrelated waveforms create for the Module 2 receiver.',
   keywords:'geometric representation two matched filters basis signal space opening',
   src:'CH9 s.2–3', steps:2, blocks:[
@@ -10601,12 +10601,12 @@ const SC = [
   ]}
 ]},
 
-{ id:'m3-ex-gs', module:'M3', nav:'Worked example: Gram–Schmidt', title:'Worked example: three pulses, two axes',
+{ id:'m3-ex-gs', module:'M3', nav:'Worked example: Gram–Schmidt', title:'Worked example: Gram–Schmidt for three pulses',
   objective:'Run the procedure on three waveforms and draw the constellation.',
   keywords:'worked example gram schmidt three signals two basis functions constellation',
   src:'CH9 s.19–21', steps:4, blocks:[
   {t:'eyebrow', text:'Module 3 · Gram–Schmidt'},
-  {t:'title', text:'Worked example: three pulses, two axes'},
+  {t:'title', text:'Worked example: Gram–Schmidt for three pulses'},
   {t:'cols', ratio:'c-6-6', vcenter:false, left:[
     {t:'wex', rows:[
       ['Given','$s_1(t)=1$ on $[0,2]$; $s_2(t)=1$ on $[2,3]$; $s_3(t)=1$ on $[0,3]$; each zero elsewhere.'],
@@ -10647,22 +10647,22 @@ const SC = [
   ]}
 ]},
 
-{ id:'m3-lab-f', module:'M3', nav:'Laboratory F', title:'Laboratory F · From waveform to basis',
+{ id:'m3-lab-f', module:'M3', nav:'Laboratory F', title:'Laboratory F · The Gram–Schmidt basis',
   objective:'Let the reader change the waveform set and watch the basis and the constellation follow.',
   keywords:'laboratory gram schmidt basis constellation waveform set dimension',
   steps:0, blocks:[
   {t:'eyebrow', text:'Module 3 · Gram–Schmidt'},
-  {t:'title', text:'Laboratory F · From waveform to basis'},
+  {t:'title', text:'Laboratory F · The Gram–Schmidt basis'},
   {t:'body', html:'Choose a set of waveforms and watch the procedure run on it. It shows the basis functions it produces, how many there are, and where the signals land. Reorder the set and the axes change while the constellation keeps its shape.'},
   {t:'lab', id:'F'}
 ]},
 
-{ id:'m3-remarks', module:'M3', nav:'What the geometry decides', title:'Results determined by geometry',
+{ id:'m3-remarks', module:'M3', nav:'Geometric equivalence', title:'Geometric equivalence of signal sets',
   objective:'State what the constellation determines and what it leaves open.',
   keywords:'remarks same geometry different waveforms performance receiver structure bandwidth',
   src:'CH9 s.15', steps:2, blocks:[
   {t:'eyebrow', text:'Module 3 · Constellations'},
-  {t:'title', text:'Results determined by geometry'},
+  {t:'title', text:'Geometric equivalence of signal sets'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'note', kind:'def', head:'Geometric equivalence', html:'<ol><li>Different waveform sets can have the same constellation.</li><li>The constellation determines receiver structure and error performance.</li></ol>'},
     {t:'reveal', at:1, items:[
@@ -10828,7 +10828,7 @@ function miniUnion(){
 const SC = [
 
 /* ---------------------------------------------------------------- 4.0 ---- */
-{ id:'m4-open', module:'M4', nav:'The receiver problem', title:'Signal-point detection',
+{ id:'m4-open', module:'M4', nav:'Signal-point detection', title:'Signal-point detection',
   objective:'State the problem the module solves and the answer it reaches.',
   keywords:'optimal receiver awgn decision minimum distance opening m-ary',
   src:'CH9 s.23', steps:2, blocks:[
@@ -10853,7 +10853,7 @@ const SC = [
 ]},
 
 /* ---------------------------------------------------------------- 4.1 ---- */
-{ id:'m4-observe', module:'M4', nav:'What the receiver keeps', title:'The observation vector',
+{ id:'m4-observe', module:'M4', nav:'The observation vector', title:'The observation vector',
   objective:'Show that the correlator bank loses nothing that matters.',
   keywords:'correlator bank observation vector irrelevant noise component projection',
   src:'CH9 s.24–25', steps:3, blocks:[
@@ -10891,7 +10891,7 @@ const SC = [
   ]}
 ]},
 
-{ id:'m4-noise', module:'M4', nav:'The noise on each axis', title:'The noise vector',
+{ id:'m4-noise', module:'M4', nav:'The noise vector', title:'The noise vector',
   objective:'Establish the distribution of the noise vector.',
   keywords:'noise vector independent gaussian variance uncorrelated joint density',
   src:'CH9 s.26–27', steps:2, blocks:[
@@ -10997,7 +10997,7 @@ const SC = [
   ]}
 ]},
 
-{ id:'m4-metric', module:'M4', nav:'The receiver that computes it', title:'The correlation metric',
+{ id:'m4-metric', module:'M4', nav:'The correlation metric', title:'The correlation metric',
   objective:'Turn the distance rule into the correlation metric a receiver computes.',
   keywords:'correlation metric receiver structure energy bias equal energy signals',
   src:'CH9 s.35–36', steps:3, blocks:[
@@ -11121,7 +11121,7 @@ const SC = [
 ]},
 
 /* ---------------------------------------------------------------- 4.4 ---- */
-{ id:'m4-pe', module:'M4', nav:'The exact answer', title:'The exact error probability',
+{ id:'m4-pe', module:'M4', nav:'Exact error probability', title:'The exact error probability',
   objective:'Give the general error expression and explain the difficulty.',
   keywords:'general expression probability of error integral decision region multidimensional',
   src:'CH9 s.51, 56', steps:2, blocks:[
@@ -11175,12 +11175,12 @@ const SC = [
   ]}
 ]},
 
-{ id:'m4-dmin', module:'M4', nav:'The usable forms', title:'The minimum-distance and nearest-neighbour forms',
+{ id:'m4-dmin', module:'M4', nav:'Simplified union bounds', title:'Minimum-distance and nearest-neighbour bounds',
   objective:'Give the minimum-distance bound and the nearest-neighbour approximation.',
   keywords:'minimum distance bound nearest neighbour approximation number of neighbours',
   src:'CH9 s.60–61', steps:3, blocks:[
   {t:'eyebrow', text:'Module 4 · The union bound'},
-  {t:'title', text:'The minimum-distance and nearest-neighbour forms'},
+  {t:'title', text:'Minimum-distance and nearest-neighbour bounds'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>$Q$ decreases, so replacing every distance by the smallest one can only make each term larger. Write</p>'},
     {t:'eq', tex:'d_{\\min}=\\min_{k\\ne j}\\;d_{kj}'},
@@ -11257,7 +11257,7 @@ const SC = [
   ]}
 ]},
 
-{ id:'m4-ex-union', module:'M4', nav:'Worked example: the bound', title:'Worked example: the union bound',
+{ id:'m4-ex-union', module:'M4', nav:'Worked example: the union bound', title:'Worked example: the union bound',
   objective:'Apply the general union bound to a four-point constellation.',
   keywords:'worked example union bound four points square distances general form',
   src:'CH9 s.62–63', steps:2, blocks:[
@@ -11285,12 +11285,12 @@ const SC = [
   ]}
 ]},
 
-{ id:'m4-ex-union-b', module:'M4', nav:'Worked example: the simpler forms', title:'Worked example: the two simpler forms',
+{ id:'m4-ex-union-b', module:'M4', nav:'Worked example: the simplified bounds', title:'Worked example: the simplified bounds',
   objective:'Compare the nearest-neighbour and minimum-distance forms with the general one.',
   keywords:'worked example nearest neighbour minimum distance comparison numbers',
   src:'CH9 s.64–65', steps:3, blocks:[
   {t:'eyebrow', text:'Module 4 · The union bound'},
-  {t:'title', text:'Worked example: the two simpler forms'},
+  {t:'title', text:'Worked example: the simplified bounds'},
   {t:'lede', text:'The same constellation, with the two forms that are actually used, and the three answers side by side.'},
   {t:'reveal', at:1, items:[
     {t:'wex', rows:[
@@ -11478,12 +11478,12 @@ function figCompare(){
 const SC = [
 
 /* ---------------------------------------------------------------- 5.0 ---- */
-{ id:'m5-open', module:'M5', nav:'Three things to switch', title:'Amplitude, frequency, phase',
+{ id:'m5-open', module:'M5', nav:'Keying families', title:'Amplitude, frequency and phase keying',
   objective:'Frame the module as one question asked of three carrier parameters.',
   keywords:'digital modulation amplitude frequency phase keying ask fsk psk opening',
   src:'CH9 s.65', steps:2, blocks:[
   {t:'eyebrow', text:'Module 5 · Opening'},
-  {t:'title', text:'Amplitude, frequency, phase'},
+  {t:'title', text:'Amplitude, frequency and phase keying'},
   {t:'lede', text:'A sinusoidal carrier has an amplitude, a frequency and a phase. Switching any one of them according to the data is a digital modulation scheme. There are three families because there are three things to switch.'},
   /* The three waveforms go side by side rather than stacked. Three figures in
      one column is taller than the stage; three across uses the width the scene
@@ -11622,7 +11622,7 @@ const SC = [
   ]}
 ]},
 
-{ id:'m5-mpsk-pe', module:'M5', nav:'What M-PSK costs', title:'The error probability of M-ary PSK',
+{ id:'m5-mpsk-pe', module:'M5', nav:'M-PSK error probability', title:'The error probability of M-ary PSK',
   objective:'Give the M-PSK error probability and the cost of increasing M.',
   keywords:'m-psk error probability energy per bit cost of doubling M decibels',
   src:'CH9 s.78', steps:3, blocks:[
@@ -11764,12 +11764,12 @@ const SC = [
   ]}
 ]},
 
-{ id:'m5-compare', module:'M5', nav:'Comparing the families', title:'Comparing the families',
+{ id:'m5-compare', module:'M5', nav:'Comparison of schemes', title:'Comparison of modulation schemes',
   objective:'Put the four families side by side on power and bandwidth.',
   keywords:'comparison psk qam pam fsk bandwidth power efficiency trade',
   src:'CH9 s.95–101', steps:2, blocks:[
   {t:'eyebrow', text:'Module 5 · Comparison'},
-  {t:'title', text:'Comparing the families'},
+  {t:'title', text:'Comparison of modulation schemes'},
   {t:'lede', text:'Which family to use, and what each one spends.'},
   {t:'cols', ratio:'c-5-7', vcenter:true, left:[
     {t:'body', html:'Every scheme carries $\\log_2 M$ bits a symbol. The chart puts the families on one scale: the energy per bit each one needs to reach $P_e=10^{-5}$, computed from the distance of each family.'},
@@ -12316,12 +12316,12 @@ window.SCENES_M6 = [
 ]},
 
 /* ---------------------------------------------------------------- 6.7 ---- */
-{ id:'m6-bound', module:'M6', nav:'How close to the entropy', title:'Source-coding bound',
+{ id:'m6-bound', module:'M6', nav:'The source-coding bound', title:'The source-coding bound',
   objective:'State H ≤ L̄ < H+1 and show blocking closes the gap.',
   keywords:'bound entropy plus one dyadic extension converges rounding block coding',
   src:'CH10 s.17–18', steps:3, blocks:[
   {t:'eyebrow', text:'Module 6 · An introduction to information theory'},
-  {t:'title', text:'Source-coding bound'},
+  {t:'title', text:'The source-coding bound'},
   {t:'lede', text:'The bound, and how to beat the rounding.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>The source-coding theorem says no code beats $H(S)$. The complementary result says a prefix code always gets within one bit of it.</p>'},
@@ -12422,12 +12422,12 @@ window.SCENES_M6 = [
 ]},
 
 /* ---------------------------------------------------------------- 6.L2 --- */
-{ id:'m6-lab-j', module:'M6', nav:'Laboratory J', title:'Laboratory J · Building a Huffman code',
+{ id:'m6-lab-j', module:'M6', nav:'Laboratory J', title:'Laboratory J · Huffman code construction',
   objective:'Run the algorithm one merge at a time and read off what it costs.',
   keywords:'laboratory huffman build merge step tree average length efficiency variance',
   steps:0, blocks:[
   {t:'eyebrow', text:'Module 6 · An introduction to information theory'},
-  {t:'title', text:'Laboratory J · Building a Huffman code'},
+  {t:'title', text:'Laboratory J · Huffman code construction'},
   {t:'body', html:'Set the probabilities, then step through the merges one at a time. The tree, the codewords, the average length, the efficiency and the variance are all recomputed as the algorithm runs. The tie-breaking rule can be switched to see the two codes of the last scene appear.'},
   {t:'lab', id:'J'}
 ]},
@@ -12501,12 +12501,12 @@ window.SCENES_M6 = [
   ]}
 ]},
 
-{ id:'m6-inputdist', module:'M6', nav:'What comes out', title:'The input distribution',
+{ id:'m6-inputdist', module:'M6', nav:'Input and output distributions', title:'Input and output distributions',
   objective:'Combine the channel matrix with an input distribution to get the joint and output distributions.',
   keywords:'input distribution a priori joint pmf marginal output distribution transmitter choice',
   src:'CH10 w.13', steps:3, blocks:[
   {t:'eyebrow', text:'Module 6 · The discrete memoryless channel'},
-  {t:'title', text:'The input distribution'},
+  {t:'title', text:'Input and output distributions'},
   {t:'lede', text:'The transmitter has a say too.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>Add one more list of numbers: how often the transmitter sends each input symbol. These are the <b>a priori probabilities</b>, and they are chosen, not given.</p>'},
@@ -12646,7 +12646,7 @@ window.SCENES_M6 = [
   ]}
 ]},
 
-{ id:'m6-mutual-props', module:'M6', nav:'Its three properties', title:'Properties of mutual information',
+{ id:'m6-mutual-props', module:'M6', nav:'Properties', title:'Properties of mutual information',
   objective:'Give the properties of mutual information and the joint-entropy relation.',
   keywords:'mutual information properties symmetry non-negative joint entropy bayes rule',
   src:'CH10 w.13', steps:3, blocks:[

@@ -880,12 +880,12 @@ const SC = [
   ]}
 ]},
 
-{ id:'m1-spectrum', module:'M1', nav:'The sampled spectrum', title:'Sampling replicates the spectrum',
+{ id:'m1-spectrum', module:'M1', nav:'The sampled spectrum', title:'The spectrum of a sampled signal',
   objective:'Derive the replication result that every later statement rests on.',
   keywords:'fourier transform replication convolution impulse train spectrum',
   src:'CH7 s.5–6', slide:true, steps:3, blocks:[
   {t:'eyebrow', text:'Module 1 · The sampling theorem'},
-  {t:'title', text:'Sampling replicates the spectrum'},
+  {t:'title', text:'The spectrum of a sampled signal'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, svg:figSpectrumPair, caption:'The message spectrum, and the spectrum after sampling at $f_s=3W$. A scaled copy sits at every multiple of $f_s$.'}
   ], right:[
@@ -903,12 +903,12 @@ const SC = [
   ]}
 ]},
 
-{ id:'m1-spectrum-b', module:'M1', nav:'One copy per impulse', title:'One copy per impulse',
+{ id:'m1-spectrum-b', module:'M1', nav:'Spectral replicas', title:'Spectral replicas',
   objective:'Show that convolving with one shifted impulse shifts the spectrum.',
   keywords:'convolution shifted impulse sifting copy scale factor fs replicas frames',
   src:'CH7 s.6', slide:true, steps:2, blocks:[
   {t:'eyebrow', text:'Module 1 · The sampling theorem'},
-  {t:'title', text:'One copy per impulse'},
+  {t:'title', text:'Spectral replicas'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true,
       frames:{labels:['$G(f)$','$f_s\\,G(f)$','$n=\\pm1$','$n=\\pm2$']},
@@ -999,12 +999,12 @@ REAL_SAMPLING,
   ]}
 ]},
 
-{ id:'m1-lpf-b', module:'M1', nav:'The filter in time', title:'The reconstruction filter in time',
+{ id:'m1-lpf-b', module:'M1', nav:'The filter in time', title:'The reconstruction filter in the time domain',
   objective:'Derive the sinc impulse response and fix the sinc convention.',
   keywords:'impulse response sinc inverse fourier rectangle zeros sampling instants convention',
   src:'CH7 s.10', slide:true, steps:3, blocks:[
   {t:'eyebrow', text:'Module 1 · Reconstruction'},
-  {t:'title', text:'The reconstruction filter in time'},
+  {t:'title', text:'The reconstruction filter in the time domain'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true, svg:figSinc,
       caption:'The pulse is one at $t=0$ and zero at every non-zero multiple of $1/(2W)$, which are the sampling instants at the Nyquist rate.'}
@@ -1044,12 +1044,12 @@ REAL_SAMPLING,
   ]}
 ]},
 
-{ id:'m1-interp-b', module:'M1', nav:'Building the sum', title:'Building the interpolation sum',
+{ id:'m1-interp-b', module:'M1', nav:'Partial sums', title:'Partial sums of the interpolation formula',
   objective:'Watch the reconstruction converge as terms are added.',
   keywords:'partial sum interpolation truncation sinc terms nyquist rate frames convergence',
   src:'CH7 s.12', slide:true, steps:2, blocks:[
   {t:'eyebrow', text:'Module 1 · Reconstruction'},
-  {t:'title', text:'Building the interpolation sum'},
+  {t:'title', text:'Partial sums of the interpolation formula'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true,
       frames:{labels:['samples','$n=4$','$n=3,4,5$','$n=1,\\dots,7$','$n=-6,\\dots,14$']},
@@ -1289,12 +1289,12 @@ REAL_QUANT,
   ]}
 ]},
 
-{ id:'m1-ex-cos-b', module:'M1', nav:'Worked example · model and measurement', title:'Worked example: the model and the measurement',
+{ id:'m1-ex-cos-b', module:'M1', nav:'Worked example · predicted and measured SQNR', title:'Worked example: predicted and measured SQNR',
   objective:'Add a bit, check the answer two ways and compare it with a measurement.',
   keywords:'worked example four bits 25.84 db check measured 19.09 25.31 model limit step size error',
   src:'CH7 s.24', slide:true, steps:3, blocks:[
   {t:'eyebrow', text:'Module 1 · Worked example'},
-  {t:'title', text:'Worked example: the model and the measurement'},
+  {t:'title', text:'Worked example: predicted and measured SQNR'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true, svg:figMeasured,
       caption:'The dashed line is $\\alpha+6.02R$. The dots are measured on the quantized waveform, and they approach the line as $R$ grows.'},
@@ -1352,12 +1352,12 @@ REAL_QUANT,
   ]}
 ]},
 
-{ id:'m1-ex-gauss-b', module:'M1', nav:'Worked example · where the error goes', title:'Worked example: where the error goes',
+{ id:'m1-ex-gauss-b', module:'M1', nav:'Worked example · SQNR of a Gaussian source', title:'Worked example: SQNR of a Gaussian source',
   objective:'Finish the Gaussian example and compare it with the uniform model.',
   keywords:'worked example gaussian sqnr 3.28 db model limit 10.8 db central region error',
   src:'CH7 s.28', slide:true, steps:3, blocks:[
   {t:'eyebrow', text:'Module 1 · Worked example'},
-  {t:'title', text:'Worked example: where the error goes'},
+  {t:'title', text:'Worked example: SQNR of a Gaussian source'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true, svg:figGaussErr,
       caption:'The error integrand, region by region. The five areas add to $P_Q=188.17$.'}
@@ -1478,12 +1478,12 @@ REAL_COMPANDING,
   ]}
 ]},
 
-{ id:'m1-ex-pcm', module:'M1', nav:'Worked example · a PCM stream', title:'Worked example: sample, quantize, encode',
+{ id:'m1-ex-pcm', module:'M1', nav:'Worked example · PCM encoding', title:'Worked example: PCM encoding of a sinc pulse',
   objective:'Set up one signal for all three stages: step size, levels and samples.',
   keywords:'worked example pcm sinc sampling quantizing step size levels',
   src:'CH7 s.36', slide:true, steps:3, blocks:[
   {t:'eyebrow', text:'Module 1 · Worked example'},
-  {t:'title', text:'Worked example: sample, quantize, encode'},
+  {t:'title', text:'Worked example: PCM encoding of a sinc pulse'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true, svg:figPcmExample,
       caption:'The message (cyan), its samples every $0.6$ s, and the selected levels (violet). Each error is under half a step.'}
@@ -1499,12 +1499,12 @@ REAL_COMPANDING,
   ]}
 ]},
 
-{ id:'m1-ex-pcm-b', module:'M1', nav:'Worked example · the bit stream', title:'Worked example: the bit stream',
+{ id:'m1-ex-pcm-b', module:'M1', nav:'Worked example · code words and bit rate', title:'Worked example: code words and bit rate',
   objective:'Finish the PCM example: code words, bit rate and a check.',
   keywords:'worked example code words bit rate 5 b/s polar nrz check sinc zero',
   src:'CH7 s.36', slide:true, steps:2, blocks:[
   {t:'eyebrow', text:'Module 1 · Worked example'},
-  {t:'title', text:'Worked example: the bit stream'},
+  {t:'title', text:'Worked example: code words and bit rate'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true, svg:figPcmStream,
       caption:'The seven code words sent as one polar NRZ stream, three bits to a sample.'}
@@ -1555,12 +1555,12 @@ REAL_PCM,
   ]}
 ]},
 
-{ id:'m1-vq-image', module:'M1', nav:'Quantizing an image', title:'Quantizing an image',
+{ id:'m1-vq-image', module:'M1', nav:'Vector quantization of an image', title:'Vector quantization of an image',
   objective:'Work the size of a quantized image and name what is lost.',
   keywords:'image quantization bits per pixel kib banding contouring lossy compression',
   src:'CH7 s.37', slide:true, steps:3, blocks:[
   {t:'eyebrow', text:'Module 1 · Vector quantization'},
-  {t:'title', text:'Quantizing an image'},
+  {t:'title', text:'Vector quantization of an image'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true, svg:()=>figBanding(),
       caption:'One row of a smooth gradient. The fine quantizer follows it; the coarse one replaces it with flat steps, and each step edge shows as a false line.'}

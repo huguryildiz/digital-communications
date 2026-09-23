@@ -117,12 +117,12 @@ const SC = [
 ]},
 
 /* ---------------------------------------------------------------- 0.1 ---- */
-{ id:'m0-open', module:'M0', nav:'What the course asks', title:'One question, asked in seven ways',
+{ id:'m0-open', module:'M0', nav:'The communication problem', title:'The communication problem',
   objective:'State the question the whole course answers before any machinery is introduced.',
   keywords:'opening digital communication noise decision error probability transmitter receiver',
   steps:2, blocks:[
   {t:'eyebrow', text:'Module 0 · The frame of the course'},
-  {t:'title', text:'One question, asked in seven ways'},
+  {t:'title', text:'The communication problem'},
   {t:'lede', text:'A transmitter sends a waveform for one symbol. A channel adds noise. A receiver observes the result and decides which symbol was sent. The course studies waveform design, receiver decisions, and error probability.'},
   {t:'fig', frame:true, svg:()=>figChain(),
     caption:'The transmitter selects a waveform. The channel adds noise. The receiver decides which symbol was sent.'},
@@ -142,7 +142,7 @@ const SC = [
 ]},
 
 /* ---------------------------------------------------------------- 0.2 ---- */
-{ id:'m0-why', module:'M0', nav:'Why digital', title:'Digital transmission',
+{ id:'m0-why', module:'M0', nav:'Digital transmission', title:'Digital transmission',
   objective:'Give the one reason digital transmission is used, and its price.',
   keywords:'why digital regeneration repeater noise accumulation bandwidth quantization',
   steps:2, blocks:[
@@ -208,7 +208,7 @@ const SC = [
 ]},
 
 /* ---------------------------------------------------------------- 0.4 ---- */
-{ id:'m0-how', module:'M0', nav:'How to read this', title:'Course controls and conventions',
+{ id:'m0-how', module:'M0', nav:'Conventions', title:'Course controls and conventions',
   objective:'Explain the reveal, the laboratories, the editions and the textbook anchor convention.',
   keywords:'how to read reveal steps laboratories editions anchors textbook convention notation',
   steps:1, blocks:[

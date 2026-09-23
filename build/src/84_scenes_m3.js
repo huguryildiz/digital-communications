@@ -85,7 +85,7 @@ function miniNearest(){
 const SC = [
 
 /* ---------------------------------------------------------------- 3.0 ---- */
-{ id:'m3-open', module:'M3', nav:'Why one axis is not enough', title:'Multiple signal-space axes',
+{ id:'m3-open', module:'M3', nav:'Multiple axes', title:'Multiple signal-space axes',
   objective:'Show the problem two unrelated waveforms create for the Module 2 receiver.',
   keywords:'geometric representation two matched filters basis signal space opening',
   src:'CH9 s.2–3', steps:2, blocks:[
@@ -297,12 +297,12 @@ const SC = [
   ]}
 ]},
 
-{ id:'m3-ex-gs', module:'M3', nav:'Worked example: Gram–Schmidt', title:'Worked example: three pulses, two axes',
+{ id:'m3-ex-gs', module:'M3', nav:'Worked example: Gram–Schmidt', title:'Worked example: Gram–Schmidt for three pulses',
   objective:'Run the procedure on three waveforms and draw the constellation.',
   keywords:'worked example gram schmidt three signals two basis functions constellation',
   src:'CH9 s.19–21', steps:4, blocks:[
   {t:'eyebrow', text:'Module 3 · Gram–Schmidt'},
-  {t:'title', text:'Worked example: three pulses, two axes'},
+  {t:'title', text:'Worked example: Gram–Schmidt for three pulses'},
   {t:'cols', ratio:'c-6-6', vcenter:false, left:[
     {t:'wex', rows:[
       ['Given','$s_1(t)=1$ on $[0,2]$; $s_2(t)=1$ on $[2,3]$; $s_3(t)=1$ on $[0,3]$; each zero elsewhere.'],
@@ -343,22 +343,22 @@ const SC = [
   ]}
 ]},
 
-{ id:'m3-lab-f', module:'M3', nav:'Laboratory F', title:'Laboratory F · From waveform to basis',
+{ id:'m3-lab-f', module:'M3', nav:'Laboratory F', title:'Laboratory F · The Gram–Schmidt basis',
   objective:'Let the reader change the waveform set and watch the basis and the constellation follow.',
   keywords:'laboratory gram schmidt basis constellation waveform set dimension',
   steps:0, blocks:[
   {t:'eyebrow', text:'Module 3 · Gram–Schmidt'},
-  {t:'title', text:'Laboratory F · From waveform to basis'},
+  {t:'title', text:'Laboratory F · The Gram–Schmidt basis'},
   {t:'body', html:'Choose a set of waveforms and watch the procedure run on it. It shows the basis functions it produces, how many there are, and where the signals land. Reorder the set and the axes change while the constellation keeps its shape.'},
   {t:'lab', id:'F'}
 ]},
 
-{ id:'m3-remarks', module:'M3', nav:'What the geometry decides', title:'Results determined by geometry',
+{ id:'m3-remarks', module:'M3', nav:'Geometric equivalence', title:'Geometric equivalence of signal sets',
   objective:'State what the constellation determines and what it leaves open.',
   keywords:'remarks same geometry different waveforms performance receiver structure bandwidth',
   src:'CH9 s.15', steps:2, blocks:[
   {t:'eyebrow', text:'Module 3 · Constellations'},
-  {t:'title', text:'Results determined by geometry'},
+  {t:'title', text:'Geometric equivalence of signal sets'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'note', kind:'def', head:'Geometric equivalence', html:'<ol><li>Different waveform sets can have the same constellation.</li><li>The constellation determines receiver structure and error performance.</li></ol>'},
     {t:'reveal', at:1, items:[

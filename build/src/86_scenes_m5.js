@@ -128,12 +128,12 @@ function figCompare(){
 const SC = [
 
 /* ---------------------------------------------------------------- 5.0 ---- */
-{ id:'m5-open', module:'M5', nav:'Three things to switch', title:'Amplitude, frequency, phase',
+{ id:'m5-open', module:'M5', nav:'Keying families', title:'Amplitude, frequency and phase keying',
   objective:'Frame the module as one question asked of three carrier parameters.',
   keywords:'digital modulation amplitude frequency phase keying ask fsk psk opening',
   src:'CH9 s.65', steps:2, blocks:[
   {t:'eyebrow', text:'Module 5 · Opening'},
-  {t:'title', text:'Amplitude, frequency, phase'},
+  {t:'title', text:'Amplitude, frequency and phase keying'},
   {t:'lede', text:'A sinusoidal carrier has an amplitude, a frequency and a phase. Switching any one of them according to the data is a digital modulation scheme. There are three families because there are three things to switch.'},
   /* The three waveforms go side by side rather than stacked. Three figures in
      one column is taller than the stage; three across uses the width the scene
@@ -272,7 +272,7 @@ const SC = [
   ]}
 ]},
 
-{ id:'m5-mpsk-pe', module:'M5', nav:'What M-PSK costs', title:'The error probability of M-ary PSK',
+{ id:'m5-mpsk-pe', module:'M5', nav:'M-PSK error probability', title:'The error probability of M-ary PSK',
   objective:'Give the M-PSK error probability and the cost of increasing M.',
   keywords:'m-psk error probability energy per bit cost of doubling M decibels',
   src:'CH9 s.78', steps:3, blocks:[
@@ -414,12 +414,12 @@ const SC = [
   ]}
 ]},
 
-{ id:'m5-compare', module:'M5', nav:'Comparing the families', title:'Comparing the families',
+{ id:'m5-compare', module:'M5', nav:'Comparison of schemes', title:'Comparison of modulation schemes',
   objective:'Put the four families side by side on power and bandwidth.',
   keywords:'comparison psk qam pam fsk bandwidth power efficiency trade',
   src:'CH9 s.95–101', steps:2, blocks:[
   {t:'eyebrow', text:'Module 5 · Comparison'},
-  {t:'title', text:'Comparing the families'},
+  {t:'title', text:'Comparison of modulation schemes'},
   {t:'lede', text:'Which family to use, and what each one spends.'},
   {t:'cols', ratio:'c-5-7', vcenter:true, left:[
     {t:'body', html:'Every scheme carries $\\log_2 M$ bits a symbol. The chart puts the families on one scale: the energy per bit each one needs to reach $P_e=10^{-5}$, computed from the distance of each family.'},

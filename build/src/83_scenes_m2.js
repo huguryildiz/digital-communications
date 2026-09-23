@@ -284,7 +284,7 @@ const SC = [
   ]}
 ]},
 
-{ id:'m2-props', module:'M2', nav:'What the matched filter achieves', title:'Properties of the matched filter',
+{ id:'m2-props', module:'M2', nav:'Matched-filter properties', title:'Properties of the matched filter',
   objective:'Establish that the output SNR depends only on the energy-to-density ratio.',
   keywords:'output snr energy noise spectral density unitless shape independent',
   src:'CH8 s.12–13', steps:2, blocks:[
@@ -326,12 +326,12 @@ const SC = [
 ]},
 
 /* ---------------------------------------------------------------- 2.2 ---- */
-{ id:'m2-basis', module:'M2', nav:'One basis, two symbols', title:'One basis, two symbols',
+{ id:'m2-basis', module:'M2', nav:'Antipodal signalling', title:'The unit-energy basis and antipodal signalling',
   objective:'Introduce the unit-energy basis and antipodal signalling.',
   keywords:'basis function unit energy polar nrz antipodal signalling one dimensional',
   src:'CH8 s.17', steps:2, blocks:[
   {t:'eyebrow', text:'Module 2 · The demodulator'},
-  {t:'title', text:'One basis, two symbols'},
+  {t:'title', text:'The unit-energy basis and antipodal signalling'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'Both waveforms of a binary baseband system are multiples of the same rectangular shape, so one unit-energy function carries both:'},
     {t:'eq', tex:'\\psi(t)=\\begin{cases}\\dfrac{1}{\\sqrt{T_b}}, & 0\\le t\\le T_b\\\\[4pt] 0,&\\text{otherwise}\\end{cases}\\qquad \\int_0^{T_b}\\psi^{2}(t)\\,dt=1'},
@@ -365,7 +365,7 @@ const SC = [
   ]}
 ]},
 
-{ id:'m2-correlator', module:'M2', nav:'Two demodulators, one number', title:'Correlator and matched-filter demodulators',
+{ id:'m2-correlator', module:'M2', nav:'Correlator and matched filter', title:'Correlator and matched-filter demodulators',
   objective:'Show that the correlator and the matched filter give the same statistic.',
   keywords:'correlator demodulator matched filter equivalent decision statistic sample',
   src:'CH8 s.19–20', steps:2, blocks:[
@@ -579,12 +579,12 @@ const SC = [
 ]},
 
 /* ---------------------------------------------------------------- 2.5 ---- */
-{ id:'m2-nyquist', module:'M2', nav:'Nyquist\'s criterion', title:'The condition for zero interference',
+{ id:'m2-nyquist', module:'M2', nav:'Nyquist\'s criterion', title:'Nyquist\'s criterion for zero intersymbol interference',
   objective:'State Nyquist\'s criterion in both domains and give the ideal channel.',
   keywords:'nyquist criterion distortionless transmission zero isi bandwidth ideal channel',
   src:'CH8 s.42–45', steps:3, blocks:[
   {t:'eyebrow', text:'Module 2 · Nyquist and the raised cosine'},
-  {t:'title', text:'Nyquist\'s criterion'},
+  {t:'title', text:'Nyquist\'s criterion for zero intersymbol interference'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'The interference term vanishes exactly when the overall pulse is zero at every sampling instant but its own:'},
     {t:'eq', key:true, label:'time domain', tex:'p\\bigl((i-k)T_b\\bigr)=\\begin{cases}1, & i=k\\\\ 0, & i\\ne k\\end{cases}'},

@@ -103,7 +103,7 @@ function miniUnion(){
 const SC = [
 
 /* ---------------------------------------------------------------- 4.0 ---- */
-{ id:'m4-open', module:'M4', nav:'The receiver problem', title:'Signal-point detection',
+{ id:'m4-open', module:'M4', nav:'Signal-point detection', title:'Signal-point detection',
   objective:'State the problem the module solves and the answer it reaches.',
   keywords:'optimal receiver awgn decision minimum distance opening m-ary',
   src:'CH9 s.23', steps:2, blocks:[
@@ -128,7 +128,7 @@ const SC = [
 ]},
 
 /* ---------------------------------------------------------------- 4.1 ---- */
-{ id:'m4-observe', module:'M4', nav:'What the receiver keeps', title:'The observation vector',
+{ id:'m4-observe', module:'M4', nav:'The observation vector', title:'The observation vector',
   objective:'Show that the correlator bank loses nothing that matters.',
   keywords:'correlator bank observation vector irrelevant noise component projection',
   src:'CH9 s.24–25', steps:3, blocks:[
@@ -166,7 +166,7 @@ const SC = [
   ]}
 ]},
 
-{ id:'m4-noise', module:'M4', nav:'The noise on each axis', title:'The noise vector',
+{ id:'m4-noise', module:'M4', nav:'The noise vector', title:'The noise vector',
   objective:'Establish the distribution of the noise vector.',
   keywords:'noise vector independent gaussian variance uncorrelated joint density',
   src:'CH9 s.26–27', steps:2, blocks:[
@@ -272,7 +272,7 @@ const SC = [
   ]}
 ]},
 
-{ id:'m4-metric', module:'M4', nav:'The receiver that computes it', title:'The correlation metric',
+{ id:'m4-metric', module:'M4', nav:'The correlation metric', title:'The correlation metric',
   objective:'Turn the distance rule into the correlation metric a receiver computes.',
   keywords:'correlation metric receiver structure energy bias equal energy signals',
   src:'CH9 s.35–36', steps:3, blocks:[
@@ -396,7 +396,7 @@ const SC = [
 ]},
 
 /* ---------------------------------------------------------------- 4.4 ---- */
-{ id:'m4-pe', module:'M4', nav:'The exact answer', title:'The exact error probability',
+{ id:'m4-pe', module:'M4', nav:'Exact error probability', title:'The exact error probability',
   objective:'Give the general error expression and explain the difficulty.',
   keywords:'general expression probability of error integral decision region multidimensional',
   src:'CH9 s.51, 56', steps:2, blocks:[
@@ -450,12 +450,12 @@ const SC = [
   ]}
 ]},
 
-{ id:'m4-dmin', module:'M4', nav:'The usable forms', title:'The minimum-distance and nearest-neighbour forms',
+{ id:'m4-dmin', module:'M4', nav:'Simplified union bounds', title:'Minimum-distance and nearest-neighbour bounds',
   objective:'Give the minimum-distance bound and the nearest-neighbour approximation.',
   keywords:'minimum distance bound nearest neighbour approximation number of neighbours',
   src:'CH9 s.60–61', steps:3, blocks:[
   {t:'eyebrow', text:'Module 4 · The union bound'},
-  {t:'title', text:'The minimum-distance and nearest-neighbour forms'},
+  {t:'title', text:'Minimum-distance and nearest-neighbour bounds'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>$Q$ decreases, so replacing every distance by the smallest one can only make each term larger. Write</p>'},
     {t:'eq', tex:'d_{\\min}=\\min_{k\\ne j}\\;d_{kj}'},
@@ -532,7 +532,7 @@ const SC = [
   ]}
 ]},
 
-{ id:'m4-ex-union', module:'M4', nav:'Worked example: the bound', title:'Worked example: the union bound',
+{ id:'m4-ex-union', module:'M4', nav:'Worked example: the union bound', title:'Worked example: the union bound',
   objective:'Apply the general union bound to a four-point constellation.',
   keywords:'worked example union bound four points square distances general form',
   src:'CH9 s.62–63', steps:2, blocks:[
@@ -560,12 +560,12 @@ const SC = [
   ]}
 ]},
 
-{ id:'m4-ex-union-b', module:'M4', nav:'Worked example: the simpler forms', title:'Worked example: the two simpler forms',
+{ id:'m4-ex-union-b', module:'M4', nav:'Worked example: the simplified bounds', title:'Worked example: the simplified bounds',
   objective:'Compare the nearest-neighbour and minimum-distance forms with the general one.',
   keywords:'worked example nearest neighbour minimum distance comparison numbers',
   src:'CH9 s.64–65', steps:3, blocks:[
   {t:'eyebrow', text:'Module 4 · The union bound'},
-  {t:'title', text:'Worked example: the two simpler forms'},
+  {t:'title', text:'Worked example: the simplified bounds'},
   {t:'lede', text:'The same constellation, with the two forms that are actually used, and the three answers side by side.'},
   {t:'reveal', at:1, items:[
     {t:'wex', rows:[

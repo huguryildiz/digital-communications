@@ -484,12 +484,12 @@ window.SCENES_M6 = [
 ]},
 
 /* ---------------------------------------------------------------- 6.7 ---- */
-{ id:'m6-bound', module:'M6', nav:'How close to the entropy', title:'Source-coding bound',
+{ id:'m6-bound', module:'M6', nav:'The source-coding bound', title:'The source-coding bound',
   objective:'State H ≤ L̄ < H+1 and show blocking closes the gap.',
   keywords:'bound entropy plus one dyadic extension converges rounding block coding',
   src:'CH10 s.17–18', steps:3, blocks:[
   {t:'eyebrow', text:'Module 6 · An introduction to information theory'},
-  {t:'title', text:'Source-coding bound'},
+  {t:'title', text:'The source-coding bound'},
   {t:'lede', text:'The bound, and how to beat the rounding.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>The source-coding theorem says no code beats $H(S)$. The complementary result says a prefix code always gets within one bit of it.</p>'},
@@ -590,12 +590,12 @@ window.SCENES_M6 = [
 ]},
 
 /* ---------------------------------------------------------------- 6.L2 --- */
-{ id:'m6-lab-j', module:'M6', nav:'Laboratory J', title:'Laboratory J · Building a Huffman code',
+{ id:'m6-lab-j', module:'M6', nav:'Laboratory J', title:'Laboratory J · Huffman code construction',
   objective:'Run the algorithm one merge at a time and read off what it costs.',
   keywords:'laboratory huffman build merge step tree average length efficiency variance',
   steps:0, blocks:[
   {t:'eyebrow', text:'Module 6 · An introduction to information theory'},
-  {t:'title', text:'Laboratory J · Building a Huffman code'},
+  {t:'title', text:'Laboratory J · Huffman code construction'},
   {t:'body', html:'Set the probabilities, then step through the merges one at a time. The tree, the codewords, the average length, the efficiency and the variance are all recomputed as the algorithm runs. The tie-breaking rule can be switched to see the two codes of the last scene appear.'},
   {t:'lab', id:'J'}
 ]},
@@ -669,12 +669,12 @@ window.SCENES_M6 = [
   ]}
 ]},
 
-{ id:'m6-inputdist', module:'M6', nav:'What comes out', title:'The input distribution',
+{ id:'m6-inputdist', module:'M6', nav:'Input and output distributions', title:'Input and output distributions',
   objective:'Combine the channel matrix with an input distribution to get the joint and output distributions.',
   keywords:'input distribution a priori joint pmf marginal output distribution transmitter choice',
   src:'CH10 w.13', steps:3, blocks:[
   {t:'eyebrow', text:'Module 6 · The discrete memoryless channel'},
-  {t:'title', text:'The input distribution'},
+  {t:'title', text:'Input and output distributions'},
   {t:'lede', text:'The transmitter has a say too.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'body', html:'<p>Add one more list of numbers: how often the transmitter sends each input symbol. These are the <b>a priori probabilities</b>, and they are chosen, not given.</p>'},
@@ -814,7 +814,7 @@ window.SCENES_M6 = [
   ]}
 ]},
 
-{ id:'m6-mutual-props', module:'M6', nav:'Its three properties', title:'Properties of mutual information',
+{ id:'m6-mutual-props', module:'M6', nav:'Properties', title:'Properties of mutual information',
   objective:'Give the properties of mutual information and the joint-entropy relation.',
   keywords:'mutual information properties symmetry non-negative joint entropy bayes rule',
   src:'CH10 w.13', steps:3, blocks:[
