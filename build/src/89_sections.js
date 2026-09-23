@@ -55,7 +55,7 @@ CONTENT.SECTIONS = {
   M1: [
     { n:'1.0', title:'Opening',                        ids:['m1-open'] },
     { n:'1.1', title:'The sampling theorem',           ids:[
-        'm1-sampler','m1-spectrum','m1-spectrum-b','m1-cases','m1-theorem','m1-real-sampling','m1-lab-l','m1-code-sampling'] },
+        'm1-ft-review','m1-sampler','m1-spectrum','m1-spectrum-b','m1-cases','m1-theorem','m1-real-sampling','m1-lab-l','m1-code-sampling'] },
     { n:'1.2', title:'Reconstruction',                 ids:[
         'm1-lpf','m1-lpf-b','m1-interp','m1-interp-b','m1-ex-nyquist','m1-ex-nyquist-b','m1-real-reconstruct','m1-lab-m','m1-code-reconstruct'] },
     { n:'1.3', title:'Quantization',                   ids:[
@@ -145,7 +145,10 @@ CONTENT.BOOK = {
      The line-code scene carries no anchor. This book does not develop line
      codes, and an anchor pointing at the nearest-looking section would be worse
      than none: it would be well formed and wrong, which is the one failure the
-     marker cannot catch. */
+     marker cannot catch.
+
+     The Fourier transform review carries none either. It restates material
+     from the preceding course, which the book assumes rather than develops. */
   'm1-open':'7.1',
   'm1-sampler':'7.1.1', 'm1-spectrum':'7.1.1', 'm1-spectrum-b':'7.1.1', 'm1-real-sampling':'7.1.1', 'm1-cases':'7.1.1', 'm1-theorem':'7.1.1',
   'm1-lpf':'7.1.1', 'm1-lpf-b':'7.1.1', 'm1-interp':'7.1.1', 'm1-interp-b':'7.1.1',

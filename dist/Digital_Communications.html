@@ -9209,6 +9209,27 @@ const SC = [
 ]},
 
 /* ---------------------------------------------------------------- 1.1 ---- */
+/* A reference slide: the transform, pairs and properties Module 1 and 2 use,
+   written in f. It has no figure, so it states its budget. */
+{ id:'m1-ft-review', module:'M1', nav:'Fourier transform review', title:'Fourier transform review',
+  objective:'Restate the Fourier transform in the frequency variable f, with the pairs and properties the module uses.',
+  keywords:'fourier transform review pairs properties frequency f omega 2 pi sinc rectangle impulse train shift modulation convolution parseval',
+  budget:'a reference slide of the transform, its pairs and its properties; there is nothing to draw',
+  slide:true, steps:0, blocks:[
+  {t:'eyebrow', text:'Module 1 · The sampling theorem'},
+  {t:'title', text:'Fourier transform review'},
+  {t:'cols', ratio:'c-6-6', left:[
+    {t:'eq', label:'The transform in $f$', tex:'\\begin{aligned}X(f)&=\\int_{-\\infty}^{\\infty}x(t)\\,e^{-j2\\pi ft}\\,dt\\\\x(t)&=\\int_{-\\infty}^{\\infty}X(f)\\,e^{j2\\pi ft}\\,df\\end{aligned}',
+      note:'Put $\\omega=2\\pi f$. Then $d\\omega=2\\pi\\,df$, so the factor $1/2\\pi$ leaves the inverse.'},
+    {t:'eq', label:'Properties', tex:'\\begin{aligned}x(t-t_0)&\\;\\leftrightarrow\\;X(f)\\,e^{-j2\\pi ft_0}\\\\x(t)\\,e^{j2\\pi f_0t}&\\;\\leftrightarrow\\;X(f-f_0)\\\\x(t)*y(t)&\\;\\leftrightarrow\\;X(f)\\,Y(f)\\\\x(t)\\,y(t)&\\;\\leftrightarrow\\;X(f)*Y(f)\\\\\\int_{-\\infty}^{\\infty}|x(t)|^{2}\\,dt&=\\int_{-\\infty}^{\\infty}|X(f)|^{2}\\,df\\end{aligned}',
+      note:'The last line is Parseval\'s theorem: the energy is the same in both domains.'}
+  ], right:[
+    {t:'eq', label:'Pairs', tex:'\\begin{aligned}\\delta(t)&\\;\\leftrightarrow\\;1\\\\1&\\;\\leftrightarrow\\;\\delta(f)\\\\e^{j2\\pi f_0t}&\\;\\leftrightarrow\\;\\delta(f-f_0)\\\\\\cos(2\\pi f_0t)&\\;\\leftrightarrow\\;\\tfrac12\\delta(f-f_0)+\\tfrac12\\delta(f+f_0)\\\\\\Pi(t/T)&\\;\\leftrightarrow\\;T\\operatorname{sinc}(fT)\\\\2W\\operatorname{sinc}(2Wt)&\\;\\leftrightarrow\\;\\Pi\\!\\left(\\frac{f}{2W}\\right)\\\\\\sum_{n}\\delta(t-nT_s)&\\;\\leftrightarrow\\;\\frac{1}{T_s}\\sum_{n}\\delta(f-nf_s)\\end{aligned}',
+      note:'$\\Pi(t/T)$ is $1$ for $|t|<T/2$ and $0$ elsewhere. Here $\\operatorname{sinc}(x)=\\sin(\\pi x)/(\\pi x)$ and $f_s=1/T_s$.'},
+    {t:'note', kind:'err', head:'Common error', html:'Use $1\\leftrightarrow\\delta(f)$, not $1\\leftrightarrow2\\pi\\delta(f)$, when the $\\omega$ pair $1\\leftrightarrow2\\pi\\delta(\\omega)$ moves to $f$. The reason is $\\delta(2\\pi f)=\\delta(f)/2\\pi$.'}
+  ]}
+]},
+
 { id:'m1-sampler', module:'M1', nav:'Impulse-train sampling', title:'Impulse-train sampling',
   objective:'Define the ideal sampled signal and reduce it to a weighted impulse train.',
   keywords:'impulse train sampling period sifting property ideal sampled signal',
@@ -13705,7 +13726,7 @@ CONTENT.SECTIONS = {
   M1: [
     { n:'1.0', title:'Opening',                        ids:['m1-open'] },
     { n:'1.1', title:'The sampling theorem',           ids:[
-        'm1-sampler','m1-spectrum','m1-spectrum-b','m1-cases','m1-theorem','m1-real-sampling','m1-lab-l','m1-code-sampling'] },
+        'm1-ft-review','m1-sampler','m1-spectrum','m1-spectrum-b','m1-cases','m1-theorem','m1-real-sampling','m1-lab-l','m1-code-sampling'] },
     { n:'1.2', title:'Reconstruction',                 ids:[
         'm1-lpf','m1-lpf-b','m1-interp','m1-interp-b','m1-ex-nyquist','m1-ex-nyquist-b','m1-real-reconstruct','m1-lab-m','m1-code-reconstruct'] },
     { n:'1.3', title:'Quantization',                   ids:[
@@ -13795,7 +13816,10 @@ CONTENT.BOOK = {
      The line-code scene carries no anchor. This book does not develop line
      codes, and an anchor pointing at the nearest-looking section would be worse
      than none: it would be well formed and wrong, which is the one failure the
-     marker cannot catch. */
+     marker cannot catch.
+
+     The Fourier transform review carries none either. It restates material
+     from the preceding course, which the book assumes rather than develops. */
   'm1-open':'7.1',
   'm1-sampler':'7.1.1', 'm1-spectrum':'7.1.1', 'm1-spectrum-b':'7.1.1', 'm1-real-sampling':'7.1.1', 'm1-cases':'7.1.1', 'm1-theorem':'7.1.1',
   'm1-lpf':'7.1.1', 'm1-lpf-b':'7.1.1', 'm1-interp':'7.1.1', 'm1-interp-b':'7.1.1',
