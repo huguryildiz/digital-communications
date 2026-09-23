@@ -41,17 +41,12 @@ function banding(){
 
 window.C1 = [
 
-/* ---------------- title ---------------- */
-{t:'title', kicker:'Digital Communications', text:'Digital Communications',
- sub:'A waveform becomes bits. A channel carries the bits through noise. A receiver decides what was sent and measures the error.',
- meta:[['Covers','Chapters 1 to 6, and appendices A and B'],['Level','Undergraduate'],
-       ['Assumed background','Fourier analysis, probability, random processes']]},
+/* ---------------- cover and contents ---------------- */
+{t:'cover', kicker:'Sampling &middot; Detection &middot; Modulation &middot; Coding', text:'Digital Communications',
+ sub:'Lecture Notes', foot:'Chapters 1&ndash;6 &middot; Appendices A&ndash;B'},
+{t:'page'},
 
-{t:'h3', text:'Course conventions'},
-{t:'p', text:'Read the plain explanation before the mathematics. Worked examples use five headings: Given, Find, Method, Solution, and Check.'},
-{t:'p', text:'Noise is white and Gaussian with <b>two-sided</b> power spectral density $N_0/2$ watts per hertz. The Gaussian tail is $Q(x)=\\frac{1}{\\sqrt{2\\pi}}\\int_x^{\\infty}e^{-t^{2}/2}\\,dt=\\tfrac12\\operatorname{erfc}(x/\\sqrt2)$. Energy and power use $R=1\\ \\Omega$.'},
-{t:'p', text:'A <b>PS</b> marker points to the related section of Proakis and Salehi, <i>Fundamentals of Communication Systems</i>, second edition. The textbook chapter numbers differ from the course chapter numbers.'},
-
+{t:'h1', text:'Contents', rule:false},
 {t:'toc', items:[
  ['1','The transition from analog to digital','Impulse-train sampling and the replication of the spectrum. The sampling theorem. Reconstruction and sinc interpolation. Uniform quantization, the error it makes, and the signal-to-quantization-noise ratio. Companding. Encoding, line codes and pulse code modulation.','PS CH7.1&ndash;7.4'],
  ['2','Baseband transmission of digital signals','Matched filtering. Correlator and matched-filter demodulators. The decision statistic, optimal threshold, and bit error probability. Intersymbol interference and the eye pattern. Nyquist\'s criterion and the raised cosine.','PS CH8.2&ndash;8.3, PS CH10.1, PS CH10.3'],
@@ -62,6 +57,11 @@ window.C1 = [
  ['A','Summary of formulas','The main formulas in course order, without derivations.','&mdash;'],
  ['B','The laboratories','Four laboratories on quantization, matched filtering, quadrature amplitude modulation, and Huffman coding.','&mdash;']
 ]},
+
+{t:'h3', text:'Course conventions'},
+{t:'p', text:'These notes are written for undergraduates. They assume Fourier analysis, probability and random processes. Read the plain explanation before the mathematics. Worked examples use five headings: Given, Find, Method, Solution, and Check.'},
+{t:'p', text:'Noise is white and Gaussian with <b>two-sided</b> power spectral density $N_0/2$ watts per hertz. The Gaussian tail is $Q(x)=\\frac{1}{\\sqrt{2\\pi}}\\int_x^{\\infty}e^{-t^{2}/2}\\,dt=\\tfrac12\\operatorname{erfc}(x/\\sqrt2)$. Energy and power use $R=1\\ \\Omega$.'},
+{t:'p', text:'A <b>PS</b> marker points to the related section of Proakis and Salehi, <i>Fundamentals of Communication Systems</i>, second edition. The textbook chapter numbers differ from the course chapter numbers.'},
 
 {t:'page'},
 

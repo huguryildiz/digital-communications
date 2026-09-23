@@ -80,11 +80,10 @@ const GROUP = `const BY = {};
 const workbook = `
 ${MODULE_TITLE}${KIND}${GROUP}
 const B = [
- {t:'title', kicker:'Digital Communications', text:'Student Workbook',
-  sub:'Every question in the course, with no answer and no solution. Work each one on the page, then check it against the artifact or against the instructor edition.',
-  meta:[['Contains', CONTENT.DRILL.length + ' questions across ' + MODS.length + ' modules'],
-        ['Level','Undergraduate'],
-        ['Answers','Not printed in this edition']]},
+ {t:'cover', kicker:'Sampling &middot; Detection &middot; Modulation &middot; Coding', text:'Digital Communications', sub:'Student Workbook', foot:CONTENT.DRILL.length + ' questions &middot; Modules 1&ndash;' + MODS.length},
+ {t:'page'},
+ {t:'h1', text:'Contents', rule:false},
+ {t:'p', lead:true, text:'Every question in the course, with no answer and no solution. Work each one on the page, then check it against the artifact or against the instructor edition.'},
  {t:'toc', items: MODS.map(id=>[id.replace('M',''), MT[id], BY[id].length + ' questions'])},
  {t:'h3', text:'How to use it'},
  {t:'p', text:'The questions are in the order the course meets them, and each is labelled with what it asks for. Only the statement and its lettered parts are printed; the reasoning stays for you to supply. The question numbers are shared with every other edition, so D5-04 is the same question in the artifact, in this workbook and in the instructor solutions.'},
@@ -109,11 +108,10 @@ renderNotes(B, document.getElementById('doc'));`;
 const solutions = `
 ${MODULE_TITLE}${KIND}${GROUP}
 const B = [
- {t:'title', kicker:'Digital Communications', text:'Instructor Solutions',
-  sub:'Every question with its worked solution, the error it is built to catch, and a teaching note. Not for distribution to students.',
-  meta:[['Contains', CONTENT.DRILL.length + ' questions, fully worked'],
-        ['Edition', CONTENT.META.version],
-        ['Distribution','Instructor only']]},
+ {t:'cover', kicker:'Sampling &middot; Detection &middot; Modulation &middot; Coding', text:'Digital Communications', sub:'Instructor Solutions', foot:'Instructor edition &middot; ' + CONTENT.DRILL.length + ' questions'},
+ {t:'page'},
+ {t:'h1', text:'Contents', rule:false},
+ {t:'p', lead:true, text:'Every question with its worked solution, the error it is built to catch, and a teaching note. Not for distribution to students.'},
  {t:'box', kind:'warn', hd:'Instructor edition', html:'This document prints the worked solution and the source pages behind every question. The student workbook contains the same questions with none of it. Question ids are shared, so a number quoted in class resolves in either document.'},
  {t:'toc', items: MODS.map(id=>[id.replace('M',''), MT[id], BY[id].length + ' questions'])},
  {t:'page'}
@@ -140,11 +138,13 @@ renderNotes(B, document.getElementById('doc'));`;
 /* -------------------------------------------------------- formula reference */
 const reference = `
 const B = [
- {t:'title', kicker:'Digital Communications', text:'Formula and Notation Reference',
-  sub:'The conventions used throughout the course, every formula it establishes, and every symbol it defines. Nothing here is derived; the derivations are in the lecture notes.',
-  meta:[['Contains','Conventions, formulas, notation'],
-        ['Edition','v1.0'],
-        ['Companion','Lecture notes, Chapters 1 to 6']]},
+ {t:'cover', kicker:'Sampling &middot; Detection &middot; Modulation &middot; Coding', text:'Digital Communications', sub:'Formula and Notation Reference', foot:'Conventions &middot; formulas &middot; notation'},
+ {t:'page'},
+ {t:'h1', text:'Contents', rule:false},
+ {t:'p', lead:true, text:'The conventions used throughout the course, every formula it establishes, and every symbol it defines. Nothing here is derived; the derivations are in the lecture notes.'},
+ {t:'toc', items:[['1','Conventions','Energy and power, noise, the $Q$ function, sinc, logarithms, and the two expressions every error probability comes from.',''],
+   ['2','Summary of formulas','Everything the course establishes, in the order it establishes it.',''],
+   ['3','Notation','Every symbol the course defines.','']]},
  {t:'h3', text:'How to read it'},
  {t:'p', text:'Part 1 states the conventions, the two expressions every error probability comes from, and the transform pair Chapters 1 and 2 use. Part 2 is the summary of formulas, in the order the course establishes them. Part 3 defines every symbol. Nothing here is derived: where a result needs an argument, the argument is in the lecture notes chapter named beside it.'},
  {t:'page'},
