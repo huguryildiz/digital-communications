@@ -8,6 +8,7 @@
      Student_Workbook.html    every question, no answers and no solutions
      Instructor_Solutions.html every question with its full solution, plus provenance
      Formula_Reference.html   the conventions, the summary of formulas, the glossary
+     PDF_VERSIONS.md          the version history of the PDFs, as a table
 
    The renderer, the stylesheet and the KaTeX build are the ones the lecture notes
    use, so the four documents are one typographic family.
@@ -102,6 +103,7 @@ MODS.forEach((id,i)=>{
   });
   if(i < MODS.length-1) B.push({t:'page'});
 });
+B.push({t:'colophon', doc:'Student Workbook'});
 renderNotes(B, document.getElementById('doc'));`;
 
 /* ------------------------------------------------------ instructor solutions */
@@ -133,6 +135,7 @@ MODS.forEach((id,i)=>{
   });
   if(i < MODS.length-1) B.push({t:'page'});
 });
+B.push({t:'colophon', doc:'Instructor Solutions'});
 renderNotes(B, document.getElementById('doc'));`;
 
 /* -------------------------------------------------------- formula reference */
@@ -180,6 +183,7 @@ B.push({t:'raw', html:'<dl class="gloss">' + Object.keys(CONTENT.GLOSS).map(k=>{
   const e = CONTENT.GLOSS[k];
   return '<dt>' + renderInline('$' + (e.s||'').replace(/\\$/g,'') + '$') + '</dt><dd>' + renderInline(e.d||'') + '</dd>';
 }).join('') + '</dl>'});
+B.push({t:'colophon', doc:'Formula and Notation Reference'});
 renderNotes(B, document.getElementById('doc'));`;
 
 const OUT = path.join(__dirname, '..', 'dist');
@@ -192,3 +196,13 @@ write('Student_Workbook.html', doc('Digital Communications — Student Workbook'
 write('Instructor_Solutions.html', doc('Digital Communications — Instructor Solutions', solutions));
 write('Formula_Reference.html', doc('Digital Communications — Formula and Notation Reference', reference,
   `<script>${g(S('src/ca.js'))}</script>`));
+
+/* The version history of the PDFs, as a table beside them. The rows are read
+   from DOC_HISTORY in render.js, the list each PDF prints on its last page, so
+   the two cannot disagree. */
+const HIST = require('vm').runInNewContext(
+  S('src/render.js').match(/window\.DOC_HISTORY\s*=\s*(\[[\s\S]*?\]);/)[1]);
+write('PDF_VERSIONS.md', '# PDF version history\n\n' +
+  'Applies to Lecture_Notes.pdf, Student_Workbook.pdf, Instructor_Solutions.pdf and Formula_Reference.pdf. Newest first.\n\n' +
+  '| Version | Date | Description |\n| --- | --- | --- |\n' +
+  HIST.map(r => '| ' + r.join(' | ') + ' |').join('\n') + '\n');

@@ -11,6 +11,12 @@
       .replace(/\$\$([^$]+)\$\$/g,(m,a)=>T(a,true))
       .replace(/\$([^$]+)\$/g,(m,a)=>T(a,false));
 
+  /* One version history for every printed document, newest first. It is set as
+     a table on the last page of each. Add a row here for each new release. */
+  window.DOC_HISTORY = [
+    ['v0', '24 September 2026', 'First edition.']
+  ];
+
   /* Cover artwork in page millimetres (210 x 297), drawn from what the course
      does to a bit stream. Left: a bit sequence as raised-cosine pulses (teal),
      the same waveform after the channel adds noise (amber), and the samples
@@ -100,6 +106,12 @@ ${seg(rx,'#E0B070',.75,.35)}
        ${b.sub?`<p class="cv-sub">${md(b.sub)}</p>`:''}</div>
        <div class="cv-foot">${b.foot?`<div class="cv-ed">${md(b.foot)}</div>`:''}
        <div class="cv-credit">© 2026 <a href="https://huguryildiz.com/">huguryildiz.com</a> · Course content: <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a></div></div></div>`,
+    /* Last-page colophon: document name, version, licence. */
+    colophon: b=>`<div class="colophon"><div class="mark">${window.ICON_SVG||''}</div>
+       <p class="cl-doc">Digital Communications &middot; ${md(b.doc)}</p>
+       <table class="cl-hist"><tr><th>Version</th><th>Date</th><th>Changes</th></tr>${
+         window.DOC_HISTORY.map(([v,d,c])=>`<tr><td>${md(v)}</td><td>${md(d)}</td><td>${md(c)}</td></tr>`).join('')}</table>
+       <p>© 2026 <a href="https://huguryildiz.com/">huguryildiz.com</a> · Course content: <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a></p></div>`,
     h1:     b=>`<h1>${b.num?`<span class="num">${b.num}</span>`:''}${md(b.text)}</h1>${b.rule!==false?'<hr class="thick">':''}`,
     h2:     b=>`<h2>${b.num?`<span class="num">${b.num}</span>`:''}${md(b.text)}</h2>`,
     h3:     b=>`<h3>${md(b.text)}</h3>`,
