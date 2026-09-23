@@ -55,17 +55,17 @@ CONTENT.SECTIONS = {
   M1: [
     { n:'1.0', title:'Opening',                        ids:['m1-open'] },
     { n:'1.1', title:'The sampling theorem',           ids:[
-        'm1-sampler','m1-spectrum','m1-cases','m1-theorem'] },
+        'm1-sampler','m1-spectrum','m1-cases','m1-theorem','m1-lab-l','m1-code-sampling'] },
     { n:'1.2', title:'Reconstruction',                 ids:[
-        'm1-lpf','m1-interp','m1-ex-nyquist'] },
+        'm1-lpf','m1-interp','m1-ex-nyquist','m1-lab-m','m1-code-reconstruct'] },
     { n:'1.3', title:'Quantization',                   ids:[
-        'm1-quant','m1-lloydmax','m1-lab-a'] },
+        'm1-quant','m1-lloydmax','m1-lab-n','m1-code-quant'] },
     { n:'1.4', title:'Quantization noise and SQNR',    ids:[
-        'm1-qnoise','m1-sqnr','m1-ex-cos','m1-ex-unif','m1-ex-gauss'] },
+        'm1-qnoise','m1-sqnr','m1-ex-cos','m1-ex-unif','m1-ex-gauss','m1-lab-a','m1-code-sqnr'] },
     { n:'1.5', title:'Non-uniform quantization',       ids:[
-        'm1-nonuniform','m1-companding'] },
+        'm1-nonuniform','m1-companding','m1-lab-o','m1-code-companding'] },
     { n:'1.6', title:'Pulse code modulation',          ids:[
-        'm1-encode','m1-linecodes','m1-ex-pcm','m1-lab-b'] },
+        'm1-encode','m1-linecodes','m1-ex-pcm','m1-lab-b','m1-code-pcm'] },
     { n:'1.7', title:'Vector quantization',            ids:['m1-vq','m1-vq-image'] },
     { n:'1.8', title:'Summary',                        ids:['m1-synth'] }
   ],
@@ -150,6 +150,7 @@ CONTENT.BOOK = {
   'm1-sampler':'7.1.1', 'm1-spectrum':'7.1.1', 'm1-cases':'7.1.1', 'm1-theorem':'7.1.1',
   'm1-lpf':'7.1.1', 'm1-interp':'7.1.1', 'm1-ex-nyquist':'7.1.1',
   'm1-quant':'7.2.1', 'm1-lloydmax':'7.2.1', 'm1-lab-a':'7.2.1',
+  'm1-lab-l':'7.1.1', 'm1-lab-m':'7.1.1', 'm1-lab-n':'7.2.1', 'm1-lab-o':'7.2.1',
   'm1-qnoise':'7.2.1', 'm1-sqnr':'7.2.1',
   'm1-ex-cos':'7.2.1', 'm1-ex-unif':'7.2.1', 'm1-ex-gauss':'7.2.1',
   'm1-nonuniform':'7.2.1', 'm1-companding':'7.2.1',
@@ -232,10 +233,23 @@ CONTENT.BOOK = {
    written down twice, so a section that gains a scene renumbers by itself and
    cannot drift out of step with the declaration.
 
-   Two id shapes take a space of their own rather than an ordinal, because
-   they are not teaching scenes: a laboratory (`*-lab-*`) takes `L`, and the
-   question scene of a module takes `Q1`. Each counts from 1 within its
-   chapter. */
+   Three id shapes take a space of their own rather than an ordinal, because
+   they are not teaching scenes: a laboratory (`*-lab-*`) takes `L`, a code
+   page (`*-code-*`) takes `C` after its section, and the question scene of a
+   module takes `Q1`.
+
+   A converted module names a laboratory after the section it closes: the one
+   in section 1.4 is Laboratory 1.4 and has the address 1.4.L, and two in one
+   section take a and b in declared order. Its scene file writes `{lab}` where
+   the number goes, in `nav`, `title`, `keywords` and the text of its blocks,
+   and it is filled in here. A module not yet converted keeps its letters and
+   numbers its laboratories through the chapter (2.L1, 2.L2). The single
+   letters in code (`{t:'lab', id:'B'}`) are internal keys either way. */
+function nameLab(s){
+  const fill = t => typeof t === 'string' ? t.split('{lab}').join(s.lab) : t;
+  s.nav = fill(s.nav); s.title = fill(s.title); s.keywords = fill(s.keywords);
+  (s.blocks||[]).forEach(b=>{ if(b.text) b.text = fill(b.text); if(b.html) b.html = fill(b.html); });
+}
 window.applyNumbering = function(scenes){
   const byId = {};
   scenes.forEach(s=>{ byId[s.id] = s; });
@@ -253,13 +267,21 @@ window.applyNumbering = function(scenes){
 
     secs.forEach(sec=>{
       const entries = [];
-      let ord = 0;
+      let ord = 0, labK = 0;
+      const named = sec.ids.filter(id=>/-lab-/.test(id) && byId[id] && /\{lab\}/.test(byId[id].title||''));
       sec.ids.forEach(id=>{
         const s = byId[id];
         if(!s){ console.error('numbering: no scene with id '+id); return; }
-        s.sec  = /-lab-/.test(id) ? ch.n+'.L'+(++labN)
-               : ch.flat          ? ch.n+'.'+(++ord)
-               :                    sec.n+'.'+(++ord);
+        if(named.includes(id)){
+          const suf = named.length > 1 ? 'abcdefgh'[labK++] : '';
+          s.lab = sec.n+suf;
+          s.sec = sec.n+'.L'+suf;
+          nameLab(s);
+        }
+        else s.sec = /-lab-/.test(id)  ? ch.n+'.L'+(++labN)
+                   : /-code-/.test(id) ? sec.n+'.C'
+                   : ch.flat           ? ch.n+'.'+(++ord)
+                   :                     sec.n+'.'+(++ord);
         s.book = CONTENT.BOOK[id];
         entries.push(s);
       });

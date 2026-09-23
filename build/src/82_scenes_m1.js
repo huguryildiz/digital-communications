@@ -635,12 +635,12 @@ const SC = [
   ]}
 ]},
 
-{ id:'m1-lab-a', module:'M1', nav:'Laboratory A', title:'Laboratory A · Quantization and SQNR',
+{ id:'m1-lab-a', module:'M1', nav:'Laboratory {lab} · Quantization and SQNR', title:'Laboratory {lab} · Quantization and SQNR',
   objective:'Let the reader move the level count and the amplitude and watch the error follow.',
   keywords:'laboratory quantization sqnr levels step size amplitude interactive',
-  steps:0, blocks:[
-  {t:'eyebrow', text:'Module 1 · Quantization'},
-  {t:'title', text:'Laboratory A · Quantization and SQNR'},
+  slide:true, steps:0, blocks:[
+  {t:'eyebrow', text:'Module 1 · Quantization noise'},
+  {t:'title', text:'Laboratory {lab} · Quantization and SQNR'},
   {t:'body', html:'Set the number of levels and the input amplitude. Read the step size, mean-square error, and signal-to-quantization-noise ratio. Compare the measured value with the prediction $\\alpha+6.02R$.'},
   {t:'lab', id:'A'}
 ]},
@@ -937,12 +937,12 @@ const SC = [
   ]}
 ]},
 
-{ id:'m1-lab-b', module:'M1', nav:'Laboratory B', title:'Laboratory B · PCM, DPCM and delta modulation',
+{ id:'m1-lab-b', module:'M1', nav:'Laboratory {lab} · PCM, DPCM and delta modulation', title:'Laboratory {lab} · PCM, DPCM and delta modulation',
   objective:'Compare three waveform coders on the same source at the same bit rate.',
   keywords:'laboratory pcm dpcm delta modulation slope overload granular noise',
-  steps:0, blocks:[
+  slide:true, steps:0, blocks:[
   {t:'eyebrow', text:'Module 1 · Pulse code modulation'},
-  {t:'title', text:'Laboratory B · PCM, DPCM and delta modulation'},
+  {t:'title', text:'Laboratory {lab} · PCM, DPCM and delta modulation'},
   {t:'body', html:'PCM encodes each sample. Differential PCM encodes the prediction error. Delta modulation sends one bit for an increase or decrease. Compare their errors for the same source and bit rate.'},
   {t:'lab', id:'B'}
 ]},
@@ -1008,6 +1008,88 @@ const SC = [
       caption:'The fine quantizer follows the smooth gradient. The coarse quantizer replaces the gradient with flat steps. Each step boundary appears as a false line.'},
     {t:'small', html:'The step size is $\\Delta=2m_{\\max}/L$, as in section 1.3. Image quantization applies the same operation to many samples.'}
   ]}
+]},
+
+/* ---- laboratories and code pages, placed by 89_sections.js ---- */
+{ id:'m1-lab-l', module:'M1', nav:'Laboratory {lab} · Sampling and aliasing', title:'Laboratory {lab} · Sampling and aliasing',
+  objective:'Move a tone past half the sampling rate and watch it fold back.',
+  keywords:'laboratory sampling aliasing nyquist rate apparent frequency tone spectrum replicas interactive', slide:true, steps:0, blocks:[
+  {t:'eyebrow', text:'Module 1 · The sampling theorem'},
+  {t:'title', text:'Laboratory {lab} · Sampling and aliasing'},
+  {t:'lede', text:'Set the tone and the sampling rate. Predict the frequency the samples show before you read it.'},
+  {t:'lab', id:'L'}
+]},
+{ id:'m1-lab-m', module:'M1', nav:'Laboratory {lab} · Reconstruction from samples', title:'Laboratory {lab} · Reconstruction from samples',
+  objective:'Compare sinc interpolation with a hold, and see the error appear below the Nyquist rate.',
+  keywords:'laboratory reconstruction sinc interpolation zero order hold truncation error interactive', slide:true, steps:0, blocks:[
+  {t:'eyebrow', text:'Module 1 · Reconstruction'},
+  {t:'title', text:'Laboratory {lab} · Reconstruction from samples'},
+  {t:'lede', text:'Rebuild the message from its samples with sinc pulses or with a hold. Compare the error at each rate.'},
+  {t:'lab', id:'M'}
+]},
+{ id:'m1-lab-n', module:'M1', nav:'Laboratory {lab} · The quantizer', title:'Laboratory {lab} · The quantizer',
+  objective:'Read the region, the level and the error of one input on a uniform quantizer.',
+  keywords:'laboratory quantizer staircase midrise midtread levels boundaries step error interactive', slide:true, steps:0, blocks:[
+  {t:'eyebrow', text:'Module 1 · Quantization'},
+  {t:'title', text:'Laboratory {lab} · The quantizer'},
+  {t:'lede', text:'Choose the level count and the quantizer type. Move the input and read its region, level and error.'},
+  {t:'lab', id:'N'}
+]},
+{ id:'m1-lab-o', module:'M1', nav:'Laboratory {lab} · Companding', title:'Laboratory {lab} · Companding',
+  objective:'Show how mu-law companding holds the SQNR steady as the input level falls.',
+  keywords:'laboratory companding mu law uniform sqnr input level dynamic range interactive', slide:true, steps:0, blocks:[
+  {t:'eyebrow', text:'Module 1 · Non-uniform quantization'},
+  {t:'title', text:'Laboratory {lab} · Companding'},
+  {t:'lede', text:'Lower the input level and compare the SQNR of a uniform quantizer with a mu-law quantizer of the same size.'},
+  {t:'lab', id:'O'}
+]},
+{ id:'m1-code-sampling', module:'M1', nav:'Code · Sampling', title:'Sampling in code',
+  objective:'Sample a tone, compute the Nyquist rate and the alias frequency, and see the replicas in a spectrum.',
+  keywords:'code matlab python program run sampling nyquist alias frequency spectrum',
+  slide:true, steps:0, budget:'a code page: the program draws its own figure', blocks:[
+  {t:'eyebrow', text:'Module 1 · Sampling in code'},
+  {t:'title', text:'Sampling in code'},
+  {t:'raw', html:()=>CODEBANK.page('m1-code-sampling')}
+]},
+{ id:'m1-code-reconstruct', module:'M1', nav:'Code · Reconstruction', title:'Reconstruction in code',
+  objective:'Rebuild a message from its samples with a sum of sinc pulses and measure the error.',
+  keywords:'code matlab python program run reconstruction sinc interpolation hold',
+  slide:true, steps:0, budget:'a code page: the program draws its own figure', blocks:[
+  {t:'eyebrow', text:'Module 1 · Reconstruction in code'},
+  {t:'title', text:'Reconstruction in code'},
+  {t:'raw', html:()=>CODEBANK.page('m1-code-reconstruct')}
+]},
+{ id:'m1-code-quant', module:'M1', nav:'Code · Quantization', title:'Quantization in code',
+  objective:'Build a uniform quantizer and apply it to a sampled signal.',
+  keywords:'code matlab python program run quantizer midrise midtread levels',
+  slide:true, steps:0, budget:'a code page: the program draws its own figure', blocks:[
+  {t:'eyebrow', text:'Module 1 · Quantization in code'},
+  {t:'title', text:'Quantization in code'},
+  {t:'raw', html:()=>CODEBANK.page('m1-code-quant')}
+]},
+{ id:'m1-code-sqnr', module:'M1', nav:'Code · SQNR', title:'SQNR in code',
+  objective:'Measure the quantization noise and the SQNR of a sinusoid, a uniform source and a Gaussian source.',
+  keywords:'code matlab python program run sqnr quantization noise six decibels per bit',
+  slide:true, steps:0, budget:'a code page: the program draws its own figure', blocks:[
+  {t:'eyebrow', text:'Module 1 · Quantization noise in code'},
+  {t:'title', text:'SQNR in code'},
+  {t:'raw', html:()=>CODEBANK.page('m1-code-sqnr')}
+]},
+{ id:'m1-code-companding', module:'M1', nav:'Code · Companding', title:'Companding in code',
+  objective:'Compress with mu-law and A-law, and compare the SQNR with a uniform quantizer.',
+  keywords:'code matlab python program run mu law a law compressor',
+  slide:true, steps:0, budget:'a code page: the program draws its own figure', blocks:[
+  {t:'eyebrow', text:'Module 1 · Non-uniform quantization in code'},
+  {t:'title', text:'Companding in code'},
+  {t:'raw', html:()=>CODEBANK.page('m1-code-companding')}
+]},
+{ id:'m1-code-pcm', module:'M1', nav:'Code · PCM', title:'PCM in code',
+  objective:'Sample, quantize and encode a signal into a PCM bit stream.',
+  keywords:'code matlab python program run pcm encoding bit rate gray code line code',
+  slide:true, steps:0, budget:'a code page: the program draws its own figure', blocks:[
+  {t:'eyebrow', text:'Module 1 · Pulse code modulation in code'},
+  {t:'title', text:'PCM in code'},
+  {t:'raw', html:()=>CODEBANK.page('m1-code-pcm')}
 ]},
 
 /* ---------------------------------------------------------------- 1.8 ---- */

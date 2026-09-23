@@ -7181,12 +7181,12 @@ const SC = [
   ]}
 ]},
 
-{ id:'m1-lab-a', module:'M1', nav:'Laboratory A', title:'Laboratory A · Quantization and SQNR',
+{ id:'m1-lab-a', module:'M1', nav:'Laboratory {lab} · Quantization and SQNR', title:'Laboratory {lab} · Quantization and SQNR',
   objective:'Let the reader move the level count and the amplitude and watch the error follow.',
   keywords:'laboratory quantization sqnr levels step size amplitude interactive',
-  steps:0, blocks:[
-  {t:'eyebrow', text:'Module 1 · Quantization'},
-  {t:'title', text:'Laboratory A · Quantization and SQNR'},
+  slide:true, steps:0, blocks:[
+  {t:'eyebrow', text:'Module 1 · Quantization noise'},
+  {t:'title', text:'Laboratory {lab} · Quantization and SQNR'},
   {t:'body', html:'Set the number of levels and the input amplitude. Read the step size, mean-square error, and signal-to-quantization-noise ratio. Compare the measured value with the prediction $\\alpha+6.02R$.'},
   {t:'lab', id:'A'}
 ]},
@@ -7483,12 +7483,12 @@ const SC = [
   ]}
 ]},
 
-{ id:'m1-lab-b', module:'M1', nav:'Laboratory B', title:'Laboratory B · PCM, DPCM and delta modulation',
+{ id:'m1-lab-b', module:'M1', nav:'Laboratory {lab} · PCM, DPCM and delta modulation', title:'Laboratory {lab} · PCM, DPCM and delta modulation',
   objective:'Compare three waveform coders on the same source at the same bit rate.',
   keywords:'laboratory pcm dpcm delta modulation slope overload granular noise',
-  steps:0, blocks:[
+  slide:true, steps:0, blocks:[
   {t:'eyebrow', text:'Module 1 · Pulse code modulation'},
-  {t:'title', text:'Laboratory B · PCM, DPCM and delta modulation'},
+  {t:'title', text:'Laboratory {lab} · PCM, DPCM and delta modulation'},
   {t:'body', html:'PCM encodes each sample. Differential PCM encodes the prediction error. Delta modulation sends one bit for an increase or decrease. Compare their errors for the same source and bit rate.'},
   {t:'lab', id:'B'}
 ]},
@@ -7554,6 +7554,88 @@ const SC = [
       caption:'The fine quantizer follows the smooth gradient. The coarse quantizer replaces the gradient with flat steps. Each step boundary appears as a false line.'},
     {t:'small', html:'The step size is $\\Delta=2m_{\\max}/L$, as in section 1.3. Image quantization applies the same operation to many samples.'}
   ]}
+]},
+
+/* ---- laboratories and code pages, placed by 89_sections.js ---- */
+{ id:'m1-lab-l', module:'M1', nav:'Laboratory {lab} · Sampling and aliasing', title:'Laboratory {lab} · Sampling and aliasing',
+  objective:'Move a tone past half the sampling rate and watch it fold back.',
+  keywords:'laboratory sampling aliasing nyquist rate apparent frequency tone spectrum replicas interactive', slide:true, steps:0, blocks:[
+  {t:'eyebrow', text:'Module 1 · The sampling theorem'},
+  {t:'title', text:'Laboratory {lab} · Sampling and aliasing'},
+  {t:'lede', text:'Set the tone and the sampling rate. Predict the frequency the samples show before you read it.'},
+  {t:'lab', id:'L'}
+]},
+{ id:'m1-lab-m', module:'M1', nav:'Laboratory {lab} · Reconstruction from samples', title:'Laboratory {lab} · Reconstruction from samples',
+  objective:'Compare sinc interpolation with a hold, and see the error appear below the Nyquist rate.',
+  keywords:'laboratory reconstruction sinc interpolation zero order hold truncation error interactive', slide:true, steps:0, blocks:[
+  {t:'eyebrow', text:'Module 1 · Reconstruction'},
+  {t:'title', text:'Laboratory {lab} · Reconstruction from samples'},
+  {t:'lede', text:'Rebuild the message from its samples with sinc pulses or with a hold. Compare the error at each rate.'},
+  {t:'lab', id:'M'}
+]},
+{ id:'m1-lab-n', module:'M1', nav:'Laboratory {lab} · The quantizer', title:'Laboratory {lab} · The quantizer',
+  objective:'Read the region, the level and the error of one input on a uniform quantizer.',
+  keywords:'laboratory quantizer staircase midrise midtread levels boundaries step error interactive', slide:true, steps:0, blocks:[
+  {t:'eyebrow', text:'Module 1 · Quantization'},
+  {t:'title', text:'Laboratory {lab} · The quantizer'},
+  {t:'lede', text:'Choose the level count and the quantizer type. Move the input and read its region, level and error.'},
+  {t:'lab', id:'N'}
+]},
+{ id:'m1-lab-o', module:'M1', nav:'Laboratory {lab} · Companding', title:'Laboratory {lab} · Companding',
+  objective:'Show how mu-law companding holds the SQNR steady as the input level falls.',
+  keywords:'laboratory companding mu law uniform sqnr input level dynamic range interactive', slide:true, steps:0, blocks:[
+  {t:'eyebrow', text:'Module 1 · Non-uniform quantization'},
+  {t:'title', text:'Laboratory {lab} · Companding'},
+  {t:'lede', text:'Lower the input level and compare the SQNR of a uniform quantizer with a mu-law quantizer of the same size.'},
+  {t:'lab', id:'O'}
+]},
+{ id:'m1-code-sampling', module:'M1', nav:'Code · Sampling', title:'Sampling in code',
+  objective:'Sample a tone, compute the Nyquist rate and the alias frequency, and see the replicas in a spectrum.',
+  keywords:'code matlab python program run sampling nyquist alias frequency spectrum',
+  slide:true, steps:0, budget:'a code page: the program draws its own figure', blocks:[
+  {t:'eyebrow', text:'Module 1 · Sampling in code'},
+  {t:'title', text:'Sampling in code'},
+  {t:'raw', html:()=>CODEBANK.page('m1-code-sampling')}
+]},
+{ id:'m1-code-reconstruct', module:'M1', nav:'Code · Reconstruction', title:'Reconstruction in code',
+  objective:'Rebuild a message from its samples with a sum of sinc pulses and measure the error.',
+  keywords:'code matlab python program run reconstruction sinc interpolation hold',
+  slide:true, steps:0, budget:'a code page: the program draws its own figure', blocks:[
+  {t:'eyebrow', text:'Module 1 · Reconstruction in code'},
+  {t:'title', text:'Reconstruction in code'},
+  {t:'raw', html:()=>CODEBANK.page('m1-code-reconstruct')}
+]},
+{ id:'m1-code-quant', module:'M1', nav:'Code · Quantization', title:'Quantization in code',
+  objective:'Build a uniform quantizer and apply it to a sampled signal.',
+  keywords:'code matlab python program run quantizer midrise midtread levels',
+  slide:true, steps:0, budget:'a code page: the program draws its own figure', blocks:[
+  {t:'eyebrow', text:'Module 1 · Quantization in code'},
+  {t:'title', text:'Quantization in code'},
+  {t:'raw', html:()=>CODEBANK.page('m1-code-quant')}
+]},
+{ id:'m1-code-sqnr', module:'M1', nav:'Code · SQNR', title:'SQNR in code',
+  objective:'Measure the quantization noise and the SQNR of a sinusoid, a uniform source and a Gaussian source.',
+  keywords:'code matlab python program run sqnr quantization noise six decibels per bit',
+  slide:true, steps:0, budget:'a code page: the program draws its own figure', blocks:[
+  {t:'eyebrow', text:'Module 1 · Quantization noise in code'},
+  {t:'title', text:'SQNR in code'},
+  {t:'raw', html:()=>CODEBANK.page('m1-code-sqnr')}
+]},
+{ id:'m1-code-companding', module:'M1', nav:'Code · Companding', title:'Companding in code',
+  objective:'Compress with mu-law and A-law, and compare the SQNR with a uniform quantizer.',
+  keywords:'code matlab python program run mu law a law compressor',
+  slide:true, steps:0, budget:'a code page: the program draws its own figure', blocks:[
+  {t:'eyebrow', text:'Module 1 · Non-uniform quantization in code'},
+  {t:'title', text:'Companding in code'},
+  {t:'raw', html:()=>CODEBANK.page('m1-code-companding')}
+]},
+{ id:'m1-code-pcm', module:'M1', nav:'Code · PCM', title:'PCM in code',
+  objective:'Sample, quantize and encode a signal into a PCM bit stream.',
+  keywords:'code matlab python program run pcm encoding bit rate gray code line code',
+  slide:true, steps:0, budget:'a code page: the program draws its own figure', blocks:[
+  {t:'eyebrow', text:'Module 1 · Pulse code modulation in code'},
+  {t:'title', text:'PCM in code'},
+  {t:'raw', html:()=>CODEBANK.page('m1-code-pcm')}
 ]},
 
 /* ---------------------------------------------------------------- 1.8 ---- */
@@ -11090,17 +11172,17 @@ CONTENT.SECTIONS = {
   M1: [
     { n:'1.0', title:'Opening',                        ids:['m1-open'] },
     { n:'1.1', title:'The sampling theorem',           ids:[
-        'm1-sampler','m1-spectrum','m1-cases','m1-theorem'] },
+        'm1-sampler','m1-spectrum','m1-cases','m1-theorem','m1-lab-l','m1-code-sampling'] },
     { n:'1.2', title:'Reconstruction',                 ids:[
-        'm1-lpf','m1-interp','m1-ex-nyquist'] },
+        'm1-lpf','m1-interp','m1-ex-nyquist','m1-lab-m','m1-code-reconstruct'] },
     { n:'1.3', title:'Quantization',                   ids:[
-        'm1-quant','m1-lloydmax','m1-lab-a'] },
+        'm1-quant','m1-lloydmax','m1-lab-n','m1-code-quant'] },
     { n:'1.4', title:'Quantization noise and SQNR',    ids:[
-        'm1-qnoise','m1-sqnr','m1-ex-cos','m1-ex-unif','m1-ex-gauss'] },
+        'm1-qnoise','m1-sqnr','m1-ex-cos','m1-ex-unif','m1-ex-gauss','m1-lab-a','m1-code-sqnr'] },
     { n:'1.5', title:'Non-uniform quantization',       ids:[
-        'm1-nonuniform','m1-companding'] },
+        'm1-nonuniform','m1-companding','m1-lab-o','m1-code-companding'] },
     { n:'1.6', title:'Pulse code modulation',          ids:[
-        'm1-encode','m1-linecodes','m1-ex-pcm','m1-lab-b'] },
+        'm1-encode','m1-linecodes','m1-ex-pcm','m1-lab-b','m1-code-pcm'] },
     { n:'1.7', title:'Vector quantization',            ids:['m1-vq','m1-vq-image'] },
     { n:'1.8', title:'Summary',                        ids:['m1-synth'] }
   ],
@@ -11185,6 +11267,7 @@ CONTENT.BOOK = {
   'm1-sampler':'7.1.1', 'm1-spectrum':'7.1.1', 'm1-cases':'7.1.1', 'm1-theorem':'7.1.1',
   'm1-lpf':'7.1.1', 'm1-interp':'7.1.1', 'm1-ex-nyquist':'7.1.1',
   'm1-quant':'7.2.1', 'm1-lloydmax':'7.2.1', 'm1-lab-a':'7.2.1',
+  'm1-lab-l':'7.1.1', 'm1-lab-m':'7.1.1', 'm1-lab-n':'7.2.1', 'm1-lab-o':'7.2.1',
   'm1-qnoise':'7.2.1', 'm1-sqnr':'7.2.1',
   'm1-ex-cos':'7.2.1', 'm1-ex-unif':'7.2.1', 'm1-ex-gauss':'7.2.1',
   'm1-nonuniform':'7.2.1', 'm1-companding':'7.2.1',
@@ -11267,10 +11350,23 @@ CONTENT.BOOK = {
    written down twice, so a section that gains a scene renumbers by itself and
    cannot drift out of step with the declaration.
 
-   Two id shapes take a space of their own rather than an ordinal, because
-   they are not teaching scenes: a laboratory (`*-lab-*`) takes `L`, and the
-   question scene of a module takes `Q1`. Each counts from 1 within its
-   chapter. */
+   Three id shapes take a space of their own rather than an ordinal, because
+   they are not teaching scenes: a laboratory (`*-lab-*`) takes `L`, a code
+   page (`*-code-*`) takes `C` after its section, and the question scene of a
+   module takes `Q1`.
+
+   A converted module names a laboratory after the section it closes: the one
+   in section 1.4 is Laboratory 1.4 and has the address 1.4.L, and two in one
+   section take a and b in declared order. Its scene file writes `{lab}` where
+   the number goes, in `nav`, `title`, `keywords` and the text of its blocks,
+   and it is filled in here. A module not yet converted keeps its letters and
+   numbers its laboratories through the chapter (2.L1, 2.L2). The single
+   letters in code (`{t:'lab', id:'B'}`) are internal keys either way. */
+function nameLab(s){
+  const fill = t => typeof t === 'string' ? t.split('{lab}').join(s.lab) : t;
+  s.nav = fill(s.nav); s.title = fill(s.title); s.keywords = fill(s.keywords);
+  (s.blocks||[]).forEach(b=>{ if(b.text) b.text = fill(b.text); if(b.html) b.html = fill(b.html); });
+}
 window.applyNumbering = function(scenes){
   const byId = {};
   scenes.forEach(s=>{ byId[s.id] = s; });
@@ -11288,13 +11384,21 @@ window.applyNumbering = function(scenes){
 
     secs.forEach(sec=>{
       const entries = [];
-      let ord = 0;
+      let ord = 0, labK = 0;
+      const named = sec.ids.filter(id=>/-lab-/.test(id) && byId[id] && /\{lab\}/.test(byId[id].title||''));
       sec.ids.forEach(id=>{
         const s = byId[id];
         if(!s){ console.error('numbering: no scene with id '+id); return; }
-        s.sec  = /-lab-/.test(id) ? ch.n+'.L'+(++labN)
-               : ch.flat          ? ch.n+'.'+(++ord)
-               :                    sec.n+'.'+(++ord);
+        if(named.includes(id)){
+          const suf = named.length > 1 ? 'abcdefgh'[labK++] : '';
+          s.lab = sec.n+suf;
+          s.sec = sec.n+'.L'+suf;
+          nameLab(s);
+        }
+        else s.sec = /-lab-/.test(id)  ? ch.n+'.L'+(++labN)
+                   : /-code-/.test(id) ? sec.n+'.C'
+                   : ch.flat           ? ch.n+'.'+(++ord)
+                   :                     sec.n+'.'+(++ord);
         s.book = CONTENT.BOOK[id];
         entries.push(s);
       });
