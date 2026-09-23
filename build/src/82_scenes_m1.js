@@ -1601,6 +1601,7 @@ REAL_QUANT,
   ], right:[
     {t:'note', kind:'def', head:'Given', html:'A zero-mean Gaussian source with $S_X(f)=2$ for $|f|<100$ Hz, sampled at the Nyquist rate. A five-level quantizer: levels $0,\\pm10,\\pm30$, boundaries $\\pm20,\\pm40$.<div class="nsep"></div>Find the signal power.',
       ask:{key:'m1-ex-gauss', choices:['$2$','$200$','$400$'], answer:2}},
+    {t:'eq', label:'Quantizer rule', tex:'\\mathbb{Q}(x)=\\begin{cases}-30, & x<-40\\\\ -10, & -40\\le x<-20\\\\ \\phantom{-}0, & -20\\le x<20\\\\ \\phantom{-}10, & 20\\le x<40\\\\ \\phantom{-}30, & x\\ge 40\\end{cases}'},
     {t:'reveal', at:1, items:[
       {t:'eq', label:'Signal power', tex:'\\begin{aligned}P_X&=\\int_{-\\infty}^{\\infty}S_X(f)\\,df\\\\&=\\int_{-100}^{100}2\\,df\\\\&=2(200)=400\\end{aligned}',
         note:'The mean is zero, so $\\sigma_X^{2}=P_X=400$.'}]},
