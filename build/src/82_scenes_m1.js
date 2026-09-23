@@ -144,6 +144,20 @@ function figCaseAt(fs){
   return a.svg();
 }
 
+/* A signal bandlimited to W, built as a sum of shifted sincs so that it is
+   exactly bandlimited, with its samples at the Nyquist interval 1/(2W).
+   Time is in units of 1/(2W), so sample n sits at t = n. */
+const NYQ_SAMPLES = [0.25,0.7,1.0,0.55,-0.2,-0.75,-0.45,0.15,0.6,0.35];
+function figNyquistSamples(){
+  const g = t => NYQ_SAMPLES.reduce((s,v,n)=>s+v*sinc(t-n), 0);
+  const a = P.Axes(SZ({xr:[-0.6,9.6], yr:[-1.1,1.45], xlabel:'t', ylabel:'g(t)',
+    xticksOverride:[], ytarget:3, ytickfmt:()=>''}));
+  a.curve(g, {color:C.in, width:2.3});
+  a.stem(NYQ_SAMPLES.map((v,n)=>[n,v]), {color:C.mid});
+  a.span(2, 3, 1.25, 'T_s=1/(2W)', {tex:true, fs:14, color:C.muted});
+  return a.svg();
+}
+
 /* The reconstruction filter on the sampled spectrum at f_s = 2.6W. The ideal
    filter passes |f| <= W with gain T_s; the dashed one is a filter that can be
    built, flat to W and falling to zero where the first copy starts. The gap it
@@ -445,31 +459,31 @@ function sqnrMeasured(R){
   }
   return 10*Math.log10(pm/pq);
 }
-/* The SQNR of a full-scale sinusoid through a fine uniform quantizer,
-   against the bit count, played one bit a frame. Frame k shows R = 1..k+1.
-   Between two frames the new stem rises from the height of the last one, and
-   a bracket marks the 6.02 dB it adds; the step Delta halves, so the noise
-   power falls by four. */
+/* The noise power of a fine uniform quantizer against the bit count, in
+   decibels relative to m_max^2, played one bit a frame. Frame k shows
+   R = 1..k+1. Between two frames the new stem grows down from the depth of the
+   last one, and a bracket marks the 6.02 dB it falls: the step Delta halves,
+   so the noise power falls by four. The SQNR is left to the next scene. */
 function figNoiseBits(v){
   const f = v ? v.frame : 7, n = Math.floor(f+1e-9), u = f-n, R = n+1;
-  const a = P.Axes(SZ({xr:[0,8.6], yr:[0,60], xlabel:'R\\;(\\text{bits per sample})',
-    ylabel:'\\mathrm{SQNR}\\;(\\mathrm{dB})', pad:{l:62,r:26,t:24,b:46}, xtarget:8, ytarget:6}));
-  const y = r => ALPHA_SINE + 20*r*Math.log10(2);
+  const a = P.Axes(SZ({xr:[0,8.6], yr:[-60,4], xlabel:'R\\;(\\text{bits per sample})',
+    ylabel:'E[Q^{2}]/m_{\\max}^{2}\\;(\\mathrm{dB})', pad:{l:62,r:26,t:24,b:46}, xtarget:8, ytarget:6}));
+  const y = r => -10*Math.log10(3) - 20*r*Math.log10(2);
   a.curve(y, {color:C.err, width:1.2, dash:'5 5', opacity:0.45});
   const st = []; for(let r=1;r<=R;r++) st.push([r, y(r)]);
   if(u > 0) st.push([R+1, y(R)+(y(R+1)-y(R))*u]);
   a.stem(st, {color:C.err});
-  /* the step just taken: from bit Rb-1 to bit Rb, with its height grown by g */
+  /* the step just taken: from bit Rb-1 to bit Rb, with its depth grown by g */
   const Rb = u > 0 ? R+1 : R, g = u > 0 ? u : 1;
   if(Rb >= 2){
-    const lo = y(Rb-1), hi = lo+(y(Rb)-lo)*g, X = Rb+0.22;
-    a.poly([[Rb-1,lo],[X,lo]], {color:C.muted, width:1, dash:'3 4'});
-    a.poly([[X-0.06,lo],[X,lo],[X,hi],[X-0.06,hi]], {color:C.in, width:1.6});
-    if(g > 0.6) a.note(X, (lo+hi)/2, '+6.02\\ \\mathrm{dB}', {tex:true, fs:14, color:C.in, dx:6});
+    const hi = y(Rb-1), lo = hi+(y(Rb)-hi)*g, X = Rb+0.22;
+    a.poly([[Rb-1,hi],[X,hi]], {color:C.muted, width:1, dash:'3 4'});
+    a.poly([[X-0.06,hi],[X,hi],[X,lo],[X-0.06,lo]], {color:C.in, width:1.6});
+    if(g > 0.6) a.note(X, (lo+hi)/2, '-6.02\\ \\mathrm{dB}', {tex:true, fs:14, color:C.in, dx:6});
   }
   const Rs = u > 0.5 ? R+1 : R;
-  a.note(0.3, 55, '\\Delta=2m_{\\max}/2^{'+Rs+'}', {tex:true, fs:14, color:C.muted});
-  a.note(0.3, 48, 'E[Q^{2}]=m_{\\max}^{2}/(3\\cdot4^{'+Rs+'})', {tex:true, fs:14, color:C.err});
+  a.note(0.3, -50, '\\Delta=2m_{\\max}/2^{'+Rs+'}', {tex:true, fs:14, color:C.muted});
+  a.note(0.3, -57, 'E[Q^{2}]=m_{\\max}^{2}/(3\\cdot4^{'+Rs+'})', {tex:true, fs:14, color:C.err});
   return a.svg();
 }
 function figMeasured(){
@@ -620,6 +634,19 @@ function figPcmExample(){
   for(let n=0;n<=6;n++){ const t=n*Ts, v=m(t);
     a.point(t, v, {color:C.in, r:4.5}); a.point(t, q(v), {color:C.mid, r:4.5}); }
   a.note(1.8, 8.6, '\\Delta=1\\ \\mathrm{V},\\;L=8', {tex:true, fs:14, color:C.muted, anchor:'middle'});
+  return a.svg();
+}
+
+/* The error of each sample of the example, against the bound +-Delta/2. */
+function figPcmError(){
+  const m = t => 8*Math.abs(sinc(t-2)), Ts = 0.6;
+  const q = v => Math.min(7, Math.floor(v)) + 0.5;
+  const a = P.Axes(SZ({xr:[-0.15,3.75], yr:[-0.8,0.8], xlabel:'t\\;(\\mathrm{s})', ylabel:'q=m-v\\;(\\mathrm{V})',
+    pad:{l:62,r:26,t:24,b:44}, xtarget:6, yticksOverride:[-0.5,0,0.5]}));
+  for(const b of [-0.5,0.5]) a.hline(b, {color:C.err, dash:'5 5', opacity:0.6});
+  const st = []; for(let n=0;n<=6;n++){ const t=n*Ts, v=m(t); st.push([t, v-q(v)]); }
+  a.stem(st, {color:C.err, showZero:true});
+  a.note(3.7, 0.62, '\\Delta/2', {tex:true, fs:14, color:C.err, anchor:'end'});
   return a.svg();
 }
 
@@ -1164,8 +1191,8 @@ const SC = [
   {t:'eyebrow', text:'Module 1 · The sampling theorem'},
   {t:'title', text:'The sampling theorem'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
-    {t:'fig', frame:true, grow:true, svg:()=>figCaseAt(2),
-      caption:'At $f_s=2W$ the copies touch without overlap. A lower rate causes overlap. A higher rate leaves a gap.'}
+    {t:'fig', frame:true, grow:true, svg:figNyquistSamples,
+      caption:'A signal bandlimited to $W$, sampled once every $1/(2W)$. At this interval the samples fix the curve between them.'}
   ], right:[
     {t:'note', kind:'def', head:'Sampling theorem', html:'If $G(f)=0$ for $|f|\\ge W$ and $f_s\\ge 2W$, the samples $g(nT_s)$ determine $g(t)$ exactly.'},
     {t:'reveal', at:1, items:[
@@ -1265,7 +1292,6 @@ REAL_SAMPLING,
   ], right:[
     {t:'eq', label:'At the Nyquist rate', tex:'\\begin{aligned}g(t)&=\\sum_{n}g(nT_s)\\operatorname{sinc}\\!\\bigl(2W(t-nT_s)\\bigr)\\\\&=\\sum_{n=-\\infty}^{\\infty}g\\!\\left(\\frac{n}{2W}\\right)\\operatorname{sinc}(2Wt-n)\\end{aligned}',
       note:'Put $T_s=1/(2W)$, so that $2WnT_s=n$.'},
-    {t:'note', kind:'ok', head:'Values at the sample times', html:'$h(nT_s)=\\operatorname{sinc}(n)=0$ for $n\\ne0$, so at $t=kT_s$ only $n=k$ survives and $g_r(kT_s)=g(kT_s)$.'},
     {t:'reveal', at:1, items:[
       {t:'note', kind:'warn', head:'A finite sum', html:'A sum over a few samples is exact only at those samples. The error between them shrinks as more terms enter.'}]},
     {t:'reveal', at:2, items:[
@@ -1486,7 +1512,7 @@ REAL_QUANT,
     {t:'fig', frame:true, grow:true,
       frames:{labels:['$R=1$','$R=2$','$R=3$','$R=4$','$R=5$','$R=6$','$R=7$','$R=8$']},
       svg:figNoiseBits,
-      caption:'Step through the bits for a full-scale sinusoid. Each added bit halves $\\Delta$, divides $E[Q^{2}]$ by four, and lifts the SQNR by $10\\log_{10}4=6.02$ dB.'}
+      caption:'Step through the bits. Each added bit halves $\\Delta$ and divides $E[Q^{2}]$ by four, a fall of $10\\log_{10}4=6.02$ dB.'}
   ], right:[
     {t:'eq', label:'In bits', tex:'\\begin{aligned}E[Q^{2}]&=\\frac{\\Delta^{2}}{12}\\\\&=\\frac{1}{12}\\left(\\frac{2m_{\\max}}{2^{R}}\\right)^{2}\\\\&=\\frac{1}{12}\\cdot\\frac{4m_{\\max}^{2}}{2^{2R}}\\\\&=\\frac{m_{\\max}^{2}}{3\\cdot 2^{2R}}\\end{aligned}',
       note:'Substitute $\\Delta=2m_{\\max}/L$ and $L=2^{R}$.'},
@@ -1790,7 +1816,7 @@ REAL_COMPANDING,
   {t:'title', text:'Worked example: PCM encoding of a sinc pulse'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true, svg:figPcmExample,
-      caption:'The message (cyan), its samples every $0.6$ s, and the selected levels (violet). Each error is under half a step.'}
+      caption:'The message (cyan), its samples every $0.6$ s, and the selected levels (violet). No error exceeds half a step.'}
   ], right:[
     {t:'note', kind:'def', head:'Given', html:'$m(t)=8\\,|\\operatorname{sinc}(t-2)|$, sampled every $T_s=0.6$ s, with an eight-level uniform quantizer over $[0,8]$.<div class="nsep"></div>Find the step size, the code words for $t=0,0.6,\\dots,3.6$, and the bit rate.',
       ask:{key:'m1-ex-pcm', q:'Predict the step size first.', choices:['$0.5$ V','$1$ V','$2$ V'], answer:1}},
@@ -1808,8 +1834,8 @@ REAL_COMPANDING,
   {t:'eyebrow', text:'Module 1 · Worked example'},
   {t:'title', text:'Worked example: samples and code words'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
-    {t:'fig', frame:true, grow:true, svg:figPcmExample,
-      caption:'Each sample falls in one tread and takes that tread\'s level (violet). Each error is under half a step.'}
+    {t:'fig', frame:true, grow:true, svg:figPcmError,
+      caption:'The error $q=m-v$ of each sample. Every error lies within $\\pm\\Delta/2=\\pm0.5$ V. The zero samples at $t=0$ and $t=3$ sit on the bottom edge and reach $-0.5$ V.'}
   ], right:[
     {t:'eq', label:'Samples', tex:'\\begin{array}{c|ccccccc}t&0&0.6&1.2&1.8&2.4&3.0&3.6\\\\t-2&-2&-1.4&-0.8&-0.2&0.4&1&1.6\\\\\\hline m(t)&0&1.73&1.87&7.48&6.05&0&1.51\\end{array}',
         note:'With $\\operatorname{sinc}(x)=\\sin(\\pi x)/(\\pi x)$: $m(0.6)=8\\,|\\sin(1.4\\pi)|/(1.4\\pi)=8(0.951)/4.398=1.73$.'},
