@@ -1,32 +1,26 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "node tools/pyodide.js",
-  "outputDirectory": ".",
+  "buildCommand": "node web/build-site.js",
+  "outputDirectory": "site",
   "installCommand": "echo \"no dependencies\"",
   "framework": null,
-  "rewrites": [
-    {
-      "source": "/",
-      "destination": "/site/index.html"
-    }
-  ],
   "headers": [
     {
-      "source": "/dist/pyodide/(.*)",
+      "source": "/(.*).html",
       "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
-        }
+        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
       ]
     },
     {
-      "source": "/dist/pyodide/(.*).wasm",
+      "source": "/pyodide/(.*)",
       "headers": [
-        {
-          "key": "Content-Type",
-          "value": "application/wasm"
-        }
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    },
+    {
+      "source": "/pyodide/(.*).wasm",
+      "headers": [
+        { "key": "Content-Type", "value": "application/wasm" }
       ]
     }
   ]

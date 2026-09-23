@@ -1,20 +1,20 @@
 /* ==========================================================================
-   tools/pyodide.js — place the Python runtime for the code pages beside the artifact.
+   web/pyodide.js — place the Python runtime for the code pages in the site.
 
-   Usage: node tools/pyodide.js [dist/pyodide]
+   Usage: node web/pyodide.js <site/pyodide>
 
    A code page's Run button loads Pyodide (CPython compiled to WebAssembly)
-   from `pyodide/v<VERSION>/` next to the page, on the first press only. The
-   artifact is served from dist/, so the runtime goes to dist/pyodide/. The
-   deploy runs this script as its build command (vercel.json); the runtime is
+   from `pyodide/v<VERSION>/` on the course site, on the first press only.
+   web/build-site.js runs this script while it assembles site/; the runtime is
    never committed.
+
    This script fetches that runtime from the Pyodide release on jsDelivr, the
    core files and the packages NumPy and Matplotlib need, and checks every
    file against a pinned SHA-256 before it is published: the core files
    against the hashes below, the packages against the hashes in the pinned
    lock file. A file that does not match stops the build.
 
-   Files are kept in tools/.cache/ (gitignored), or in PYODIDE_CACHE when it is
+   Files are kept in web/.cache/ (gitignored), or in PYODIDE_CACHE when it is
    set, so a second build on the same machine fetches nothing. SKIP_PYODIDE=1 skips the step for an offline
    local build; the site then has no runtime and Run reports that Python
    could not be loaded.
@@ -35,7 +35,7 @@ const CORE = {
   'pyodide-lock.json': '3256ffc76388de0e37f4b34d42ab484268d1afc675179ff97b2a5bb14f84ccac'
 };
 
-const out = path.join(process.argv[2] || path.join(__dirname, '..', 'dist', 'pyodide'), 'v' + VERSION);
+const out = path.join(process.argv[2] || path.join(__dirname, '..', 'site', 'pyodide'), 'v' + VERSION);
 const cache = process.env.PYODIDE_CACHE || path.join(__dirname, '.cache', 'pyodide-' + VERSION);
 const sha = b => crypto.createHash('sha256').update(b).digest('hex');
 

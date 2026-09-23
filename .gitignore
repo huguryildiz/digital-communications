@@ -31,9 +31,6 @@ dist/Formula_Reference.html
 # deliverables and stay tracked. The instructor PDF remains a local build product
 # and is never published.
 dist/Instructor_Solutions.pdf
-# The Python runtime for the code pages, staged by tools/pyodide.js at deploy.
-dist/pyodide/
-tools/.cache/
 # build/qa.js screenshot dump and build/textclash.js report.
 shots/
 shots-m/
@@ -71,8 +68,12 @@ PRODUCT.md
 # Editor settings: a local convenience, not a property of the project.
 .vscode/
 
-# --- Deploy ---
+# --- Public site build (web/build-site.js) ---
+# Assembled from dist/ on every deploy; nothing in it is authored by hand.
+site/
 .vercel
+# web/pyodide.js keeps the fetched Python runtime here between builds.
+web/.cache/
 .env*
 
 # Working TODO: local working document, not tracked.

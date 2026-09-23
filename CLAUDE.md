@@ -48,7 +48,7 @@ those details; do not duplicate their full text here.
 
 ## Repository and working loop
 
-- `build/src/` holds the interactive artifact; `notes/src/` holds lecture notes; `site/` builds the
+- `build/src/` holds the interactive artifact; `notes/src/` holds lecture notes; `web/` builds the
   public page; `verify/` holds numerical checks; `dist/` is generated output. `source/` contains
   private reference material; never reproduce or redistribute it.
 - The one place for chapter, section, address, and textbook anchors is `build/src/89_sections.js`.

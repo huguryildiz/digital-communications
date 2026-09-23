@@ -4,7 +4,7 @@ paths:
   - "notes/**/*"
   - "verify/**/*"
   - "tools/**/*"
-  - "site/**/*"
+  - "web/**/*"
   - "dist/**/*"
 ---
 
@@ -95,11 +95,17 @@ ran them while converting its own modules.
 
 ## Site
 
-`site/` is the public landing page and is not part of the artifact. It touches no scene, laboratory,
-or question, so none of the gates above reads it; check a change there by looking at it. `vercel.json`
-and `.vercelignore` say what the host serves; `.vercelignore` replaces `.gitignore` for the deploy
-rather than adding to it, so anything that must stay off the host is named there even when git already
-ignores it.
+`web/` holds the public landing page and `web/build-site.js`, which assembles the published site in
+`site/` (gitignored). The script runs the artifact and notes builds, then copies the artifact with the
+instructor edition removed in memory: `{t:'instr'}` blocks, `src` and `teach` fields, and the edition
+control. It must not modify `build/src` or overwrite `dist/`, and each transform asserts its hit count,
+so a source edit that breaks a match stops the build. `web/pyodide.js` fetches the pinned Pyodide
+runtime into `site/pyodide/` and checks every file against a pinned SHA-256 (`SKIP_PYODIDE=1` skips
+it offline). After a site rebuild, run `cd build && node pw.js ../web/sitecheck.js`; it walks the
+sanitised artifact, the cover links and the three HTML editions. `vercel.json` and `.vercelignore`
+say what the host builds and serves; `.vercelignore` replaces `.gitignore` for the upload rather than
+adding to it, so anything that must stay off the host is named there even when git already ignores
+it.
 
 ## Traps
 

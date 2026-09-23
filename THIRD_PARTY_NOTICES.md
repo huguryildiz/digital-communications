@@ -18,7 +18,7 @@ under its original copyright notice.
 
 ## Radiant Shaders, “Kinetic Grid”
 
-The hero background of the public page, `site/grid.js`, is adapted from the
+The hero background of the public page, `web/grid.js`, is adapted from the
 upstream shader. What was changed is written at the top of that file.
 
 Copyright (c) 2025 Paul Bakaus
@@ -29,7 +29,7 @@ https://github.com/pbakaus/radiant
 ## Pyodide 0.29.3
 
 The code pages run Python in the reader's browser through Pyodide. It is not
-stored in this repository: `tools/pyodide.js` fetches it at deploy time and
-publishes it beside the artifact under its own licenses (Mozilla Public
+stored in this repository: `web/pyodide.js` fetches it at deploy time and
+publishes it with the site under its own licenses (Mozilla Public
 License 2.0 for Pyodide; NumPy, Matplotlib and their dependencies under their
 own terms). Source project: https://github.com/pyodide/pyodide

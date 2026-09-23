@@ -82,8 +82,8 @@ Press `?` inside the artifact for the keyboard shortcuts.
 build/     the artifact: sources in build/src/, the build script, and the browser checks
 notes/     the lecture notes and the other PDF editions
 verify/    Python scripts that recompute every numerical result independently
-tools/     text checks on student-facing wording, and the Python runtime staging script
-site/      the public page
+tools/     text checks on student-facing wording
+web/       the public site and the script that assembles it
 dist/      generated output; never edited by hand
 assets/    the course icon
 source/    private reference material; not tracked and never redistributed
@@ -102,6 +102,7 @@ nothing is installed and nothing is fetched from the network.
 cd build && node build.js                              # the artifact
 cd notes && node build.js                              # the lecture notes
 cd notes && node editions.js && node ../build/pw.js topdf.js   # the other editions and all PDFs
+node web/build-site.js                                 # the public site, in site/
 ```
 
 The artifact build is byte-reproducible. If a rebuild from unchanged sources changes the output, that
@@ -118,11 +119,11 @@ The numerical checks use a local Python environment:
 The site is hosted on Vercel as static files. Vercel runs no Python: the code pages run Python in the
 reader's browser through [Pyodide](https://pyodide.org), a build of CPython compiled to WebAssembly.
 
-1. On Vercel, the build command runs `tools/pyodide.js`. That script downloads Pyodide 0.29.3 from
+1. On Vercel, the build command runs `web/build-site.js`, which calls `web/pyodide.js`. That script downloads Pyodide 0.29.3 from
    jsDelivr, together with NumPy, Matplotlib and their dependencies, and checks every file against a
    pinned SHA-256. A mismatch stops the build. This is the one step that uses the network; the artifact
    and the notes still build offline.
-2. The files are published under `dist/pyodide/v0.29.3/` on the course site itself, so a reader's
+2. The files are published under `pyodide/v0.29.3/` on the course site itself, so a reader's
    browser never contacts a third-party server. `vercel.json` serves them with a one-year immutable
    cache and the `application/wasm` content type.
 3. Nothing is loaded when the page opens. The first press of **Run** loads the runtime and the two
