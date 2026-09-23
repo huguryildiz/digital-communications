@@ -57,8 +57,9 @@ capacity (M6). M0 is the opening: what the whole subject asks, and how to use th
 ## Brand Commitments
 
 Calm, rigorous and editorial. The interface makes a demanding technical course feel navigable, and
-never competes with the mathematics. The artifact carries the same design tokens as its sibling course
-in `~/Documents/GitHub/signals-and-systems` — the two read as one publication, though each course's
+never competes with the mathematics. The artifact carries the same design tokens as its sibling course,
+[Signals and Systems](https://github.com/huguryildiz/signals-and-systems) (local copy:
+`~/Documents/GitHub/signals-and-systems`) — the two read as one publication, though each course's
 public cover page is now its own separate design.
 
 The language is plain academic English. No promotional tone, no slogans, no sentence written to sound
