@@ -10,7 +10,9 @@
 build/
 notes/
 verify/
-tools/
+# The deploy runs tools/pyodide.js to stage the Python runtime into dist/.
+tools/*
+!tools/pyodide.js
 docs/
 source/
 shots/
