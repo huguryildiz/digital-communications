@@ -1548,6 +1548,11 @@ body[data-layout=phone] .btn{ font-size:calc(15px * var(--ts)); padding:12px 16p
    of the screen. */
 body[data-layout=phone] .cols{ grid-template-columns:minmax(0,1fr); gap:var(--s3); }
 body[data-layout=phone] .gblk{ grid-template-columns:minmax(0,1fr) !important; gap:18px !important; }
+/* A code page sets the program beside what it does: seven columns of code, five
+   of prose. On a phone the two panels do not fit side by side at a size either
+   one can be read at, so the code comes first and the description follows it,
+   each at the full width of the column. */
+body[data-layout=phone] .cp-body{ grid-template-columns:minmax(0,1fr); gap:20px; }
 body[data-layout=phone] .ctrls{ grid-template-columns:minmax(0,1fr); gap:14px; padding:14px 15px; }
 body[data-layout=phone] .dr-types{ grid-template-columns:minmax(0,1fr); gap:20px; }
 body[data-layout=phone] .dr-pair{ flex-direction:column; gap:10px; }
@@ -1557,6 +1562,9 @@ body[data-layout=phone] .dr-pair > div{ width:100%; }
    first and the cards follow it at their own height. The slide rules name the
    split, so these carry the slide class to outweigh them. */
 body[data-layout=phone] .scene.slide .cols{ grid-template-columns:minmax(0,1fr); gap:var(--s4); }
+/* A long card-tab title can outrun the narrowest column; there it wraps
+   rather than push the card past the edge of the screen. */
+body[data-layout=phone] .scene.slide .note > .note-h{ white-space:normal; max-width:calc(100% + 6px); text-align:left; }
 body[data-layout=phone] .scene.slide .cols.fill > .col{ justify-content:flex-start; }
 body[data-layout=phone] .scene.slide .lab > .cols{ height:auto; }
 body[data-layout=phone] .scene.slide .lab > .cols > .col.stack{ justify-content:flex-start; }
