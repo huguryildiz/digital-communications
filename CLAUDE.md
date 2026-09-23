@@ -16,6 +16,9 @@ be backed up with the working copy. The full pre-migration instructions are in
   are historical when their status conflicts with `TODO.md` or a later report.
 - Read `DESIGN.md` before editing a scene, figure, or style; read `PRODUCT.md` before design work.
   Read `.claude/reference/history.md` when the reason for a decision is unclear.
+- When a design question is not settled by `DESIGN.md`, `.claude/rules/` or Module 1, take the answer
+  from the sibling repository `~/Documents/GitHub/signals-and-systems` (its `DESIGN.md`, source and
+  built output) rather than inventing one. Read it only; never edit that repository from here.
 
 ## Facts
 
