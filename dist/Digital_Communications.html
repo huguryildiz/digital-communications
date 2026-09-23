@@ -8323,8 +8323,7 @@ function figLpf(){
   for(let n=-2;n<=2;n++) copy(a, n*fs, W, fs, {color:C.mid, width:2.2});
   a.poly([[-4.2,0],[-e,0],[-W,top],[W,top],[e,0],[4.2,0]], {color:C.h, width:1.5, dash:'6 5'});
   a.poly([[-4.2,0],[-W,0],[-W,top],[W,top],[W,0],[4.2,0]], {color:C.h, width:2.4});
-  a.note(-W-0.42, 0.92*top, 'H(f)', {tex:true, fs:14, color:C.h, anchor:'end'});
-  a.span(W, e, 1.24*fs, '\\text{transition band}', {tex:true, fs:12, color:C.muted});
+  a.span(-e, -W, 1.24*fs, '\\text{transition band}', {tex:true, fs:12, color:C.muted});
   return a.svg();
 }
 
@@ -8677,6 +8676,14 @@ function figGaussQ(){
   a.note(-72, 0.0215, '\\sigma_X=20', {tex:true, fs:14, color:C.in});
   return a.svg();
 }
+/* The input-output staircase of the same quantizer. */
+function figGaussStair(){
+  const a = P.Axes(SZ({xr:[-60,60], yr:[-34,34], xlabel:'x', ylabel:'\\mathbb{Q}(x)',
+    xticksOverride:[-60,-40,-20,0,20,40,60], yticksOverride:[-30,-20,-10,0,10,20,30]}));
+  a.poly([[-60,-30],[-40,-30],[-40,-10],[-20,-10],[-20,0],[20,0],[20,10],[40,10],[40,30],[60,30]],
+    {color:C.in, width:2.4});
+  return a.svg();
+}
 /* The error integrand of the same quantizer, region by region. The area of
    each piece is its contribution to P_Q. */
 function figGaussErr(){
@@ -8951,6 +8958,7 @@ const REAL_RECONSTRUCT = realGallery({ id:'m1-real-reconstruct', nav:'Reconstruc
   ],
   notes:[
     {t:'note', kind:'def', head:'A hold, not a sinc', html:'A converter cannot build the ideal filter. It holds each sample for $T_s$, then smooths the staircase with an analog filter.'},
+    {t:'note', kind:'def', head:'Transform pair', html:'A hold of length $T_s$ has a rectangular impulse response, and a rectangle transforms to a sinc.<div class="nsep"></div>$h_0(t)=1,\\ 0\\le t<T_s\\;\\leftrightarrow\\;T_s\\operatorname{sinc}(fT_s)\\,e^{-j\\pi fT_s}$<br>Here $\\operatorname{sinc}(x)=\\sin(\\pi x)/(\\pi x)$.'},
     {t:'note', kind:'warn', head:'Hold droop', html:'The hold weights the spectrum by $\\operatorname{sinc}(f/f_s)$. At $f_s/2$ that is $2/\\pi$, a loss of $3.92$ dB.'}
   ]});
 
@@ -9232,13 +9240,15 @@ const SC = [
   {t:'eyebrow', text:'Module 1 · The sampling theorem'},
   {t:'title', text:'The spectrum of a sampled signal'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
-    {t:'fig', frame:true, svg:figSpectrumPair, caption:'The message spectrum, and the spectrum after sampling at $f_s=3W$. A scaled copy sits at every multiple of $f_s$.'}
+    {t:'fig', frame:true, svg:figSpectrumPair, caption:'The message spectrum, and the spectrum after sampling at $f_s=3W$. A scaled copy sits at every multiple of $f_s$.'},
+    {t:'note', kind:'def', head:'Transform pairs', html:'In $f$, no $2\\pi$ appears: $x(t)\\,y(t)\\leftrightarrow X(f)*Y(f)$ and $e^{j2\\pi f_0t}\\leftrightarrow\\delta(f-f_0)$.'}
   ], right:[
+
     {t:'eq', label:'Product in time', tex:'G_\\delta(f)=G(f)*P(f)',
-      note:'$g_\\delta(t)$ is a train of impulses, so it has a transform. A product in time is a convolution in frequency.'},
+      note:'$g_\\delta(t)=g(t)\\,p(t)$, so the first pair applies.'},
     {t:'reveal', at:1, items:[
       {t:'eq', label:'Transform of the train', tex:'\\begin{aligned}c_n&=\\frac{1}{T_s}\\int_{-T_s/2}^{T_s/2}\\delta(t)\\,e^{-j2\\pi nf_st}\\,dt=\\frac{1}{T_s}\\\\p(t)&=\\frac{1}{T_s}\\sum_{n=-\\infty}^{\\infty}e^{j2\\pi nf_st}\\\\P(f)&=\\frac{1}{T_s}\\sum_{n=-\\infty}^{\\infty}\\delta(f-nf_s)\\end{aligned}',
-        note:'Sifting gives $e^{0}=1$, and each $e^{j2\\pi nf_st}$ transforms to $\\delta(f-nf_s)$.'}]},
+        note:'Sifting gives $e^{0}=1$. The second pair, with $f_0=nf_s$, transforms each term.'}]},
     {t:'reveal', at:2, items:[
       {t:'note', kind:'def', head:'Given', html:'$G(f)=0$ for $|f|\\ge 4$ kHz, and $f_s=10$ kHz.<div class="nsep"></div>Where does the copy centred at $f_s$ begin?',
         ask:{key:'m1-spectrum', choices:['$4$ kHz','$6$ kHz','$10$ kHz'], answer:1,
@@ -9328,7 +9338,8 @@ REAL_SAMPLING,
   {t:'title', text:'The reconstruction filter'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true, svg:figLpf,
-      caption:'At $f_s=2.6W$ the ideal filter (solid) keeps the copy at the origin. A filter that can be built (dashed) falls through the gap before the next copy.'}
+      caption:'At $f_s=2.6W$ the ideal filter (solid) keeps the copy at the origin. A filter that can be built (dashed) falls through the gap before the next copy.'},
+    {t:'legend', items:[['mid','$G_\\delta(f)$'],['h','ideal $H(f)$'],['h','buildable filter',true]]}
   ], right:[
     {t:'eq', label:'Ideal lowpass filter', tex:'H(f)=\\begin{cases}T_s, & |f|\\le W\\\\[2pt] 0, & |f|>f_s-W\\end{cases}',
       note:'Between $W$ and $f_s-W$ the filter may do anything.'},
@@ -9765,11 +9776,12 @@ REAL_QUANT,
   {t:'title', text:'Worked example: a Gaussian source'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true, svg:figGaussQ,
-      caption:'Each sample is $N(0,400)$. The dashed lines are the boundaries $\\pm20$ and $\\pm40$. The dots are the levels $0$, $\\pm10$, $\\pm30$.'}
+      caption:'Each sample is $N(0,400)$. The dashed lines are the boundaries $\\pm20$ and $\\pm40$. The dots are the levels $0$, $\\pm10$, $\\pm30$.'},
+    {t:'fig', frame:true, grow:true, svg:figGaussStair,
+      caption:'The quantizer rule $\\mathbb{Q}(x)$: each input region maps to one level.'}
   ], right:[
     {t:'note', kind:'def', head:'Given', html:'A zero-mean Gaussian source with $S_X(f)=2$ for $|f|<100$ Hz, sampled at the Nyquist rate. A five-level quantizer: levels $0,\\pm10,\\pm30$, boundaries $\\pm20,\\pm40$.<div class="nsep"></div>Find the signal power.',
       ask:{key:'m1-ex-gauss', choices:['$2$','$200$','$400$'], answer:2}},
-    {t:'eq', label:'Quantizer rule', tex:'\\mathbb{Q}(x)=\\begin{cases}-30, & x<-40\\\\ -10, & -40\\le x<-20\\\\ \\phantom{-}0, & -20\\le x<20\\\\ \\phantom{-}10, & 20\\le x<40\\\\ \\phantom{-}30, & x\\ge 40\\end{cases}'},
     {t:'reveal', at:1, items:[
       {t:'eq', label:'Signal power', tex:'\\begin{aligned}P_X&=\\int_{-\\infty}^{\\infty}S_X(f)\\,df\\\\&=\\int_{-100}^{100}2\\,df\\\\&=2(200)=400\\end{aligned}',
         note:'The mean is zero, so $\\sigma_X^{2}=P_X=400$.'}]},
