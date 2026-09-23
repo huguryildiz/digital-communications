@@ -1,0 +1,32 @@
+Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International
+(CC BY-NC-SA 4.0)
+
+Copyright (c) 2026 Hüseyin Uğur Yıldız
+
+This license applies to the original course content in this repository: the
+scenes, laboratories, code pages, practice questions and their worked
+solutions, lecture notes, figures, and formula and notation material. The
+source content is in the authored data files under `build/src/`
+(`71_labs_m1.js` through `76_labs_m6.js`, `76_code_m1.js`,
+`80_content_core.js`, `81_scenes_m0.js` through `87_scenes_m6.js`,
+`89_sections.js`, `92_drill_m1.js` through `97_drill_m6.js`) and the chapter
+files under `notes/src/` (`c1.js` through `c6.js`, `ca.js`, `cb.js`).
+
+The PDF deliverables in `dist/` contain this course content and are covered
+by this license. The HTML deliverables in `dist/` are composite artifacts:
+this license covers their authored course content, while embedded software
+and third-party components remain under their own licenses. See `LICENSE`
+and `THIRD_PARTY_NOTICES.md`.
+
+You are free to share and adapt this material for non-commercial purposes,
+provided you give appropriate credit, link to this license, indicate changes,
+and license your adaptations under the same terms. You may not imply that the
+licensor endorses you or your use.
+
+The full legal code is at:
+https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+A plain-language summary is at:
+https://creativecommons.org/licenses/by-nc-sa/4.0/
+
+Material in `source/` is third-party and is not licensed by this repository.
+It is not reproduced, quoted or redistributed here.
