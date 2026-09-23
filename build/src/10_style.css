@@ -136,7 +136,7 @@ body[data-display=projector]{ --ts:1.36; }
 /* the smallest labels are what a back row loses first: raise their floor */
 body[data-display=projector] .small{ font-size:calc(17.5px * var(--ts)); }
 body[data-display=projector] figcaption{ font-size:calc(16.5px * var(--ts)); }
-body[data-display=projector] .eyebrow{ font-size:calc(16px * var(--ts)); }
+body[data-display=projector] .eyebrow{ font-size:calc(16px * var(--ts) * var(--hk,1)); }
 body[data-display=projector] .eq-label,
 body[data-display=projector] .note-h,
 body[data-display=projector] .wex-k,
@@ -147,6 +147,9 @@ body[data-display=projector] .legend{ font-size:calc(17px * var(--ts)); }
 body[data-display=projector] .eq .katex{ font-size:1.60em; }
 body[data-display=projector] .eq.lg .katex{ font-size:1.87em; }
 body[data-display=projector] .eq.sm .katex{ font-size:1.33em; }
+/* a slide sets its legends and equations at the sizes of the slide language */
+body[data-display=projector] .scene.slide .legend{ font-size:calc(21px * var(--ts)); }
+body[data-display=projector] .scene.slide .eq .katex{ font-size:1.30em; }
 body[data-display=projector] .katex{ font-size:1.10em; }
 body[data-display=projector]{ --rule:#C2BCB0; }      /* stronger hairlines */
 body[data-display=projector][data-theme=dark]{ --rule:#3A4754; }
@@ -175,6 +178,11 @@ body[data-display=projector][data-pointer=laser] textarea{ user-select:text; -we
 /* the two pointer controls belong to projector mode and are hidden outside it */
 #appheader .proj-only{ display:none; }
 body[data-display=projector] #appheader .proj-only{ display:block; }
+body[data-display=projector] #appheader button.proj-only{ display:inline-flex; }
+body[data-display=projector] #appheader #trail-len{ display:inline-flex; align-items:center; gap:6px; }
+#trail-len input{ width:72px; accent-color:var(--coral); cursor:pointer; }
+#trail-len input:disabled{ opacity:.4; cursor:default; }
+#trail-len output{ min-width:3.2em; font-size:11.5px; letter-spacing:.08em; }
 
 *,*::before,*::after{ box-sizing:border-box; }
 
@@ -239,6 +247,16 @@ body[data-motion=reduced] #appheader .eelogo path{ animation:none; filter:none; 
 #appheader button[aria-pressed=true]{ color:var(--coral); }
 #appheader button:disabled{ opacity:.4; cursor:default; }
 #appheader button:disabled:hover{ color:var(--muted); background:transparent; }
+#appheader button:has(svg){ display:inline-flex; align-items:center; gap:6px; }
+#appheader button svg{ display:block; width:16px; height:16px; flex:none; }
+@media (max-width:1180px){ #appheader button:has(svg) span{ display:none; } }
+#setmenu{ position:fixed; inset:auto; margin:0; padding:6px; min-width:200px;
+  flex-direction:column; align-items:stretch; gap:2px;
+  background:var(--paper-2); border:1px solid var(--rule); border-radius:var(--radius);
+  box-shadow:0 8px 24px rgba(0,0,0,.18); }
+#setmenu:popover-open{ display:flex; }
+#setmenu button{ justify-content:flex-start; }
+#appheader #setmenu button:has(svg) span{ display:inline; }
 #sbtoggle{ font-size:15px !important; line-height:1; padding:5px 9px !important; }
 
 /* --- left contents rail ---------------------------------------------- */
@@ -296,6 +314,38 @@ body[data-sidebar=off] #sidebar{ display:none; }
 #sidenav li.insec{ margin-left:7px; }
 #sidenav li.insec a{ border-left-color:var(--rule-strong); }
 #sidenav li.insec a.on{ border-left-color:var(--coral); }
+/* An open section is drawn as one panel: its heading is the panel's top band
+   and its scenes sit inside the same frame, so where the section starts and
+   ends reads at a glance. The panel closes at the next heading or at the end
+   of the chapter. */
+#sidenav li.csec:has(> button.open){
+  margin-top:10px; background:var(--paper-2);
+  border:1px solid var(--rule); border-bottom:0; border-radius:5px 5px 0 0;
+}
+#sidenav li.csec:has(> button.open) button{
+  color:var(--ink); font-weight:600; padding-top:7px; padding-bottom:6px;
+  border-bottom:1px solid var(--rule); border-radius:5px 5px 0 0;
+}
+#sidenav li.csec:has(> button.open) button:hover{ background:var(--paper-3); }
+#sidenav li.csec:has(> button.open) .cnum{ color:var(--coral); }
+#sidenav li.insec{
+  margin-left:0; padding:0 6px 0 8px; background:var(--paper-2);
+  border-left:1px solid var(--rule); border-right:1px solid var(--rule);
+}
+#sidenav li.csec + li.insec{ padding-top:4px; }
+#sidenav li.insec:has(+ li.csec), #sidenav li.insec:has(+ li.cdrill), #sidenav li.insec:last-child{
+  border-bottom:1px solid var(--rule); border-radius:0 0 5px 5px;
+  padding-bottom:5px; margin-bottom:10px;
+}
+#sidenav li.insec a:hover, #sidenav li.insec a.on{ background:var(--paper-3); }
+/* The practice questions close the chapter at section level, so the row is set
+   like a section heading, without a caret: it opens a scene, not a group. */
+#sidenav li.cdrill{ margin-top:9px; }
+#sidenav li.cdrill a{
+  font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase;
+  padding:4px 8px 4px 10px; border-radius:2px;
+}
+#sidenav li.cdrill a:not(.on){ color:var(--muted); }
 .cnum{ font-family:var(--mono); font-size:10.5px; letter-spacing:.04em; color:var(--slate); }
 #sidenav a.on .cnum{ color:var(--coral); }
 /* The label frame is uppercase mono with wide tracking, and both properties
@@ -346,11 +396,11 @@ body[data-sidebar=off] #sidebar{ display:none; }
 
 /* eyebrow / metadata */
 .eyebrow{
-  font-family:var(--mono); font-size:calc(15px * var(--ts)); letter-spacing:.16em;
+  font-family:var(--mono); font-size:calc(15px * var(--ts) * var(--hk,1)); letter-spacing:.16em;
   text-transform:uppercase; color:var(--slate); font-weight:500;
-  display:flex; align-items:center; gap:12px; margin:0 0 18px;
+  display:flex; align-items:center; gap:calc(12px * var(--hk,1)); margin:0 0 calc(18px * var(--hk,1));
 }
-.eyebrow .tick{ width:26px; height:1px; background:currentColor; opacity:.55; }
+.eyebrow .tick{ width:calc(26px * var(--hk,1)); height:1px; background:currentColor; opacity:.55; }
 .eyebrow .ebnum{ color:var(--coral); letter-spacing:.1em; }
 .eyebrow .ebnum::before{ content:'·'; color:var(--faint); margin-right:8px; }
 /* The anchor is a chip, not another word in the eyebrow. It points outside the
@@ -369,12 +419,12 @@ body[data-sidebar=off] #sidebar{ display:none; }
 
 /* titles */
 h1.display{
-  font-family:var(--serif); font-weight:400; font-size:calc(74px * var(--ts)); line-height:1.04;
-  letter-spacing:-.012em; margin:0 0 20px; color:var(--ink);
+  font-family:var(--serif); font-weight:400; font-size:calc(74px * var(--ts) * var(--hk,1)); line-height:1.04;
+  letter-spacing:-.012em; margin:0 0 calc(20px * var(--hk,1)); color:var(--ink);
 }
 h2.title{
-  font-family:var(--serif); font-weight:400; font-size:calc(45px * var(--ts)); line-height:1.10;
-  letter-spacing:-.008em; margin:0 0 14px; color:var(--ink);
+  font-family:var(--serif); font-weight:400; font-size:calc(45px * var(--ts) * var(--hk,1)); line-height:1.10;
+  letter-spacing:-.008em; margin:0 0 calc(14px * var(--hk,1)); color:var(--ink);
 }
 h3.sub{
   font-family:var(--sans); font-weight:600; font-size:calc(20px * var(--ts)); line-height:1.3;
@@ -396,9 +446,11 @@ h3.sub{
 .cols{ display:grid; gap:var(--s6); flex:1; min-height:0; }
 .cols.c-6-6{ grid-template-columns:1fr 1fr; }
 .cols.c-5-7{ grid-template-columns:5fr 7fr; }
+.cols.c-5-7-exception{ grid-template-columns:5fr 7fr; }
 .cols.c-7-5{ grid-template-columns:7fr 5fr; }
 .cols.c-4-8{ grid-template-columns:4fr 8fr; }
 .cols.c-8-4{ grid-template-columns:8fr 4fr; }
+.scene.slide .cols.c-5-7{ grid-template-columns:1fr 1fr; }
 .col{ min-width:0; display:flex; flex-direction:column; }
 .col.center{ justify-content:center; }
 .stack{ display:flex; flex-direction:column; gap:16px; }
@@ -419,6 +471,113 @@ h3.sub{
   padding-bottom:10px; border-bottom:1px solid var(--rule);
 }
 .card .body{ font-size:calc(17px * var(--ts)); line-height:1.5; }
+
+/* recall deck: a module summary as prompts. A closed card shows the question
+   in the lede's italic; an open card shows the answer in body type and takes a
+   coral edge. Both faces sit in one grid cell, so a card is as tall as its
+   longer face and opening it never moves anything else on the slide. */
+.recall-bar{
+  display:flex; align-items:center; justify-content:space-between; gap:16px;
+  font-family:var(--mono); font-size:calc(14px * var(--ts)); letter-spacing:.12em;
+  text-transform:uppercase; color:var(--slate); margin-bottom:14px;
+}
+.recall-count b{ color:var(--coral); font-weight:600; }
+.recall-all{
+  font:inherit; letter-spacing:inherit; text-transform:inherit; color:var(--slate-deep);
+  background:transparent; border:1px solid var(--rule-strong); border-radius:var(--radius);
+  padding:6px 10px; cursor:pointer;
+  transition:background 160ms var(--ease),color 160ms var(--ease),border-color 160ms var(--ease);
+}
+.recall-all:hover,.recall-all:focus-visible{ background:var(--coral); border-color:var(--coral); color:var(--paper); outline:none; }
+.recall-list{
+  list-style:none; margin:0; padding:0;
+  display:grid; grid-template-columns:repeat(var(--rc-cols),minmax(0,1fr)); gap:12px 14px;
+}
+.recall-list > li{ display:flex; }
+.recall-card{
+  flex:1; display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:18px;
+  width:100%; margin:0; padding:20px 22px 20px 18px; text-align:left; cursor:pointer;
+  font:inherit; color:var(--ink);
+  background:var(--paper-2); border:1px solid var(--rule); border-left:3px solid var(--rule-strong);
+  border-radius:var(--radius);
+  transition:border-color 220ms var(--ease),background 220ms var(--ease);
+}
+.recall-card:hover{ background:var(--paper-3); border-left-color:var(--slate); }
+.recall-card:focus-visible{ outline:2px solid var(--slate); outline-offset:2px; }
+.recall-card.is-open{ border-left-color:var(--coral); }
+.rc-num{
+  font-family:var(--mono); font-size:calc(26px * var(--ts)); line-height:1; color:var(--slate);
+  min-width:1.2em; text-align:center; transition:color 220ms var(--ease);
+}
+.recall-card.is-open .rc-num{ color:var(--coral); }
+.rc-faces{ display:grid; perspective:900px; }
+.rc-face{
+  grid-area:1/1; align-self:center; backface-visibility:hidden;
+  transition:transform 380ms var(--ease),opacity 260ms var(--ease),visibility 0s linear 0s;
+}
+.rc-q{
+  font-family:var(--serif); font-style:italic; font-size:calc(25px * var(--ts)); line-height:1.3; color:var(--ink);
+}
+.rc-a{
+  font-family:var(--sans); font-size:calc(20px * var(--ts)); line-height:1.45; color:var(--graphite);
+  opacity:0; visibility:hidden; transform:rotateX(-80deg); transform-origin:50% 0;
+  transition:transform 380ms var(--ease),opacity 260ms var(--ease),visibility 0s linear 380ms;
+}
+.rc-a b{ color:var(--ink); }
+.recall-card.is-open .rc-q{
+  opacity:0; visibility:hidden; transform:rotateX(80deg); transform-origin:50% 100%;
+  transition:transform 380ms var(--ease),opacity 200ms var(--ease),visibility 0s linear 380ms;
+}
+.recall-card.is-open .rc-a{
+  opacity:1; visibility:visible; transform:none;
+  transition:transform 380ms var(--ease),opacity 260ms var(--ease) 60ms,visibility 0s;
+}
+.rc-tag{
+  display:inline-block; margin-right:12px; vertical-align:middle; line-height:1.3;
+  font-family:var(--mono); font-style:normal; font-size:calc(11.5px * var(--ts)); letter-spacing:.12em;
+  text-transform:uppercase; color:var(--slate-deep);
+  border:1px solid var(--rule-strong); border-radius:var(--radius); padding:2px 6px;
+}
+.rc-glyph{ display:block; width:124px; opacity:.92; }
+.rc-glyph svg{ display:block; width:100%; height:auto; overflow:visible; }
+/* project deck: the recall card look for the list; the chosen card takes the
+   coral edge and its brief shows on the right. All briefs share one grid cell,
+   so choosing another project moves nothing. */
+.proj{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:40px; align-items:start; }
+.proj-right{ display:grid; }
+.proj-brief{ grid-area:1/1; display:flex; flex-direction:column; gap:12px; opacity:0; visibility:hidden; transition:opacity 220ms var(--ease),visibility 0s linear 220ms; }
+.proj-brief.is-on{ opacity:1; visibility:visible; transition:opacity 220ms var(--ease),visibility 0s; }
+.proj-h{
+  font-family:var(--mono); font-size:calc(14px * var(--ts)); letter-spacing:.12em; text-transform:uppercase;
+  color:var(--slate); margin:0 0 6px;
+}
+/* each block of a brief sits in its own card, the recall card's surface;
+   the aim takes the coral edge of the chosen project. */
+.proj-sec{ background:var(--paper-2); border:1px solid var(--rule); border-left:3px solid var(--rule-strong);
+  border-radius:var(--radius); padding:16px 22px 18px 18px; }
+.proj-sec-aim{ border-left-color:var(--coral); }
+.proj-aim{ font-family:var(--serif); font-style:italic; font-size:calc(24px * var(--ts)); line-height:1.35; color:var(--ink); margin:0; }
+.proj-learn,.proj-steps,.proj-look{ font-family:var(--sans); font-size:calc(18px * var(--ts)); line-height:1.45; color:var(--graphite); margin:0; }
+.proj-learn,.proj-steps{ padding-left:1.3em; }
+.proj-steps{ padding-left:1.8em; }
+.proj-learn li+li,.proj-steps li+li{ margin-top:4px; }
+.proj-steps li::marker{ font-family:var(--mono); color:var(--coral); }
+/* heading icons: a small mono heading over a block of a panel (a project
+   brief, a reflection) carries a drawn coral icon for its role, in place of
+   the tick. One stroke set, 24-unit grid, as a mask so it takes the ink. */
+.hi{ display:flex; align-items:center; gap:.6em; }
+.hi::before{ content:""; flex:none; width:1.4em; height:1.4em; background:var(--coral);
+  -webkit-mask:var(--hi) center/contain no-repeat; mask:var(--hi) center/contain no-repeat; }
+.hi-aim{ --hi:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='8.5'/%3E%3Ccircle cx='12' cy='12' r='4.5'/%3E%3Ccircle cx='12' cy='12' r='.8'/%3E%3C/svg%3E"); }
+.hi-practise{ --hi:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.5 6.5l1.6 1.6 3-3M3.5 13.5l1.6 1.6 3-3M11.5 7h9M11.5 14h9M11.5 20h9'/%3E%3C/svg%3E"); }
+.hi-steps{ --hi:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 20h5v-5h5v-5h5V5h3'/%3E%3C/svg%3E"); }
+.hi-look{ --hi:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z'/%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3C/svg%3E"); }
+.hi-reflect{ --hi:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 5h16v10.5h-9l-4.5 4v-4H4z'/%3E%3Cpath d='M8 9h8M8 12h5'/%3E%3C/svg%3E"); }
+.hi-next{ --hi:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 12h15M14 7l5 5-5 5'/%3E%3C/svg%3E"); }
+.proj-card .rc-q, .proj-card.is-open .rc-q{ font-size:calc(23px * var(--ts)); opacity:1; visibility:visible; transform:none; }
+body[data-motion=reduced] .proj-brief{ transition:none; }
+body[data-motion=reduced] .rc-face{ transition:none; transform:none; }
+@media (prefers-reduced-motion:reduce){ .rc-face{ transition:none; transform:none; } }
 
 /* vertical rhythm: two blocks in the same flow never touch. Headings, the lede
    and rules carry their own bottom margin, so nothing is added after them. */
@@ -446,6 +605,12 @@ h3.sub{
 .eq .katex{ font-size:1.42em; }
 .eq.lg .katex{ font-size:1.66em; }
 .eq.sm .katex{ font-size:1.18em; }
+/* On a slide every equation is set at one size and given more room
+   (DESIGN.md, Equation). `:where` keeps the box rule at the weight of `.eq`,
+   so `.eq.plain` and the slide's own equation forms still override it. */
+:where(.scene.slide) .eq{ margin:10px 0; padding:14px 22px 14px 26px; font-size:calc(19px * var(--ts)); }
+:where(.scene.slide) .eq.plain{ padding:10px 0; }
+.scene.slide .eq .katex{ font-size:1.30em; }
 .eq-label{
   font-family:var(--mono); font-size:calc(12px * var(--ts)); letter-spacing:.12em;
   text-transform:uppercase; color:var(--slate); margin-bottom:5px;
@@ -509,18 +674,46 @@ h3.sub{
 .wex-v .eq{ margin:8px 0; }
 
 /* legend */
-.legend{ display:flex; flex-wrap:wrap; gap:18px 26px; font-size:calc(15px * var(--ts)); color:var(--muted); }
+.legend{ display:flex; flex-wrap:wrap; gap:18px 30px; font-size:calc(19px * var(--ts)); color:var(--muted); }
 .legend i{ display:inline-flex; align-items:center; gap:8px; font-style:normal; }
-.legend i::before{ content:""; width:22px; height:3px; border-radius:2px; background:currentColor; }
-.lg-in{ color:var(--sig-in); } .lg-h{ color:var(--sig-h); }
-.lg-out{ color:var(--sig-out); } .lg-mid{ color:var(--sig-mid); }
-.lg-err{ color:var(--sig-err); }
+.legend i::before{ content:""; width:26px; height:3px; border-radius:2px; background:currentColor; }
+/* In a plot the legend is a small card over the data area, in a corner the
+   traces leave free; the figure is its positioning box. */
+figure.fig, .plot-wrap{ position:relative; }
+.legend.in-plot{ position:absolute; top:10px; right:14px; z-index:1;
+  flex-direction:column; gap:5px; padding:8px 13px 9px;
+  background:var(--paper-2); border:1px solid var(--rule); border-radius:var(--radius);
+  box-shadow:0 1px 3px rgba(0,0,0,.08); pointer-events:none; }
+.legend.in-plot.lg-at-tl{ right:auto; left:72px; top:calc(44px * var(--ts)); }
+.fig-frame > .legend.in-plot{ top:24px; right:34px; }
+.fig-frame > .legend.in-plot.lg-at-tl{ right:auto; left:92px; top:calc(58px * var(--ts)); }
+/* when the vertical axis is the plot's left edge, the card sits in the data
+   area to its right; the axis pad scales with the figure, so the offset does too */
+.fig-frame > .legend.in-plot.lg-at-tl-axis{ right:auto; left:calc(16px + 14%); top:74px; }
+/* a laboratory panel redraws its traces anywhere in the data area, so its
+   legend sits in one row in the strip above it, beside the axis name */
+.plot-wrap > .legend.in-plot{ flex-direction:row; gap:4px 18px; top:2px; right:14px; padding:3px 10px 4px; }
+body[data-theme=dark] .legend.in-plot{ background:color-mix(in srgb, var(--paper-2) 90%, #fff); border-color:var(--rule-strong, var(--rule)); box-shadow:0 1px 4px rgba(0,0,0,.25); }
+.lg-in{ color:var(--sig-in); --lg-c:var(--sig-in); } .lg-h{ color:var(--sig-h); --lg-c:var(--sig-h); }
+.lg-out{ color:var(--sig-out); --lg-c:var(--sig-out); } .lg-mid{ color:var(--sig-mid); --lg-c:var(--sig-mid); }
+.lg-err{ color:var(--sig-err); --lg-c:var(--sig-err); }
+/* on the light page a coloured label is thin on paper: the swatch carries the
+   colour and the label is set in graphite */
+body:not([data-theme=dark]) .legend i{ color:var(--graphite); }
+body:not([data-theme=dark]) .legend i::before{ background:var(--lg-c, currentColor); }
+/* a dashed trace gets a dashed swatch */
+body .legend i.lg-dash::before{ background:repeating-linear-gradient(90deg, var(--lg-c, currentColor) 0 7px, transparent 7px 11px); }
 
 /* ==========================================================================
    Figures
    ========================================================================== */
 figure.fig{ margin:0; display:flex; flex-direction:column; gap:7px; min-height:0; }
 figure.fig svg{ display:block; width:100%; height:auto; }
+/* a photograph or a book cover, embedded as a data URI from 77_images.js */
+figure.fig > img.photo{ display:block; width:100%; height:auto; aspect-ratio:3/2; object-fit:cover; border-radius:2px; }
+figure.fig > img.cover{ display:block; height:540px; width:auto; max-width:100%; margin:0 auto 6px;
+  object-fit:contain; outline:1px solid var(--rule); box-shadow:0 6px 18px rgba(0,0,0,.18); }
+figure.fig:has(> img.cover) figcaption{ text-align:center; max-width:460px; margin:0 auto; }
 #scene-host svg{ display:block; width:100%; height:auto; }
 /* An axis name is typeset mathematics inside the figure, and the two rules above
    would stretch the small svg pieces a formula uses for roots and for stretched
@@ -540,6 +733,191 @@ figure.fig .katex svg, #scene-host .katex svg{
 #scene-host .eyebrow .ebicon{ display:inline-block; width:12.5px; height:12.5px; }
 figcaption{ font-size:calc(14px * var(--ts)); color:var(--muted); line-height:1.42; }
 figcaption b{ color:var(--graphite); font-weight:600; }
+.course-map-svg{ overflow:visible; }
+.course-orbit{ fill:none; stroke:var(--rule); stroke-width:1.2; stroke-dasharray:2 7; }
+.course-core{ fill:var(--paper-2); stroke:var(--rule-strong); stroke-width:1.2; }
+.course-core-k,.course-node-id,.course-map-kicker{ font-family:var(--mono); letter-spacing:.14em; }
+.course-core-k{ fill:var(--slate); font-size:13px; }
+.course-core-t,.course-node-title{ fill:var(--ink); font-family:var(--serif); }
+.course-core-t{ font-size:21px; }
+.course-spoke{ stroke:var(--rule-strong); stroke-width:1; stroke-dasharray:1 5; opacity:.3; animation:course-spoke-in .36s var(--ease) calc(.16s + var(--i) * .11s) both; }
+.course-node{ opacity:.34; transform-box:fill-box; transform-origin:center; animation:course-node-in .46s var(--ease) calc(.28s + var(--i) * .11s) both; }
+.course-node{ cursor:pointer; outline:none; }
+.course-node-disc{ fill:var(--paper); stroke:var(--slate); stroke-width:1.35; transition:fill 180ms var(--ease),stroke 180ms var(--ease),stroke-width 180ms var(--ease); }
+.course-node-title{ font-size:15px; }
+.course-node-id{ fill:var(--muted); font-size:10px; }
+.course-node:hover .course-node-disc,.course-node:focus .course-node-disc,.course-node.is-active .course-node-disc{ fill:color-mix(in srgb,var(--coral) 8%,var(--paper)); stroke:var(--coral); stroke-width:2.4; }
+.course-node.is-active .course-node-disc{ animation:course-node-pulse 4.8s var(--ease) 2.1s infinite; }
+.course-node:hover .course-node-title,.course-node:focus .course-node-title,.course-node.is-active .course-node-title{ fill:var(--coral); }
+.course-map-panel{ border-left:2px solid var(--coral); padding:5px 0 4px 22px; }
+
+/* ---- lecture slides (DECIDED 2026-09-21) ------------------------------------
+   Everything here is scoped to a scene that carries `slide:true`. A scene that
+   has not opted in renders exactly as it did before. A filled column spreads its
+   children over the stage instead of stacking them at the top. */
+.scene.slide .cols.fill{ align-items:stretch; }
+.scene.slide .cols.fill > .col{ justify-content:space-between; }
+/* A card that has not been revealed yet starts 6 px below its place. On a scene
+   that leaves room under it that offset is invisible, but a slide fills the
+   stage, so the offset hangs 6 px past the bottom of the column and the browser
+   counts it as scrollable overflow: `qa.js` then reads a full slide as
+   overflowing at every step before its last. The motion is kept and turned the
+   other way, because overflow above the top of a scroll box adds no height.
+   The rule names the hidden state: written on `.reveal` alone it out-specifies
+   `.reveal.shown{ transform:none }` and a revealed card stays 6 px too high. */
+.scene.slide .reveal:not(.shown){ transform:translateY(-6px); }
+
+/* The slide's tokens. The ink of a tab is white on the light page; in the dark
+   theme every colour token is a light tint, so the ink is the page. White on
+   the amber token is about 3:1, so the light amber tab takes a darker fill.
+   A tab is one line of label type and 8 px of padding tall, and the room kept
+   above a card follows it: 30 px in normal display, more in lecture mode, where
+   a fixed 30 px would be shorter than the tab it has to hold. */
+.scene.slide, .dr-sol{
+  --tab-ink:#FFFFFF;
+  --tab-amber:#8A5E12;
+  --card-plum:#8B3A62;      /* two card tones that are not signal colours, */
+  --card-graphite:#5E5850;  /* for a second or third neutral card on a slide */
+  --tab-room:calc(22px * var(--ts) + 8px);
+  --card-gap:14px;   /* clear space between a card and the tab of the next */
+}
+body[data-theme=dark] :is(.scene.slide, .dr-sol){ --tab-ink:var(--paper); --tab-amber:var(--sig-h);
+  --card-plum:#D98CB3; --card-graphite:#C4BDB2; }
+
+/* the title: a full-width hairline under it, a short coral segment at its left */
+.scene.slide .scene-inner > h2.title{ position:relative; margin:0 0 calc(26px * var(--hk,1)); padding-bottom:calc(16px * var(--hk,1)); }
+.scene.slide .scene-inner > h2.title::after{
+  content:""; position:absolute; left:0; right:0; bottom:0; height:1px; background:var(--rule);
+}
+.scene.slide .scene-inner > h2.title::before{
+  content:""; position:absolute; left:0; bottom:0; z-index:1;
+  width:calc(150px * var(--hk,1)); height:calc(2px * var(--hk,1)); background:var(--coral);
+}
+
+/* The information card: the `note` block. The body is a raised panel tinted
+   with the colour of its kind; the head becomes a filled tab on the top-left
+   edge, outside the reading column. The base rules for `.note.err` and for the
+   head colour of each kind are out-specified here, not restated. */
+:is(.scene.slide, .dr-sol) .note{
+  --nc:var(--slate); --ntab:var(--slate); --ntint:4%;
+  position:relative;
+  background:color-mix(in srgb, var(--nc) var(--ntint), var(--paper-2));
+  border:1px solid var(--rule); border-left:3px solid var(--nc);
+  border-radius:var(--radius);
+  padding:17px 22px 16px;
+  font-size:calc(21.5px * var(--ts)); line-height:1.52; color:var(--graphite);
+}
+:is(.scene.slide, .dr-sol) .note.ok  { --nc:var(--sig-out); --ntab:var(--sig-out); }
+:is(.scene.slide, .dr-sol) .note.warn{ --nc:var(--sig-h);   --ntab:var(--tab-amber); }
+:is(.scene.slide, .dr-sol) .note.err { --nc:var(--sig-err); --ntab:var(--sig-err); --ntint:8%; }
+:is(.scene.slide, .dr-sol) .note b, :is(.scene.slide, .dr-sol) .note strong{ color:var(--ink); font-weight:650; }
+/* a hairline inside a card, between the given data and the question */
+:is(.scene.slide, .dr-sol) .note .nsep{ height:1px; background:var(--rule); margin:13px 0 12px; }
+
+/* The tab of a card and the tab of a labelled equation are one rule. It also
+   sets the size of a tab in lecture mode: this selector out-specifies the
+   `body[data-display=projector] .note-h` floor, so a slide's tab is
+   13.5 px times the type scale in both displays and is set once. */
+:is(.scene.slide, .dr-sol) .note > .note-h,
+.scene.slide .eq:not(.plain) > .eq-label{
+  position:absolute; bottom:calc(100% - 1px); left:-3px;
+  display:inline-flex; align-items:center; gap:.46em;
+  margin:0; padding:4px 12px 4px 10px;
+  background:var(--ntab); color:var(--tab-ink);
+  border-radius:var(--radius) var(--radius) 0 0;
+  font-family:var(--mono); font-size:calc(13.5px * var(--ts)); letter-spacing:.12em;
+  text-transform:uppercase; font-weight:600; line-height:1.35;
+  white-space:nowrap;
+}
+.scene.slide .eq:not(.plain) > .eq-label{ --ntab:var(--coral); padding:4px 12px; }
+/* a tab is a label frame, and a label frame never rewrites its mathematics */
+:is(.scene.slide, .dr-sol) .note > .note-h .katex,
+.scene.slide .eq > .eq-label .katex{ text-transform:none; letter-spacing:normal; }
+
+/* the tab's icon: one drawn set, 1.6 px stroke, masked so it takes the tab ink
+   and sized in em so it follows the tab in lecture mode */
+:is(.scene.slide, .dr-sol) .note > .note-h::before{
+  content:""; flex:none; width:1.11em; height:1.11em;
+  background:currentColor;
+  -webkit-mask-position:center; mask-position:center;
+  -webkit-mask-size:contain;    mask-size:contain;
+  -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat;
+}
+:is(.scene.slide, .dr-sol) .note.def > .note-h::before{                     /* bookmark */
+  -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6.5 3.5h11v17l-5.5-4.2-5.5 4.2z'/%3E%3C/svg%3E");
+          mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6.5 3.5h11v17l-5.5-4.2-5.5 4.2z'/%3E%3C/svg%3E");
+}
+:is(.scene.slide, .dr-sol) .note.ok > .note-h::before{                      /* check */
+  -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4.5 12.6l5.1 5.1L19.7 6.6'/%3E%3C/svg%3E");
+          mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4.5 12.6l5.1 5.1L19.7 6.6'/%3E%3C/svg%3E");
+}
+:is(.scene.slide, .dr-sol) .note.warn > .note-h::before{                    /* lightbulb */
+  -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3a6 6 0 0 0-3.4 10.9c.6.5 1 1.2 1 1.9v.4h4.8v-.4c0-.7.4-1.4 1-1.9A6 6 0 0 0 12 3z'/%3E%3Cpath d='M9.8 19h4.4M10.6 21.4h2.8'/%3E%3C/svg%3E");
+          mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3a6 6 0 0 0-3.4 10.9c.6.5 1 1.2 1 1.9v.4h4.8v-.4c0-.7.4-1.4 1-1.9A6 6 0 0 0 12 3z'/%3E%3Cpath d='M9.8 19h4.4M10.6 21.4h2.8'/%3E%3C/svg%3E");
+}
+:is(.scene.slide, .dr-sol) .note.err > .note-h::before{                     /* warning triangle */
+  -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3.6 21.2 20H2.8z'/%3E%3Cpath d='M12 9.6v4.6M12 17.4v.1'/%3E%3C/svg%3E");
+          mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3.6 21.2 20H2.8z'/%3E%3Cpath d='M12 9.6v4.6M12 17.4v.1'/%3E%3C/svg%3E");
+}
+
+/* An equation takes the card's padding. One with a label is the same card with
+   a coral tab; one without keeps the look it has outside a slide. Every
+   equation block sets its mathematics at one size, on a slide or off it. */
+.scene.slide .eq:not(.plain){ padding:16px 22px 16px 24px; }
+.scene.slide .eq-note{ font-size:calc(21.5px * var(--ts)); line-height:1.52; }
+
+/* Room for the tab. Only a card with a head and an equation with a label have
+   a tab, so only they take the room; the corner under the tab is squared so the
+   tab and the left edge meet in one line. A reveal that opens with such a block
+   gives up its own flow gap, or the block would stand off twice. The first
+   block of a column takes the same room whatever it is, so a figure at the top
+   of one column starts level with the card body at the top of the other. */
+.scene.slide :is(.scene-inner, .col, .reveal, .gcell) > .note:has(> .note-h),
+.scene.slide :is(.scene-inner, .col, .reveal, .gcell) > .eq:not(.plain):has(> .eq-label){
+  margin:calc(var(--tab-room) + var(--card-gap)) 0 0; border-top-left-radius:0;
+}
+.scene.slide .reveal:has(> .note:first-child > .note-h, > .eq:not(.plain):first-child > .eq-label){ margin-top:0; }
+/* a laboratory builds its cards inside its own containers, so they take the
+   tab room there */
+.scene.slide .lab :is(.derive, .aper, .work) > .note:has(> .note-h),
+.scene.slide .lab :is(.derive, .work) > .eq:not(.plain):has(> .eq-label){
+  margin-top:calc(var(--tab-room) + var(--card-gap)); border-top-left-radius:0;
+}
+/* the control panel has no tab, so a laboratory column starts at the top */
+.scene.slide .lab > .cols > .col > :first-child:not(.reveal){ margin-top:0; }
+.scene.slide .lab .col > :is(.derive, .aper, .work){ margin-top:0; }
+.scene.slide .lab :is(.derive, .work) > .eq{ margin-bottom:0; }
+.scene.slide .cols > .col > :first-child:not(.reveal),
+.scene.slide .cols > .col > .reveal:first-child > :first-child{ margin-top:var(--tab-room); }
+/* `figure.fig{ margin:0 }` out-specifies the flow rule, so a figure has no gap
+   above it, and a figure that grows takes every pixel the column has left. It
+   keeps the same distance from the block above it as a card does. */
+.scene.slide :is(.scene-inner, .col, .reveal, .gcell) > * + figure.fig{ margin-top:var(--tab-room); }
+
+/* the figure frame keeps the card's rhythm; the caption reads from the back */
+.scene.slide figcaption{ font-size:calc(21.5px * var(--ts)); line-height:1.45; }
+
+/* a grid of cards on a slide: a card fills its cell, so a row of cards reads as
+   one band and the rows share the height of the stage */
+.scene.slide .gcell{ display:flex; flex-direction:column; }
+.scene.slide .gcell > .note:only-child{ flex:1; }
+.scene.slide .fig-frame{ padding:14px 16px; }
+.course-map-kicker{ margin:0 0 13px; color:var(--slate); font-size:12px; font-weight:650; }
+.course-map-kicker span{ float:right; color:var(--coral); }
+.course-map-panel h3{ margin:0; color:var(--ink); font-family:var(--serif); font-size:clamp(28px,2.2vw,38px); font-weight:500; line-height:1.05; }
+.course-map-topic{ margin:5px 0 20px; color:var(--slate); font-family:var(--mono); font-size:12px; letter-spacing:.09em; }
+.course-map-copy{ display:grid; gap:12px; color:var(--graphite); font-size:calc(16px * var(--ts)); line-height:1.44; }
+.course-map-copy p{ margin:0; }
+.course-map-copy b{ color:var(--ink); }
+.course-map-controls{ display:flex; gap:5px; margin-top:24px; }
+.course-path-btn{ min-width:34px; padding:7px 4px; border:1px solid var(--rule-strong); border-radius:2px; background:transparent; color:var(--slate-deep); cursor:pointer; font:600 11px/1 var(--mono); letter-spacing:.04em; transition:background 160ms var(--ease),color 160ms var(--ease),border-color 160ms var(--ease); }
+.course-path-btn:hover,.course-path-btn:focus-visible,.course-path-btn.is-active{ background:var(--coral); border-color:var(--coral); color:#FCF9F3; outline:none; }
+.course-map-hint{ margin:12px 0 0; color:var(--muted); font-size:12px; line-height:1.35; }
+@keyframes course-spoke-in{ from{ opacity:.3; } to{ opacity:1; } }
+@keyframes course-node-in{ from{ opacity:.34; transform:scale(.92); } to{ opacity:1; transform:scale(1); } }
+@keyframes course-node-pulse{ 0%,76%,100%{ filter:drop-shadow(0 0 0 transparent); } 84%{ filter:drop-shadow(0 0 7px color-mix(in srgb,var(--coral) 38%,transparent)); } }
+body[data-motion=reduced] .course-spoke,body[data-motion=reduced] .course-node,body[data-motion=reduced] .course-node.is-active .course-node-disc{ animation:none; opacity:1; }
+@media (prefers-reduced-motion:reduce){ .course-spoke,.course-node,.course-node.is-active .course-node-disc{ animation:none; opacity:1; } }
 .fig-frame{
   background:var(--paper-2); border:1px solid var(--rule);
   border-radius:var(--radius); padding:12px 15px;
@@ -632,10 +1010,43 @@ svg.sincpick.pick .sp-note{ display:none; }
 .mtf-stem-dot{ animation:mtf-pop 7s var(--ease) calc(2.1s + var(--i) * .1s) infinite; }
 @keyframes mtf-pop{ 0%,50%{ r:4 } 56%{ r:6.6 } 66%,100%{ r:4 } }
 
+/* module openings: the same motion for figures drawn through curve() and stem()
+   with opts.anim. The traces carry pathLength="1", so the sweep is measured in
+   fractions of the trace and needs no drawn length. The tip pop scales the dot
+   instead of setting its radius, so it works for any stem size. */
+.mtf-sweep{
+  stroke-dasharray:.06 3; stroke-dashoffset:.06;
+  animation:mtf-sweep 7s cubic-bezier(.4,0,.5,1) 2.1s infinite;
+}
+@keyframes mtf-sweep{
+  0%      { stroke-dashoffset:.06 }
+  26%,100%{ stroke-dashoffset:-1 }
+}
+.mtf-tip{
+  transform-box:fill-box; transform-origin:center;
+  animation:mtf-tip 7s var(--ease) 2.1s infinite;
+}
+@keyframes mtf-tip{ 0%,50%{ transform:scale(1) } 56%{ transform:scale(1.6) } 66%,100%{ transform:scale(1) } }
+
 /* the highlight is the one purely visual motion here: it stops entirely when
    motion is reduced, and never appears on paper */
 body[data-motion=reduced] .mtf-sparkwrap{ display:none; }
 @media (prefers-reduced-motion:reduce){ .mtf-sparkwrap{ display:none; } }
+/* difference of steps: each pair u[n], -u[n-1] collapses onto the axis, the
+   sample at n=0 is left and marked. Start and end equal the still figure. */
+.dc-pair{ transform-box:view-box; animation:dc-cancel 9s var(--ease) 1s infinite; }
+@keyframes dc-cancel{
+  0%,22%  { transform:scaleY(1); opacity:1 }
+  40%,80% { transform:scaleY(0); opacity:0 }
+  94%,100%{ transform:scaleY(1); opacity:1 }
+}
+.dc-zero{ opacity:0; animation:dc-show 9s var(--ease) 1s infinite; }
+.dc-keep{ opacity:0; animation:dc-show 9s var(--ease) 1.8s infinite; }
+@keyframes dc-show{ 0%,36%{ opacity:0 } 44%,78%{ opacity:1 } 88%,100%{ opacity:0 } }
+.dc-lbl{ animation:dc-hide 9s var(--ease) 1s infinite; }
+@keyframes dc-hide{ 0%,24%{ opacity:1 } 36%,82%{ opacity:.25 } 94%,100%{ opacity:1 } }
+@media (prefers-reduced-motion:reduce){ .dc-pair,.dc-zero,.dc-keep,.dc-lbl{ animation:none; } }
+
 
 /* ==========================================================================
    Reveal sequence
@@ -649,6 +1060,21 @@ body[data-motion=reduced] .mtf-sparkwrap{ display:none; }
    Controls & laboratories
    ========================================================================== */
 .lab{ display:flex; flex-direction:column; gap:var(--s3); flex:1; min-height:0; }
+/* The laboratory type floor (DESIGN.md, "A laboratory on a slide"). It holds
+   for a laboratory whose scene is a slide, which every laboratory of a
+   converted module is; one not yet converted keeps the sizes it was fitted at. */
+.scene.slide .lab .ctrl label,
+.scene.slide .lab .readout dt,
+.scene.slide .lab .note-h{ font-size:calc(16px * var(--ts)); }
+.scene.slide .lab .seg button{ font-size:calc(17px * var(--ts)); }
+.scene.slide .lab .ctrl label .val{ font-size:calc(20px * var(--ts)); }
+.scene.slide .lab .small{ font-size:calc(18px * var(--ts)); }
+.scene.slide .lab .note{ font-size:calc(19px * var(--ts)); }
+.scene.slide .lab figcaption{ font-size:calc(18px * var(--ts)); }
+.scene.slide .lab .readout dd{ font-size:calc(21px * var(--ts)); line-height:1.35; }
+.scene.slide .lab .lab-eq{ font-size:calc(22px * var(--ts)); }
+.scene.slide .lab > .cols{ height:100%; align-items:stretch; }
+.scene.slide .lab > .cols > .col.stack{ justify-content:space-between; }
 .ctrls{
   display:grid; gap:18px 28px; grid-template-columns:repeat(2,minmax(0,1fr));
   background:var(--paper-2); border:1px solid var(--rule);
@@ -726,6 +1152,35 @@ input[type=range]:focus-visible::-webkit-slider-thumb{ box-shadow:0 0 0 4px rgba
 .btn:disabled{ opacity:.42; cursor:not-allowed; }
 .btn.ghost{ border-color:transparent; }
 
+/* Lettered choices inside a laboratory on a slide: the ringed coral letter. */
+.scene.slide .lab .opts{ display:grid; gap:10px; }
+.scene.slide .lab .opt{
+  display:flex; align-items:center; gap:16px; width:100%; min-height:68px;
+  padding:12px 18px; text-align:left;
+  font-family:var(--sans); font-size:calc(18px * var(--ts)); line-height:1.4;
+  color:var(--ink); background:var(--paper-2);
+  border:1px solid var(--rule-strong); border-radius:var(--radius);
+  cursor:pointer; transition:background 140ms var(--ease),border-color 140ms var(--ease);
+}
+.scene.slide .lab .opt .k{
+  flex:none; display:grid; place-items:center; width:1.45em; height:1.45em; border-radius:50%;
+  font-family:var(--mono); font-size:.78em; font-weight:600;
+  color:var(--coral); border:1px solid color-mix(in srgb, var(--coral) 55%, transparent);
+}
+.scene.slide .lab .opt:hover:not(:disabled){ background:var(--paper-3); border-color:var(--coral); }
+.scene.slide .lab .opt:hover:not(:disabled) .k{ background:var(--coral); color:var(--paper); }
+.scene.slide .lab .opt:disabled{ cursor:default; opacity:1; }
+.scene.slide .lab .opt.correct{ background:var(--sig-out-soft); border-color:var(--sig-out); }
+.scene.slide .lab .opt.correct .k{ color:var(--sig-out); border-color:var(--sig-out); }
+.scene.slide .lab .opt.wrong{ background:var(--sig-err-soft); border-color:var(--sig-err); }
+.scene.slide .lab .opt.wrong .k{ color:var(--sig-err); border-color:var(--sig-err); }
+.scene.slide .lab .fb{
+  padding:14px 18px; font-size:calc(17.5px * var(--ts)); line-height:1.5;
+  color:var(--graphite); background:var(--paper-2);
+  border-left:3px solid var(--sig-out); border-radius:var(--radius);
+}
+.scene.slide .lab .fb.bad{ border-left-color:var(--sig-err); }
+
 .readout{
   display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:2px;
   background:var(--rule); border:1px solid var(--rule); border-radius:var(--radius);
@@ -744,10 +1199,8 @@ input[type=range]:focus-visible::-webkit-slider-thumb{ box-shadow:0 0 0 4px rgba
 .quiz{ display:flex; flex-direction:column; gap:var(--s2); max-width:1180px; }
 .qid{ font-family:var(--mono); font-size:12.5px; letter-spacing:.12em; color:var(--faint); }
 .qstem{ font-size:calc(21px * var(--ts)); line-height:1.55; color:var(--ink); }
-/* Answer options, their feedback panel and the hint ladder were all removed when
-   the question bank was folded into the exam drill: a question is now stated,
-   worked on paper, and checked against its solution. Nothing renders .opt, .fb
-   or .hintbox any more. */
+/* The question bank has no answer options or hint ladder. Laboratory 1.2's
+   classification choices and feedback are styled above, within the lab. */
 
 /* instructor-only material */
 .instr{ display:none; }
@@ -783,6 +1236,12 @@ body[data-edition=instructor] .instr-inline{ display:inline; }
 }
 #chrome button:hover{ color:var(--ink); background:var(--paper-3); }
 #chrome button[aria-pressed=true]{ color:var(--coral); }
+#chrome .navarrow{ font-size:16px; line-height:1; padding:4px 10px; letter-spacing:0; }
+#pagebox{ font:inherit; color:var(--ink); text-align:right; min-width:3ch;
+  background:transparent; border:1px solid var(--rule); border-radius:var(--radius);
+  padding:3px 4px; }
+#pagebox:hover{ border-color:var(--muted); }
+#pagebox:focus{ outline:none; border-color:var(--coral); background:var(--paper-3); }
 
 .overlay{
   position:fixed; inset:0; background:rgba(20,18,15,.55);
@@ -835,56 +1294,68 @@ body[data-edition=instructor] .instr-inline{ display:inline; }
   padding:9px 0; border-bottom:1px solid var(--rule); }
 .gitem .gs{ text-align:right; }
 .gitem .gd{ font-size:15.5px; color:var(--graphite); line-height:1.4; }
+.licensebox{ margin-top:30px; padding-top:18px; border-top:1px solid var(--rule); color:var(--muted); font-size:14px; line-height:1.5; }
+.licensebox .eyebrow{ margin-bottom:8px; }
+.licensebox p{ margin:4px 0; }
+.licensebox a{ color:var(--slate); }
 .gitem .gd a{ color:var(--slate); cursor:pointer; text-decoration:none;
   border-bottom:1px dotted var(--slate); }
 
-
-/* ==========================================================================
-   Exam drills: the taxonomy scene, and the panel of open-ended questions
-   ========================================================================== */
-.dr-types{ display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
-  gap:24px 38px; align-items:start; }
-.dr-type{ border-top:2px solid var(--rule-strong); padding-top:14px; }
-.dr-type-h{ display:flex; align-items:baseline; gap:10px;
-  font-family:var(--serif); font-size:calc(21px * var(--ts)); line-height:1.25;
-  color:var(--ink); margin-bottom:8px; }
-.dr-type-k{ font-family:var(--mono); font-size:12.5px; letter-spacing:.12em;
-  color:var(--coral); flex:none; padding-top:2px; }
-.dr-type-asks{ font-size:calc(16.5px * var(--ts)); line-height:1.5; color:var(--graphite); }
-.dr-type-m{ margin:10px 0 0; padding-left:20px;
-  font-size:calc(15.5px * var(--ts)); line-height:1.48; color:var(--muted); }
-.dr-type-m li{ margin:3px 0; }
-.dr-type-go{ display:inline-block; margin-top:10px; cursor:pointer;
-  font-family:var(--mono); font-size:11.5px; letter-spacing:.08em;
-  color:var(--slate); border-bottom:1px dotted var(--slate); }
-.dr-type-go:hover{ color:var(--coral); border-bottom-color:var(--coral); }
 
 /* The pager. One question is on screen at a time, so the reader always knows
    which of the twenty they are on and never has to hunt for the next one. */
 .dr-pager{ display:flex; align-items:center; gap:16px; margin-bottom:18px;
   padding-bottom:14px; border-bottom:1px solid var(--rule); }
-.dr-count{ font-family:var(--mono); font-size:13px; letter-spacing:.1em;
-  color:var(--ink); }
+.dr-count{ font-family:var(--mono); font-size:calc(16px * var(--ts)); letter-spacing:.08em;
+  color:var(--muted); padding:8px 18px; border-radius:999px;
+  background:var(--paper-2); border:1px solid var(--rule-strong); white-space:nowrap; }
+.dr-count .dr-n{ color:var(--coral); font-weight:600; font-size:1.2em; margin:0 2px; }
+/* the number is a field the reader can type a question number into */
+.dr-count input.dr-n{ font-family:inherit; letter-spacing:inherit; width:2.4ch; padding:1px 3px;
+  text-align:center; background:var(--paper); border:1px solid var(--rule-strong); border-radius:6px;
+  -moz-appearance:textfield; appearance:textfield; cursor:text; }
+.dr-count input.dr-n::-webkit-inner-spin-button,
+.dr-count input.dr-n::-webkit-outer-spin-button{ -webkit-appearance:none; margin:0; }
+.dr-count input.dr-n:hover{ border-color:var(--coral); }
+.dr-count input.dr-n:focus{ outline:none; border-color:var(--coral);
+  box-shadow:0 0 0 2px color-mix(in srgb, var(--coral) 30%, transparent); }
 .dr-count .dr-of{ color:var(--faint); }
-.dr-seen{ margin-left:auto; font-size:14.5px; color:var(--sig-out); }
+.dr-seen{ margin-left:auto; font-size:calc(16px * var(--ts)); color:var(--sig-out); }
+/* the question's own number, set as a coral pill above its statement */
+.drill .qid{ display:block; width:fit-content; font-size:calc(15px * var(--ts)); font-weight:600;
+  color:var(--coral); padding:5px 14px; border-radius:999px; margin-bottom:6px;
+  background:color-mix(in srgb, var(--coral) 12%, transparent);
+  border:1px solid color-mix(in srgb, var(--coral) 45%, transparent); }
 .dr-pager .btn[disabled]{ opacity:.38; cursor:default; }
 /* The question itself is a single column that scrolls. It is never laid out in
    columns: CSS multicolumn inside a height-constrained box overflows sideways,
    which puts the overflow out of reach rather than below the fold. */
+/* the page runs to the foot of the stage; the footer strip is outside it */
+.scene:has(.dr-page), body[data-display=projector] .scene:has(.dr-page){ padding-bottom:20px; }
 .dr-page{ flex:1; min-height:0; overflow-y:auto; overflow-x:hidden; padding-right:22px; }
 .dr-page::-webkit-scrollbar{ width:9px; }
 .dr-page::-webkit-scrollbar-thumb{ background:var(--rule-strong); border-radius:6px; }
 .dr-page .quiz{ max-width:1560px; }
+/* the question sits on a card, the same raised panel as .card, so the
+   statement, its parts and the solution read as one unit apart from the pager */
+.dr-page .quiz.drill{ max-width:none; background:var(--paper-2); border:1px solid var(--rule);
+  border-radius:var(--radius); padding:24px 28px 26px; box-sizing:border-box; }
 /* Examination parts are lettered a), b), c) — not numbered, because the numbers
    would read as steps of one method rather than as separate questions. */
 .drill .dr-parts{ margin:0; padding-left:30px; list-style:none; counter-reset:drpart;
-  display:flex; flex-direction:column; gap:9px;
-  font-size:calc(19px * var(--ts)); line-height:1.5; color:var(--graphite); }
+  display:flex; flex-direction:column; gap:11px;
+  font-size:calc(22px * var(--ts)); line-height:1.5; color:var(--graphite); }
+.drill .qstem{ font-size:calc(25px * var(--ts)); }
 .drill .dr-parts li{ counter-increment:drpart; position:relative; }
 .drill .dr-parts li::before{
   content:counter(drpart,lower-alpha) ")"; position:absolute; left:-30px; top:1px;
   font-family:var(--mono); font-size:.78em; color:var(--slate); }
 .drill .note.ok figure.fig{ margin-top:14px; }
+/* The worked solution is a column of the slide cards: Given with Find under a
+   hairline, Method, one green card per solved part, Check, the common error.
+   The card rules above are shared with .scene.slide; the tab room is set here. */
+.dr-sol{ display:flex; flex-direction:column; }
+.dr-sol > .note:has(> .note-h){ margin-top:calc(var(--tab-room) + var(--card-gap)); border-top-left-radius:0; }
 /* two figures a question shows together — the input and the impulse response,
    or an input-output pair. Each keeps its own column and scales inside it. */
 .dr-pair{ display:flex; gap:16px; align-items:flex-start; }
@@ -1217,6 +1688,290 @@ body[data-layout=phone] #counter{ font-size:10px; white-space:nowrap; }
     page-break-after:always; break-after:page; }
   .reveal{ opacity:1 !important; transform:none !important; }
   .mtf-sparkwrap{ display:none !important; }
-  .mtf-trace,.mtf-fade,.mtf-stem,.mtf-box,.mtf-stem-dot,
+  .mtf-trace,.mtf-fade,.mtf-stem,.mtf-box,.mtf-stem-dot,.mtf-tip,
   .mtf-wire-in,.mtf-wire-out{ animation:none !important; opacity:1 !important; }
 }
+
+/* ==========================================================================
+   Interaction on a slide: a prediction inside a card (`note.ask`), sliders
+   under a figure (`fig.live`) and sounds under a figure (`fig.listen`).
+   Sizes follow the laboratory type floor and scale with --ts.
+   ========================================================================== */
+.ask-q{ margin-top:10px; }
+.ask-q:empty{ display:none; }
+.ask-row{ display:flex; flex-wrap:wrap; gap:10px; margin-top:10px; }
+.ask-opt{
+  display:inline-flex; align-items:center; gap:.5em;
+  font-family:var(--sans); font-size:calc(18px * var(--ts)); line-height:1.3;
+  padding:8px 16px; min-height:calc(44px * var(--ts));
+  color:var(--ink); background:var(--paper-2);
+  border:1px solid var(--rule-strong); border-radius:var(--radius);
+  cursor:pointer; transition:background 140ms var(--ease),border-color 140ms var(--ease);
+}
+.ask-opt:hover:not([aria-disabled]){ border-color:var(--slate); background:var(--paper-3); }
+.ask-opt:focus-visible{ outline:2px solid var(--slate); outline-offset:2px; }
+.ask-opt[aria-disabled]{ cursor:default; }
+.ask-opt.is-right{ border-color:var(--sig-out); background:var(--sig-out-soft); font-weight:600; }
+.ask-opt.is-wrong{ border-color:var(--sig-err); background:var(--sig-err-soft); }
+.ask-opt.is-dim{ color:var(--muted); }
+.ask-opt.is-right::before, .ask-opt.is-wrong::before{
+  content:""; width:1em; height:1em; flex:none; background:currentColor;
+  -webkit-mask:var(--ask-icon) center/contain no-repeat; mask:var(--ask-icon) center/contain no-repeat;
+}
+.ask-opt.is-right{ --ask-icon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4.5 12.6l5.1 5.1L19.7 6.6'/%3E%3C/svg%3E"); }
+.ask-opt.is-wrong{ --ask-icon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round'%3E%3Cpath d='M6 6l12 12M18 6L6 18'/%3E%3C/svg%3E"); }
+.ask-why{ margin-top:12px; font-size:calc(18px * var(--ts)); line-height:1.45; color:var(--graphite); }
+.ask-why[aria-hidden]{ visibility:hidden; }
+
+/* A prediction card on a slide has its own form: a coral edge and tab with a
+   question mark, a dashed frame that reads as "your turn", the question in the
+   lede's serif italic, and lettered choices. The letter gives way to the check
+   or the cross once the card is answered, in the same width. */
+.scene.slide .note.ask{
+  --nc:var(--coral); --ntab:var(--coral); --ntint:5%;
+  border-style:dashed; border-color:var(--rule-strong); border-left:3px solid var(--nc);
+}
+.scene.slide .note.ask > .note-h::before{
+  -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M9.4 9.3a2.7 2.7 0 0 1 5.2.9c0 1.8-2.6 2.3-2.6 4'/%3E%3Cpath d='M12 17.2v.1'/%3E%3C/svg%3E");
+          mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M9.4 9.3a2.7 2.7 0 0 1 5.2.9c0 1.8-2.6 2.3-2.6 4'/%3E%3Cpath d='M12 17.2v.1'/%3E%3C/svg%3E");
+}
+/* No two cards on a slide share a colour. A card keeps the colour of its kind
+   unless an earlier card on the slide already holds it; then draw() gives it
+   the first free neutral tone (slate, plum, graphite). A labelled equation
+   counts as a card. Green and red are never
+   handed out this way, because they mean a solution and an error. These rules
+   follow the kind and prediction rules so they out-rank them. */
+.scene.slide :is(.note,.eq)[data-tone=slate]   { --nc:var(--slate);         --ntab:var(--slate);         --ntint:4%; }
+.scene.slide :is(.note,.eq)[data-tone=plum]    { --nc:var(--card-plum);     --ntab:var(--card-plum);     --ntint:4%; }
+.scene.slide :is(.note,.eq)[data-tone=graphite]{ --nc:var(--card-graphite); --ntab:var(--card-graphite); --ntint:4%; }
+.scene.slide :is(.note,.eq)[data-tone=amber]   { --nc:var(--sig-h);         --ntab:var(--tab-amber);     --ntint:4%; }
+.scene.slide :is(.note,.eq)[data-tone=coral]   { --nc:var(--coral);         --ntab:var(--coral);         --ntint:4%; }
+.scene.slide .eq[data-tone]{ border-left-color:var(--nc); }
+.scene.slide .eq.result[data-tone]{ border-color:var(--nc); }
+.scene.slide .eq[data-tone] > .eq-label{ --ntab:inherit; }
+.note.ask .ask-prompt{
+  margin-top:14px; padding-top:12px; border-top:1px solid var(--rule);
+  font-family:var(--serif); font-style:italic; color:var(--ink);
+  font-size:1.08em; line-height:1.4;
+}
+.note.ask .ask-prompt .katex{ font-style:normal; }
+.ask-k{
+  display:inline-grid; place-items:center; flex:none;
+  width:1.45em; height:1.45em; border-radius:50%;
+  font-family:var(--mono); font-size:.78em; font-weight:600; font-style:normal;
+  color:var(--coral); border:1px solid color-mix(in srgb, var(--coral) 55%, transparent);
+}
+.ask-opt:hover:not([aria-disabled]) .ask-k{ background:var(--coral); color:var(--paper); }
+.ask-opt:hover:not([aria-disabled]){ border-color:var(--coral); }
+.ask-opt:focus-visible{ outline-color:var(--coral); }
+.ask-opt.is-right .ask-k, .ask-opt.is-wrong .ask-k{ display:none; }
+.ask-opt.is-dim .ask-k{ color:var(--muted); border-color:var(--rule-strong); }
+.ask-opt.is-right::before, .ask-opt.is-wrong::before{ width:1.13em; height:1.13em; }
+.ask-why b{ color:var(--ink); }
+
+.fxbar{ display:flex; flex-wrap:wrap; align-items:center; gap:10px 14px; margin-top:10px; }
+.live-ctrl{ flex:1 1 280px; display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:14px; }
+.live-k{ font-size:calc(19px * var(--ts)); color:var(--ink); }
+.live-v{ font-size:calc(20px * var(--ts)); color:var(--coral); text-align:right; font-weight:600; }
+
+.listen-btn{
+  display:inline-flex; align-items:center; gap:.55em;
+  font-family:var(--sans); font-size:calc(17px * var(--ts)); line-height:1.3;
+  padding:8px 16px 8px 12px; min-height:calc(42px * var(--ts));
+  color:var(--slate-deep); background:var(--paper-2);
+  border:1px solid var(--rule-strong); border-radius:var(--radius); cursor:pointer;
+  transition:background 140ms var(--ease),border-color 140ms var(--ease);
+}
+.listen-btn::before{
+  content:""; flex:none; width:0; height:0;
+  border-left:.62em solid currentColor; border-top:.38em solid transparent; border-bottom:.38em solid transparent;
+}
+.listen-btn:hover{ border-color:var(--slate); background:var(--paper-3); }
+.listen-btn:focus-visible{ outline:2px solid var(--slate); outline-offset:2px; }
+.listen-btn.is-playing{ border-color:var(--coral); color:var(--coral); }
+.listen-btn.is-playing::before{ width:.62em; height:.62em; border:0; background:currentColor; }
+body[data-theme=dark] .listen-btn{ color:var(--slate); }
+.frame-btn{ padding:8px 16px; }
+.frame-btn::before{ display:none; }
+.frame-btn:disabled{ opacity:.45; cursor:default; }
+/* the frame counter reads like the eyebrow: mono numerals, coral progress */
+.frame-v{ display:inline-flex; align-items:center; gap:14px; margin-left:6px; padding-left:18px;
+  border-left:1px solid var(--rule-strong); min-height:calc(42px * var(--ts)); }
+.frame-n{ font-family:var(--mono); font-size:calc(14px * var(--ts)); letter-spacing:.12em;
+  color:var(--muted); font-variant-numeric:tabular-nums; white-space:nowrap; }
+.frame-n b{ color:var(--coral); font-weight:600; }
+.frame-pips{ display:inline-flex; gap:5px; }
+.frame-pips i{ width:18px; height:3px; border-radius:2px; background:var(--rule-strong);
+  transition:background 220ms var(--ease); }
+.frame-pips i.on{ background:var(--coral); }
+.frame-l{ font-size:calc(19px * var(--ts)); color:var(--ink); }
+@media print{ .fxbar, .ask-row, .ask-why{ display:none !important; } }
+
+.fig.sketch > svg{ cursor:crosshair; touch-action:none; }
+.fig.sketch .sk-key{ transition:opacity 200ms var(--ease); }
+.fig.sketch:not(.sk-shown) .sk-key{ opacity:0; }
+.sk-ink{ fill:none; stroke:var(--coral); stroke-width:3.4; stroke-linecap:round; stroke-linejoin:round; opacity:.85; pointer-events:none; }
+.sk-hint{ flex:1 1 auto; }
+.sk-btn{
+  font-family:var(--sans); font-size:calc(17px * var(--ts)); line-height:1.3;
+  padding:8px 16px; min-height:calc(42px * var(--ts));
+  color:var(--slate-deep); background:var(--paper-2);
+  border:1px solid var(--rule-strong); border-radius:var(--radius); cursor:pointer;
+  transition:background 140ms var(--ease),border-color 140ms var(--ease);
+}
+.sk-btn:hover{ border-color:var(--slate); background:var(--paper-3); }
+.sk-btn:focus-visible{ outline:2px solid var(--slate); outline-offset:2px; }
+.sk-btn[aria-pressed=true]{ border-color:var(--coral); color:var(--coral); }
+body[data-theme=dark] .sk-btn:not([aria-pressed=true]){ color:var(--slate); }
+@media print{ .fig.sketch .sk-key{ opacity:1 !important; } .sk-ink{ display:none; } }
+
+
+/* ---------- card language additions (DESIGN.md, "Inside a card") ----------
+   Classes used inside a card's html or on an equation block. None is a block
+   of its own, so the slide budget counts them as the card they sit in. */
+
+/* comparison panel: two halves of one card, a hairline between them */
+.scene.slide .cmp{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); }
+.scene.slide .cmp > div{ padding-right:20px; }
+.scene.slide .cmp > div + div{ padding:0 0 0 20px; border-left:1px solid var(--rule); }
+.scene.slide .cmp-h{ display:block; margin-bottom:6px;
+  font-family:var(--mono); font-size:calc(13.5px * var(--ts)); letter-spacing:.12em;
+  text-transform:uppercase; font-weight:600; color:var(--slate-deep); }
+body[data-theme=dark] .scene.slide .cmp-h{ color:var(--slate); }
+
+/* property chips: a verdict on a named property, never colour alone */
+.scene.slide .chips{ display:inline-flex; flex-wrap:wrap; gap:8px 10px; margin-left:12px; vertical-align:.1em; }
+.scene.slide .chip{ display:inline-flex; align-items:center; gap:.45em;
+  padding:3px 12px 3px 9px; border:1px solid currentColor; border-radius:var(--radius);
+  font-family:var(--mono); font-size:calc(14.5px * var(--ts)); letter-spacing:.06em;
+  text-transform:uppercase; font-weight:600; line-height:1.5; }
+.scene.slide .chip::before{ content:""; width:1.05em; height:1.05em; background:currentColor;
+  -webkit-mask:var(--chip-i) center/contain no-repeat; mask:var(--chip-i) center/contain no-repeat; }
+.scene.slide .chip.yes{ color:var(--sig-out); background:var(--sig-out-soft);
+  --chip-i:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4.5 12.6l5.1 5.1L19.7 6.6'/%3E%3C/svg%3E"); }
+.scene.slide .chip.no{ color:var(--sig-err); background:var(--sig-err-soft);
+  --chip-i:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round'%3E%3Cpath d='M6 6l12 12M18 6L6 18'/%3E%3C/svg%3E"); }
+
+/* step strip: a numbered procedure, one line a step */
+.scene.slide ol.steps{ list-style:none; counter-reset:st; margin:12px 0 0; padding:0; }
+.scene.slide ol.steps > li{ counter-increment:st; position:relative; padding:0 0 10px 46px; }
+.scene.slide ol.steps > li:last-child{ padding-bottom:0; }
+.scene.slide ol.steps > li::before{ content:counter(st); position:absolute; left:0; top:.1em;
+  width:1.5em; height:1.5em; display:grid; place-items:center;
+  border:1.5px solid var(--coral); border-radius:50%; color:var(--coral);
+  font-family:var(--mono); font-size:calc(15px * var(--ts)); font-weight:600; }
+
+/* key result: the one result a module carries forward; a coral frame all round */
+.scene.slide .eq.result{ border-color:var(--coral);
+  background:linear-gradient(0deg,rgba(190,85,57,.075),rgba(190,85,57,.075)),var(--paper-2); }
+body[data-theme=dark] .scene.slide .eq.result{
+  background:linear-gradient(0deg,rgba(224,154,106,.11),rgba(224,154,106,.11)),rgba(255,255,255,.035); }
+
+/* margin note: the reason for a step, beside the equation instead of under it */
+.scene.slide .eq.side{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,.9fr);
+  align-items:center; column-gap:24px; }
+.scene.slide .eq.side > .eq-note{ margin:0; padding-left:20px; border-left:1px solid var(--rule);
+  font-family:var(--serif); font-style:italic; font-size:calc(19.5px * var(--ts)); line-height:1.42; color:var(--muted); }
+
+/* value chip: a result read off as one number and what it is */
+.scene.slide .val{ display:inline-flex; align-items:baseline; gap:14px; margin-left:10px;
+  padding:2px 14px; vertical-align:baseline; background:var(--paper); border:1px solid var(--rule); border-radius:var(--radius); }
+.scene.slide .val > b .katex{ font-size:1.35em; color:var(--ink); }
+.scene.slide .val > small{ font-family:var(--mono); font-size:calc(13.5px * var(--ts));
+  letter-spacing:.12em; text-transform:uppercase; color:var(--muted); }
+
+/* ---------- title icons ----------
+   A laboratory, a code page, a gallery, the practice questions and the quick
+   check carry a drawn icon at the left of the title: a coral stroke in a
+   tinted square of the one radius. The id selector is needed because every
+   svg in a scene is otherwise a full-width figure. */
+#scene-host h2.title .t-icon{ display:inline-grid; place-items:center; vertical-align:-.08em;
+  width:1.04em; height:1.04em; margin:-.06em .34em -.06em 0; border:1.5px solid var(--coral); border-radius:var(--radius);
+  background:rgba(160,69,28,.07); color:var(--coral); }
+body[data-theme=dark] #scene-host h2.title .t-icon, #scene-host .scene.dark h2.title .t-icon{ background:rgba(224,154,106,.1); }
+#scene-host h2.title .t-icon svg{ display:block; width:.7em; height:.7em; fill:none; stroke:currentColor;
+  stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
+
+/* ---------- code: programs in MATLAB and Python ----------
+   Each section closes with a code page. The page is a scene: numbered
+   program tabs, the code on the left, and what it does, a task and the output on the right.
+   Highlighting uses the ink ramp, slate and terracotta only: the signal
+   colours keep their figure meanings. */
+
+/* code grows less than prose in projector mode: a program is 15 to 21 lines and must fit the stage */
+.cpage{ display:flex; flex-direction:column; gap:22px; --code-fs:calc(12px + 5px * var(--ts)); }
+body[data-theme=dark] .cpage{ color-scheme:dark; }
+.cp-nav{ display:flex; flex-wrap:wrap; gap:10px; }
+.cp-ex{ display:inline-flex; align-items:center; gap:.6em; cursor:pointer;
+  font-family:var(--sans); font-size:calc(17px * var(--ts)); line-height:1.3; color:var(--graphite);
+  padding:8px 16px 8px 10px; background:var(--paper-2);
+  border:1px solid var(--rule-strong); border-radius:var(--radius); }
+.cp-n{ width:1.55em; height:1.55em; display:grid; place-items:center; flex:none;
+  border:1.5px solid var(--coral); border-radius:50%; color:var(--coral);
+  font-family:var(--mono); font-size:.82em; font-weight:600; }
+.cp-ex:hover{ border-color:var(--slate); }
+.cp-ex[aria-selected=true]{ border-color:var(--coral); color:var(--ink); box-shadow:inset 0 -2px 0 var(--coral); }
+.cp-ex[aria-selected=true] .cp-n{ background:var(--coral); color:var(--paper); }
+.cp-ex:focus-visible{ outline:2px solid var(--slate); outline-offset:2px; }
+.cp-body{ display:grid; grid-template-columns:minmax(0,7fr) minmax(0,5fr); gap:40px; align-items:start; }
+.cp-code{ display:flex; flex-direction:column; gap:14px; min-width:0; }
+.cp-side{ display:flex; flex-direction:column; gap:30px; min-width:0; }
+.cp-side > .note{ margin-top:12px; }   /* room for the tab above the card */
+.cp-what{ margin:0; font-size:calc(21.5px * var(--ts)); line-height:1.5; color:var(--graphite); }
+
+.code-bar{ display:flex; align-items:flex-end; justify-content:space-between; gap:16px;
+  border-bottom:1px solid var(--rule); }
+.code-tabs{ display:flex; gap:4px; }
+.code-tab{ font-family:var(--mono); font-size:calc(14.5px * var(--ts)); font-weight:600;
+  letter-spacing:.12em; text-transform:uppercase; color:var(--muted); background:none;
+  border:0; border-bottom:2px solid transparent; margin-bottom:-1px; padding:10px 16px 9px; cursor:pointer; }
+.code-tab:hover{ color:var(--ink); }
+.code-tab[aria-selected=true]{ color:var(--ink); border-bottom-color:var(--coral); }
+.code-tab:focus-visible{ outline:2px solid var(--slate); outline-offset:-2px; }
+.code-acts{ display:flex; gap:8px; margin-bottom:8px; }
+.code-acts .btn{ padding:7px 16px; font-size:calc(16px * var(--ts)); }
+.code-copy{ min-width:6.5em; }
+.code-runbtn::before{ content:""; display:inline-block; margin-right:.5em; vertical-align:-.05em;
+  border-left:.6em solid currentColor; border-top:.36em solid transparent; border-bottom:.36em solid transparent; }
+
+.cpage pre.code{ margin:0; padding:18px 20px 18px 0; overflow:auto;
+  background:var(--paper-3); border:1px solid var(--rule); border-radius:var(--radius);
+  font-family:var(--mono); font-size:var(--code-fs); line-height:1.6; color:var(--ink);
+  counter-reset:ln; tab-size:4; }
+pre.code .cl{ counter-increment:ln; }
+pre.code .cl::before{ content:counter(ln); display:inline-block; width:3.2em; padding-right:1.1em;
+  margin-right:.2em; text-align:right; color:var(--faint); user-select:none; -webkit-user-select:none; }
+pre.code .tk-c{ color:var(--muted); font-style:italic; }
+pre.code .tk-k{ color:var(--slate-deep); font-weight:600; }
+pre.code .tk-s{ color:var(--terracotta); }
+pre.code .tk-n{ color:var(--graphite); }
+body[data-theme=dark] pre.code .tk-k{ color:var(--slate); }
+
+/* The editable Python: a textarea over the highlighted text with the same
+   metrics; only its caret and selection show. */
+.code-edit{ position:relative; }
+.code-edit > pre.code{ overflow:hidden; }
+.code-edit > textarea{ position:absolute; inset:0; width:100%; height:100%; box-sizing:border-box; margin:0;
+  resize:none; overflow:auto; white-space:pre; border:1px solid transparent; border-radius:var(--radius);
+  background:transparent; color:transparent; caret-color:var(--ink);
+  font-family:var(--mono); font-size:var(--code-fs); line-height:1.6; tab-size:4;
+  padding:18px 20px 18px 4.5em; }
+.code-edit > textarea::selection{ background:rgba(40,86,126,.22); }
+.code-edit > textarea:focus{ outline:none; border-color:var(--slate); }
+
+/* with Run, the output keeps its height, so a run moves nothing on the page */
+.cp-out.is-run{ min-height:calc(480px - 70px * var(--ts)); }
+.cp-out{ border:1px solid var(--rule); border-left:3px solid var(--sig-out);
+  border-radius:var(--radius); background:var(--paper-2); padding:12px 18px 16px;
+  display:flex; flex-direction:column; gap:10px; }
+.run-status{ display:flex; justify-content:space-between; font-family:var(--mono); font-size:calc(13.5px * var(--ts));
+  font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:var(--sig-out); }
+.run-status span{ color:var(--muted); font-weight:400; }
+.run-text{ margin:0; font-family:var(--mono); font-size:calc(17px * var(--ts)); line-height:1.55; color:var(--ink);
+  white-space:pre-wrap; }
+.run-err{ color:var(--sig-err); }
+.run-idle{ margin:0; font-size:calc(17px * var(--ts)); line-height:1.5; color:var(--muted); }
+.run-idle code{ font-family:var(--mono); font-size:.92em; color:var(--graphite); }
+.run-fig{ display:block; width:100%; max-height:calc(420px - 120px * var(--ts)); object-fit:contain;
+  background:#fff; border:1px solid var(--rule); border-radius:var(--radius); }
+@media print{ .code-acts, .code-edit > textarea{ display:none !important; } }

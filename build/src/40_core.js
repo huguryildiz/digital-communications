@@ -33,6 +33,7 @@ const APP = (() => {
     display: 'normal',  // 'normal' | 'projector'
     pointer: 'laser',   // 'laser' | 'arrow'  — projector mode only
     trail:   'fade',    // 'fade' | 'hold' | 'off' — ink drawn while the button is held
+    trailSec: 1,        // seconds a faded trail stays fully visible
     quiz: {},           // qid -> {picked, correct, attempts, revealed}
     drillPage: {},      // module id -> index of the drill question on screen
     secOpen: {},        // section number -> the reader's own open/closed choice
@@ -79,6 +80,7 @@ const APP = (() => {
       display: saved.display || 'normal',
       pointer: saved.pointer || 'laser',
       trail:   saved.trail==='on' ? 'fade' : (saved.trail || 'fade'),
+      trailSec: saved.trailLen || 1,
       visited: saved.visited || {},
       quiz: saved.quiz || {},
       drillPage: saved.drillPage || {}
@@ -105,7 +107,7 @@ const APP = (() => {
     /* what is stored for the rail is always the wide-layout choice */
     if(state.layout!=='phone') state.rail = state.sidebar;
     store.write({ mode:state.mode, edition:state.edition, motion:state.motion, sidebar:state.rail,
-                  theme:state.theme, display:state.display, pointer:state.pointer, trail:state.trail,
+                  theme:state.theme, display:state.display, pointer:state.pointer, trail:state.trail, trailLen:state.trailSec,
                   visited:state.visited, quiz:state.quiz, drillPage:state.drillPage,
                   at:SCENES[state.i]&&SCENES[state.i].id });
   }
@@ -156,32 +158,24 @@ const APP = (() => {
      In front of a class the pointer is an instrument, not a control: the
      system arrow is too small to follow from the back of a room. In
      projector mode it becomes a red dot. Holding the mouse button down draws
-     with it, the way a finger draws on a tablet. Strokes accumulate, so a
-     term can be ringed and a word written beside it, and the drawing goes
-     all at once a few seconds after the last stroke ends — or is held until
-     it is cleared, which the header decides. Moving without holding the
-     button moves the dot alone, so pointing leaves no ink. The dot never
-     leaves, because it is standing in for the arrow. Everything is drawn on
+     with it. Strokes accumulate and fade together after a pause, or remain
+     until cleared, according to the header control. Everything is drawn on
      one fixed canvas above the page that takes no clicks, so nothing else
      changes. Under reduced motion the stroke is left out and only the dot is
-     drawn. Both the pointer and the ink can be turned off from the header. */
+     drawn. */
   const laser = (() => {
-    const HOLD = 3000;         /* ms the ink stays after the button is let go */
-    const FADE = 900;          /* ms it then takes to go */
-    const KEEP = 6000;         /* most points held across all strokes */
+    const FADE = 900, KEEP = 6000;
+    const hold = () => state.trailSec*1000;
     let cv=null, cx=null, on=false, raf=0, dpr=1, W=0, H=0;
-    let head=null;             /* {x,y} where the dot is now */
-    let drawing=false, released=0;
-    const strokes = [];        /* each one a list of {x,y}; oldest first */
-
+    let head=null, drawing=false, released=0;
+    const strokes = [];
     function count(){ let n=0; for(const s of strokes) n+=s.length; return n; }
-    function drop(){                       /* forget the oldest ink first */
+    function drop(){
       while(count()>KEEP && strokes.length){
         strokes[0].shift();
         if(strokes[0].length<2) strokes.shift();
       }
     }
-
     function size(){
       dpr = Math.min(window.devicePixelRatio||1, 2);
       W = window.innerWidth; H = window.innerHeight;
@@ -191,119 +185,72 @@ const APP = (() => {
     }
     function frame(){
       raf = 0;
-      /* `hold` keeps the ink until it is cleared; `fade` gives it HOLD at full
-         strength after the button is let go — long enough to say a sentence
-         over it — and then takes the whole drawing away together, rather than
-         tail first, so a word does not lose its first letter while it is
-         still being read */
       const keep = state.trail==='hold';
       const idle = (drawing||keep) ? 0 : performance.now() - released;
-      let a = idle<=HOLD ? 1 : 1 - (idle-HOLD)/FADE;
+      let a = idle<=hold() ? 1 : 1 - (idle-hold())/FADE;
       if(a<=0){ a=0; strokes.length=0; }
       cx.clearRect(0,0,W,H);
       if(a>0 && strokes.length && state.trail!=='off' && state.motion==='full'){
-        /* every stroke in one path, stroked three times — a wide soft halo,
-           the red body, a pale core. Stroking each piece on its own instead
-           leaves a bead at every round cap and doubles the ink where two
-           strokes cross. */
-        cx.lineCap='round'; cx.lineJoin='round'; cx.globalAlpha = a;
+        cx.lineCap='round'; cx.lineJoin='round'; cx.globalAlpha=a;
         cx.beginPath();
         for(const pts of strokes){
           if(pts.length<2) continue;
           cx.moveTo(pts[0].x, pts[0].y);
-          for(let k=1;k<pts.length-1;k++){        /* midpoint smoothing */
-            cx.quadraticCurveTo(pts[k].x, pts[k].y,
-                                (pts[k].x+pts[k+1].x)/2, (pts[k].y+pts[k+1].y)/2);
-          }
-          const b = pts[pts.length-1];
-          cx.lineTo(b.x, b.y);
+          for(let k=1;k<pts.length-1;k++) cx.quadraticCurveTo(pts[k].x,pts[k].y,(pts[k].x+pts[k+1].x)/2,(pts[k].y+pts[k+1].y)/2);
+          const b=pts[pts.length-1]; cx.lineTo(b.x,b.y);
         }
         cx.strokeStyle='rgba(255,66,44,0.26)'; cx.lineWidth=21; cx.stroke();
         cx.strokeStyle='rgba(228,38,22,0.94)'; cx.lineWidth=11; cx.stroke();
         cx.strokeStyle='rgba(255,231,226,0.96)'; cx.lineWidth=4; cx.stroke();
-        cx.globalAlpha = 1;
+        cx.globalAlpha=1;
       }
-      const p = head;
-      if(p){
-        const g = cx.createRadialGradient(p.x,p.y,0, p.x,p.y,19);
-        g.addColorStop(0,   'rgba(255,236,230,1)');
-        g.addColorStop(0.10,'rgba(255,64,40,1)');
-        g.addColorStop(0.32,'rgba(214,45,32,0.92)');
-        g.addColorStop(0.55,'rgba(214,45,32,0.32)');
-        g.addColorStop(1,   'rgba(214,45,32,0)');
-        cx.fillStyle = g;
-        cx.beginPath(); cx.arc(p.x,p.y,19,0,Math.PI*2); cx.fill();
+      if(head){
+        const g=cx.createRadialGradient(head.x,head.y,0,head.x,head.y,19);
+        g.addColorStop(0,'rgba(255,236,230,1)');
+        g.addColorStop(.10,'rgba(255,64,40,1)');
+        g.addColorStop(.32,'rgba(214,45,32,.92)');
+        g.addColorStop(.55,'rgba(214,45,32,.32)');
+        g.addColorStop(1,'rgba(214,45,32,0)');
+        cx.fillStyle=g; cx.beginPath(); cx.arc(head.x,head.y,19,0,Math.PI*2); cx.fill();
       }
-      /* while the button is held the next point comes from the next event, and
-         held ink never changes on its own: only a fade has to be animated */
-      if(!drawing && state.trail!=='hold' && a>0 && strokes.length) raf = requestAnimationFrame(frame);
+      if(!drawing && state.trail!=='hold' && a>0 && strokes.length) raf=requestAnimationFrame(frame);
     }
-    function tick(){ if(!raf) raf = requestAnimationFrame(frame); }
+    function tick(){ if(!raf) raf=requestAnimationFrame(frame); }
     function mouse(e){ return !e.pointerType || e.pointerType==='mouse' || e.pointerType==='pen'; }
     function move(e){
       if(!mouse(e)) return;
-      head = {x:e.clientX, y:e.clientY};
+      head={x:e.clientX,y:e.clientY};
       if(drawing){ strokes[strokes.length-1].push(head); drop(); }
       tick();
     }
     function down(e){
-      if(!mouse(e) || e.button!==0) return;
-      /* a drawing that had begun to fade is finished with: start a clean one */
-      if(!drawing && state.trail!=='hold' && performance.now()-released > HOLD) strokes.length=0;
-      drawing = true;
-      head = {x:e.clientX, y:e.clientY};
-      strokes.push([head]);                    /* strokes accumulate: a word
-                                                  keeps every letter of it */
-      tick();
+      if(!mouse(e)||e.button!==0) return;
+      if(!drawing && state.trail!=='hold' && performance.now()-released>hold()) strokes.length=0;
+      drawing=true; head={x:e.clientX,y:e.clientY}; strokes.push([head]); tick();
     }
-    function up(){
-      if(!drawing) return;
-      drawing = false; released = performance.now();
-      tick();
-    }
-    function leave(){
-      if(drawing){ drawing=false; released=performance.now(); }
-      head=null; tick();
-    }
-
+    function up(){ if(!drawing) return; drawing=false; released=performance.now(); tick(); }
+    /* a picture or a link would otherwise start a native drag and cut the stroke */
+    function nodrag(e){ e.preventDefault(); }
+    function leave(){ if(drawing){ drawing=false; released=performance.now(); } head=null; tick(); }
     function start(){
-      if(on) return;
-      if(!window.matchMedia || !matchMedia('(pointer:fine)').matches) return;
-      if(!cv){
-        cv = document.createElement('canvas');
-        cv.id = 'laser'; cv.setAttribute('aria-hidden','true');
-        document.body.appendChild(cv);
-        cx = cv.getContext('2d');
-      }
-      on = true; cv.style.display='block'; size();
-      window.addEventListener('pointermove', move, {passive:true});
-      window.addEventListener('pointerdown', down, {passive:true});
-      window.addEventListener('pointerup', up, {passive:true});
-      window.addEventListener('pointercancel', up, {passive:true});
-      document.addEventListener('mouseleave', leave);
-      window.addEventListener('blur', leave);
-      window.addEventListener('resize', size);
+      if(on || !window.matchMedia || !matchMedia('(pointer:fine)').matches) return;
+      if(!cv){ cv=document.createElement('canvas'); cv.id='laser'; cv.setAttribute('aria-hidden','true'); document.body.appendChild(cv); cx=cv.getContext('2d'); }
+      on=true; cv.style.display='block'; size();
+      window.addEventListener('pointermove',move,{passive:true});
+      window.addEventListener('pointerdown',down,{passive:true});
+      window.addEventListener('pointerup',up,{passive:true});
+      window.addEventListener('pointercancel',up,{passive:true});
+      window.addEventListener('dragstart',nodrag);
+      document.addEventListener('mouseleave',leave); window.addEventListener('blur',leave); window.addEventListener('resize',size);
     }
     function stop(){
       if(!on) return;
-      on = false;
-      window.removeEventListener('pointermove', move);
-      window.removeEventListener('pointerdown', down);
-      window.removeEventListener('pointerup', up);
-      window.removeEventListener('pointercancel', up);
-      document.removeEventListener('mouseleave', leave);
-      window.removeEventListener('blur', leave);
-      window.removeEventListener('resize', size);
-      if(raf){ cancelAnimationFrame(raf); raf=0; }
-      leave();
-      if(cv) cv.style.display='none';
+      on=false; window.removeEventListener('pointermove',move); window.removeEventListener('pointerdown',down);
+      window.removeEventListener('pointerup',up); window.removeEventListener('pointercancel',up); window.removeEventListener('dragstart',nodrag);
+      document.removeEventListener('mouseleave',leave); window.removeEventListener('blur',leave); window.removeEventListener('resize',size);
+      if(raf){ cancelAnimationFrame(raf); raf=0; } leave(); if(cv) cv.style.display='none';
     }
-    return {
-      sync(){ (state.display==='projector' && state.pointer==='laser') ? start() : stop(); },
-      /* clearing takes whatever is on screen with it — the C key, a change of
-         scene, and turning the ink off all use this */
-      clear(){ if(on && strokes.length){ strokes.length=0; drawing=false; tick(); } }
-    };
+    return { sync(){ (state.display==='projector'&&state.pointer==='laser') ? start() : stop(); }, clear(){ if(on&&strokes.length){ strokes.length=0; drawing=false; tick(); } } };
   })();
 
   /* ---------- stage scaling: exact 1920×1080 basis, scaled to fit ---------- */
@@ -316,15 +263,21 @@ const APP = (() => {
        real pixels and scrolls. Any transform left over from the wide layout is
        cleared here, so turning a phone from landscape to portrait does not
        leave the column shrunk. */
-    if(state.layout==='phone'){ stage.style.transform=''; stage.dataset.k='1'; return; }
+    if(state.layout==='phone'){ stage.style.transform=''; stage.style.height=''; stage.dataset.k='1'; return; }
     /* measure the painted box, not the window: inside a panel, an iframe or a
        zoomed view, window.innerWidth does not describe the area we can use. */
     const r = wrap.getBoundingClientRect();
     const w = Math.max(1, Math.min(r.width,  wrap.clientWidth  || r.width));
     const h = Math.max(1, Math.min(r.height, wrap.clientHeight || r.height));
     const k = Math.min(w/1920, h/1080);
+    /* A practice-question page scrolls rather than scales, so on a window taller
+       than 16:9 the stage grows downward to the window's foot instead of
+       leaving a letterbox band under the question. */
+    const tall = !!stage.querySelector('.dr-page');
+    const H = tall ? Math.max(1080, h/k) : 1080;
+    stage.style.height = tall ? H + 'px' : '';
     const dx = Math.round((w - 1920*k) / 2);
-    const dy = Math.round((h - 1080*k) / 2);
+    const dy = Math.round((h - H*k) / 2);
     stage.style.transform = 'translate(' + dx + 'px,' + dy + 'px) scale(' + k + ')';
     stage.dataset.k = k.toFixed(4);
   }
@@ -428,6 +381,8 @@ const APP = (() => {
       const typing = tag==='input'||tag==='textarea';
       if(e.key==='Escape'){ closeAll(); return; }
       if(typing) return;
+      /* a focused button on the slide (a prediction, a sound) takes its own Space */
+      if(e.key===' ' && tag==='button' && e.target.closest('#scene-host')) return;
       switch(e.key){
         case 'ArrowRight': case 'PageDown': case ' ': e.preventDefault(); next(); break;
         case 'ArrowLeft': case 'PageUp': e.preventDefault(); prev(); break;
@@ -465,13 +420,9 @@ const APP = (() => {
     applyBodyFlags(); persist();
     requestAnimationFrame(()=>{ fit(); onRender(); });
   }
-  function togglePointer(){
-    state.pointer = state.pointer==='laser'?'arrow':'laser';
-    applyBodyFlags(); persist(); onRender();
-  }
+  function togglePointer(){ state.pointer=state.pointer==='laser'?'arrow':'laser'; applyBodyFlags(); persist(); onRender(); }
   function toggleTrail(){
-    /* fade → hold → off, and round again */
-    state.trail = state.trail==='fade' ? 'hold' : state.trail==='hold' ? 'off' : 'fade';
+    state.trail=state.trail==='fade'?'hold':state.trail==='hold'?'off':'fade';
     if(state.trail==='off') laser.clear();
     applyBodyFlags(); persist(); onRender();
   }
@@ -479,6 +430,12 @@ const APP = (() => {
     requestAnimationFrame(()=>{ fit(); onRender(); }); }
 
   function bindChrome(){
+    document.addEventListener('input', e=>{
+      if(e.target.id!=='trail-sec') return;
+      state.trailSec = +e.target.value; e.target.nextElementSibling.textContent = state.trailSec+' s'; persist();
+    });
+    /* once set, the slider gives the arrow keys back to the slides */
+    document.addEventListener('change', e=>{ if(e.target.id==='trail-sec') e.target.blur(); });
     document.addEventListener('click', e=>{
       const t = e.target.closest('[data-act]');
       if(!t) return;
@@ -519,6 +476,19 @@ const APP = (() => {
         e.stopPropagation(); e.preventDefault(); toggleSidebar();
       }
     }, true);
+    /* page box in the footer: type a number, Enter jumps, Escape restores */
+    const pb = document.getElementById('pagebox');
+    if(pb){
+      pb.addEventListener('focus', ()=>pb.select());
+      pb.addEventListener('keydown', e=>{
+        if(e.key==='Enter'){
+          const k = parseInt(pb.value,10);
+          if(k>=1 && k<=SCENES.length) go(k-1);
+          pb.blur();
+        } else if(e.key==='Escape') pb.blur();
+      });
+      pb.addEventListener('blur', ()=>{ pb.value = state.i+1; });
+    }
   }
 
   /* ---------- contents, shared by the rail and the map ----------
@@ -536,17 +506,16 @@ const APP = (() => {
          + `<span class="ctitle">${RENDER.md(s.nav||s.title||s.id)}</span>`;
   }
 
-  /* A section is open when the reader has said so, and otherwise when the scene
-     on screen is inside it. That keeps the rail short enough to scan while never
-     hiding where the reader currently stands. */
+  /* A section is open unless the reader has closed it, so the whole contents
+     are visible on arrival. */
   function secIsOpen(n){
     if(n in state.secOpen) return state.secOpen[n];
-    const cur = SCENES[state.i];
-    return !!(cur && cur.sec && cur.sec.indexOf(n+'.') === 0);
+    return true;
   }
-  /* A chapter's questions close it: they are worked after the teaching scenes.
-     `row` is given the scene, not a position, so both surfaces place it the
-     same way. */
+  /* The practice questions follow the teaching scenes. `row` is given the
+     scene, not a position, so both surfaces place it the same way; the third
+     argument marks the practice row so the rail can draw it at heading level,
+     where the chapter heading above already names the module. */
   function chapterRows(ch, row, head, collapse){
     const out = [];
     ch.sections.forEach(sec=>{
@@ -555,7 +524,7 @@ const APP = (() => {
       if(titled) out.push(head(sec, open));
       if(open) sec.scenes.forEach(s=>out.push(row(s, titled)));
     });
-    if(ch.q.drill) out.push(row(ch.q.drill));
+    if(ch.q.drill) out.push(row(ch.q.drill, false, true));
     return out.join('');
   }
 
@@ -585,9 +554,9 @@ const APP = (() => {
       const rows = chapterRows(ch,
         /* A scene inside an open section is marked, so the rail can draw a
            rule down the left of the run and show where the section ends. */
-        (s, inSec) => `<li class="${inSec?'insec':''}"><a data-act="goto" data-id="${s.id}" tabindex="0"
+        (s, inSec, drill) => `<li class="${inSec?'insec':drill?'cdrill':''}"><a data-act="goto" data-id="${s.id}" tabindex="0"
                 class="${s.id===cur.id?'on':''}${state.visited[s.id]?' seen':''}"
-                >${label(s)}</a></li>`,
+                >${drill?`<span class="cnum">${s.sec}</span><span class="ctitle">Practice questions</span>`:label(s)}</a></li>`,
         (sec, open) => `<li class="csec"><button type="button" data-act="sec" data-sec="${sec.n}"
                 aria-expanded="${open}" class="${open?'open':''}"
                 ><span class="cnum">${sec.n}</span><span class="ctitle">${RENDER.md(sec.title)}</span

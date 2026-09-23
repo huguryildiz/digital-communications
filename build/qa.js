@@ -56,7 +56,8 @@ const fs = require('fs'), path = require('path');
         const hasFig = !!inner.querySelector('figure.fig svg');
         return { overflow: (!sc && (vy > 2 || vx > 2)), vy: sc?0:vy, vx: sc?0:vx,
                  fit: k, capped: host.dataset.capped ? +host.dataset.capped : 0,
-                 words, isLab, isDrill, hasFig };
+                 words, isLab, isDrill, hasFig,
+                 grown: host.dataset.grown ? +host.dataset.grown : 0 };
       });
       report.push({ id: s.id, step: st, ...metrics });
       if (!only) await page.screenshot({ path: path.join(outDir, `${s.id}__s${st}.png`) });
@@ -81,6 +82,8 @@ const fs = require('fs'), path = require('path');
   const nofig = report.filter(r => teach(r) && !r.hasFig).map(r => r.id);
   console.log(JSON.stringify({ sceneCount: scenes.length, errors: errors.slice(0, 25),
     overflow: report.filter(r => r.overflow), dense, wordy, nofig,
-    scaled: report.filter(r=>r.fit<0.999).map(r=>[r.id,r.step,r.fit]) }, null, 1));
+    scaled: report.filter(r=>r.fit<0.999).map(r=>[r.id,r.step,r.fit]),
+    /* reporting only: a slide whose figure took the spare height of its column */
+    grown: report.filter(r=>r.grown).map(r=>[r.id,r.step,r.grown]) }, null, 1));
   await browser.close();
 })();

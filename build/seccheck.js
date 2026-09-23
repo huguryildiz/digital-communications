@@ -54,8 +54,16 @@ const path = require('path');
   for(const ch of data.chapters){
     const mine = data.scenes.filter(s=>s.sec && s.sec.split('.')[0] === ch.n);
 
+    /* A converted module addresses a laboratory after the section it closes
+       (1.2.L, 4.6.La); a module not yet converted numbers them through the
+       chapter (2.L1, 2.L2), and those numbers must run with no gap. */
+    const secNs = new Set((data.sections[ch.module]||[]).map(x=>x.n));
     run(`chapter ${ch.n} laboratories`,
-        mine.filter(s=>/\.L\d+$/.test(s.sec)).map(s=>+s.sec.match(/\.L(\d+)$/)[1]));
+        mine.filter(s=>/^[^.]+\.L\d+$/.test(s.sec)).map(s=>+s.sec.match(/\.L(\d+)$/)[1]));
+    mine.filter(s=>/\.L/.test(s.sec) && !/^[^.]+\.L\d+$/.test(s.sec)).forEach(s=>{
+      const m = s.sec.match(/^(.+)\.L([a-h]?)$/);
+      if(!m || !secNs.has(m[1])) say(`laboratory "${s.id}" has address ${s.sec}, not <section>.L`);
+    });
     run(`chapter ${ch.n} question sections`,
         mine.filter(s=>/\.Q\d+$/.test(s.sec)).map(s=>+s.sec.match(/\.Q(\d+)$/)[1]));
 
