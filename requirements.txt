@@ -1,0 +1,4 @@
+# Python packages for the numerical checks in verify/ and the text checks in tools/.
+numpy==2.5.3
+scipy>=1.14,<2
+sympy==1.14.0

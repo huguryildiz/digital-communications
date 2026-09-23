@@ -8,10 +8,15 @@ dist/Student_Workbook.*
 dist/Instructor_Solutions.*
 dist/Formula_Reference.*
 
-# Local working area, not student-facing. The commands that drive production
-# live here too, and they are instructions to whoever is building this rather
-# than part of what is built — the same reason AGENTS.md and CLAUDE.md are out.
-.claude/
+# Local working area. The agent instructions and guards are tracked; commands,
+# plans, specs, reports, notes, and other working records remain ignored.
+.claude/*
+!.claude/README.md
+!.claude/settings.json
+!.claude/rules/
+!.claude/hooks/
+.claude/hooks/__pycache__/
+.claude/worktrees/
 
 # Local toolchain and scratch output.
 .venv/
@@ -27,6 +32,18 @@ __pycache__/
 .vercel
 
 # Working notes for the agents that build this, not part of what is published.
-AGENTS.md
-CLAUDE.md
 .Codex/notes/
+
+# The root instruction files are tracked; ignore copies anywhere else.
+CLAUDE.md
+AGENTS.md
+DESIGN.md
+PRODUCT.md
+!/CLAUDE.md
+!/AGENTS.md
+!/DESIGN.md
+!/PRODUCT.md
+
+# The Python runtime for the code pages, staged by tools/pyodide.js at deploy.
+dist/pyodide/
+tools/.cache/
