@@ -209,17 +209,21 @@ art = replaceExactly(art,
   `    instr:   () => '',`,
   1, 'instructor block renderer');
 
-/* The controls card on the course-controls scene counted the edition as one
-   of the ways to read the course. On the published copy there is one edition,
-   so the card names the three modes that are actually there. */
+/* The help scene in Module 0 names the edition key and the two editions.
+   On the published copy there is one edition, so the key is dropped and the
+   note says only what the student edition does. */
 art = replaceExactly(art,
-  `    [{t:'card', head:'Four ways to read it', items:[`,
-  `    [{t:'card', head:'Three ways to read it', items:[`,
-  1, 'controls card heading');
+  `keywords:'help navigation modes instructor student reduced motion`,
+  `keywords:'help navigation modes reduced motion`,
+  1, 'help scene keywords');
 art = replaceExactly(art,
-  `html:'<b>Normal</b>, <b>lecture</b>, <b>self-study</b>, and <b>student</b> or <b>instructor</b>. The controls are along the top, and the choice is remembered.'`,
-  `html:'<b>Normal</b>, <b>lecture</b> and <b>self-study</b>. The controls are along the top, and the choice is remembered.'`,
-  1, 'controls card modes');
+  ` <kbd>L</kbd> study mode, <kbd>I</kbd> edition, <kbd>R</kbd> reduced motion.`,
+  ` <kbd>L</kbd> study mode, <kbd>R</kbd> reduced motion.`,
+  1, 'help scene keys');
+art = replaceExactly(art,
+  `head:'Two editions', html:'The <b>student edition</b> hides solutions until you ask for them. The <b>instructor edition</b> shows presenter notes, error warnings and every solution.'`,
+  `head:'Solutions', html:'Every solution stays hidden until you ask for it.'`,
+  1, 'help scene editions note');
 
 /* The teaching note behind each question is gone with its `teach` field, so
    the branch that would have drawn it is emptied too — otherwise the words
@@ -292,10 +296,14 @@ copy(path.join(DIST, 'Lecture_Notes.pdf'), 'Lecture_Notes.pdf');
 copy(path.join(DIST, 'Student_Workbook.pdf'), 'Student_Workbook.pdf');
 copy(path.join(DIST, 'Formula_Reference.pdf'), 'Formula_Reference.pdf');
 
-/* The cover page, its stylesheet, the hero background and the scope. */
-for (const f of ['index.html', 'site.css', 'grid.js', 'scope.js'])
+/* The cover page, the hero background, Figure 1, and the cover and inside
+   page of each PDF, rendered from the PDFs themselves. */
+for (const f of ['index.html', 'grid.js', 'fig.js'])
   copy(path.join(__dirname, f), f);
 copy(path.join(ROOT, 'assets', 'icon.svg'), 'icon.svg');
+fs.mkdirSync(path.join(SITE, 'img'));
+for (const f of fs.readdirSync(path.join(__dirname, 'img')).filter(f => f.endsWith('.jpg')))
+  copy(path.join(__dirname, 'img', f), path.join('img', f));
 
 /* The Python runtime for the code pages' Run button, fetched and checked
    against pinned hashes by web/pyodide.js. */

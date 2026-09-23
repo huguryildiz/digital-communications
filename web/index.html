@@ -4,184 +4,335 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Digital Communications</title>
-<meta name="description" content="Digital Communications — an interactive course artifact, ten laboratories, one hundred and twenty practice questions with worked solutions, and the lecture notes as a book.">
+<meta name="description" content="Digital Communications: an undergraduate course in seven modules, with lecture notes, a student workbook and a formula reference.">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="site.css">
+<meta property="og:title" content="Digital Communications">
+<meta property="og:description" content="An undergraduate course in seven modules, with lecture notes, a student workbook and a formula reference.">
+<meta property="og:type" content="website">
+<style>
+/* The cover page. One pinned frame tells Figure 1 (web/fig.js) in three steps while the title, the
+   caption and the timeline change with it; the modules and the documents follow. DESIGN.md, "The
+   public cover page", records the decisions. */
+:root{
+  --bg:#070C13; --bg-2:#0B121B; --panel:#101924;
+  --ink:#E6E2D9; --soft:#B9B4AA; --muted:#8C95A1; --faint:#5E6874;
+  --hair:rgba(230,226,217,.13); --hair-2:rgba(230,226,217,.28);
+  --coral:#E09A6A;
+  --cyan:#4FBECE; --green:#82C27B; --red:#E8785F;
+  --fig-axis:rgba(230,226,217,.18); --fig-text:#8C95A1; --fig-grid:rgba(230,226,217,.06);
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+  --sans:Inter,"SF Pro Text",-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  --ease:cubic-bezier(.16,1,.3,1);
+  color-scheme:dark;
+}
+*,*::before,*::after{ box-sizing:border-box; }
+html{ -webkit-text-size-adjust:100%; }
+body{ margin:0; background:var(--bg); color:var(--soft); font:400 16px/1.6 var(--sans); -webkit-font-smoothing:antialiased; }
+a{ color:inherit; }
+a:focus-visible, button:focus-visible{ outline:2px solid var(--coral); outline-offset:3px; border-radius:2px; }
+.label{ font-size:11px; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); }
+
+/* ── the story: one pinned frame, 300vh of scroll ─────────────────────── */
+.story{ position:relative; height:300vh; }
+.stage{
+  position:sticky; top:0; height:100vh; overflow:hidden;
+  background:radial-gradient(70% 60% at 68% 48%, #0E1826 0%, var(--bg) 70%);
+}
+#grid{ position:absolute; inset:0; width:100%; height:100%; display:block; pointer-events:none;
+  mix-blend-mode:screen; opacity:.5;
+  -webkit-mask-image:linear-gradient(90deg,#000 0%,rgba(0,0,0,.6) 30%,transparent 55%);
+          mask-image:linear-gradient(90deg,#000 0%,rgba(0,0,0,.6) 30%,transparent 55%); }
+
+/* the viewfinder: four corner marks inset from the window */
+.frame{ position:absolute; inset:22px; pointer-events:none; }
+.frame i{ position:absolute; width:22px; height:22px; border-color:var(--hair-2); border-style:solid; border-width:0; }
+.frame i:nth-child(1){ top:0; left:0; border-top-width:1px; border-left-width:1px; }
+.frame i:nth-child(2){ top:0; right:0; border-top-width:1px; border-right-width:1px; }
+.frame i:nth-child(3){ bottom:0; left:0; border-bottom-width:1px; border-left-width:1px; }
+.frame i:nth-child(4){ bottom:0; right:0; border-bottom-width:1px; border-right-width:1px; }
+
+.inner{ position:absolute; inset:22px; display:grid; grid-template-rows:auto 1fr auto; padding:26px 44px 22px; }
+
+.top{ display:flex; align-items:center; justify-content:space-between; gap:24px; }
+.brand{ display:flex; align-items:center; gap:12px; text-decoration:none; color:var(--ink); }
+.brand .label{ color:var(--ink); }
+.nav{ display:flex; align-items:center; gap:28px; }
+.nav a{ text-decoration:none; }
+.nav a.label:hover{ color:var(--ink); }
+.nav .dot::before{ content:""; display:inline-block; width:4px; height:4px; margin:0 10px 2px 0; border-radius:50%; background:var(--coral); }
+
+.body{ display:grid; grid-template-columns:minmax(0,5fr) minmax(0,7fr); gap:48px; align-items:center; min-height:0; }
+
+.copy{ position:relative; }
+.chapter{ display:flex; align-items:center; gap:14px; margin-bottom:26px; }
+.chapter::before{ content:""; width:36px; height:1px; background:var(--hair-2); }
+.titles{ position:relative; height:clamp(150px, 17vw, 200px); }
+.titles h1, .titles h2{
+  position:absolute; inset:0 auto auto 0; margin:0;
+  font-family:var(--serif); font-weight:400; color:var(--ink);
+  font-size:clamp(50px, 5.6vw, 90px); line-height:.94; letter-spacing:-.025em;
+  opacity:0; transform:translateY(14px); filter:blur(6px);
+  transition:opacity .7s var(--ease), transform .9s var(--ease), filter .7s var(--ease);
+}
+.titles em{ font-style:italic; }
+.titles .on{ opacity:1; transform:none; filter:none; }
+.rule{ width:64px; height:1px; margin:30px 0 22px; background:var(--hair-2); }
+.caps{ position:relative; min-height:6.6em; max-width:26em; }
+.caps p{ position:absolute; inset:0 auto auto 0; margin:0; font-family:var(--serif); font-size:18.5px; line-height:1.6; color:var(--soft);
+  opacity:0; transition:opacity .6s var(--ease); }
+.caps p.on{ opacity:1; }
+.actions{ display:flex; align-items:center; gap:26px; margin-top:26px; }
+.btn{ display:inline-flex; align-items:center; gap:12px; padding:14px 24px; border:1px solid var(--hair-2); border-radius:2px;
+  text-decoration:none; color:var(--ink); font-size:15px; letter-spacing:.02em; transition:background-color .25s, border-color .25s, color .25s; }
+.btn:hover{ background:var(--ink); color:var(--bg); border-color:var(--ink); }
+.btn svg{ width:17px; height:17px; fill:none; stroke:currentColor; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
+.link{ font-size:15px; color:var(--muted); text-decoration:none; border-bottom:1px solid var(--hair-2); padding-bottom:2px; }
+.link:hover{ color:var(--ink); border-color:var(--ink); }
+
+.fig{ position:relative; margin:0; }
+#plot{ display:block; width:100%; aspect-ratio:16/11; }
+.tag{ display:flex; justify-content:flex-end; gap:12px; align-items:flex-start; margin-top:10px; }
+.tag b{ display:block; font:italic 400 17px/1 var(--serif); letter-spacing:0; text-transform:none; color:var(--ink); }
+.tag .plus{ font:300 20px/1 var(--sans); color:var(--coral); margin-top:-2px; }
+.tag small{ display:block; margin-top:5px; font-size:12.5px; letter-spacing:.02em; text-transform:none; color:var(--muted); font-variant-numeric:tabular-nums; }
+
+.side{ position:absolute; right:-30px; top:50%; transform:translateY(-50%) rotate(90deg); transform-origin:center; white-space:nowrap; }
+
+/* the timeline */
+.foot{ display:grid; grid-template-columns:auto 1fr auto; gap:36px; align-items:end; }
+.gh{ display:inline-flex; width:40px; height:40px; align-items:center; justify-content:center; border:1px solid var(--hair-2); border-radius:50%; color:var(--muted); transition:color .25s, border-color .25s; }
+.gh:hover{ color:var(--ink); border-color:var(--ink); }
+.gh svg{ width:18px; height:18px; fill:currentColor; }
+.count{ font-family:var(--serif); font-size:64px; line-height:.8; color:var(--ink); font-variant-numeric:lining-nums; }
+.count span + span{ font-size:18px; color:var(--faint); margin-left:8px; letter-spacing:.05em; }
+.line{ position:relative; padding-bottom:4px; }
+.line__head{ display:flex; justify-content:space-between; margin-bottom:12px; }
+.line__track{ position:relative; height:1px; background:var(--hair-2); }
+.line__fill{ position:absolute; left:0; top:0; height:1px; width:0; background:var(--ink); }
+.line__knob{ position:absolute; top:-5px; width:11px; height:11px; margin-left:-5px; border-radius:50%; background:var(--ink); box-shadow:0 0 0 4px rgba(230,226,217,.12); left:0; }
+.line__marks{ position:relative; height:26px; margin-top:12px; }
+.line__marks button{ position:absolute; transform:translateX(-50%); padding:4px 0; background:none; border:0; cursor:pointer; font:inherit; }
+.line__marks button.label{ font-size:10.5px; }
+.line__marks button.on{ color:var(--ink); }
+.line__marks button:first-child{ transform:none; }
+.line__marks button:last-child{ transform:translateX(-100%); }
+
+/* ── after the story ───────────────────────────────────────────────────── */
+.wrap{ max-width:1240px; margin:0 auto; padding:0 66px; }
+.facts{ display:grid; grid-template-columns:repeat(4,1fr); border-block:1px solid var(--hair); }
+.facts div{ padding:34px 0 30px; }
+.facts div + div{ padding-left:32px; border-left:1px solid var(--hair); }
+.facts b{ display:block; font-family:var(--serif); font-weight:400; font-size:clamp(40px,4.4vw,60px); line-height:1; color:var(--ink); margin-bottom:12px; }
+
+.sec{ padding:110px 0 0; }
+.sec__head{ display:grid; grid-template-columns:minmax(0,5fr) minmax(0,7fr); gap:48px; align-items:end; margin-bottom:48px; }
+.sec h2{ margin:14px 0 0; font-family:var(--serif); font-weight:400; font-size:clamp(40px,4.6vw,64px); line-height:1; letter-spacing:-.02em; color:var(--ink); }
+.sec h2 em{ font-style:italic; }
+.sec__head > p{ margin:0; max-width:34em; font-family:var(--serif); font-size:18px; color:var(--soft); }
+
+.mods{ list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); column-gap:64px; border-top:1px solid var(--hair); }
+.mods li{ display:grid; grid-template-columns:52px 1fr; gap:10px; padding:22px 0 24px; border-bottom:1px solid var(--hair); }
+.mods .n{ font-family:var(--serif); font-size:26px; line-height:1.1; color:var(--faint); }
+.mods h3{ margin:0 0 4px; font-family:var(--serif); font-weight:400; font-size:22px; line-height:1.25; color:var(--ink); }
+.mods p{ margin:0; font-size:14.5px; color:var(--muted); }
+
+.docs{ list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:36px; }
+.doc{ display:flex; flex-direction:column; height:100%; text-decoration:none; color:inherit; }
+.doc__img{ position:relative; aspect-ratio:4/3; overflow:hidden; background:radial-gradient(90% 80% at 50% 100%, #122031 0%, var(--bg-2) 70%); }
+.doc__img::after{ content:""; position:absolute; inset:12px; border:1px solid var(--hair); pointer-events:none; }
+.doc__img img{ position:absolute; top:13%; width:38%; box-shadow:0 20px 40px -14px rgba(0,0,0,.85); transition:transform .8s var(--ease); }
+.doc__img .page{ left:46%; transform:rotate(4deg); filter:brightness(.85); }
+.doc__img .cover{ left:20%; transform:rotate(-3deg); }
+.doc:hover .page{ transform:translate(12px,-4px) rotate(6deg); }
+.doc:hover .cover{ transform:translate(-6px,0) rotate(-4deg); }
+.doc .label{ margin-top:22px; }
+.doc h3{ margin:8px 0 8px; font-family:var(--serif); font-weight:400; font-size:26px; line-height:1.15; color:var(--ink); }
+.doc p{ margin:0; font-size:14.5px; color:var(--muted); flex:1; }
+.doc__go{ margin-top:18px; font-size:14.5px; color:var(--ink); border-bottom:1px solid var(--hair-2); align-self:flex-start; padding-bottom:2px; transition:border-color .25s; }
+.doc:hover .doc__go{ border-color:var(--coral); }
+
+.end{ display:flex; align-items:center; justify-content:space-between; gap:16px; margin-top:120px; padding:24px 0 36px; border-top:1px solid var(--hair); font-size:13.5px; color:var(--faint); }
+.end a{ text-underline-offset:3px; }
+
+@media (max-width:980px){
+  .inner{ padding:20px 22px 18px; }
+  .body{ grid-template-columns:1fr; gap:8px; align-content:center; }
+  .titles{ height:clamp(110px, 26vw, 170px); }
+  .titles h1, .titles h2{ font-size:clamp(44px, 11vw, 76px); }
+  .chapter{ margin-bottom:14px; }
+  .rule, .caps{ display:none; }
+  .actions{ margin-top:10px; }
+  .side, .nav a:not(.btn){ display:none; }
+  .count{ font-size:40px; }
+  .foot{ gap:20px; }
+  .wrap{ padding:0 22px; }
+  .facts{ grid-template-columns:repeat(2,1fr); }
+  .facts div:nth-child(3){ padding-left:0; border-left:0; }
+  .facts div:nth-child(n+3){ border-top:1px solid var(--hair); }
+  .sec__head{ grid-template-columns:1fr; gap:18px; }
+  .mods{ grid-template-columns:1fr; }
+  .docs{ grid-template-columns:1fr; gap:48px; }
+}
+@media (max-width:560px){
+  .frame{ inset:10px; } .inner{ inset:10px; padding:16px 14px 14px; }
+  .actions .link{ display:none; }
+  .line__head .label:first-child{ display:none; }
+  .line__head{ justify-content:flex-end; }
+  .line__marks button{ display:none; }
+  .line__marks button.on{ display:block; left:0 !important; transform:none; }
+}
+@media (prefers-reduced-motion:reduce){ *,*::before,*::after{ transition:none !important; } }
+</style>
 </head>
 <body>
 
-<header class="bar">
-  <a class="brand" href="/">
-    <img src="icon.svg" alt="" width="30" height="30">
-    <span class="brand__name">Digital&nbsp;Communications</span>
-  </a>
-  <nav class="bar__nav">
-    <a href="#instrument">The instrument</a>
-    <a href="#modules">Modules</a>
-    <a href="#documents">Documents</a>
-    <a class="btn btn--sm" href="Digital_Communications.html">Open the course</a>
-  </nav>
-</header>
+<main>
+  <section class="story" id="track">
+    <div class="stage" id="fig">
+      <canvas id="grid" aria-hidden="true"></canvas>
+      <div class="frame" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
 
-<!-- ─────────────────────────────── hero ─────────────────────────────── -->
-<section class="hero">
-  <canvas id="grid" class="hero__grid" aria-hidden="true"></canvas>
-  <div class="hero__inner">
-    <p class="eyebrow">Digital Communications</p>
-    <h1 class="hero__title">Digital<br><span class="hero__title-em">Communications</span></h1>
-    <p class="hero__lead">
-      A digital communication system carries a finite alphabet of symbols across a channel
-      that adds noise to everything it carries. This course is the study of how those symbols
-      are chosen, how they are recovered, and how often the recovery is wrong.
-    </p>
-    <div class="hero__cta">
-      <a class="btn btn--primary" href="Digital_Communications.html">Open the course</a>
-      <a class="btn" href="Lecture_Notes.pdf">Lecture notes (PDF)</a>
-    </div>
-    <ul class="facts">
-      <li><b>7</b><span>modules</span></li>
-      <li><b>109</b><span>scenes</span></li>
-      <li><b>10</b><span>laboratories</span></li>
-      <li><b>120</b><span>worked questions</span></li>
-    </ul>
-  </div>
-</section>
+      <div class="inner">
+        <header class="top">
+          <a class="brand" href="#track"><img src="icon.svg" alt="" width="26" height="26"><span class="label">Digital Communications</span></a>
+          <nav class="nav" aria-label="Site">
+            <a class="label dot" href="#modules">Seven modules</a>
+            <a class="label dot" href="#documents">Documents</a>
+          </nav>
+        </header>
 
-<!-- ──────────────────────────── the instrument ──────────────────────── -->
-<section class="band" id="instrument">
-  <div class="band__grid">
-    <div class="band__copy">
-      <p class="eyebrow">What the course is about</p>
-      <h2>One picture, and the number beside it</h2>
-      <p>
-        The screen beside this shows a bit stream in Manchester code with noise added to it,
-        exactly as a receiver would see it. Nothing on it is decoration. The signal-to-noise
-        ratio in the corner drifts slowly between 7 and 11&nbsp;dB, the noise drawn on the trace
-        is scaled by that same ratio, and the error rate is computed from it.
-      </p>
-      <p class="eq">P<sub>b</sub> = Q(√(2 E<sub>b</sub> ⁄ N<sub>0</sub>))</p>
-      <p>
-        That formula is where the course arrives. Watch the trace get rough and the error rate
-        gets worse in the same breath, because they are one quantity and not two. The bits along
-        the top are the bits the trace is drawing, not a second random string.
-      </p>
-      <p class="note">
-        Every figure in the course is drawn from the mathematics beside it, and every number is
-        checked by a program that computes it a second way.
-      </p>
-    </div>
+        <div class="body">
+          <div class="copy">
+            <p class="chapter label">Figure 1 · section 2.3</p>
+            <div class="titles">
+              <h1 data-s="0">Digital<br><em>Communications.</em></h1>
+              <h2 data-s="1" aria-hidden="true">Through<br><em>the noise.</em></h2>
+              <h2 data-s="2" aria-hidden="true">How often<br><em>it is wrong.</em></h2>
+            </div>
+            <div class="rule" aria-hidden="true"></div>
+            <div class="caps" aria-live="polite">
+              <p data-s="0">Each bit leaves as a Manchester pulse: a 1 rises in the middle of its cell, a 0 falls. Scroll to send them.</p>
+              <p data-s="1">The channel adds white Gaussian noise. As E<sub>b</sub>/N<sub>0</sub> falls, the received waveform gets rough and the bits get harder to read back.</p>
+              <p data-s="2">For antipodal signals the bit error probability is P<sub>b</sub> = Q(&radic;(2E<sub>b</sub>/N<sub>0</sub>)). From 4 dB to 10 dB it falls by more than three orders of magnitude.</p>
+            </div>
+            <div class="actions">
+              <a class="btn" href="Digital_Communications.html">Open the course
+                <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11.5M11 5.5l4.5 4.5-4.5 4.5"/></svg></a>
+              <a class="link" href="#documents">Download the PDFs</a>
+            </div>
+          </div>
 
-    <figure class="scope">
-      <div class="scope__frame">
-        <canvas id="scope" class="scope__screen" aria-hidden="true"></canvas>
-        <div class="hud" aria-hidden="true">
-          <span class="hud__tl">
-            <span class="hud__live"><i></i> LIVE · CH-1</span>
-            <span class="hud__bits" id="hud-bits">0110 1011 0101</span>
-          </span>
-          <span class="hud__tr">
-            R<sub>b</sub> = <b id="hud-rate">10.0 Mb/s</b><br>MANCHESTER
-          </span>
-          <span class="hud__bl">SNR = <b id="hud-snr">9.0 dB</b></span>
-          <span class="hud__br">BER <b id="hud-ber">3.4e−5</b></span>
+          <figure class="fig">
+            <canvas id="plot" data-pad="40,16,24,40" data-glow role="img"
+              aria-label="Twelve bits as a Manchester waveform, the same waveform with Gaussian noise added, then the bit error probability against Eb/N0."></canvas>
+            <figcaption class="tag"><span class="plus" aria-hidden="true">+</span>
+              <span class="label"><b id="tag-t">s(t)</b><small id="tag-s">Manchester code · 1 of 12 bits</small></span></figcaption>
+          </figure>
         </div>
+
+        <footer class="foot">
+          <div class="count" aria-hidden="true"><span id="cnt">01</span><span>/ 03</span></div>
+          <div class="line">
+            <div class="line__head"><span class="label">Digital Communications · Figure 1</span><span class="label" id="pct">0%</span></div>
+            <div class="line__track"><div class="line__fill" id="fill"></div><div class="line__knob" id="knob"></div></div>
+            <div class="line__marks">
+              <button class="label" data-go="0" style="left:0%">Symbols</button>
+              <button class="label" data-go=".36" style="left:36%">Channel</button>
+              <button class="label" data-go=".68" style="left:68%">Error rate</button>
+              <button class="label" data-go="1" style="left:100%">Documents</button>
+            </div>
+          </div>
+          <a class="gh" href="https://github.com/huguryildiz/digital-communications" target="_blank" rel="noopener" aria-label="The course on GitHub"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg></a>
+        </footer>
       </div>
-      <figcaption>
-        A Manchester-coded stream at 10&nbsp;Mb/s under additive white Gaussian noise.
-        The readout is measured from the same model that draws the trace.
-      </figcaption>
-    </figure>
+      <span class="side label" aria-hidden="true">Seven modules · 2026</span>
+    </div>
+  </section>
+
+  <div class="wrap">
+    <div class="facts">
+      <div><b data-fact="modules">7</b><span class="label">modules</span></div>
+      <div><b data-fact="scenes">151</b><span class="label">scenes</span></div>
+      <div><b data-fact="labs">15</b><span class="label">laboratories</span></div>
+      <div><b data-fact="questions">128</b><span class="label">worked questions</span></div>
+    </div>
+
+    <section class="sec" id="modules" aria-labelledby="mods-h">
+      <div class="sec__head">
+        <div><p class="label">The course</p><h2 id="mods-h">Seven <em>modules.</em></h2></div>
+        <p>A transmitter is given a symbol and sends a waveform. A channel adds noise to it. A receiver observes the sum and decides which symbol was sent. Each module is about one part of that chain.</p>
+      </div>
+      <ol class="mods">
+        <li><span class="n">0</span><div><h3>Why digital communications?</h3><p>What the whole subject asks, why digits are sent at all, and what that costs.</p></div></li>
+        <li><span class="n">1</span><div><h3>The transition from analog to digital</h3><p>Sampling, quantization and PCM: turning a continuous signal into a finite alphabet, and what the rounding costs.</p></div></li>
+        <li><span class="n">2</span><div><h3>Baseband transmission of digital signals</h3><p>The matched filter, the decision and its error, intersymbol interference, and the Nyquist pulse.</p></div></li>
+        <li><span class="n">3</span><div><h3>Geometric representation of signal waveforms</h3><p>Signals as vectors and constellations. Once distance means something, the receiver follows.</p></div></li>
+        <li><span class="n">4</span><div><h3>The optimal receiver in AWGN</h3><p>The observation, the decision rule, decision regions and the union bound on the error probability.</p></div></li>
+        <li><span class="n">5</span><div><h3>Digital modulation methods</h3><p>The binary schemes, PSK, QAM and FSK, each measured by the same distance as the last module.</p></div></li>
+        <li><span class="n">6</span><div><h3>An introduction to information theory</h3><p>Entropy, source coding and channel capacity: the limit that no scheme above can pass.</p></div></li>
+      </ol>
+    </section>
+
+    <section class="sec" id="documents" aria-labelledby="docs-h">
+      <div class="sec__head">
+        <div><p class="label">On paper</p><h2 id="docs-h">Three <em>documents.</em></h2></div>
+        <p>Typeset from the same sources as the course, as PDFs.</p>
+      </div>
+      <ul class="docs">
+        <li><a class="doc" href="Lecture_Notes.pdf" download>
+          <div class="doc__img"><img class="page" src="img/ln_page.jpg" alt=""><img class="cover" src="img/ln_cover.jpg" alt=""></div>
+          <span class="label">PDF · 58 pp · 3.8 MB</span><h3>Lecture notes</h3>
+          <p>The six chapters written out as a book, in the order the lectures take them.</p>
+          <span class="doc__go">Download</span></a></li>
+        <li><a class="doc" href="Student_Workbook.pdf" download>
+          <div class="doc__img"><img class="page" src="img/wb_page.jpg" alt="" loading="lazy"><img class="cover" src="img/wb_cover.jpg" alt="" loading="lazy"></div>
+          <span class="label">PDF · 44 pp · 3.0 MB</span><h3>Student workbook</h3>
+          <p>The practice questions and the laboratories, with room to work.</p>
+          <span class="doc__go">Download</span></a></li>
+        <li><a class="doc" href="Formula_Reference.pdf" download>
+          <div class="doc__img"><img class="page" src="img/fr_page.jpg" alt="" loading="lazy"><img class="cover" src="img/fr_cover.jpg" alt="" loading="lazy"></div>
+          <span class="label">PDF · 10 pp · 379 KB</span><h3>Formula reference</h3>
+          <p>Every result the course uses, on the fewest pages it fits on.</p>
+          <span class="doc__go">Download</span></a></li>
+      </ul>
+    </section>
+
+    <footer class="end"><span>&copy; 2026 Huseyin Ugur Yildiz &middot; <a href="https://huguryildiz.com/">huguryildiz.com</a></span>
+      <a class="gh" href="https://github.com/huguryildiz/digital-communications" target="_blank" rel="noopener" aria-label="The course on GitHub"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg></a></footer>
   </div>
-</section>
+</main>
 
-<!-- ───────────────────────────── the modules ────────────────────────── -->
-<section class="band band--alt" id="modules">
- <div class="band__in">
-  <p class="eyebrow">The seven modules</p>
-  <h2>One question, asked seven ways</h2>
-  <p class="band__lead">
-    A transmitter is given a symbol and sends a waveform. A channel adds noise to that waveform.
-    A receiver observes the sum and decides which symbol was sent. Every module is either a way
-    of choosing the waveforms, a way of making the decision, or a way of working out how often
-    the decision is wrong.
-  </p>
 
-  <ol class="mods">
-    <li><span class="mods__n">0</span>
-      <h3>The frame of the course</h3>
-      <p>What the whole subject asks, why digits are sent at all, and what that costs.</p></li>
-    <li><span class="mods__n">1</span>
-      <h3>Sampling, quantization and PCM</h3>
-      <p>Turning a continuous signal into a finite alphabet, and what the rounding costs.</p></li>
-    <li><span class="mods__n">2</span>
-      <h3>Baseband transmission</h3>
-      <p>Line codes, pulse shapes, intersymbol interference and the eye that shows it.</p></li>
-    <li><span class="mods__n">3</span>
-      <h3>Geometric representation</h3>
-      <p>Signals as points. Once distance means something, the receiver becomes obvious.</p></li>
-    <li><span class="mods__n">4</span>
-      <h3>The optimal receiver</h3>
-      <p>Decision regions, the matched filter, and the union bound on the error probability.</p></li>
-    <li><span class="mods__n">5</span>
-      <h3>Modulation methods</h3>
-      <p>ASK, PSK, FSK and QAM, each measured by the same distance as the last module.</p></li>
-    <li><span class="mods__n">6</span>
-      <h3>Information theory</h3>
-      <p>Entropy, source coding and channel capacity — the limit none of the above passes.</p></li>
-  </ol>
- </div>
-</section>
-
-<!-- ──────────────────────────── the documents ───────────────────────── -->
-<section class="band" id="documents">
-  <p class="eyebrow">Take it away</p>
-  <h2>The course as four things you can hold</h2>
-
-  <div class="docs">
-    <a class="doc" href="Digital_Communications.html">
-      <span class="doc__kind">Interactive</span>
-      <h3>The course artifact</h3>
-      <p>109 scenes, ten laboratories and every practice question with its worked solution.
-         One file, no network, works offline.</p>
-      <span class="doc__go">Open →</span>
-    </a>
-    <a class="doc" href="Lecture_Notes.pdf">
-      <span class="doc__kind">PDF</span>
-      <h3>Lecture notes</h3>
-      <p>The six chapters written out as a book, in the order the lectures take them.</p>
-      <span class="doc__go">Download →</span>
-    </a>
-    <a class="doc" href="Student_Workbook.pdf">
-      <span class="doc__kind">PDF</span>
-      <h3>Student workbook</h3>
-      <p>The questions, the laboratories, and room to work.</p>
-      <span class="doc__go">Download →</span>
-    </a>
-    <a class="doc" href="Formula_Reference.pdf">
-      <span class="doc__kind">PDF</span>
-      <h3>Formula reference</h3>
-      <p>Every result the course uses, on the fewest pages it fits on.</p>
-      <span class="doc__go">Download →</span>
-    </a>
-  </div>
-
-  <p class="note note--wide">
-    Two conventions decide every number here, and mixing them is a silent factor of two:
-    the noise is white and Gaussian with <b>two-sided</b> power spectral density N<sub>0</sub>⁄2,
-    and Q(x) is the Gaussian tail, Q(x) = ½&nbsp;erfc(x⁄√2).
-  </p>
-</section>
-
-<footer class="foot">
-  <p>Digital Communications.</p>
-  <p class="foot__fine">
-    The hero background is adapted from <a href="https://radiant-shaders.com/shader/kinetic-grid">Kinetic Grid</a>,
-    part of <a href="https://github.com/pbakaus/radiant">Radiant Shaders</a> by Paul Bakaus, used under the MIT licence
-    and recoloured to this course's palette.
-  </p>
-</footer>
-
-<script src="grid.js"></script>
-<script src="scope.js"></script>
+<script>
+window.onFig = function (f) {
+  document.querySelectorAll('.titles [data-s], .caps p').forEach(function (e) { e.classList.toggle('on', +e.dataset.s === f.s); });
+  document.getElementById('cnt').textContent = '0' + (f.s + 1);
+  var pc = (f.p * 100).toFixed(0) + '%';
+  document.getElementById('pct').textContent = pc;
+  document.getElementById('fill').style.width = pc;
+  document.getElementById('knob').style.left = pc;
+  document.querySelectorAll('.line__marks button').forEach(function (b, i) { b.classList.toggle('on', i === f.s); });
+  document.getElementById('tag-t').textContent = ['s(t)', 'r(t)', 'Pb'][f.s];
+  var sup = { '-': '\u207b', 0: '\u2070', 1: '\u00b9', 2: '\u00b2', 3: '\u00b3', 4: '\u2074', 5: '\u2075', 6: '\u2076', 7: '\u2077', 8: '\u2078', 9: '\u2079' };
+  function sci(x) {
+    var e = Math.floor(Math.log10(x)), m = x / Math.pow(10, e);
+    if (m >= 9.995) { m = 1; e++; }
+    return m.toFixed(2) + ' \u00d7 10' + String(e).split('').map(function (c) { return sup[c]; }).join('');
+  }
+  document.getElementById('tag-s').textContent = f.s === 0 ? 'Manchester code \u00b7 ' + f.bits + ' of ' + f.nbits + ' bits'
+    : f.s === 1 ? 'white Gaussian noise \u00b7 Eb/N\u2080 = ' + f.db.toFixed(1) + ' dB'
+    : 'antipodal \u00b7 ' + sci(f.pb) + ' at ' + f.db.toFixed(1) + ' dB';
+};
+document.querySelectorAll('.line__marks button').forEach(function (b) {
+  b.addEventListener('click', function () {
+    var t = document.getElementById('track'), span = t.offsetHeight - window.innerHeight;
+    var go = +b.dataset.go;
+    var y = go >= 1 ? document.getElementById('documents').offsetTop : t.offsetTop + go * span + 2;
+    window.scrollTo({ top: y, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+  });
+});
+</script>
+<script src="fig.js"></script>
+<script src="grid.js" defer></script>
 </body>
 </html>

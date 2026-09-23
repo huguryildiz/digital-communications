@@ -49,27 +49,26 @@ const copy = (a, c, W, peak, opts) => a.poly([[c-W,0],[c,peak],[c+W,0]], opts);
    samples in one figure and the curve in the next cannot drift apart. */
 const g = t => 0.85*Math.sin(1.15*t) + 0.35*Math.sin(2.7*t + 0.8);
 
-/* Sampling is a product of two signals, so it is drawn as three panels on one
-   time axis: the message, the train that multiplies it, and the product. The
-   panels share w, xr and pad.l, so a sample instant sits at the same place in
-   all three and the reader can read straight down a column. */
-function figSamplingStack(){
-  const Ts = 1.0, N = 10;
-  const common = {w:600, xr:[-0.4,10.4], xtarget:6, pad:{l:52,r:26,t:24,b:16}};
-  const mute = f => Object.assign({}, common, f);
-  const a = P.Axes(mute({h:128, yr:[-1.45,1.55], ylabel:'g(t)', ytarget:4}));
-  a.curve(g,{color:C.in});
-  /* Every impulse of the train has weight one: it only marks the instants. */
-  const b = P.Axes(mute({h:100, yr:[-0.45,1.60], ylabel:'p(t)', ytarget:2}));
-  for(let n=0;n<=N;n++) b.impulse(n*Ts, 1, {color:C.h, label:false});
-  b.span(4*Ts, 5*Ts, 1.28, 'T_s', {tex:true, fs:13, color:C.h});
-  /* The message is repeated as a dashed line, because the height of each
-     impulse is read off it. */
-  const c = P.Axes(mute({h:150, yr:[-1.45,1.55], xlabel:'t',
-    ylabel:'g_\\delta(t)=g(t)\\,p(t)', ytarget:4, pad:{l:52,r:26,t:24,b:16}}));
-  c.curve(g,{color:C.in, width:1.4, dash:'4 6', opacity:0.55});
-  for(let n=0;n<=N;n++) c.impulse(n*Ts, g(n*Ts), {color:C.mid, label:false});
-  return a.svg() + b.svg() + c.svg();
+/* Sampling is a product of two signals, built up on one time axis one signal
+   per frame: the message, then the train that multiplies it, then the
+   product. Between frames 1 and 2 each impulse of the train slides from
+   height one to g(nT_s) and the train fades behind it, so the reader sees the
+   product form at every sample instant. Frame 3 fades the message and the
+   train out and leaves the sampled signal alone. */
+function figSamplingStack(v){
+  const k = v ? v.frame : 3, Ts = 1.0, N = 10;
+  const a = P.Axes(SZ({xr:[-0.4,10.4], yr:[-1.45,1.9], xlabel:'t',
+    pad:{l:50,r:26,t:24,b:42}, xtarget:6, ytarget:4}));
+  const x = Math.max(0, Math.min(1, k-2));
+  if(x < 1) a.curve(g, {color:C.in, opacity:1-x});
+  if(k > 1e-9){
+    const u = Math.min(1, k), w = Math.max(0, Math.min(1, k-1));
+    if(x < 1) for(let n=0;n<=N;n++) a.impulse(n*Ts, u, {color:C.h, label:false, opacity:(1-0.6*w)*(1-x)});
+    if(u > 0.5 && x < 0.5) a.span(4*Ts, 5*Ts, 1.28, 'T_s', {tex:true, fs:13, color:C.h});
+    if(w > 1e-9)
+      for(let n=0;n<=N;n++) a.impulse(n*Ts, 1 + (g(n*Ts)-1)*w, {color:C.mid, label:false});
+  }
+  return a.svg();
 }
 
 /* The message spectrum and the same spectrum after sampling, on one frequency
@@ -181,12 +180,14 @@ function figSinc(){
    classes. While a term is lifted, its zeros at the other sampling instants
    are drawn, because those zeros are why the sum passes through every sample.
    The figure itself stays a plain string of SVG, rebuilt on every render. */
-function figInterp(){
-  const Ts = 1;                     /* T_s = 1 s and 2W = 1, so the picture reads directly */
+function figInterp(v){
+  const Ts = 1;
+  /* frame 0 is the resting figure; frame k >= 1 lifts term n = k-1 by hand */
+  const man = v && v.frame != null ? Math.round(v.frame) - 1 : -1;                     /* T_s = 1 s and 2W = 1, so the picture reads directly */
   const a = P.Axes(SZ({xr:[-0.4,8.4], yr:[-1.5,1.7], xlabel:'t', ylabel:'g(t),\\;g_r(t)',
     pad:{l:50,r:26,t:24,b:42}, xtarget:6, ytarget:4}));
   for(let n=0;n<=8;n++){
-    a.raw(`<g class="st" data-st="${n}">`);
+    a.raw(`<g class="st${n===man?' on':''}" data-st="${n}">`);
     a.curve(t=>g(n*Ts)*sinc((t-n*Ts)/Ts), {color:C.mid, width:1.1, opacity:0.55, dash:'3 3'});
     for(let k=0;k<=8;k++) if(k!==n)
       a.raw(`<circle class="st-z" cx="${a.sx(k*Ts).toFixed(2)}" cy="${a.sy(0).toFixed(2)}"
@@ -196,7 +197,7 @@ function figInterp(){
   a.curve(t=>{ let s=0; for(let n=-6;n<=14;n++) s += g(n*Ts)*sinc((t-n*Ts)/Ts); return s; },
           {color:C.out, width:2.6});
   for(let n=0;n<=8;n++){
-    a.raw(`<g class="st-dot" data-st="${n}">`);
+    a.raw(`<g class="st-dot${n===man?' on':''}" data-st="${n}">`);
     a.point(n*Ts, g(n*Ts), {color:C.in, r:3.8});
     /* an invisible disc widens the pointer target to a finger's width */
     a.raw(`<circle cx="${a.sx(n*Ts).toFixed(2)}" cy="${a.sy(g(n*Ts)).toFixed(2)}"
@@ -209,7 +210,7 @@ function figInterp(){
      so it is joined with \approx. */
   for(let n=0;n<=8;n++){
     const arg = n===0 ? 't' : `t-${n}`;
-    a.raw(`<g class="st-eq" data-st="${n}">`);
+    a.raw(`<g class="st-eq${n===man?' on':''}" data-st="${n}">`);
     a.note(0.15, 1.45,
       `g(${n})\\,\\operatorname{sinc}(${arg})\\approx ${P.fmt(g(n*Ts),2)}\\,\\operatorname{sinc}(${arg})`,
       {tex:true, fs:13, color:C.mid});
@@ -218,7 +219,7 @@ function figInterp(){
   a.raw('<g class="sp-note">');
   a.note(0.15, 1.45, '\\text{one shifted }\\operatorname{sinc}\\text{ per sample}', {tex:true, fs:13, color:C.mid});
   a.raw('</g>');
-  return a.svg().replace('<svg ','<svg class="sincpick" ');
+  return a.svg().replace('<svg ', man >= 0 ? `<svg class="sincpick pick" data-man="${man}" ` : '<svg class="sincpick" ');
 }
 
 /* The interpolation sum built up term by term. Frame j holds the terms of
@@ -261,6 +262,41 @@ function figQuantizer(kind){
   return a.svg();
 }
 
+/* One sample at a time through the mid-tread quantizer of figQuantizer. The
+   frame is the time in units of T_s: between two frames the probe slides
+   along the signal, so the reader sees the input move across a tread and the
+   output hold, then jump at a boundary. The top panel keeps every sample
+   taken so far and the level it went to. The two panels are nested in one
+   svg, because a frame redraw replaces a single svg; the redraw's height
+   hint is for a one-panel figure, so it is cleared here. */
+const walkM = t => 2.3*Math.sin(2*Math.PI*(t-1)/9+2.2) + 0.6*Math.sin(2*Math.PI*(t-1)/4);
+const walkQ = m => Math.max(-3, Math.min(3, Math.round(m)));
+function figQuantWalk(v){
+  P.hOverride = null;
+  const f = (v ? v.frame : 0) + 1, mp = walkM(f), vp = walkQ(mp);
+  const a = P.Axes({w:600, h:200, xr:[-0.2,8.4], yr:[-3.6,3.6], xlabel:'t/T_s', ylabel:'m(t),\\;v[n]',
+    pad:{l:56,r:26,t:24,b:40}, xtarget:9, ytarget:8});
+  for(let k=-3;k<=3;k++) a.hline(k, {color:C.rule, dash:'2 5', opacity:0.9});
+  a.curve(walkM, {color:C.in, width:2});
+  a.vline(f, {color:C.muted});
+  for(let n=1;n<=f+1e-6;n++){ const m = walkM(n), q = walkQ(m);
+    a.poly([[n,m],[n,q]], {color:C.mid, width:1.4, dash:'3 3'});
+    a.point(n, m, {color:C.in, r:4}); a.point(n, q, {color:C.mid, r:4.6}); }
+  a.point(f, mp, {color:C.in, r:5.4});
+  const b = P.Axes({w:600, h:270, xr:[-3.8,3.8], yr:[-3.8,3.8], xlabel:'m', ylabel:'v=\\mathbb{Q}(m)',
+    pad:{l:56,r:26,t:26,b:40}, xtarget:8, ytarget:8});
+  b.poly([[-3.8,-3.8],[3.8,3.8]], {color:C.rule, width:1.2, dash:'3 4'});
+  const pts=[]; for(let i=0;i<=1520;i++){ const m=-3.8+7.6*i/1520; pts.push([m,walkQ(m)]); }
+  b.poly(pts, {color:C.mid, width:2.4});
+  b.poly([[mp,0],[mp,vp]], {color:C.in, width:1.6, dash:'4 4'});
+  b.poly([[mp,vp],[0,vp]], {color:C.mid, width:1.6, dash:'4 4'});
+  b.point(mp, 0, {color:C.in, r:5.4}); b.point(0, vp, {color:C.mid, r:5.4});
+  b.note(1.1, -2.2, `m=${mp.toFixed(2)}`, {tex:true, fs:16, color:C.in});
+  b.note(1.1, -3.2, `v=${vp}`, {tex:true, fs:16, color:C.mid});
+  const nest = (svg, y, h) => svg.replace('<svg ', `<svg x="0" y="${y}" width="600" height="${h}" `);
+  return `<svg viewBox="0 0 600 470" xmlns="http://www.w3.org/2000/svg" role="img">${nest(a.svg(),0,200)}${nest(b.svg(),200,270)}</svg>`;
+}
+
 /* The Gaussian tail and density, for the quantizer that minimises the mean
    square error. erf is the Abramowitz–Stegun rational form (error < 1.5e-7). */
 function erf(x){ const s = x<0?-1:1; x = Math.abs(x); const t = 1/(1+0.3275911*x);
@@ -300,18 +336,58 @@ function figQuantError(){
   const q = m => Math.max(-mmax+D/2, Math.min(mmax-D/2, (Math.floor(m/D)+0.5)*D));
   const m = t => mmax*Math.cos(t);
   const a = P.Axes({w:600,h:230,xr:[0,2*Math.PI],yr:[-6,6.4],
-    xlabel:'t',ylabel:'m(t),\\;\\mathbb{Q}(m(t))',pad:{l:54,r:26,t:24,b:40},
+    xlabel:'t',ylabel:'\\text{amplitude}',pad:{l:54,r:26,t:24,b:40},
     xtarget:5,ytarget:4});
   a.curve(m,{color:C.in});
   const pts=[]; for(let i=0;i<=900;i++){ const t=2*Math.PI*i/900; pts.push([t,q(m(t))]); }
   a.poly(pts,{color:C.mid,width:2.0});
   const b = P.Axes({w:600,h:170,xr:[0,2*Math.PI],yr:[-D,D],
-    xlabel:'t',ylabel:'q(t)',pad:{l:54,r:26,t:26,b:40},
+    xlabel:'t',ylabel:'\\text{amplitude}',pad:{l:54,r:26,t:26,b:40},
     xtarget:5,ytarget:3});
   b.hline(D/2,{color:C.err,dash:'4 4'}); b.hline(-D/2,{color:C.err,dash:'4 4'});
   b.curve(t=>m(t)-q(m(t)),{color:C.err,width:1.7,n:1400});
   b.note(0.12, 0.72*D, '+\\Delta/2', {tex:true,fs:13,color:C.err});
   return a.svg() + b.svg();
+}
+
+/* The bound |q| <= Delta/2 under a slider on the input m. A four-level
+   mid-rise quantizer with Delta = 1. The region that holds m is shaded, its
+   level v_k sits at the middle, and q is the gap between the line v = m and
+   the staircase. The lower panel is q against m: it rises across each region
+   and never leaves +-Delta/2, reaching it only at a boundary. The v_k label
+   sits just left of its region, clear of the probe and the line v = m. The boundary labels move to the top in the
+   leftmost region, where the line v = m runs through the bottom corner. */
+function figErrBound(v){
+  P.hOverride = null;
+  const p = v && v.m!=null ? v.m : 0.7;
+  const Q = m => Math.max(-1.5, Math.min(1.5, Math.floor(m)+0.5));
+  const k0 = Math.max(-2, Math.min(1, Math.floor(p))), vk = k0+0.5, q = p-Q(p);
+  const dfmt = x => { const n = Math.round(x); return n===0 ? '0' : (n<0?'−':'')+(Math.abs(n)===1?'':Math.abs(n))+'Δ'; };
+  const a = P.Axes({w:600, h:270, xr:[-2.3,2.3], yr:[-2.3,2.5], xlabel:'m', ylabel:'\\mathbb{Q}(m)',
+    pad:{l:56,r:26,t:24,b:40}, xticksOverride:[-2,-1,0,1,2], yticksOverride:[], xtickfmt:()=>''});
+  a.rect(k0, -2.3, k0+1, 2.5, {fill:C.dec.mid});
+  a.poly([[-2.3,-2.3],[2.3,2.3]], {color:C.in, width:1.4, dash:'4 4'});
+  for(let k=-2;k<2;k++) a.poly([[k,Q(k+0.5)],[k+1,Q(k+0.5)]], {color:C.mid, width:2.4});
+  const yb = k0===-2 ? 1.75 : -2.05;
+  a.note(k0, yb, 'm_{k-1}', {tex:true, fs:14, color:C.muted, anchor:'end', dx:-4});
+  a.note(k0+1, yb, 'm_k', {tex:true, fs:14, color:C.muted, dx:4});
+  a.note(k0, vk-0.08, 'v_k', {tex:true, fs:15, color:C.mid, anchor:'end', dx:-8});
+  a.span(k0, k0+1, 2.2, '\\Delta', {tex:true, fs:15, color:C.muted});
+  a.vline(p, {color:C.muted});
+  a.poly([[p,vk],[p,p]], {color:C.err, width:3});
+  a.point(p, p, {color:C.in, r:5}); a.point(p, vk, {color:C.mid, r:5});
+  a.note(2.25, -1.3, `|q|=${(Math.abs(q)).toFixed(2)}\\,\\Delta`, {tex:true, fs:15, color:C.err, anchor:'end'});
+  const b = P.Axes({w:600, h:220, xr:[-2.3,2.3], yr:[-0.9,0.9], xlabel:'m', ylabel:'q',
+    pad:{l:56,r:26,t:20,b:40}, xticksOverride:[-2,-1,0,1,2], yticksOverride:[], xtickfmt:dfmt});
+  b.rect(k0, -0.9, k0+1, 0.9, {fill:C.dec.mid});
+  b.hline(0.5, {color:C.err, dash:'4 4'}); b.hline(-0.5, {color:C.err, dash:'4 4'});
+  b.note(-2.25, 0.6, '+\\Delta/2', {tex:true, fs:14, color:C.err});
+  b.note(-2.25, -0.8, '-\\Delta/2', {tex:true, fs:14, color:C.err});
+  for(let k=-2;k<2;k++) b.poly([[k,-0.5],[k+1-1e-6,0.5]], {color:C.err, width:2});
+  b.vline(p, {color:C.muted});
+  b.point(p, q, {color:C.err, r:5});
+  const nest = (svg, y, h) => svg.replace('<svg ', `<svg x="0" y="${y}" width="600" height="${h}" `);
+  return `<svg viewBox="0 0 600 490" xmlns="http://www.w3.org/2000/svg" role="img">${nest(a.svg(),0,270)}${nest(b.svg(),270,220)}</svg>`;
 }
 
 /* The error of a fine quantizer as a density: flat at 1/Delta across one
@@ -320,12 +396,12 @@ function figErrDensity(){
   const a = P.Axes(SZ({xr:[-0.9,0.9], yr:[-0.14,1.4], xlabel:'q', ylabel:'f_Q(q)',
     xticksOverride:[-0.5,0,0.5], xtickfmt:x=>x<0?'\u2212\u0394/2':x>0?'\u0394/2':'0',
     yticksOverride:[]}));
-  a.rect(-0.5, 0, 0.5, 1, {fill:C.dec.err, stroke:C.err, width:2});
+  a.rect(-0.5, 0, 0.5, 1, {stroke:C.muted, width:1.6});
   a.area(q=>q*q, -0.5, 0.5, {color:C.dec.err});
   const pts=[]; for(let i=0;i<=200;i++){ const q=-0.5+i/200; pts.push([q,q*q]); }
   a.poly(pts, {color:C.err, width:2});
-  a.note(0.54, 1.1, 'f_Q(q)=1/\\Delta', {tex:true, fs:14, color:C.err});
-  a.note(0.3, 0.42, 'q^{2}f_Q(q)', {tex:true, fs:14, color:C.err});
+  a.note(0.54, 1.1, 'f_Q(q)=1/\\Delta', {tex:true, fs:14, color:C.muted});
+  a.note(0.54, 0.22, 'q^{2}f_Q(q)', {tex:true, fs:14, color:C.err});
   return a.svg();
 }
 
@@ -349,7 +425,7 @@ function figSqnr(v){
 function figCosQuant(){
   const L = 8, mmax = 5, D = 2*mmax/L;
   const q = m => Math.max(-mmax+D/2, Math.min(mmax-D/2, (Math.floor(m/D)+0.5)*D));
-  const a = P.Axes(SZ({xr:[0,2*Math.PI], yr:[-6,6.6], xlabel:'t', ylabel:'m(t),\\;\\mathbb{Q}(m(t))',
+  const a = P.Axes(SZ({xr:[0,2*Math.PI], yr:[-6,6.6], xlabel:'t', ylabel:'\\text{amplitude}',
     pad:{l:60,r:26,t:24,b:42}, xtarget:5, ytarget:5}));
   for(let k=0;k<L;k++) a.hline(-mmax+(k+0.5)*D, {color:C.rule, dash:'2 5', opacity:0.9});
   a.curve(t=>mmax*Math.cos(t), {color:C.in});
@@ -369,6 +445,33 @@ function sqnrMeasured(R){
     pm += m*m; pq += (m-lv)*(m-lv);
   }
   return 10*Math.log10(pm/pq);
+}
+/* The SQNR of a full-scale sinusoid through a fine uniform quantizer,
+   against the bit count, played one bit a frame. Frame k shows R = 1..k+1.
+   Between two frames the new stem rises from the height of the last one, and
+   a bracket marks the 6.02 dB it adds; the step Delta halves, so the noise
+   power falls by four. */
+function figNoiseBits(v){
+  const f = v ? v.frame : 7, n = Math.floor(f+1e-9), u = f-n, R = n+1;
+  const a = P.Axes(SZ({xr:[0,8.6], yr:[0,60], xlabel:'R\\;(\\text{bits per sample})',
+    ylabel:'\\mathrm{SQNR}\\;(\\mathrm{dB})', pad:{l:62,r:26,t:24,b:46}, xtarget:8, ytarget:6}));
+  const y = r => ALPHA_SINE + 20*r*Math.log10(2);
+  a.curve(y, {color:C.err, width:1.2, dash:'5 5', opacity:0.45});
+  const st = []; for(let r=1;r<=R;r++) st.push([r, y(r)]);
+  if(u > 0) st.push([R+1, y(R)+(y(R+1)-y(R))*u]);
+  a.stem(st, {color:C.err});
+  /* the step just taken: from bit Rb-1 to bit Rb, with its height grown by g */
+  const Rb = u > 0 ? R+1 : R, g = u > 0 ? u : 1;
+  if(Rb >= 2){
+    const lo = y(Rb-1), hi = lo+(y(Rb)-lo)*g, X = Rb+0.22;
+    a.poly([[Rb-1,lo],[X,lo]], {color:C.muted, width:1, dash:'3 4'});
+    a.poly([[X-0.06,lo],[X,lo],[X,hi],[X-0.06,hi]], {color:C.in, width:1.6});
+    if(g > 0.6) a.note(X, (lo+hi)/2, '+6.02\\ \\mathrm{dB}', {tex:true, fs:14, color:C.in, dx:6});
+  }
+  const Rs = u > 0.5 ? R+1 : R;
+  a.note(0.3, 55, '\\Delta=2m_{\\max}/2^{'+Rs+'}', {tex:true, fs:14, color:C.muted});
+  a.note(0.3, 48, 'E[Q^{2}]=m_{\\max}^{2}/(3\\cdot4^{'+Rs+'})', {tex:true, fs:14, color:C.err});
+  return a.svg();
 }
 function figMeasured(){
   const a = P.Axes(SZ({xr:[1.5,8.5], yr:[5,55], xlabel:'R\\;(\\text{bits per sample})',
@@ -564,18 +667,57 @@ function figBanding(o){
 function realGallery(cfg){
   return { id:cfg.id, module:'M1', nav:cfg.nav, title:cfg.title, src:cfg.src,
     objective:cfg.objective, keywords:cfg.keywords,
-    budget:cfg.budget||'a gallery of four everyday cases; each figure is one example',
+    budget:cfg.budget||'a gallery of four everyday cases. Each figure is one example',
     slide:true, steps:cfg.notes.length-1, blocks:[
     {t:'eyebrow', text:cfg.eyebrow},
     {t:'title', text:cfg.title},
     {t:'cols', ratio:'c-8-4', fill:true, left:[
-      {t:'grid', cols:2, gap:'18px 22px', items:cfg.figs.map(([svg,cap])=>
-        [{t:'fig', frame:true, svg, caption:cap}])}
+      {t:'grid', cols:2, gap:'18px 22px', items:cfg.figs.map(([svg,cap,listen])=>
+        [Object.assign({t:'fig', frame:true, svg, caption:cap}, listen?{listen}:{})])}
     ], right:cfg.notes.map((n,i)=>i ? {t:'reveal', at:i, items:[n]} : n)}
   ]};
 }
 
 /* ---- the galleries ------------------------------------------------------ */
+
+/* A recorded sound as a signal of time, for fig.listen. SND holds 8 kHz
+   mu-law bytes (build/snd/pack.js); they are expanded once. M keeps every
+   M-th sample, after a low-pass below 4/M kHz when filter is set, the way
+   an anti-aliasing filter would run before a slower sampler. Playback
+   rebuilds the signal from the kept samples with a windowed sinc. */
+const SPEECH = {};
+function speech(name, M, filter){
+  if(!SPEECH[name]){
+    const b = atob(SND[name]), x = new Float32Array(b.length);
+    for(let i=0;i<b.length;i++){
+      const u = ~b.charCodeAt(i) & 255, e = (u>>4) & 7, m = ((((u&15)<<3) + 0x84) << e) - 0x84;
+      x[i] = (u & 128 ? -m : m)/32768;
+    }
+    SPEECH[name] = x;
+  }
+  const key = name+'/'+M+'/'+!!filter;
+  if(!SPEECH[key]){
+    let x = SPEECH[name];
+    if(filter){ const fc = 0.45/M, L = 60, h = [];
+      for(let k=-L;k<=L;k++) h.push((k ? Math.sin(2*Math.PI*fc*k)/(Math.PI*k) : 2*fc)*(0.54+0.46*Math.cos(Math.PI*k/L)));
+      const y = new Float32Array(x.length);
+      for(let n=0;n<x.length;n++){ let s=0; for(let k=-L;k<=L;k++){ const i=n-k; if(i>=0 && i<x.length) s += h[k+L]*x[i]; } y[n]=s; }
+      x = y; }
+    const y = new Float32Array(Math.ceil(x.length/M));
+    for(let i=0;i<y.length;i++) y[i] = x[i*M];
+    SPEECH[key] = y;
+  }
+  const y = SPEECH[key], fs = 8000/M, K = 8;
+  return { dur: y.length/fs, f: t => {
+    const u = t*fs, n0 = Math.floor(u); let s = 0;
+    for(let n=n0-K+1;n<=n0+K;n++){
+      if(n<0 || n>=y.length) continue;
+      const d = u-n;
+      s += y[n]*(d ? Math.sin(Math.PI*d)/(Math.PI*d) : 1)*(0.5+0.5*Math.cos(Math.PI*d/K));
+    }
+    return s; } };
+}
+
 const REAL_SAMPLING = realGallery({ id:'m1-real-sampling', nav:'Sampling rates around us',
   title:'Sampling rates around us', eyebrow:'Module 1 · The sampling theorem', src:'CH7 s.12',
   objective:'Attach the Nyquist rate to systems students use every day.',
@@ -589,7 +731,11 @@ const REAL_SAMPLING = realGallery({ id:'m1-real-sampling', nav:'Sampling rates a
         xticksOverride:[-8,-3.4,3.4,8],ytickfmt:()=>''}));
       const band = c => [1,-1].forEach(s=>a.poly([[c+0.3*s,0],[c+0.9*s,1],[c+2.2*s,0.62],[c+3.4*s,0]],{color:C.mid,width:2.2}));
       for(const c of [-16,-8,0,8,16]) band(c);
-      return a.svg(); }, 'Telephone speech is filtered to $3.4$ kHz and sampled at $8$ kHz, which leaves a $1.2$ kHz guard band.'],
+      return a.svg(); }, 'Telephone speech is filtered to $3.4$ kHz and sampled at $8$ kHz, which leaves a $1.2$ kHz guard band.',
+      {items:[
+        {label:'$f_s=8$ kHz', sound:()=>speech('apollo11', 1)},
+        {label:'$f_s=2$ kHz, no filter', sound:()=>speech('apollo11', 4)},
+        {label:'$f_s=2$ kHz, filtered', sound:()=>speech('apollo11', 4, true)}]}],
     [()=>{ const a=P.Axes(EXO({xr:[0,60],yr:[-14,26],xlabel:'\\text{true rate (Hz)}',ylabel:'\\text{seen (Hz)}',
         xticksOverride:[0,12,24,36,48,60],ytarget:4}));
       a.curve(f=>f,{color:C.in,width:1.4,dash:'5 5'});
@@ -642,8 +788,8 @@ const REAL_RECONSTRUCT = realGallery({ id:'m1-real-reconstruct', nav:'Reconstruc
 
 const REAL_QUANT = realGallery({ id:'m1-real-quant', nav:'Quantizers around us',
   title:'Quantizers around us', eyebrow:'Module 1 · Quantization', src:'CH7 s.16',
-  objective:'Recognise uniform quantizers in displays and converters.',
-  keywords:'examples thermometer display adc 10 bit 3.3 V step kitchen scale mid tread grey levels colour depth',
+  objective:'Recognise uniform quantizers in displays, converters and stored data.',
+  keywords:'examples thermometer display adc 10 bit 3.3 V step kitchen scale mid tread language model llm weights 4 bit int4 memory',
   figs:[
     [()=>{ const a=P.Axes(EXO({xr:[0,10],yr:[36.55,37.15],xlabel:'t\\;(\\text{min})',ylabel:'T\\;(^\\circ\\mathrm{C})',xtarget:5,ytarget:3}));
       const T = t => 36.62+0.046*t;
@@ -659,9 +805,12 @@ const REAL_QUANT = realGallery({ id:'m1-real-quant', nav:'Quantizers around us',
       a.curve(x=>Math.round(x),{color:C.mid,width:2.3,n:1600});
       a.point(0.4,0,{color:C.err,r:4.5});
       return a.svg(); }, 'A kitchen scale reads in $1$ g steps and rounds. A $0.4$ g feather reads $0$: the scale is a mid-tread quantizer.'],
-    [()=>{ const a=P.Axes(EXO({xr:[0,16],yr:[0,1],xlabel:'\\text{level}',ylabel:'',xticksOverride:[0,4,8,12,16],yticksOverride:[],grid:false}));
-      for(let k=0;k<16;k++){ const v=Math.round(255*k/15); a.rect(k,0.12,k+1,0.88,{fill:`rgb(${v},${v},${v})`,stroke:C.rule,width:1}); }
-      return a.svg(); }, 'Sixteen grey levels are drawn here. Eight bits a colour give $256$ levels, and three colours give $256^{3}=16\\,777\\,216$.']
+    [()=>{ const a=P.Axes(EXO({xr:[-3.4,3.4],yr:[0,0.5],xlabel:'w/\\sigma',ylabel:'\\text{share of weights}',ynameAtAxis:true,xticksOverride:[-3,-2,-1,0,1,2,3],yticksOverride:[]}));
+      const phi=w=>Math.exp(-w*w/2)/Math.sqrt(2*Math.PI), D=0.4;
+      const Phi=w=>{ let s=0; const n=400, lo=-8; for(let i=0;i<n;i++){ const u=lo+(w-lo)*(i+.5)/n; s+=phi(u); } return s*(w-lo)/n; };
+      a.curve(phi,{color:C.in,width:1.6,dash:'5 5'});
+      a.stem([...Array(16)].map((_,k)=>{ const l=-3+k*D, lo=k?l-D/2:-8, hi=k<15?l+D/2:8; return [l,(Phi(hi)-Phi(lo))/D]; }),{color:C.mid});
+      return a.svg(); }, 'A language model with $70\\times10^{9}$ weights needs $140$ GB at $16$ bits. At $4$ bits each weight is rounded to one of $2^{4}=16$ levels, and the model needs about $35$ GB.']
   ],
   notes:[
     {t:'note', kind:'def', head:'Every reading is a level', html:'A digital display shows one of a finite set of values. A change smaller than one step leaves the reading unchanged.'},
@@ -720,7 +869,7 @@ const REAL_COMPANDING = realGallery({ id:'m1-real-companding', nav:'Companding a
       a.poly(pts(false),{color:C.in,width:2.2}); a.poly(pts(true),{color:C.mid,width:2.4});
       a.note(-49,12,'\\text{uniform}',{tex:true,fs:13,color:C.in});
       a.note(-49,42,'\\mu\\text{-law}',{tex:true,fs:13,color:C.mid});
-      return a.svg(); }, 'Two $8$-bit quantizers on a sinusoid. The $\\mu$-law SQNR stays nearly flat as the level falls; the uniform one falls a decibel per decibel.'],
+      return a.svg(); }, 'Two $8$-bit quantizers on a sinusoid. The $\\mu$-law SQNR stays nearly flat as the level falls. The uniform one falls a decibel per decibel.'],
     [()=>{ const a=P.Axes(EXO({xr:[0,0.05],yr:[0,0.5],xlabel:'x/x_{\\max}',ylabel:'y',xticksOverride:[0,0.0114,0.05],ytarget:3}));
       a.curve(mulaw,{color:C.in,width:2.3}); a.curve(alaw,{color:C.h,width:2.3,dash:'6 4'});
       a.vline(1/A_LAW,{color:C.muted});
@@ -779,7 +928,7 @@ const REAL_PCM = realGallery({ id:'m1-real-pcm', nav:'PCM around us',
    dark-page tints. */
 const NAVY = {axis:'rgba(239,231,216,.34)', tick:'#9EACB9', name:'#E6E2D9'};
 function figOpenTrace(){
-  const a = P.Axes({w:520,h:215,xr:[0,10],yr:[-1.45,1.45],grid:false,
+  const a = P.Axes({w:520,h:178,xr:[0,10],yr:[-1.45,1.45],grid:false,
     xlabel:'t', ylabel:'g(t)', chrome:NAVY, pad:{l:46,r:30,t:22,b:34}, xstep:2, ytarget:3});
   const pts=[]; for(let i=0;i<=520;i++){ const t=10*i/520; pts.push([a.sx(t),a.sy(g(t))]); }
   const d='M'+pts.map(p=>p[0].toFixed(2)+','+p[1].toFixed(2)).join('L');
@@ -790,13 +939,21 @@ function figOpenTrace(){
     <g class="mtf-sparkwrap">
       <path class="mtf-beam-tail" d="${d}" stroke="#7FC3CE" stroke-width="4.5" opacity=".55" ${cap}/>
       <path class="mtf-beam" d="${d}" stroke="#D9F3F7" stroke-width="3" ${cap}/></g></g>`);
+  /* the sampling instants: a dot on the trace every half second, appearing
+     with the stem it becomes below */
+  for(let n=0;n<=20;n++){
+    const X=a.sx(0.5*n).toFixed(2), Y=a.sy(g(0.5*n)).toFixed(2);
+    a.raw(`<g class="mtf-stem" style="--i:${n};transform-origin:${X}px ${Y}px">
+      <circle class="mtf-stem-dot" cx="${X}" cy="${Y}" r="3.6" fill="#D9F3F7" stroke="#0A0F18" stroke-width="1.2"/></g>`);
+  }
   return a.svg();
 }
 /* The same message sampled every half second and rounded to a step of 0.25:
    the stems rise one by one, each to its quantized height. */
 function figOpenStems(){
-  const a = P.Axes({w:520,h:215,xr:[0,10],yr:[-1.45,1.45],grid:false,
-    xlabel:'n', ylabel:'\\mathbb{Q}(g(nT_s))', chrome:NAVY, pad:{l:46,r:30,t:22,b:34}, xstep:2, ytarget:3});
+  const a = P.Axes({w:520,h:178,xr:[0,10],yr:[-1.45,1.45],grid:false,
+    xlabel:'n', ylabel:'\\mathbb{Q}(g(nT_s))', chrome:NAVY, pad:{l:46,r:30,t:22,b:34}, xstep:2, ytarget:3,
+    xtickfmt:v=>String(2*v)});
   const q = v => (Math.floor(v/0.25)+0.5)*0.25;
   for(let k=-5;k<=5;k++) a.hline((k+0.5)*0.25, {color:'rgba(239,231,216,.10)', dash:'2 5'});
   for(let n=0;n<=20;n++){
@@ -804,6 +961,23 @@ function figOpenStems(){
     a.raw(`<g class="mtf-stem" style="--i:${n};transform-origin:${X}px ${Y0}px">
       <line x1="${X}" y1="${Y0}" x2="${X}" y2="${Y}" stroke="#AC99DC" stroke-width="1.8"/>
       <circle class="mtf-stem-dot" cx="${X}" cy="${Y}" r="4" fill="#AC99DC"/></g>`);
+  }
+  return a.svg();
+}
+/* Each quantized sample as its 4-bit code, most significant bit on top: level
+   k of the sixteen steps of 0.25 on [-2, 2) is written k in binary, one digit
+   to a row. The columns follow the stems above, one sample to a column. */
+function figOpenBits(){
+  const a = P.Axes({w:520,h:98,xr:[0,10],yr:[0,4],grid:false,zeroAxes:false,
+    xlabel:'', ylabel:'\\text{4-bit code}', chrome:NAVY, pad:{l:46,r:30,t:10,b:4},
+    xtickfmt:()=>'', ytickfmt:()=>''});
+  const rh=a.sy(0)-a.sy(1);
+  for(let n=0;n<=20;n++){
+    const k = Math.floor(g(0.5*n)/0.25)+8, X=a.sx(0.5*n);
+    const cells = [3,2,1,0].map((b,r)=>{ const on=(k>>b)&1, y=a.sy(4-r)+rh*0.78;
+      return `<text x="${X.toFixed(2)}" y="${y.toFixed(2)}" text-anchor="middle" font-size="15"
+        font-family="'JetBrains Mono',ui-monospace,monospace" fill="${on?'#C9BAF0':'rgba(239,231,216,.38)'}">${on}</text>`; }).join('');
+    a.raw(`<g class="mtf-stem" style="--i:${n+3};transform-origin:${X.toFixed(2)}px ${a.sy(0).toFixed(2)}px">${cells}</g>`);
   }
   return a.svg();
 }
@@ -850,9 +1024,10 @@ const SC = [
       {t:'note', kind:'warn', head:'Result 2', html:'<span style="color:var(--graphite)">Quantization cannot be undone. Each extra bit divides the error power by four, which is about $6$ dB of SQNR.</span>'}
     ]}
   ], right:[
-    {t:'grid', cols:1, gap:'24px', items:[
+    {t:'grid', cols:1, gap:'10px', items:[
       [{t:'fig', svg:figOpenTrace}],
-      [{t:'fig', svg:figOpenStems}]
+      [{t:'fig', svg:figOpenStems}],
+      [{t:'fig', svg:figOpenBits}]
     ]}
   ]}
 ]},
@@ -861,42 +1036,42 @@ const SC = [
 { id:'m1-sampler', module:'M1', nav:'Impulse-train sampling', title:'Impulse-train sampling',
   objective:'Define the ideal sampled signal and reduce it to a weighted impulse train.',
   keywords:'impulse train sampling period sifting property ideal sampled signal',
-  src:'CH7 s.4', slide:true, steps:3, blocks:[
+  src:'CH7 s.4', slide:true, steps:2, blocks:[
   {t:'eyebrow', text:'Module 1 · The sampling theorem'},
   {t:'title', text:'Impulse-train sampling'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
-    {t:'fig', frame:true, svg:figSamplingStack, caption:'The message, the train and their product on one time axis. Each impulse carries the sample value at its own time.'}
+    {t:'fig', frame:true, grow:true,
+      frames:{labels:['$g(t)$','$p(t)$','$g_\\delta(t)=g(t)\\,p(t)$','$g_\\delta(t)$ alone']},
+      svg:figSamplingStack,
+      caption:'Step through the frames. The message, the train, then their product: each impulse carries the sample value at its own time.'},
+    {t:'legend', items:[['in','$g(t)$',0,0,2],['h','$p(t)$',0,1,2],['mid','$g_\\delta(t)$',0,2]]}
   ], right:[
     {t:'eq', label:'Impulse train', tex:'p(t)=\\sum_{n=-\\infty}^{\\infty}\\delta(t-nT_s),\\qquad f_s=\\frac{1}{T_s}'},
     {t:'reveal', at:1, items:[
-      {t:'eq', label:'Sampled signal', tex:'\\begin{aligned}g_\\delta(t)&=g(t)\\,p(t)\\\\&=\\sum_{n=-\\infty}^{\\infty}g(nT_s)\\,\\delta(t-nT_s)\\end{aligned}',
-        note:'Sifting: $g(t)\\delta(t-t_0)=g(t_0)\\delta(t-t_0)$.'}]},
+      {t:'eq', label:'Sampled signal', tex:'\\begin{aligned}g_\\delta(t)&=g(t)\\,p(t)\\\\&=g(t)\\sum_{n=-\\infty}^{\\infty}\\delta(t-nT_s)\\\\&=\\sum_{n=-\\infty}^{\\infty}g(t)\\,\\delta(t-nT_s)\\\\&=\\sum_{n=-\\infty}^{\\infty}g(nT_s)\\,\\delta(t-nT_s)\\end{aligned}',
+        note:'Move $g(t)$ inside the sum, then sift: $g(t)\\delta(t-t_0)=g(t_0)\\delta(t-t_0)$.'}]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'def', head:'A continuous-time signal', html:'$g_\\delta(t)$ is not a list of numbers. It is a train of weighted impulses, so it has a Fourier transform.'}]},
-    {t:'reveal', at:3, items:[
       {t:'note', kind:'def', head:'Given', html:'A sampler takes one sample every $T_s=125\\ \\mu$s.<div class="nsep"></div>What is the sampling rate?',
         ask:{key:'m1-sampler', choices:['$125$ Hz','$8$ kHz','$80$ kHz'], answer:1,
           why:'$f_s=1/T_s=1/(125\\times10^{-6})=8000$ Hz.'}}]}
   ]}
 ]},
 
-{ id:'m1-spectrum', module:'M1', nav:'The sampled spectrum', title:'The spectrum of a sampled signal',
-  objective:'Derive the replication result that every later statement rests on.',
+{ id:'m1-spectrum', module:'M1', cls:'type-lg', nav:'The sampled spectrum', title:'The spectrum of a sampled signal',
+  objective:'Find the transform of the impulse train, the first half of the replication result.',
   keywords:'fourier transform replication convolution impulse train spectrum',
-  src:'CH7 s.5–6', slide:true, steps:3, blocks:[
+  src:'CH7 s.5–6', slide:true, steps:2, blocks:[
   {t:'eyebrow', text:'Module 1 · The sampling theorem'},
   {t:'title', text:'The spectrum of a sampled signal'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, svg:figSpectrumPair, caption:'The message spectrum, and the spectrum after sampling at $f_s=3W$. A scaled copy sits at every multiple of $f_s$.'}
   ], right:[
     {t:'eq', label:'Product in time', tex:'G_\\delta(f)=G(f)*P(f)',
-      note:'A product in time is a convolution in frequency.'},
+      note:'$g_\\delta(t)$ is a train of impulses, so it has a transform. A product in time is a convolution in frequency.'},
     {t:'reveal', at:1, items:[
-      {t:'eq', label:'Transform of the train', tex:'P(f)=\\frac{1}{T_s}\\sum_{n=-\\infty}^{\\infty}\\delta(f-nf_s)',
-        note:'Every Fourier-series coefficient of $p(t)$ is $1/T_s$, by the sifting property.'}]},
+      {t:'eq', label:'Transform of the train', tex:'\\begin{aligned}c_n&=\\frac{1}{T_s}\\int_{-T_s/2}^{T_s/2}\\delta(t)\\,e^{-j2\\pi nf_st}\\,dt=\\frac{1}{T_s}\\\\p(t)&=\\frac{1}{T_s}\\sum_{n=-\\infty}^{\\infty}e^{j2\\pi nf_st}\\\\P(f)&=\\frac{1}{T_s}\\sum_{n=-\\infty}^{\\infty}\\delta(f-nf_s)\\end{aligned}',
+        note:'Sifting gives $e^{0}=1$, and each $e^{j2\\pi nf_st}$ transforms to $\\delta(f-nf_s)$.'}]},
     {t:'reveal', at:2, items:[
-      {t:'eq', key:true, result:true, label:'Key result · Spectrum replicas', tex:'G_\\delta(f)=f_s\\sum_{n=-\\infty}^{\\infty}G(f-nf_s)'}]},
-    {t:'reveal', at:3, items:[
       {t:'note', kind:'def', head:'Given', html:'$G(f)=0$ for $|f|\\ge 4$ kHz, and $f_s=10$ kHz.<div class="nsep"></div>Where does the copy centred at $f_s$ begin?',
         ask:{key:'m1-spectrum', choices:['$4$ kHz','$6$ kHz','$10$ kHz'], answer:1,
           why:'The copy $G(f-f_s)$ occupies $f_s-W<f<f_s+W$, so it starts at $10-4=6$ kHz.'}}]}
@@ -904,7 +1079,7 @@ const SC = [
 ]},
 
 { id:'m1-spectrum-b', module:'M1', nav:'Spectral replicas', title:'Spectral replicas',
-  objective:'Show that convolving with one shifted impulse shifts the spectrum.',
+  objective:'Show that convolving with one shifted impulse shifts the spectrum, and assemble the replicas.',
   keywords:'convolution shifted impulse sifting copy scale factor fs replicas frames',
   src:'CH7 s.6', slide:true, steps:2, blocks:[
   {t:'eyebrow', text:'Module 1 · The sampling theorem'},
@@ -915,10 +1090,11 @@ const SC = [
       svg:figSpectrumBuild,
       caption:'Step through the frames. The message spectrum is scaled by $f_s$, then one copy is added for each pair of impulses at $\\pm nf_s$.'}
   ], right:[
-    {t:'eq', label:'Convolution with one impulse', tex:'\\begin{aligned}G(f)*\\delta(f-nf_s)&=\\int_{-\\infty}^{\\infty}G(\\theta)\\,\\delta(f-nf_s-\\theta)\\,d\\theta\\\\&=G(f-nf_s)\\end{aligned}',
-      note:'The impulse is even, so the sifting property picks $\\theta=f-nf_s$.'},
+    {t:'eq', label:'Convolution with one impulse', tex:'\\begin{aligned}G(f)*\\delta(f-nf_s)&=\\int_{-\\infty}^{\\infty}G(\\theta)\\,\\delta(f-nf_s-\\theta)\\,d\\theta\\\\&=\\int_{-\\infty}^{\\infty}G(\\theta)\\,\\delta\\bigl(\\theta-(f-nf_s)\\bigr)\\,d\\theta\\\\&=G(f-nf_s)\\end{aligned}',
+      note:'Flip the sign of the even impulse, then sift at $\\theta=f-nf_s$.'},
     {t:'reveal', at:1, items:[
-      {t:'note', kind:'def', head:'Scale factor', html:'The impulses of $P(f)$ have weight $1/T_s=f_s$. Every copy is therefore $f_s$ times the message spectrum.'}]},
+      {t:'eq', key:true, result:true, label:'Key result · Spectrum replicas', tex:'\\begin{aligned}G_\\delta(f)&=\\frac{1}{T_s}\\sum_{n}G(f)*\\delta(f-nf_s)\\\\&=f_s\\sum_{n=-\\infty}^{\\infty}G(f-nf_s)\\end{aligned}',
+        note:'Put $P(f)$ into $G(f)*P(f)$ and convolve term by term, with $1/T_s=f_s$.'}]},
     {t:'reveal', at:2, items:[
       {t:'note', kind:'def', head:'Given', html:'A signal is sampled at $f_s=8$ kHz.<div class="nsep"></div>In the copy centred at $f_s$, where does the value $G(1\\text{ kHz})$ appear?',
         ask:{key:'m1-spectrum-b', choices:['$7$ kHz','$8$ kHz','$9$ kHz'], answer:2,
@@ -950,7 +1126,7 @@ const SC = [
   ]}
 ]},
 
-{ id:'m1-theorem', module:'M1', nav:'The sampling theorem', title:'The sampling theorem',
+{ id:'m1-theorem', module:'M1', cls:'type-lg', nav:'The sampling theorem', title:'The sampling theorem',
   objective:'State the theorem and the rate and interval it fixes.',
   keywords:'sampling theorem nyquist rate nyquist interval bandlimited statement',
   src:'CH7 s.12', slide:true, steps:3, blocks:[
@@ -958,14 +1134,14 @@ const SC = [
   {t:'title', text:'The sampling theorem'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true, svg:()=>figCaseAt(2),
-      caption:'At $f_s=2W$ the copies touch without overlap. A lower rate causes overlap; a higher rate leaves a gap.'}
+      caption:'At $f_s=2W$ the copies touch without overlap. A lower rate causes overlap. A higher rate leaves a gap.'}
   ], right:[
-    {t:'note', kind:'def', head:'Sampling theorem', html:'If $G(f)=0$ for $|f|\\ge W$ and $f_s\\ge 2W$, the samples $g(nT_s)$ determine $g(t)$ exactly. For a lowpass signal, $W$ is also the highest frequency.'},
+    {t:'note', kind:'def', head:'Sampling theorem', html:'If $G(f)=0$ for $|f|\\ge W$ and $f_s\\ge 2W$, the samples $g(nT_s)$ determine $g(t)$ exactly.'},
     {t:'reveal', at:1, items:[
-      {t:'eq', key:true, result:true, label:'Key result · Nyquist rate', tex:'f_s^{\\min}=2W'}]},
+      {t:'eq', key:true, result:true, label:'Key result · Nyquist rate', tex:'\\begin{aligned}f_s-W&\\ge W\\\\f_s&\\ge 2W\\\\f_s^{\\min}&=2W\\end{aligned}',
+        note:'The copy at $f_s$ starts at $f_s-W$, which must not lie below $W$.'}]},
     {t:'reveal', at:2, items:[
-      {t:'eq', side:true, label:'Nyquist interval', tex:'T_s^{\\max}=\\frac{1}{2W}',
-        note:'The longest spacing between samples that still works.'}]},
+      {t:'eq', side:true, label:'Nyquist interval', tex:'\\begin{aligned}T_s&=\\frac{1}{f_s}\\le\\frac{1}{2W}\\\\T_s^{\\max}&=\\frac{1}{2W}\\end{aligned}'}]},
     {t:'reveal', at:3, items:[
       {t:'note', kind:'def', head:'Given', html:'Telephone speech is bandlimited to $W=3.4$ kHz.<div class="nsep"></div>What is the longest sampling interval?',
         ask:{key:'m1-theorem', choices:['$73.5\\ \\mu$s','$147\\ \\mu$s','$294\\ \\mu$s'], answer:1,
@@ -1002,20 +1178,18 @@ REAL_SAMPLING,
 { id:'m1-lpf-b', module:'M1', nav:'The filter in time', title:'The reconstruction filter in the time domain',
   objective:'Derive the sinc impulse response and fix the sinc convention.',
   keywords:'impulse response sinc inverse fourier rectangle zeros sampling instants convention',
-  src:'CH7 s.10', slide:true, steps:3, blocks:[
+  src:'CH7 s.10', slide:true, steps:2, blocks:[
   {t:'eyebrow', text:'Module 1 · Reconstruction'},
   {t:'title', text:'The reconstruction filter in the time domain'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true, svg:figSinc,
       caption:'The pulse is one at $t=0$ and zero at every non-zero multiple of $1/(2W)$, which are the sampling instants at the Nyquist rate.'}
   ], right:[
-    {t:'eq', label:'Impulse response at f_s = 2W', tex:'\\begin{aligned}h(t)&=\\int_{-W}^{W}\\frac{1}{2W}e^{j2\\pi ft}\\,df\\\\&=\\frac{\\sin(2\\pi Wt)}{2\\pi Wt}=\\operatorname{sinc}(2Wt)\\end{aligned}'},
+    {t:'eq', label:'Impulse response at f_s = 2W', tex:'\\begin{aligned}h(t)&=\\int_{-W}^{W}\\frac{1}{2W}e^{j2\\pi ft}\\,df\\\\&=\\frac{1}{2W}\\cdot\\frac{e^{j2\\pi Wt}-e^{-j2\\pi Wt}}{j2\\pi t}\\\\&=\\frac{1}{2W}\\cdot\\frac{2j\\sin(2\\pi Wt)}{j2\\pi t}\\\\&=\\frac{\\sin(2\\pi Wt)}{2\\pi Wt}\\\\&=\\operatorname{sinc}(2Wt)\\end{aligned}',
+      note:'The gain is $T_s=1/(2W)$. Integrate, then use $e^{jx}-e^{-jx}=2j\\sin x$.'},
     {t:'reveal', at:1, items:[
-      {t:'eq', side:true, label:'The sinc convention', tex:'\\operatorname{sinc}(x)=\\frac{\\sin(\\pi x)}{\\pi x}',
-        note:'One at $x=0$, zero at every other integer.'}]},
+      {t:'eq', side:true, label:'The sinc convention', tex:'\\operatorname{sinc}(x)=\\frac{\\sin(\\pi x)}{\\pi x}'}]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'ok', head:'Zeros at the samples', html:'$h(nT_s)=\\operatorname{sinc}(n)=0$ for every $n\\ne0$ when $T_s=1/(2W)$. Each pulse is invisible at the other sampling instants.'}]},
-    {t:'reveal', at:3, items:[
       {t:'note', kind:'def', head:'Given', html:'The message is bandlimited to $W=5$ kHz.<div class="nsep"></div>Where is the first zero of $h(t)$ for $t>0$?',
         ask:{key:'m1-lpf-b', choices:['$50\\ \\mu$s','$100\\ \\mu$s','$200\\ \\mu$s'], answer:1,
           why:'$\\operatorname{sinc}(2Wt)=0$ first at $2Wt=1$, so $t=1/(2W)=100\\ \\mu$s.'}}]}
@@ -1025,19 +1199,20 @@ REAL_SAMPLING,
 { id:'m1-interp', module:'M1', nav:'Interpolation', title:'The interpolation formula',
   objective:'Derive the interpolation formula as a sum of shifted sinc pulses.',
   keywords:'interpolation formula sinc shifted samples reconstruction sum convolution',
-  src:'CH7 s.11', slide:true, steps:3, blocks:[
+  src:'CH7 s.11', slide:true, steps:2, blocks:[
   {t:'eyebrow', text:'Module 1 · Reconstruction'},
   {t:'title', text:'The interpolation formula'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true, svg:figInterp,
-      caption:'Each sample scales one sinc pulse. The green sum passes through every sample. Point to a sample to lift its pulse.'}
+      frames:{labels:['all terms','$n=0$','$n=1$','$n=2$','$n=3$','$n=4$','$n=5$','$n=6$','$n=7$','$n=8$'], ms:250},
+      caption:'Each sample scales one sinc pulse. The green sum passes through every sample. Point to a sample, or step through the terms, to lift its pulse.'}
   ], right:[
-    {t:'eq', label:'Filter the impulse train', tex:'g_r(t)=\\int_{-\\infty}^{\\infty}\\underbrace{\\sum_{n}g(nT_s)\\,\\delta(\\tau-nT_s)}_{g_\\delta(\\tau)}\\,h(t-\\tau)\\,d\\tau'},
+    {t:'eq', label:'Filter the impulse train', tex:'\\begin{aligned}g_r(t)&=\\int_{-\\infty}^{\\infty}\\underbrace{\\sum_{n}g(nT_s)\\,\\delta(\\tau-nT_s)}_{g_\\delta(\\tau)}\\,h(t-\\tau)\\,d\\tau\\\\&=\\sum_{n}g(nT_s)\\int_{-\\infty}^{\\infty}h(t-\\tau)\\,\\delta(\\tau-nT_s)\\,d\\tau\\\\&=\\sum_{n}g(nT_s)\\,h(t-nT_s)\\end{aligned}',
+      note:'Swap the sum and the integral, then sift each term at $\\tau=nT_s$.'},
     {t:'reveal', at:1, items:[
-      {t:'eq', label:'Sift each impulse', tex:'g_r(t)=\\sum_{n}g(nT_s)\\underbrace{\\int_{-\\infty}^{\\infty}h(t-\\tau)\\,\\delta(\\tau-nT_s)\\,d\\tau}_{h(t-nT_s)}'}]},
+      {t:'eq', key:true, result:true, label:'Key result · Interpolation formula', tex:'g_r(t)=\\sum_{n=-\\infty}^{\\infty}g(nT_s)\\operatorname{sinc}\\!\\bigl(2W(t-nT_s)\\bigr)',
+        note:'Substitute $h(t)=\\operatorname{sinc}(2Wt)$, the filter at $f_s=2W$.'}]},
     {t:'reveal', at:2, items:[
-      {t:'eq', key:true, result:true, label:'Key result · Interpolation formula', tex:'g_r(t)=\\sum_{n=-\\infty}^{\\infty}g(nT_s)\\operatorname{sinc}\\!\\bigl(2W(t-nT_s)\\bigr)'}]},
-    {t:'reveal', at:3, items:[
       {t:'note', kind:'def', head:'Given', html:'Sampling at the Nyquist rate, evaluate $g_r(t)$ at $t=3T_s$.<div class="nsep"></div>Which terms of the sum are non-zero there?',
         ask:{key:'m1-interp', choices:['Only $n=3$','$n=2,3,4$','Every $n$'], answer:0,
           why:'The term $n$ is $g(nT_s)\\operatorname{sinc}(3-n)$, and $\\operatorname{sinc}$ vanishes at every non-zero integer.'}}]}
@@ -1056,8 +1231,9 @@ REAL_SAMPLING,
       svg:figInterpBuild,
       caption:'Step through the frames. Each new sinc pulse corrects the sum between the samples without moving it at the samples already fitted.'}
   ], right:[
-    {t:'eq', label:'At the Nyquist rate', tex:'g(t)=\\sum_{n=-\\infty}^{\\infty}g\\!\\left(\\frac{n}{2W}\\right)\\operatorname{sinc}(2Wt-n)'},
-    {t:'note', kind:'ok', head:'Values at the sample times', html:'At $t=kT_s$ every term but $n=k$ is zero, so $g_r(kT_s)=g(kT_s)$. Between the samples all the terms contribute.'},
+    {t:'eq', label:'At the Nyquist rate', tex:'\\begin{aligned}g(t)&=\\sum_{n}g(nT_s)\\operatorname{sinc}\\!\\bigl(2W(t-nT_s)\\bigr)\\\\&=\\sum_{n=-\\infty}^{\\infty}g\\!\\left(\\frac{n}{2W}\\right)\\operatorname{sinc}(2Wt-n)\\end{aligned}',
+      note:'Put $T_s=1/(2W)$, so that $2WnT_s=n$.'},
+    {t:'note', kind:'ok', head:'Values at the sample times', html:'$h(nT_s)=\\operatorname{sinc}(n)=0$ for $n\\ne0$, so at $t=kT_s$ only $n=k$ survives and $g_r(kT_s)=g(kT_s)$.'},
     {t:'reveal', at:1, items:[
       {t:'note', kind:'warn', head:'A finite sum', html:'A sum over a few samples is exact only at those samples. The error between them shrinks as more terms enter.'}]},
     {t:'reveal', at:2, items:[
@@ -1074,22 +1250,28 @@ REAL_SAMPLING,
   {t:'eyebrow', text:'Module 1 · Worked example'},
   {t:'title', text:'Worked example: the Nyquist rate and a guard band'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
-    {t:'fig', frame:true, grow:true, svg:()=>{
+    {t:'fig', frame:true, grow:true,
+      frames:{labels:['$X(f)$','$f_s=2W=80$ kHz','$f_s=90$ kHz'], ms:900},
+      svg:v=>{
+      const k = v ? v.frame : 2;
+      const fs = 80 + 10*Math.max(0, Math.min(1, k-1)), h = Math.max(0, Math.min(1, k));
+      const tk = Math.round(fs);
       const a=P.Axes(SZ({xr:[-140,140],yr:[-0.1,1.4],xlabel:'f\\;(\\text{kHz})',ylabel:'X_\\delta(f)',
-        xticksOverride:[-90,-40,40,90],ytickfmt:()=>''}));
-      for(const c of [-90,0,90]) copy(a,c,40,1,{color:C.mid,width:2.2});
-      a.span(40,50,0.22,'f_g=10',{tex:true,fs:13,color:C.muted});
+        xticksOverride:[-tk,-40,40,tk],ytickfmt:()=>''}));
+      copy(a,0,40,1,{color:C.mid,width:2.2});
+      if(h > 1e-9) for(const c of [-fs,fs]) copy(a,c,40,h,{color:C.mid,width:2.2});
+      if(fs - 80 > 1.5) a.span(40,fs-40,0.22,`f_g=${Math.round(fs-80)}`,{tex:true,fs:13,color:C.muted});
       return a.svg(); },
-      caption:'$W=40$ kHz sampled at $90$ kHz. The first copy starts at $50$ kHz, $10$ kHz above the message edge.'}
+      caption:'Step through the frames. At $f_s=2W=80$ kHz the first copy starts exactly at the message edge $W=40$ kHz. At $90$ kHz it starts at $50$ kHz, leaving a $10$ kHz guard band.'}
   ], right:[
     {t:'note', kind:'def', head:'Given', html:'$x(t)$ is bandlimited to $W=40$ kHz.<div class="nsep"></div>Find (a) the Nyquist rate and (b) the rate with a $10$ kHz guard band.',
       ask:{key:'m1-ex-nyquist', q:'Predict (a) first.', choices:['$40$ kHz','$80$ kHz','$90$ kHz'], answer:1}},
     {t:'reveal', at:1, items:[
       {t:'note', kind:'def', head:'Method', html:'<ol class="steps"><li>The Nyquist rate is $2W$.</li><li>A guard band $f_g$ adds to it: $f_s=2W+f_g$.</li></ol>'}]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'ok', head:'Solution', html:'(a) $f_s=2(40)=80$ kHz. (b) $f_s=80+10=90$ kHz.'}]},
+      {t:'eq', label:'Solution', tex:'\\text{(a)}\\;\\begin{aligned}f_s&=2W\\\\&=2(40)\\\\&=80\\ \\text{kHz}\\end{aligned}\\qquad\\text{(b)}\\;\\begin{aligned}f_s&=2W+f_g\\\\&=80+10\\\\&=90\\ \\text{kHz}\\end{aligned}'}]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'def', head:'Check', html:'At $90$ kHz the first copy spans $50$ to $130$ kHz. The gap from $40$ to $50$ kHz is the $10$ kHz guard band.'}]}
+      {t:'note', kind:'def', head:'Check', html:'At $90$ kHz the first copy spans $f_s-W=50$ to $f_s+W=130$ kHz. The gap from $W=40$ to $50$ kHz is the $10$ kHz guard band.'}]}
   ]}
 ]},
 
@@ -1116,10 +1298,10 @@ REAL_SAMPLING,
     {t:'note', kind:'def', head:'Given', html:'$y(t)=x(t)\\cos(80000\\pi t)$, with $x$ bandlimited to $40$ kHz.<div class="nsep"></div>Find (c) the Nyquist rate of $y(t)$.',
       ask:{key:'m1-ex-nyquist-b', choices:['$80$ kHz','$120$ kHz','$160$ kHz'], answer:2}},
     {t:'reveal', at:1, items:[
-      {t:'eq', label:'Modulation shifts the spectrum', tex:'Y(f)=\\tfrac12X(f-40\\text{k})+\\tfrac12X(f+40\\text{k})',
-        note:'The carrier is $\\cos(2\\pi f_ct)$ with $f_c=40$ kHz.'}]},
+      {t:'eq', label:'Modulation shifts the spectrum', tex:'\\begin{aligned}y(t)&=x(t)\\cos(2\\pi f_ct)\\\\&=\\tfrac12x(t)\\,e^{j2\\pi f_ct}+\\tfrac12x(t)\\,e^{-j2\\pi f_ct}\\\\Y(f)&=\\tfrac12X(f-f_c)+\\tfrac12X(f+f_c)\\end{aligned}',
+        note:'$2\\pi f_ct=80000\\pi t$ gives $f_c=40$ kHz, and $e^{\\pm j2\\pi f_ct}$ shifts by $\\pm f_c$.'}]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'ok', head:'Solution', html:'The highest frequency of $y$ is $f_c+W=80$ kHz, so its Nyquist rate is $2(80)=160$ kHz.'}]},
+      {t:'eq', label:'Solution', tex:'\\begin{aligned}f_{\\max}&=f_c+W\\\\&=40+40\\\\&=80\\ \\text{kHz}\\end{aligned}\\qquad\\begin{aligned}f_s&=2f_{\\max}\\\\&=2(80)\\\\&=160\\ \\text{kHz}\\end{aligned}'}]},
     {t:'reveal', at:3, items:[
       {t:'note', kind:'err', head:'Common error', html:'The rate $80$ kHz belongs to $x$. Modulation moves the highest frequency to $80$ kHz, so $y$ needs $160$ kHz.'}]}
   ]}
@@ -1140,7 +1322,7 @@ REAL_RECONSTRUCT,
   ], right:[
     {t:'note', kind:'def', head:'Quantization', html:'Quantization replaces each sample by the nearest of $L$ <b>representation levels</b>. In a <b>uniform</b> quantizer the levels are equally spaced.'},
     {t:'eq', label:'Step size', tex:'\\Delta=\\frac{2m_{\\max}}{L}',
-      note:'$L$ levels share the full range $[-m_{\\max},m_{\\max}]$.'},
+      note:'$L$ levels share the full range $[-m_{\\max},m_{\\max}]$. For a range $[m_{\\min},m_{\\max}]$, ${\\Delta=(m_{\\max}-m_{\\min})/L}$.'},
     {t:'reveal', at:1, items:[
       {t:'note', kind:'def', head:'Mid-rise', html:'A decision boundary sits at zero. With $L$ even, the levels are $\\pm\\Delta/2,\\pm3\\Delta/2,\\dots$ and none of them is zero.'}]},
     {t:'reveal', at:2, items:[
@@ -1170,6 +1352,28 @@ REAL_RECONSTRUCT,
   ]}
 ]},
 
+{ id:'m1-quant-walk', module:'M1', nav:'Sample to level', title:'A sampled signal through the quantizer',
+  objective:'Follow each sample from the signal to its level on the staircase.',
+  keywords:'quantizer sample level staircase mid-tread input output frames animation',
+  src:'CH7 s.16', slide:true, steps:2, blocks:[
+  {t:'eyebrow', text:'Module 1 · Quantization'},
+  {t:'title', text:'A sampled signal through the quantizer'},
+  {t:'cols', ratio:'c-5-7', fill:true, left:[
+    {t:'fig', frame:true,
+      frames:{labels:['$n=1$','$n=2$','$n=3$','$n=4$','$n=5$','$n=6$','$n=7$','$n=8$']},
+      svg:figQuantWalk,
+      caption:'Step through the samples. Each sample $m(nT_s)$ enters the mid-tread quantizer with $\\Delta=1$ and leaves as the level $v[n]$.'}
+  ], right:[
+    {t:'note', kind:'def', head:'Sample and quantize', html:'<ol class="steps"><li>Sample: read $m(nT_s)$ off the signal.</li><li>Find the region: the sample lies between two boundaries of the staircase.</li><li>Output: the level of that region, $v[n]=\\mathbb{Q}\\bigl(m(nT_s)\\bigr)$.</li></ol>'},
+    {t:'reveal', at:1, items:[
+      {t:'note', kind:'warn', head:'Many inputs, one level', html:'Every input between $1.5$ and $2.5$ leaves as $2$. The output keeps the region and loses the exact value.'}]},
+    {t:'reveal', at:2, items:[
+      {t:'note', kind:'def', head:'Given', html:'The same quantizer receives the sample $m(nT_s)=1.62$.<div class="nsep"></div>What is $v[n]$?',
+        ask:{key:'m1-quant-walk', choices:['$1$','$1.5$','$2$'], answer:2,
+          why:'$1.62$ lies between the boundaries $1.5$ and $2.5$, so it goes to the level $2$.'}}]}
+  ]}
+]},
+
 { id:'m1-lloydmax', module:'M1', nav:'Levels and boundaries', title:'The quantizer as a function',
   objective:'State the quantizer function and the two optimality conditions.',
   keywords:'quantizer function regions boundaries lloyd max midpoint centroid gaussian',
@@ -1178,7 +1382,7 @@ REAL_RECONSTRUCT,
   {t:'title', text:'The quantizer as a function'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true, svg:figRegions,
-      caption:'The best four-level quantizer for a Gaussian input. Each boundary $m_k$ lies midway between two levels; each level $v_k$ is the centroid of its region.'}
+      caption:'The best four-level quantizer for a Gaussian input. Each boundary $m_k$ lies midway between two levels. Each level $v_k$ is the centroid of its region.'}
   ], right:[
     {t:'eq', label:'Quantizer function', tex:'\\mathbb{Q}(m)=v_k\\quad\\text{for}\\quad m_{k-1}<m\\le m_k',
       note:'The boundaries $m_k$ cut the range into $L$ regions.'},
@@ -1203,13 +1407,15 @@ REAL_QUANT,
   {t:'eyebrow', text:'Module 1 · Quantization noise'},
   {t:'title', text:'Quantization noise'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
-    {t:'fig', frame:true, svg:figQuantError,
-      caption:'A sinusoid of amplitude $5$ through an eight-level quantizer, $\\Delta=1.25$. The error stays between $-\\Delta/2$ and $\\Delta/2$.'}
+    {t:'fig', frame:true, grow:true,
+      live:{controls:[{k:'m', label:'$m$', min:-2, max:1.99, step:0.01, v:0.7, show:v=>'$'+v.toFixed(2)+'\\,\\Delta$'}]},
+      svg:figErrBound,
+      caption:'Drag the input $m$. The error is the gap between the line $v=m$ and the staircase. It is largest at a boundary, where it equals $\\Delta/2$.'}
   ], right:[
     {t:'eq', label:'Quantization error', tex:'q=m-\\mathbb{Q}(m)'},
     {t:'reveal', at:1, items:[
-      {t:'eq', side:true, label:'Bound', tex:'|q|\\le\\frac{\\Delta}{2}',
-        note:'Every input goes to the nearer level.'}]},
+      {t:'eq', side:true, label:'Bound', tex:'\\begin{aligned}|q|&=|m-v_k|\\\\&\\le\\tfrac12(m_k-m_{k-1})\\\\&=\\frac{\\Delta}{2}\\end{aligned}',
+        note:'Inside the range, $v_k$ is the midpoint of a region $\\Delta$ wide.'}]},
     {t:'reveal', at:2, items:[
       {t:'note', kind:'def', head:'Uniform model', html:'For a small $\\Delta$ the input density is nearly flat across one region. The error is then modelled as $Q\\sim U(-\\Delta/2,\\Delta/2)$.'}]},
     {t:'reveal', at:3, items:[
@@ -1220,32 +1426,51 @@ REAL_QUANT,
 ]},
 
 { id:'m1-qnoise-b', module:'M1', nav:'Noise power', title:'The power of quantization noise',
-  objective:'Derive the mean-square error of a fine quantizer and write it in bits.',
-  keywords:'mean square error delta squared over twelve variance bits per sample',
-  src:'CH7 s.20', slide:true, steps:3, blocks:[
+  objective:'Derive the mean-square error of a fine quantizer.',
+  keywords:'mean square error delta squared over twelve variance uniform error density',
+  src:'CH7 s.20', slide:true, steps:1, blocks:[
   {t:'eyebrow', text:'Module 1 · Quantization noise'},
   {t:'title', text:'The power of quantization noise'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true, svg:figErrDensity,
-      caption:'The uniform error density, and $q^{2}f_Q(q)$ shaded. The shaded area is the noise power.'}
+      caption:'The uniform error density, and $q^{2}f_Q(q)$ shaded. The shaded area is the noise power $E[Q^{2}]$.'}
   ], right:[
-    {t:'eq', label:'Mean-square error', tex:'\\begin{aligned}E[Q^{2}]&=\\int_{-\\Delta/2}^{\\Delta/2}q^{2}\\,\\frac{1}{\\Delta}\\,dq\\\\&=\\frac{1}{\\Delta}\\left[\\frac{q^{3}}{3}\\right]_{-\\Delta/2}^{\\Delta/2}=\\frac{\\Delta^{2}}{12}\\end{aligned}'},
+    {t:'eq', label:'Mean-square error', tex:'\\begin{aligned}E[Q^{2}]&=\\int_{-\\Delta/2}^{\\Delta/2}q^{2}\\,\\frac{1}{\\Delta}\\,dq\\\\&=\\frac{1}{\\Delta}\\left[\\frac{q^{3}}{3}\\right]_{-\\Delta/2}^{\\Delta/2}\\\\&=\\frac{1}{3\\Delta}\\left(\\frac{\\Delta^{3}}{8}+\\frac{\\Delta^{3}}{8}\\right)\\\\&=\\frac{\\Delta^{2}}{12}\\end{aligned}',
+      note:'The error density is $f_Q(q)=1/\\Delta$ on $[-\\Delta/2,\\Delta/2]$, and $(-\\Delta/2)^{3}=-\\Delta^{3}/8$.'},
     {t:'reveal', at:1, items:[
-      {t:'eq', label:'In bits', tex:'E[Q^{2}]=\\frac{1}{12}\\left(\\frac{2m_{\\max}}{2^{R}}\\right)^{2}=\\frac{m_{\\max}^{2}}{3\\cdot 2^{2R}}',
-        note:'Substitute $\\Delta=2m_{\\max}/L$ and $L=2^{R}$.'}]},
-    {t:'reveal', at:2, items:[
-      {t:'note', kind:'ok', head:'One bit, a quarter', html:'Each extra bit halves $\\Delta$ and divides the noise power by four.'}]},
-    {t:'reveal', at:3, items:[
       {t:'note', kind:'def', head:'Given', html:'A fine uniform quantizer has $\\Delta=0.5$.<div class="nsep"></div>What is $E[Q^{2}]$?',
         ask:{key:'m1-qnoise-b', choices:['$0.0208$','$0.0417$','$0.125$'], answer:0,
           why:'$\\Delta^{2}/12=0.25/12=0.0208$.'}}]}
   ]}
 ]},
 
+{ id:'m1-qnoise-c', module:'M1', nav:'Noise power in bits', title:'Quantization noise in bits',
+  objective:'Write the noise power of a fine quantizer in terms of the bits a sample.',
+  keywords:'noise power bits per sample step size halves quarter 2 to the minus 2R',
+  src:'CH7 s.20', slide:true, steps:2, blocks:[
+  {t:'eyebrow', text:'Module 1 · Quantization noise'},
+  {t:'title', text:'Quantization noise in bits'},
+  {t:'cols', ratio:'c-5-7', fill:true, left:[
+    {t:'fig', frame:true, grow:true,
+      frames:{labels:['$R=1$','$R=2$','$R=3$','$R=4$','$R=5$','$R=6$','$R=7$','$R=8$']},
+      svg:figNoiseBits,
+      caption:'Step through the bits for a full-scale sinusoid. Each added bit halves $\\Delta$, divides $E[Q^{2}]$ by four, and lifts the SQNR by $10\\log_{10}4=6.02$ dB.'}
+  ], right:[
+    {t:'eq', label:'In bits', tex:'\\begin{aligned}E[Q^{2}]&=\\frac{\\Delta^{2}}{12}\\\\&=\\frac{1}{12}\\left(\\frac{2m_{\\max}}{2^{R}}\\right)^{2}\\\\&=\\frac{1}{12}\\cdot\\frac{4m_{\\max}^{2}}{2^{2R}}\\\\&=\\frac{m_{\\max}^{2}}{3\\cdot 2^{2R}}\\end{aligned}',
+      note:'Substitute $\\Delta=2m_{\\max}/L$ and $L=2^{R}$.'},
+    {t:'reveal', at:1, items:[
+      {t:'note', kind:'ok', head:'One bit, a quarter', html:'Each extra bit halves $\\Delta$ and divides the noise power by four.'}]},
+    {t:'reveal', at:2, items:[
+      {t:'note', kind:'def', head:'Given', html:'A fine quantizer goes from $R=6$ to $R=7$ bits.<div class="nsep"></div>By what factor does $E[Q^{2}]$ fall?',
+        ask:{key:'m1-qnoise-c', choices:['$2$','$4$','$8$'], answer:1,
+          why:'$E[Q^{2}]$ is proportional to $2^{-2R}$, and $2^{2}=4$.'}}]}
+  ]}
+]},
+
 { id:'m1-sqnr', module:'M1', nav:'Signal-to-noise ratio', title:'Signal-to-quantization-noise ratio',
   objective:'Derive the SQNR of a uniform quantizer and the six-decibel rule.',
   keywords:'sqnr signal to quantization noise ratio decibel six per bit alpha input level slider',
-  src:'CH7 s.21–22', slide:true, steps:3, blocks:[
+  src:'CH7 s.21–22', slide:true, steps:2, blocks:[
   {t:'eyebrow', text:'Module 1 · Quantization noise'},
   {t:'title', text:'Signal-to-quantization-noise ratio'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
@@ -1253,14 +1478,14 @@ REAL_QUANT,
       live:{controls:[{k:'lvl', label:'level', min:-40, max:0, step:5, v:-20, show:v=>'$'+v+'$ dB'}]},
       svg:figSqnr,
       caption:'Drag the input level below full scale. The line keeps its slope of $6.02$ dB a bit and drops by the level.'},
-    {t:'legend', items:[['in','full-scale sinusoid'],['mid','at the chosen level']], at:'tl'}
+    {t:'legend', items:[['in','full-scale sinusoid'],['mid','at the chosen level']], at:'tl-axis'}
   ], right:[
-    {t:'eq', label:'Definition', tex:'\\mathrm{SQNR}=\\frac{P_M}{E[Q^{2}]}'},
+    {t:'eq', label:'Uniform quantizer', tex:'\\begin{aligned}\\mathrm{SQNR}&=\\frac{P_M}{E[Q^{2}]}\\\\&=\\frac{3P_M}{m_{\\max}^{2}}\\,2^{2R}\\end{aligned}',
+      note:'Substitute $E[Q^{2}]=m_{\\max}^{2}/(3\\cdot2^{2R})$.'},
     {t:'reveal', at:1, items:[
-      {t:'eq', label:'Uniform quantizer', tex:'\\mathrm{SQNR}=\\frac{3P_M}{m_{\\max}^{2}}\\,2^{2R}'}]},
+      {t:'eq', key:true, result:true, label:'Key result · Six decibels a bit', tex:'\\begin{aligned}\\mathrm{SQNR}\\;[\\mathrm{dB}]&=\\underbrace{10\\log_{10}\\frac{3P_M}{m_{\\max}^{2}}}_{\\alpha}+10\\log_{10}2^{2R}\\\\&=\\alpha+20R\\log_{10}2\\\\&=\\alpha+6.02R\\end{aligned}',
+        note:'The log of a product is a sum of logs, and $20\\log_{10}2=6.02$.'}]},
     {t:'reveal', at:2, items:[
-      {t:'eq', key:true, result:true, label:'Key result · Six decibels a bit', tex:'\\mathrm{SQNR}\\;[\\mathrm{dB}]=\\underbrace{10\\log_{10}\\frac{3P_M}{m_{\\max}^{2}}}_{\\alpha}+\\,6.02R'}]},
-    {t:'reveal', at:3, items:[
       {t:'note', kind:'def', head:'Given', html:'A quantizer gives $40$ dB at $R=6$.<div class="nsep"></div>What does it give at $R=8$?',
         ask:{key:'m1-sqnr', choices:['$46.02$ dB','$52.04$ dB','$53.33$ dB'], answer:1,
           why:'Two more bits add $2(6.02)=12.04$ dB.'}}]}
@@ -1268,52 +1493,68 @@ REAL_QUANT,
 ]},
 
 { id:'m1-ex-cos', module:'M1', nav:'Worked example · a sinusoid', title:'Worked example: quantizing a sinusoid',
-  objective:'Compute the step size and SQNR of a full-scale sinusoid at three bits.',
-  keywords:'worked example sinusoid parseval average power sqnr three bits 19.82 db',
-  src:'CH7 s.23', slide:true, steps:3, blocks:[
+  objective:'Compute the power and the SQNR intercept of a full-scale sinusoid.',
+  keywords:'worked example sinusoid parseval average power intercept alpha 1.76 db',
+  src:'CH7 s.23', slide:true, steps:2, blocks:[
   {t:'eyebrow', text:'Module 1 · Worked example'},
   {t:'title', text:'Worked example: quantizing a sinusoid'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true, svg:figCosQuant,
-      caption:'$m(t)=5\\cos t$ through a three-bit quantizer spanning $[-5,5]$. The dotted lines are the eight levels.'}
+      caption:'$m(t)=5\\cos t$ through a three-bit quantizer spanning $[-5,5]$. The dotted lines are the eight levels.'},
+    {t:'legend', items:[['in','$m(t)$'],['mid','$\\mathbb{Q}(m(t))$']], at:'tc'}
   ], right:[
     {t:'note', kind:'def', head:'Given', html:'$m(t)=5\\cos t$ and a uniform quantizer over its full range, $R=3$.<div class="nsep"></div>Find the step size and the SQNR in decibels.',
       ask:{key:'m1-ex-cos', q:'Predict the step size first.', choices:['$0.625$','$1.25$','$2.5$'], answer:1}},
     {t:'reveal', at:1, items:[
-      {t:'eq', label:'Signal power', tex:'P_M=\\sum_k|a_k|^{2}=2\\left(\\tfrac52\\right)^{2}=12.5',
-        note:'Parseval, with $a_{\\pm1}=5/2$.'}]},
+      {t:'eq', label:'Signal power', tex:'\\begin{aligned}P_M&=|a_1|^{2}+|a_{-1}|^{2}\\\\&=2\\left(\\tfrac52\\right)^{2}\\\\&=12.5\\end{aligned}',
+        note:'Parseval, with $m(t)=\\tfrac52e^{jt}+\\tfrac52e^{-jt}$ and $a_{\\pm1}=5/2$.'}]},
     {t:'reveal', at:2, items:[
-      {t:'eq', label:'Intercept', tex:'\\alpha=10\\log_{10}\\frac{3(12.5)}{5^{2}}=10\\log_{10}1.5=1.76\\ \\text{dB}'}]},
-    {t:'reveal', at:3, items:[
-      {t:'note', kind:'ok', head:'Solution', html:'$\\Delta=2(5)/8=1.25$ V and $\\mathrm{SQNR}=1.76+6.02(3)=19.82$ dB.'}]}
+      {t:'eq', label:'Intercept', tex:'\\begin{aligned}\\alpha&=10\\log_{10}\\frac{3(12.5)}{5^{2}}\\\\&=10\\log_{10}\\frac{37.5}{25}\\\\&=10\\log_{10}1.5\\\\&=1.76\\ \\text{dB}\\end{aligned}',
+        note:'$m_{\\max}=5$, the peak of the sinusoid.'}]}
+  ]}
+]},
+
+{ id:'m1-ex-cos-s', module:'M1', nav:'Worked example · SQNR at three bits', title:'Worked example: step size and SQNR at three bits',
+  objective:'Finish the three-bit sinusoid and check the SQNR from its definition.',
+  keywords:'worked example step size 1.25 sqnr three bits 19.82 db check definition common error',
+  src:'CH7 s.23', slide:true, steps:2, blocks:[
+  {t:'eyebrow', text:'Module 1 · Worked example'},
+  {t:'title', text:'Worked example: step size and SQNR at three bits'},
+  {t:'cols', ratio:'c-5-7', fill:true, left:[
+    {t:'fig', frame:true, svg:figQuantError,
+      caption:'The same sinusoid through the eight-level quantizer, $\\Delta=1.25$. The error stays between $-\\Delta/2$ and $\\Delta/2$.'},
+    {t:'legend', items:[['in','$m(t)$'],['mid','$\\mathbb{Q}(m(t))$'],['err','$q(t)$']], at:'tc'}
+  ], right:[
+    {t:'eq', label:'Solution', tex:'\\begin{aligned}\\Delta&=\\frac{2m_{\\max}}{2^{R}}\\\\&=\\frac{2(5)}{8}\\\\&=1.25\\ \\text{V}\\end{aligned}\\qquad\\begin{aligned}\\mathrm{SQNR}&=\\alpha+6.02R\\\\&=1.76+6.02(3)\\\\&=19.82\\ \\text{dB}\\end{aligned}'},
+    {t:'reveal', at:1, items:[
+      {t:'eq', label:'Check at R = 3', tex:'\\begin{aligned}E[Q^{2}]&=\\frac{1.25^{2}}{12}=\\frac{1.5625}{12}\\\\&=0.1302\\\\\\mathrm{SQNR}&=10\\log_{10}\\frac{12.5}{0.1302}\\\\&=10\\log_{10}96.0\\\\&=19.82\\ \\text{dB}\\end{aligned}',
+        note:'The definition gives the same number as $\\alpha+6.02R$.'}]},
+    {t:'reveal', at:2, items:[
+      {t:'note', kind:'err', head:'Common error', html:'The full range is $2m_{\\max}=10$ V, so $\\Delta=2m_{\\max}/L$. Using $m_{\\max}/L$ halves every step.'}]}
   ]}
 ]},
 
 { id:'m1-ex-cos-b', module:'M1', nav:'Worked example · predicted and measured SQNR', title:'Worked example: predicted and measured SQNR',
-  objective:'Add a bit, check the answer two ways and compare it with a measurement.',
-  keywords:'worked example four bits 25.84 db check measured 19.09 25.31 model limit step size error',
-  src:'CH7 s.24', slide:true, steps:3, blocks:[
+  objective:'Add a bit and compare the prediction with a measurement.',
+  keywords:'worked example four bits 25.84 db measured 19.09 25.31 model limit',
+  src:'CH7 s.24', slide:true, steps:1, blocks:[
   {t:'eyebrow', text:'Module 1 · Worked example'},
   {t:'title', text:'Worked example: predicted and measured SQNR'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true, svg:figMeasured,
       caption:'The dashed line is $\\alpha+6.02R$. The dots are measured on the quantized waveform, and they approach the line as $R$ grows.'},
-    {t:'legend', items:[['in','$\\alpha+6.02R$',true],['mid','measured']], at:'tl'}
+    {t:'legend', items:[['in','$\\alpha+6.02R$',true],['mid','measured']], at:'tl-axis'}
   ], right:[
-    {t:'eq', label:'At R = 4', tex:'\\Delta=\\frac{2(5)}{16}=0.625,\\qquad \\mathrm{SQNR}=1.76+6.02(4)=25.84\\ \\text{dB}'},
+    {t:'eq', label:'At R = 4', tex:'\\begin{aligned}\\Delta&=\\frac{2(5)}{2^{4}}\\\\&=\\frac{10}{16}\\\\&=0.625\\ \\text{V}\\end{aligned}\\qquad\\begin{aligned}\\mathrm{SQNR}&=1.76+6.02(4)\\\\&=1.76+24.08\\\\&=25.84\\ \\text{dB}\\end{aligned}'},
     {t:'reveal', at:1, items:[
-      {t:'note', kind:'def', head:'Check', html:'$E[Q^{2}]=1.25^{2}/12=0.1302$ and $10\\log_{10}(12.5/0.1302)=19.82$ dB. Two routes give one number.'}]},
-    {t:'reveal', at:2, items:[
-      {t:'note', kind:'warn', head:'Model limit', html:'The measured values are $19.09$ and $25.31$ dB. At three or four bits the error of a sinusoid is not quite uniform.'}]},
-    {t:'reveal', at:3, items:[
-      {t:'note', kind:'err', head:'Common error', html:'The full range is $2m_{\\max}=10$ V, so $\\Delta=2m_{\\max}/L$. Using $m_{\\max}/L$ halves every step.'}]}
+      {t:'note', kind:'warn', head:'Model limit', html:'The measured values are $19.09$ and $25.31$ dB. At three or four bits the error of a sinusoid is not quite uniform.'}]}
   ]}
 ]},
 
 { id:'m1-ex-unif', module:'M1', nav:'Worked example · a uniform source', title:'Worked example: a uniform source',
-  objective:'Compute the SQNR from the definitions when the input is uniform.',
-  keywords:'worked example uniform distribution 256 levels sqnr 48.16 db integration',
-  src:'CH7 s.25–26', slide:true, steps:3, blocks:[
+  objective:'Compute the signal and noise powers from the definitions when the input is uniform.',
+  keywords:'worked example uniform distribution 256 levels signal power noise power integration',
+  src:'CH7 s.25–26', slide:true, steps:2, blocks:[
   {t:'eyebrow', text:'Module 1 · Worked example'},
   {t:'title', text:'Worked example: a uniform source'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
@@ -1323,53 +1564,84 @@ REAL_QUANT,
     {t:'note', kind:'def', head:'Given', html:'$M\\sim U(-1,1)$ and a uniform quantizer with $L=256$.<div class="nsep"></div>Find the SQNR.',
       ask:{key:'m1-ex-unif', q:'Predict the step size first.', choices:['$1/256$','$1/128$','$1/64$'], answer:1}},
     {t:'reveal', at:1, items:[
-      {t:'eq', label:'Signal power', tex:'P_M=\\int_{-1}^{1}m^{2}\\,\\tfrac12\\,dm=\\tfrac13'}]},
+      {t:'eq', label:'Signal power', tex:'\\begin{aligned}P_M&=\\int_{-1}^{1}m^{2}\\,\\tfrac12\\,dm\\\\&=\\tfrac12\\left[\\frac{m^{3}}{3}\\right]_{-1}^{1}\\\\&=\\tfrac12\\left(\\tfrac13+\\tfrac13\\right)=\\tfrac13\\end{aligned}'}]},
     {t:'reveal', at:2, items:[
-      {t:'eq', label:'Noise power', tex:'\\Delta=\\frac{2}{256}=\\frac{1}{128},\\qquad E[Q^{2}]=\\frac{\\Delta^{2}}{12}=5.086\\times10^{-6}'}]},
-    {t:'reveal', at:3, items:[
-      {t:'note', kind:'ok', head:'Solution', html:'$\\mathrm{SQNR}=(1/3)/(5.086\\times10^{-6})=65536$, or $48.16$ dB. This is $6.02(8)$ with $\\alpha=0$, and the model is exact here.'}]}
+      {t:'eq', label:'Noise power', tex:'\\begin{aligned}\\Delta&=\\frac{2}{256}=\\frac{1}{128}\\\\E[Q^{2}]&=\\frac{\\Delta^{2}}{12}=\\frac{1}{12(128)^{2}}\\\\&=\\frac{1}{196\\,608}=5.086\\times10^{-6}\\end{aligned}'}]}
+  ]}
+]},
+
+{ id:'m1-ex-unif-b', module:'M1', nav:'Worked example · SQNR of a uniform source', title:'Worked example: SQNR of a uniform source',
+  objective:'Finish the uniform source and see why the model is exact for it.',
+  keywords:'worked example uniform source sqnr 65536 48.16 db exact model alpha zero',
+  src:'CH7 s.26', slide:true, steps:2, blocks:[
+  {t:'eyebrow', text:'Module 1 · Worked example'},
+  {t:'title', text:'Worked example: SQNR of a uniform source'},
+  {t:'cols', ratio:'c-5-7', fill:true, left:[
+    {t:'fig', frame:true, grow:true, svg:figErrDensity,
+      caption:'For a uniform input the error in every region is exactly uniform on $[-\\Delta/2,\\Delta/2]$.'}
+  ], right:[
+    {t:'eq', label:'Solution', tex:'\\begin{aligned}\\mathrm{SQNR}&=\\frac{P_M}{E[Q^{2}]}=\\tfrac13(196\\,608)\\\\&=65\\,536=2^{16}\\\\\\mathrm{SQNR}\\;[\\mathrm{dB}]&=10\\log_{10}2^{16}\\\\&=48.16\\ \\text{dB}\\end{aligned}',
+      note:'This is $6.02(8)$, so $\\alpha=0$ for this source.'},
+    {t:'reveal', at:1, items:[
+      {t:'note', kind:'ok', head:'Check', html:'Each region holds a flat piece of the input density. The error is then exactly $U(-\\Delta/2,\\Delta/2)$, and $\\Delta^{2}/12$ is exact.'}]},
+    {t:'reveal', at:2, items:[
+      {t:'note', kind:'err', head:'Common error', html:'Use $\\Delta=2/256$, not $1/256$. The range $[-1,1]$ is $2$ wide.'}]}
   ]}
 ]},
 
 { id:'m1-ex-gauss', module:'M1', nav:'Worked example · a Gaussian source', title:'Worked example: a Gaussian source',
-  objective:'Compute the signal and noise powers of a coarse quantizer by integration.',
-  keywords:'worked example gaussian source psd five level quantizer noise power 188.17',
-  src:'CH7 s.27', slide:true, steps:3, blocks:[
+  objective:'Set up a coarse quantizer on a Gaussian source and find the signal power.',
+  keywords:'worked example gaussian source psd five level quantizer signal power 400',
+  src:'CH7 s.27', slide:true, steps:2, blocks:[
   {t:'eyebrow', text:'Module 1 · Worked example'},
   {t:'title', text:'Worked example: a Gaussian source'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true, svg:figGaussQ,
-      caption:'Each sample is $N(0,400)$. The dashed lines are the boundaries $\\pm20$ and $\\pm40$; the dots are the levels $0$, $\\pm10$, $\\pm30$.'}
+      caption:'Each sample is $N(0,400)$. The dashed lines are the boundaries $\\pm20$ and $\\pm40$. The dots are the levels $0$, $\\pm10$, $\\pm30$.'}
   ], right:[
     {t:'note', kind:'def', head:'Given', html:'A zero-mean Gaussian source with $S_X(f)=2$ for $|f|<100$ Hz, sampled at the Nyquist rate. A five-level quantizer: levels $0,\\pm10,\\pm30$, boundaries $\\pm20,\\pm40$.<div class="nsep"></div>Find the signal power.',
       ask:{key:'m1-ex-gauss', choices:['$2$','$200$','$400$'], answer:2}},
     {t:'reveal', at:1, items:[
-      {t:'eq', label:'Signal power', tex:'P_X=\\int_{-100}^{100}2\\,df=400=\\sigma_X^{2}'}]},
+      {t:'eq', label:'Signal power', tex:'\\begin{aligned}P_X&=\\int_{-\\infty}^{\\infty}S_X(f)\\,df\\\\&=\\int_{-100}^{100}2\\,df\\\\&=2(200)=400\\end{aligned}',
+        note:'The mean is zero, so $\\sigma_X^{2}=P_X=400$.'}]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'def', head:'Method', html:'The quantizer is coarse and its outer regions are unbounded. Integrate the error region by region; $\\Delta^{2}/12$ does not apply.'}]},
-    {t:'reveal', at:3, items:[
-      {t:'eq', label:'Noise power', tex:'P_Q=\\int_{-\\infty}^{\\infty}\\bigl(x-\\mathbb{Q}(x)\\bigr)^{2}f_X(x)\\,dx=188.17'}]}
+      {t:'note', kind:'def', head:'Method', html:'The quantizer is coarse and its outer regions are unbounded. Integrate the error region by region; $\\Delta^{2}/12$ does not apply.'}]}
+  ]}
+]},
+
+{ id:'m1-ex-gauss-q', module:'M1', nav:'Worked example · noise of a Gaussian source', title:'Worked example: noise power of a Gaussian source',
+  objective:'Integrate the error of a coarse quantizer region by region.',
+  keywords:'worked example gaussian noise power 188.17 region by region integral central region',
+  src:'CH7 s.27', slide:true, steps:1, blocks:[
+  {t:'eyebrow', text:'Module 1 · Worked example'},
+  {t:'title', text:'Worked example: noise power of a Gaussian source'},
+  {t:'cols', ratio:'c-5-7', fill:true, left:[
+    {t:'fig', frame:true, grow:true, svg:figGaussErr,
+      caption:'The error integrand, region by region. The five areas add to $P_Q=188.17$.'}
+  ], right:[
+    {t:'eq', label:'Noise power', tex:'\\begin{aligned}P_Q&=\\int_{-\\infty}^{\\infty}\\bigl(x-\\mathbb{Q}(x)\\bigr)^{2}f_X(x)\\,dx\\\\&=\\int_{-20}^{20}x^{2}f_X\\,dx+2\\int_{20}^{40}(x-10)^{2}f_X\\,dx\\\\&\\quad+2\\int_{40}^{\\infty}(x-30)^{2}f_X\\,dx\\\\&=79.50+2(46.36)+2(7.98)\\\\&=188.17\\end{aligned}',
+        note:'$f_X$ is even, so each side region has a twin. The three integrals are evaluated numerically.'},
+    {t:'reveal', at:1, items:[
+      {t:'note', kind:'def', head:'Check', html:'The central region gives $79.50$ of the $188.17$. It holds $68\\%$ of the samples, each with an error of up to $20$.'}]}
   ]}
 ]},
 
 { id:'m1-ex-gauss-b', module:'M1', nav:'Worked example · SQNR of a Gaussian source', title:'Worked example: SQNR of a Gaussian source',
   objective:'Finish the Gaussian example and compare it with the uniform model.',
-  keywords:'worked example gaussian sqnr 3.28 db model limit 10.8 db central region error',
-  src:'CH7 s.28', slide:true, steps:3, blocks:[
+  keywords:'worked example gaussian sqnr 3.28 db model limit 10.8 db',
+  src:'CH7 s.28', slide:true, steps:2, blocks:[
   {t:'eyebrow', text:'Module 1 · Worked example'},
   {t:'title', text:'Worked example: SQNR of a Gaussian source'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
-    {t:'fig', frame:true, grow:true, svg:figGaussErr,
-      caption:'The error integrand, region by region. The five areas add to $P_Q=188.17$.'}
+    {t:'fig', frame:true, grow:true, svg:figGaussQ,
+      caption:'The density of $N(0,400)$ with the five-level quantizer. The step between levels is $\\Delta=20$.'}
   ], right:[
     {t:'note', kind:'def', head:'Given', html:'$P_X=400$ and $P_Q=188.17$.<div class="nsep"></div>What is the SQNR?',
       ask:{key:'m1-ex-gauss-b', choices:['$3.28$ dB','$6.02$ dB','$10.8$ dB'], answer:0}},
     {t:'reveal', at:1, items:[
-      {t:'note', kind:'ok', head:'Solution', html:'$\\mathrm{SQNR}=10\\log_{10}(400/188.17)=3.28$ dB.'}]},
+      {t:'eq', label:'Solution', tex:'\\begin{aligned}\\mathrm{SQNR}&=10\\log_{10}\\frac{P_X}{P_Q}\\\\&=10\\log_{10}\\frac{400}{188.17}\\\\&=10\\log_{10}2.126\\\\&=3.28\\ \\text{dB}\\end{aligned}'}]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'err', head:'Model limit', html:'With $\\Delta=20$, the formula $\\Delta^{2}/12$ predicts $10.8$ dB. The coarse levels and the unbounded outer regions cost $7.5$ dB more.'}]},
-    {t:'reveal', at:3, items:[
-      {t:'note', kind:'def', head:'Check', html:'The central region gives $79.50$ of the $188.17$. It holds $68\\%$ of the samples, each with an error of up to $20$.'}]}
+      {t:'note', kind:'err', head:'Model limit', html:'With $\\Delta=20$, $\\Delta^{2}/12=33.3$ and $10\\log_{10}(400/33.3)=10.8$ dB. The coarse levels and the unbounded outer regions cost $10.8-3.28=7.5$ dB.'}]}
   ]}
 ]},
 
@@ -1398,8 +1670,8 @@ REAL_SQNR,
   ], right:[
     {t:'note', kind:'def', head:'The problem', html:'Speech is mostly quiet and only sometimes reaches its peak. A uniform step is the same for a whisper and a shout, so the whisper is quantized coarsely in proportion to itself.'},
     {t:'reveal', at:1, items:[
-      {t:'eq', side:true, label:'Relative error', tex:'\\frac{|q|}{|m|}\\le\\frac{\\Delta}{2|m|}',
-        note:'Small amplitudes suffer the most.'}]},
+      {t:'eq', side:true, label:'Relative error', tex:'\\frac{|q|}{|m|}\\le\\frac{\\Delta/2}{|m|}=\\frac{\\Delta}{2|m|}',
+        note:'Divide $|q|\\le\\Delta/2$ by $|m|$. Small amplitudes suffer the most.'}]},
     {t:'reveal', at:2, items:[
       {t:'note', kind:'def', head:'Companding', html:'Compress the signal with a memoryless curve, quantize uniformly, and expand at the receiver. The name joins <b>com</b>pressing and ex<b>panding</b>.'}]},
     {t:'reveal', at:3, items:[
@@ -1423,7 +1695,7 @@ REAL_SQNR,
     {t:'reveal', at:1, items:[
       {t:'eq', label:'A-law', tex:'y=\\begin{cases}\\dfrac{A|x|}{1+\\ln A}\\operatorname{sgn}(x), & |x|\\le\\dfrac{1}{A}\\\\[8pt] \\dfrac{1+\\ln(A|x|)}{1+\\ln A}\\operatorname{sgn}(x), & \\dfrac{1}{A}<|x|\\le 1\\end{cases}'}]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'ok', head:'In use', html:'Both laws map $\\pm1$ to $\\pm1$, so the quantizer range is unchanged. North America and Japan use $\\mu=255$; most other countries use $A=87.6$.'}]},
+      {t:'note', kind:'ok', head:'In use', html:'Both laws map $\\pm1$ to $\\pm1$, so the quantizer range is unchanged. North America and Japan use $\\mu=255$. Most other countries use $A=87.6$.'}]},
     {t:'reveal', at:3, items:[
       {t:'note', kind:'def', head:'Given', html:'$\\mu=255$ and an input $x=0.01$.<div class="nsep"></div>What is the compressed value $y$?',
         ask:{key:'m1-companding', choices:['$0.01$','$0.23$','$0.50$'], answer:1,
@@ -1442,7 +1714,7 @@ REAL_COMPANDING,
   {t:'title', text:'Encoding and the bit rate'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true, svg:figGrayTable,
-      caption:'Eight levels in two codes. Adjacent Gray words (green) differ in one bit; the natural words $011$ and $100$ differ in all three.'}
+      caption:'Eight levels in two codes. Adjacent Gray words (green) differ in one bit. The natural words $011$ and $100$ differ in all three.'}
   ], right:[
     {t:'eq', key:true, result:true, label:'Key result · Bit rate', tex:'R_b=R\\,f_s\\qquad\\left(\\frac{\\text{bits}}{\\text{sample}}\\right)\\left(\\frac{\\text{samples}}{\\text{s}}\\right)'},
     {t:'reveal', at:1, items:[
@@ -1479,9 +1751,9 @@ REAL_COMPANDING,
 ]},
 
 { id:'m1-ex-pcm', module:'M1', nav:'Worked example · PCM encoding', title:'Worked example: PCM encoding of a sinc pulse',
-  objective:'Set up one signal for all three stages: step size, levels and samples.',
+  objective:'Set up one signal for all three stages and find the step size and levels.',
   keywords:'worked example pcm sinc sampling quantizing step size levels',
-  src:'CH7 s.36', slide:true, steps:3, blocks:[
+  src:'CH7 s.36', slide:true, steps:2, blocks:[
   {t:'eyebrow', text:'Module 1 · Worked example'},
   {t:'title', text:'Worked example: PCM encoding of a sinc pulse'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
@@ -1493,27 +1765,42 @@ REAL_COMPANDING,
     {t:'reveal', at:1, items:[
       {t:'note', kind:'def', head:'Method', html:'<ol class="steps"><li>Take $\\Delta$ from the range and $L$.</li><li>Evaluate each sample.</li><li>Read the tread, then its code word.</li></ol>'}]},
     {t:'reveal', at:2, items:[
-      {t:'eq', label:'Step and levels', tex:'\\Delta=\\frac{8-0}{8}=1\\ \\text{V},\\qquad v_k=0.5,\\,1.5,\\,\\dots,\\,7.5'}]},
-    {t:'reveal', at:3, items:[
-      {t:'eq', label:'Samples', tex:'m(nT_s)=0,\\;1.73,\\;1.87,\\;7.48,\\;6.05,\\;0,\\;1.51'}]}
+      {t:'eq', label:'Step and levels', tex:'\\begin{aligned}\\Delta&=\\frac{8-0}{8}=1\\ \\text{V}\\\\v_k&=\\bigl(k+\\tfrac12\\bigr)\\Delta,\\quad k=0,\\dots,7\\\\&=0.5,\\,1.5,\\,\\dots,\\,7.5\\ \\text{V}\\end{aligned}'}]}
   ]}
 ]},
 
-{ id:'m1-ex-pcm-b', module:'M1', nav:'Worked example · code words and bit rate', title:'Worked example: code words and bit rate',
-  objective:'Finish the PCM example: code words, bit rate and a check.',
+{ id:'m1-ex-pcm-s', module:'M1', nav:'Worked example · samples and code words', title:'Worked example: samples and code words',
+  objective:'Evaluate the samples of the PCM example and read their code words.',
+  keywords:'worked example pcm samples sinc levels code words natural binary index',
+  src:'CH7 s.36', slide:true, steps:1, blocks:[
+  {t:'eyebrow', text:'Module 1 · Worked example'},
+  {t:'title', text:'Worked example: samples and code words'},
+  {t:'cols', ratio:'c-5-7', fill:true, left:[
+    {t:'fig', frame:true, grow:true, svg:figPcmExample,
+      caption:'Each sample falls in one tread and takes that tread\'s level (violet). Each error is under half a step.'}
+  ], right:[
+    {t:'eq', label:'Samples', tex:'\\begin{array}{c|ccccccc}t&0&0.6&1.2&1.8&2.4&3.0&3.6\\\\t-2&-2&-1.4&-0.8&-0.2&0.4&1&1.6\\\\\\hline m(t)&0&1.73&1.87&7.48&6.05&0&1.51\\end{array}',
+        note:'With $\\operatorname{sinc}(x)=\\sin(\\pi x)/(\\pi x)$: $m(0.6)=8\\,|\\sin(1.4\\pi)|/(1.4\\pi)=8(0.951)/4.398=1.73$.'},
+    {t:'reveal', at:1, items:[
+      {t:'eq', label:'Levels and code words', tex:'\\begin{array}{c|ccccccc}v&0.5&1.5&1.5&7.5&6.5&0.5&1.5\\\\k&0&1&1&7&6&0&1\\\\\\hline\\text{code}&000&001&001&111&110&000&001\\end{array}',
+        note:'The index is $k=v/\\Delta-\\tfrac12$, written in three bits.'}]}
+  ]}
+]},
+
+{ id:'m1-ex-pcm-b', module:'M1', nav:'Worked example · bit rate', title:'Worked example: the bit rate of the PCM stream',
+  objective:'Finish the PCM example: the bit rate, the bit duration and a check.',
   keywords:'worked example code words bit rate 5 b/s polar nrz check sinc zero',
   src:'CH7 s.36', slide:true, steps:2, blocks:[
   {t:'eyebrow', text:'Module 1 · Worked example'},
-  {t:'title', text:'Worked example: code words and bit rate'},
+  {t:'title', text:'Worked example: the bit rate of the PCM stream'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true, svg:figPcmStream,
       caption:'The seven code words sent as one polar NRZ stream, three bits to a sample.'}
   ], right:[
     {t:'note', kind:'def', head:'Given', html:'Three bits a sample, one sample every $0.6$ s.<div class="nsep"></div>What is the bit rate?',
       ask:{key:'m1-ex-pcm-b', choices:['$1.8$ b/s','$5$ b/s','$0.6$ b/s'], answer:1}},
-    {t:'eq', label:'Levels and code words', tex:'\\begin{array}{c|ccccccc}v&0.5&1.5&1.5&7.5&6.5&0.5&1.5\\\\\\hline\\text{code}&000&001&001&111&110&000&001\\end{array}'},
     {t:'reveal', at:1, items:[
-      {t:'note', kind:'ok', head:'Solution', html:'$f_s=1/0.6=1.667$ samples a second, so $R_b=3(1.667)=5$ b/s and one bit lasts $T_b=0.2$ s.'}]},
+      {t:'eq', label:'Solution', tex:'\\begin{aligned}f_s&=\\frac{1}{T_s}=\\frac{1}{0.6}=1.667\\ \\text{samples/s}\\\\R_b&=R\\,f_s=\\frac{3}{0.6}=5\\ \\text{b/s}\\\\T_b&=\\frac{1}{R_b}=0.2\\ \\text{s}\\end{aligned}'}]},
     {t:'reveal', at:2, items:[
       {t:'note', kind:'def', head:'Check', html:'At $t=3$ the sample is $8|\\operatorname{sinc}(1)|=0$ exactly, because $\\operatorname{sinc}$ vanishes at every non-zero integer.'}]}
   ]}
@@ -1544,10 +1831,10 @@ REAL_PCM,
   ], right:[
     {t:'note', kind:'def', head:'Vector quantization', html:'Treat $n$ samples as one point in $n$ dimensions and send the nearest point of a <b>codebook</b>. Scalar quantization is the case $n=1$.'},
     {t:'reveal', at:1, items:[
-      {t:'eq', label:'Every pair', tex:'L^{2}=16^{2}=256\\ \\text{pairs}\\;\\Rightarrow\\;8\\ \\text{bits a pair}'}]},
+      {t:'eq', label:'Every pair', tex:'\\begin{aligned}L^{2}&=16^{2}=256\\ \\text{pairs}\\\\\\log_2 256&=8\\ \\text{bits a pair}\\end{aligned}'}]},
     {t:'reveal', at:2, items:[
-      {t:'eq', label:'Pairs that occur', tex:'3L-2=46\\ \\text{pairs}\\;\\Rightarrow\\;\\lceil\\log_2 46\\rceil=6\\ \\text{bits a pair}',
-        note:'Three bits a sample instead of four, with the same cells.'}]},
+      {t:'eq', label:'Pairs that occur', tex:'\\begin{aligned}L+2(L-1)&=3L-2\\\\&=3(16)-2=46\\ \\text{pairs}\\\\\\lceil\\log_2 46\\rceil&=\\lceil 5.52\\rceil=6\\ \\text{bits a pair}\\end{aligned}',
+        note:'The diagonal holds $L$ pairs and each side line $L-1$: three bits a sample, not four.'}]},
     {t:'reveal', at:3, items:[
       {t:'note', kind:'def', head:'Given', html:'An $8$-level quantizer, and neighbours that differ by at most one step.<div class="nsep"></div>How many pairs can occur?',
         ask:{key:'m1-vq', choices:['$22$','$24$','$64$'], answer:0,
@@ -1563,12 +1850,12 @@ REAL_PCM,
   {t:'title', text:'Vector quantization of an image'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true, svg:()=>figBanding(),
-      caption:'One row of a smooth gradient. The fine quantizer follows it; the coarse one replaces it with flat steps, and each step edge shows as a false line.'}
+      caption:'One row of a smooth gradient. The fine quantizer follows it. The coarse one replaces it with flat steps, and each step edge shows as a false line.'}
   ], right:[
-    {t:'eq', label:'Bits in the image', tex:'\\begin{aligned}512^{2}(8)&=2\\,097\\,152\\ \\text{bits}=256\\ \\text{KiB}\\\\512^{2}(5)&=1\\,310\\,720\\ \\text{bits}=160\\ \\text{KiB}\\end{aligned}',
-      note:'Going from $256$ to $32$ levels saves $37.5\\%$ of the file.'},
+    {t:'eq', label:'Bits in the image', tex:'\\begin{aligned}512^{2}(8)&=2\\,097\\,152\\ \\text{bits}\\\\&=256\\ \\text{KiB}\\end{aligned}\\qquad\\begin{aligned}512^{2}(5)&=1\\,310\\,720\\ \\text{bits}\\\\&=160\\ \\text{KiB}\\end{aligned}',
+      note:'One KiB is $8(1024)$ bits, and $32$ levels need $\\log_2 32=5$ bits. The file shrinks by $(256-160)/256=37.5\\%$.'},
     {t:'reveal', at:1, items:[
-      {t:'eq', side:true, label:'What it costs', tex:'6.02(8-5)=18.06\\ \\text{dB}',
+      {t:'eq', side:true, label:'What it costs', tex:'6.02(8-5)=6.02(3)=18.06\\ \\text{dB}',
         note:'Three bits fewer, three times six decibels.'}]},
     {t:'reveal', at:2, items:[
       {t:'note', kind:'warn', head:'Banding', html:'Coarse levels turn a smooth gradient into flat steps. The eye reads the step edges as contours that the scene never had.'}]},
@@ -1665,7 +1952,7 @@ REAL_PCM,
 { id:'m1-quick', module:'M1', nav:'Quick check', title:'Quick check',
   objective:'Check the module ideas with eight short predictions.',
   keywords:'quick check predict alias nyquist rate sinc bits sqnr step size mu law gray code levels',
-  budget:'a set of eight prediction cards; the questions carry no figure',
+  budget:'a set of eight prediction cards. The questions carry no figure',
   slide:true, steps:0, blocks:[
   {t:'eyebrow', text:'Module 1 · Quick check'},
   {t:'title', text:'Quick check'},
@@ -1743,20 +2030,24 @@ REAL_PCM,
    every step and theme change and the figure string is rebuilt from scratch.
    The roll call defers to the course's own motion switch (body[data-motion]),
    which is initialised from prefers-reduced-motion; the pointer interaction
-   stays live either way. */
+   stays live either way. Previous and Next under the figure step through the
+   terms by hand: the figure then carries the chosen term in data-man, the
+   roll call stops, and releasing a pointer pin returns to that term. */
 const SP = { n:null, held:false, i:-1 };
 const spRoot  = () => document.querySelector('svg.sincpick');
 function spApply(sv){
   if(!sv) return;
-  sv.classList.toggle('pick', SP.n!=null);
+  const n = SP.held || sv.dataset.man==null ? SP.n : +sv.dataset.man;
+  sv.classList.toggle('pick', n!=null);
   sv.querySelectorAll('[data-st]').forEach(el=>
-    el.classList.toggle('on', el.dataset.st===String(SP.n)));
+    el.classList.toggle('on', el.dataset.st===String(n)));
 }
 setInterval(()=>{
   if(document.hidden || SP.held) return;
   if(document.body.dataset.motion==='reduced') return;
   const sv = spRoot();
   if(!sv){ SP.n=null; SP.i=-1; return; }
+  if(sv.dataset.man!=null) return;
   SP.i=(SP.i+1)%9; SP.n=SP.i; spApply(sv);
 }, 1700);
 document.addEventListener('pointerover', e=>{
@@ -1768,8 +2059,9 @@ document.addEventListener('pointerover', e=>{
 document.addEventListener('pointerout', e=>{
   if(!SP.held || e.pointerType!=='mouse' || !(e.target instanceof Element)) return;
   const sv = e.target.closest('svg.sincpick');
-  if(sv && !(e.relatedTarget instanceof Element && sv.contains(e.relatedTarget)))
+  if(sv && !(e.relatedTarget instanceof Element && sv.contains(e.relatedTarget))){
     SP.held=false;      /* the roll call takes over on its next tick */
+    if(sv.dataset.man!=null) spApply(sv); }
 });
 document.addEventListener('click', e=>{
   /* a mouse pins by pointing; its click must not immediately release the pin */

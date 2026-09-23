@@ -33,7 +33,7 @@ const CONTENT = {
   },
 
   MODULES: [
-    { id:'M0', title:'The Frame of the Course' },
+    { id:'M0', title:'Why Digital Communications?' },
     { id:'M1', title:'Sampling, Quantization and PCM' },
     { id:'M2', title:'Baseband Transmission' },
     { id:'M3', title:'Geometric Representation of Signals' },

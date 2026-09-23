@@ -131,6 +131,13 @@ const PLOT = (() => {
   };
 
   /* ---------- axis tick selection: "nice" 1-2-5 steps ---------- */
+  /* Stem tip marker: a filled triangle centred on the tip (X,Y), pointing away
+     from zero, so a negative sample points down. r is the radius of the dot it
+     replaces; attr carries a class or style. */
+  const stemTip = (X, Y, r, v, col, attr='') => {
+    const d = v<0 ? -1 : 1, f = n => (+n).toFixed(2);
+    return `<path${attr} d="M${f(X)},${f(Y-d*r*1.35)} l${f(r*1.2)},${f(d*r*2.1)} h${f(-r*2.4)} Z" fill="${col}"/>`;
+  };
   function niceStep(range, target){
     const raw = range/Math.max(1,target);
     const mag = 10**Math.floor(Math.log10(raw));
@@ -206,7 +213,7 @@ const PLOT = (() => {
       const yy0 = H - Pb;
       if(!zeroInside) return yy0 + XNAME_DROP + 1;
       const zeroPx = (0-ya)/(yb-ya)*(H - P.t - Pb);
-      return Math.max(yy0 + 16*LBLS, yy0 - zeroPx + XNAME_DROP);
+      return Math.max(yy0 + 0.72*NAMEBOX + 8*LBLS, yy0 - zeroPx + XNAME_DROP);
     };
     if(o.xlabel){
       P.b = Math.max(P.b, 24);
@@ -305,7 +312,7 @@ const PLOT = (() => {
           parts.push(`<line x1="${X}" y1="${sy(0).toFixed(2)}" x2="${X}" y2="${sy(v).toFixed(2)}"
             stroke="${col}" stroke-width="${(opts.width||(EMPH?2:1.8))*STRW}"/>`);
           if(Math.abs(v)>1e-12 || opts.showZero)
-            parts.push(`<circle${tip} cx="${X}" cy="${sy(v).toFixed(2)}" r="${r}" fill="${col}"/>`);
+            parts.push(stemTip(X, sy(v), r, v, col, tip));
           else
             parts.push(`<circle cx="${X}" cy="${sy(0).toFixed(2)}" r="${r*0.62}" fill="${col}" opacity=".55"/>`);
           if(an){ parts.push('</g>'); i++; }
@@ -319,8 +326,8 @@ const PLOT = (() => {
         const X=sx(t), Y0=sy(0), Y1=sy(top);
         const dir = Y1<Y0 ? -1 : 1;
         parts.push(`<line x1="${X.toFixed(2)}" y1="${Y0.toFixed(2)}" x2="${X.toFixed(2)}" y2="${(Y1-dir*0).toFixed(2)}"
-          stroke="${col}" stroke-width="${(opts.width||2.1)*STRW}"/>`);
-        parts.push(`<path d="M${X.toFixed(2)},${Y1.toFixed(2)} l${(-5.2*STRW).toFixed(2)},${(-dir*9*STRW).toFixed(2)} l${(10.4*STRW).toFixed(2)},0 Z" fill="${col}"/>`);
+          stroke="${col}" stroke-width="${(opts.width||2.1)*STRW}"${opts.opacity!=null?` opacity="${opts.opacity}"`:''}/>`);
+        parts.push(`<path d="M${X.toFixed(2)},${Y1.toFixed(2)} l${(-5.2*STRW).toFixed(2)},${(-dir*9*STRW).toFixed(2)} l${(10.4*STRW).toFixed(2)},0 Z" fill="${col}"${opts.opacity!=null?` opacity="${opts.opacity}"`:''}/>`);
         if(opts.label!==false)
           parts.push(`<text x="${(X+8).toFixed(2)}" y="${(Y1+(dir<0?-4:14)).toFixed(2)}" ${halo()}
             font-family="var(--sans)" font-size="${(opts.fs||13)*LBLS}" fill="${col}">(${opts.labelText||fmt(weight,3)})</text>`);
@@ -460,8 +467,15 @@ const PLOT = (() => {
           g.push(`<text x="${it.x+it.w/2}" y="${y}" ${halo()}
             font-size="${(it.fs||16)*LBLS}" fill="${COL.ink}" text-anchor="middle">${esc(L)}</text>`); });
       } else if(it.t==='arrow'){
-        g.push(`<line x1="${it.x1}" y1="${it.y1}" x2="${it.x2-8}" y2="${it.y2}" stroke="${it.color||COL.ink}" stroke-width="${1.5*STRW}"/>`);
-        g.push(`<path d="M${it.x2},${it.y2} l-9,-4.5 v9 Z" fill="${it.color||COL.ink}"/>`);
+        if(it.y1===it.y2 && it.x2>it.x1){
+          g.push(`<line x1="${it.x1}" y1="${it.y1}" x2="${it.x2-8}" y2="${it.y2}" stroke="${it.color||COL.ink}" stroke-width="${1.5*STRW}"/>`);
+          g.push(`<path d="M${it.x2},${it.y2} l-9,-4.5 v9 Z" fill="${it.color||COL.ink}"/>`);
+        } else {
+          /* any other direction: the same head, turned along the shaft */
+          const L=Math.hypot(it.x2-it.x1,it.y2-it.y1), ux=(it.x2-it.x1)/L, uy=(it.y2-it.y1)/L, f=v=>+v.toFixed(2);
+          g.push(`<line x1="${it.x1}" y1="${it.y1}" x2="${f(it.x2-8*ux)}" y2="${f(it.y2-8*uy)}" stroke="${it.color||COL.ink}" stroke-width="${1.5*STRW}"/>`);
+          g.push(`<path d="M${it.x2},${it.y2} L${f(it.x2-9*ux-4.5*uy)},${f(it.y2-9*uy+4.5*ux)} L${f(it.x2-9*ux+4.5*uy)},${f(it.y2-9*uy-4.5*ux)} Z" fill="${it.color||COL.ink}"/>`);
+        }
         if(it.label){
           if(it.tex) g.push(texName(it.label,{xMid:(it.x1+it.x2)/2, baseline:it.y1-7, size:15, color:it.color||COL.muted, figW:w}));
           else g.push(`<text x="${(it.x1+it.x2)/2}" y="${it.y1-10}" ${halo()} font-size="${15*LBLS}" fill="${it.color||COL.muted}" text-anchor="middle" font-style="italic">${esc(it.label)}</text>`);
@@ -496,7 +510,7 @@ const PLOT = (() => {
     return out;
   };
 
-  const API = { Axes, blocks, texName, COL, ticks, fmt, niceStep, setTheme, decade, decades,
+  const API = { Axes, blocks, texName, stemTip, COL, ticks, fmt, niceStep, setTheme, decade, decades,
     hOverride:null, labelScale:()=>LBLS };
   return API;
 })();

@@ -180,16 +180,18 @@ const RENDER = (() => {
         ${b.ask?askBody(b.html):symLinks(md(b.html))}${b.ask?askHTML(b.ask):''}</div>`,
     /* A legend is drawn inside the plot it keys, as a small card in a corner
        (`at`: 'tr' by default, 'tl', or 'tl-axis' for a plot whose vertical
-       axis is its left edge). A third item entry marks a dashed trace. blocks() hands the legend that follows a
+       axis is its left edge). A third item entry marks a dashed trace; a fourth
+       and fifth are the first and last frame at which the entry shows in a figure played in frames. blocks() hands the legend that follows a
        fig to that fig, so the scene data keeps writing it as its own block. */
-    legend:  b => `<div class="legend in-plot lg-at-${b.at||'tr'}">${b.items.map(([c,l,dash])=>`<i class="lg-${c}${dash?' lg-dash':''}">${md(l)}</i>`).join('')}</div>`,
+    legend:  (b, fi) => `<div class="legend in-plot lg-at-${b.at||'tr'}">${b.items.map(([c,l,dash,from,until])=>`<i class="lg-${c}${dash?' lg-dash':''}"${
+          from!=null ? ` data-lg-from="${from}" data-lg-until="${until!=null?until:''}"${fi!=null && (fi<from || (until!=null && fi>until)) ? ' hidden' : ''}` : ''}>${md(l)}</i>`).join('')}</div>`,
     wex:     b => `<div class="wex">${b.rows.map(([k,v])=>
         `<div class="wex-row"><div class="wex-k">${md(k)}</div><div class="wex-v">${symLinks(md(v))}</div></div>`).join('')}</div>`,
     fig:     (b, lg) => `<figure class="fig ${b.frame?'fig-frame':''}${
           b.sketch?' sketch'+(b.sketch.shown?' sk-shown':''):''}"${
           b.grow && typeof b.svg==='function' ? ` data-grow="${GROW.push(b)-1}"` : ''}${
           b.live||b.listen||b.sketch||b.frames ? ` data-fx="${FX.push(b)-1}"` : ''}>
-        ${figSvg(b)}${lg ? B.legend(lg) : ''}
+        ${figSvg(b)}${lg ? B.legend(lg, b.frames ? b.frames.i|0 : null) : ''}
         ${b.live||b.listen||b.sketch||b.frames?`<div class="fxbar">${b.frames?framesHTML(b):''}${b.live?liveHTML(b):''}${b.listen?listenHTML(b):''}${b.sketch?sketchHTML(b):''}</div>`:''}
         ${b.caption?`<figcaption>${md(b.caption)}</figcaption>`:''}</figure>`,
     /* The column count is written inline because it is content, not style. The
@@ -706,6 +708,8 @@ def _ss_figs():
         fig.querySelector('[data-frame-v]').innerHTML = frameVal(b);
         fig.querySelectorAll('[data-frame]').forEach(x=>{ const d=+x.dataset.frame;
           x.disabled = d<0 ? b.frames.i<=0 : b.frames.i>=n-1; });
+        fig.querySelectorAll('[data-lg-from]').forEach(x=>{ const u = x.dataset.lgUntil;
+          x.hidden = b.frames.i < +x.dataset.lgFrom || (u!=='' && b.frames.i > +u); });
         frameTween(fig, b, from, b.frames.i); }
       return; }
     const lb = e.target.closest('[data-listen]');
@@ -808,7 +812,7 @@ def _ss_figs():
         emphasis:!!(sc && sc.slide) });
     const host = document.getElementById('scene-host');
     if(!sc||!host) return;
-    host.className = 'scene is-active' + (sc.dark?' dark':'') + (sc.slide?' slide':'');
+    host.className = 'scene is-active' + (sc.dark?' dark':'') + (sc.slide?' slide':'') + (sc.cls?' '+sc.cls:'');
     TITLE_ICON = titleIcon(sc.id);
     GROW = []; FX = [];
     AUDIO.stop();

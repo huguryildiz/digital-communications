@@ -40,7 +40,7 @@ typography:
     lineHeight: 1.55
   card:
     fontFamily: "Inter, SF Pro Text, -apple-system, Segoe UI, Roboto, Arial, sans-serif"
-    fontSize: "21.5px"
+    fontSize: "24px"
     fontWeight: 400
     lineHeight: 1.52
   label:
@@ -170,6 +170,51 @@ longer draws.
 `notes/src/notes.css` still carries an earlier, lighter-only palette. The lecture notes and the
 artifact are therefore not guaranteed to be the same colour; this is a known gap, not a decision.
 
+### The public cover page
+
+Redesigned on 2026-09-24 on the pattern of the Signals and Systems cover
+(`~/Documents/GitHub/signals-and-systems/web/index.html`); the two share the layout and differ in
+their figure, their text and their backdrop. The styles are inline in `web/index.html`, with no web
+font and no stylesheet request (`site.css` and the old scope, `scope.js`, were removed). The page is
+dark only: ground `#070C13`, ink `#E6E2D9`, hairlines in ink at 13% and 28%, coral `#E09A6A` for the
+nav dots and the `+` on the figure label, and the dark-theme signal tints for the traces. The cover is
+the one place where the rule against hero numbers does not apply; it has no gradient text, no glass
+and no neon.
+
+**The frame.** The first 300vh is one pinned stage with four corner marks, like a viewfinder. It holds
+the course name and links to the modules and the documents; on the left the label `Figure 1 ·
+section 2.3`, a large serif title whose second line is italic, one caption sentence, `Open the course`
+and `Download the PDFs`; on the right Figure 1, frameless, with a `+` label naming the trace and its
+reading; a vertical label on the right edge; and at the foot the step counter, a timeline whose marks
+(Symbols, Channel, Error rate, Documents) scroll to their step, and a GitHub button linking the
+repository. The titles are "Digital *Communications.*", "Through *the noise.*" and "How often *it is
+wrong.*". On a phone the caption, the second link and the side label are hidden.
+
+After the frame: the four facts as large serif numerals, the seven modules as a two-column list, the
+three PDFs, and a footer with the copyright line and the GitHub button again.
+
+**Figure 1** (`web/fig.js`) is section 2.3, the decision and its error, in three steps driven by the
+scroll position. Twelve bits leave as a Manchester waveform s(t) in cyan; the channel adds white
+Gaussian noise and the received r(t), in green, roughens as Eb/N0 falls from 16 dB to 4 dB; then
+Pb = Q(√(2Eb/N0)) for antipodal signalling is drawn in red on a log axis, with the operating point
+moving from 4 dB (1.25 × 10⁻²) to 10 dB (3.87 × 10⁻⁶). The noise is one seeded Gaussian realisation,
+drawn with a standard deviation of 0.55/√(Eb/N0) of the pulse height: proportional to the true one,
+scaled for the eye. The figure moves only when the reader scrolls, so it needs no reduced-motion
+branch.
+
+**The facts row** is written by hand, one `data-fact` attribute per number. `web/sitecheck.js` counts
+the same four things in the published artifact (modules, scenes, scenes whose id matches `-lab-x`,
+practice questions) and fails when a number on the cover disagrees.
+
+**The document images** are the real PDFs: each card shows page 1 and one inside page behind it
+(lecture notes page 22, workbook page 6, formula reference page 3), rendered with
+`pdftoppm -r 72 -jpeg -jpegopt quality=80 -singlefile -f N -l N` into
+`web/img/{ln,wb,fr}_{cover,page}.jpg`. Re-render them when those pages change.
+
+The backdrop is `web/grid.js` (Radiant Shaders, "Kinetic Grid", MIT; see `THIRD_PARTY_NOTICES.md`),
+inside the pinned frame, blended with `screen` at opacity .5 and masked to the left third so it never
+runs through the figure. It does not take pointer input on this page.
+
 ## Typography
 
 Serif for the display and scene titles, sans for everything read as a sentence, mono uppercase with
@@ -182,7 +227,7 @@ Mono is used for labels and addresses only, never for running text.
 | scene title `h2` | 45 px serif 400 | topic-style heading, never a sentence |
 | lede | 23.5 px serif italic | one sentence under a title, used sparingly |
 | body | 19 px / 1.55 | max width 900 px |
-| card body | 21.5 px / 1.52 | slide cards (`.scene.slide .note`) |
+| card body | 24 px / 1.52 | slide cards (`.scene.slide .note`) |
 | label / tab | 13.5 px mono, `.12em`, 600 | card and equation tabs |
 | equation | 19 px, KaTeX at 1.30 em, in every scene, laboratory and display mode; no `lg` or `sm` size | scales with `--ts`; see Equation |
 | figure caption | 18 px / 1.45 on converted slides and converted-module laboratories | unconverted scenes remain 14 px |
@@ -303,7 +348,7 @@ The card is a restyle of the existing `note` block, so every note in the course 
 content change. The markup stays `<div class="note KIND"><span class="note-h">HEAD</span>…</div>`.
 
 - Body: raised panel tinted 4% with the kind's colour, 1 px hairline border, 3 px left edge in the
-  kind's colour, 3 px radius, padding `17px 22px 16px`, 21.5 px type.
+  kind's colour, 3 px radius, padding `17px 22px 16px`, 24 px type.
 - Tab: `.note-h` becomes a filled tab on the card's top-left edge, outside the reading column. Mono
   13.5 px uppercase, `.12em`, weight 600, padding `4px 12px 4px 10px`, top corners rounded.
 - Icon: one drawn set, 15 px, 1.6 px stroke, as an inline SVG `mask-image` data URI on

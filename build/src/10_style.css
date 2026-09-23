@@ -676,6 +676,7 @@ body[data-motion=reduced] .rc-face{ transition:none; transform:none; }
 /* legend */
 .legend{ display:flex; flex-wrap:wrap; gap:18px 30px; font-size:calc(19px * var(--ts)); color:var(--muted); }
 .legend i{ display:inline-flex; align-items:center; gap:8px; font-style:normal; }
+.legend i[hidden]{ display:none; }
 .legend i::before{ content:""; width:26px; height:3px; border-radius:2px; background:currentColor; }
 /* In a plot the legend is a small card over the data area, in a corner the
    traces leave free; the figure is its positioning box. */
@@ -690,6 +691,8 @@ figure.fig, .plot-wrap{ position:relative; }
 /* when the vertical axis is the plot's left edge, the card sits in the data
    area to its right; the axis pad scales with the figure, so the offset does too */
 .fig-frame > .legend.in-plot.lg-at-tl-axis{ right:auto; left:calc(16px + 14%); top:74px; }
+/* centred over the data area, for a trace that fills both top corners */
+.fig-frame > .legend.in-plot.lg-at-tc{ right:auto; left:54%; transform:translateX(-50%); }
 /* a laboratory panel redraws its traces anywhere in the data area, so its
    legend sits in one row in the strip above it, beside the axis name */
 .plot-wrap > .legend.in-plot{ flex-direction:row; gap:4px 18px; top:2px; right:14px; padding:3px 10px 4px; }
@@ -733,19 +736,19 @@ figure.fig .katex svg, #scene-host .katex svg{
 #scene-host .eyebrow .ebicon{ display:inline-block; width:12.5px; height:12.5px; }
 figcaption{ font-size:calc(14px * var(--ts)); color:var(--muted); line-height:1.42; }
 figcaption b{ color:var(--graphite); font-weight:600; }
-.course-map-svg{ overflow:visible; }
+.course-map-svg{ overflow:visible; max-height:770px; }
 .course-orbit{ fill:none; stroke:var(--rule); stroke-width:1.2; stroke-dasharray:2 7; }
 .course-core{ fill:var(--paper-2); stroke:var(--rule-strong); stroke-width:1.2; }
 .course-core-k,.course-node-id,.course-map-kicker{ font-family:var(--mono); letter-spacing:.14em; }
-.course-core-k{ fill:var(--slate); font-size:13px; }
+.course-core-k{ fill:var(--slate); font-size:16px; }
 .course-core-t,.course-node-title{ fill:var(--ink); font-family:var(--serif); }
-.course-core-t{ font-size:21px; }
+.course-core-t{ font-size:27px; }
 .course-spoke{ stroke:var(--rule-strong); stroke-width:1; stroke-dasharray:1 5; opacity:.3; animation:course-spoke-in .36s var(--ease) calc(.16s + var(--i) * .11s) both; }
 .course-node{ opacity:.34; transform-box:fill-box; transform-origin:center; animation:course-node-in .46s var(--ease) calc(.28s + var(--i) * .11s) both; }
 .course-node{ cursor:pointer; outline:none; }
 .course-node-disc{ fill:var(--paper); stroke:var(--slate); stroke-width:1.35; transition:fill 180ms var(--ease),stroke 180ms var(--ease),stroke-width 180ms var(--ease); }
-.course-node-title{ font-size:15px; }
-.course-node-id{ fill:var(--muted); font-size:10px; }
+.course-node-title{ font-size:19px; }
+.course-node-id{ fill:var(--muted); font-size:13px; }
 .course-node:hover .course-node-disc,.course-node:focus .course-node-disc,.course-node.is-active .course-node-disc{ fill:color-mix(in srgb,var(--coral) 8%,var(--paper)); stroke:var(--coral); stroke-width:2.4; }
 .course-node.is-active .course-node-disc{ animation:course-node-pulse 4.8s var(--ease) 2.1s infinite; }
 .course-node:hover .course-node-title,.course-node:focus .course-node-title,.course-node.is-active .course-node-title{ fill:var(--coral); }
@@ -805,7 +808,7 @@ body[data-theme=dark] :is(.scene.slide, .dr-sol){ --tab-ink:var(--paper); --tab-
   border:1px solid var(--rule); border-left:3px solid var(--nc);
   border-radius:var(--radius);
   padding:17px 22px 16px;
-  font-size:calc(21.5px * var(--ts)); line-height:1.52; color:var(--graphite);
+  font-size:calc(24px * var(--ts)); line-height:1.52; color:var(--graphite);
 }
 :is(.scene.slide, .dr-sol) .note.ok  { --nc:var(--sig-out); --ntab:var(--sig-out); }
 :is(.scene.slide, .dr-sol) .note.warn{ --nc:var(--sig-h);   --ntab:var(--tab-amber); }
@@ -897,22 +900,27 @@ body[data-theme=dark] :is(.scene.slide, .dr-sol){ --tab-ink:var(--paper); --tab-
 /* the figure frame keeps the card's rhythm; the caption reads from the back */
 .scene.slide figcaption{ font-size:calc(21.5px * var(--ts)); line-height:1.45; }
 
+/* a slide the owner asked to read larger: the columns take a raised type
+   scale; the eyebrow and title stay at their one size */
+.scene.slide.type-lg .cols{ --ts:1.12; }
+body[data-display=projector] .scene.slide.type-lg .cols{ --ts:1.52; }
+
 /* a grid of cards on a slide: a card fills its cell, so a row of cards reads as
    one band and the rows share the height of the stage */
 .scene.slide .gcell{ display:flex; flex-direction:column; }
 .scene.slide .gcell > .note:only-child{ flex:1; }
 .scene.slide .fig-frame{ padding:14px 16px; }
-.course-map-kicker{ margin:0 0 13px; color:var(--slate); font-size:12px; font-weight:650; }
+.course-map-kicker{ margin:0 0 13px; color:var(--slate); font-size:14px; font-weight:650; }
 .course-map-kicker span{ float:right; color:var(--coral); }
-.course-map-panel h3{ margin:0; color:var(--ink); font-family:var(--serif); font-size:clamp(28px,2.2vw,38px); font-weight:500; line-height:1.05; }
-.course-map-topic{ margin:5px 0 20px; color:var(--slate); font-family:var(--mono); font-size:12px; letter-spacing:.09em; }
-.course-map-copy{ display:grid; gap:12px; color:var(--graphite); font-size:calc(16px * var(--ts)); line-height:1.44; }
+.course-map-panel h3{ margin:0; color:var(--ink); font-family:var(--serif); font-size:clamp(32px,2.6vw,44px); font-weight:500; line-height:1.05; }
+.course-map-topic{ margin:6px 0 22px; color:var(--slate); font-family:var(--mono); font-size:14px; letter-spacing:.09em; }
+.course-map-copy{ display:grid; gap:14px; color:var(--graphite); font-size:calc(19px * var(--ts)); line-height:1.44; }
 .course-map-copy p{ margin:0; }
 .course-map-copy b{ color:var(--ink); }
 .course-map-controls{ display:flex; gap:5px; margin-top:24px; }
-.course-path-btn{ min-width:34px; padding:7px 4px; border:1px solid var(--rule-strong); border-radius:2px; background:transparent; color:var(--slate-deep); cursor:pointer; font:600 11px/1 var(--mono); letter-spacing:.04em; transition:background 160ms var(--ease),color 160ms var(--ease),border-color 160ms var(--ease); }
+.course-path-btn{ min-width:42px; padding:9px 6px; border:1px solid var(--rule-strong); border-radius:2px; background:transparent; color:var(--slate-deep); cursor:pointer; font:600 13px/1 var(--mono); letter-spacing:.04em; transition:background 160ms var(--ease),color 160ms var(--ease),border-color 160ms var(--ease); }
 .course-path-btn:hover,.course-path-btn:focus-visible,.course-path-btn.is-active{ background:var(--coral); border-color:var(--coral); color:#FCF9F3; outline:none; }
-.course-map-hint{ margin:12px 0 0; color:var(--muted); font-size:12px; line-height:1.35; }
+.course-map-hint{ margin:14px 0 0; color:var(--muted); font-size:14px; line-height:1.35; }
 @keyframes course-spoke-in{ from{ opacity:.3; } to{ opacity:1; } }
 @keyframes course-node-in{ from{ opacity:.34; transform:scale(.92); } to{ opacity:1; transform:scale(1); } }
 @keyframes course-node-pulse{ 0%,76%,100%{ filter:drop-shadow(0 0 0 transparent); } 84%{ filter:drop-shadow(0 0 7px color-mix(in srgb,var(--coral) 38%,transparent)); } }
@@ -1007,8 +1015,10 @@ svg.sincpick.pick .sp-note{ display:none; }
   45%     { stroke:var(--mtf-h);   stroke-width:2.2 }
   54%,100%{ stroke:var(--mtf-ink); stroke-width:1.6 }
 }
-.mtf-stem-dot{ animation:mtf-pop 7s var(--ease) calc(2.1s + var(--i) * .1s) infinite; }
-@keyframes mtf-pop{ 0%,50%{ r:4 } 56%{ r:6.6 } 66%,100%{ r:4 } }
+.mtf-stem-dot{
+  transform-box:fill-box; transform-origin:center;
+  animation:mtf-tip 7s var(--ease) calc(2.1s + var(--i) * .1s) infinite;
+}
 
 /* module openings: the same motion for figures drawn through curve() and stem()
    with opts.anim. The traces carry pathLength="1", so the sweep is measured in
@@ -1032,6 +1042,11 @@ svg.sincpick.pick .sp-note{ display:none; }
    motion is reduced, and never appears on paper */
 body[data-motion=reduced] .mtf-sparkwrap{ display:none; }
 @media (prefers-reduced-motion:reduce){ .mtf-sparkwrap{ display:none; } }
+/* title chain: each wire's stream slides right by one period per cycle */
+.tsig-flow{ animation:tsig-flow 4s linear infinite; }
+@keyframes tsig-flow{ from{ transform:translateX(0) } to{ transform:translateX(240px) } }
+body[data-motion=reduced] .tsig-flow{ animation:none; }
+@media (prefers-reduced-motion:reduce){ .tsig-flow{ animation:none; } }
 /* difference of steps: each pair u[n], -u[n-1] collapses onto the axis, the
    sample at n=0 is left and marked. Start and end equal the still figure. */
 .dc-pair{ transform-box:view-box; animation:dc-cancel 9s var(--ease) 1s infinite; }
@@ -1712,7 +1727,7 @@ body[data-layout=phone] #counter{ font-size:10px; white-space:nowrap; }
   .reveal{ opacity:1 !important; transform:none !important; }
   .mtf-sparkwrap{ display:none !important; }
   .mtf-trace,.mtf-fade,.mtf-stem,.mtf-box,.mtf-stem-dot,.mtf-tip,
-  .mtf-wire-in,.mtf-wire-out{ animation:none !important; opacity:1 !important; }
+  .mtf-wire-in,.mtf-wire-out,.tsig-flow{ animation:none !important; opacity:1 !important; }
 }
 
 /* ==========================================================================

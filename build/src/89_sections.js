@@ -29,7 +29,7 @@
    two-part. Chapter 0 is the course opening, short enough that a section level
    would be an empty frame. */
 CONTENT.CHAPTERS = [
-  { n:'0', module:'M0', title:'The frame of the course', flat:true },
+  { n:'0', module:'M0', title:'Why digital communications?', flat:true },
   { n:'1', module:'M1', title:'The transition from analog to digital' },
   { n:'2', module:'M2', title:'Baseband transmission of digital signals' },
   { n:'3', module:'M3', title:'Geometric representation of signal waveforms' },
@@ -49,7 +49,7 @@ CONTENT.CHAPTERS = [
 CONTENT.SECTIONS = {
 
   M0: [
-    { n:'0', ids:['m0-open','m0-why','m0-map','m0-how'] }
+    { n:'0', ids:['m0-system','m0-digital','m0-open','m0-why','m0-examples','m0-apps','m0-books','m0-map','m0-howto'] }
   ],
 
   M1: [
@@ -59,13 +59,13 @@ CONTENT.SECTIONS = {
     { n:'1.2', title:'Reconstruction',                 ids:[
         'm1-lpf','m1-lpf-b','m1-interp','m1-interp-b','m1-ex-nyquist','m1-ex-nyquist-b','m1-real-reconstruct','m1-lab-m','m1-code-reconstruct'] },
     { n:'1.3', title:'Quantization',                   ids:[
-        'm1-quant','m1-quant-b','m1-lloydmax','m1-real-quant','m1-lab-n','m1-code-quant'] },
+        'm1-quant','m1-quant-b','m1-quant-walk','m1-lloydmax','m1-real-quant','m1-lab-n','m1-code-quant'] },
     { n:'1.4', title:'Quantization noise and SQNR',    ids:[
-        'm1-qnoise','m1-qnoise-b','m1-sqnr','m1-ex-cos','m1-ex-cos-b','m1-ex-unif','m1-ex-gauss','m1-ex-gauss-b','m1-real-sqnr','m1-lab-a','m1-code-sqnr'] },
+        'm1-qnoise','m1-qnoise-b','m1-qnoise-c','m1-sqnr','m1-ex-cos','m1-ex-cos-s','m1-ex-cos-b','m1-ex-unif','m1-ex-unif-b','m1-ex-gauss','m1-ex-gauss-q','m1-ex-gauss-b','m1-real-sqnr','m1-lab-a','m1-code-sqnr'] },
     { n:'1.5', title:'Non-uniform quantization',       ids:[
         'm1-nonuniform','m1-companding','m1-real-companding','m1-lab-o','m1-code-companding'] },
     { n:'1.6', title:'Pulse code modulation',          ids:[
-        'm1-encode','m1-linecodes','m1-ex-pcm','m1-ex-pcm-b','m1-real-pcm','m1-lab-b','m1-code-pcm'] },
+        'm1-encode','m1-linecodes','m1-ex-pcm','m1-ex-pcm-s','m1-ex-pcm-b','m1-real-pcm','m1-lab-b','m1-code-pcm'] },
     { n:'1.7', title:'Vector quantization',            ids:['m1-vq','m1-vq-image'] },
     { n:'1.8', title:'Summary',                        ids:['m1-quick','m1-synth'] }
   ],
@@ -150,12 +150,13 @@ CONTENT.BOOK = {
   'm1-sampler':'7.1.1', 'm1-spectrum':'7.1.1', 'm1-spectrum-b':'7.1.1', 'm1-real-sampling':'7.1.1', 'm1-cases':'7.1.1', 'm1-theorem':'7.1.1',
   'm1-lpf':'7.1.1', 'm1-lpf-b':'7.1.1', 'm1-interp':'7.1.1', 'm1-interp-b':'7.1.1',
   'm1-ex-nyquist':'7.1.1', 'm1-ex-nyquist-b':'7.1.1', 'm1-real-reconstruct':'7.1.1',
-  'm1-quant':'7.2.1', 'm1-quant-b':'7.2.1', 'm1-lloydmax':'7.2.1', 'm1-real-quant':'7.2.1', 'm1-lab-a':'7.2.1',
+  'm1-quant':'7.2.1', 'm1-quant-b':'7.2.1', 'm1-quant-walk':'7.2.1', 'm1-lloydmax':'7.2.1', 'm1-real-quant':'7.2.1', 'm1-lab-a':'7.2.1',
   'm1-lab-l':'7.1.1', 'm1-lab-m':'7.1.1', 'm1-lab-n':'7.2.1', 'm1-lab-o':'7.2.1',
-  'm1-qnoise':'7.2.1', 'm1-qnoise-b':'7.2.1', 'm1-sqnr':'7.2.1', 'm1-real-sqnr':'7.2.1',
-  'm1-ex-cos':'7.2.1', 'm1-ex-cos-b':'7.2.1', 'm1-ex-unif':'7.2.1', 'm1-ex-gauss':'7.2.1', 'm1-ex-gauss-b':'7.2.1',
+  'm1-qnoise':'7.2.1', 'm1-qnoise-b':'7.2.1', 'm1-qnoise-c':'7.2.1', 'm1-sqnr':'7.2.1', 'm1-real-sqnr':'7.2.1',
+  'm1-ex-cos':'7.2.1', 'm1-ex-cos-s':'7.2.1', 'm1-ex-cos-b':'7.2.1', 'm1-ex-unif':'7.2.1', 'm1-ex-unif-b':'7.2.1',
+  'm1-ex-gauss':'7.2.1', 'm1-ex-gauss-q':'7.2.1', 'm1-ex-gauss-b':'7.2.1',
   'm1-nonuniform':'7.2.1', 'm1-companding':'7.2.1', 'm1-real-companding':'7.2.1',
-  'm1-encode':'7.3', 'm1-ex-pcm':'7.4.1', 'm1-ex-pcm-b':'7.4.1', 'm1-real-pcm':'7.4', 'm1-lab-b':'7.4',
+  'm1-encode':'7.3', 'm1-ex-pcm':'7.4.1', 'm1-ex-pcm-s':'7.4.1', 'm1-ex-pcm-b':'7.4.1', 'm1-real-pcm':'7.4', 'm1-lab-b':'7.4',
   /* Vector quantization is section 7.2.2 of the book, "Vector Quantization",
      p. 309 — read there, not inferred from the neighbouring section number. */
   'm1-vq':'7.2.2', 'm1-vq-image':'7.2.2',
