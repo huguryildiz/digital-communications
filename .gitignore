@@ -32,7 +32,10 @@ __pycache__/
 .vercel
 
 # Working notes for the agents that build this, not part of what is published.
-.Codex/notes/
+.codex/notes/
+
+# Editor settings: a local convenience, not a property of the project.
+.vscode/
 
 # The root instruction files are tracked; ignore copies anywhere else.
 CLAUDE.md
