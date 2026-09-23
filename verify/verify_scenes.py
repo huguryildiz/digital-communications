@@ -150,6 +150,91 @@ def _pairs_within_one(L):
     return sum(1 for i in range(L) for j in range(L) if abs(i - j) <= 1)
 
 
+def _copy_lower_edge(W, fs):
+    """Lowest frequency at which the copy G(f - fs) of a triangle of half-width
+    W is non-zero, found by scanning the copy rather than by fs - W."""
+    f = np.linspace(0.0, 2 * fs, 2_000_001)
+    tri = np.clip(1 - np.abs(f - fs) / W, 0.0, None)
+    return float(f[np.argmax(tri > 0)])
+
+
+def _alias_by_fft(f0, fs, n=4000):
+    """Apparent frequency of a sampled tone, read off the peak of its DFT."""
+    k = np.arange(n)
+    x = np.cos(2 * np.pi * f0 * k / fs)
+    spec = np.abs(np.fft.rfft(x))
+    return float(np.fft.rfftfreq(n, 1 / fs)[np.argmax(spec)])
+
+
+def _apparent_rate_by_phase(f0, frame_rate):
+    """Signed apparent rate of a rotating pattern filmed at frame_rate: the
+    phase step per frame, wrapped to (-pi, pi], turned back into a rate."""
+    step = 2 * np.pi * f0 / frame_rate
+    wrapped = (step + np.pi) % (2 * np.pi) - np.pi
+    return float(wrapped * frame_rate / (2 * np.pi))
+
+
+def _first_sinc_zero(W):
+    """First positive zero of sinc(2Wt), by root finding."""
+    from scipy.optimize import brentq
+    return brentq(lambda t: np.sinc(2 * W * t), 0.5 / (2 * W), 1.5 / (2 * W))
+
+
+def _midrise(m, delta):
+    return (math.floor(m / delta) + 0.5) * delta
+
+
+def _max_error_midrise(delta, levels):
+    """Largest |m - Q(m)| over the quantizer's range, on a fine grid."""
+    mmax = levels * delta / 2
+    m = np.linspace(-mmax, mmax, 400_001)
+    q = np.clip(np.floor(m / delta) + 0.5, -levels / 2 + 0.5, levels / 2 - 0.5) * delta
+    return float(np.max(np.abs(m - q)))
+
+
+def _mse_by_integral(delta):
+    val, _ = integrate.quad(lambda q: q * q / delta, -delta / 2, delta / 2)
+    return val
+
+
+def _sqnr_measured(bits, level_db=0.0, n=2_000_001):
+    """SQNR of a sinusoid at level_db below full scale through a uniform
+    mid-rise quantizer spanning [-5, 5], measured on the waveform."""
+    mmax, L = 5.0, 2 ** bits
+    delta = 2 * mmax / L
+    amp = mmax * 10 ** (level_db / 20)
+    t = np.linspace(0.0, 2 * np.pi, n)
+    m = amp * np.cos(t + 0.123)
+    q = np.clip(np.floor(m / delta) + 0.5, -L / 2 + 0.5, L / 2 - 0.5) * delta
+    return 10 * math.log10(np.mean(m ** 2) / np.mean((m - q) ** 2))
+
+
+def _sqnr_model(bits, level_db=0.0):
+    """The uniform-error model for a sinusoid at level_db below full scale on
+    [-5, 5]: its power integrated over a period, the noise from integrating
+    q^2 over one step. The gallery quotes the model at 8 bits, where the
+    measured value sits a little lower."""
+    t = sp.symbols("t", real=True)
+    amp = 5.0 * 10 ** (level_db / 20)
+    pm = float(sp.integrate((amp * sp.cos(t)) ** 2, (t, 0, 2 * sp.pi)) / (2 * sp.pi))
+    return 10 * math.log10(pm / _mse_by_integral(10.0 / 2 ** bits))
+
+
+def _gauss_region(k):
+    """Contribution of region k (0..4) of the five-level quantizer to P_Q."""
+    var = 400.0
+    dens = lambda x: math.exp(-x * x / (2 * var)) / math.sqrt(2 * math.pi * var)
+    lo, hi, v = _GAUSS_EDGES[k], _GAUSS_EDGES[k + 1], _GAUSS_LEVELS[k]
+    seg, _ = integrate.quad(lambda x: (x - v) ** 2 * dens(x), lo, hi)
+    return seg
+
+
+def _prob_within(a, sigma):
+    val, _ = integrate.quad(lambda x: math.exp(-x * x / (2 * sigma ** 2))
+                            / math.sqrt(2 * math.pi * sigma ** 2), -a, a)
+    return val
+
+
 # ── Module 2 ────────────────────────────────────────────────────────────────
 # Baseband transmission: the matched filter, the threshold, the error
 # probability, and the bandwidth the pulse needs.
@@ -417,60 +502,148 @@ _M6_FIVE = [0.4, 0.2, 0.2, 0.1, 0.1]
 
 
 CHECKS: list[dict] = [
-    # ---- 1.2.3, the sampling-rate example -------------------------------
-    {"name": "1.2.3 Nyquist rate, W = 40 kHz",
-     "stated": 80e3, "derive": lambda: 2 * 40e3},
-    {"name": "1.2.3 rate with a 10 kHz guard band",
-     "stated": 90e3, "derive": lambda: 2 * 40e3 + 10e3},
-    {"name": "1.2.3 Nyquist rate of the modulated signal",
-     "stated": 160e3, "derive": _nyquist_of_product},
+    # ---- 1.1, the sampling theorem --------------------------------------
+    {"name": "1.1.1 sampling rate at T_s = 125 us",
+     "stated": 8e3, "derive": lambda: 1 / 125e-6},
+    {"name": "1.1.2 lower edge of the copy at f_s, W = 4 kHz, f_s = 10 kHz",
+     "stated": 6.0, "derive": lambda: _copy_lower_edge(4.0, 10.0), "tol": 1e-5},
+    {"name": "1.1.3 where G(1 kHz) reappears in the copy at f_s = 8 kHz",
+     "stated": 9.0, "derive": lambda: float(sp.solve(sp.Symbol("f") - 8 - 1)[0])},
+    {"name": "1.1.4 first copy starts inside the band, W = 3, f_s = 5 kHz",
+     "stated": 2.0, "derive": lambda: _copy_lower_edge(3.0, 5.0), "tol": 1e-5},
+    {"name": "1.1.5 Nyquist interval at W = 3.4 kHz, us",
+     "stated": 147, "derive": lambda: 1e6 / (2 * 3.4e3), "tol": 3e-3},
+    {"name": "1.1.6 CD guard band, kHz",
+     "stated": 4.1, "derive": lambda: _copy_lower_edge(20.0, 44.1) - 20.0, "tol": 1e-5},
+    {"name": "1.1.6 telephone guard band, kHz",
+     "stated": 1.2, "derive": lambda: _copy_lower_edge(3.4, 8.0) - 3.4, "tol": 1e-5},
+    {"name": "1.1.6 apparent spoke rate at 24 frames a second, Hz",
+     "stated": -4.0, "derive": lambda: _apparent_rate_by_phase(20.0, 24.0)},
+    {"name": "1.1.6 half the ECG sampling rate, Hz",
+     "stated": 250.0, "derive": lambda: 500.0 / 2},
 
-    # ---- 1.4.3, the sinusoid --------------------------------------------
-    {"name": "1.4.3 average power of 5cos(t)",
+    # ---- 1.2, reconstruction ---------------------------------------------
+    {"name": "1.2.1 transition band at W = 4, f_s = 10 kHz",
+     "stated": 2.0, "derive": lambda: _copy_lower_edge(4.0, 10.0) - 4.0, "tol": 1e-5},
+    {"name": "1.2.2 first zero of sinc(2Wt) at W = 5 kHz, us",
+     "stated": 100.0, "derive": lambda: 1e6 * _first_sinc_zero(5e3), "tol": 1e-6},
+    {"name": "1.2.5 Nyquist rate, W = 40 kHz",
+     "stated": 80e3, "derive": lambda: 2 * 40e3},
+    {"name": "1.2.5 rate with a 10 kHz guard band",
+     "stated": 90e3, "derive": lambda: 2 * 40e3 + 10e3},
+    {"name": "1.2.5 first copy at 90 kHz starts at, kHz",
+     "stated": 50.0, "derive": lambda: _copy_lower_edge(40.0, 90.0), "tol": 1e-5},
+    {"name": "1.2.6 Nyquist rate of the modulated signal",
+     "stated": 160e3, "derive": _nyquist_of_product},
+    {"name": "1.2.7 hold droop at f_s/2, dB",
+     "stated": -3.92, "derive": lambda: 20 * math.log10(abs(np.sinc(0.5))), "tol": 2e-3},
+    {"name": "1.2.7 first copy after oversampling CD audio by four, kHz",
+     "stated": 156.4, "derive": lambda: _copy_lower_edge(20.0, 4 * 44.1), "tol": 1e-5},
+
+    # ---- 1.3, quantization -----------------------------------------------
+    {"name": "1.3.1 mid-rise output for m = 0.2, step 1",
+     "stated": 0.5, "derive": lambda: _midrise(0.2, 1.0)},
+    {"name": "1.3.2 mid-tread output for m = 0.2, step 1, plus one",
+     "stated": 1.0, "derive": lambda: round(0.2 / 1.0) * 1.0 + 1},
+    {"name": "1.3.3 boundary between levels 1 and 3",
+     "stated": 2.0, "derive": lambda: float(sp.solve(
+         sp.Eq((sp.Symbol("m") - 1) ** 2, (sp.Symbol("m") - 3) ** 2))[0])},
+    {"name": "1.3.4 step of a 10-bit converter over 3.3 V, mV",
+     "stated": 3.22, "derive": lambda: 3.3 / 2 ** 10 * 1e3, "tol": 2e-3},
+    {"name": "1.3.4 colours at eight bits a channel",
+     "stated": 16777216, "derive": lambda: (2 ** 8) ** 3},
+
+    # ---- 1.4, quantization noise and SQNR ---------------------------------
+    {"name": "1.4.1 largest error at step 1.25",
+     "stated": 0.625, "derive": lambda: _max_error_midrise(1.25, 8), "tol": 1e-4},
+    {"name": "1.4.2 mean-square error at step 0.5",
+     "stated": 0.0208, "derive": lambda: _mse_by_integral(0.5), "tol": 2e-3},
+    {"name": "1.4.3 SQNR at R = 8 from 40 dB at R = 6",
+     "stated": 52.04, "derive": lambda: 40 + 10 * math.log10((2 ** 8 / 2 ** 6) ** 2), "tol": 3e-4},
+    {"name": "1.4.4 average power of 5cos(t)",
      "stated": 12.5, "derive": _power_of_sinusoid},
-    {"name": "1.4.3 step size at R = 3",
+    {"name": "1.4.4 step size at R = 3",
      "stated": 1.25, "derive": lambda: 2 * 5.0 / 2 ** 3},
-    {"name": "1.4.3 step size at R = 4",
-     "stated": 0.625, "derive": lambda: 2 * 5.0 / 2 ** 4},
+    {"name": "1.4.4 intercept alpha for the full-scale sinusoid, dB",
+     "stated": 1.76, "derive": lambda: 10 * math.log10(3 * _power_of_sinusoid() / 25.0), "tol": 3e-3},
     # The scene states two numbers per resolution, and they are different
     # claims. The first is what alpha + 6.02R gives; the second is what the
     # quantizer actually does to this waveform. They differ because the uniform
     # error model is a small-step model and eight levels is not a small step.
-    {"name": "1.4.3 SQNR at R = 3, from the formula",
+    {"name": "1.4.4 SQNR at R = 3, from the formula",
      "stated": 19.82, "derive": lambda: _sqnr_db_formula(3), "tol": 3e-4},
-    {"name": "1.4.3 SQNR at R = 3, measured on the waveform",
-     "stated": 19.09, "derive": lambda: _sqnr_db_sinusoid(3), "tol": 3e-3},
-    {"name": "1.4.3 SQNR at R = 4, from the formula",
+    {"name": "1.4.5 step size at R = 4",
+     "stated": 0.625, "derive": lambda: 2 * 5.0 / 2 ** 4},
+    {"name": "1.4.5 SQNR at R = 4, from the formula",
      "stated": 25.84, "derive": lambda: _sqnr_db_formula(4), "tol": 3e-4},
-    {"name": "1.4.3 SQNR at R = 4, measured on the waveform",
+    {"name": "1.4.5 mean-square error at R = 3",
+     "stated": 0.1302, "derive": lambda: _mse_by_integral(1.25), "tol": 3e-4},
+    {"name": "1.4.5 SQNR at R = 3, measured on the waveform",
+     "stated": 19.09, "derive": lambda: _sqnr_db_sinusoid(3), "tol": 3e-3},
+    {"name": "1.4.5 SQNR at R = 4, measured on the waveform",
      "stated": 25.31, "derive": lambda: _sqnr_db_sinusoid(4), "tol": 3e-3},
-    {"name": "1.4.3 mean-square error at R = 3",
-     "stated": 0.1302, "derive": lambda: (2 * 5.0 / 8) ** 2 / 12},
-
-    # ---- 1.4.4, the uniform source --------------------------------------
-    {"name": "1.4.4 average power of U(-1,1)",
+    {"name": "1.4.6 average power of U(-1,1)",
      "stated": 1 / 3, "derive": lambda: float(
          sp.integrate(sp.Symbol("m") ** 2 * sp.Rational(1, 2),
                       (sp.Symbol("m"), -1, 1)))},
-    {"name": "1.4.4 step size, L = 256",
+    {"name": "1.4.6 step size, L = 256",
      "stated": 1 / 128, "derive": lambda: 2 * 1.0 / 256},
-    {"name": "1.4.4 mean-square error",
+    {"name": "1.4.6 mean-square error",
      "stated": 5.086e-6, "derive": _mse_uniform_source, "tol": 2e-4},
-    {"name": "1.4.4 SQNR",
+    {"name": "1.4.6 SQNR as a ratio",
+     "stated": 65536, "derive": lambda: (1.0 / 3.0) / _mse_uniform_source(), "tol": 1e-6},
+    {"name": "1.4.6 SQNR",
      "stated": 48.16, "derive": _sqnr_db_uniform_source, "tol": 3e-4},
-
-    # ---- 1.4.5, the Gaussian source --------------------------------------
-    {"name": "1.4.5 signal power",
+    {"name": "1.4.7 signal power",
      "stated": 400.0, "derive": _signal_power_gaussian},
-    {"name": "1.4.5 quantization noise power",
-     "stated": 188.18, "derive": _noise_power_gaussian, "tol": 1e-4},
-    {"name": "1.4.5 SQNR",
-     "stated": 3.27, "derive": _sqnr_db_gaussian, "tol": 2e-3},
-    {"name": "1.4.5 what the uniform model would have predicted",
+    {"name": "1.4.7 quantization noise power",
+     "stated": 188.17, "derive": _noise_power_gaussian, "tol": 5e-5},
+    {"name": "1.4.8 central region's share of P_Q",
+     "stated": 79.50, "derive": lambda: _gauss_region(2), "tol": 1e-4},
+    {"name": "1.4.8 inner side region's share of P_Q",
+     "stated": 46.36, "derive": lambda: _gauss_region(3), "tol": 2e-4},
+    {"name": "1.4.8 outer region's share of P_Q",
+     "stated": 7.98, "derive": lambda: _gauss_region(4), "tol": 1e-3},
+    {"name": "1.4.8 SQNR",
+     "stated": 3.28, "derive": _sqnr_db_gaussian, "tol": 2e-3},
+    {"name": "1.4.8 what the uniform model would have predicted",
      "stated": 10.8, "derive": lambda: 10 * math.log10(400.0 / (20.0 ** 2 / 12)),
      "tol": 5e-3},
+    {"name": "1.4.8 what the coarse quantizer costs against the model, dB",
+     "stated": 7.5, "derive": lambda: 10 * math.log10(400.0 / (20.0 ** 2 / 12)) - _sqnr_db_gaussian(),
+     "tol": 5e-3},
+    {"name": "1.4.8 per cent of samples in the central region",
+     "stated": 68, "derive": lambda: 100 * _prob_within(20.0, 20.0), "tol": 5e-3},
+    # The gallery's word lengths, measured on a quantized sinusoid rather than
+    # read off alpha + 6.02R.
+    {"name": "1.4.9 16-bit SQNR at full scale",
+     "stated": 98.1, "derive": lambda: _sqnr_measured(16), "tol": 1e-3},
+    {"name": "1.4.9 16-bit SQNR 40 dB below full scale",
+     "stated": 58.1, "derive": lambda: _sqnr_measured(16, -40.0), "tol": 2e-3},
+    {"name": "1.4.9 8-bit SQNR at full scale, by the model",
+     "stated": 49.9, "derive": lambda: _sqnr_model(8), "tol": 2e-3},
+    {"name": "1.4.9 8-bit SQNR 30 dB below full scale, by the model",
+     "stated": 19.9, "derive": lambda: _sqnr_model(8, -30.0), "tol": 3e-3},
+    {"name": "1.4.9 12-bit SQNR at full scale",
+     "stated": 74.0, "derive": lambda: _sqnr_measured(12), "tol": 1e-3},
+    {"name": "1.4.9 24-bit SQNR at full scale",
+     "stated": 146.3, "derive": lambda: _sqnr_measured(24), "tol": 1e-3},
 
-    # ---- 1.6.3, the PCM stream -------------------------------------------
+    # ---- 1.5, non-uniform quantization ------------------------------------
+    {"name": "1.5.1 error relative to a 0.2 V peak at step 0.1 V, per cent",
+     "stated": 25.0, "derive": lambda: 100 * _max_error_midrise(0.1, 64) / 0.2, "tol": 1e-4},
+    {"name": "1.5.2 mu-law output for x = 0.01",
+     "stated": 0.23, "derive": lambda: math.log(1 + 255 * 0.01, 256), "tol": 1e-2},
+    {"name": "1.5.2 ln(3.55)",
+     "stated": 1.267, "derive": lambda: float(sp.log(sp.Rational(355, 100)).evalf()), "tol": 5e-4},
+    {"name": "1.5.2 ln(256)",
+     "stated": 5.545, "derive": lambda: float(sp.log(256).evalf()), "tol": 1e-4},
+    {"name": "1.5.3 end of the linear A-law segment, 1/A",
+     "stated": 0.0114, "derive": lambda: 1 / 87.6, "tol": 2e-3},
+
+    # ---- 1.6, pulse code modulation ---------------------------------------
+    {"name": "1.6.1 bit rate of 256-level PCM at 8 kHz",
+     "stated": 64e3, "derive": lambda: math.log2(256) * 8000},
     {"name": "1.6.3 step size", "stated": 1.0, "derive": lambda: (8.0 - 0.0) / 8},
     {"name": "1.6.3 sample at t = 0.6", "stated": 1.73,
      "derive": lambda: _pcm_sample(1), "tol": 3e-3},
@@ -482,23 +655,28 @@ CHECKS: list[dict] = [
      "derive": lambda: _pcm_sample(4), "tol": 3e-3},
     {"name": "1.6.3 sample at t = 3.6", "stated": 1.51,
      "derive": lambda: _pcm_sample(6), "tol": 3e-3},
-    # The code words, read as the integer each three-bit word stands for. A
-    # wrong word is a wrong integer, so one check covers the whole stream.
     # The seven three-bit words read as one twenty-one-bit number. A wrong word
     # is a wrong number, so one check covers the whole stream.
-    {"name": "1.6.3 code words 000 001 001 111 110 000 001",
+    {"name": "1.6.4 code words 000 001 001 111 110 000 001",
      "stated": 40833,
      "derive": lambda: int("".join(format(_pcm_code_index(n), "03b")
                                    for n in range(7)), 2)},
-    {"name": "1.6.3 bit rate", "stated": 5.0, "derive": lambda: 3 * (1 / 0.6)},
+    {"name": "1.6.4 bit rate", "stated": 5.0, "derive": lambda: 3 * (1 / 0.6)},
+    {"name": "1.6.4 bit duration, s", "stated": 0.2, "derive": lambda: 1 / (3 * (1 / 0.6))},
+    {"name": "1.6.5 CD audio bit rate, b/s",
+     "stated": 1411200, "derive": lambda: 2 * 16 * 44100},
+    {"name": "1.6.5 telephone word interval, us",
+     "stated": 125.0, "derive": lambda: 1e6 / 8000},
 
-    # ---- 2.1, the matched filter ----------------------------------------
+    # ---- 1.7, vector quantization ------------------------------------------
     {"name": "1.7.1 pairs a 16-level scalar quantizer must name",
      "stated": 256, "derive": lambda: 16 ** 2},
     {"name": "1.7.1 pairs that can actually occur", "stated": 46,
      "derive": lambda: _pairs_within_one(16)},
     {"name": "1.7.1 bits a pair the smaller codebook needs", "stated": 6,
      "derive": lambda: math.ceil(math.log2(_pairs_within_one(16)))},
+    {"name": "1.7.1 pairs that occur at L = 8", "stated": 22,
+     "derive": lambda: _pairs_within_one(8)},
     {"name": "1.7.2 bits in a 512x512 image at 8 bits a pixel",
      "stated": 2097152, "derive": lambda: 512 * 512 * 8},
     {"name": "1.7.2 that in KiB", "stated": 256,
@@ -511,7 +689,22 @@ CHECKS: list[dict] = [
      "derive": lambda: (1 - math.log2(32) / 8) * 100, "tol": 1e-9},
     {"name": "1.7.2 what those three bits cost, dB", "stated": 18.06,
      "derive": lambda: 20 * (8 - 5) * math.log10(2), "tol": 3e-4},
+    {"name": "1.7.2 a 256x256 image at 64 levels, KiB", "stated": 48,
+     "derive": lambda: 256 * 256 * math.log2(64) / 8 / 1024},
 
+    # ---- 1.8, quick check ----------------------------------------------------
+    {"name": "1.8.1 a 7 kHz tone sampled at 10 kHz appears at, Hz",
+     "stated": 3000.0, "derive": lambda: _alias_by_fft(7000.0, 10000.0), "tol": 1e-3},
+    {"name": "1.8.1 Nyquist rate of 20 kHz audio",
+     "stated": 40e3, "derive": lambda: 2 * 20e3},
+    {"name": "1.8.1 two more bits, dB",
+     "stated": 12.04, "derive": lambda: _sqnr_db_formula(5) - _sqnr_db_formula(3), "tol": 3e-4},
+    {"name": "1.8.1 noise power ratio when the step doubles",
+     "stated": 4.0, "derive": lambda: _mse_by_integral(2.0) / _mse_by_integral(1.0)},
+    {"name": "1.8.1 levels of a 16-bit quantizer",
+     "stated": 65536, "derive": lambda: 2 ** 16},
+
+    # ---- 2.1, the matched filter ----------------------------------------
     {"name": "2.1.4 the matched-filter bound for a unit-energy pulse",
      "stated": 2.0, "derive": lambda: 2 * 1.0 / 1.0},
 

@@ -195,10 +195,10 @@ window.C1 = [
  ['Given','A zero-mean stationary Gaussian source has $S_X(f)=2$ for $|f|<100$ Hz. Its samples enter a five-level quantizer with outputs $-30,-10,0,10,30$ and boundaries at $-40,-20,20,40$.'],
  ['Find','The SQNR of the scheme.'],
  ['Method','The signal power is the area under the spectral density. The noise power must be integrated region by region, because this quantizer is neither uniform nor fine.'],
- ['Solution','$P_X=\\int_{-100}^{100}2\\,df=400$, and since the mean is zero this is also $\\sigma_X^{2}$. Splitting $P_Q=\\int(x-\\mathbb{Q}(x))^{2}f_X(x)\\,dx$ at the four boundaries gives $7.98+46.36+79.50+46.36+7.98=188.18$, so $\\mathrm{SQNR}=10\\log_{10}(400/188.18)=3.27$ dB.'],
+ ['Solution','$P_X=\\int_{-100}^{100}2\\,df=400$, and since the mean is zero this is also $\\sigma_X^{2}$. Splitting $P_Q=\\int(x-\\mathbb{Q}(x))^{2}f_X(x)\\,dx$ at the four boundaries gives five contributions of about $7.98$, $46.36$, $79.50$, $46.36$ and $7.98$, which add to $P_Q=188.17$, so $\\mathrm{SQNR}=10\\log_{10}(400/188.17)=3.28$ dB.'],
  ['Check','The central region alone contributes $79.50$, and it holds the $68\\%$ of the mass with $|X|<20$ and an error of up to $20$. That is where a five-level quantizer spends its error, and it is why the answer is a few decibels rather than a few tens.']
 ]},
-{t:'box', kind:'err', hd:'Model limit', html:'This quantizer is coarse, and its outer regions are unbounded. A sample at $x=120$ has an error of $90$. The formula $\\Delta^2/12$ predicts $10.8$ dB, but direct integration gives $3.27$ dB.'},
+{t:'box', kind:'err', hd:'Model limit', html:'This quantizer is coarse, and its outer regions are unbounded. A sample at $x=120$ has an error of $90$. The formula $\\Delta^2/12$ predicts $10.8$ dB, but direct integration gives $3.28$ dB.'},
 
 {t:'page'},
 

@@ -1552,6 +1552,21 @@ body[data-layout=phone] .ctrls{ grid-template-columns:minmax(0,1fr); gap:14px; p
 body[data-layout=phone] .dr-types{ grid-template-columns:minmax(0,1fr); gap:20px; }
 body[data-layout=phone] .dr-pair{ flex-direction:column; gap:10px; }
 body[data-layout=phone] .dr-pair > div{ width:100%; }
+/* A slide is laid out for the wide stage: a figure beside its cards, the
+   cards spread down the height of the stage. On a phone the figure comes
+   first and the cards follow it at their own height. The slide rules name the
+   split, so these carry the slide class to outweigh them. */
+body[data-layout=phone] .scene.slide .cols{ grid-template-columns:minmax(0,1fr); gap:var(--s4); }
+body[data-layout=phone] .scene.slide .cols.fill > .col{ justify-content:flex-start; }
+body[data-layout=phone] .scene.slide .lab > .cols{ height:auto; }
+body[data-layout=phone] .scene.slide .lab > .cols > .col.stack{ justify-content:flex-start; }
+body[data-layout=phone] .scene.slide .cmp{ grid-template-columns:minmax(0,1fr); }
+body[data-layout=phone] .scene.slide .eq.side{ grid-template-columns:minmax(0,1fr); }
+/* The recall deck writes its column count inline as a custom property; one
+   card a row on a phone, with the sketch kept small beside the question. */
+body[data-layout=phone] .recall-list{ --rc-cols:1 !important; }
+body[data-layout=phone] .recall-card{ gap:12px; padding:14px 14px 14px 12px; }
+body[data-layout=phone] .rc-glyph{ width:72px; }
 /* the worked-example ladder puts its key above the step rather than beside it:
    a 136 px label column and a 200 px value column is not a table, it is two
    words a line */
