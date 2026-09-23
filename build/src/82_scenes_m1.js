@@ -1607,8 +1607,6 @@ REAL_QUANT,
   {t:'eyebrow', text:'Module 1 · Worked example'},
   {t:'title', text:'Worked example: a Gaussian source'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
-    {t:'fig', frame:true, grow:true, svg:figGaussQ,
-      caption:'Each sample is $N(0,400)$. The dashed lines are the boundaries $\\pm20$ and $\\pm40$. The dots are the levels $0$, $\\pm10$, $\\pm30$.'},
     {t:'fig', frame:true, grow:true, svg:figGaussStair,
       caption:'The quantizer rule $\\mathbb{Q}(x)$: each input region maps to one level.'}
   ], right:[
