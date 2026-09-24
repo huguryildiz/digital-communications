@@ -19,6 +19,9 @@ here by a route the solution does not take:
 A last check per question confirms that every stated text occurs inside that
 question's block of the JS file, so the table below cannot drift from the page.
 
+Four questions are on the channel side (D6-06, D6-07, D6-14, D6-22). Their
+numbers are in the CHANNEL table further down, with the routes listed there.
+
 The runner is the one in verify_drills.py: a CHECKS list of dicts with
 "name", "stated", "derive" and "tol", and main() prints N passed, M failed.
 """
@@ -66,15 +69,12 @@ SOURCES = {
     'D6-03': ([U(range(1, 13))], lambda x: math.floor(12/x)),
     'D6-04': ([U(range(16))], lambda x: sum((x >> i) & 1 for i in range(4))),
     'D6-05': ([U(range(-5, 6))], lambda x: math.ceil(abs(x)/2)),
-    'D6-06': ([U(range(-2, 10))], lambda x: abs(x) % 7),
-    'D6-07': ([U(range(-6, 7))], lambda x: (x*x) % 11),
     'D6-08': ([U(range(-7, 8))], lambda x: max(x, 0)),
     'D6-09': ([U([1, 2, 3]), geo([-1, 0, 1], '1/3')], lambda x, z: x*z),
     'D6-10': ([U([-1, 0, 1]), {z: _c_normalised([sp.Rational(1, k) for k in (1, 2, 3)])/z for z in (1, 2, 3)}], lambda x, z: x*z),
     'D6-11': ([U(range(4)), geo([0, 1, 2], '1/2')], lambda x, z: max(x, z)),
     'D6-12': ([U(range(4)), {z: _c_normalised([sp.Rational(1, 2), 1, sp.Rational(1, 2)])*2.0**(-abs(z)) for z in (-1, 0, 1)}], lambda x, z: x+z),
     'D6-13': ([U(range(6)), {z: _c_normalised([1, 3])*z for z in (1, 3)}], lambda x, z: math.floor(x/z)),
-    'D6-14': ([U([-2, -1, 1, 2]), {z: _c_normalised([1, 2, 3])*(z+1) for z in (0, 1, 2)}], lambda x, z: x*z),
     'D6-15': ([U(range(4)), geo([0, 1, 2, 3], '1/2')], lambda x, z: min(x, z)),
     'D6-16': ([{0: 4/7, 1: 2/7, 2: 1/7}, U(range(4))], lambda x, y: x+y),
     'D6-17': ([U([1, 2, 3]), {1: 0.5, 2: 0.25, 3: 0.25}], lambda x, y: x*y),
@@ -82,7 +82,6 @@ SOURCES = {
     'D6-19': ([U(range(1, 6)), U(range(1, 6))], lambda x, y: min(x, y)),
     'D6-20': ([{0: 0.25, 1: 0.5, 2: 0.25}, {0: 4/7, 1: 2/7, 2: 1/7}], lambda x, y: x-y),
     'D6-21': ([{k: k/10 for k in range(1, 5)}, U([0, 2, 4])], lambda x, y: x+y),
-    'D6-22': ([{0: 1/6, 1: 2/6, 2: 2/6, 3: 1/6}, U(range(3))], lambda x, y: x+y),
     'D6-23': ([U(range(1, 17))], lambda x: math.floor(math.log2(x))),
     'D6-24': ([U(range(4)), U(range(4))], lambda x, y: abs(x-y)),
     'D6-25': ([U(range(4)), U([0, 1])], lambda x, z: (x*z) % 2),
@@ -94,10 +93,10 @@ SOURCES = {
 }
 
 # the common denominator each solution writes its probabilities over
-DEN = {'D6-01': 9, 'D6-02': 10, 'D6-03': 12, 'D6-04': 16, 'D6-05': 11, 'D6-06': 12,
-       'D6-07': 13, 'D6-08': 15, 'D6-09': 39, 'D6-10': 33, 'D6-11': 28, 'D6-12': 16,
-       'D6-13': 24, 'D6-14': 24, 'D6-15': 60, 'D6-16': 28, 'D6-17': 12, 'D6-18': 24,
-       'D6-19': 25, 'D6-20': 28, 'D6-21': 30, 'D6-22': 18, 'D6-23': 16, 'D6-24': 16,
+DEN = {'D6-01': 9, 'D6-02': 10, 'D6-03': 12, 'D6-04': 16, 'D6-05': 11,
+       'D6-08': 15, 'D6-09': 39, 'D6-10': 33, 'D6-11': 28, 'D6-12': 16,
+       'D6-13': 24, 'D6-15': 60, 'D6-16': 28, 'D6-17': 12, 'D6-18': 24,
+       'D6-19': 25, 'D6-20': 28, 'D6-21': 30, 'D6-23': 16, 'D6-24': 16,
        'D6-25': 4, 'D6-26': 8, 'D6-27': 16, 'D6-28': 9, 'D6-29': 12, 'D6-30': 52}
 
 
@@ -290,7 +289,7 @@ def derive(q, kind, args, text):
             return solve_a30()[0]
         zp = SOURCES[q][0][1]
         # the constant is p_Z at the point where the shape equals one
-        shape = {'D6-09': 0, 'D6-10': 1, 'D6-11': 0, 'D6-12': 0, 'D6-13': 1, 'D6-14': 0, 'D6-15': 0}[q]
+        shape = {'D6-09': 0, 'D6-10': 1, 'D6-11': 0, 'D6-12': 0, 'D6-13': 1, 'D6-15': 0}[q]
         return zp[shape]
     if kind == 'a':
         return solve_a30()[1]
@@ -306,8 +305,6 @@ def derive(q, kind, args, text):
             return ratio_q([sp.Eq(x0, 2*x1), sp.Eq(x0, 4*x2), sp.Eq(x0+x1+x2, 1)], [x0, x1, x2], x2)
         if q == 'D6-21':
             return ratio_q([sp.Eq(x0+2*x0+3*x0+4*x0, 1)], [x0], x0)
-        if q == 'D6-22':
-            return ratio_q([sp.Eq(x1, 2*x0), sp.Eq(x2, 2*x0), sp.Eq(x3, x0), sp.Eq(x0+x1+x2+x3, 1)], [x0, x1, x2, x3], x0)
         if q == 'D6-27':
             return ratio_q([sp.Eq(x0, 2*x1), sp.Eq(x0, 2*x2), sp.Eq(x0+x1+x2, 1)], [x0, x1, x2], x1)
     if kind == 'cdf11':
@@ -499,51 +496,6 @@ STATED = {
         ('kraft', [], 1.0, '1'),
         ('Hp1', [], 2.823067982273661, '2.8231'),
     ],
-    'D6-06': [
-        ('pmf', ['0'], 0.16666666666666666, '\\frac{2}{12}'),
-        ('pmf', ['1'], 0.25, '\\frac{3}{12}'),
-        ('pmf', ['2'], 0.25, '\\frac{3}{12}'),
-        ('pmf', ['3'], 0.08333333333333333, '\\frac{1}{12}'),
-        ('pmf', ['4'], 0.08333333333333333, '\\frac{1}{12}'),
-        ('pmf', ['5'], 0.08333333333333333, '\\frac{1}{12}'),
-        ('pmf', ['6'], 0.08333333333333333, '\\frac{1}{12}'),
-        ('term', ['3'], 0.5, '0.50000'),
-        ('term', ['2'], 0.430827083453526, '0.43083'),
-        ('term', ['1'], 0.29874687506009634, '0.29875'),
-        ('H', [], 2.6258145836939115, '2.6258'),
-        ('codes', ['{"5": "0000", "6": "0001", "0": "001", "1": "01", "2": "10", "3": "110", "4": "111"}'], 1.0, ''),
-        ('L', [], 2.6666666666666665, '2.6667'),
-        ('Lfrac', [], 2.6666666666666665, '\\frac{32}{12}'),
-        ('eta', [], 0.9846804688852169, '0.9847'),
-        ('pct', [], 0.9846804688852169, '98.47'),
-        ('msum', [], 2.6666666666666665, '\\frac{32}{12}'),
-        ('log2D', [], 3.584962500721156, '3.5850'),
-        ('nlogn', [], 0.9591479170272447, '0.9591'),
-        ('kraft', [], 1.0, '1'),
-        ('Hp1', [], 3.6258145836939115, '3.6258'),
-    ],
-    'D6-07': [
-        ('pmf', ['0'], 0.07692307692307693, '\\frac{1}{13}'),
-        ('pmf', ['1'], 0.15384615384615385, '\\frac{2}{13}'),
-        ('pmf', ['3'], 0.3076923076923077, '\\frac{4}{13}'),
-        ('pmf', ['4'], 0.15384615384615385, '\\frac{2}{13}'),
-        ('pmf', ['5'], 0.15384615384615385, '\\frac{2}{13}'),
-        ('pmf', ['9'], 0.15384615384615385, '\\frac{2}{13}'),
-        ('term', ['4'], 0.5232122209664899, '0.52321'),
-        ('term', ['2'], 0.4154522643293988, '0.41545'),
-        ('term', ['1'], 0.28464920908777636, '0.28465'),
-        ('H', [], 2.4696704873718613, '2.4697'),
-        ('codes', ['{"4": "000", "5": "001", "3": "01", "9": "100", "0": "101", "1": "11"}'], 1.0, ''),
-        ('L', [], 2.5384615384615383, '2.5385'),
-        ('Lfrac', [], 2.5384615384615383, '\\frac{33}{13}'),
-        ('eta', [], 0.9729004950252788, '0.9729'),
-        ('pct', [], 0.9729004950252788, '97.29'),
-        ('msum', [], 2.5384615384615383, '\\frac{33}{13}'),
-        ('log2D', [], 3.700439718141092, '3.7004'),
-        ('nlogn', [], 1.2307692307692308, '1.2308'),
-        ('kraft', [], 1.0, '1'),
-        ('Hp1', [], 3.4696704873718613, '3.4697'),
-    ],
     'D6-08': [
         ('pmf', ['0'], 0.5333333333333333, '\\frac{8}{15}'),
         ('pmf', ['1'], 0.06666666666666667, '\\frac{1}{15}'),
@@ -682,31 +634,6 @@ STATED = {
         ('nlogn', [], 2.7682734124061352, '2.7683'),
         ('kraft', [], 1.0, '1'),
         ('Hp1', [], 2.816689088315021, '2.8167'),
-    ],
-    'D6-14': [
-        ('pmf', ['-4'], 0.125, '\\frac{3}{24}'),
-        ('pmf', ['-2'], 0.20833333333333334, '\\frac{5}{24}'),
-        ('pmf', ['-1'], 0.08333333333333333, '\\frac{2}{24}'),
-        ('pmf', ['0'], 0.16666666666666666, '\\frac{4}{24}'),
-        ('pmf', ['1'], 0.08333333333333333, '\\frac{2}{24}'),
-        ('pmf', ['2'], 0.20833333333333334, '\\frac{5}{24}'),
-        ('pmf', ['4'], 0.125, '\\frac{3}{24}'),
-        ('term', ['5'], 0.47146550121537373, '0.47147'),
-        ('term', ['4'], 0.430827083453526, '0.43083'),
-        ('term', ['3'], 0.375, '0.37500'),
-        ('term', ['2'], 0.29874687506009634, '0.29875'),
-        ('H', [], 2.721251836004466, '2.7213'),
-        ('codes', ['{"-1": "0000", "1": "0001", "0": "001", "-4": "010", "4": "011", "-2": "10", "2": "11"}'], 1.0, ''),
-        ('L', [], 2.75, '2.7500'),
-        ('Lfrac', [], 2.75, '\\frac{66}{24}'),
-        ('eta', [], 0.9895461221834423, '0.9895'),
-        ('pct', [], 0.9895461221834423, '98.95'),
-        ('c', [], 0.16666666666666666, 'c=\\tfrac16'),
-        ('msum', [], 2.75, '\\frac{66}{24}'),
-        ('log2D', [], 4.584962500721156, '4.5850'),
-        ('nlogn', [], 1.86371066471669, '1.8637'),
-        ('kraft', [], 1.0, '1'),
-        ('Hp1', [], 3.721251836004466, '3.7213'),
     ],
     'D6-15': [
         ('pmf', ['0'], 0.65, '\\frac{39}{60}'),
@@ -875,29 +802,6 @@ STATED = {
         ('nlogn', [], 2.0591479170272446, '2.0591'),
         ('kraft', [], 1.0, '1'),
         ('Hp1', [], 3.847742678581274, '3.8477'),
-    ],
-    'D6-22': [
-        ('pmf', ['0'], 0.05555555555555555, '\\frac{1}{18}'),
-        ('pmf', ['1'], 0.16666666666666666, '\\frac{3}{18}'),
-        ('pmf', ['2'], 0.2777777777777778, '\\frac{5}{18}'),
-        ('pmf', ['3'], 0.2777777777777778, '\\frac{5}{18}'),
-        ('pmf', ['4'], 0.16666666666666666, '\\frac{3}{18}'),
-        ('pmf', ['5'], 0.05555555555555555, '\\frac{1}{18}'),
-        ('term', ['5'], 0.5133324740430417, '0.5133'),
-        ('term', ['3'], 0.430827083453526, '0.4308'),
-        ('term', ['1'], 0.23166250008012845, '0.2317'),
-        ('H', [], 2.3516441151533924, '2.3516'),
-        ('codes', ['{"4": "000", "0": "0010", "5": "0011", "2": "01", "3": "10", "1": "11"}'], 1.0, ''),
-        ('L', [], 2.388888888888889, '2.3889'),
-        ('Lfrac', [], 2.388888888888889, '\\frac{43}{18}'),
-        ('eta', [], 0.9844091644828155, '0.9844'),
-        ('pct', [], 0.9844091644828155, '98.44'),
-        ('q', [], 0.16666666666666666, 'q=\\tfrac16'),
-        ('msum', [], 2.388888888888889, '\\frac{43}{18}'),
-        ('log2D', [], 4.169925001442312, '4.1699'),
-        ('nlogn', [], 1.81828088628892, '1.8183'),
-        ('kraft', [], 1.0, '1'),
-        ('Hp1', [], 3.3516441151533924, '3.3516'),
     ],
     'D6-23': [
         ('pmf', ['0'], 0.0625, '\\frac{1}{16}'),
@@ -1086,6 +990,233 @@ STATED = {
     ],
 }
 
+# ── the four channel-side questions (D6-06, D6-07, D6-14, D6-22) ─────────────
+#
+# These state probabilities of a binary symmetric channel and energies per bit
+# of the bandlimited channel, not pmfs of a derived source, so they have their
+# own table. Each entry is (text printed on the page, number it stands for,
+# re-derivation, absolute tolerance). The routes differ from the solutions':
+#
+#   binomial tails   scipy.stats.binom survival functions, and one seeded
+#                    Monte Carlo run of the majority vote over the BSC
+#   binary entropy   scipy.stats.entropy of (p, 1-p)
+#   Shannon limit    the smallest E_b/N_0 with r <= log2(1 + r E_b/N_0),
+#                    found by brentq on the capacity itself rather than read
+#                    from the closed form (2^r - 1)/r
+#   E_b/N_0 needed   brentq on a*Q(sqrt(b x)) = P_b with scipy's Q, where a
+#                    and b come from the constellation points (nearest
+#                    neighbours counted on the lattice)
+#   ranges           brentq on the received E_s/N_0 at distance d
+#
+# A value printed to k decimals gets an absolute tolerance of a little over
+# half a unit in the last place. A value in dB at two decimals that the page
+# reaches through rounded table entries gets 0.008 dB.
+
+from scipy.optimize import brentq
+from scipy.stats import binom, norm
+
+Qf = norm.sf
+
+
+def dB(x):
+    return 10*math.log10(x)
+
+
+def limit_lin(r):
+    """smallest E_b/N_0 (linear) at which the bandlimited channel carries r bit/s/Hz"""
+    return brentq(lambda g: math.log2(1 + r*g) - r, 1e-6, 1e6, xtol=1e-14)
+
+
+def majority_fail(n, p):
+    return float(binom.sf((n - 1)//2, n, p))
+
+
+def mc_majority(n, p, trials=2_000_000, seed=606):
+    rng = np.random.default_rng(seed)
+    flips = rng.random((trials, n)) < p
+    return float(np.mean(flips.sum(axis=1) > n//2))
+
+
+def points(name):
+    if name == 'QPSK':
+        return np.exp(1j*(np.pi/4 + np.pi/2*np.arange(4)))
+    if name == '8PSK':
+        return np.exp(1j*2*np.pi*np.arange(8)/8)
+    if name == '16QAM':
+        g = np.array([-3, -1, 1, 3])
+        return (g[:, None] + 1j*g[None, :]).ravel()
+    raise KeyError(name)
+
+
+def ab(name):
+    """(a, b) with P_b ~ a Q(sqrt(b Eb/N0)): a is the mean nearest-neighbour
+    count over log2 M, b is d_min^2/(2 Eb), both from the points themselves"""
+    s = points(name)
+    M = len(s)
+    D = np.abs(s[:, None] - s[None, :])
+    dmin = np.min(D[D > 1e-9])
+    nn = np.mean(np.sum(np.abs(D - dmin) < 1e-9, axis=1))
+    Eb = np.mean(np.abs(s)**2)/math.log2(M)
+    return nn/math.log2(M), dmin**2/(2*Eb)
+
+
+def ebn0_needed(a, b, pb=1e-4):
+    return brentq(lambda x: a*Qf(math.sqrt(b*x)) - pb, 1e-3, 1e4, xtol=1e-12)
+
+
+# the constants the D6-14 statement prints, rounded as printed
+B14 = {'QPSK': 2.0, '8PSK': 0.879, '16QAM': 0.8}
+A14 = {'QPSK': 1.0, '8PSK': 2/3, '16QAM': 3/4}
+
+p06, k06 = 0.05, 20
+P3 = majority_fail(3, p06)
+P5 = majority_fail(5, p06)
+C06 = 1 - float(sp_entropy([p06, 1 - p06], base=2))
+
+P07, N007, R07, B07 = 1.8e-11, 4.0e-20, 60e6, 10e6
+
+DB2 = 0.008          # dB at two decimals, reached through rounded entries
+
+CHANNEL = {
+    'D6-06': [
+        ('0.2864', 0.2864, lambda: 1 - C06, 6e-5),
+        ('1-0.3585', 0.3585, lambda: (1 - p06)**k06, 6e-5),
+        ('0.6415', 0.6415, lambda: 1 - binom.pmf(0, k06, p06), 6e-5),
+        ('0.007125', 0.007125, lambda: binom.pmf(2, 3, p06), 1e-9),
+        ('0.000125', 0.000125, lambda: binom.pmf(3, 3, p06), 1e-9),
+        ('7.25\\times10^{-3}', 7.25e-3, lambda: P3, 6e-6),
+        ('(0.99275)^{20}', 0.99275, lambda: 1 - P3, 6e-6),
+        ('1-0.8646', 0.8646, lambda: (1 - P3)**k06, 6e-5),
+        ('0.1354', 0.1354, lambda: 1 - binom.pmf(0, k06, P3), 6e-5),
+        ('1.1281\\times10^{-3}', 1.1281e-3, lambda: binom.pmf(3, 5, p06), 6e-8),
+        ('2.969\\times10^{-5}', 2.969e-5, lambda: binom.pmf(4, 5, p06), 6e-9),
+        ('3.125\\times10^{-7}', 3.125e-7, lambda: binom.pmf(5, 5, p06), 1e-12),
+        ('1.158\\times10^{-3}', 1.158e-3, lambda: P5, 6e-7),
+        ('(0.998842)^{20}', 0.998842, lambda: 1 - P5, 6e-7),
+        ('1-0.97709', 0.97709, lambda: (1 - P5)**k06, 6e-6),
+        ('0.02291', 0.02291, lambda: 1 - binom.pmf(0, k06, P5), 6e-6),
+        ('0.7136', 0.7136, lambda: C06, 6e-5),
+        ('28.03', 28.03, lambda: k06/C06, 6e-3),
+        ('0.77378', 0.77378, lambda: binom.pmf(0, 5, p06), 6e-6),
+        ('0.20363', 0.20363, lambda: binom.pmf(1, 5, p06), 6e-6),
+        ('0.02143', 0.02143, lambda: binom.pmf(2, 5, p06), 6e-6),
+        ('+0.00113', 0.00113, lambda: binom.pmf(3, 5, p06), 6e-6),
+        ('0.00003', 0.00003, lambda: binom.pmf(4, 5, p06), 6e-6),
+        ('1.00000', 1.0, lambda: sum(binom.pmf(j, 5, p06) for j in range(6)), 6e-6),
+        ('3p^{2}=0.0075', 0.0075, lambda: 3*p06**2, 6e-5),
+        ('10p^{3}=0.00125', 0.00125, lambda: 10*p06**3, 6e-6),
+        ('=0.0232', 0.0232, lambda: k06*P5, 6e-5),
+        ('2.3\\%', 0.023, lambda: 1 - (1 - P5)**k06, 6e-4),
+        # the labels on the two solution figures
+        ("'0.857'", 0.857, lambda: binom.pmf(0, 3, p06), 6e-4),
+        ("'0.135'", 0.135, lambda: binom.pmf(1, 3, p06), 6e-4),
+        ("'7.13\\times10^{-3}'", 7.13e-3, lambda: binom.pmf(2, 3, p06), 6e-6),
+        ("'1.25\\times10^{-4}'", 1.25e-4, lambda: binom.pmf(3, 3, p06), 6e-7),
+        ("'0.774'", 0.774, lambda: binom.pmf(0, 5, p06), 6e-4),
+        ("'0.204'", 0.204, lambda: binom.pmf(1, 5, p06), 6e-4),
+        ("'0.0214'", 0.0214, lambda: binom.pmf(2, 5, p06), 6e-5),
+        ("'1.13\\times10^{-3}'", 1.13e-3, lambda: binom.pmf(3, 5, p06), 6e-6),
+        ("'2.97\\times10^{-5}'", 2.97e-5, lambda: binom.pmf(4, 5, p06), 6e-8),
+        ("'3.13\\times10^{-7}'", 3.13e-7, lambda: binom.pmf(5, 5, p06), 6e-10),
+        # one Monte Carlo run of the vote: 2e6 trials, standard error 6e-5 at 7e-3
+        ('Monte Carlo P_3', 7.25e-3, lambda: mc_majority(3, p06), 3e-4),
+    ],
+    'D6-07': [
+        ('=6\\ \\text{bit/s/Hz}', 6.0, lambda: R07/B07, 1e-12),
+        ('=10.5', 10.5, lambda: limit_lin(R07/B07), 1e-6),
+        ('10.21\\ \\text{dB}', 10.21, lambda: dB(limit_lin(R07/B07)), 0.006),
+        ('3.0\\times10^{-19}\\ \\text{J}', 3.0e-19, lambda: P07/R07, 1e-24),
+        ('=7.5', 7.5, lambda: P07/R07/N007, 1e-9),
+        ('8.75\\ \\text{dB}', 8.75, lambda: dB(P07/R07/N007), 0.006),
+        ('10.21-8.75=1.46', 1.46, lambda: dB(limit_lin(6)) - dB(P07/R07/N007), 0.006),
+        ('&=45', 45.0, lambda: P07/(N007*B07), 1e-9),
+        ('\\log_2 46', 46.0, lambda: 1 + P07/(N007*B07), 1e-9),
+        ('5.5236', 5.5236, lambda: math.log2(46), 6e-5),
+        ('55.24\\ \\text{Mbit/s}', 55.24, lambda: B07*math.log2(1 + P07/(N007*B07))/1e6, 6e-3),
+        ('0.9\\times10^{-11}', 0.9e-11, lambda: P07/2, 1e-20),
+        ('=3\\ \\text{bit/s/Hz}', 3.0, lambda: (R07/2)/B07, 1e-12),
+        ('=2.333', 2.333, lambda: limit_lin(3), 6e-4),
+        ('3.68\\ \\text{dB}', 3.68, lambda: dB(limit_lin(3)), 0.006),
+        ('8.75-3.68=5.07', 5.07, lambda: dB(P07/R07/N007) - dB(limit_lin(3)), 0.006),
+        ('3(7.5)=22.5', 22.5, lambda: (P07/2)/(N007*B07), 1e-9),
+        ('4.5546', 4.5546, lambda: math.log2(23.5), 6e-5),
+        ('45.55\\ \\text{Mbit/s}', 45.55, lambda: B07*math.log2(1 + (P07/2)/(N007*B07))/1e6, 6e-3),
+    ],
+    'D6-14': [
+        # the table printed in the statement
+        ('Q(3.719)=1.00\\times10^{-4}', 1.00e-4, lambda: Qf(3.719), 6e-7),
+        ('Q(3.646)=1.33\\times10^{-4}', 1.33e-4, lambda: Qf(3.646), 6e-7),
+        ('Q(3.615)=1.50\\times10^{-4}', 1.50e-4, lambda: Qf(3.615), 6e-7),
+        # the approximations printed in the statement, from the constellation points
+        ('P_b=Q\\big(\\sqrt{2E_b/N_0}\\big)', 1.0, lambda: ab('QPSK')[0], 1e-12),
+        ('\\sqrt{2E_b/N_0}', 2.0, lambda: ab('QPSK')[1], 1e-12),
+        ('\\tfrac{2}{3}\\,Q', 2/3, lambda: ab('8PSK')[0], 1e-12),
+        ('0.879\\,E_b/N_0', 0.879, lambda: ab('8PSK')[1], 6e-4),
+        ('\\tfrac{3}{4}\\,Q', 0.75, lambda: ab('16QAM')[0], 1e-12),
+        ('0.8\\,E_b/N_0', 0.8, lambda: ab('16QAM')[1], 1e-12),
+        # part (a)
+        ('\\frac{13.831}{2}', 13.831, lambda: 3.719**2, 6e-4),
+        ('&=6.915', 6.915, lambda: ebn0_needed(A14['QPSK'], B14['QPSK']), 3e-3),
+        ('8.40\\ \\text{dB}', 8.40, lambda: dB(ebn0_needed(A14['QPSK'], B14['QPSK'])), DB2),
+        ('10^{-4}/\\tfrac{2}{3}=1.50\\times10^{-4}', 1.50e-4, lambda: 1e-4/A14['8PSK'], 1e-12),
+        ('\\frac{13.068}{0.879}', 13.068, lambda: 3.615**2, 6e-4),
+        ('&=14.867', 14.867, lambda: ebn0_needed(A14['8PSK'], B14['8PSK']), 0.012),
+        ('11.72\\ \\text{dB}', 11.72, lambda: dB(ebn0_needed(A14['8PSK'], B14['8PSK'])), DB2),
+        ('10^{-4}/\\tfrac{3}{4}=1.33\\times10^{-4}', 1.33e-4, lambda: 1e-4/A14['16QAM'], 4e-7),
+        ('\\frac{13.293}{0.8}', 13.293, lambda: 3.646**2, 6e-4),
+        ('&=16.617', 16.617, lambda: ebn0_needed(A14['16QAM'], B14['16QAM']), 0.012),
+        ('12.21\\ \\text{dB}', 12.21, lambda: dB(ebn0_needed(A14['16QAM'], B14['16QAM'])), DB2),
+        # part (b)
+        ('=1.5=1.76\\ \\text{dB}', 1.76, lambda: dB(limit_lin(2)), 0.006),
+        ('=2.333=3.68\\ \\text{dB}', 3.68, lambda: dB(limit_lin(3)), 0.006),
+        ('=3.75=5.74\\ \\text{dB}', 5.74, lambda: dB(limit_lin(4)), 0.006),
+        # part (c)
+        ('6.64\\ \\text{dB}', 6.64, lambda: dB(ebn0_needed(1, 2)/limit_lin(2)), DB2),
+        ('8.04\\ \\text{dB}', 8.04, lambda: dB(ebn0_needed(2/3, 0.879)/limit_lin(3)), DB2),
+        ('6.47\\ \\text{dB}', 6.47, lambda: dB(ebn0_needed(0.75, 0.8)/limit_lin(4)), DB2),
+        ('=6.37', 6.37, lambda: ebn0_needed(2/3, 0.879)/limit_lin(3), 0.012),
+        ('=4.610', 4.610, lambda: ebn0_needed(1, 2)/limit_lin(2), 3e-3),
+        ('=4.431', 4.431, lambda: ebn0_needed(0.75, 0.8)/limit_lin(4), 4e-3),
+    ],
+    'D6-22': [
+        ('=6\\ \\text{Mbit/s},\\quad r=1', 6.0, lambda: 6e6*0.5*math.log2(4)/1e6, 1e-12),
+        ('=12\\ \\text{Mbit/s},\\quad r=2', 12.0, lambda: 6e6*0.5*math.log2(16)/1e6, 1e-12),
+        ('=18\\ \\text{Mbit/s},\\quad r=3', 18.0, lambda: 6e6*0.5*math.log2(64)/1e6, 1e-12),
+        ('=1=0\\ \\text{dB}', 1.0, lambda: limit_lin(1), 1e-6),
+        ('=1.5=1.76\\ \\text{dB}', 1.76, lambda: dB(limit_lin(2)), 0.006),
+        ('=2.333=3.68\\ \\text{dB}', 3.68, lambda: dB(limit_lin(3)), 0.006),
+        ('=1.50\\ \\text{dB}', 1.50, lambda: dB(limit_lin(1)*1) + 1.5, 0.006),
+        ('+3.01=6.27', 6.27, lambda: dB(limit_lin(2)*2) + 1.5, 0.006),
+        ('+4.77=9.95', 9.95, lambda: dB(limit_lin(3)*3) + 1.5, 0.006),
+        ('6.27-1.50=4.77', 4.77, lambda: dB(limit_lin(2)*2) - dB(limit_lin(1)), 0.006),
+        ('9.95-1.50=8.45', 8.45, lambda: dB(limit_lin(3)*3) - dB(limit_lin(1)), 0.006),
+        ('2.4\\,(0.5774)', 0.5774, lambda: 10**(-4.77/20), 6e-5),
+        ('2.4\\,(0.3780)', 0.3780, lambda: 10**(-8.45/20), 6e-5),
+        # a range is the distance at which the received E_s/N_0 (QPSK's need
+        # at 2.4 km, falling as 1/d^2) meets the scheme's need
+        ('&=1.39\\ \\text{km}', 1.39, lambda: brentq(lambda d: limit_lin(1)*(2.4/d)**2 - 2*limit_lin(2), 0.1, 10), 6e-3),
+        ('&=0.91\\ \\text{km}', 0.91, lambda: brentq(lambda d: limit_lin(1)*(2.4/d)**2 - 3*limit_lin(3), 0.1, 10), 6e-3),
+        ('20\\log_{10}2=6.02', 6.02, lambda: dB((2.4/1.2)**2), 0.006),
+        ('&=7.52\\ \\text{dB}', 7.52, lambda: dB(limit_lin(1)*(2.4/1.2)**2) + 1.5, 0.006),
+        ('falls $2.43$ dB short', 2.43, lambda: dB(3*limit_lin(3)) - dB(limit_lin(1)*(2.4/1.2)**2), 0.006),
+        ('7.52-6.27=1.25', 1.25, lambda: dB(limit_lin(1)*(2.4/1.2)**2) - dB(2*limit_lin(2)), 0.006),
+        ('2.4/\\sqrt{3}=1.386', 1.386, lambda: brentq(lambda d: (2.4/d)**2 - 3, 0.1, 10), 6e-4),
+        ('2.4/\\sqrt{7}=0.907', 0.907, lambda: brentq(lambda d: (2.4/d)**2 - 7, 0.1, 10), 6e-4),
+        ("d:0.907", 0.907, lambda: 2.4/math.sqrt(7), 6e-4),
+        ("d:1.386", 1.386, lambda: 2.4/math.sqrt(3), 6e-4),
+    ],
+}
+
+
+def channel_text_present(q):
+    block = js_blocks()[q].replace('\\\\', '\\')
+    texts = [t for t, *_ in CHANNEL[q] if not t.startswith('Monte Carlo')]
+    missing = [t for t in texts if t not in block]
+    for t in missing:
+        print(f"      not printed in {q}: {t}")
+    return 1 - len(missing)/len(texts)
+
+
 # ── the checks ───────────────────────────────────────────────────────────────
 
 MC_TOL = 0.02   # 400 000 draws: the standard error of a probability near 0.2 is 6e-4
@@ -1113,6 +1244,15 @@ for q, items in STATED.items():
                        "tol": MC_TOL})
     CHECKS.append({"name": f"{q} every stated number is printed in the question",
                    "stated": 1.0, "derive": (lambda q=q: text_present(q)), "tol": 1e-12})
+
+for q, items in CHANNEL.items():
+    for text, value, fn_, atol in items:
+        CHECKS.append({"name": f"{q} {text}",
+                       "stated": value,
+                       "derive": fn_,
+                       "tol": atol if value == 0 else atol/abs(value)})
+    CHECKS.append({"name": f"{q} every stated number is printed in the question",
+                   "stated": 1.0, "derive": (lambda q=q: channel_text_present(q)), "tol": 1e-12})
 
 
 def main() -> int:
