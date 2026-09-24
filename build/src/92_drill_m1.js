@@ -1,68 +1,212 @@
 /* ==========================================================================
    Practice questions — Module 1.
 
-   The module opens with a taxonomy of the question shapes that keep coming
-   back and closes with twenty-one open-ended questions in those shapes. Every
-   worked solution is hidden until the reader asks for it, so a first pass
-   shows the target and not the answer.
+   Thirty questions in the form of the midterm and final examination
+   questions on sampling, quantization and PCM. Each one is a statement and
+   three or four lettered parts with point weights that sum to 25, and each
+   worked solution ends in a figure that shows the answer. The worked solution
+   is hidden until the reader asks for it.
 
-   Every question keeps the shape of the type it belongs to and none of its
-   numbers. A replacement number is chosen so that the character of the answer
-   survives: a quantizer that was coarse stays coarse, a signal that filled its
-   range still fills it, and a question that exists to show a model failing
-   still shows it failing.
+   The five question types follow the examination: PCM design from an
+   accuracy requirement, the spectrum of a product or a sinc, a sum of
+   sinusoids through a uniform quantizer, a density with a fine quantizer, and
+   a drawn density with a coarse quantizer. No number set is taken from an
+   examination paper. Every number a solution states is re-derived by an
+   independent route in verify/drills_m1.py.
    ========================================================================== */
 (function(){
 const P = PLOT, C = P.COL;
 const sinc = x => Math.abs(x) < 1e-12 ? 1 : Math.sin(Math.PI*x)/(Math.PI*x);
 
+/* ---- figure helpers ---------------------------------------------------
+   Every figure below is a function called when its solution is drawn, so
+   it takes the palette in force. A legend is a card inside the plot it keys
+   (DESIGN.md, Figures); a panel is positioned so that its legend sits in
+   its own corner when a solution stacks two panels. */
+const legend = (items, at) => `<div class="legend in-plot lg-at-${at||'tr'}">${items.map(([c,l,d])=>
+  `<i class="lg-${c}${d==='dot'?' lg-dot':d?' lg-dash':''}">${RENDER.md(l)}</i>`).join('')}</div>`;
+const panel = (svg, lg) => `<div style="position:relative">${svg}${lg||''}</div>`;
+
+/* The largest quantization error of an R-bit quantizer as a share of the
+   peak-to-peak range: (Delta/2)/(2V) = 1/(2L) = 50/2^R per cent. */
+function figAccuracy(o){
+  const Rs = []; for(let R=o.R0-3; R<=o.R0+2; R++) Rs.push(R);
+  const pct = R => 50/2**R, top = pct(o.R0-3);
+  const a = P.Axes({w:700,h:300,xr:[o.R0-3.7,o.R0+2.7],yr:[0,top*1.55],
+    xlabel:'R\\;(\\text{bits per sample})', ylabel:'\\text{largest error}\\;(\\%\\text{ of }2V_{\\max})',
+    pad:{l:58,r:26,t:26,b:44}, xticksOverride:Rs, xtickfmt:v=>String(v), ytarget:4});
+  if(o.band){
+    a.rect(o.R0-3.7, o.band[0], o.R0+2.7, o.band[1], {fill:C.dec.out});
+    a.note(o.R0+2.6, o.band[1], `${P.fmt(o.band[0],3)}\\le p<${P.fmt(o.band[1],3)}`, {tex:true, anchor:'end', dy:-12, color:C.out});
+  }
+  a.stem(Rs.filter(R=>R!==o.R0).map(R=>[R,pct(R)]), {color:C.mid});
+  a.stem([[o.R0,pct(o.R0)]], {color:C.out});
+  const items = [['mid','$50/2^{R}$ per cent'],['out','least $R$ that meets it']];
+  if(o.p!=null){
+    a.hline(o.p, {color:C.err, dash:'6 4', opacity:1});
+    a.note(o.R0+2.6, o.p, `p=${o.p}\\%`, {tex:true, anchor:'end', dy:-12, color:C.err});
+    items.push(['err','requirement $p$',1]);
+  }
+  return panel(a.svg(), legend(items));
+}
+
+/* A line spectrum and its copies around the multiples of f_s. `lines` holds
+   [f, weight] for f >= 0; the weight is the magnitude of the impulse. */
+function figLines(o){
+  const wmax = Math.max(...o.lines.map(l=>l[1]));
+  const a = P.Axes({w:720,h:280,xr:[-o.xmax,o.xmax],yr:[0,wmax*2.4],
+    xlabel:`f\\;(\\text{${o.unit||'kHz'}})`, ylabel:'|X_\\delta(f)|',
+    pad:{l:34,r:28,t:26,b:44}, xticksOverride:o.ticks, ytickfmt:()=>''});
+  const put = (f,w,col,op) => { if(Math.abs(f) < 0.97*o.xmax) a.impulse(f,w,{color:col,label:false,opacity:op}); };
+  for(const k of [-3,-2,-1,1,2,3]) o.lines.forEach(([f,w])=>{ put(k*o.fs+f,w,C.mid,0.85); if(f) put(k*o.fs-f,w,C.mid,0.85); });
+  o.lines.forEach(([f,w])=>{ put(f,w,C.in); if(f) put(-f,w,C.in); });
+  if(o.fg) a.span(o.W, o.fs-o.W, wmax*1.2, `f_g=${o.fg}`, {tex:true, fs:13, color:C.muted});
+  return panel(a.svg(), legend([['in','$X(f)$'],['mid','copies at $\\pm f_s,\\ \\pm2f_s$']], 'tl'));
+}
+
+/* A continuous spectrum X(f) (zero outside |f| < B) and its copies. */
+function figShape(o){
+  const X = f => Math.abs(f) < o.B ? o.X(f) : null;
+  const a = P.Axes({w:720,h:280,xr:[-o.xmax,o.xmax],yr:[0,o.peak*2.2],
+    xlabel:`f\\;(\\text{${o.unit||'Hz'}})`, ylabel:'X_\\delta(f)',
+    pad:{l:34,r:28,t:26,b:44}, xticksOverride:o.ticks, ytickfmt:()=>''});
+  for(const k of [-3,-2,-1,1,2,3]){
+    a.area(f=>X(f-k*o.fs)||0, k*o.fs-o.B, k*o.fs+o.B, {color:C.dec.mid});
+    a.curve(f=>X(f-k*o.fs), {color:C.mid});
+  }
+  a.area(f=>X(f)||0, -o.B, o.B, {color:C.dec.in});
+  a.curve(X, {color:C.in});
+  if(o.fg) a.span(o.W, o.fs-o.W, o.peak*1.2, `f_g=${o.fg}`, {tex:true, fs:13, color:C.muted});
+  if(o.mark) a.note(o.mark[0], o.mark[1], o.mark[2], {tex:true, anchor:'middle', dy:-10, color:C.in});
+  return panel(a.svg(), legend([['in','$X(f)$'],['mid','copies at $\\pm f_s,\\ \\pm2f_s$']], 'tl'));
+}
+
+/* A waveform over a few periods with its maximum and minimum marked. The
+   labels sit outside the band the curve fills, above the maximum line and
+   below the minimum line, so the curve never crosses them. */
+function figWave(o){
+  const s = o.max - o.min;
+  const a = P.Axes({w:720,h:o.h||290,xr:[o.t0,o.t1],yr:[o.min-0.3*s, o.max+(o.head||0.45)*s],
+    xlabel:'t\\;(\\text{ms})', ylabel:'x(t)', pad:{l:56,r:28,t:26,b:44}, ytarget:5,
+    xticksOverride:o.xticks||null});
+  a.hline(o.max, {color:C.mid, dash:'5 4', opacity:1});
+  if(o.minTo!=null) a.poly([[o.t0,o.min],[o.minTo,o.min]], {color:C.mid, width:1, dash:'5 4'});
+  else a.hline(o.min, {color:C.mid, dash:'5 4', opacity:1});
+  (o.parts||[]).forEach(f=>a.curve(f, {color:C.mid, width:1.5, dash:'5 4'}));
+  a.curve(o.f, {color:C.in});
+  (o.marks||[]).forEach(([t,v])=>a.point(t, v, {color:C.mid}));
+  const lx = o.lx!=null ? o.lx : o.t0 + 0.02*(o.t1-o.t0);
+  a.note(lx, o.max, o.maxLab, {tex:true, dy:-10, color:C.mid});
+  if(o.minTo!=null) a.note(o.minTo+0.02*(o.t1-o.t0), o.min, o.minLab, {tex:true, dy:4, color:C.mid});
+  else a.note(lx, o.min, o.minLab, {tex:true, dy:20, color:C.mid});
+  return panel(a.svg(), o.legend ? legend(o.legend) : '');
+}
+
+/* A density with the power integrand x^2 f(x) shaded: its area is P_X. */
+function figDensity(o){
+  const g = x => (x < o.lo || x > o.hi) ? 0 : o.f(x);
+  const w = o.hi - o.lo;
+  const a = P.Axes({w:720,h:290,xr:[o.lo-0.3*w, o.hi+0.3*w],yr:[0,o.ymax],
+    xlabel:'x', ylabel:'f_X(x)', pad:{l:52,r:28,t:26,b:44}, xticksOverride:o.xticks, ytarget:4});
+  a.area(x=>x*x*g(x), o.lo, o.hi, {color:C.dec.mid});
+  a.curve(x=>(x < o.lo || x > o.hi) ? null : x*x*o.f(x), {color:C.mid, dash:'6 4'});
+  a.curve(g, {color:C.in, n:900});
+  return panel(a.svg(), legend([['in','$f_X(x)$'],['mid','$x^{2}f_X(x)$ with area $P_X$',1]], o.at||'tr'));
+}
+
+/* A coarse quantizer: the staircase with its output levels written on it,
+   then the density with the error integrand (x - Q(x))^2 f(x) shaded region
+   by region. The shaded area is the noise power P_Q. Both panels share the
+   x axis, so its numbers are written once, under the second panel. */
+function figCoarse(o){
+  const qy = o.qy || [-o.qr, o.qr];
+  const a = P.Axes({w:720,h:230,xr:o.xr,yr:qy, xlabel:'x', ylabel:'\\mathbb{Q}(x)',
+    pad:{l:52,r:28,t:26,b:44}, xticksOverride:o.xticks, xtickfmt:()=>'', ytickfmt:()=>'', ytarget:4});
+  o.q.forEach(([lo,hi,v])=>{
+    a.poly([[Math.max(lo,o.xr[0]),v],[Math.min(hi,o.xr[1]),v]], {color:C.mid, width:2.8});
+    if(v) a.note((Math.max(lo,o.xr[0])+Math.min(hi,o.xr[1]))/2, v, P.fmt(v,2), {tex:true, anchor:'middle', dy:v>0?-12:22, color:C.mid});
+  });
+  const b = P.Axes({w:720,h:270,xr:o.xr,yr:[0,o.emax], xlabel:'x', ylabel:'(x-\\mathbb{Q}(x))^{2}f_X(x)',
+    pad:{l:52,r:28,t:26,b:44}, xticksOverride:o.xticks, ytarget:4});
+  const cuts = o.cuts;
+  for(let i=0; i<cuts.length-1; i++){
+    const lo = cuts[i], hi = cuts[i+1];
+    let v = 0; for(const [l,h,w] of o.q) if((lo+hi)/2 > l && (lo+hi)/2 < h) v = w;
+    const e = x => (x-v)*(x-v)*o.f(x);
+    b.area(e, lo, hi, {color:C.dec.err, n:200});
+    b.curve(x=>(x < lo || x > hi) ? null : e(x), {color:C.err});
+  }
+  b.curve(o.f, {color:C.in, width:1.6, dash:'6 4', n:900});
+  return panel(a.svg())
+       + panel(b.svg(), legend([['err','error integrand, area $P_Q$'],['in','$f_X(x)$',1]], 'tl'));
+}
+
+/* A drawn density, in the form the question gives it: the height is c. */
+function figPdf(o){
+  const a = P.Axes({w:640,h:240,xr:o.xr,yr:[0,1.4], xlabel:'x', ylabel:'f_X(x)',
+    pad:{l:52,r:26,t:26,b:44}, xticksOverride:o.xticks, ytickfmt:()=>'', ytarget:2});
+  (o.levels||[[1,'c']]).forEach(([y,lab,x1])=>{
+    a.poly([[o.xr[0],y],[x1,y]], {color:C.ruleStrong, width:1.1, dash:'4 4'});
+    a.note(o.xr[0], y, lab, {tex:true, anchor:'end', dx:-8, color:C.ink});
+  });
+  a.poly(o.pts, {color:C.in});
+  return a.svg();
+}
+
+/* The largest number of bits per sample a link of rate Rb allows at the
+   sampling rate f_s: the floor of Rb/f_s. */
+function figBudget(o){
+  const a = P.Axes({w:700,h:290,xr:o.xr,yr:o.yr, xlabel:`f_s\\;(\\text{${o.unit}})`,
+    ylabel:'\\text{bits per sample}', pad:{l:52,r:28,t:26,b:44}, xticksOverride:o.xticks, ystep:1,
+    xtickfmt:v=>P.fmt(v,2)});
+  if(o.forbid) a.rect(o.xr[0], o.yr[0], o.forbid, o.yr[1], {fill:C.dec.err});
+  a.curve(f=>o.Rb/f, {color:C.h, dash:'6 4'});
+  for(let R=o.yr[0]; R<=o.yr[1]; R++){
+    const f1 = Math.min(o.xr[1], o.Rb/R), f0 = Math.max(o.xr[0], o.Rb/(R+1));
+    if(f1 > f0) a.poly([[f0,R],[f1,R]], {color:C.mid, width:2.6});
+  }
+  a.point(o.pick[0], o.pick[1], {color:C.out, r:5.5});
+  return panel(a.svg(), legend([['h','$R_b/f_s$',1],['mid','whole bits $\\lfloor R_b/f_s\\rfloor$'],['out','design point','dot']]));
+}
+
 /* ======================================================================
-   The taxonomy. Three of the six shapes are read off the question tables;
-   the other three come from the worked examples in the lecture material,
-   and the last names the full-length form.
+   The taxonomy: the five examination question types of this module.
    ====================================================================== */
 CONTENT.DRILLTYPES.M1 = [
-  { k:'rate', name:'Sampling rate, resolution and bit rate',
-    asks:'A message is given by its bandwidth or its formula. Find the rate it must be sampled at, how many bits a sample needs, and the bit rate or symbol rate that follows.',
-    method:['Find the highest frequency present. For a product of sinusoids, expand it first — the highest frequency of a product is not the highest frequency of either factor.',
-            'The Nyquist rate is twice that. A guard band adds to it: $f_s=2W+f_g$. A rate stated as a percentage above Nyquist multiplies it.',
-            'Resolution is $R=\\log_2 L$, rounded <em>up</em> when it comes from an accuracy requirement. The bit rate is $R_b=Rf_s$, and a symbol rate divides that by the bits each symbol carries.'],
+  { k:'pcm', name:'PCM design from an accuracy requirement',
+    asks:'A sinusoid or a bandwidth is given with an accuracy requirement or a level count. Find the bits per sample, the sampling rate, the bit rate and the symbol rate.',
+    method:['Turn the requirement into a bound on the step. The largest error $\\Delta/2$ must stay below the stated share of the peak-to-peak value $2V_{\\max}$.',
+            'Put $\\Delta=2V_{\\max}/L$ and solve for $L$. Round $L$ up to a power of two, and take $R=\\log_2 L$.',
+            'The sampling rate is $2W$, or $2W$ times the stated margin. Then $R_b=Rf_s$, and an $M$-level PAM system sends $R_b/\\log_2 M$ symbols a second.'],
     go:'m1-encode' },
 
-  { k:'sqnr-density', name:'A source density, a quantizer, and the SQNR',
-    asks:'A density is given with an unknown constant, together with a quantizer. Find the constant, the signal power, the noise power and the SQNR.',
-    method:['Find the constant from $\\int f_X(x)\\,dx=1$ before anything else. Every later part depends on it.',
-            'The signal power is $E[X^{2}]=\\int x^{2}f_X(x)\\,dx$, a property of the source, not the variance of the quantized values.',
-            'The noise power is $E[(X-\\mathbb{Q}(X))^{2}]$, integrated region by region against the same density. Use $\\Delta^{2}/12$ only when the quantizer is uniform and fine. A coarse quantizer gives a few decibels, not tens.'],
-    go:'m1-ex-gauss' },
+  { k:'spectrum', name:'The spectrum of a product, a square or a sinc',
+    asks:'A signal is given as a product of sinusoids, a squared cosine or a sinc expression. Find its highest frequency, the sampling rate, the bit rate and the step size.',
+    method:['Expand products and squares into sums with $2\\cos A\\cos B=\\cos(A-B)+\\cos(A+B)$. For sinc factors, a product in time is a convolution in frequency, so the bandwidths add.',
+            'With a guard band the rate is $f_s=2W+f_g$. A required bit rate fixes $f_s=R_b/R$, and then $f_g=f_s-2W$.',
+            'The step is $\\Delta=(x_{\\max}-x_{\\min})/L$. Find the two extremes from the signal itself, not from the amplitudes of its terms.'],
+    go:'m1-ex-nyquist' },
 
-  { k:'sqnr-wave', name:'A waveform through a uniform quantizer',
-    asks:'A periodic waveform is sampled at the Nyquist rate and uniformly quantized. Find the bit rate, the step size and the SQNR in decibels.',
-    method:['Average power from Parseval: for a sum of sinusoids it is the sum of half the squared amplitudes.',
-            'The peak $m_{\\max}$ is the largest value the waveform actually reaches. For a sum that is the sum of the amplitudes only when the terms peak together. Then $\\Delta=2m_{\\max}/L$, or $m_{\\max}/L$ if the signal never goes negative.',
-            '$\\mathrm{SQNR}\\;[\\mathrm{dB}]=10\\log_{10}(3P_M/m_{\\max}^{2})+6.02R$. The first term is negative whenever the signal does not fill the range.'],
+  { k:'wave', name:'A sum of sinusoids through a uniform quantizer',
+    asks:'A sum of sinusoids is sampled at the Nyquist rate and uniformly quantized. Find the bit rate, the step size and the SQNR in decibels.',
+    method:['The Nyquist rate is twice the highest frequency present.',
+            'Check whether the terms can peak together. If they cannot, write the sum as a function of one cosine and find its extremes.',
+            'Terms at different frequencies add their powers $A_i^{2}/2$. Then $\\mathrm{SQNR}=P_X/(\\Delta^{2}/12)$, or $\\alpha+6.02R$ in decibels.'],
     go:'m1-sqnr' },
 
-  { k:'recon', name:'Reconstruction, aliasing and the anti-aliasing filter',
-    asks:'A rate is given that may or may not be adequate. Decide whether the message survives, and where an aliased component lands.',
-    method:['Draw the replicas at multiples of $f_s$ and look at whether they overlap. Everything else follows from the picture.',
-            'A component at $f_0$ produces replicas at $f_0-nf_s$. The receiver passes the replica inside its band. Its frequency is $|f_0-nf_s|$ for the integer $n$ that gives the smallest value.',
-            'An anti-aliasing filter removes what lies above $f_s/2$ before the sampler: it prevents the damage rather than recovering anything. The reconstruction filter has gain $1/(2W)$, not unity.'],
-    go:'m1-cases' },
+  { k:'fine', name:'A density with a constant and a fine uniform quantizer',
+    asks:'A density is given with an unknown constant, and a uniform quantizer with many levels covers its range. Find the constant, the SQNR and the bit rate.',
+    method:['Find the constant from $\\int f_X(x)\\,dx=1$ first. Split the integral at zero when the density contains $|x|$.',
+            'The signal power is $P_X=\\int x^{2}f_X(x)\\,dx$, the full mean square with the mean included.',
+            'With many levels the noise power is $\\Delta^{2}/12$, where $\\Delta$ is the range over $L$. Then $\\mathrm{SQNR}=P_X/(\\Delta^{2}/12)$.'],
+    go:'m1-ex-unif' },
 
-  { k:'pcm', name:'From a waveform to a bit stream',
-    asks:'A signal, a sampling interval and a quantizer are given. Produce the samples, the levels, the code words and the bit rate.',
-    method:['Evaluate the signal at each sampling instant. Do not read the values off a sketch.',
-            'Find which tread each sample falls in: the index is $\\lfloor (m-m_{\\min})/\\Delta\\rfloor$, capped at $L-1$.',
-            'Write the index as an $R$-bit word, in natural binary unless Gray coding is asked for. The bit rate is $Rf_s$ and one bit lasts $T_b=T_s/R$.',
-            'If the question codes samples in blocks, count the blocks that can actually occur rather than all $L^{n}$ of them, and take $\\lceil\\log_2(\\cdot)\\rceil$. A codeword is a whole number of bits.'],
-    go:'m1-ex-pcm' },
-
-  { k:'full', name:'A full-length question combining several of the shapes above',
-    asks:'One statement and three or four lettered parts, each usually resting on the part before it.',
-    method:['Read every part before starting. A later part almost always uses a number an earlier part produced, so an error early on travels the whole way.',
-            'Name the shape of each part before working it, and use the method for that shape unchanged.',
-            'Carry exact values between parts. Check each value against the previous result. The bit rate equals the resolution times the sampling rate. Each additional bit must increase the SQNR by $6.02$ dB.'] }
+  { k:'coarse', name:'A drawn density and a coarse quantizer',
+    asks:'A trapezoidal, triangular or stepped density is drawn with its height $c$, and a quantizer with two to four outputs is given. Find $c$, the two powers and the SQNR.',
+    method:['Find $c$ from the area of the drawn shape. Then write the density on each straight piece.',
+            'Split the noise integral $\\int(x-\\mathbb{Q}(x))^{2}f_X(x)\\,dx$ at every quantizer boundary and every corner of the density, and integrate each piece.',
+            'Do not use $\\Delta^{2}/12$ for a coarse quantizer. Its error is not uniform, and outside the covered range it has no bound.'],
+    go:'m1-ex-gauss' }
 ];
 
 /* ======================================================================
@@ -70,350 +214,677 @@ CONTENT.DRILLTYPES.M1 = [
    ====================================================================== */
 CONTENT.DRILL = CONTENT.DRILL.concat([
 
-/* ---- single-skill, two or three parts ------------------------------- */
+/* ---- A. PCM design from an accuracy requirement --------------------- */
 
-{ id:'D1-01', module:'M1', type:'rate', src:'MT Q1',
-  stem:'A message signal is bandlimited to $W=12$ kHz.',
-  parts:['Give the Nyquist rate.',
-         'The sampler is run $25\\%$ above the Nyquist rate. Give the rate and the sampling interval.',
-         'Express the extra margin in part (b) as a guard band $f_g$.'],
-  sol:'<b>Given.</b> A lowpass message with $W=12$ kHz.<br>'
-     +'<b>Find.</b> The Nyquist rate, a rate $25\\%$ above it, and the guard band that margin represents.<br>'
-     +'<b>Method.</b> The Nyquist rate is twice the highest frequency. A percentage above it multiplies; a guard band adds.<br>'
-     +'<b>Solution — (a).</b> $f_s^{\\min}=2W=24$ kHz.<br>'
-     +'<b>Solution — (b).</b> $f_s=1.25\\times 24=30$ kHz, so $T_s=1/30000=33.3\\ \\mu$s.<br>'
-     +'<b>Solution — (c).</b> $f_s=2W+f_g$ gives $f_g=30-24=6$ kHz.<br>'
-     +'<b>Check.</b> The replicas sit at multiples of $30$ kHz, and each is $24$ kHz wide. Therefore, the gap between adjacent replica edges is $30-24=6$ kHz. This gap is the guard band.',
-  err:'Reading "$25\\%$ above Nyquist" as $2W+0.25W=30$ kHz by accident of arithmetic. The two agree here only because $0.25\\times 2W=0.5W$ happens to equal $6$ kHz. With $W=10$ kHz they would not.',
-  teach:'Ask for the guard band before the percentage. A student who can only do one of the two has learnt a formula rather than the picture.' },
+{ id:'D1-01', module:'M1', type:'pcm', src:'MT Q1',
+  stem:'Assume that a sinusoidal message signal is defined as $x(t)=V_{\\max}\\cos(12000\\pi t)$, where $V_{\\max}$ is the maximum amplitude of the message signal. This analog message signal is sampled at the Nyquist rate and quantized by using a uniform quantizer. The quantization noise is a uniform random variable between $-\\tfrac{\\Delta}{2}$ and $\\tfrac{\\Delta}{2}$, where $\\Delta$ is the step size. The quantization noise is required not to exceed $\\pm0.25\\%$ of the peak-to-peak message signal. Quantized data are encoded by using a $4$-level PAM system.',
+  parts:['[9 pts] What is the minimum number of bits per sample for this PAM system?',
+         '[8 pts] Calculate the bit rate of this system.',
+         '[8 pts] What is the symbol rate of this system?'],
+  sol:'<b>Given.</b> $x(t)=V_{\\max}\\cos(2\\pi(6000)t)$, Nyquist sampling, noise within $\\pm0.25\\%$ of the peak-to-peak value, $4$-level PAM.<br>'
+     +'<b>Find.</b> The least number of bits per sample $R$, the bit rate $R_b$ and the symbol rate $R_s$.<br>'
+     +'<b>Method.</b> The requirement bounds the step $\\Delta$. That bound gives a least level count $L$, rounded up to a power of two. The rates then follow from $R_b=Rf_s$ and $R_s=R_b/\\log_2 M$.<br>'
+     +'<b>Solution — (a).</b> The peak-to-peak value is $2V_{\\max}$, and the largest error is $\\Delta/2$. The requirement reads:'
+     +'$$\\frac{\\Delta}{2}\\le0.0025\\,(2V_{\\max})=0.005\\,V_{\\max}.$$'
+     +'Multiply both sides by $2$ to get $\\Delta\\le0.01\\,V_{\\max}$. The quantizer spans $[-V_{\\max},V_{\\max}]$, so $\\Delta=2V_{\\max}/L$:'
+     +'$$\\begin{aligned}\\frac{2V_{\\max}}{L}&\\le0.01\\,V_{\\max}\\\\L&\\ge\\frac{2}{0.01}\\\\L&\\ge200\\end{aligned}$$'
+     +'The level count must be a power of two. The smallest one above $200$ is $L=256=2^{8}$, so $R=8$ bits per sample.<br>'
+     +'<b>Solution — (b).</b> The message frequency is $f_0=12000\\pi/(2\\pi)=6000$ Hz. The Nyquist rate is $f_s=2f_0=12\\,000$ samples per second.'
+     +'$$\\begin{aligned}R_b&=Rf_s\\\\&=8\\times12\\,000\\\\&=96\\,000~\\text{bit/s}\\end{aligned}$$<br>'
+     +'<b>Solution — (c).</b> A $4$-level PAM symbol carries $\\log_2 4=2$ bits.'
+     +'$$\\begin{aligned}R_s&=\\frac{R_b}{\\log_2 M}\\\\&=\\frac{96\\,000}{2}\\\\&=48\\,000~\\text{symbols/s}\\end{aligned}$$<br>'
+     +'<b>Check.</b> With $L=256$ the largest error is $\\Delta/2=V_{\\max}/256=0.00391\\,V_{\\max}$. Divided by $2V_{\\max}$ this is $0.195\\%$, inside $0.25\\%$. With $L=128$ it is $0.391\\%$, outside. So $8$ bits is the least.',
+  err:'Measuring the bound against $V_{\\max}$ instead of the peak-to-peak value $2V_{\\max}$. Then $\\Delta\\le0.005\\,V_{\\max}$, $L\\ge400$ and $R=9$, one bit too many.',
+  teach:'Close variant of the examination shape. Part (a) carries the weight, and most lost marks come from the peak-to-peak factor or from rounding $L$ down.',
+  figSol:()=>figAccuracy({p:0.25, R0:8}) },
 
-{ id:'D1-02', module:'M1', type:'rate', src:'MT Q1',
-  stem:'An audio source is sampled at $f_s=44$ kHz and each sample is quantized by a uniform quantizer with $L=512$ levels.',
-  parts:['Give the number of bits per sample.',
-         'Give the bit rate of the resulting PCM stream.',
-         'How long does one bit last?'],
-  sol:'<b>Given.</b> $f_s=44$ kHz, $L=512$.<br>'
-     +'<b>Find.</b> $R$, $R_b$ and $T_b$.<br>'
-     +'<b>Method.</b> $R=\\log_2 L$, $R_b=Rf_s$, $T_b=1/R_b$.<br>'
-     +'<b>Solution.</b> $R=\\log_2 512=9$ bits per sample. $R_b=9\\times 44000=396$ kbit/s. One bit lasts $T_b=1/396000=2.53\\ \\mu$s.<br>'
-     +'<b>Check.</b> The units carry the argument: $\\left(\\frac{\\text{bits}}{\\text{sample}}\\right)\\left(\\frac{\\text{samples}}{\\text{s}}\\right)=\\frac{\\text{bits}}{\\text{s}}$. $T_b=T_s/R=(1/44000)/9=2.53\\ \\mu$s, which is the same number reached from the sampling interval instead.',
-  err:'Reporting $R=512$ bits per sample. The level count and the resolution are different quantities and differ by a logarithm.',
-  teach:'Worth asking what happens to $R_b$ if the level count is doubled. It rises by $f_s$ bits per second, one extra bit per sample, and buys $6.02$ dB.' },
+{ id:'D1-02', module:'M1', type:'pcm', src:'MT Q1',
+  stem:'Assume that a sinusoidal message signal is defined as $x(t)=V_{\\max}\\sin(7000\\pi t)$, where $V_{\\max}$ is the maximum amplitude of the message signal. It is sampled at a rate $25\\%$ greater than the Nyquist rate and quantized by using a uniform quantizer. The quantization noise is a uniform random variable between $-\\tfrac{\\Delta}{2}$ and $\\tfrac{\\Delta}{2}$. It is required not to exceed $\\pm0.8\\%$ of the peak-to-peak message signal. Quantized data are encoded by using an $8$-level PAM system.',
+  parts:['[7 pts] What is the minimum number of bits per sample?',
+         '[6 pts] Determine the sampling rate.',
+         '[6 pts] Calculate the bit rate of this system.',
+         '[6 pts] What is the symbol rate of this system?'],
+  sol:'<b>Given.</b> $x(t)=V_{\\max}\\sin(2\\pi(3500)t)$, sampling $25\\%$ above the Nyquist rate, noise within $\\pm0.8\\%$ of the peak-to-peak value, $8$-level PAM.<br>'
+     +'<b>Find.</b> $R$, $f_s$, $R_b$ and $R_s$.<br>'
+     +'<b>Method.</b> Bound $\\Delta$ from the requirement, then $L$ and $R$. A percentage above the Nyquist rate multiplies that rate.<br>'
+     +'<b>Solution — (a).</b> The largest error $\\Delta/2$ is compared with the peak-to-peak value $2V_{\\max}$:'
+     +'$$\\begin{aligned}\\frac{\\Delta}{2}&\\le0.008\\,(2V_{\\max})\\\\\\Delta&\\le0.032\\,V_{\\max}\\end{aligned}$$'
+     +'With $\\Delta=2V_{\\max}/L$ this becomes $2/L\\le0.032$, so $L\\ge62.5$. The smallest power of two above $62.5$ is $L=64$, and $R=\\log_2 64=6$ bits per sample.<br>'
+     +'<b>Solution — (b).</b> The frequency is $f_0=3500$ Hz, so the Nyquist rate is $2f_0=7000$ Hz.'
+     +'$$\\begin{aligned}f_s&=1.25\\times7000\\\\&=8750~\\text{samples/s}\\end{aligned}$$<br>'
+     +'<b>Solution — (c).</b> $$\\begin{aligned}R_b&=Rf_s\\\\&=6\\times8750\\\\&=52\\,500~\\text{bit/s}\\end{aligned}$$<br>'
+     +'<b>Solution — (d).</b> An $8$-level symbol carries $\\log_2 8=3$ bits.'
+     +'$$\\begin{aligned}R_s&=\\frac{52\\,500}{3}\\\\&=17\\,500~\\text{symbols/s}\\end{aligned}$$<br>'
+     +'<b>Check.</b> Each $6$-bit sample fills exactly two $3$-bit symbols. So $R_s=2f_s=2(8750)=17\\,500$ symbols per second, the same number. The error bound with $L=64$ is $50/64=0.78\\%$, just inside $0.8\\%$.',
+  err:'Computing the rate as $2(3500)+0.25(3500)$. The $25\\%$ multiplies the Nyquist rate of $7000$ Hz, not the tone frequency.',
+  teach:'Close variant. The requirement is set so that $L=64$ passes by a small margin, which rewards exact arithmetic over estimation.',
+  figSol:()=>figAccuracy({p:0.8, R0:6}) },
 
-{ id:'D1-03', module:'M1', type:'rate', src:'MT Q1',
-  stem:'A signal $x(t)$ is bandlimited to $15$ kHz. It is used to modulate a carrier: $$y(t)=x(t)\\cos\\!\\left(2\\pi(60000)t\\right).$$',
-  parts:['Sketch, in words, where the spectrum of $y$ sits.',
-         'Give the Nyquist rate of $y(t)$.'],
-  sol:'<b>Given.</b> $x$ bandlimited to $15$ kHz, carrier at $60$ kHz.<br>'
-     +'<b>Find.</b> The Nyquist rate of the product.<br>'
-     +'<b>Method.</b> Multiplication by a cosine shifts the spectrum to $\\pm f_c$ and halves it. The rate follows from the highest frequency of the <em>result</em>.<br>'
-     +'<b>Solution — (a).</b> $Y(f)=\\tfrac12 X(f-60\\text{k})+\\tfrac12 X(f+60\\text{k})$: two copies of $X$, centred at $\\pm 60$ kHz, each $30$ kHz wide, so $Y$ is non-zero for $45<|f|<75$ kHz.<br>'
-     +'<b>Solution — (b).</b> The highest frequency present is $f_c+W=75$ kHz, so $f_s^{\\min}=2(75)=150$ kHz.<br>'
-     +'<b>Check.</b> Doubling the carrier to $120$ kHz would double the answer to $270$ kHz while leaving the width of $Y$ unchanged at $30$ kHz. The rate follows the highest frequency, not the width — which is the whole content of this question.',
-  err:'Answering $30$ kHz, the Nyquist rate of $x$. Modulation moved the message and the sampler has to keep up with where it went.',
-  teach:'This is the standard trap in the sampling question. A student who answers $30$ kHz has applied the rule to the wrong signal, which is a different mistake from not knowing the rule.' },
+{ id:'D1-03', module:'M1', type:'pcm', src:'MT Q1',
+  stem:'Let $X(t)$ have a bandwidth of $3.2$ MHz. This signal is sampled, quantized and binary encoded to obtain a PCM signal.',
+  parts:['[7 pts] Determine the sampling rate if $X(t)$ is sampled at a rate $25\\%$ greater than the Nyquist rate.',
+         '[6 pts] If the samples of $X(t)$ are quantized by using a uniform quantizer with $2048$ levels, determine the number of bits required per sample.',
+         '[6 pts] Calculate the bit rate of this system in bits per second.',
+         '[6 pts] Find the least channel bandwidth that can carry this PCM signal.'],
+  sol:'<b>Given.</b> $W=3.2$ MHz, a rate $25\\%$ above the Nyquist rate, $L=2048$.<br>'
+     +'<b>Find.</b> $f_s$, $R$, $R_b$ and the least channel bandwidth $B_T$.<br>'
+     +'<b>Method.</b> The Nyquist rate is $2W$, and the margin multiplies it. Then $R=\\log_2 L$ and $R_b=Rf_s$. A binary stream needs at least $R_b/2$ hertz.<br>'
+     +'<b>Solution — (a).</b> $$\\begin{aligned}f_s&=1.25\\,(2W)\\\\&=1.25\\times6.4\\\\&=8~\\text{MHz}\\end{aligned}$$<br>'
+     +'<b>Solution — (b).</b> $2048=2^{11}$, so $R=\\log_2 2048=11$ bits per sample.<br>'
+     +'<b>Solution — (c).</b> $$\\begin{aligned}R_b&=Rf_s\\\\&=11\\times8\\times10^{6}\\\\&=88\\times10^{6}~\\text{bit/s}\\end{aligned}$$<br>'
+     +'<b>Solution — (d).</b> $$\\begin{aligned}B_T&\\ge\\frac{R_b}{2}\\\\&=\\frac{88\\times10^{6}}{2}\\\\&=44~\\text{MHz}\\end{aligned}$$<br>'
+     +'<b>Check.</b> At the Nyquist rate the bit rate would be $11\\times6.4=70.4$ Mbit/s. The margin scales it by $1.25$, and $1.25\\times70.4=88$ Mbit/s. The copies in the figure leave a guard band $f_s-2W=1.6$ MHz.',
+  err:'Computing $f_s=2(3.2)+0.25(3.2)=7.2$ MHz. The margin multiplies the Nyquist rate $6.4$ MHz, not the bandwidth.',
+  teach:'Close variant with a fourth part on the channel bandwidth, taken from the PCM bandwidth scene. It links the bit rate to a physical band.',
+  figSol:()=>figShape({X:f=>1-0.55*(f/3.2)**2, B:3.2, peak:1, fs:8, W:3.2, fg:'1.6', xmax:12.6, unit:'MHz',
+    ticks:[-8,-3.2,3.2,8]}) },
 
-{ id:'D1-04', module:'M1', type:'recon', src:'CH7 s.9–11',
-  stem:'A message bandlimited to $W=15$ kHz is sampled at exactly the Nyquist rate and reconstructed with an ideal lowpass filter.',
-  parts:['Give the passband gain and cut-off of the reconstruction filter.',
-         'Give its impulse response.',
-         'Show that the reconstructed signal equals the message at every sampling instant.'],
-  sol:'<b>Given.</b> $W=15$ kHz, $f_s=2W=30$ kHz.<br>'
-     +'<b>Find.</b> The filter, its impulse response, and the value of the reconstruction at $t=kT_s$.<br>'
-     +'<b>Method.</b> Sampling multiplied the spectrum by $f_s$. The filter divides it back and keeps only the copy at the origin.<br>'
-     +'<b>Solution — (a).</b> $H_{\\mathrm{LPF}}(f)=\\dfrac{1}{2W}=\\dfrac{1}{30000}=3.33\\times10^{-5}$ for $|f|\\le 15$ kHz, and zero outside.<br>'
-     +'<b>Solution — (b).</b> $h_{\\mathrm{LPF}}(t)=\\operatorname{sinc}(2Wt)=\\operatorname{sinc}(30000\\,t)$, with $\\operatorname{sinc}(x)=\\sin(\\pi x)/(\\pi x)$.<br>'
-     +'<b>Solution — (c).</b> $g_r(t)=\\sum_n g(nT_s)\\operatorname{sinc}(2Wt-n)$. At $t=kT_s=k/(2W)$ the argument of the $n$th term is $k-n$, and $\\operatorname{sinc}$ is zero at every non-zero integer and one at zero. Every term vanishes except $n=k$, leaving $g_r(kT_s)=g(kT_s)$.<br>'
-     +'<b>Check.</b> The interpolation is not merely correct at the samples. Since $f_s=2W$ exactly, the filter passes the whole message and nothing else. Therefore, $g_r$ and $g$ agree everywhere and not only at the instants.',
-  err:'Giving the filter unit gain. The reconstruction is then $2W=30000$ times too large, and nothing in a plot of the spectrum shape reveals it.',
-  teach:'Part (c) is the one worth insisting on. It is the only place in the module where the zeros of $\\operatorname{sinc}$ do the work, and the same fact returns in the PCM example.' },
+{ id:'D1-04', module:'M1', type:'pcm', src:'MT Q1 (variant)',
+  stem:'A PCM system carries the sinusoid $x(t)=V_{\\max}\\cos(10000\\pi t)$. It samples at the Nyquist rate and quantizes uniformly over $[-V_{\\max},V_{\\max}]$. The quantization noise is uniform between $-\\tfrac{\\Delta}{2}$ and $\\tfrac{\\Delta}{2}$. The bits are sent by a $16$-level PAM system, and the measured symbol rate is $17\\,500$ symbols per second.',
+  parts:['[6 pts] Find the bit rate and the number of bits per sample.',
+         '[6 pts] Find the number of quantization levels and the step size in terms of $V_{\\max}$.',
+         '[7 pts] Find the largest quantization error as a percentage of the peak-to-peak message signal.',
+         '[6 pts] The design came from a requirement of $\\pm p\\%$ of the peak-to-peak signal. Find the range of $p$ for which this number of bits is the minimum.'],
+  sol:'<b>Given.</b> $f_0=5000$ Hz, Nyquist sampling, $16$-level PAM at $R_s=17\\,500$ symbols per second.<br>'
+     +'<b>Find.</b> $R_b$, $R$, $L$, $\\Delta$, the largest error in per cent, and the range of $p$.<br>'
+     +'<b>Method.</b> Work the design backwards. The symbol rate gives the bit rate, and the sampling rate gives the bits per sample. The last part asks when $R$ passes and $R-1$ fails.<br>'
+     +'<b>Solution — (a).</b> A $16$-level symbol carries $\\log_2 16=4$ bits, and $f_s=2f_0=10\\,000$ samples per second.'
+     +'$$\\begin{aligned}R_b&=R_s\\log_2 M=17\\,500\\times4=70\\,000~\\text{bit/s}\\\\R&=\\frac{R_b}{f_s}=\\frac{70\\,000}{10\\,000}=7~\\text{bits per sample}\\end{aligned}$$<br>'
+     +'<b>Solution — (b).</b> $L=2^{7}=128$, and $\\Delta=2V_{\\max}/128=V_{\\max}/64=0.0156\\,V_{\\max}$.<br>'
+     +'<b>Solution — (c).</b> The largest error is $\\Delta/2=V_{\\max}/128$. Divide it by the peak-to-peak value:'
+     +'$$\\frac{V_{\\max}/128}{2V_{\\max}}=\\frac{1}{256}=0.391\\%.$$<br>'
+     +'<b>Solution — (d).</b> Seven bits meet the requirement when $0.391\\le p$. Six bits would give $L=64$ and a largest error of $1/128=0.781\\%$. Six bits fail when $p<0.781$. So seven bits is the minimum for $0.391\\le p<0.781$.<br>'
+     +'<b>Check.</b> Take $p=0.5$, inside the range. Then $\\Delta/2\\le0.005(2V_{\\max})$ gives $L\\ge1/0.01=100$, so $L=128$ and $R=7$ again.',
+  err:'Multiplying the symbol rate by $16$ instead of by $\\log_2 16=4$. A symbol with $16$ levels carries $4$ bits, not $16$.',
+  teach:'Creative variant: the examination question run backwards. Part (d) makes the student see the requirement as an interval, which is what the rounding up hides.',
+  figSol:()=>figAccuracy({R0:7, band:[0.390625, 0.78125]}) },
 
-{ id:'D1-05', module:'M1', type:'recon', src:'CH7 s.7–8',
-  stem:'A pure tone at $7$ kHz is sampled at $f_s=10$ kHz without an anti-aliasing filter. The samples pass through an ideal lowpass filter with a $5$ kHz cut-off.',
-  parts:['Give the frequencies of the replicas the sampler produces below $10$ kHz.',
-         'Give the frequency of the tone that comes out of the filter.',
-         'What anti-aliasing filter would have prevented this, and what would have been lost?'],
-  sol:'<b>Given.</b> $f_0=7$ kHz, $f_s=10$ kHz.<br>'
-     +'<b>Find.</b> Where the tone lands after sampling and filtering.<br>'
-     +'<b>Method.</b> Sampling puts a copy of every component at $f_0-nf_s$ for every integer $n$. The filter keeps whichever copies fall below its cut-off.<br>'
-     +'<b>Solution — (a).</b> The replicas of the $7$ kHz component sit at $7-10=-3$ kHz and $7+0=7$ kHz among others. As a real signal the negative one appears at $3$ kHz.<br>'
-     +'<b>Solution — (b).</b> The filter passes $|f|<5$ kHz, so it keeps the copy at $3$ kHz and rejects the one at $7$ kHz. A $7$ kHz tone went in and a $3$ kHz tone comes out.<br>'
-     +'<b>Solution — (c).</b> A lowpass filter of cut-off $5$ kHz applied <em>before</em> the sampler would have removed the tone entirely. Nothing false would then appear, but the tone itself is lost. That is the trade the anti-aliasing filter makes: it converts a wrong answer into a missing one.<br>'
-     +'<b>Check.</b> $|7-10|=3$, and $3<f_s/2=5$. Therefore, the alias falls in the passband. A $5$ kHz tone lies on the band edge. For a tone below $5$ kHz, the nearest replica is above $5$ kHz. This result is the sampling theorem for one sinusoidal component.',
-  err:'Answering $7$ kHz on the grounds that the tone "is still there". It is, at $7$ kHz, but the filter rejects that copy and keeps the one the sampler manufactured at $3$ kHz.',
-  teach:'Have the student name what a listener would hear. Aliasing is not an abstraction here: the pitch is audibly wrong and no later processing can put it right.' },
+{ id:'D1-05', module:'M1', type:'pcm', src:'MT Q1 (variant)',
+  stem:'Assume that a sinusoidal message signal is defined as $x(t)=V_{\\max}\\cos(18000\\pi t)$. It is sampled at the Nyquist rate and quantized by using a uniform quantizer. The quantization noise is uniform between $-\\tfrac{\\Delta}{2}$ and $\\tfrac{\\Delta}{2}$. It is required not to exceed $\\pm0.1\\%$ of the peak-to-peak message signal. The bits are sent by an $M$-level PAM system over a channel that accepts at most $60\\,000$ symbols per second.',
+  parts:['[8 pts] What is the minimum number of bits per sample?',
+         '[6 pts] Calculate the bit rate of this system.',
+         '[5 pts] Find the smallest PAM order $M$, a power of two, that the channel accepts.',
+         '[6 pts] Calculate the symbol rate with that $M$.'],
+  sol:'<b>Given.</b> $f_0=9000$ Hz, Nyquist sampling, noise within $\\pm0.1\\%$ of the peak-to-peak value, at most $60\\,000$ symbols per second.<br>'
+     +'<b>Find.</b> $R$, $R_b$, the least $M$ and the symbol rate.<br>'
+     +'<b>Method.</b> Bound $\\Delta$ to get $R$. The symbol rate is $R_b/k$ with $k=\\log_2 M$ bits a symbol. Solve $R_b/k\\le60\\,000$ for the smallest whole $k$.<br>'
+     +'<b>Solution — (a).</b> $$\\begin{aligned}\\frac{\\Delta}{2}&\\le0.001\\,(2V_{\\max})\\\\\\Delta&\\le0.004\\,V_{\\max}\\\\\\frac{2V_{\\max}}{L}&\\le0.004\\,V_{\\max}\\\\L&\\ge500\\end{aligned}$$'
+     +'The smallest power of two above $500$ is $512$, so $R=9$ bits per sample.<br>'
+     +'<b>Solution — (b).</b> $f_s=2(9000)=18\\,000$ samples per second.'
+     +'$$\\begin{aligned}R_b&=9\\times18\\,000\\\\&=162\\,000~\\text{bit/s}\\end{aligned}$$<br>'
+     +'<b>Solution — (c).</b> $$\\begin{aligned}\\frac{162\\,000}{k}&\\le60\\,000\\\\k&\\ge\\frac{162\\,000}{60\\,000}\\\\k&\\ge2.7\\end{aligned}$$'
+     +'The smallest whole $k$ is $3$, so $M=2^{3}=8$.<br>'
+     +'<b>Solution — (d).</b> $R_s=162\\,000/3=54\\,000$ symbols per second.<br>'
+     +'<b>Check.</b> With $M=4$ the symbol rate is $162\\,000/2=81\\,000$, above the limit. With $M=8$ it is $54\\,000$, below it. So $8$ is the least order.',
+  err:'Rounding $k=2.7$ down to $2$. Then $R_s=81\\,000$ symbols per second and the channel limit is broken. A bound of the form $k\\ge2.7$ rounds up.',
+  teach:'Creative variant: the PAM order is the unknown. It checks that the student treats bits per symbol and levels per symbol as different quantities.',
+  figSol:()=>{
+    const ks=[1,2,3,4,5,6], rs=k=>162/k;
+    const a=P.Axes({w:700,h:300,xr:[0.3,6.7],yr:[0,250],xlabel:'k=\\log_2 M\\;(\\text{bits per symbol})',
+      ylabel:'R_s\\;(\\text{thousand symbols/s})',pad:{l:58,r:26,t:26,b:44},xticksOverride:ks,xtickfmt:String,ytarget:5});
+    a.stem(ks.filter(k=>k!==3).map(k=>[k,rs(k)]),{color:C.mid});
+    a.stem([[3,rs(3)]],{color:C.out});
+    a.hline(60,{color:C.err,dash:'6 4',opacity:1});
+    a.note(6.6,60,'60\\text{ limit}',{tex:true,anchor:'end',dy:-12,color:C.err});
+    return panel(a.svg(), legend([['mid','$R_s=R_b/k$'],['out','least $k$ within the limit'],['err','channel limit',1]]));
+  } },
 
-{ id:'D1-06', module:'M1', type:'sqnr-wave', src:'Final Q1',
-  stem:'The signal $m(t)=3\\cos t$ is quantized by a uniform quantizer that spans its full range, with $R=6$ bits per sample.',
-  parts:['Give the number of levels and the step size.',
-         'Give the SQNR in decibels.'],
-  sol:'<b>Given.</b> $m(t)=3\\cos t$, $R=6$.<br>'
-     +'<b>Find.</b> $L$, $\\Delta$ and the SQNR.<br>'
-     +'<b>Method.</b> $L=2^R$, $\\Delta=2m_{\\max}/L$, and $\\mathrm{SQNR}=\\alpha+6.02R$ with $\\alpha=10\\log_{10}(3P_M/m_{\\max}^{2})$.<br>'
-     +'<b>Solution — (a).</b> $L=2^{6}=64$ and $m_{\\max}=3$, so $\\Delta=\\dfrac{2(3)}{64}=0.09375$.<br>'
-     +'<b>Solution — (b).</b> $P_M=3^{2}/2=4.5$, so $\\alpha=10\\log_{10}\\dfrac{3(4.5)}{9}=10\\log_{10}1.5=1.76$ dB and $\\mathrm{SQNR}=1.76+6.02(6)=37.88$ dB.<br>'
-     +'<b>Check.</b> By the other route, $E[Q^{2}]=\\Delta^{2}/12=0.09375^{2}/12=7.324\\times10^{-4}$ and $10\\log_{10}(4.5/7.324\\times10^{-4})=37.88$ dB. Note also that $\\alpha$ came out at $1.76$ dB, the value for <em>any</em> full-scale sinusoid. The amplitude cancels. This is why the answer does not depend on the $3$.',
-  err:'Using $\\Delta=m_{\\max}/L$ and halving the step. The range covered is $2m_{\\max}$, from $-3$ to $+3$.',
-  teach:'The observation in the check is worth drawing out: $\\alpha=1.76$ dB for every full-scale sinusoid, so the amplitude in this question is decoration and the answer is $6.02R+1.76$.' },
+{ id:'D1-06', module:'M1', type:'pcm', src:'MT Q1 (variant)',
+  stem:'Let $X(t)$ have a bandwidth of $2.5$ MHz. It is sampled at a rate $30\\%$ greater than the Nyquist rate, quantized by a uniform quantizer and binary encoded. The PCM signal must fit a link that carries $64$ Mbit/s. Assume that $1$ Mbit/s $=10^{6}$ bit/s.',
+  parts:['[6 pts] Determine the sampling rate.',
+         '[7 pts] Find the largest number of bits per sample, and the number of levels, that the link allows.',
+         '[6 pts] Calculate the bit rate of the resulting system.',
+         '[6 pts] For a full-scale sinusoidal test signal, calculate the SQNR in dB.'],
+  sol:'<b>Given.</b> $W=2.5$ MHz, a rate $30\\%$ above the Nyquist rate, a link of $64$ Mbit/s.<br>'
+     +'<b>Find.</b> $f_s$, the largest $R$ and its $L$, $R_b$, and the SQNR of a full-scale sinusoid.<br>'
+     +'<b>Method.</b> The link bounds $Rf_s$ from above. With $f_s$ fixed, $R$ is the largest whole number with $Rf_s\\le64$ Mbit/s. For a full-scale sinusoid $3P_X/x_{\\max}^{2}=1.5$.<br>'
+     +'<b>Solution — (a).</b> $$\\begin{aligned}f_s&=1.30\\,(2W)\\\\&=1.30\\times5\\\\&=6.5~\\text{MHz}\\end{aligned}$$<br>'
+     +'<b>Solution — (b).</b> $$\\begin{aligned}R\\,(6.5\\times10^{6})&\\le64\\times10^{6}\\\\R&\\le\\frac{64}{6.5}=9.85\\end{aligned}$$'
+     +'The largest whole $R$ is $9$, so $L=2^{9}=512$.<br>'
+     +'<b>Solution — (c).</b> $$\\begin{aligned}R_b&=9\\times6.5\\times10^{6}\\\\&=58.5\\times10^{6}~\\text{bit/s}\\end{aligned}$$<br>'
+     +'<b>Solution — (d).</b> A sinusoid of amplitude $A$ has $P_X=A^{2}/2$ and fills $[-A,A]$. With $\\Delta=2A/L$:'
+     +'$$\\begin{aligned}\\mathrm{SQNR}&=\\frac{A^{2}/2}{(2A/L)^{2}/12}\\\\&=\\frac{3L^{2}}{2}=\\frac{3(512)^{2}}{2}=393\\,216\\\\&=10\\log_{10}393\\,216=55.95~\\text{dB}\\end{aligned}$$<br>'
+     +'<b>Check.</b> Ten bits would need $10\\times6.5=65$ Mbit/s, above the link rate. The rule $1.76+6.02R$ gives $1.76+6.02(9)=55.94$ dB, the same to rounding.',
+  err:'Rounding $9.85$ up to $10$ bits. Here the bound is an upper limit set by the link, so the whole number is taken below it.',
+  teach:'Creative variant: the bit budget reverses the rounding direction of part (a) of the examination question. Ask the student to say which way to round before computing.',
+  figSol:()=>figBudget({Rb:64, xr:[4.6,8.4], yr:[7,14], xticks:[5,6,6.5,7,8], unit:'MHz', pick:[6.5,9]}) },
 
-{ id:'D1-07', module:'M1', type:'sqnr-wave', src:'Final Q1',
-  stem:'A full-scale sinusoid is to be quantized so that the SQNR is at least $40$ dB.',
-  parts:['Give the smallest number of bits per sample that achieves it.',
-         'Give the SQNR actually obtained.',
-         'By how many decibels would the requirement be missed with one bit fewer?'],
-  sol:'<b>Given.</b> A sinusoid filling the quantizer range. A requirement of $40$ dB.<br>'
-     +'<b>Find.</b> The smallest integer $R$.<br>'
-     +'<b>Method.</b> $\\mathrm{SQNR}=1.76+6.02R$ for a full-scale sinusoid. Solve for $R$ and round <em>up</em>: resolution is an integer.<br>'
-     +'<b>Solution — (a).</b> $1.76+6.02R\\ge 40$ gives $R\\ge (40-1.76)/6.02=6.35$, so $R=7$ bits.<br>'
-     +'<b>Solution — (b).</b> $\\mathrm{SQNR}=1.76+6.02(7)=43.90$ dB.<br>'
-     +'<b>Solution — (c).</b> At $R=6$, $\\mathrm{SQNR}=1.76+36.12=37.88$ dB, which misses the requirement by $2.12$ dB.<br>'
-     +'<b>Check.</b> The two answers in (b) and (c) differ by $6.02$ dB, one bit, as they must. $43.90-2.12=41.78\\neq40$: the requirement sits between two achievable values, which is why rounding up is not optional.',
-  err:'Rounding $6.35$ down to $6$ because it is closer. Resolution cannot be fractional, and $6$ bits fails the requirement.',
-  teach:'Ask what happens to the answer if the signal uses half the range. $\\alpha$ falls by $6.02$ dB, so exactly one more bit is needed — which is the cleanest statement of what amplitude costs.' },
+/* ---- B. The spectrum of a product, a square or a sinc --------------- */
 
-{ id:'D1-08', module:'M1', type:'sqnr-density', src:'MT Q2',
-  stem:'The samples of a source are uniformly distributed on $[-2,2]$ and are quantized by a uniform quantizer with $L=64$ levels covering that range.',
-  parts:['Give the signal power and the step size.',
-         'Give the quantization noise power.',
-         'Give the SQNR in decibels.'],
-  sol:'<b>Given.</b> $M\\sim U(-2,2)$, $L=64$.<br>'
-     +'<b>Find.</b> $P_M$, $\\Delta$, $E[Q^{2}]$ and the SQNR.<br>'
-     +'<b>Method.</b> Calculate signal power from the density. Calculate the step from the range and level count. Here, $\\Delta^{2}/12$ gives the exact noise power because the source is uniform over the full range.<br>'
-     +'<b>Solution — (a).</b> $P_M=\\displaystyle\\int_{-2}^{2}m^{2}\\tfrac14\\,dm=\\tfrac{4}{3}=1.333$. With $m_{\\max}=2$, $\\Delta=\\dfrac{2(2)}{64}=0.0625$.<br>'
-     +'<b>Solution — (b).</b> $E[Q^{2}]=\\Delta^{2}/12=3.255\\times10^{-4}$.<br>'
-     +'<b>Solution — (c).</b> $\\mathrm{SQNR}=1.333/3.255\\times10^{-4}=4096$, which is $10\\log_{10}4096=36.12$ dB.<br>'
-     +'<b>Check.</b> $R=\\log_2 64=6$ and $\\alpha=10\\log_{10}\\dfrac{3(4/3)}{4}=10\\log_{10}1=0$ dB exactly. Therefore, $\\mathrm{SQNR}=6.02(6)=36.12$ dB. The intercept vanishing is not a coincidence. A uniform source spanning the range is the one case where the uniform quantizer is also the optimal one, and $4096=2^{12}=2^{2R}$.',
-  err:'Taking $P_M$ to be the variance of the <em>quantized</em> values. The signal power is a property of the source, and the quantizer has not been applied yet when it is computed.',
-  teach:'Contrast with the sinusoid: same level count, $\\alpha=0$ here and $+1.76$ dB there, so the sinusoid does better. A sinusoid concentrates its amplitude near the peaks, which for a fixed peak means more power.' },
+{ id:'D1-07', module:'M1', type:'spectrum', src:'MT Q1',
+  stem:'Let $x(t)=10\\cos(3000\\pi t)\\cos(6000\\pi t)$ be sampled and quantized by using a $512$-level uniform quantizer. Assume that $1$ kbit/s $=1000$ bit/s.',
+  parts:['[6 pts] Determine the minimum sampling rate if a guard band of $1$ kHz is required.',
+         '[6 pts] Calculate the bit rate of this system.',
+         '[6 pts] If the data rate of this system is required as $108$ kbit/s, what should the guard band be?',
+         '[7 pts] Calculate the step size of the uniform quantizer.'],
+  sol:'<b>Given.</b> A product of two cosines, a guard band of $1$ kHz, $L=512$.<br>'
+     +'<b>Find.</b> $f_s$, $R_b$, the guard band for $108$ kbit/s, and $\\Delta$.<br>'
+     +'<b>Method.</b> Expand the product into a sum first. The highest frequency of the sum sets $W$, and $f_s=2W+f_g$.<br>'
+     +'<b>Solution — (a).</b> Use $2\\cos A\\cos B=\\cos(A-B)+\\cos(A+B)$ with $A=2\\pi(1500)t$ and $B=2\\pi(3000)t$:'
+     +'$$\\begin{aligned}x(t)&=5\\,[\\cos(A-B)+\\cos(A+B)]\\\\&=5\\cos(2\\pi(1500)t)+5\\cos(2\\pi(4500)t)\\end{aligned}$$'
+     +'The cosine is even, so $\\cos(A-B)=\\cos(B-A)$. The highest frequency is $W=4.5$ kHz.'
+     +'$$\\begin{aligned}f_s&=2W+f_g\\\\&=9+1\\\\&=10~\\text{kHz}\\end{aligned}$$<br>'
+     +'<b>Solution — (b).</b> $R=\\log_2 512=9$ bits, so $R_b=9\\times10\\,000=90\\,000$ bit/s $=90$ kbit/s.<br>'
+     +'<b>Solution — (c).</b> $$\\begin{aligned}f_s&=\\frac{R_b}{R}=\\frac{108\\,000}{9}=12~\\text{kHz}\\\\f_g&=f_s-2W=12-9=3~\\text{kHz}\\end{aligned}$$<br>'
+     +'<b>Solution — (d).</b> At $t=0$ both factors are $1$, so $x_{\\max}=10$. At $t=1/3000$ s the first factor is $\\cos\\pi=-1$ and the second is $\\cos2\\pi=1$, so $x_{\\min}=-10$.'
+     +'$$\\begin{aligned}\\Delta&=\\frac{x_{\\max}-x_{\\min}}{L}\\\\&=\\frac{20}{512}\\\\&=0.0391\\end{aligned}$$<br>'
+     +'<b>Check.</b> Evaluate the expanded form at $t=1/3000$ s: $5\\cos(\\pi)+5\\cos(3\\pi)=-5-5=-10$. It agrees with the product form. The product cannot pass $10$ in size, since each factor is at most $1$.',
+  err:'Taking $W=3$ kHz from the factor $\\cos(6000\\pi t)$. The product holds a $4.5$ kHz term that neither factor has.',
+  teach:'Close variant of the examination shape. Part (c) is the reverse question, and the check in part (d) that the minimum is really $-10$ is worth asking for aloud.',
+  figSol:()=>figLines({lines:[[1.5,2.5],[4.5,2.5]], fs:10, W:4.5, fg:'1', xmax:15.5, ticks:[-10,-4.5,4.5,10]}) },
 
-{ id:'D1-09', module:'M1', type:'sqnr-density', src:'MT Q2',
-  stem:'The samples of a stationary source have the triangular density $$f_X(x)=c\\left(1-\\frac{|x|}{3}\\right),\\qquad |x|\\le 3,$$and zero elsewhere.',
-  parts:['Determine $c$.',
-         'Give the power of the samples.'],
-  sol:'<b>Given.</b> A symmetric triangular density on $[-3,3]$ with unknown peak $c$.<br>'
-     +'<b>Find.</b> $c$ and $E[X^{2}]$.<br>'
-     +'<b>Method.</b> The constant comes from the total area being one. The power is the second moment against the same density.<br>'
-     +'<b>Solution — (a).</b> The density is a triangle of base $6$ and height $c$, so its area is $\\tfrac12(6)c=3c$. Setting $3c=1$ gives $c=\\tfrac13$.<br>'
-     +'<b>Solution — (b).</b> $$E[X^{2}]=2\\int_{0}^{3}x^{2}\\cdot\\tfrac13\\left(1-\\tfrac{x}{3}\\right)dx=\\tfrac23\\int_{0}^{3}\\left(x^{2}-\\tfrac{x^{3}}{3}\\right)dx=\\tfrac23\\left(9-\\tfrac{27}{4}\\right)=1.5.$$<br>'
-     +'<b>Check.</b> A symmetric triangular distribution on $[-a,a]$ has variance $a^{2}/6$, and $9/6=1.5$. Its mean is zero, so variance equals power. A uniform source on the same interval has power $a^{2}/3=3$. This value is twice as large because the triangular density concentrates probability near zero.',
-  err:'Setting $c=1$ because the peak of a triangle "should be one". The peak of a density is not one; the area is.',
-  teach:'The comparison in the check is the useful part. Two sources on the same interval can differ in power by a factor of two, and the SQNR follows that factor directly.' },
+{ id:'D1-08', module:'M1', type:'spectrum', src:'MT Q1',
+  stem:'Let $x(t)=5\\sin(2000\\pi t)\\cos(8000\\pi t)$ be sampled and quantized by using a $64$-level uniform quantizer. Assume that $1$ kbit/s $=1000$ bit/s.',
+  parts:['[6 pts] Determine the minimum sampling rate if a guard band of $1.5$ kHz is required.',
+         '[6 pts] Calculate the bit rate of this system.',
+         '[6 pts] If the data rate of this system is required as $78$ kbit/s, what should the guard band be?',
+         '[7 pts] Calculate the step size of the uniform quantizer.'],
+  sol:'<b>Given.</b> A product of a sine and a cosine, a guard band of $1.5$ kHz, $L=64$.<br>'
+     +'<b>Find.</b> $f_s$, $R_b$, the guard band for $78$ kbit/s, and $\\Delta$.<br>'
+     +'<b>Method.</b> Expand the product with $2\\sin A\\cos B=\\sin(A+B)+\\sin(A-B)$. Then $f_s=2W+f_g$ and $R_b=Rf_s$.<br>'
+     +'<b>Solution — (a).</b> Put $A=2\\pi(1000)t$ and $B=2\\pi(4000)t$:'
+     +'$$\\begin{aligned}x(t)&=2.5\\,[\\sin(A+B)+\\sin(A-B)]\\\\&=2.5\\sin(2\\pi(5000)t)-2.5\\sin(2\\pi(3000)t)\\end{aligned}$$'
+     +'The sine is odd, so $\\sin(A-B)=-\\sin(B-A)$. The highest frequency is $W=5$ kHz.'
+     +'$$\\begin{aligned}f_s&=2W+f_g\\\\&=10+1.5\\\\&=11.5~\\text{kHz}\\end{aligned}$$<br>'
+     +'<b>Solution — (b).</b> $R=\\log_2 64=6$ bits, so $R_b=6\\times11\\,500=69\\,000$ bit/s $=69$ kbit/s.<br>'
+     +'<b>Solution — (c).</b> $$\\begin{aligned}f_s&=\\frac{78\\,000}{6}=13~\\text{kHz}\\\\f_g&=13-10=3~\\text{kHz}\\end{aligned}$$<br>'
+     +'<b>Solution — (d).</b> At $t=1/4000$ s the sine is $\\sin(\\pi/2)=1$ and the cosine is $\\cos2\\pi=1$, so $x_{\\max}=5$. At $t=3/4000$ s the sine is $-1$ and the cosine is $\\cos6\\pi=1$, so $x_{\\min}=-5$.'
+     +'$$\\begin{aligned}\\Delta&=\\frac{5-(-5)}{64}\\\\&=0.156\\end{aligned}$$<br>'
+     +'<b>Check.</b> Evaluate the expanded form at $t=1/4000$ s: $2.5\\sin(2.5\\pi)-2.5\\sin(1.5\\pi)=2.5+2.5=5$. It agrees with the product form.',
+  err:'Writing $\\sin A\\cos B$ with the cosine identity. The expansion of a sine times a cosine gives sines, and the frequencies are still $A\\pm B$.',
+  teach:'Close variant with a sine factor. The frequencies are those of the cosine product, and the extremes need a separate instant for each.',
+  figSol:()=>figLines({lines:[[3,1.25],[5,1.25]], fs:11.5, W:5, fg:'1.5', xmax:17.5, ticks:[-11.5,-5,5,11.5]}) },
 
-{ id:'D1-10', module:'M1', type:'pcm', src:'CH7 s.36',
-  stem:'A non-negative signal is known to lie in $[0,6]$ volts. It is quantized by an eight-level uniform quantizer covering that range, with the level of each tread at its midpoint, and encoded in natural binary.',
-  parts:['Give the step size and list the eight levels.',
-         'Give the level and the code word for the samples $0.9$, $2.4$, $4.7$ and $5.9$ volts.'],
-  sol:'<b>Given.</b> Range $[0,6]$, $L=8$.<br>'
-     +'<b>Find.</b> $\\Delta$, the levels, and four code words.<br>'
-     +'<b>Method.</b> $\\Delta$ is the range divided by the level count. The index of a sample is $\\lfloor m/\\Delta\\rfloor$, capped at $L-1$.<br>'
-     +'<b>Solution — (a).</b> $\\Delta=(6-0)/8=0.75$ V, and the levels sit at $0.375,\\,1.125,\\,1.875,\\,2.625,\\,3.375,\\,4.125,\\,4.875,\\,5.625$.<br>'
-     +'<b>Solution — (b).</b> $0.9/0.75=1.2$, so index $1$, level $1.125$, word $001$. $2.4/0.75=3.2$, index $3$, level $2.625$, word $011$. $4.7/0.75=6.27$, index $6$, level $4.875$, word $110$. $5.9/0.75=7.87$, index $7$, level $5.625$, word $111$.<br>'
-     +'<b>Check.</b> Every error is under half a step: $|0.9-1.125|=0.225$, $|2.4-2.625|=0.225$, $|4.7-4.875|=0.175$ and $|5.9-5.625|=0.275$, all below $\\Delta/2=0.375$. A value above the bound would mean a wrong tread rather than a rounding.',
-  err:'Placing the levels at the tread boundaries — $0,\\,0.75,\\,1.5,\\ldots$ — instead of their midpoints. The error then reaches a full step rather than half of one, and the noise power is four times too large.',
-  teach:'The check is the method: the half-step bound is what tells a student that an index is wrong without their having to redo the division.' },
+{ id:'D1-09', module:'M1', type:'spectrum', src:'MT Q1',
+  stem:'Let $x(t)=8\\cos^{2}(3000\\pi t)$ be sampled and quantized by using a $256$-level uniform quantizer that spans the range of $x(t)$. Assume that $1$ kbit/s $=1000$ bit/s.',
+  parts:['[6 pts] Determine the minimum sampling rate if a guard band of $2$ kHz is required.',
+         '[6 pts] Calculate the bit rate of this system.',
+         '[6 pts] If the data rate of this system is required as $72$ kbit/s, what should the guard band be?',
+         '[7 pts] Calculate the step size of the uniform quantizer.'],
+  sol:'<b>Given.</b> A squared cosine, a guard band of $2$ kHz, $L=256$ over the range of $x(t)$.<br>'
+     +'<b>Find.</b> $f_s$, $R_b$, the guard band for $72$ kbit/s, and $\\Delta$.<br>'
+     +'<b>Method.</b> Write the square as a sum with $\\cos^{2}\\theta=\\tfrac12(1+\\cos2\\theta)$. The square doubles the frequency and adds a constant.<br>'
+     +'<b>Solution — (a).</b> With $\\theta=2\\pi(1500)t$:'
+     +'$$\\begin{aligned}x(t)&=8\\cdot\\tfrac12\\,(1+\\cos2\\theta)\\\\&=4+4\\cos(2\\pi(3000)t)\\end{aligned}$$'
+     +'The highest frequency is $W=3$ kHz.'
+     +'$$\\begin{aligned}f_s&=2W+f_g\\\\&=6+2\\\\&=8~\\text{kHz}\\end{aligned}$$<br>'
+     +'<b>Solution — (b).</b> $R=\\log_2 256=8$ bits, so $R_b=8\\times8000=64\\,000$ bit/s $=64$ kbit/s.<br>'
+     +'<b>Solution — (c).</b> $$\\begin{aligned}f_s&=\\frac{72\\,000}{8}=9~\\text{kHz}\\\\f_g&=9-6=3~\\text{kHz}\\end{aligned}$$<br>'
+     +'<b>Solution — (d).</b> A square is never negative, so $x_{\\min}=0$, reached at $t=1/6000$ s. The largest value is $x(0)=8$.'
+     +'$$\\begin{aligned}\\Delta&=\\frac{8-0}{256}\\\\&=0.03125\\end{aligned}$$<br>'
+     +'<b>Check.</b> The expanded form gives the same range: $4+4\\cos(\\cdot)$ runs from $4-4=0$ to $4+4=8$. The constant $4$ is the impulse at $f=0$ in the figure.',
+  err:'Taking $W=1.5$ kHz from the argument $3000\\pi t$. Squaring doubles the frequency, so the tone sits at $3$ kHz.',
+  teach:'Close variant with a square in place of a product. The range is one-sided, so the step is the range over $L$, not $2x_{\\max}/L$.',
+  figSol:()=>figLines({lines:[[0,4],[3,2]], fs:8, W:3, fg:'2', xmax:13, ticks:[-8,-3,3,8]}) },
 
-{ id:'D1-11', module:'M1', type:'pcm', src:'CH7 s.34',
-  stem:'Sixteen quantization levels are to be encoded in four bits, either in natural binary or in a Gray code.',
-  parts:['Give the natural binary and Gray words for levels $7$ and $8$.',
-         'Count how many bits change between those two adjacent levels under each code.',
-         'Say what this costs when a channel error moves a decision to a neighbouring level.'],
-  sol:'<b>Given.</b> $L=16$, $R=4$.<br>'
-     +'<b>Find.</b> The two encodings of levels $7$ and $8$, and the cost of the difference.<br>'
-     +'<b>Method.</b> Natural binary writes the index directly. The Gray word is $g=b\\oplus(b\\gg1)$, the index exclusive-ored with itself shifted right by one.<br>'
-     +'<b>Solution — (a).</b> Level $7$: natural $0111$. Gray $0111\\oplus 0011=0100$. Level $8$: natural $1000$. Gray $1000\\oplus 0100=1100$.<br>'
-     +'<b>Solution — (b).</b> Natural: $0111\\to1000$ changes all four bits. Gray: $0100\\to1100$ changes one.<br>'
-     +'<b>Solution — (c).</b> A channel error almost always moves the decision to a neighbouring level, because the neighbouring level is the closest wrong answer. Under natural binary that single symbol error costs up to four bit errors. Under Gray coding it costs exactly one. The reconstructed amplitude is wrong by one step either way — what changes is how many bits are reported wrong.<br>'
-     +'<b>Check.</b> The Gray code has the one-bit property between <em>every</em> adjacent pair, not only this one. Levels $3$ and $4$ give $0010$ and $0110$, one bit apart, where natural binary gives $0011$ and $0100$, three bits apart.',
-  err:'Concluding that Gray coding reduces the probability of a symbol error. It does not touch the detector. It changes only how many bit errors a symbol error produces.',
-  teach:'Levels $7$ and $8$ are chosen because they straddle the worst case in natural binary. Ask for another adjacent pair to check that the Gray property is general rather than lucky.' },
+{ id:'D1-10', module:'M1', type:'spectrum', src:'Final Q1',
+  stem:'The signal $$x(t)=\\left(\\frac{\\sin(200\\pi t)}{20\\pi t}\\right)^{2}$$ is sampled at the Nyquist rate. The samples are uniformly quantized with $256$ levels over the range of $x(t)$. Use $\\operatorname{sinc}(u)=\\sin(\\pi u)/(\\pi u)$. According to the information given above,',
+  parts:['[8 pts] Calculate the bit rate of this system.',
+         '[8 pts] Calculate the step size of the uniform quantizer.',
+         '[9 pts] Find the quantized value and the natural binary code word of the samples at $t=0$, $t=2.5$ ms and $t=7.5$ ms.'],
+  sol:'<b>Given.</b> A squared sinc, Nyquist sampling, $L=256$ over the range of $x(t)$.<br>'
+     +'<b>Find.</b> $R_b$, $\\Delta$, and three quantized samples with their code words.<br>'
+     +'<b>Method.</b> Write $x(t)$ with the sinc. A square in time is a convolution in frequency, so the bandwidth doubles. The sample index is $\\lfloor x/\\Delta\\rfloor$, capped at $L-1$.<br>'
+     +'<b>Solution — (a).</b> $\\sin(200\\pi t)/(20\\pi t)=10\\,\\sin(200\\pi t)/(200\\pi t)=10\\operatorname{sinc}(200t)$, so $x(t)=100\\operatorname{sinc}^{2}(200t)$. The factor has the transform $\\tfrac{1}{20}\\Pi(f/200)$, which is zero for $|f|>100$ Hz.'
+     +' The convolution of two rectangles of width $200$ Hz is a triangle:'
+     +'$$X(f)=\\frac{200-|f|}{400},\\quad|f|\\le200~\\text{Hz}.$$'
+     +'So $W=200$ Hz and $f_s=2W=400$ Hz. With $R=\\log_2 256=8$ bits, $R_b=8\\times400=3200$ bit/s.<br>'
+     +'<b>Solution — (b).</b> A square is never negative, and $x(t)=0$ at $t=k/200$ s for every $k\\ne0$. The largest value is $x(0)=100\\operatorname{sinc}^{2}(0)=100$.'
+     +'$$\\begin{aligned}\\Delta&=\\frac{100-0}{256}\\\\&=0.3906\\end{aligned}$$<br>'
+     +'<b>Solution — (c).</b> The sampling interval is $T_s=1/400$ s $=2.5$ ms, so $t=nT_s$ gives $x=100\\operatorname{sinc}^{2}(n/2)$. The level of index $k$ is $(k+\\tfrac12)\\Delta$.'
+     +'<div class="eq plain sm">$$\\begin{array}{c|ccc}t&0&2.5~\\text{ms}&7.5~\\text{ms}\\\\\\hline x(t)&100&400/\\pi^{2}=40.53&400/(9\\pi^{2})=4.503\\\\x/\\Delta&256\\to255&103.75&11.53\\\\\\text{level}&99.80&40.43&4.492\\\\\\text{word}&11111111&01100111&00001011\\end{array}$$</div>'
+     +'At $t=0$ the index $256$ is outside $0,\\dots,255$, so it is capped at $255$. The values use $\\operatorname{sinc}(1/2)=2/\\pi$ and $\\operatorname{sinc}(3/2)=-2/(3\\pi)$.<br>'
+     +'<b>Check.</b> Every error is at most $\\Delta/2=0.195$: $100-99.80=0.195$, $40.53-40.43=0.098$ and $4.503-4.492=0.011$. The area of $x(t)$ is $X(0)$. Integrating, $100\\int\\operatorname{sinc}^{2}(200t)\\,dt=100/200=0.5$, which is the peak of the triangle, $200/400$.',
+  err:'Taking the bandwidth as $100$ Hz, the band of one sinc factor. The square convolves the spectrum with itself, which doubles the band to $200$ Hz.',
+  teach:'Examination shape with part (c) changed. A squared sinc has finite energy and zero average power, so its SQNR is not defined. The code words replace that part.',
+  figSol:()=>{
+    const X = f => (200-Math.abs(f))/400;
+    const top = figShape({X, B:200, peak:0.5, fs:400, xmax:1150, unit:'Hz', ticks:[-800,-400,-200,200,400,800]});
+    const xs = t => 100*sinc(0.2*t)**2, n = []; for(let k=0;k<=5;k++) n.push([2.5*k, xs(2.5*k)]);
+    const a = P.Axes({w:720,h:270,xr:[0,14],yr:[-12,140],xlabel:'t\\;(\\text{ms})',ylabel:'x(t)',
+      pad:{l:52,r:28,t:26,b:44},xticksOverride:[2.5,5,7.5,10,12.5],ytarget:4});
+    a.curve(xs,{color:C.in});
+    a.stem(n,{color:C.mid});
+    return top + panel(a.svg(), legend([['in','$x(t)$'],['mid','samples $x(nT_s)$']]));
+  } },
 
-{ id:'D1-12', module:'M1', type:'sqnr-wave', src:'CH7 s.22',
-  stem:'A quantizer is designed for a peak amplitude $m_{\\max}$, but the sinusoid actually presented to it reaches only a quarter of that.',
-  parts:['Give $\\alpha$ in the two cases and the loss in decibels.',
-         'How many extra bits per sample would recover the loss?'],
-  sol:'<b>Given.</b> A uniform quantizer sized for $m_{\\max}$. A sinusoid of peak $0.25\\,m_{\\max}$.<br>'
-     +'<b>Find.</b> The change in $\\alpha$ and its cost in bits.<br>'
-     +'<b>Method.</b> $\\alpha=10\\log_{10}(3P_M/m_{\\max}^{2})$ with $m_{\\max}$ the quantizer\'s range, not the signal\'s peak. Only $P_M$ changes.<br>'
-     +'<b>Solution — (a).</b> Full scale: $P_M=m_{\\max}^{2}/2$, so $\\alpha=10\\log_{10}1.5=1.76$ dB. At a quarter scale: $P_M=(0.25m_{\\max})^{2}/2=0.03125\\,m_{\\max}^{2}$, so $\\alpha=10\\log_{10}0.09375=-10.28$ dB. The loss is $12.04$ dB.<br>'
-     +'<b>Solution — (b).</b> Each bit buys $6.02$ dB, so $12.04/6.02=2$ bits exactly.<br>'
-     +'<b>Check.</b> The amplitude fell by a factor of four, the power by sixteen, and $10\\log_{10}16=12.04$ dB. Equivalently $20\\log_{10}4=12.04$ dB. Every halving of the amplitude costs $6.02$ dB, one bit. This is the same exchange rate as the resolution. The reason is the same, that halving the amplitude and halving the step size are the same thing seen from either end.<br>'
-     +'<b>Why this matters.</b> A quantizer sized for the loudest passage of a piece of music gives the quiet passages far fewer effective levels. That is the argument for companding, and this calculation is how large the argument is.',
-  err:'Recomputing $\\Delta$ from the signal\'s own peak. The quantizer was built for $m_{\\max}$ and does not change because the signal got quieter. That is precisely why the ratio degrades.',
-  teach:'This question is the bridge to non-uniform quantization. It is worth setting immediately before that section rather than after it.' },
+{ id:'D1-11', module:'M1', type:'spectrum', src:'Final Q1',
+  stem:'The signal $$x(t)=\\frac{\\sin(200\\pi t)}{10\\pi t}\\cdot\\frac{\\sin(600\\pi t)}{10\\pi t}$$ is sampled at the Nyquist rate. The samples are uniformly quantized with $128$ levels over the range of $x(t)$. Use $\\operatorname{sinc}(u)=\\sin(\\pi u)/(\\pi u)$. According to the information given above,',
+  parts:['[8 pts] Calculate the bit rate of this system.',
+         '[8 pts] Calculate the step size of the uniform quantizer. (Hint: $\\min x(t)\\cong-177$.)',
+         '[9 pts] Find the smallest number of levels, a power of two, that makes the step size smaller than $1$. Calculate the bit rate it needs.'],
+  sol:'<b>Given.</b> A product of two sinc factors, Nyquist sampling, $L=128$, and $\\min x(t)\\cong-177$.<br>'
+     +'<b>Find.</b> $R_b$, $\\Delta$, and the least $L$ with $\\Delta<1$ and its bit rate.<br>'
+     +'<b>Method.</b> A product in time is a convolution in frequency, so the two bandwidths add. The step is the range over $L$.<br>'
+     +'<b>Solution — (a).</b> Write each factor with the sinc:'
+     +'$$\\begin{aligned}\\frac{\\sin(200\\pi t)}{10\\pi t}&=20\\operatorname{sinc}(200t)\\\\\\frac{\\sin(600\\pi t)}{10\\pi t}&=60\\operatorname{sinc}(600t)\\end{aligned}$$'
+     +'The first is bandlimited to $100$ Hz and the second to $300$ Hz. Their product is bandlimited to $100+300=400$ Hz. So $f_s=2(400)=800$ Hz, $R=\\log_2 128=7$, and $R_b=7\\times800=5600$ bit/s.<br>'
+     +'<b>Solution — (b).</b> Each factor is largest at $t=0$, where $\\operatorname{sinc}(0)=1$. So $x_{\\max}=20\\times60=1200$, and the hint gives $x_{\\min}=-177$.'
+     +'$$\\begin{aligned}\\Delta&=\\frac{1200-(-177)}{128}\\\\&=\\frac{1377}{128}\\\\&=10.76\\end{aligned}$$<br>'
+     +'<b>Solution — (c).</b> $\\Delta=1377/L<1$ needs $L>1377$. The powers of two near it are $1024<1377<2048$, so $L=2048$ and $R=11$. Then $\\Delta=1377/2048=0.672$ and $R_b=11\\times800=8800$ bit/s.<br>'
+     +'<b>Check.</b> With $L=1024$ the step is $1377/1024=1.34$, still above $1$. The spectrum is a trapezoid. Its height at $f=0$ equals the area of $x(t)$, $1200\\int\\operatorname{sinc}(200t)\\operatorname{sinc}(600t)\\,dt=1200/600=2$.',
+  err:'Taking the range as $[-1200,1200]$. The signal never goes below about $-177$, so a symmetric range wastes nearly half the levels.',
+  teach:'Examination shape with part (c) changed, since a product of sincs has zero average power and no SQNR. The hint for the minimum is kept as in the examination.',
+  figSol:()=>{
+    const X = f => { const g=Math.abs(f); return g<=200 ? 2 : 2*(400-g)/200; };
+    const top = figShape({X, B:400, peak:2, fs:800, xmax:1300, unit:'Hz', ticks:[-800,-400,-200,200,400,800]});
+    return top + figWave({f:t=>1200*sinc(0.2*t)*sinc(0.6*t), t0:0, t1:14, max:1200, min:-177,
+      maxLab:'x_{\\max}=1200', minLab:'x_{\\min}\\cong-177', lx:4.2, xticks:[8,10,12], h:270, minTo:3.3, marks:[[2.289,-176.7]]});
+  } },
 
-/* ---- full-length, three or four lettered parts ---------------------- */
+{ id:'D1-12', module:'M1', type:'spectrum', src:'Final Q1',
+  stem:'The signal $$x(t)=\\frac{\\sin(1000\\pi t)}{\\pi t}\\,\\cos(4000\\pi t)$$ is sampled at the Nyquist rate. The samples are uniformly quantized with $1024$ levels over the range of $x(t)$. According to the information given above,',
+  parts:['[8 pts] Find the Fourier transform $X(f)$ and the highest frequency in $x(t)$.',
+         '[6 pts] Calculate the bit rate of this system.',
+         '[5 pts] Calculate the step size of the uniform quantizer. (Hint: $\\min x(t)\\cong-902$.)',
+         '[6 pts] Calculate the energy of $x(t)$ by Parseval\'s theorem.'],
+  sol:'<b>Given.</b> A sinc pulse times a cosine carrier, Nyquist sampling, $L=1024$, and $\\min x(t)\\cong-902$.<br>'
+     +'<b>Find.</b> $X(f)$, the highest frequency, $R_b$, $\\Delta$, and the energy $E_x$.<br>'
+     +'<b>Method.</b> Use the pair $2W\\operatorname{sinc}(2Wt)\\leftrightarrow\\Pi(f/2W)$ and the modulation property. The energy is $\\int|X(f)|^{2}\\,df$.<br>'
+     +'<b>Solution — (a).</b> $\\sin(1000\\pi t)/(\\pi t)=1000\\operatorname{sinc}(1000t)$, whose transform is $\\Pi(f/1000)$: height $1$ for $|f|<500$ Hz. The cosine moves half of it to each of $\\pm2000$ Hz:'
+     +'$$X(f)=\\tfrac12\\Pi\\!\\left(\\frac{f-2000}{1000}\\right)+\\tfrac12\\Pi\\!\\left(\\frac{f+2000}{1000}\\right).$$'
+     +'$X(f)$ is $\\tfrac12$ for $1500<|f|<2500$ Hz and zero elsewhere. The highest frequency is $2.5$ kHz.<br>'
+     +'<b>Solution — (b).</b> $f_s=2(2500)=5000$ Hz and $R=\\log_2 1024=10$, so $R_b=10\\times5000=50\\,000$ bit/s.<br>'
+     +'<b>Solution — (c).</b> At $t=0$ the sinc factor is $1000$ and the cosine is $1$, so $x_{\\max}=1000$.'
+     +'$$\\begin{aligned}\\Delta&=\\frac{1000-(-902)}{1024}\\\\&=\\frac{1902}{1024}\\\\&=1.857\\end{aligned}$$<br>'
+     +'<b>Solution — (d).</b> Each rectangle has height $\\tfrac12$ and width $1000$ Hz.'
+     +'$$\\begin{aligned}E_x&=\\int_{-\\infty}^{\\infty}|X(f)|^{2}\\,df\\\\&=2\\int_{1500}^{2500}\\left(\\tfrac12\\right)^{2}df\\\\&=2\\cdot\\tfrac14\\cdot1000\\\\&=500\\end{aligned}$$<br>'
+     +'<b>Check.</b> In time, $\\cos^{2}\\theta=\\tfrac12(1+\\cos2\\theta)$ splits the energy into two integrals. The first is $\\tfrac12\\int(\\sin(1000\\pi t)/(\\pi t))^{2}dt=\\tfrac12\\int\\Pi^{2}(f/1000)\\,df=\\tfrac12(1000)=500$.'
+     +' The second is the transform of the squared sinc at $4000$ Hz. That transform stops at $1000$ Hz, so the second integral is $0$.',
+  err:'Taking $500$ Hz, the edge of the sinc factor, as the highest frequency. The cosine moves that band to $1500$ to $2500$ Hz, so the Nyquist rate is $5$ kHz.',
+  teach:'Close to the examination shape. The energy part replaces the SQNR, which a finite-energy pulse does not have, and uses the Parseval line of the transform review.',
+  figSol:()=>{
+    const X = f => { const g=Math.abs(f); return (g>1.5 && g<2.5) ? 0.5 : null; };
+    const top = figShape({X:f=>X(f)==null?0:X(f), B:2.5, peak:0.5, fs:5, xmax:8.2, unit:'kHz', ticks:[-5,-2.5,-1.5,1.5,2.5,5]});
+    return top + figWave({f:t=>1000*sinc(t)*Math.cos(4*Math.PI*t), t0:0, t1:3.2, max:1000, min:-902,
+      maxLab:'x_{\\max}=1000', minLab:'x_{\\min}\\cong-902', lx:1.2, h:270, marks:[[0.2447,-902.4]]});
+  } },
 
-{ id:'D1-13', module:'M1', type:'full', src:'MT Q1',
-  stem:'A sinusoidal message is $x(t)=V_{\\max}\\cos(6000\\pi t)$, where $V_{\\max}$ is its peak amplitude. A uniform quantizer gives noise on $\\left(-\\tfrac{\\Delta}{2},\\tfrac{\\Delta}{2}\\right)$. The noise must not exceed $\\pm2\\%$ of the peak-to-peak message amplitude. A $32$-level PAM system encodes the quantized data. The sampling rate equals the Nyquist rate.',
-  parts:['Determine the minimum number of bits per sample.',
-         'Calculate the bit rate of the system.',
-         'Calculate the symbol rate of the system.'],
-  sol:'<b>Given.</b> $f_0=3000$ Hz, noise bound $2\\%$ of peak-to-peak, $32$-level PAM.<br>'
-     +'<b>Find.</b> $R$, $R_b$ and the symbol rate.<br>'
-     +'<b>Method.</b> The accuracy requirement fixes the largest permissible $\\Delta$, which fixes the smallest permissible $L$, which fixes $R$ after rounding up. The rate then follows from $R_b=Rf_s$, and the symbol rate from how many bits a PAM symbol carries.<br>'
-     +'<b>Solution (a).</b> The peak-to-peak amplitude is $2V_{\\max}$. Therefore, $$\\frac{\\Delta}{2}\\le 0.02\\,(2V_{\\max})=0.04V_{\\max}\\quad\\Longrightarrow\\quad\\Delta\\le 0.08V_{\\max}.$$With $\\Delta=2V_{\\max}/L$, this gives $L\\ge25$. The level count must be a power of two, so $L=32$ and $R=5$ bits per sample.<br>'
-     +'<b>Solution — (b).</b> The message reaches $3000$ Hz, so $f_s=2(3000)=6000$ samples per second and $$R_b=Rf_s=5\\times 6000=30\\ \\text{kbit/s}.$$<br>'
-     +'<b>Solution — (c).</b> A $32$-level PAM symbol carries $\\log_2 32=5$ bits, so the symbol rate is $30000/5=6000$ symbols per second.<br>'
-     +'<b>Check.</b> The symbol rate equals the sampling rate. One sample contains $5$ bits, and one PAM symbol carries $5$ bits. If $R=6$, the symbol rate becomes $7200$ while the sampling rate remains $6000$. One sample then needs more than one PAM symbol.',
-  err:'Reading the noise bound against $V_{\\max}$ rather than against the peak-to-peak $2V_{\\max}$. That halves the permissible step, doubles the required level count and gives $R=6$.',
-  teach:'Part (c) rewards reading the question. The PAM level count is given and is not the same quantity as the quantizer level count, even though here they coincide.' },
+/* ---- C. A sum of sinusoids through a uniform quantizer -------------- */
 
-{ id:'D1-14', module:'M1', type:'full', src:'MT Q1',
-  stem:'The signal $$x(t)=6\\cos(2000\\pi t)\\cos(6000\\pi t)$$is sampled and quantized with a $512$-level uniform quantizer. Assume $1$ kbit/s $=1000$ bit/s.',
-  parts:['Determine the minimum sampling rate if a guard band of $2$ kHz is required.',
-         'Calculate the bit rate of the system at that sampling rate.',
-         'If the bit rate is required to be $100$ kbit/s, what should the guard band be?',
-         'Calculate the step size of the uniform quantizer.'],
-  sol:'<b>Given.</b> A product of two cosines, $L=512$.<br>'
-     +'<b>Find.</b> $f_s$ with a guard band, the bit rate, the guard band for a given bit rate, and $\\Delta$.<br>'
-     +'<b>Method.</b> Expand the product before doing anything else: the bandwidth of a product is not the bandwidth of either factor.<br>'
-     +'<b>Solution — (a).</b> Using $2\\cos A\\cos B=\\cos(A-B)+\\cos(A+B)$, $$x(t)=3\\cos(2\\pi(2000)t)+3\\cos(2\\pi(4000)t).$$The highest frequency is $4$ kHz, so $W=4$ kHz and $$f_s=2W+f_g=8+2=10\\ \\text{kHz}.$$<br>'
-     +'<b>Solution — (b).</b> $R=\\log_2 512=9$ bits per sample, so $R_b=9\\times 10000=90$ kbit/s.<br>'
-     +'<b>Solution — (c).</b> $f_s=R_b/R=100000/9=11.11$ kHz, so $f_g=f_s-2W=11.11-8=3.11$ kHz.<br>'
-     +'<b>Solution — (d).</b> The two terms peak together at $t=0$, where $x(0)=3+3=6$, so $m_{\\max}=6$ and $$\\Delta=\\frac{2(6)}{512}=0.0234\\ \\text{V}.$$<br>'
-     +'<b>Check.</b> Part (c) must give a larger guard band than part (a). This occurs because a higher bit rate at fixed resolution means a higher sampling rate and therefore more room between the replicas. $3.11>2$ kHz, as it should be. $m_{\\max}=6$ agrees with the original form. $6\\cos\\cdot\\cos$ cannot exceed $6$, and it reaches it when both factors are one.',
-  err:'Taking $W=3$ kHz from the $6000\\pi$ term without expanding. The product contains a $4$ kHz component that neither factor has.',
-  teach:'Part (d) is worth asking about separately. The peak of a sum of two sinusoids is the sum of their amplitudes only when they peak together. This here they do and in the next question they also do. But it is a fact to be checked, not assumed.' },
-
-{ id:'D1-15', module:'M1', type:'full', src:'MT Q1',
-  stem:'A signal $X(t)$ has a bandwidth of $2.5$ MHz. It is sampled, quantized and binary encoded to obtain a PCM signal.',
-  parts:['Determine the sampling rate if $X(t)$ is sampled at a rate $40\\%$ greater than the Nyquist rate.',
-         'If the samples are quantized with a uniform quantizer with $4096$ levels, determine the number of bits required per sample.',
-         'Calculate the bit rate of this system in bits per second.',
-         'How much of the bit rate is the margin above Nyquist responsible for?'],
-  sol:'<b>Given.</b> $W=2.5$ MHz, a rate $40\\%$ above Nyquist, $L=4096$.<br>'
-     +'<b>Find.</b> $f_s$, $R$, $R_b$ and the cost of the margin.<br>'
-     +'<b>Method.</b> A percentage above Nyquist multiplies the Nyquist rate. Resolution is a logarithm of the level count. The bit rate is their product.<br>'
-     +'<b>Solution — (a).</b> The Nyquist rate is $2W=5$ MHz, so $$f_s=1.40\\times 5=7\\ \\text{MHz}.$$<br>'
-     +'<b>Solution — (b).</b> $R=\\log_2 4096=12$ bits per sample.<br>'
-     +'<b>Solution — (c).</b> $R_b=Rf_s=12\\times 7\\times10^{6}=84$ Mbit/s.<br>'
-     +'<b>Solution (d).</b> At the Nyquist rate, the bit rate is $12\\times5=60$ Mbit/s. Therefore, the $40\\%$ sampling margin adds $24$ Mbit/s. Sampling rate and bit rate are proportional at fixed resolution.<br>'
-     +'<b>Check.</b> $4096=2^{12}$. Therefore, the resolution is exact rather than rounded. The margin costs the same percentage of the bit rate as it adds to the sampling rate. This is the sense in which oversampling is paid for linearly while resolution is paid for logarithmically. Doubling the levels costs one bit per sample, or $8.3\\%$ here, and buys $6.02$ dB.',
-  err:'Computing $f_s=2W+0.4W=5.5$ MHz. "Forty per cent greater than the Nyquist rate" multiplies the Nyquist rate, not the bandwidth.',
-  teach:'Part (d) is the one that makes the question worth setting. It puts the two ways of spending bit rate — more samples and more levels — on the same scale for the first time.' },
-
-{ id:'D1-16', module:'M1', type:'full', src:'MT Q2',
-  stem:'A stationary source is sampled, and the samples have the density $$f_X(x)=k\\left(1+|x|\\right),\\qquad x\\in[-1,1],$$and zero elsewhere. The samples are quantized with a uniform quantizer with $128$ levels covering $[-1,1]$, and the quantization noise is uniform on $\\left(-\\tfrac{\\Delta}{2},\\tfrac{\\Delta}{2}\\right)$.',
-  parts:['Determine the value of $k$.',
-         'Obtain the SQNR in decibels.',
-         'For a $4$ kHz source sampled at the Nyquist rate, calculate the bit rate of the corresponding PCM system.'],
-  sol:'<b>Given.</b> A density with an unknown constant on $[-1,1]$; $L=128$.<br>'
-     +'<b>Find.</b> $k$, the SQNR and the PCM bit rate.<br>'
-     +'<b>Method.</b> The constant comes from the total area. The signal power is the second moment against the density. The noise power is $\\Delta^{2}/12$, which applies because the quantizer is uniform and fine.<br>'
-     +'<b>Solution — (a).</b> $$\\int_{-1}^{1}k(1+|x|)\\,dx=k\\left(2+2\\cdot\\tfrac12\\right)=3k=1\\;\\Longrightarrow\\;k=\\tfrac13.$$<br>'
-     +'<b>Solution — (b).</b> $$P_X=\\int_{-1}^{1}x^{2}\\cdot\\tfrac13(1+|x|)\\,dx=\\tfrac23\\int_{0}^{1}\\left(x^{2}+x^{3}\\right)dx=\\tfrac23\\left(\\tfrac13+\\tfrac14\\right)=\\tfrac{7}{18}=0.3889.$$With $m_{\\max}=1$, $\\Delta=2/128=1/64$ and $E[Q^{2}]=\\Delta^{2}/12=2.035\\times10^{-5}$. Hence $$\\mathrm{SQNR}=\\frac{0.3889}{2.035\\times10^{-5}}=19115\\;\\Longrightarrow\\;42.81\\ \\text{dB}.$$<br>'
-     +'<b>Solution — (c).</b> $R=\\log_2 128=7$ bits per sample and $f_s=2(4000)=8$ kHz, so $R_b=7\\times 8000=56$ kbit/s.<br>'
-     +'<b>Check.</b> The intercept method gives $\\alpha=0.67$ dB and $\\mathrm{SQNR}=42.81$ dB. This density places more probability near the range edges than a uniform density. Therefore, its power is $0.389$ instead of $0.333$. This increase gives the positive intercept.',
-  err:'Forgetting the absolute value when integrating and computing $\\int_{-1}^{1}k(1+x)\\,dx=2k$, which gives $k=\\tfrac12$. Every later number then inherits the error.',
-  teach:'The check shows the effect of the source density. More probability near the range edges increases the signal power for the same quantizer. The intercept measures this gain.' },
-
-{ id:'D1-17', module:'M1', type:'full', src:'MT Q2',
-  stem:'The samples of a stationary source $X$ have the triangular density $$f_X(x)=c\\left(1-\\frac{|x|}{8}\\right),\\qquad |x|\\le 8,$$and zero elsewhere. They are quantized by $$\\hat{X}=\\mathbb{Q}(X)=\\begin{cases}-3, & -6<X<0\\\\ \\;\\;\\,3, & \\;\\;\\;0<X<6\\\\ \\;\\;\\,0, & \\text{otherwise.}\\end{cases}$$',
-  figure: () => {
-    const a = P.Axes({w:660,h:250,xr:[-9,9],yr:[-4.4,4.4],
-      xlabel:'x',ylabel:'\\mathbb{Q}(x)',pad:{l:52,r:26,t:26,b:42},xtarget:6,ytarget:4});
-    a.poly([[-9,0],[-6,0]],{color:C.mid,width:2.2});
-    a.poly([[-6,-3],[0,-3]],{color:C.mid,width:2.2});
-    a.poly([[0,3],[6,3]],{color:C.mid,width:2.2});
-    a.poly([[6,0],[9,0]],{color:C.mid,width:2.2});
-    a.curve(x=>Math.abs(x)<=8 ? 3.6*(1-Math.abs(x)/8) : null,{color:C.in,width:1.6,dash:'5 4'});
-    return a.svg();
-  },
-  parts:['Determine the value of $c$.',
-         'Calculate the power of the samples of the source.',
-         'Calculate the power of the quantization noise.',
-         'Obtain the SQNR in decibels.'],
-  sol:'<b>Given.</b> A triangular density on $[-8,8]$ and a three-level quantizer that returns zero outside $(-6,6)$.<br>'
-     +'<b>Find.</b> $c$, $P_X$, $P_Q$ and the SQNR.<br>'
-     +'<b>Method.</b> Area for the constant, second moment for the power, and a region-by-region integral for the noise. $\\Delta^{2}/12$ cannot be used here. This occurs because the quantizer is neither uniform nor fine.<br>'
-     +'<b>Solution — (a).</b> The density is a triangle of base $16$ and height $c$, so $\\tfrac12(16)c=8c=1$ and $c=\\tfrac18=0.125$.<br>'
-     +'<b>Solution — (b).</b> A symmetric triangular density on $[-a,a]$ has $E[X^{2}]=a^{2}/6$, so $$P_X=\\frac{64}{6}=10.667.$$<br>'
-     +'<b>Solution — (c).</b> Splitting at the boundaries and using symmetry, $$P_Q=2\\left[\\int_{0}^{6}(x-3)^{2}f_X(x)\\,dx+\\int_{6}^{8}x^{2}f_X(x)\\,dx\\right]=2\\bigl[1.406+1.396\\bigr]=5.604.$$<br>'
-     +'<b>Solution — (d).</b> $$\\mathrm{SQNR}\\;[\\mathrm{dB}]=10\\log_{10}\\frac{10.667}{5.604}=2.79\\ \\text{dB}.$$<br>'
-     +'<b>Check.</b> A three-level quantizer carries at most $\\log_2 3=1.58$ bits. Therefore, a result of a few decibels is the right order. Anything in the tens would be impossible. Note also that the two contributions to $P_Q$ are almost equal even though the outer region holds far less probability. The error there is much larger, and the two effects nearly cancel.',
-  err:'Applying $\\Delta^{2}/12$ with $\\Delta=6$. That gives $P_Q=3$ and an SQNR of $5.5$ dB, twice too good. This occurs because the error outside $(-6,6)$ is not bounded by half a step at all.',
-  teach:'Ask before part (c) whether $\\Delta^{2}/12$ applies. The question exists to make the answer "no", and a student who reaches for it has not noticed that the outer regions are unbounded.' },
-
-{ id:'D1-18', module:'M1', type:'full', src:'Final Q1',
-  stem:'The signal $$x(t)=2\\cos(2000\\pi t)+\\cos(6000\\pi t)$$is sampled at the Nyquist rate and uniformly quantized with $128$ levels.',
-  parts:['Calculate the bit rate of this system.',
-         'Calculate the step size of the uniform quantizer.',
-         'Calculate the SQNR of the quantization scheme in decibels.'],
-  sol:'<b>Given.</b> Two sinusoids at $1$ kHz and $3$ kHz with amplitudes $2$ and $1$; $L=128$.<br>'
+{ id:'D1-13', module:'M1', type:'wave', src:'Final Q1',
+  stem:'The signal $x(t)=2\\cos(3000\\pi t)+3\\cos(9000\\pi t)$ is sampled at the Nyquist rate and samples are uniformly quantized with $256$ levels. According to the information given above,',
+  parts:['[5 pts] Calculate the bit rate of this system.',
+         '[10 pts] Calculate the step size of the uniform quantizer.',
+         '[10 pts] Calculate the SQNR of the quantization scheme (in dB).'],
+  sol:'<b>Given.</b> Two cosines at $1.5$ kHz and $4.5$ kHz with amplitudes $2$ and $3$, Nyquist sampling, $L=256$.<br>'
      +'<b>Find.</b> $R_b$, $\\Delta$ and the SQNR.<br>'
-     +'<b>Method.</b> The rate comes from the highest frequency. The step size from the peak. The SQNR from the average power and the peak together.<br>'
-     +'<b>Solution — (a).</b> The highest frequency is $3$ kHz, so $f_s=6$ kHz. With $R=\\log_2 128=7$ bits, $$R_b=7\\times 6000=42\\ \\text{kbit/s}.$$<br>'
-     +'<b>Solution — (b).</b> Both terms reach their maxima at $t=0$, where $x(0)=2+1=3$, and no other instant exceeds it, so $m_{\\max}=3$ and $$\\Delta=\\frac{2(3)}{128}=0.0469\\ \\text{V}.$$<br>'
-     +'<b>Solution — (c).</b> By Parseval the average power is $$P_M=\\frac{2^{2}}{2}+\\frac{1^{2}}{2}=2.5,$$so $\\alpha=10\\log_{10}\\dfrac{3(2.5)}{9}=-0.79$ dB and $$\\mathrm{SQNR}=-0.79+6.02(7)=41.35\\ \\text{dB}.$$<br>'
-     +'<b>Check.</b> The intercept is negative, and it should be. The signal reaches $3$ but carries only the power of a single sinusoid of amplitude $\\sqrt{5}=2.24$. Therefore, it does not fill the range as efficiently as a pure sinusoid would. Independently, $E[Q^{2}]=\\Delta^{2}/12=1.831\\times10^{-4}$ and $10\\log_{10}(2.5/1.831\\times10^{-4})=41.35$ dB.',
-  err:'Taking $m_{\\max}=2$, the larger of the two amplitudes. The peak of a sum is the sum of the amplitudes whenever the terms peak together, which they do here at $t=0$.',
-  teach:'Ask whether $m_{\\max}=3$ needs proof. It does in general — two sinusoids at unrelated frequencies need not peak together — and here it follows because both are cosines with zero phase.' },
+     +'<b>Method.</b> The rate comes from the highest frequency. The step comes from the range $[x_{\\min},x_{\\max}]$. The SQNR is $P_X/(\\Delta^{2}/12)$, with $P_X$ from the amplitudes.<br>'
+     +'<b>Solution — (a).</b> The highest frequency is $4.5$ kHz, so $f_s=9$ kHz. With $R=\\log_2 256=8$ bits:'
+     +'$$\\begin{aligned}R_b&=8\\times9000\\\\&=72\\,000~\\text{bit/s}\\end{aligned}$$<br>'
+     +'<b>Solution — (b).</b> At $t=0$ both terms peak together: $x(0)=2+3=5$. At $t=1/3000$ s the terms are $2\\cos\\pi=-2$ and $3\\cos3\\pi=-3$, so $x=-5$. No value can pass $2+3=5$ in size.'
+     +'$$\\begin{aligned}\\Delta&=\\frac{5-(-5)}{256}\\\\&=0.0391\\end{aligned}$$<br>'
+     +'<b>Solution — (c).</b> The two tones have different frequencies, so their powers add:'
+     +'$$\\begin{aligned}P_X&=\\frac{2^{2}}{2}+\\frac{3^{2}}{2}=6.5\\\\E[Q^{2}]&=\\frac{\\Delta^{2}}{12}=\\frac{0.0391^{2}}{12}=1.272\\times10^{-4}\\\\\\mathrm{SQNR}&=\\frac{6.5}{1.272\\times10^{-4}}=51\\,118\\\\&=10\\log_{10}51\\,118=47.09~\\text{dB}\\end{aligned}$$<br>'
+     +'<b>Check.</b> By the rule, $\\alpha=10\\log_{10}(3P_X/x_{\\max}^{2})=10\\log_{10}(19.5/25)=-1.079$ dB. Then $\\alpha+20R\\log_{10}2=-1.079+48.165=47.09$ dB.',
+  err:'Taking the peak as $3$, the larger amplitude. The two cosines both equal $1$ at $t=0$, so the peak is the sum $5$.',
+  teach:'Close variant of the examination shape. Ask the student to name the instant of the minimum, which the answer $-5$ needs.',
+  figSol:()=>figWave({f:t=>2*Math.cos(3*Math.PI*t)+3*Math.cos(9*Math.PI*t), t0:0, t1:2, max:5, min:-5,
+    maxLab:'x_{\\max}=5', minLab:'x_{\\min}=-5', lx:0.72, marks:[[0,5],[1/3,-5],[2/3,5],[1,-5],[4/3,5],[5/3,-5],[2,5]]}) },
 
-{ id:'D1-19', module:'M1', type:'full', src:'CH7 s.7–8, 13',
-  stem:'A message $x(t)$ is bandlimited to $20$ kHz. The available converter runs at $f_s=30$ kHz.',
-  parts:['Give the Nyquist rate, and say whether $30$ kHz is adequate.',
-         'A component of the message at $18$ kHz is present. Where does it appear after sampling and reconstruction with an ideal lowpass filter of cut-off $15$ kHz?',
-         'Give the cut-off of an anti-aliasing filter that makes $30$ kHz adequate, and say what is lost.',
-         'With that anti-aliasing filter in place and a guard band of $4$ kHz, give the sampling rate that would be needed.'],
-  sol:'<b>Given.</b> $W=20$ kHz, $f_s=30$ kHz.<br>'
-     +'<b>Find.</b> Whether the rate works, where an $18$ kHz component lands, and what filtering fixes it.<br>'
-     +'<b>Method.</b> Compare $f_s$ with $2W$. If the replicas overlap, find where the overlapping component lands from $|f_0-nf_s|$.<br>'
-     +'<b>Solution — (a).</b> $f_s^{\\min}=2W=40$ kHz. The available $30$ kHz is below it, so the replicas overlap and the rate is <b>not</b> adequate.<br>'
-     +'<b>Solution — (b).</b> The replicas of the $18$ kHz component sit at $18-30=-12$ kHz and at $18+30=48$ kHz, among others. The filter passes $|f|<15$ kHz, so it keeps the copy at $12$ kHz. An $18$ kHz component of the message emerges as a $12$ kHz component, on top of whatever the message genuinely had at $12$ kHz.<br>'
-     +'<b>Solution — (c).</b> A rate of $30$ kHz is adequate for a message bandlimited to $f_s/2=15$ kHz, so the anti-aliasing filter must cut off at $15$ kHz. Everything the message carried between $15$ and $20$ kHz is lost — permanently, and deliberately.<br>'
-     +'<b>Solution — (d).</b> With $W=15$ kHz and $f_g=4$ kHz, $f_s=2(15)+4=34$ kHz.<br>'
-     +'<b>Check.</b> Part (b) and part (c) are the same statement seen twice. $18$ kHz is above $f_s/2=15$ kHz. This is exactly the condition for a component to alias, and the filter of part (c) is the one that removes every such component. Part (d) is above the $30$ kHz the converter offers. This is the honest conclusion. With a guard band this converter is not fast enough even for the filtered message.',
-  err:'Answering part (b) with $18$ kHz on the grounds that the component "is still in the message". It is, but the sampler put a copy at $12$ kHz and the reconstruction filter keeps that one and rejects the original.',
-  teach:'Part (c) is where students resist: the fix throws information away. Naming the trade — a wrong answer converted into a missing one — is what makes it acceptable.' },
+{ id:'D1-14', module:'M1', type:'wave', src:'Final Q1',
+  stem:'The signal $x(t)=2\\cos(2000\\pi t)+\\cos(4000\\pi t)$ is sampled at the Nyquist rate and samples are uniformly quantized with $128$ levels. The quantizer spans the range of $x(t)$, from its minimum to its maximum. According to the information given above,',
+  parts:['[5 pts] Calculate the bit rate of this system.',
+         '[7 pts] Find the maximum and the minimum of $x(t)$.',
+         '[6 pts] Calculate the step size of the uniform quantizer.',
+         '[7 pts] Calculate the SQNR of the quantization scheme (in dB).'],
+  sol:'<b>Given.</b> Tones at $1$ kHz and $2$ kHz with amplitudes $2$ and $1$, Nyquist sampling, $L=128$ over $[x_{\\min},x_{\\max}]$.<br>'
+     +'<b>Find.</b> $R_b$, $x_{\\max}$, $x_{\\min}$, $\\Delta$ and the SQNR.<br>'
+     +'<b>Method.</b> The second tone is the double angle of the first. Write $x$ as a function of $c=\\cos\\theta$ and find its extremes on $[-1,1]$.<br>'
+     +'<b>Solution — (a).</b> The highest frequency is $2$ kHz, so $f_s=4$ kHz. With $R=\\log_2 128=7$ bits, $R_b=7\\times4000=28\\,000$ bit/s.<br>'
+     +'<b>Solution — (b).</b> Put $\\theta=2\\pi(1000)t$ and $c=\\cos\\theta$. Then $\\cos2\\theta=2c^{2}-1$:'
+     +'$$\\begin{aligned}x&=2c+(2c^{2}-1)\\\\&=2c^{2}+2c-1=g(c)\\end{aligned}$$'
+     +'Set the derivative to zero: $g^{\\prime}(c)=4c+2=0$, so $c=-\\tfrac12$. There $g(-\\tfrac12)=\\tfrac12-1-1=-1.5$. At the ends $g(1)=3$ and $g(-1)=-1$. So $x_{\\max}=3$ and $x_{\\min}=-1.5$.<br>'
+     +'<b>Solution — (c).</b> $$\\begin{aligned}\\Delta&=\\frac{3-(-1.5)}{128}\\\\&=\\frac{4.5}{128}\\\\&=0.0352\\end{aligned}$$<br>'
+     +'<b>Solution — (d).</b> $$\\begin{aligned}P_X&=\\frac{2^{2}}{2}+\\frac{1^{2}}{2}=2.5\\\\E[Q^{2}]&=\\frac{0.0352^{2}}{12}=1.030\\times10^{-4}\\\\\\mathrm{SQNR}&=\\frac{2.5}{1.030\\times10^{-4}}=24\\,273\\\\&=43.85~\\text{dB}\\end{aligned}$$<br>'
+     +'<b>Check.</b> The minimum sits where $\\cos\\theta=-\\tfrac12$, at $\\theta=2\\pi/3$ or $t=1/3$ ms. Evaluate there: $2\\cos(2\\pi/3)+\\cos(4\\pi/3)=-1-\\tfrac12=-1.5$.',
+  err:'Taking the range as $[-3,3]$ by symmetry. This signal never goes below $-1.5$, so a symmetric range wastes a third of the levels.',
+  teach:'Close to the examination shape, where the minimum is given as a hint. Here the student finds it, which a quadratic in $\\cos\\theta$ makes possible by hand.',
+  figSol:()=>figWave({f:t=>2*Math.cos(2*Math.PI*t)+Math.cos(4*Math.PI*t), t0:0, t1:2, max:3, min:-1.5,
+    maxLab:'x_{\\max}=3', minLab:'x_{\\min}=-1.5', lx:0.4, marks:[[0,3],[1/3,-1.5],[2/3,-1.5],[1,3],[4/3,-1.5],[5/3,-1.5],[2,3]]}) },
 
-{ id:'D1-20', module:'M1', type:'full', src:'CH7 s.36',
-  stem:'The message is $$m(t)=6\\,\\bigl|\\operatorname{sinc}(t-1)\\bigr|,\\qquad \\operatorname{sinc}(x)=\\frac{\\sin\\pi x}{\\pi x}.$$It is sampled every $T_s=0.4$ s. An eight-level uniform quantizer covers $[0,6]$, with each level at the midpoint of its interval. The encoder uses natural binary coding.',
-  figure: () => {
-    const m = t => 6*Math.abs(sinc(t-1));
-    const a = P.Axes({w:700,h:250,xr:[-0.1,2.1],yr:[-0.4,7],
-      xlabel:'t\\;(\\mathrm{s})',ylabel:'m(t)',pad:{l:52,r:26,t:26,b:44},xtarget:5,ytarget:4});
-    for(let k=0;k<8;k++) a.hline(0.75*k+0.375,{color:C.rule,dash:'2 5'});
-    a.curve(m,{color:C.in});
-    for(let n=0;n<=5;n++) a.point(0.4*n, m(0.4*n), {color:C.in, r:4});
-    return a.svg();
-  },
-  parts:['Give the step size and the eight levels.',
-         'Give the six samples from $t=0$ to $t=2$ s, their levels and their code words.',
-         'Give the bit rate and the duration of one bit.',
-         'Sketch, in words, the polar NRZ waveform of the first two code words.'],
-  sol:'<b>Given.</b> $m(t)=6|\\operatorname{sinc}(t-1)|$, $T_s=0.4$ s, $L=8$ over $[0,6]$.<br>'
-     +'<b>Find.</b> $\\Delta$, the samples and their words, the rate, and the line-code waveform.<br>'
-     +'<b>Method.</b> Evaluate the signal at each instant. Find its tread. Write the index in three bits. The rate follows from $R$ and $f_s$.<br>'
-     +'<b>Solution — (a).</b> $\\Delta=(6-0)/8=0.75$ V, and the levels are $0.375,\\,1.125,\\,1.875,\\,2.625,\\,3.375,\\,4.125,\\,4.875,\\,5.625$.<br>'
-     +'<b>Solution — (b).</b> The samples are<div class="eq plain sm">'
-     +'$$\\begin{array}{c|cccccc}'
-     +'t\\,(\\mathrm{s}) & 0 & 0.4 & 0.8 & 1.2 & 1.6 & 2.0\\\\\\hline '
-     +'m(t) & 0 & 3.027 & 5.613 & 5.613 & 3.027 & 0\\\\'
-     +'\\text{level} & 0.375 & 3.375 & 5.625 & 5.625 & 3.375 & 0.375\\\\'
-     +'\\text{word} & 000 & 100 & 111 & 111 & 100 & 000'
-     +'\\end{array}$$</div>'
-     +'<b>Solution — (c).</b> $R=\\log_2 8=3$ bits per sample and $f_s=1/0.4=2.5$ samples per second, so $R_b=3(2.5)=7.5$ bit/s and $T_b=T_s/3=0.1333$ s.<br>'
-     +'<b>Solution (d).</b> Polar NRZ sends $+A$ for one and $-A$ for zero. The first six bits are $000\\,100$. Thus, the waveform stays at $-A$ for three bit intervals, at $+A$ for one, and at $-A$ for two. The total duration is $0.8$ s, or two sampling intervals.<br>'
-     +'<b>Check.</b> The signal, samples, and codewords are symmetric about $t=1$. At $t=0$, the sample is $6|\\operatorname{sinc}(-1)|=0$. The sinc function is zero at each nonzero integer. The interpolation formula uses the same property. Every quantization error is at most half a step. The smallest error is $0.012$. At $t=0$ and $t=2$, the error is $0.375=\\Delta/2$. This edge case explains the non-strict bound $|Q|\\le\\Delta/2$.',
-  err:'Placing the eight levels at $0,\\,0.75,\\,\\ldots,\\,5.25$ rather than at the tread midpoints. The sample at $t=0$ then encodes correctly by luck, and every other one is off by half a step.',
-  teach:'The symmetry noted in the check is the quickest way to mark this question. The word list must read the same in both directions, and a student whose does not has made an arithmetic slip somewhere in the middle.' },
+{ id:'D1-15', module:'M1', type:'wave', src:'Final Q1',
+  stem:'The signal $x(t)=\\cos(1000\\pi t)+\\cos(3000\\pi t)+\\cos(5000\\pi t)$ is sampled at the Nyquist rate and samples are uniformly quantized with $512$ levels. According to the information given above,',
+  parts:['[5 pts] Calculate the bit rate of this system.',
+         '[10 pts] Calculate the step size of the uniform quantizer.',
+         '[10 pts] Calculate the SQNR of the quantization scheme (in dB).'],
+  sol:'<b>Given.</b> Three unit cosines at $0.5$, $1.5$ and $2.5$ kHz, Nyquist sampling, $L=512$.<br>'
+     +'<b>Find.</b> $R_b$, $\\Delta$ and the SQNR.<br>'
+     +'<b>Method.</b> As before: the highest frequency, the range, and $P_X/(\\Delta^{2}/12)$.<br>'
+     +'<b>Solution — (a).</b> The highest frequency is $2.5$ kHz, so $f_s=5$ kHz. $R=\\log_2 512=9$, so $R_b=9\\times5000=45\\,000$ bit/s.<br>'
+     +'<b>Solution — (b).</b> At $t=0$ all three cosines are $1$, so $x_{\\max}=3$. At $t=1$ ms the angles are $\\pi$, $3\\pi$ and $5\\pi$, so all three are $-1$ and $x_{\\min}=-3$.'
+     +'$$\\begin{aligned}\\Delta&=\\frac{3-(-3)}{512}\\\\&=0.01172\\end{aligned}$$<br>'
+     +'<b>Solution — (c).</b> $$\\begin{aligned}P_X&=3\\times\\tfrac12=1.5\\\\E[Q^{2}]&=\\frac{0.01172^{2}}{12}=1.144\\times10^{-5}\\\\\\mathrm{SQNR}&=\\frac{1.5}{1.144\\times10^{-5}}=131\\,072\\\\&=51.18~\\text{dB}\\end{aligned}$$<br>'
+     +'<b>Check.</b> $3P_X/x_{\\max}^{2}=4.5/9=\\tfrac12$, so $\\alpha=10\\log_{10}0.5=-3.010$ dB. The rule gives $-3.010+20(9)\\log_{10}2=-3.010+54.185=51.18$ dB. In ratio form, $\\tfrac12\\cdot2^{18}=2^{17}=131\\,072$.',
+  err:'Adding the amplitudes to get the power, $P_X=3$. Each unit cosine carries power $\\tfrac12$, so three of them carry $1.5$.',
+  teach:'Close variant with three terms. The odd harmonics make the waveform square-like, and the negative intercept shows that its power is low for its peak.',
+  figSol:()=>figWave({f:t=>Math.cos(Math.PI*t)+Math.cos(3*Math.PI*t)+Math.cos(5*Math.PI*t), t0:0, t1:4, max:3, min:-3,
+    maxLab:'x_{\\max}=3', minLab:'x_{\\min}=-3', lx:0.35, marks:[[0,3],[1,-3],[2,3],[3,-3],[4,3]]}) },
 
-{ id:'D1-21', module:'M1', type:'pcm', src:'CH7 s.37',
-  stem:'A $512\\times512$ greyscale image is stored at $8$ bits a pixel. It is then requantized more coarsely, and finally coded in pairs of neighbouring pixels.',
-  parts:['Give the stored size at $8$ bits a pixel, in bits and in KiB.',
-         'Give the size at $L=32$ levels, the fraction saved, and what it costs in SQNR.',
-         'At $L=16$, neighbouring pixels never differ by more than one level. Give the number of pairs a coder must be able to name if it ignores that, and the number if it does not.',
-         'Give the bits a pixel each of those two needs, and say what the saving was bought with.'],
-  sol:'<b>Given.</b> $512\\times512$ pixels. $8$ bits a pixel, then $L=32$, then $L=16$ in pairs.<br>'
-     +'<b>Find.</b> Two file sizes, the SQNR cost, two pair counts and two rates.<br>'
-     +'<b>Method.</b> Rate times pixel count for a size. $6.02$ dB a bit for the cost. For the pairs, count what can occur and take $\\lceil\\log_2(\\cdot)\\rceil$.<br>'
-     +'<b>Solution — (a).</b> $512^{2}=262\\,144$ pixels, so $262\\,144(8)=2\\,097\\,152$ bits. Dividing by eight gives $262\\,144$ bytes, which is $256$ KiB.<br>'
-     +'<b>Solution — (b).</b> $R=\\log_2 32=5$ bits a pixel, so $1\\,310\\,720$ bits or $160$ KiB. Three bits of every eight are gone, so $37.5\\%$ is saved, and it costs $6.02(8-5)=18.06$ dB.<br>'
-     +'<b>Solution — (c).</b> Ignoring the dependence, every combination has to be nameable: $L^{2}=256$ pairs. Using it, only the pairs with $|i-j|\\le1$ occur — the diagonal has $L$, and each neighbouring diagonal has $L-1$ — so $3L-2=46$.<br>'
-     +'<b>Solution (d).</b> $\\log_2 256=8$ bits a pair. This is $4$ bits a pixel. For the other, $\\log_2 46=5.52$. Therefore, $6$ bits a pair. This is $3$ bits a pixel. The quarter saved was bought with the <em>dependence</em> between neighbouring pixels, and with nothing else. The cells are the same size in both. Therefore, the rounding error is the same.<br>'
-     +'<b>Check.</b> Five bits a pair would name only $32$ pairs and there are $46$. Therefore, six is the smallest whole number that works. $46$ is comfortably under $64$. Therefore, a little dependence is being left unclaimed. Part (b) and part (d) are two different ways of spending less. (b) makes the cells bigger and accepts more error, (d) keeps the cells and stops paying for combinations that never happen. Only the first is lossy in the sense of adding distortion.',
-  err:'Quoting $\\log_2 46=5.52$ bits a pair as the answer. A codeword is a whole number of bits, so it is $6$ — and the leftover is why coding longer blocks does better still.',
-  teach:'Part (d) uses the same counting idea as source coding. Count the possible pairs and take the base-two logarithm. Module 6 develops this idea with entropy.' }
+{ id:'D1-16', module:'M1', type:'wave', src:'Final Q1 (variant)',
+  stem:'The signal $x(t)=3\\sin(5000\\pi t)+4\\cos(5000\\pi t)$ is sampled at the Nyquist rate and samples are uniformly quantized with $128$ levels over the range of $x(t)$. According to the information given above,',
+  parts:['[5 pts] Calculate the bit rate of this system.',
+         '[8 pts] Find the peak value of $x(t)$.',
+         '[5 pts] Calculate the step size of the uniform quantizer.',
+         '[7 pts] Calculate the SQNR of the quantization scheme (in dB).'],
+  sol:'<b>Given.</b> A sine and a cosine at the same frequency $2.5$ kHz, Nyquist sampling, $L=128$.<br>'
+     +'<b>Find.</b> $R_b$, the peak, $\\Delta$ and the SQNR.<br>'
+     +'<b>Method.</b> Two terms at one frequency are one sinusoid. Write $a\\sin\\theta+b\\cos\\theta=A\\cos(\\theta-\\varphi)$ with $A=\\sqrt{a^{2}+b^{2}}$.<br>'
+     +'<b>Solution — (a).</b> The only frequency is $2.5$ kHz, so $f_s=5$ kHz. With $R=7$, $R_b=7\\times5000=35\\,000$ bit/s.<br>'
+     +'<b>Solution — (b).</b> Expand $A\\cos(\\theta-\\varphi)=A\\cos\\varphi\\cos\\theta+A\\sin\\varphi\\sin\\theta$ and match terms:'
+     +'$$\\begin{aligned}A\\cos\\varphi&=4\\\\A\\sin\\varphi&=3\\\\A&=\\sqrt{4^{2}+3^{2}}=5\\end{aligned}$$'
+     +'So $x(t)=5\\cos(5000\\pi t-\\varphi)$ with $\\varphi=\\arctan(3/4)=0.644$ rad. The peak is $5$, and the minimum is $-5$.<br>'
+     +'<b>Solution — (c).</b> $\\Delta=(5-(-5))/128=0.0781$.<br>'
+     +'<b>Solution — (d).</b> $$\\begin{aligned}P_X&=\\frac{5^{2}}{2}=12.5\\\\E[Q^{2}]&=\\frac{0.0781^{2}}{12}=5.086\\times10^{-4}\\\\\\mathrm{SQNR}&=\\frac{12.5}{5.086\\times10^{-4}}=24\\,576\\\\&=43.91~\\text{dB}\\end{aligned}$$<br>'
+     +'<b>Check.</b> The sine and the cosine are orthogonal over a period, so their powers add: $3^{2}/2+4^{2}/2=4.5+8=12.5$. The peak at $t=\\varphi/(5000\\pi)=0.041$ ms gives $3\\sin(0.644)+4\\cos(0.644)=1.8+3.2=5$.',
+  err:'Taking the peak as $3+4=7$. The two terms peak a quarter period apart, so their sum peaks at $\\sqrt{3^{2}+4^{2}}=5$.',
+  teach:'Creative variant: two terms that look like a sum but share one frequency. It tests whether the student checks when the terms peak before adding amplitudes.',
+  figSol:()=>figWave({f:t=>3*Math.sin(5*Math.PI*t)+4*Math.cos(5*Math.PI*t), t0:0, t1:1.2, max:5, min:-5,
+    parts:[t=>3*Math.sin(5*Math.PI*t), t=>4*Math.cos(5*Math.PI*t)], maxLab:'x_{\\max}=5', minLab:'x_{\\min}=-5', lx:0.5,
+    legend:[['in','$x(t)$'],['mid','$3\\sin$ and $4\\cos$ terms',1]]}) },
+
+{ id:'D1-17', module:'M1', type:'wave', src:'Final Q1 (variant)',
+  stem:'The signal $x(t)=4\\cos(2000\\pi t)+2\\cos(6000\\pi t)$ is sampled with a guard band of at least $1$ kHz and uniformly quantized over the range of $x(t)$. The bits must fit a link of $80$ kbit/s. Assume that $1$ kbit/s $=1000$ bit/s.',
+  parts:['[5 pts] Determine the minimum sampling rate.',
+         '[7 pts] Find the largest number of bits per sample that the link allows at that rate.',
+         '[6 pts] Calculate the step size of the uniform quantizer.',
+         '[7 pts] Calculate the SQNR of the quantization scheme (in dB).'],
+  sol:'<b>Given.</b> Tones at $1$ kHz and $3$ kHz with amplitudes $4$ and $2$, $f_g\\ge1$ kHz, a link of $80$ kbit/s.<br>'
+     +'<b>Find.</b> $f_s$, the largest $R$, $\\Delta$ and the SQNR.<br>'
+     +'<b>Method.</b> The guard band sets the least $f_s$. The link sets the largest $R$ at that $f_s$. Then $\\Delta$ and the SQNR follow as usual.<br>'
+     +'<b>Solution — (a).</b> $W=3$ kHz, so $f_s=2W+f_g=6+1=7$ kHz.<br>'
+     +'<b>Solution — (b).</b> $$\\begin{aligned}R\\,(7000)&\\le80\\,000\\\\R&\\le11.43\\end{aligned}$$'
+     +'The largest whole $R$ is $11$, so $L=2048$ and $R_b=77$ kbit/s.<br>'
+     +'<b>Solution — (c).</b> At $t=0$ the terms give $4+2=6$. At $t=0.5$ ms they give $4\\cos\\pi+2\\cos3\\pi=-6$. So the range is $[-6,6]$.'
+     +'$$\\begin{aligned}\\Delta&=\\frac{12}{2048}\\\\&=0.00586\\end{aligned}$$<br>'
+     +'<b>Solution — (d).</b> $$\\begin{aligned}P_X&=\\frac{4^{2}}{2}+\\frac{2^{2}}{2}=10\\\\E[Q^{2}]&=\\frac{0.00586^{2}}{12}=2.861\\times10^{-6}\\\\\\mathrm{SQNR}&=\\frac{10}{2.861\\times10^{-6}}=3.495\\times10^{6}\\\\&=65.43~\\text{dB}\\end{aligned}$$<br>'
+     +'<b>Check.</b> $\\alpha=10\\log_{10}(30/36)=-0.792$ dB, and $-0.792+20(11)\\log_{10}2=-0.792+66.227=65.43$ dB. With $R=11$ the link allows $f_s$ up to $80/11=7.27$ kHz, so the guard band could grow to $1.27$ kHz.',
+  err:'Choosing $R=12$ from $80/6$, the rate without the guard band. The guard band raises $f_s$ to $7$ kHz, and $12\\times7=84$ kbit/s breaks the link.',
+  teach:'Creative variant that joins the guard-band question and the SQNR question through a bit budget. The rounding goes down here, unlike the accuracy question.',
+  figSol:()=>figBudget({Rb:80, xr:[5.6,9.4], yr:[8,14], xticks:[6,7,8,9], unit:'kHz', pick:[7,11], forbid:7}) },
+
+/* ---- D. A density with a constant and a fine uniform quantizer ------ */
+
+{ id:'D1-18', module:'M1', type:'fine', src:'MT Q2',
+  stem:'A strict-sense stationary random process $X(t)$ is sampled. The sampled values $X$ have the following PDF: $f_X(x)=k\\left[1+x^{2}\\right]$ for $x\\in[-1,1]$. Sampled values are quantized by using a uniform quantizer with $128$ levels. The quantization noise is a uniform random variable between $-\\tfrac{\\Delta}{2}$ and $\\tfrac{\\Delta}{2}$, where $\\Delta$ is the step size.',
+  parts:['[5 pts] Determine the value of $k$.',
+         '[15 pts] Obtain the SQNR in dB.',
+         '[5 pts] If the bandwidth of the signal is $4$ kHz, what is the bit rate of the corresponding PCM system?'],
+  sol:'<b>Given.</b> $f_X(x)=k(1+x^{2})$ on $[-1,1]$, $L=128$ over $[-1,1]$, uniform noise.<br>'
+     +'<b>Find.</b> $k$, the SQNR and the bit rate.<br>'
+     +'<b>Method.</b> The total area gives $k$. The second moment gives $P_X$. The noise is $\\Delta^{2}/12$ with $\\Delta=2/L$.<br>'
+     +'<b>Solution — (a).</b> $$\\begin{aligned}1&=\\int_{-1}^{1}k(1+x^{2})\\,dx\\\\&=k\\left[x+\\frac{x^{3}}{3}\\right]_{-1}^{1}\\\\&=k\\left[\\left(1+\\tfrac13\\right)-\\left(-1-\\tfrac13\\right)\\right]\\\\&=\\tfrac83\\,k\\end{aligned}$$'
+     +'So $k=3/8=0.375$.<br>'
+     +'<b>Solution — (b).</b> The signal power is the second moment:'
+     +'$$\\begin{aligned}P_X&=\\int_{-1}^{1}x^{2}\\cdot\\tfrac38(1+x^{2})\\,dx\\\\&=\\tfrac38\\left[\\frac{x^{3}}{3}+\\frac{x^{5}}{5}\\right]_{-1}^{1}\\\\&=\\tfrac38\\left(\\tfrac23+\\tfrac25\\right)=\\tfrac38\\cdot\\tfrac{16}{15}=0.4\\end{aligned}$$'
+     +'The step is $\\Delta=2/128=1/64$, so $E[Q^{2}]=\\Delta^{2}/12=1/49\\,152=2.035\\times10^{-5}$.'
+     +'$$\\begin{aligned}\\mathrm{SQNR}&=\\frac{0.4}{2.035\\times10^{-5}}=19\\,661\\\\&=10\\log_{10}19\\,661=42.94~\\text{dB}\\end{aligned}$$<br>'
+     +'<b>Solution — (c).</b> $f_s=2(4000)=8000$ samples per second and $R=\\log_2 128=7$, so $R_b=7\\times8000=56\\,000$ bit/s.<br>'
+     +'<b>Check.</b> $\\alpha=10\\log_{10}(3P_X/1^{2})=10\\log_{10}1.2=0.792$ dB. Then $0.792+20(7)\\log_{10}2=0.792+42.144=42.94$ dB.',
+  err:'Integrating $k(1+x^{2})$ over $[0,1]$ only, which gives $k=3/4$. The density lives on $[-1,1]$, and the area over the whole interval must be $1$.',
+  teach:'Close variant of the examination shape with $1+x^{2}$ in place of $1+|x|^{1/2}$. The point weights follow the examination.',
+  figSol:()=>figDensity({f:x=>0.375*(1+x*x), lo:-1, hi:1, ymax:1.3, xticks:[-1,-0.5,0.5,1]}) },
+
+{ id:'D1-19', module:'M1', type:'fine', src:'MT Q2',
+  stem:'A strict-sense stationary random process $X(t)$ is sampled. The sampled values $X$ have the following PDF: $f_X(x)=k\\left[1-|x|^{1/2}\\right]$ for $x\\in[-1,1]$. Sampled values are quantized by using a uniform quantizer with $512$ levels. The quantization noise is a uniform random variable between $-\\tfrac{\\Delta}{2}$ and $\\tfrac{\\Delta}{2}$, where $\\Delta$ is the step size.',
+  parts:['[5 pts] Determine the value of $k$.',
+         '[15 pts] Obtain the SQNR in dB.',
+         '[5 pts] If the bandwidth of the signal is $5$ kHz, what is the bit rate of the corresponding PCM system?'],
+  sol:'<b>Given.</b> $f_X(x)=k(1-|x|^{1/2})$ on $[-1,1]$, $L=512$ over $[-1,1]$.<br>'
+     +'<b>Find.</b> $k$, the SQNR and the bit rate.<br>'
+     +'<b>Method.</b> The density is even, so integrate over $[0,1]$ and double. There $|x|=x$.<br>'
+     +'<b>Solution — (a).</b> $$\\begin{aligned}1&=2k\\int_{0}^{1}\\bigl(1-x^{1/2}\\bigr)dx\\\\&=2k\\left[x-\\tfrac23x^{3/2}\\right]_{0}^{1}\\\\&=2k\\left(1-\\tfrac23\\right)=\\tfrac23\\,k\\end{aligned}$$'
+     +'So $k=3/2$.<br>'
+     +'<b>Solution — (b).</b> $$\\begin{aligned}P_X&=2\\cdot\\tfrac32\\int_{0}^{1}\\bigl(x^{2}-x^{5/2}\\bigr)dx\\\\&=3\\left[\\frac{x^{3}}{3}-\\tfrac27x^{7/2}\\right]_{0}^{1}\\\\&=3\\left(\\tfrac13-\\tfrac27\\right)=\\tfrac17=0.1429\\end{aligned}$$'
+     +'The step is $\\Delta=2/512=1/256$, so $E[Q^{2}]=1/(12\\cdot65\\,536)=1.272\\times10^{-6}$.'
+     +'$$\\begin{aligned}\\mathrm{SQNR}&=\\frac{1/7}{1.272\\times10^{-6}}=112\\,347\\\\&=50.51~\\text{dB}\\end{aligned}$$<br>'
+     +'<b>Solution — (c).</b> $f_s=10$ kHz and $R=\\log_2 512=9$, so $R_b=9\\times10\\,000=90\\,000$ bit/s.<br>'
+     +'<b>Check.</b> $\\alpha=10\\log_{10}(3/7)=-3.680$ dB. Then $-3.680+20(9)\\log_{10}2=-3.680+54.185=50.51$ dB. The intercept is negative because the density crowds near zero.',
+  err:'Writing $\\int x^{1/2}dx=\\tfrac12x^{-1/2}$. The power rule raises the exponent: $\\int x^{1/2}dx=\\tfrac23x^{3/2}$.',
+  teach:'Close variant with the square root kept but its sign reversed. The density now peaks at zero, and the negative intercept follows.',
+  figSol:()=>figDensity({f:x=>1.5*(1-Math.sqrt(Math.abs(x))), lo:-1, hi:1, ymax:2.1, xticks:[-1,-0.5,0.5,1]}) },
+
+{ id:'D1-20', module:'M1', type:'fine', src:'MT Q2',
+  stem:'The samples of a stationary source, $X(t)$, are distributed according to the PDF $f_X(x)=k\\left(4-x^{2}\\right)$ for $|x|\\le2$, and zero elsewhere. The samples are quantized by using a uniform quantizer with $64$ levels over $[-2,2]$. The quantization noise is a uniform random variable between $-\\tfrac{\\Delta}{2}$ and $\\tfrac{\\Delta}{2}$.',
+  parts:['[5 pts] Determine the value of $k$.',
+         '[15 pts] Obtain the SQNR in dB.',
+         '[5 pts] If the bandwidth of the signal is $6$ kHz, what is the bit rate of the corresponding PCM system?'],
+  sol:'<b>Given.</b> A parabolic density on $[-2,2]$, $L=64$ over $[-2,2]$.<br>'
+     +'<b>Find.</b> $k$, the SQNR and the bit rate.<br>'
+     +'<b>Method.</b> Area for $k$, second moment for $P_X$, and $\\Delta^{2}/12$ with $\\Delta=4/64$.<br>'
+     +'<b>Solution — (a).</b> $$\\begin{aligned}1&=2k\\int_{0}^{2}(4-x^{2})\\,dx\\\\&=2k\\left[4x-\\frac{x^{3}}{3}\\right]_{0}^{2}\\\\&=2k\\left(8-\\tfrac83\\right)=\\tfrac{32}{3}\\,k\\end{aligned}$$'
+     +'So $k=3/32=0.09375$.<br>'
+     +'<b>Solution — (b).</b> $$\\begin{aligned}P_X&=2\\cdot\\tfrac{3}{32}\\int_{0}^{2}(4x^{2}-x^{4})\\,dx\\\\&=\\tfrac{3}{16}\\left[\\frac{4x^{3}}{3}-\\frac{x^{5}}{5}\\right]_{0}^{2}\\\\&=\\tfrac{3}{16}\\left(\\tfrac{32}{3}-\\tfrac{32}{5}\\right)=\\tfrac{3}{16}\\cdot\\tfrac{64}{15}=0.8\\end{aligned}$$'
+     +'The step is $\\Delta=4/64=1/16$, so $E[Q^{2}]=1/3072=3.255\\times10^{-4}$.'
+     +'$$\\begin{aligned}\\mathrm{SQNR}&=0.8\\times3072=2457.6\\\\&=33.91~\\text{dB}\\end{aligned}$$<br>'
+     +'<b>Solution — (c).</b> $f_s=12$ kHz and $R=\\log_2 64=6$, so $R_b=6\\times12\\,000=72\\,000$ bit/s.<br>'
+     +'<b>Check.</b> $\\alpha=10\\log_{10}(3(0.8)/2^{2})=10\\log_{10}0.6=-2.218$ dB. Then $-2.218+20(6)\\log_{10}2=-2.218+36.124=33.91$ dB.',
+  err:'Using $\\Delta=2/64$ as for a range of $[-1,1]$. The range here is $[-2,2]$, which is $4$ wide, so $\\Delta=4/64$.',
+  teach:'Close variant on a wider interval. The range enters both the step and the intercept, and a student who keeps $[-1,1]$ is off by $6$ dB.',
+  figSol:()=>figDensity({f:x=>(3/32)*(4-x*x), lo:-2, hi:2, ymax:0.75, xticks:[-2,-1,1,2]}) },
+
+{ id:'D1-21', module:'M1', type:'fine', src:'MT Q2',
+  stem:'The samples of a stationary source $X(t)$ have the PDF $f_X(x)=k\\,e^{-|x|}$ for $|x|\\le2$, and zero elsewhere. They are quantized by a uniform quantizer with $256$ levels over $[-2,2]$. The quantization noise is a uniform random variable between $-\\tfrac{\\Delta}{2}$ and $\\tfrac{\\Delta}{2}$.',
+  parts:['[5 pts] Determine the value of $k$.',
+         '[7 pts] Calculate the power of the samples.',
+         '[7 pts] Obtain the SQNR in dB.',
+         '[6 pts] Find the smallest number of levels, a power of two, that gives an SQNR of at least $50$ dB.'],
+  sol:'<b>Given.</b> A truncated two-sided exponential on $[-2,2]$, $L=256$ over $[-2,2]$.<br>'
+     +'<b>Find.</b> $k$, $P_X$, the SQNR, and the least $L$ for $50$ dB.<br>'
+     +'<b>Method.</b> Integrate over $[0,2]$ and double. The power needs integration by parts twice. For the last part use $\\mathrm{SQNR}=\\alpha+6.02R$.<br>'
+     +'<b>Solution — (a).</b> $$\\begin{aligned}1&=2k\\int_{0}^{2}e^{-x}dx\\\\&=2k\\bigl[-e^{-x}\\bigr]_{0}^{2}\\\\&=2k\\,(1-e^{-2})\\end{aligned}$$'
+     +'So $k=1/(2(1-e^{-2}))=1/(2\\times0.8647)=0.5783$.<br>'
+     +'<b>Solution — (b).</b> By parts twice, $\\int x^{2}e^{-x}dx=-e^{-x}(x^{2}+2x+2)$. Evaluate it at the limits:'
+     +'$$\\begin{aligned}\\int_{0}^{2}x^{2}e^{-x}dx&=-e^{-2}(4+4+2)+e^{0}(0+0+2)\\\\&=2-10e^{-2}=0.6466\\\\P_X&=2k\\,(0.6466)=0.7479\\end{aligned}$$<br>'
+     +'<b>Solution — (c).</b> $\\Delta=4/256=1/64$, so $E[Q^{2}]=1/49\\,152=2.035\\times10^{-5}$.'
+     +'$$\\begin{aligned}\\mathrm{SQNR}&=\\frac{0.7479}{2.035\\times10^{-5}}=36\\,759\\\\&=45.65~\\text{dB}\\end{aligned}$$<br>'
+     +'<b>Solution — (d).</b> $\\alpha=10\\log_{10}(3P_X/x_{\\max}^{2})=10\\log_{10}(2.2436/4)=-2.511$ dB. Solve for $R$:'
+     +'$$\\begin{aligned}-2.511+6.02R&\\ge50\\\\R&\\ge\\frac{52.511}{6.02}=8.72\\end{aligned}$$'
+     +'So $R=9$ and $L=512$, which gives $-2.511+54.185=51.67$ dB.<br>'
+     +'<b>Check.</b> The rule at $R=8$ gives $-2.511+48.165=45.65$ dB, the value of part (c) reached another way. It is below $50$ dB, so $256$ levels are not enough.',
+  err:'Forgetting the factor $2$ from the two halves of the density, which gives $k=1.157$. The area over $[-2,0]$ equals the area over $[0,2]$, and both count.',
+  teach:'Close variant with an exponential density, which needs integration by parts. Part (d) replaces the bit rate with a design question on the level count.',
+  figSol:()=>figDensity({f:x=>0.5783*Math.exp(-Math.abs(x)), lo:-2, hi:2, ymax:1.1, xticks:[-2,-1,1,2]}) },
+
+{ id:'D1-22', module:'M1', type:'fine', src:'MT Q2 (variant)',
+  stem:'The samples of a stationary source $X(t)$ have the PDF $f_X(x)=k(1+x)$ for $-1\\le x\\le1$, and zero elsewhere. The samples are quantized by a uniform quantizer with $32$ levels over $[-1,1]$. The quantization noise is a uniform random variable between $-\\tfrac{\\Delta}{2}$ and $\\tfrac{\\Delta}{2}$.',
+  parts:['[5 pts] Determine the value of $k$.',
+         '[8 pts] Calculate the mean and the power of the samples.',
+         '[7 pts] Obtain the SQNR in dB.',
+         '[5 pts] If the bandwidth of the signal is $3.5$ kHz, what is the bit rate of the corresponding PCM system?'],
+  sol:'<b>Given.</b> A ramp density on $[-1,1]$, $L=32$ over $[-1,1]$.<br>'
+     +'<b>Find.</b> $k$, $E[X]$, $P_X$, the SQNR and the bit rate.<br>'
+     +'<b>Method.</b> The density is not even, so integrate over the whole interval. The signal power is $E[X^{2}]$, with the mean inside it.<br>'
+     +'<b>Solution — (a).</b> $$\\begin{aligned}1&=k\\left[x+\\frac{x^{2}}{2}\\right]_{-1}^{1}\\\\&=k\\left[\\left(1+\\tfrac12\\right)-\\left(-1+\\tfrac12\\right)\\right]=2k\\end{aligned}$$'
+     +'So $k=\\tfrac12$.<br>'
+     +'<b>Solution — (b).</b> $$\\begin{aligned}E[X]&=\\tfrac12\\left[\\frac{x^{2}}{2}+\\frac{x^{3}}{3}\\right]_{-1}^{1}=\\tfrac12\\left[\\left(\\tfrac12+\\tfrac13\\right)-\\left(\\tfrac12-\\tfrac13\\right)\\right]=\\tfrac13\\\\P_X&=\\tfrac12\\left[\\frac{x^{3}}{3}+\\frac{x^{4}}{4}\\right]_{-1}^{1}=\\tfrac12\\left[\\left(\\tfrac13+\\tfrac14\\right)-\\left(-\\tfrac13+\\tfrac14\\right)\\right]=\\tfrac13\\end{aligned}$$<br>'
+     +'<b>Solution — (c).</b> $\\Delta=2/32=1/16$, so $E[Q^{2}]=1/3072$.'
+     +'$$\\begin{aligned}\\mathrm{SQNR}&=\\tfrac13\\times3072=1024\\\\&=30.10~\\text{dB}\\end{aligned}$$<br>'
+     +'<b>Solution — (d).</b> $f_s=7$ kHz and $R=\\log_2 32=5$, so $R_b=5\\times7000=35\\,000$ bit/s.<br>'
+     +'<b>Check.</b> Split the density into $\\tfrac12$ and $\\tfrac12x$. The odd part adds $\\tfrac12\\int x^{3}dx=0$ to the power. So $P_X=\\tfrac12\\int_{-1}^{1}x^{2}dx=\\tfrac13$, the power of a uniform source, and $\\mathrm{SQNR}=6.02(5)=30.10$ dB.',
+  err:'Using the variance $\\tfrac13-\\left(\\tfrac13\\right)^{2}=\\tfrac29$ as the signal power. The SQNR compares the full mean square $E[X^{2}]$ with the noise, and the mean is part of the signal.',
+  teach:'Creative variant with a density that is not even. The tilt moves the mean but leaves the power at the uniform value, which the check makes visible.',
+  figSol:()=>figDensity({f:x=>0.5*(1+x), lo:-1, hi:1, ymax:1.6, xticks:[-1,-0.5,0.5,1], at:'tl'}) },
+
+{ id:'D1-23', module:'M1', type:'fine', src:'MT Q2 (variant)',
+  stem:'The samples of a stationary source $X(t)$ have the PDF $f_X(x)=k|x|$ for $|x|\\le a$, and zero elsewhere. The power of the samples is $E[X^{2}]=2$. A uniform quantizer with $L$ levels covers $[-a,a]$. The quantization noise is a uniform random variable between $-\\tfrac{\\Delta}{2}$ and $\\tfrac{\\Delta}{2}$.',
+  parts:['[8 pts] Determine $a$ and $k$.',
+         '[7 pts] Find the smallest $L$, a power of two, that gives an SQNR of at least $40$ dB.',
+         '[5 pts] Calculate the step size and the SQNR obtained with that $L$.',
+         '[5 pts] If the bandwidth of the signal is $6.5$ kHz, what is the bit rate of the corresponding PCM system?'],
+  sol:'<b>Given.</b> A V-shaped density on $[-a,a]$ with unknown $a$ and $k$, and $E[X^{2}]=2$.<br>'
+     +'<b>Find.</b> $a$, $k$, the least $L$ for $40$ dB, $\\Delta$, the SQNR and the bit rate.<br>'
+     +'<b>Method.</b> Two conditions fix two unknowns: the area is $1$ and the power is $2$. Then use $\\mathrm{SQNR}=\\alpha+6.02R$.<br>'
+     +'<b>Solution — (a).</b> $$\\begin{aligned}1&=2k\\int_{0}^{a}x\\,dx=2k\\cdot\\frac{a^{2}}{2}=ka^{2}\\\\2&=2k\\int_{0}^{a}x^{3}dx=2k\\cdot\\frac{a^{4}}{4}=\\frac{ka^{4}}{2}\\end{aligned}$$'
+     +'Put $k=1/a^{2}$ into the second line: $a^{2}/2=2$, so $a=2$ and $k=\\tfrac14$.<br>'
+     +'<b>Solution — (b).</b> $\\alpha=10\\log_{10}(3P_X/a^{2})=10\\log_{10}(6/4)=1.761$ dB.'
+     +'$$\\begin{aligned}1.761+6.02R&\\ge40\\\\R&\\ge\\frac{38.239}{6.02}=6.35\\end{aligned}$$'
+     +'So $R=7$ and $L=128$.<br>'
+     +'<b>Solution — (c).</b> $\\Delta=4/128=0.03125$, and $E[Q^{2}]=\\Delta^{2}/12=8.138\\times10^{-5}$.'
+     +'$$\\begin{aligned}\\mathrm{SQNR}&=\\frac{2}{8.138\\times10^{-5}}=24\\,576\\\\&=43.91~\\text{dB}\\end{aligned}$$<br>'
+     +'<b>Solution — (d).</b> $f_s=13$ kHz, so $R_b=7\\times13\\,000=91\\,000$ bit/s.<br>'
+     +'<b>Check.</b> Six bits would give $1.761+36.12=37.88$ dB, short of $40$. The ratio $3P_X/a^{2}=1.5$ is the value for a full-scale sinusoid, so this source behaves like one.',
+  err:'Setting the peak $ka$ equal to $1$. The area under a density is $1$, not its largest value.',
+  teach:'Creative variant: the power is given and the support is found. The coincidence with the sinusoid intercept is worth pointing out in class.',
+  figSol:()=>figDensity({f:x=>0.25*Math.abs(x), lo:-2, hi:2, ymax:2.4, xticks:[-2,-1,1,2]}) },
+
+/* ---- E. A drawn density and a coarse quantizer ----------------------- */
+
+{ id:'D1-24', module:'M1', type:'coarse', src:'MT Q2',
+  stem:'The samples of a stationary source, $X(t)$, are distributed according to the probability density function (PDF) drawn below. These samples are quantized using the following quantizer: $$\\hat X=\\mathbb{Q}(X)=\\begin{cases}-2,&-3<X<0\\\\2,&0<X<3\\\\0,&\\text{otherwise}\\end{cases}$$ According to the information given above,',
+  figure:()=>figPdf({xr:[-6,6], xticks:[-5,-3,3,5], pts:[[-6,0],[-5,0],[-3,1],[3,1],[5,0],[6,0]], levels:[[1,'c',-3]]}),
+  parts:['[6 pts] Determine the value of $c$.',
+         '[6 pts] Calculate the power of the samples of the stationary source.',
+         '[6 pts] Calculate the power of the quantization noise.',
+         '[7 pts] Obtain the SQNR in dB.'],
+  sol:'<b>Given.</b> A trapezoidal density on $[-5,5]$, flat at height $c$ on $[-3,3]$. The quantizer gives $\\pm2$ on $(-3,0)$ and $(0,3)$, and $0$ elsewhere.<br>'
+     +'<b>Find.</b> $c$, $P_X$, $P_Q$ and the SQNR.<br>'
+     +'<b>Method.</b> The area gives $c$. Both powers are even integrals, so work on $x\\ge0$ and double. Split the noise integral at the corner $x=3$, which is also a quantizer boundary.<br>'
+     +'<b>Solution — (a).</b> A trapezoid with parallel sides $10$ and $6$ and height $c$ has area $\\tfrac12(10+6)c=8c=1$. So $c=\\tfrac18$.'
+     +' For $x\\ge0$ the density is $\\tfrac18$ on $[0,3]$ and $(5-x)/16$ on $[3,5]$.<br>'
+     +'<b>Solution — (b).</b> $$\\begin{aligned}P_X&=2\\left[\\int_{0}^{3}\\frac{x^{2}}{8}dx+\\int_{3}^{5}\\frac{x^{2}(5-x)}{16}dx\\right]\\\\&=2\\left[\\frac{x^{3}}{24}\\Big|_{0}^{3}+\\frac{1}{16}\\left(\\frac{5x^{3}}{3}-\\frac{x^{4}}{4}\\right)\\Big|_{3}^{5}\\right]\\\\&=2\\left[1.125+\\tfrac{1}{16}(52.083-24.75)\\right]\\\\&=2\\,[1.125+1.708]=5.667\\end{aligned}$$<br>'
+     +'<b>Solution — (c).</b> On $(0,3)$ the output is $2$, and on $(3,5)$ it is $0$:'
+     +'$$\\begin{aligned}P_Q&=2\\left[\\int_{0}^{3}\\frac{(x-2)^{2}}{8}dx+\\int_{3}^{5}\\frac{x^{2}(5-x)}{16}dx\\right]\\\\&=2\\left[\\frac{(x-2)^{3}}{24}\\Big|_{0}^{3}+1.708\\right]\\\\&=2\\left[\\frac{1-(-8)}{24}+1.708\\right]\\\\&=2\\,[0.375+1.708]=4.167\\end{aligned}$$<br>'
+     +'<b>Solution — (d).</b> $$\\begin{aligned}\\mathrm{SQNR}&=\\frac{5.667}{4.167}=1.36\\\\&=10\\log_{10}1.36=1.34~\\text{dB}\\end{aligned}$$<br>'
+     +'<b>Check.</b> On $(0,3)$, $X$ is uniform with probability $\\tfrac38$, mean $1.5$ and variance $9/12=0.75$. So $E[(X-2)^{2}]$ there is $0.75+(1.5-2)^{2}=1$, and $\\tfrac38\\times1=0.375$ as in part (c).',
+  err:'Using $\\Delta^{2}/12$ for the noise. The quantizer returns $0$ for $|X|>3$, so the error there reaches $5$ and the uniform model does not hold.',
+  teach:'Close variant of the examination shape. The tails outside the covered range carry most of the noise, which the figure shows at a glance.',
+  figSol:()=>figCoarse({f:x=>{const g=Math.abs(x); return g<=3 ? 1/8 : g<=5 ? (5-g)/16 : 0;},
+    q:[[-6,-3,0],[-3,0,-2],[0,3,2],[3,6,0]], xr:[-6,6], qr:3.4, xticks:[-5,-3,3,5], cuts:[-5,-3,0,3,5], emax:2.0}) },
+
+{ id:'D1-25', module:'M1', type:'coarse', src:'MT Q2',
+  stem:'The samples of a stationary source, $X(t)$, are distributed according to the probability density function (PDF) drawn below. These samples are quantized using the following quantizer: $$\\hat X=\\mathbb{Q}(X)=\\begin{cases}-3,&-6<X<0\\\\3,&0<X<6\\\\0,&\\text{otherwise}\\end{cases}$$ According to the information given above,',
+  figure:()=>figPdf({xr:[-8,8], xticks:[-6,-3,3,6], pts:[[-8,0],[-6,0],[0,1],[6,0],[8,0]], levels:[[1,'c',0]]}),
+  parts:['[6 pts] Determine the value of $c$.',
+         '[6 pts] Calculate the power of the samples of the stationary source.',
+         '[6 pts] Calculate the power of the quantization noise.',
+         '[7 pts] Obtain the SQNR in dB.'],
+  sol:'<b>Given.</b> A triangular density on $[-6,6]$ with peak $c$, and outputs $\\pm3$ on $(-6,0)$ and $(0,6)$.<br>'
+     +'<b>Find.</b> $c$, $P_X$, $P_Q$ and the SQNR.<br>'
+     +'<b>Method.</b> The area gives $c$. For $x\\ge0$ the density is $c(1-x/6)$, and both powers are twice the integral over $[0,6]$.<br>'
+     +'<b>Solution — (a).</b> The triangle has base $12$ and height $c$, so $\\tfrac12(12)c=6c=1$ and $c=\\tfrac16$.<br>'
+     +'<b>Solution — (b).</b> $$\\begin{aligned}P_X&=2\\int_{0}^{6}x^{2}\\cdot\\tfrac16\\left(1-\\frac{x}{6}\\right)dx\\\\&=\\tfrac13\\left[\\frac{x^{3}}{3}-\\frac{x^{4}}{24}\\right]_{0}^{6}\\\\&=\\tfrac13\\,(72-54)=6\\end{aligned}$$<br>'
+     +'<b>Solution — (c).</b> Substitute $u=x-3$, so $x=0$ gives $u=-3$ and $x=6$ gives $u=3$. The density becomes $\\tfrac16(\\tfrac12-\\tfrac{u}{6})$:'
+     +'$$\\begin{aligned}P_Q&=2\\int_{0}^{6}(x-3)^{2}\\cdot\\tfrac16\\left(1-\\frac{x}{6}\\right)dx\\\\&=\\tfrac13\\int_{-3}^{3}u^{2}\\left(\\tfrac12-\\frac{u}{6}\\right)du\\\\&=\\tfrac13\\left[\\frac{u^{3}}{6}-\\frac{u^{4}}{24}\\right]_{-3}^{3}\\\\&=\\tfrac13\\left[(4.5-3.375)-(-4.5-3.375)\\right]\\\\&=\\tfrac13\\,(9)=3\\end{aligned}$$'
+     +'The $u^{4}$ terms cancel between the two limits, because $u^{3}/6$ is odd and $u^{4}/24$ is even.<br>'
+     +'<b>Solution — (d).</b> $\\mathrm{SQNR}=6/3=2$, which is $10\\log_{10}2=3.01$ dB.<br>'
+     +'<b>Check.</b> Each region is one cell of width $\\Delta=6$, the density is a straight line inside it, and the output sits at its midpoint. The odd part of the error integral vanishes, so $P_Q=\\Delta^{2}/12=36/12=3$.',
+  err:'Leaving out the factor $\\tfrac16$ of the density after the substitution. Change the variable in the whole integrand, not only in the square.',
+  teach:'Close variant of the triangular examination shape. With the outputs at the cell midpoints the result equals $\\Delta^{2}/12$, which the check explains.',
+  figSol:()=>figCoarse({f:x=>{const g=Math.abs(x); return g<=6 ? (1-g/6)/6 : 0;},
+    q:[[-8,-6,0],[-6,0,-3],[0,6,3],[6,8,0]], xr:[-8,8], qr:4.6, xticks:[-6,-3,3,6], cuts:[-6,0,6], emax:2.6}) },
+
+{ id:'D1-26', module:'M1', type:'coarse', src:'MT Q2',
+  stem:'The samples of a stationary source, $X(t)$, are distributed according to the probability density function (PDF) drawn below. These samples are quantized using the following quantizer: $$\\hat X=\\mathbb{Q}(X)=\\begin{cases}-2,&-4<X<-1\\\\0,&-1\\le X\\le1\\\\2,&1<X<4\\end{cases}$$ According to the information given above,',
+  figure:()=>figPdf({xr:[-5,5], xticks:[-4,-2,-1,1,2,4], pts:[[-5,0],[-4,0],[-2,1],[2,1],[4,0],[5,0]], levels:[[1,'c',-2]]}),
+  parts:['[6 pts] Determine the value of $c$.',
+         '[6 pts] Calculate the power of the samples of the stationary source.',
+         '[6 pts] Calculate the power of the quantization noise.',
+         '[7 pts] Obtain the SQNR in dB.'],
+  sol:'<b>Given.</b> A trapezoidal density on $[-4,4]$, flat at height $c$ on $[-2,2]$, and a three-level quantizer with outputs $-2$, $0$, $2$.<br>'
+     +'<b>Find.</b> $c$, $P_X$, $P_Q$ and the SQNR.<br>'
+     +'<b>Method.</b> Work on $x\\ge0$ and double. Split the noise integral at the quantizer boundary $x=1$ and at the corner $x=2$.<br>'
+     +'<b>Solution — (a).</b> $\\tfrac12(8+4)c=6c=1$, so $c=\\tfrac16$. For $x\\ge0$ the density is $\\tfrac16$ on $[0,2]$ and $(4-x)/12$ on $[2,4]$.<br>'
+     +'<b>Solution — (b).</b> $$\\begin{aligned}P_X&=2\\left[\\int_{0}^{2}\\frac{x^{2}}{6}dx+\\int_{2}^{4}\\frac{x^{2}(4-x)}{12}dx\\right]\\\\&=2\\left[\\frac{x^{3}}{18}\\Big|_{0}^{2}+\\frac{1}{12}\\left(\\frac{4x^{3}}{3}-\\frac{x^{4}}{4}\\right)\\Big|_{2}^{4}\\right]\\\\&=2\\left[\\tfrac49+\\tfrac{1}{12}\\left(\\tfrac{64}{3}-\\tfrac{20}{3}\\right)\\right]\\\\&=2\\left[\\tfrac49+\\tfrac{11}{9}\\right]=\\tfrac{10}{3}=3.333\\end{aligned}$$<br>'
+     +'<b>Solution — (c).</b> The output is $0$ on $[0,1]$ and $2$ on $(1,4)$. On $[2,4]$ substitute $u=x-2$, with limits $0$ and $2$:'
+     +'$$\\begin{aligned}P_Q&=2\\left[\\int_{0}^{1}\\frac{x^{2}}{6}dx+\\int_{1}^{2}\\frac{(x-2)^{2}}{6}dx+\\int_{0}^{2}\\frac{u^{2}(2-u)}{12}du\\right]\\\\&=2\\left[\\tfrac{1}{18}+\\tfrac{1}{18}+\\tfrac{1}{12}\\left(\\tfrac{16}{3}-4\\right)\\right]\\\\&=2\\left[\\tfrac19+\\tfrac19\\right]=\\tfrac49=0.444\\end{aligned}$$<br>'
+     +'<b>Solution — (d).</b> $$\\begin{aligned}\\mathrm{SQNR}&=\\frac{10/3}{4/9}=7.5\\\\&=10\\log_{10}7.5=8.75~\\text{dB}\\end{aligned}$$<br>'
+     +'<b>Check.</b> On $[0,1]$, $X$ is uniform with probability $\\tfrac16$ and $E[X^{2}]=\\tfrac13$ there. That gives $\\tfrac16\\cdot\\tfrac13=\\tfrac{1}{18}$, the first term of part (c).',
+  err:'Giving the middle region the output of its neighbours. On $[-1,1]$ the quantizer returns $0$, so the error there is $x$ itself.',
+  teach:'Close variant with a mid-tread quantizer whose outputs cover the whole support. It is the one coarse case with no unbounded tail, so the SQNR is higher.',
+  figSol:()=>figCoarse({f:x=>{const g=Math.abs(x); return g<=2 ? 1/6 : g<=4 ? (4-g)/12 : 0;},
+    q:[[-5,-1,-2],[-1,1,0],[1,5,2]], xr:[-5,5], qr:3.4, xticks:[-4,-2,-1,1,2,4], cuts:[-4,-2,-1,1,2,4], emax:0.3}) },
+
+{ id:'D1-27', module:'M1', type:'coarse', src:'MT Q2',
+  stem:'The samples of a stationary source, $X(t)$, are distributed according to the probability density function (PDF) drawn below. These samples are quantized using the following quantizer: $$\\hat X=\\mathbb{Q}(X)=\\begin{cases}-2,&-4<X<0\\\\2,&0<X<4\\\\0,&\\text{otherwise}\\end{cases}$$ According to the information given above,',
+  figure:()=>figPdf({xr:[-7,7], xticks:[-6,-4,-2,2,4,6], pts:[[-7,0],[-6,0],[-2,1],[2,1],[6,0],[7,0]], levels:[[1,'c',-2]]}),
+  parts:['[6 pts] Determine the value of $c$.',
+         '[6 pts] Calculate the power of the samples of the stationary source.',
+         '[6 pts] Calculate the power of the quantization noise.',
+         '[7 pts] Obtain the SQNR in dB.'],
+  sol:'<b>Given.</b> A trapezoidal density on $[-6,6]$, flat at height $c$ on $[-2,2]$. The outputs are $\\pm2$ on $(-4,0)$ and $(0,4)$, and $0$ outside.<br>'
+     +'<b>Find.</b> $c$, $P_X$, $P_Q$ and the SQNR.<br>'
+     +'<b>Method.</b> Work on $x\\ge0$ and double. The noise integral splits at the corner $x=2$ and at the boundary $x=4$.<br>'
+     +'<b>Solution — (a).</b> $\\tfrac12(12+4)c=8c=1$, so $c=\\tfrac18$. For $x\\ge0$ the density is $\\tfrac18$ on $[0,2]$ and $(6-x)/32$ on $[2,6]$.<br>'
+     +'<b>Solution — (b).</b> $$\\begin{aligned}P_X&=2\\left[\\int_{0}^{2}\\frac{x^{2}}{8}dx+\\int_{2}^{6}\\frac{x^{2}(6-x)}{32}dx\\right]\\\\&=2\\left[\\frac{x^{3}}{24}\\Big|_{0}^{2}+\\frac{1}{32}\\left(2x^{3}-\\frac{x^{4}}{4}\\right)\\Big|_{2}^{6}\\right]\\\\&=2\\left[\\tfrac13+\\tfrac{1}{32}(108-12)\\right]\\\\&=2\\left[\\tfrac13+3\\right]=\\tfrac{20}{3}=6.667\\end{aligned}$$<br>'
+     +'<b>Solution — (c).</b> Three pieces for $x\\ge0$. On $[2,4]$ substitute $u=x-2$, with limits $0$ and $2$, so $6-x=4-u$:'
+     +'$$\\begin{aligned}\\int_{0}^{2}\\frac{(x-2)^{2}}{8}dx&=\\frac{(x-2)^{3}}{24}\\Big|_{0}^{2}=\\tfrac13\\\\\\int_{0}^{2}\\frac{u^{2}(4-u)}{32}du&=\\tfrac{1}{32}\\left(\\tfrac{32}{3}-4\\right)=\\tfrac{5}{24}\\\\\\int_{4}^{6}\\frac{x^{2}(6-x)}{32}dx&=\\tfrac{1}{32}\\left(2x^{3}-\\frac{x^{4}}{4}\\right)\\Big|_{4}^{6}=\\tfrac{1}{32}(108-64)=\\tfrac{11}{8}\\end{aligned}$$'
+     +'$$P_Q=2\\left[\\tfrac13+\\tfrac{5}{24}+\\tfrac{11}{8}\\right]=2\\cdot\\tfrac{23}{12}=\\tfrac{23}{6}=3.833$$<br>'
+     +'<b>Solution — (d).</b> $$\\begin{aligned}\\mathrm{SQNR}&=\\frac{20/3}{23/6}=\\frac{40}{23}=1.739\\\\&=2.40~\\text{dB}\\end{aligned}$$<br>'
+     +'<b>Check.</b> The tail $(4,6)$ holds probability $\\int_{4}^{6}(6-x)/32\\,dx=\\tfrac{1}{16}$. There $X$ has the density $(6-x)/2$, whose second moment is $\\tfrac12(2x^{3}-x^{4}/4)\\big|_{4}^{6}=22$. So the tail adds $\\tfrac{1}{16}\\times22=\\tfrac{11}{8}$ on each side, as in part (c).',
+  err:'Dropping the tails beyond $\\pm4$ because they hold little probability. They hold $\\tfrac18$ of it in total but $72\\%$ of the noise power.',
+  teach:'Close variant of the trapezoidal examination shape, with outputs that stop short of the support. The small tails dominate the noise, as the figure shows.',
+  figSol:()=>figCoarse({f:x=>{const g=Math.abs(x); return g<=2 ? 1/8 : g<=6 ? (6-g)/32 : 0;},
+    q:[[-7,-4,0],[-4,0,-2],[0,4,2],[4,7,0]], xr:[-7,7], qr:3.4, xticks:[-6,-4,-2,2,4,6], cuts:[-6,-4,-2,0,2,4,6], emax:1.75}) },
+
+{ id:'D1-28', module:'M1', type:'coarse', src:'MT Q2 (variant)',
+  stem:'The samples of a stationary source $X(t)$ have the piecewise-constant PDF drawn below. They are quantized by a $4$-level uniform quantizer over $[-3,3]$, with outputs $\\pm0.75$ and $\\pm2.25$ and boundaries $0$ and $\\pm1.5$.',
+  figure:()=>figPdf({xr:[-4,4], xticks:[-3,-1.5,-1,1,1.5,3], pts:[[-4,0],[-3,0],[-3,0.5],[-1,0.5],[-1,1],[1,1],[1,0.5],[3,0.5],[3,0],[4,0]],
+    levels:[[1,'c',-1],[0.5,'c/2',-3]]}),
+  parts:['[5 pts] Determine the value of $c$.',
+         '[6 pts] Calculate the power of the samples.',
+         '[8 pts] Calculate the power of the quantization noise, region by region.',
+         '[6 pts] Obtain the SQNR in dB, and compare the noise power with $\\Delta^{2}/12$.'],
+  sol:'<b>Given.</b> A density of height $c$ on $|x|<1$ and $c/2$ on $1<|x|<3$. A uniform quantizer with $\\Delta=1.5$ and outputs at the cell midpoints.<br>'
+     +'<b>Find.</b> $c$, $P_X$, $P_Q$, the SQNR, and a comparison with $\\Delta^{2}/12$.<br>'
+     +'<b>Method.</b> The step of the density at $x=1$ falls inside the cell $(0,1.5)$. Split the noise integral there as well as at the boundaries.<br>'
+     +'<b>Solution — (a).</b> The area is $2c+2\\cdot\\tfrac{c}{2}\\cdot2=4c=1$, so $c=\\tfrac14$.<br>'
+     +'<b>Solution — (b).</b> $$\\begin{aligned}P_X&=2\\left[\\int_{0}^{1}\\frac{x^{2}}{4}dx+\\int_{1}^{3}\\frac{x^{2}}{8}dx\\right]\\\\&=2\\left[\\tfrac{1}{12}+\\frac{27-1}{24}\\right]=2\\cdot\\tfrac{14}{12}=\\tfrac73=2.333\\end{aligned}$$<br>'
+     +'<b>Solution — (c).</b> Use the antiderivative $(x-v)^{3}/3$ on each piece, with $v$ the output:'
+     +'$$\\begin{aligned}\\int_{0}^{1}\\frac{(x-0.75)^{2}}{4}dx&=\\tfrac{1}{12}(0.25^{3}+0.75^{3})=0.03646\\\\\\int_{1}^{1.5}\\frac{(x-0.75)^{2}}{8}dx&=\\tfrac{1}{24}(0.75^{3}-0.25^{3})=0.01693\\\\\\int_{1.5}^{3}\\frac{(x-2.25)^{2}}{8}dx&=\\tfrac{1}{24}(2\\times0.75^{3})=0.03516\\end{aligned}$$'
+     +'Doubling for $x<0$: $P_Q=2(0.03646+0.01693+0.03516)=0.1771$.<br>'
+     +'<b>Solution — (d).</b> $\\mathrm{SQNR}=2.333/0.1771=13.18$, which is $11.20$ dB. The model gives $\\Delta^{2}/12=2.25/12=0.1875$, so the true noise is $5.6\\%$ smaller. More probability sits in the part of the cell $(0,1.5)$ nearer its output.<br>'
+     +'<b>Check.</b> Take $P_X$ as a mixture. $|X|<1$ has probability $\\tfrac12$ and $E[X^{2}]=\\tfrac13$ there. $1<|X|<3$ has probability $\\tfrac12$ and $E[X^{2}]=(27-1)/6=\\tfrac{13}{3}$ there. So $P_X=\\tfrac12\\cdot\\tfrac13+\\tfrac12\\cdot\\tfrac{13}{3}=\\tfrac73$.',
+  err:'Integrating the cell $(0,1.5)$ with one density value. The density changes from $c$ to $c/2$ at $x=1$, inside the cell, so that cell needs two integrals.',
+  teach:'Creative variant: a stepped density and a uniform quantizer whose cell holds a jump. It shows when $\\Delta^{2}/12$ is close and why it is not exact.',
+  figSol:()=>figCoarse({f:x=>{const g=Math.abs(x); return g<1 ? 0.25 : g<=3 ? 0.125 : 0;},
+    q:[[-4,-1.5,-2.25],[-1.5,0,-0.75],[0,1.5,0.75],[1.5,4,2.25]], xr:[-4,4], qr:3.6, xticks:[-3,-1.5,-1,1,1.5,3], cuts:[-3,-1.5,-1,0,1,1.5,3], emax:0.5}) },
+
+{ id:'D1-29', module:'M1', type:'coarse', src:'MT Q2 (variant)',
+  stem:'The samples of a stationary source $X(t)$ have the triangular PDF drawn below. They are quantized by $$\\hat X=\\mathbb{Q}(X)=\\begin{cases}-b,&-3<X<0\\\\b,&0<X<3\\\\0,&\\text{otherwise}\\end{cases}$$ where $b>0$ is a design constant.',
+  figure:()=>figPdf({xr:[-4,4], xticks:[-3,-1,1,3], pts:[[-4,0],[-3,0],[0,1],[3,0],[4,0]], levels:[[1,'c',0]]}),
+  parts:['[5 pts] Determine the value of $c$.',
+         '[5 pts] Calculate the power of the samples.',
+         '[7 pts] For $b=2$, calculate the power of the quantization noise and the SQNR in dB.',
+         '[8 pts] Find the value of $b$ that makes the noise power smallest, and the SQNR it gives.'],
+  sol:'<b>Given.</b> A triangular density on $[-3,3]$ with peak $c$, and outputs $\\pm b$ on the two halves.<br>'
+     +'<b>Find.</b> $c$, $P_X$, $P_Q$ and the SQNR for $b=2$, and the best $b$.<br>'
+     +'<b>Method.</b> Expand $(x-b)^{2}$ so that $P_Q$ becomes a quadratic in $b$. Its coefficients are moments of the density. Then set the derivative in $b$ to zero.<br>'
+     +'<b>Solution — (a).</b> $\\tfrac12(6)c=3c=1$, so $c=\\tfrac13$. For $x\\ge0$ the density is $\\tfrac13(1-x/3)$.<br>'
+     +'<b>Solution — (b).</b> $$\\begin{aligned}P_X&=2\\int_{0}^{3}x^{2}\\cdot\\tfrac13\\left(1-\\frac{x}{3}\\right)dx\\\\&=\\tfrac23\\left[\\frac{x^{3}}{3}-\\frac{x^{4}}{12}\\right]_{0}^{3}=\\tfrac23\\,(9-6.75)=1.5\\end{aligned}$$<br>'
+     +'<b>Solution — (c).</b> By symmetry $P_Q=2\\int_{0}^{3}(x-b)^{2}f_X\\,dx$. Expand the square:'
+     +'$$\\begin{aligned}P_Q&=2\\int_{0}^{3}x^{2}f_X\\,dx-2b\\cdot2\\int_{0}^{3}xf_X\\,dx+b^{2}\\cdot2\\int_{0}^{3}f_X\\,dx\\\\&=P_X-2b\\,E|X|+b^{2}\\end{aligned}$$'
+     +'The last integral is $1$. The middle one is $E|X|=\\tfrac23\\left[\\frac{x^{2}}{2}-\\frac{x^{3}}{9}\\right]_{0}^{3}=\\tfrac23(4.5-3)=1$. So $P_Q=1.5-2b+b^{2}$.'
+     +' At $b=2$: $P_Q=1.5-4+4=1.5$ and $\\mathrm{SQNR}=1.5/1.5=1$, which is $0$ dB.<br>'
+     +'<b>Solution — (d).</b> $$\\begin{aligned}\\frac{dP_Q}{db}&=-2+2b=0\\\\b&=1\\end{aligned}$$'
+     +'The second derivative is $2>0$, so this is a minimum. Then $P_Q=1.5-2+1=0.5$ and $\\mathrm{SQNR}=3$, which is $4.77$ dB.<br>'
+     +'<b>Check.</b> Integrate directly at $b=1$ with $u=x-1$, limits $-1$ and $2$: $2\\cdot\\tfrac19\\int_{-1}^{2}u^{2}(2-u)\\,du=\\tfrac29\\left[\\tfrac{2u^{3}}{3}-\\tfrac{u^{4}}{4}\\right]_{-1}^{2}=\\tfrac29\\left(\\tfrac43+\\tfrac{11}{12}\\right)=0.5$.',
+  err:'Placing the output at the midpoint $1.5$ of the cell. The best output is the mean of $X$ in the cell, $E[X\\mid0<X<3]=1$, not the midpoint.',
+  teach:'Creative variant that reaches the centroid condition of the optimal quantizer by one derivative. At $b=2$ the noise equals the signal power, a result worth a moment in class.',
+  figSol:()=>figCoarse({f:x=>{const g=Math.abs(x); return g<=3 ? (1-g/3)/3 : 0;},
+    q:[[-4,-3,0],[-3,0,-1],[0,3,1],[3,4,0]], xr:[-4,4], qr:3.4, xticks:[-3,-1,1,3], cuts:[-3,0,3], emax:0.58}) },
+
+{ id:'D1-30', module:'M1', type:'coarse', src:'MT Q2 (variant)',
+  stem:'The samples of a non-negative stationary source $X(t)$ have the PDF drawn below. It falls linearly from $c$ at $x=0$ to zero at $x=4$. They are quantized by $$\\hat X=\\mathbb{Q}(X)=\\begin{cases}1,&0<X<2\\\\3,&2<X<4\\\\0,&\\text{otherwise}\\end{cases}$$ According to the information given above,',
+  figure:()=>figPdf({xr:[-1,5], xticks:[1,2,3,4], pts:[[-1,0],[0,0],[0,1],[4,0],[5,0]], levels:[[1,'c',0]]}),
+  parts:['[5 pts] Determine the value of $c$.',
+         '[6 pts] Calculate the mean and the power of the samples.',
+         '[8 pts] Calculate the power of the quantization noise.',
+         '[6 pts] Obtain the SQNR in dB, and compare the noise power with $\\Delta^{2}/12$.'],
+  sol:'<b>Given.</b> $f_X(x)=c(1-x/4)$ on $[0,4]$, and a two-level uniform quantizer with $\\Delta=2$ and outputs at the cell midpoints.<br>'
+     +'<b>Find.</b> $c$, $E[X]$, $P_X$, $P_Q$, the SQNR and a comparison with $\\Delta^{2}/12$.<br>'
+     +'<b>Method.</b> Integrate each cell after centring it on its output. The substitution $u=x-v$ makes the odd terms vanish.<br>'
+     +'<b>Solution — (a).</b> The triangle has base $4$ and height $c$, so $2c=1$ and $c=\\tfrac12$.<br>'
+     +'<b>Solution — (b).</b> $$\\begin{aligned}E[X]&=\\tfrac12\\int_{0}^{4}\\left(x-\\frac{x^{2}}{4}\\right)dx=\\tfrac12\\left[\\frac{x^{2}}{2}-\\frac{x^{3}}{12}\\right]_{0}^{4}=\\tfrac12\\left(8-\\tfrac{16}{3}\\right)=\\tfrac43\\\\P_X&=\\tfrac12\\int_{0}^{4}\\left(x^{2}-\\frac{x^{3}}{4}\\right)dx=\\tfrac12\\left[\\frac{x^{3}}{3}-\\frac{x^{4}}{16}\\right]_{0}^{4}=\\tfrac12\\left(\\tfrac{64}{3}-16\\right)=\\tfrac83\\end{aligned}$$<br>'
+     +'<b>Solution — (c).</b> On $(0,2)$ put $u=x-1$, limits $-1$ and $1$, so $1-x/4=\\tfrac34-\\tfrac{u}{4}$. On $(2,4)$ put $u=x-3$, so $1-x/4=\\tfrac14-\\tfrac{u}{4}$.'
+     +'$$\\begin{aligned}\\int_{0}^{2}(x-1)^{2}f_X\\,dx&=\\tfrac12\\int_{-1}^{1}u^{2}\\left(\\tfrac34-\\tfrac{u}{4}\\right)du=\\tfrac12\\cdot\\tfrac34\\cdot\\tfrac23=\\tfrac14\\\\\\int_{2}^{4}(x-3)^{2}f_X\\,dx&=\\tfrac12\\int_{-1}^{1}u^{2}\\left(\\tfrac14-\\tfrac{u}{4}\\right)du=\\tfrac12\\cdot\\tfrac14\\cdot\\tfrac23=\\tfrac{1}{12}\\end{aligned}$$'
+     +'The $u^{3}$ terms integrate to zero over $[-1,1]$. So $P_Q=\\tfrac14+\\tfrac{1}{12}=\\tfrac13=0.333$.<br>'
+     +'<b>Solution — (d).</b> $\\mathrm{SQNR}=(8/3)/(1/3)=8$, which is $10\\log_{10}8=9.03$ dB. Here $\\Delta^{2}/12=4/12=\\tfrac13$, exactly equal to $P_Q$.<br>'
+     +'<b>Check.</b> Each cell has probability $f_X(v)\\Delta$ when the density is straight inside it. That is $\\tfrac38\\cdot2=\\tfrac34$ and $\\tfrac18\\cdot2=\\tfrac14$. Each contributes its probability times $\\Delta^{2}/12$, so $\\tfrac34\\cdot\\tfrac13+\\tfrac14\\cdot\\tfrac13=\\tfrac13$.',
+  err:'Taking the range as $[-4,4]$ in part (d), which gives $\\Delta=4$ and $\\Delta^{2}/12=1.33$. The source never goes negative, so the quantizer covers $[0,4]$ and $\\Delta=2$.',
+  teach:'Creative variant with a one-sided source. It shows that $\\Delta^{2}/12$ is exact, not approximate, when the density is a straight line inside each cell and the output sits at the midpoint.',
+  figSol:()=>figCoarse({f:x=>(x>=0 && x<=4) ? 0.5*(1-x/4) : 0,
+    q:[[-1,0,0],[0,2,1],[2,4,3],[4,5,0]], xr:[-1,5], qr:4.4, qy:[-0.8,4.2], xticks:[1,2,3,4], cuts:[0,2,4], emax:0.88}) }
 
 ]);
 
@@ -424,12 +895,12 @@ window.DRILL_M1 = [
 
 { id:'m1-drill', module:'M1', nav:'Module 1 · practice questions',
   title:'Module 1 — practice questions',
-  objective:'Twenty-one open-ended questions with worked solutions, in the form they are asked in.',
-  keywords:'practice questions module 1 sampling nyquist quantization sqnr step size bit rate pcm gray code aliasing',
+  objective:'Thirty open-ended questions with worked solutions on sampling, quantization and PCM.',
+  keywords:'practice questions module 1 sampling nyquist guard band quantization sqnr step size bit rate symbol rate pam pcm density',
   steps:0, blocks:[
-  {t:'eyebrow', text:'Module 1 · Practice D1-01 … D1-21'},
+  {t:'eyebrow', text:'Module 1 · Practice D1-01 … D1-30'},
   {t:'title', text:'Practice questions'},
-  {t:'small', html:'Work each question before opening its solution. Check that the bit rate is the resolution times the sampling rate. Each added bit adds $6.02$ dB of SQNR. The quantization error is at most half a step. A required level count rounds upward.'},
+  {t:'small', html:'Work each question before opening its solution. The bit rate is the resolution times the sampling rate. A required level count rounds up to a power of two. A coarse quantizer needs its noise integrated region by region.'},
   {t:'rule', short:true},
   {t:'drill', module:'M1'}
 ]}
