@@ -90,10 +90,14 @@ CONTENT.SECTIONS = {
   M3: [
     { n:'3.0', title:'Opening',                        ids:['m3-open'] },
     { n:'3.1', title:'Signals as vectors',             ids:[
-        'm3-ortho','m3-project','m3-energy'] },
-    { n:'3.2', title:'Constellations',                 ids:['m3-constellation','m3-remarks'] },
-    { n:'3.3', title:'The Gram–Schmidt procedure',     ids:['m3-gs','m3-ex-gs','m3-lab-f'] },
-    { n:'3.4', title:'Summary',                        ids:['m3-synth'] }
+        'm3-twoaxes','m3-ortho','m3-project','m3-analyzer','m3-inner','m3-energy','m3-ex-inspect',
+        'm3-real-vectors','m3-lab-r','m3-code-vectors'] },
+    { n:'3.2', title:'Constellations',                 ids:[
+        'm3-constellation','m3-binary','m3-passband','m3-ex-qpsk','m3-remarks','m3-psk',
+        'm3-real-constellation','m3-lab-s','m3-code-constellation'] },
+    { n:'3.3', title:'The Gram–Schmidt procedure',     ids:[
+        'm3-gs','m3-ex-gs','m3-ex-gs-b','m3-basis-change','m3-real-gs','m3-lab-f','m3-code-gs'] },
+    { n:'3.4', title:'Summary',                        ids:['m3-chain','m3-quick','m3-synth','m3-projects'] }
   ],
 
   M4: [
@@ -210,13 +214,20 @@ CONTENT.BOOK = {
   'm2-equalizer':'10.5.2', 'm2-timing':'8.9.1', 'm2-psd':'10.2', 'm2-repeater':'8.10',
   'm2-chain':'8.3', 'm2-quick':'8.3, 10.3.1', 'm2-synth':'8.3, 10.3.1', 'm2-projects':'8.3, 10.3.1',
 
-  /* All of Module 3 is section 8.1 of the book, "Geometric Representation of
-     Signal Waveforms", p. 348 — read there rather than inferred. This is also
-     the anchor the ported Gram-Schmidt code got wrong: its comments cite 7.1,
-     which in this edition is the sampling theorem. */
-  'm3-open':'8.1', 'm3-ortho':'8.1', 'm3-project':'8.1', 'm3-energy':'8.1',
-  'm3-constellation':'8.1', 'm3-remarks':'8.1',
-  'm3-gs':'8.1', 'm3-ex-gs':'8.1', 'm3-lab-f':'8.1', 'm3-synth':'8.1',
+  /* Module 3 is section 8.1 of the book, "Geometric Representation of Signal
+     Waveforms", p. 348, with two excursions, each read there: the binary
+     sets as points are 8.2 (8.2.1 antipodal, 8.2.2 orthogonal signalling),
+     and the cosine and sine basis and the points on a circle are 8.6.1,
+     "Geometric Representation of PSK Signals". The worked example with four
+     signals and three axes is the book's own Example 8.1.1, and the change of
+     basis its closing remark on Figure 8.3. The galleries of real systems and
+     the code pages carry no anchor beyond their section's, as in Module 2. */
+  'm3-open':'8.1', 'm3-twoaxes':'8.1', 'm3-ortho':'8.1', 'm3-project':'8.1', 'm3-analyzer':'8.1',
+  'm3-inner':'8.1', 'm3-energy':'8.1', 'm3-ex-inspect':'8.1', 'm3-real-vectors':'8.1', 'm3-lab-r':'8.1',
+  'm3-constellation':'8.1', 'm3-binary':'8.2', 'm3-passband':'8.6.1', 'm3-ex-qpsk':'8.6.1',
+  'm3-remarks':'8.1', 'm3-psk':'8.6.1', 'm3-real-constellation':'8.6.1, 8.7.1', 'm3-lab-s':'8.1, 8.6.1',
+  'm3-gs':'8.1', 'm3-ex-gs':'8.1', 'm3-ex-gs-b':'8.1', 'm3-basis-change':'8.1', 'm3-real-gs':'8.1', 'm3-lab-f':'8.1',
+  'm3-chain':'8.1', 'm3-quick':'8.1', 'm3-synth':'8.1', 'm3-projects':'8.1',
 
   /* Module 4 is section 8.4 of the book, "M-ary Digital Modulation": 8.4.1 is
      the optimum receiver for M-ary signals in AWGN and 8.4.2 is the union

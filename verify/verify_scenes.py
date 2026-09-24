@@ -500,6 +500,77 @@ def _gs_example():
             "energies": [sum(v * v for v in c) for c in coords]}
 
 
+# The remaining Module 3 helpers work on sampled waveforms: every inner
+# product is a sum of samples, never the coordinate formula the scene uses.
+_M3_N = 60000
+
+
+def _m3_grid(t0, t1, n=_M3_N):
+    dt = (t1 - t0) / n
+    return t0 + (np.arange(n) + 0.5) * dt, dt
+
+
+def _m3_pw(t, segs):
+    """A piecewise-constant waveform from (start, end, value) pieces."""
+    out = np.zeros_like(t)
+    for a, b, v in segs:
+        out[(t >= a) & (t < b)] = v
+    return out
+
+
+def _m3_ip(segs_x, segs_y, t0=0.0, t1=3.0):
+    t, dt = _m3_grid(t0, t1)
+    return float(np.sum(_m3_pw(t, segs_x) * _m3_pw(t, segs_y)) * dt)
+
+
+def _m3_gs(sigs, t0, t1):
+    """Gram-Schmidt on sampled waveforms given as piece lists."""
+    t, dt = _m3_grid(t0, t1)
+    xs = [_m3_pw(t, s) for s in sigs]
+    dot = lambda a, b: float(np.sum(a * b) * dt)
+    scale = max(dot(x, x) for x in xs)
+    basis, coords = [], []
+    for x in xs:
+        c = [dot(x, b) for b in basis]
+        g = x - sum(ci * basis[k] for k, ci in enumerate(c)) if basis else x.copy()
+        eg = dot(g, g)
+        if eg > 1e-9 * scale:
+            basis.append(g / math.sqrt(eg))
+            c.append(math.sqrt(eg))
+        coords.append(c)
+    for c in coords:
+        c += [0.0] * (len(basis) - len(c))
+    return coords, len(basis)
+
+
+_M3_BOOK = [[(0, 2, 1)], [(0, 1, 1), (1, 2, -1)], [(0, 1, -1), (1, 3, 1)], [(0, 3, 1)]]
+
+
+def _m3_carrier_ip(fa, fb, fc=3, T=1.0):
+    """Inner product of two unit-energy carrier functions over [0, T]."""
+    t, dt = _m3_grid(0.0, T)
+    f = {"c": lambda: math.sqrt(2 / T) * np.cos(2 * np.pi * fc * t),
+         "s": lambda: math.sqrt(2 / T) * np.sin(2 * np.pi * fc * t)}
+    return float(np.sum(f[fa]() * f[fb]()) * dt)
+
+
+def _m3_min_dist(pts):
+    pts = np.asarray(pts, float)
+    d = [np.linalg.norm(pts[i] - pts[k]) for i in range(len(pts)) for k in range(i + 1, len(pts))]
+    return float(min(d))
+
+
+def _m3_qam(L):
+    g = np.arange(-(L - 1), L, 2, dtype=float)
+    pts = np.array([(x, y) for x in g for y in g])
+    return pts / math.sqrt(np.mean(np.sum(pts ** 2, axis=1)))
+
+
+def _m3_psk(M):
+    k = np.arange(M)
+    return np.c_[np.cos(2 * np.pi * k / M), np.sin(2 * np.pi * k / M)]
+
+
 # Each entry:
 #   name    -- the scene and the quantity, as a reader would name them
 #   stated  -- the number the scene prints
@@ -1154,6 +1225,103 @@ CHECKS: list[dict] = [
      "derive": lambda: _gs_example()["energies"][1], "tol": 1e-6},
     {"name": "3.3.2 energy of s3", "stated": 3.0,
      "derive": lambda: _gs_example()["energies"][2], "tol": 1e-6},
+    # ---- Module 3, converted: every stated number on a slide -----------------
+    {"name": "3.1.1 integral of s0*s1 over [0,1], offset by 1", "stated": 1.0,
+     "derive": lambda: _m3_ip([(0, .5, 1), (.5, 1, -1)], [(0, .25, 1), (.25, .75, -1), (.75, 1, 1)], 0, 1) + 1.0,
+     "tol": 1e-9},
+    {"name": "3.1.2 height of a unit-energy pulse on [0,2]", "stated": 0.707,
+     "derive": lambda: 1 / math.sqrt(_m3_ip([(0, 2, 1)], [(0, 2, 1)], 0, 2)), "tol": 1e-3},
+    {"name": "3.1.3 first coordinate of s = 3 then -1", "stated": 3.0,
+     "derive": lambda: _m3_ip([(0, 1, 3), (1, 2, -1)], [(0, 1, 1)], 0, 2), "tol": 1e-6},
+    {"name": "3.1.3 second coordinate of s = 3 then -1", "stated": -1.0,
+     "derive": lambda: _m3_ip([(0, 1, 3), (1, 2, -1)], [(1, 2, 1)], 0, 2), "tol": 1e-6},
+    {"name": "3.1.5 integral of x*y for x = (2,1), y = (1,-1)", "stated": 1.0,
+     "derive": lambda: _m3_ip([(0, 1, 2), (1, 2, 1)], [(0, 1, 1), (1, 2, -1)], 0, 2), "tol": 1e-6},
+    {"name": "3.1.6 distance between (1,1) and (1,-1) from the waveforms", "stated": 2.0,
+     "derive": lambda: math.sqrt(_m3_ip([(1, 2, 2)], [(1, 2, 2)], 0, 2)), "tol": 1e-6},
+    {"name": "3.1.6 energy of a point on the circle of radius sqrt 2", "stated": 2.0,
+     "derive": lambda: _m3_ip([(0, 1, 1), (1, 2, 1)], [(0, 1, 1), (1, 2, 1)], 0, 2), "tol": 1e-6},
+    {"name": "3.1.7 energy of each of the four pulse signals", "stated": 2.0,
+     "derive": lambda: _m3_ip([(0, 1, -1), (1, 2, 1)], [(0, 1, -1), (1, 2, 1)], 0, 2), "tol": 1e-6},
+    {"name": "3.1.7 the four pulse signals need two dimensions", "stated": 2,
+     "derive": lambda: _m3_gs([[(0, 2, 1)], [(0, 1, 1), (1, 2, -1)], [(0, 1, -1), (1, 2, 1)], [(0, 2, -1)]], 0, 2)[1]},
+    {"name": "3.1.8 Walsh codes w2 and w5 of length 8 are orthogonal (offset by 1)", "stated": 1.0,
+     "derive": lambda: 1.0 + _m3_ip([(k, k + 1, v) for k, v in enumerate([1, 1, -1, -1, 1, 1, -1, -1])],
+                                    [(k, k + 1, v) for k, v in enumerate([1, -1, 1, -1, -1, 1, -1, 1])], 0, 8),
+     "tol": 1e-9},
+    {"name": "3.1.8 IS-95 chip time at 1.2288 Mchip/s, us", "stated": 0.814,
+     "derive": lambda: 1 / 1.2288, "tol": 1e-3},
+    {"name": "3.1.8 Wi-Fi symbol time at 312.5 kHz spacing, us", "stated": 3.2,
+     "derive": lambda: 1e6 / 312.5e3, "tol": 1e-9},
+    {"name": "3.1.8 Wi-Fi subcarriers k = 3 and 4 over one symbol, offset by 1", "stated": 1.0,
+     "derive": lambda: 1.0 + float(np.sum(np.cos(2 * np.pi * 3 * _m3_grid(0, 1)[0]) * np.cos(2 * np.pi * 4 * _m3_grid(0, 1)[0])) * _m3_grid(0, 1)[1]),
+     "tol": 1e-9},
+    {"name": "3.1.8 the 8-point DCT with scale 1/2 is orthonormal (max error, offset by 1)", "stated": 1.0,
+     "derive": lambda: 1.0 + float(np.max(np.abs((lambda C: C @ C.T - np.eye(7))(
+         np.array([[0.5 * math.cos(math.pi * (2 * n + 1) * k / 16) for n in range(8)] for k in range(1, 8)]))))),
+     "tol": 1e-12},
+    {"name": "3.1.8 Kansas City bit time at 300 baud, ms", "stated": 3.33,
+     "derive": lambda: 1000 / 300, "tol": 2e-3},
+    {"name": "3.1.8 cycles of 1200 Hz in one bit", "stated": 4.0, "derive": lambda: 1200 / 300},
+    {"name": "3.1.8 cycles of 2400 Hz in one bit", "stated": 8.0, "derive": lambda: 2400 / 300},
+    {"name": "3.2.1 diagonal distance of the square, (1,1) to (-1,-1)", "stated": 2.83,
+     "derive": lambda: float(np.linalg.norm([2, 2])), "tol": 2e-3},
+    {"name": "3.2.1 smallest distance of the square", "stated": 2.0,
+     "derive": lambda: _m3_min_dist([(1, 1), (1, -1), (-1, 1), (-1, -1)]), "tol": 1e-12},
+    {"name": "3.2.2 orthogonal over antipodal energy at equal distance, dB", "stated": 3.01,
+     "derive": lambda: 10 * math.log10((2.0 ** 2) / (math.sqrt(2) ** 2)), "tol": 2e-3},
+    {"name": "3.2.2 on-off distance at average energy 1", "stated": 1.41421,
+     "derive": lambda: math.sqrt(2 * _m3_ip([(0, 1, 1)], [(0, 1, 1)], 0, 1)), "tol": 1e-5},
+    {"name": "3.2.3 cosine and sine with fcT = 3 are orthogonal (offset by 1)", "stated": 1.0,
+     "derive": lambda: 1.0 + _m3_carrier_ip("c", "s"), "tol": 1e-8},
+    {"name": "3.2.3 the carrier cosine has unit energy", "stated": 1.0,
+     "derive": lambda: _m3_carrier_ip("c", "c"), "tol": 1e-8},
+    {"name": "3.2.3 phase 90 degrees lies on psi2", "stated": 1.0,
+     "derive": lambda: float(np.sum(math.sqrt(2) * np.cos(2 * np.pi * 3 * _m3_grid(0, 1)[0] - math.pi / 2)
+         * math.sqrt(2) * np.sin(2 * np.pi * 3 * _m3_grid(0, 1)[0])) * _m3_grid(0, 1)[1]), "tol": 1e-8},
+    {"name": "3.2.4 energy of each carrier waveform", "stated": 2.0,
+     "derive": lambda: _m3_carrier_ip("c", "c") + _m3_carrier_ip("s", "s") - 2 * _m3_carrier_ip("c", "s"), "tol": 1e-8},
+    {"name": "3.2.4 smallest distance of the carrier set", "stated": 2.0,
+     "derive": lambda: _m3_min_dist([(-1, 1), (1, 1), (-1, -1), (1, -1)]), "tol": 1e-12},
+    {"name": "3.2.6 8-PSK smallest distance at E = 1", "stated": 0.765,
+     "derive": lambda: _m3_min_dist(_m3_psk(8)), "tol": 1e-3},
+    {"name": "3.2.6 sin(pi/8)", "stated": 0.383, "derive": lambda: math.sin(math.pi / 8), "tol": 1e-3},
+    {"name": "3.2.6 16-PSK smallest distance at E = 1", "stated": 0.390,
+     "derive": lambda: _m3_min_dist(_m3_psk(16)), "tol": 2e-3},
+    {"name": "3.2.7 16-QAM smallest distance at average energy 1", "stated": 0.632,
+     "derive": lambda: _m3_min_dist(_m3_qam(4)), "tol": 1e-3},
+    {"name": "3.2.7 64-QAM smallest distance at average energy 1", "stated": 0.309,
+     "derive": lambda: _m3_min_dist(_m3_qam(8)), "tol": 2e-3},
+    {"name": "3.3.1 energy of g2 for E = 25, s21 = 3", "stated": 16.0,
+     "derive": lambda: float(np.linalg.norm(np.array([3.0, 4.0]) - 3.0 * np.array([1.0, 0.0])) ** 2), "tol": 1e-12},
+    {"name": "3.3.3 the four signals need three dimensions", "stated": 3,
+     "derive": lambda: _m3_gs(_M3_BOOK, 0, 3)[1]},
+    {"name": "3.3.3 second coordinate of s3", "stated": -1.41421,
+     "derive": lambda: _m3_gs(_M3_BOOK, 0, 3)[0][2][1], "tol": 1e-5},
+    {"name": "3.3.3 third coordinate of s4", "stated": 1.0,
+     "derive": lambda: _m3_gs(_M3_BOOK, 0, 3)[0][3][2], "tol": 1e-6},
+    {"name": "3.3.3 energy of s3", "stated": 3.0,
+     "derive": lambda: _m3_ip(_M3_BOOK[2], _M3_BOOK[2]), "tol": 1e-6},
+    {"name": "3.3.3 energy of s4", "stated": 3.0,
+     "derive": lambda: _m3_ip(_M3_BOOK[3], _M3_BOOK[3]), "tol": 1e-6},
+    {"name": "3.3.4 first coordinate of (1,1) on axes turned 45 degrees", "stated": 1.41421,
+     "derive": lambda: float(np.dot([1, 1], [math.cos(math.pi / 4), math.sin(math.pi / 4)])), "tol": 1e-5},
+    {"name": "3.3.5 leak of a 10-degree quadrature error", "stated": 0.174,
+     "derive": lambda: float(np.sum(np.cos(2 * np.pi * 3 * _m3_grid(0, 1)[0]) * np.sin(2 * np.pi * 3 * _m3_grid(0, 1)[0] + math.radians(10)))
+         * _m3_grid(0, 1)[1] * 2), "tol": 3e-3},
+    {"name": "3.3.5 hum coefficient <m,r>/||r||^2", "stated": 0.8,
+     "derive": lambda: (lambda t, dt: float(np.sum((0.5 * np.sin(2 * np.pi * 450 * t) + 0.8 * np.sin(2 * np.pi * 50 * t))
+         * np.sin(2 * np.pi * 50 * t)) / np.sum(np.sin(2 * np.pi * 50 * t) ** 2)))(*_m3_grid(0, 0.02)), "tol": 1e-8},
+    {"name": "3.3.5 Legendre: coefficient of 1 removed from u^2", "stated": 1 / 3,
+     "derive": lambda: (lambda u, du: float(np.sum(u ** 2) / np.sum(np.ones_like(u))))(*_m3_grid(-1, 1)), "tol": 1e-6},
+    {"name": "3.4.2 unit-energy height on [0,4]", "stated": 0.5,
+     "derive": lambda: 1 / math.sqrt(_m3_ip([(0, 4, 1)], [(0, 4, 1)], 0, 4)), "tol": 1e-6},
+    {"name": "3.4.2 energy of 2 psi1 - 3 psi2", "stated": 13.0,
+     "derive": lambda: _m3_ip([(0, 1, 2), (1, 2, -3)], [(0, 1, 2), (1, 2, -3)], 0, 2), "tol": 1e-6},
+    {"name": "3.4.2 distance from (1,2) to (4,6)", "stated": 5.0,
+     "derive": lambda: float(np.linalg.norm(np.array([4, 6]) - np.array([1, 2]))), "tol": 1e-12},
+    {"name": "3.4.2 QPSK smallest distance at E = 2", "stated": 2.0,
+     "derive": lambda: _m3_min_dist(math.sqrt(2) * _m3_psk(4)), "tol": 1e-9},
     {"name": "3.2 four points on a square: smallest distance at energy 2",
      "stated": 2.0, "derive": lambda: 2 * 1.0},
 
