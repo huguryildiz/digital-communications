@@ -1,367 +1,1038 @@
 /* ==========================================================================
    Practice questions — Module 5.
 
-   Final Q3 supplies the shape of the last three: a modulation scheme is named,
-   the constellation has to be drawn, and the symbol error probability follows
-   from its geometry. That question is shared with Module 4, which supplies the
-   receiver; the schemes are this module's part of it.
+   Thirty questions in the shape of the final examination's modulation
+   question: a set of equally likely carrier waveforms is given, the student
+   draws the constellation with its optimal decision regions, and then writes
+   the nearest-neighbour approximation of the symbol error probability as a
+   function of E_s,avg/N0. Twenty-two keep that shape with new sets (offset and
+   odd-M PSK, PAM with a zero or asymmetric point, QAM, rings, a zero signal,
+   a point off the circle, two-frequency sets). Eight turn it round: the
+   regions are given and the waveforms are asked for, the error expression is
+   given and the set is asked for, or two sets are compared at equal energy.
 
-   The rest come from the worked examples in the lecture material and from the
-   comparisons the module makes between the families.
+   Every solution figure is drawn by cfig(): exact minimum-distance regions
+   (half-plane clipping, not a raster), each filled at low opacity in the
+   colour of its symbol, the points labelled, the nearest-neighbour pairs in
+   coral and d_min written beside one of them. Labels are placed by a small
+   search that keeps them off every line, point and other label.
    ========================================================================== */
 (function(){
+const P = PLOT, C = P.COL;
+const SYM = ['in','out','mid','h','err'];
+const R2 = Math.SQRT2, R3 = Math.sqrt(3);
 
+/* ---- exact minimum-distance regions inside a box ---------------------- */
+function regionsOf(pts, box){
+  return pts.map((p,i)=>{
+    let poly = [[box[0],box[2]],[box[1],box[2]],[box[1],box[3]],[box[0],box[3]]];
+    pts.forEach((q,j)=>{
+      if(j===i) return;
+      const ax = 2*(q[0]-p[0]), ay = 2*(q[1]-p[1]);
+      const b = q[0]*q[0]+q[1]*q[1]-p[0]*p[0]-p[1]*p[1];
+      const f = v => ax*v[0]+ay*v[1]-b;
+      const out = [];
+      for(let k=0;k<poly.length;k++){
+        const A = poly[k], B = poly[(k+1)%poly.length], fa = f(A), fb = f(B);
+        if(fa<=0) out.push(A);
+        if((fa<0&&fb>0)||(fa>0&&fb<0)){ const t = fa/(fa-fb); out.push([A[0]+t*(B[0]-A[0]), A[1]+t*(B[1]-A[1])]); }
+      }
+      poly = out;
+    });
+    return poly;
+  });
+}
+
+/* the boundary shared by regions i and j, if it has length */
+function sharedEdge(polys, pts, i, j, eps){
+  const p = pts[i], q = pts[j];
+  const on = polys[i].filter(v => Math.abs(((v[0]-p[0])**2+(v[1]-p[1])**2)-((v[0]-q[0])**2+(v[1]-q[1])**2)) < eps);
+  if(on.length<2) return null;
+  let best = null, bl = 0;
+  for(let a=0;a<on.length;a++) for(let b=a+1;b<on.length;b++){
+    const L = Math.hypot(on[a][0]-on[b][0], on[a][1]-on[b][1]);
+    if(L>bl){ bl=L; best=[on[a],on[b]]; }
+  }
+  return bl>1e-6 ? best : null;
+}
+
+/* ---- label placement: a rectangle that touches nothing ----------------- */
+function segHitsRect(s, r){
+  let t0 = 0, t1 = 1;
+  const dx = s[1][0]-s[0][0], dy = s[1][1]-s[0][1];
+  const pq = [[-dx, s[0][0]-r[0]], [dx, r[2]-s[0][0]], [-dy, s[0][1]-r[1]], [dy, r[3]-s[0][1]]];
+  for(const [pp,qq] of pq){
+    if(Math.abs(pp)<1e-12){ if(qq<0) return false; continue; }
+    const t = qq/pp;
+    if(pp<0){ if(t>t1) return false; if(t>t0) t0=t; }
+    else { if(t<t0) return false; if(t<t1) t1=t; }
+  }
+  return true;
+}
+function rectCost(r0, ob){
+  let c = 0;
+  const r = [r0[0]-3, r0[1]-3, r0[2]+3, r0[3]+3];
+  if(r[0]<ob.box[0] || r[2]>ob.box[2] || r[1]<ob.box[1] || r[3]>ob.box[3]) c += 50;
+  ob.segs.forEach(s=>{ if(segHitsRect(s, r)) c += s[2]||10; });
+  ob.circ.forEach(q=>{
+    const cx = Math.max(r[0], Math.min(q[0], r[2])), cy = Math.max(r[1], Math.min(q[1], r[3]));
+    if(Math.hypot(cx-q[0], cy-q[1]) < q[2]) c += 30;
+  });
+  ob.rects.forEach(o=>{ if(r[0]<o[2] && r[2]>o[0] && r[1]<o[3] && r[3]>o[1]) c += 40; });
+  return c;
+}
+function place(cands, w, h, ob, extra){
+  let best = null, bc = Infinity;
+  for(const c of cands){
+    const r = [c[0]-w/2, c[1]-h/2, c[0]+w/2, c[1]+h/2];
+    const cost = rectCost(r, ob) + (extra ? extra(c) : 0);
+    if(cost < bc){ bc = cost; best = r; if(cost===0) break; }
+  }
+  ob.rects.push([best[0]-3, best[1]-3, best[2]+3, best[3]+3]);
+  return best;
+}
+
+/* width of a short TeX label, estimated from what it draws, in ems:
+   subscripts are small, a relation carries a thick space on each side */
+function texW(s, fs){
+  let t = s.replace(/\\(?:left|right|!|,|;|big|Big)/g,'').replace(/\\text\{([^}]*)\}/g,'$1');
+  let em = 0;
+  t = t.replace(/[_^](\{(?:[^{}]|\{[^{}]*\})*\}|\\[a-zA-Z]+|.)/g, m => {
+    const inner = m.slice(1).replace(/^\{|\}$/g,'').replace(/\\(?:min|max)/g,'mmm').replace(/\\[a-zA-Z]+/g,'x').replace(/[{}]/g,'');
+    em += 0.4*inner.length; return ''; });
+  t = t.replace(/\\sqrt/g, () => { em += 0.95; return ''; })
+       .replace(/\\[a-zA-Z]+/g, () => { em += 0.62; return ''; })
+       .replace(/=/g, () => { em += 1.35; return ''; })
+       .replace(/[.,]/g, () => { em += 0.3; return ''; })
+       .replace(/[{}]/g,'');
+  em += 0.6*t.length;
+  return em*fs + 5;
+}
+
+/* ---- the constellation figure ------------------------------------------
+   pts   coordinates on (psi1, psi2)
+   o.names       TeX name of each point (default s_1 ... s_M)
+   o.dTex        value written after d_min
+   o.oneD        a one-dimensional set: no psi2 axis
+   o.hide        draw the regions and boundaries only (a given, not an answer)
+   o.regionNames names written inside the regions instead of at the points
+   o.nn=false    no nearest-neighbour marking
+   o.title       a short TeX title at the top right of the data area         */
+function cfig(pts, o){
+  o = o || {};
+  const M = pts.length, LS = P.labelScale();
+  const names = o.names || pts.map((_,i)=>'s_{'+(i+1)+'}');
+  const oneD = !!o.oneD;
+  const xs = pts.map(p=>p[0]), ys = pts.map(p=>p[1]);
+  let dmin = Infinity;
+  for(let i=0;i<M;i++) for(let j=i+1;j<M;j++) dmin = Math.min(dmin, Math.hypot(pts[i][0]-pts[j][0], pts[i][1]-pts[j][1]));
+  const span = Math.max(Math.max(...xs)-Math.min(...xs), Math.max(...ys)-Math.min(...ys), dmin);
+  const m = o.margin || Math.max(0.36*span, 0.6*dmin);
+  let xr = [Math.min(0,...xs)-m, Math.max(0,...xs)+m];
+  let yr = oneD ? [-1,1] : [Math.min(0,...ys)-m, Math.max(0,...ys)+m];
+  if(o.xr) xr = o.xr; if(o.yr) yr = o.yr;
+  /* equal scales on the two axes, so a perpendicular bisector looks perpendicular */
+  const kpx = o.k || Math.min(560/(xr[1]-xr[0]), oneD ? 1e9 : 440/(yr[1]-yr[0]));
+  if(oneD){ const hh = 62/kpx; yr = [-hh, hh]; }
+  /* the regions first, in data units, so the ticks can keep clear of them */
+  const box = [xr[0], xr[1], yr[0], yr[1]];
+  const polys = regionsOf(pts, box);
+  const eps = 1e-7*(span*span+1);
+  const edges = [];
+  const adj = pts.map(()=>[]);
+  for(let i=0;i<M;i++) for(let j=i+1;j<M;j++){
+    const e = sharedEdge(polys, pts, i, j, eps);
+    if(e){ edges.push(e); adj[i].push(j); adj[j].push(i); }
+  }
+  /* A tick number crossed by a boundary or sitting on a point is dropped. In
+     one dimension the ticks are the points themselves, unless given. */
+  const step = o.tick || P.niceStep(Math.max(xr[1]-xr[0], oneD?0:(yr[1]-yr[0])), 6);
+  const tk = r => { const t=[]; for(let v=Math.ceil(r[0]/step-1e-9)*step; v<=r[1]+1e-9; v+=step) if(Math.abs(v)>1e-9) t.push(+v.toFixed(6)); return t; };
+  const LS0 = P.labelScale();
+  const nnSegs = [];
+  if(o.nn !== false && !o.hide) for(let i=0;i<M;i++) for(let j=i+1;j<M;j++)
+    if(Math.abs(Math.hypot(pts[i][0]-pts[j][0], pts[i][1]-pts[j][1]) - dmin) < 1e-6*(1+dmin)) nnSegs.push([pts[i],pts[j]]);
+  const clear = rr => !edges.concat(nnSegs).some(e=>segHitsRect(e, rr)) &&
+    (o.hide || !pts.some(p=>p[0]>rr[0]-7/kpx && p[0]<rr[2]+7/kpx && p[1]>rr[1]-7/kpx && p[1]<rr[3]+7/kpx));
+  const xLab = v => { const tw = 7.6*P.fmt(v,3).length*LS0/kpx; return [v-tw/2-2/kpx, -(20*LS0+6)/kpx, v+tw/2+2/kpx, -5/kpx]; };
+  const yLab = v => { const tw = 7.6*P.fmt(v,3).length*LS0/kpx; return [-(12+tw)/kpx, v-7*LS0/kpx, -5/kpx, v+9*LS0/kpx]; };
+  /* in one dimension a tick that sits on a threshold is written beside the line, not under it */
+  const onEdge = v => oneD && edges.some(e=>Math.abs(e[0][0]-v)<1e-6 && Math.abs(e[1][0]-v)<1e-6);
+  const xtAll = o.xticks || (oneD ? pts.map(p=>+p[0].toFixed(6)).concat(edges.map(e=>+e[0][0].toFixed(6))).filter(v=>Math.abs(v)>1e-9) : tk(xr).filter(v=>clear(xLab(v))));
+  const yt = oneD ? [] : (o.yticks || tk(yr).filter(v=>clear(yLab(v))));
+  const xt = xtAll.filter(v=>!onEdge(v)), xtSide = xtAll.filter(onEdge);
+  const pad = {l:46, r:28, t:22, b:40};
+  let w = Math.round(kpx*(xr[1]-xr[0]))+pad.l+pad.r, h = Math.round(kpx*(yr[1]-yr[0]))+pad.t+pad.b, a;
+  for(let it=0; it<4; it++){
+    a = P.Axes({w, h, xr, yr, pad, xlabel:'\\psi_1', ylabel: oneD ? '' : '\\psi_2',
+      xticksOverride:xt, yticksOverride:yt, zeroAxes:!oneD, grid:!oneD});
+    const ex = kpx*(xr[1]-xr[0]) - (a.x1-a.x0), ey = kpx*(yr[1]-yr[0]) - (a.y0-a.y1);
+    if(Math.abs(ex)<0.6 && Math.abs(ey)<0.6) break;
+    w = Math.round(w+ex); h = Math.round(h+ey);
+  }
+  const X = v => a.sx(v), Y = v => a.sy(v);
+  xtSide.forEach(v=>a.raw(`<text x="${(X(v)+5*LS0).toFixed(2)}" y="${(Y(0)+20*LS0).toFixed(2)}" paint-order="stroke" stroke="var(--fig-halo,#FCF9F3)" stroke-width="3.4" stroke-linejoin="round" font-size="${13*LS0}" fill="${C.muted}" text-anchor="start">${P.fmt(v,3)}</text>`));
+  /* a one-dimensional axis still names its origin */
+  const zeroLab = oneD && xr[0]<0 && xr[1]>0 && !xt.includes(0) && (o.zeroTick || pts.some(p=>Math.abs(p[0])<1e-9));
+  if(zeroLab)
+    a.raw(`<text x="${X(0).toFixed(2)}" y="${(Y(0)+20*LS0).toFixed(2)}" paint-order="stroke" stroke="var(--fig-halo,#FCF9F3)" stroke-width="3.4" stroke-linejoin="round" font-size="${13*LS0}" fill="${C.muted}" text-anchor="middle">0</text>`);
+  /* a colouring in which neighbouring regions differ */
+  const col = o.colors || (()=>{
+    const c = [], used = [0,0,0,0,0];
+    for(let i=0;i<M;i++){
+      const ban = new Set(adj[i].filter(j=>j<i).map(j=>c[j]));
+      let best = -1;
+      for(let k=0;k<4;k++) if(!ban.has(k) && (best<0 || used[k]<used[best])) best = k;
+      if(best<0) best = 4;
+      c.push(best); used[best]++;
+    }
+    return c;
+  })();
+  /* fills */
+  polys.forEach((pg,i)=>{
+    if(pg.length<3) return;
+    const d = 'M'+pg.map(v=>X(v[0]).toFixed(2)+','+Y(v[1]).toFixed(2)).join('L')+'Z';
+    a.under(`<path d="${d}" fill="${C.dec[SYM[col[i]]]}" stroke="none"/>`);
+  });
+  const segs = [];
+  /* region boundaries */
+  edges.forEach(e=>{
+    a.poly(e, {color:C.muted, width:1.3, dash:'6 4'});
+    segs.push([[X(e[0][0]),Y(e[0][1])],[X(e[1][0]),Y(e[1][1])],12]);
+  });
+  if(oneD){
+    const yz = Y(0);
+    a.raw(`<line x1="${a.x0}" y1="${yz.toFixed(2)}" x2="${a.x1+10}" y2="${yz.toFixed(2)}" stroke="${C.axis}" stroke-width="1.5"/>`
+        + `<path d="M${a.x1+10},${yz.toFixed(2)} l-8,-4 v8 Z" fill="${C.axis}"/>`);
+    segs.push([[a.x0,yz],[a.x1+10,yz],8]);
+  } else {
+    if(yr[0]<0 && yr[1]>0) segs.push([[a.x0,Y(0)],[a.x1+10,Y(0)],8]);
+    if(xr[0]<0 && xr[1]>0) segs.push([[X(0),a.y0],[X(0),a.y1-8],8]);
+  }
+  /* nearest-neighbour pairs */
+  const pairs = [];
+  for(let i=0;i<M;i++) for(let j=i+1;j<M;j++)
+    if(Math.abs(Math.hypot(pts[i][0]-pts[j][0], pts[i][1]-pts[j][1]) - dmin) < 1e-6*(1+dmin)) pairs.push([i,j]);
+  const showNN = o.nn !== false && !o.hide;
+  if(showNN) pairs.forEach(([i,j])=>{
+    a.poly([pts[i],pts[j]], {color:C.coral, width:2.4});
+    segs.push([[X(pts[i][0]),Y(pts[i][1])],[X(pts[j][0]),Y(pts[j][1])],12]);
+  });
+  /* points */
+  const rp = 6.2;
+  if(!o.hide) pts.forEach((p,i)=>a.point(p[0],p[1],{color:C[SYM[col[i]]], r:rp, ring:C.plate, ringw:1.6}));
+  /* obstacles for the labels */
+  const ob = { box:[a.x0+2, a.y1+2, a.x1-2, a.y0-2], segs, rects:[],
+    circ: o.hide ? [] : pts.map(p=>[X(p[0]), Y(p[1]), rp*1.25+3]) };
+  const TS = 13*LS;
+  xt.forEach(v=>{ const s=P.fmt(v,3), tw=7.6*String(s).length*LS; const yb=(oneD?Y(0):(yr[0]<=0&&yr[1]>=0?Y(0):a.y0));
+    ob.rects.push([X(v)-tw/2-2, yb+6, X(v)+tw/2+2, yb+20*LS+5]); });
+  if(zeroLab) ob.rects.push([X(0)-6, Y(0)+6, X(0)+6, Y(0)+20*LS+5]);
+  xtSide.forEach(v=>{ const tw=7.6*P.fmt(v,3).length*LS; ob.rects.push([X(v)+3, Y(0)+6, X(v)+7+tw, Y(0)+20*LS+5]); });
+  yt.forEach(v=>{ const s=P.fmt(v,3), tw=7.6*String(s).length*LS; const xb=(xr[0]<=0&&xr[1]>=0?X(0):a.x0);
+    ob.rects.push([xb-10-tw-2, Y(v)-TS*0.75, xb-6, Y(v)+TS*0.5]); });
+  const FS = 15;
+  const labels = [];
+  /* texName sets the foot of the formula's box on `baseline`; the box is about
+     nineteen units tall, so its middle sits half of that above the foot */
+  const texAt = (txt, r, color) => labels.push(P.texName(txt, { xMid:(r[0]+r[2])/2, baseline:(r[1]+r[3])/2+9.5*LS,
+    size:FS, color, figW:w }));
+  /* point names: outward from the centre of the set first */
+  const cx = xs.reduce((s,v)=>s+v,0)/M, cy = ys.reduce((s,v)=>s+v,0)/M;
+  if(!o.hide) pts.forEach((p,i)=>{
+    const lw = texW(names[i], FS)*LS, lh = 21*LS;
+    let th0 = Math.atan2(p[1]-cy, p[0]-cx);
+    if(Math.hypot(p[0]-cx, p[1]-cy) < 1e-9) th0 = Math.PI/4;
+    if(oneD) th0 = Math.PI/2;
+    /* rings of growing radius, and on each ring the outward direction first */
+    const cands = [];
+    for(let g=2; g<=70; g+=3){
+      [0,1,-1,2,-2,3,-3,4,-4,5,-5,6,-6,7,-7,8,-8,9,-9,10,-10,11,-11,12,-12,13,-13,14,-14,15,-15,16].forEach(k=>{
+        const th = th0 + k*Math.PI/16, ux = Math.cos(th), uy = -Math.sin(th);
+        const dist = Math.abs(ux)*lw/2 + Math.abs(uy)*lh/2 + rp + g;
+        cands.push([X(p[0]) + ux*dist, Y(p[1]) + uy*dist]);
+      });
+    }
+    /* a name belongs inside its own region, so it cannot be read as a neighbour's */
+    const pg = polys[i];
+    const own = c => { const xd = xr[0]+(c[0]-a.x0)/kpx, yd = yr[0]+(a.y0-c[1])/kpx;
+      for(let q=0;q<pg.length;q++){ const A=pg[q], B=pg[(q+1)%pg.length];
+        if((B[0]-A[0])*(yd-A[1])-(B[1]-A[1])*(xd-A[0]) < -1e-9) return 25; }
+      return 0; };
+    texAt(names[i], place(cands, lw, lh, ob, own), C[SYM[col[i]]]);
+  });
+  /* region names for a figure that gives the regions */
+  if(o.regionNames) polys.forEach((pg,i)=>{
+    const lw = texW(o.regionNames[i], FS)*LS, lh = 21*LS;
+    const gx = pg.reduce((s,v)=>s+v[0],0)/pg.length, gy = pg.reduce((s,v)=>s+v[1],0)/pg.length;
+    const tx = o.regionAt ? o.regionAt[i][0] : gx, ty = o.regionAt ? o.regionAt[i][1] : gy;
+    const cands = [[X(tx),Y(ty)]];
+    for(let rr=10; rr<=60; rr+=10) for(let k=0;k<8;k++) cands.push([X(tx)+rr*Math.cos(k*Math.PI/4), Y(ty)-rr*Math.sin(k*Math.PI/4)]);
+    texAt(o.regionNames[i], place(cands, lw, lh, ob), C[SYM[col[i]]]);
+  });
+  /* d_min beside one nearest-neighbour pair */
+  if(showNN && o.dTex !== false){
+    const txt = 'd_{\\min}' + (o.dTex ? '='+o.dTex : '');
+    const lw = texW(txt, FS)*LS, lh = 23*LS;
+    const order = o.dPair!=null ? [pairs[o.dPair]].concat(pairs) : pairs;
+    const cands = [];
+    order.forEach(([i,j])=>{
+      const A = [X(pts[i][0]),Y(pts[i][1])], B = [X(pts[j][0]),Y(pts[j][1])];
+      const L = Math.hypot(B[0]-A[0], B[1]-A[1]), nx = -(B[1]-A[1])/L, ny = (B[0]-A[0])/L;
+      const off = Math.abs(nx)*lw/2 + Math.abs(ny)*lh/2 + 7;
+      [0.5,0.32,0.68,0.2,0.8,0.1,0.9,0,1,-0.15,1.15,-0.3,1.3,-0.45,1.45].forEach(t=>[1,-1].forEach(sg=>[0,10,22,36].forEach(g=>
+        cands.push([A[0]+t*(B[0]-A[0])+sg*nx*(off+g), A[1]+t*(B[1]-A[1])+sg*ny*(off+g)]))));
+    });
+    texAt(txt, place(cands, lw, lh, ob), C.coral);
+  }
+  /* a panel title sits above the data area, right-aligned, clear of the psi2 name */
+  if(o.title) labels.push(P.texName(o.title, { xRight:a.x1, baseline:a.y1-5*LS, size:FS, color:C.ink, figW:w }));
+  a.raw(labels.join(''));
+  return a.svg().replace('<svg ', `<svg style="max-width:${o.maxw||Math.round(w*1.45)}px;margin:0 auto" `);
+}
+
+/* two figures side by side, wrapping on a narrow screen */
+const pair = (s1, s2) => `<div style="display:flex;flex-wrap:wrap;gap:12px 20px;justify-content:center;align-items:flex-end">`
+  + [s1,s2].map(s=>`<div style="flex:1 1 300px;min-width:0">${s}</div>`).join('') + `</div>`;
+
+/* the examination wording, shared by the questions that keep it */
+const OPEN = 'Consider an $M$-ary modulation scheme where the equally probable symbols have the following waveforms: ';
+const AWGN = ' These signals are planned to be transmitted over a standard AWGN channel with $\\mathcal{N}(0,N_0/2)$.';
+const PDRAW = n => '['+n+' pts] Draw the signal constellation and the optimal decision regions for this signal constellation.';
+const PNN = n => '['+n+' pts] Determine the nearest-neighbour approximation of the average symbol error probability as a function of $E_{s,\\text{avg}}/N_0$, where $E_{s,\\text{avg}}$ is the average symbol energy.';
+
+/* sets used by more than one question */
+const onCircle = (r, angles) => angles.map(t=>[r*Math.cos(t), r*Math.sin(t)]);
+const range = (a,b) => Array.from({length:b-a+1},(_,i)=>a+i);
+const grid = (xs, ys) => [].concat(...ys.map(y=>xs.map(x=>[x,y])));
+const gridNames = (nx, ny) => [].concat(...range(1,ny).reverse().map(n=>range(1,nx).map(mm=>'s_{'+mm+n+'}')));
+
+/* ======================================================================
+   The taxonomy: the shapes the modulation question takes.
+   ====================================================================== */
 CONTENT.DRILLTYPES.M5 = [
-  { k:'binary', name:'A binary scheme',
-    asks:'BPSK, BFSK or BASK is named with an energy and a noise level. Find the distance and the bit error probability.',
-    method:['Write the two points down first. Antipodal gives $\\pm\\sqrt{E_b}$ on one axis. Orthogonal gives $(\\sqrt{E_b},0)$ and $(0,\\sqrt{E_b})$. On-off gives $0$ and $\\sqrt{2E_b}$ once the average is taken.',
-            'Antipodal has $d^{2}=4E_b$ and $P_b=Q\\!\\left(\\sqrt{2E_b/N_0}\\right)$. Orthogonal and on-off both have $d^{2}=2E_b$ and $P_b=Q\\!\\left(\\sqrt{E_b/N_0}\\right)$.',
-            'The gap between them is a factor of two inside the square root, which is $3.01$ dB, and it never changes with the noise level.'],
-    go:'m5-bpsk' },
+  { k:'psk', name:'Equal-energy phase sets',
+    asks:'Waveforms $A\\cos(2\\pi f_ct+\\theta_k)$ with one amplitude and $M$ phases, often with an offset or an odd $M$. Draw the constellation and regions, then give $P_e$.',
+    method:['Expand each waveform on $\\psi_1=\\sqrt{2/T}\\cos(2\\pi f_ct)$ and $\\psi_2=-\\sqrt{2/T}\\sin(2\\pi f_ct)$. A phase $\\theta_k$ becomes the angle $\\theta_k$ on a circle of radius $A\\sqrt{T/2}$.',
+            'The regions are wedges centred on the points. Their boundaries bisect the angles between neighbouring points, so an offset only rotates the picture.',
+            '$d_{\\min}=2\\sqrt{E_s}\\sin(\\pi/M)$ and $N_{\\min}=2$ for $M\\ge3$. Write $d_{\\min}^{2}$ as a multiple of $E_{s,\\text{avg}}$ before substituting into $N_{\\min}Q\\big(\\sqrt{d_{\\min}^{2}/2N_0}\\big)$.'],
+    go:'m5-mpsk-pe' },
 
-  { k:'mpsk', name:'M-ary phase-shift keying',
-    asks:'An $M$-PSK constellation is given with $E_s$ or $E_b$. Find $d_{\\min}$, $N_{\\min}$ and the symbol error probability.',
-    method:['All $M$ points sit on a circle of radius $\\sqrt{E_s}$ at spacing $2\\pi/M$, so $d_{\\min}=2\\sqrt{E_s}\\sin(\\pi/M)$.',
-            'Every point has exactly two neighbours at that distance, so $N_{\\min}=2$ for every $M$ above two.',
-            '$P_e\\approx 2Q\\!\\left(\\sqrt{2E_s/N_0}\\,\\sin(\\pi/M)\\right)$. Convert with $E_s=(\\log_2 M)E_b$ if the question gives energy per bit.'],
-    go:'m5-mpsk' },
-
-  { k:'mpam', name:'M-ary amplitude-shift keying',
-    asks:'An $M$-PAM constellation is given. Find the average energy, the distance and the error probability.',
-    method:['The points are $\\pm A,\\pm3A,\\ldots,\\pm(M-1)A$ on one axis, so $d_{\\min}=2A$ and $E_{s,\\text{avg}}=A^{2}(M^{2}-1)/3$.',
-            'Eliminating $A$ gives $d_{\\min}^{2}=12E_{s,\\text{avg}}/(M^{2}-1)$, which is the form to use when the energy is what the question fixes.',
-            'The two end points have one neighbour and the rest have two, so $N_{\\min}=2(M-1)/M$ — an average, and not a whole number.'],
+  { k:'pam', name:'Amplitude sets on one carrier',
+    asks:'Waveforms $c_k\\cos(2\\pi f_ct)$ with one phase and several amplitudes, possibly with a zero or an asymmetric level. Draw the line constellation and thresholds, then give $P_e$.',
+    method:['One basis function carries every waveform. The coordinate of $c_k\\cos(2\\pi f_ct)$ on $\\psi_1$ is $c_k\\sqrt{T/2}$, and a negative amplitude is a negative coordinate.',
+            'The thresholds are the midpoints between neighbouring points. The two end regions run to infinity.',
+            'Count neighbours at $d_{\\min}$ point by point. An end point has one, an inner point has two, and a point further than $d_{\\min}$ from everything has none. Average over the $M$ points.'],
     go:'m5-mask' },
 
-  { k:'qam', name:'Quadrature amplitude modulation',
-    asks:'An $M$-QAM constellation is given. Find $d_{\\min}$, $N_{\\min}$ and the error probability.',
-    method:['Square QAM is two independent $\\sqrt{M}$-level amplitude constellations at right angles. With spacing $d$, $E_{s,\\text{avg}}=(M-1)d^{2}/6$.',
-            'So $d_{\\min}^{2}=6E_{s,\\text{avg}}/(M-1)$ — the same shape as PAM but with $M-1$ where PAM has $M^{2}-1$.',
-            'Count $N_{\\min}$ by position: corners have two neighbours, edges three, the interior four. Average over all $M$ points.'],
+  { k:'qam', name:'Amplitude-and-phase sets',
+    asks:'A square or rectangular grid, two rings, a set with a zero signal, or a set with one point off the circle. Draw it with its regions and give $P_e$ with the neighbour count averaged.',
+    method:['Write each waveform as $a_k\\sqrt{2/T}\\cos-b_k\\sqrt{2/T}\\sin$ and read $(a_k,b_k)$ off it, or convert amplitude and phase with $\\cos(x+\\theta)=\\cos\\theta\\cos x-\\sin\\theta\\sin x$.',
+            'Draw the perpendicular bisector of every close pair. Each region is the part of the plane nearer its own point than any other.',
+            'Find $d_{\\min}$ from the distance table, then count for each point how many others sit at exactly $d_{\\min}$. $N_{\\min}$ is the average, and it need not be a whole number.'],
     go:'m5-qam' },
 
-  { k:'compare', name:'Comparing two schemes',
-    asks:'Two schemes are named. Compare the energy each needs, the bits each carries, and the bandwidth each occupies.',
-    method:['Fix what is being held equal before comparing anything: the same $E_s$, the same $E_b$, or the same error probability. The answer changes with the choice.',
-            'For a fixed error probability, calculate the ratio of the two $Q$ arguments. Convert the squared ratio to decibels with $10\\log_{10}$.',
-            'PSK and QAM keep their bandwidth as $M$ grows and pay in energy. FSK keeps its energy and pays in bandwidth. That is the whole trade.'],
-    go:'m5-compare' },
+  { k:'fsk', name:'Sets built from two frequencies',
+    asks:'Waveforms on two carrier frequencies, possibly with the zero signal or with both signs. Check orthogonality, choose the two axes, draw the set and give $P_e$.',
+    method:['Two cosines on $0\\le t\\le T$ are orthogonal when their frequencies differ by a multiple of $1/(2T)$. Then each frequency is its own axis.',
+            'If they are not orthogonal, compute $\\rho=\\langle s_1,s_2\\rangle/E$ and use Gram–Schmidt. The distance is $d^{2}=2E(1-\\rho)$.',
+            'Orthogonal points of energy $E$ are $\\sqrt{2E}$ apart, antipodal ones $2\\sqrt{E}$. Everything else follows from the distance table.'],
+    go:'m5-bfsk' },
 
-  { k:'full', name:'A full-length question on one scheme',
-    asks:'One scheme, three or four parts: draw the constellation, find the distance, apply the error formula, and compare with an alternative.',
-    method:['Draw the constellation to scale first and mark $d_{\\min}$ on the drawing. Everything else is read off it.',
-            'State once whether the given energy is per symbol or per bit, convert with $E_s=(\\log_2 M)E_b$, and do not convert again.',
-            'Check the answer against a case you already know. At $M=4$, QAM and PSK are the same constellation, and QPSK needs the same $E_b/N_0$ as BPSK.'] }
+  { k:'design', name:'Reversed questions and comparisons',
+    asks:'The regions or the error expression are given and the waveforms are asked for, or two sets are compared at equal $E_{s,\\text{avg}}$.',
+    method:['A boundary is the perpendicular bisector of two points. So each point is the mirror image of its neighbour in the boundary they share.',
+            'An error expression gives $d_{\\min}^{2}/E_{s,\\text{avg}}$ and $N_{\\min}$. Match both against the formulas of each family.',
+            'Compare two sets at the same $E_{s,\\text{avg}}$ through $10\\log_{10}$ of the ratio of their $d_{\\min}^{2}/E_{s,\\text{avg}}$ values. Mention $N_{\\min}$ as the second-order difference.'],
+    go:'m5-compare' }
 ];
 
+/* ======================================================================
+   The questions.
+   ====================================================================== */
 CONTENT.DRILL = CONTENT.DRILL.concat([
 
-/* ---- single-skill ---------------------------------------------------- */
+/* ---- close variants of the examination shape ------------------------- */
 
-{ id:'D5-01', module:'M5', type:'binary', src:'CH9 s.68',
-  stem:'A binary phase-shift keying system runs at $E_b/N_0=9$ dB.',
-  parts:['Give the two constellation points and the distance between them.',
-         'Give the bit error probability.'],
-  sol:'<b>Given.</b> BPSK at $9$ dB.<br>'
-     +'<b>Find.</b> $d_{\\min}$ and $P_b$.<br>'
-     +'<b>Method.</b> Place the points, measure the distance, put it through one $Q$.<br>'
-     +'<b>Solution — (a).</b> The two waveforms are $\\pm\\sqrt{2E_b/T_b}\\cos(2\\pi f_c t)$, which is one basis function carrying $+\\sqrt{E_b}$ and $-\\sqrt{E_b}$. So $d_{\\min}=2\\sqrt{E_b}$ and $d_{\\min}^{2}=4E_b$.<br>'
-     +'<b>Solution — (b).</b> $\\dfrac{d_{\\min}^{2}}{2N_0}=\\dfrac{4E_b}{2N_0}=\\dfrac{2E_b}{N_0}$. At $9$ dB, $E_b/N_0=7.943$, so the argument is $\\sqrt{15.887}=3.986$ and $P_b=Q(3.986)=3.36\\times10^{-5}$.<br>'
-     +'<b>Check.</b> The two points are the furthest apart that two points of energy $E_b$ can be, so no binary scheme at this energy does better. Any other answer to part (b) that is smaller than this one is wrong for that reason alone.',
-  err:'Writing $P_b=Q\\!\\left(\\sqrt{E_b/N_0}\\right)$, which is the orthogonal answer. The factor of two comes from the points being antipodal rather than at right angles.',
-  teach:'Ask for the answer at $12$ dB before computing it. The argument grows as $\\sqrt{\\cdot}$. Therefore, three more decibels doubles $2E_b/N_0$ and multiplies the argument by $1.41$. $Q$ falls by nearly two orders of magnitude. That steepness is the reason a few decibels matter so much.' },
+{ id:'D5-01', module:'M5', type:'psk', src:'Final Q3',
+  stem:'Consider an $M$-ary modulation scheme where the equally probable symbols have the following waveforms: $$s_k(t)=\\sqrt{18}\\cos\\!\\Big(3000\\pi t+\\frac{\\pi(2k+1)}{6}\\Big),\\quad k\\in\\{1,\\ldots,6\\},\\quad0\\le t\\le1.$$ These signals are planned to be transmitted over a standard AWGN channel with $\\mathcal{N}(0,N_0/2)$.',
+  parts:['[10 pts] Draw the signal constellation and the optimal decision regions for this signal constellation.',
+         '[10 pts] Determine the nearest-neighbour approximation of the average symbol error probability as a function of $E_{s,\\text{avg}}/N_0$, where $E_{s,\\text{avg}}$ is the average symbol energy.',
+         '[5 pts] Evaluate the approximation of part (b) at $E_{s,\\text{avg}}/N_0=18$.'],
+  sol:'<b>Given.</b> Six equally likely waveforms of amplitude $\\sqrt{18}$ at $f_c=1500$ Hz on $0\\le t\\le1$. The phases are $\\theta_k=\\pi(2k+1)/6$.<br>'
+     +'<b>Find.</b> The constellation with its regions, $P_e$ as a function of $E_{s,\\text{avg}}/N_0$, and its value at $E_{s,\\text{avg}}/N_0=18$.<br>'
+     +'<b>Method.</b> Use the orthonormal pair $\\psi_1(t)=\\sqrt2\\cos(3000\\pi t)$ and $\\psi_2(t)=-\\sqrt2\\sin(3000\\pi t)$ on $0\\le t\\le1$. Equally likely signals in AWGN are detected best by the minimum-distance rule. Then $P_e\\approx N_{\\min}Q\\big(\\sqrt{d_{\\min}^{2}/2N_0}\\big)$.<br>'
+     +'<b>Solution — (a).</b> Expand the cosine of a sum:'
+     +'$$\\begin{aligned}s_k(t)&=\\sqrt{18}\\big[\\cos\\theta_k\\cos(3000\\pi t)-\\sin\\theta_k\\sin(3000\\pi t)\\big]\\\\&=\\frac{\\sqrt{18}}{\\sqrt2}\\cos\\theta_k\\,\\psi_1(t)+\\frac{\\sqrt{18}}{\\sqrt2}\\sin\\theta_k\\,\\psi_2(t)\\\\&=3\\cos\\theta_k\\,\\psi_1(t)+3\\sin\\theta_k\\,\\psi_2(t).\\end{aligned}$$'
+     +'So $\\mathbf{s}_k=(3\\cos\\theta_k,\\,3\\sin\\theta_k)$ lies on a circle of radius $3$. The six angles are $\\theta_1=90^{\\circ}$, $\\theta_2=150^{\\circ}$, $\\theta_3=210^{\\circ}$, $\\theta_4=270^{\\circ}$, $\\theta_5=330^{\\circ}$ and $\\theta_6=390^{\\circ}\\equiv30^{\\circ}$. '
+     +'Neighbouring points are $60^{\\circ}$ apart. The optimal region of each point is the $60^{\\circ}$ wedge centred on it. The wedge boundaries are the rays at $0^{\\circ},60^{\\circ},120^{\\circ},180^{\\circ},240^{\\circ}$ and $300^{\\circ}$.<br>'
+     +'<b>Solution — (b).</b> Every waveform has the same energy, so the average is that energy:'
+     +'$$\\begin{aligned}E_{s,\\text{avg}}&=\\int_0^1 18\\cos^2(3000\\pi t+\\theta_k)\\,dt\\\\&=9\\int_0^1\\big[1+\\cos(6000\\pi t+2\\theta_k)\\big]dt\\\\&=9\\Big[t+\\frac{\\sin(6000\\pi t+2\\theta_k)}{6000\\pi}\\Big]_0^1\\\\&=9.\\end{aligned}$$'
+     +'The sine term is equal at both limits, because $6000\\pi$ is a whole number of periods. The chord between neighbours is'
+     +'$$d_{\\min}=2\\cdot3\\sin\\frac{\\pi}{6}=3,\\qquad d_{\\min}^{2}=9=E_{s,\\text{avg}}.$$'
+     +'Each point has two neighbours at $d_{\\min}$, one on each side. So $N_{\\min}=2$ and'
+     +'$$\\begin{aligned}P_e&\\approx2Q\\Big(\\sqrt{\\frac{d_{\\min}^{2}}{2N_0}}\\Big)\\\\&=2Q\\Big(\\sqrt{\\frac{E_{s,\\text{avg}}}{2N_0}}\\Big).\\end{aligned}$$<br>'
+     +'<b>Solution — (c).</b> The argument is $\\sqrt{18/2}=\\sqrt9=3.00$. The table gives $Q(3.00)=0.001350$. So $P_e\\approx2(0.001350)=2.70\\times10^{-3}$.<br>'
+     +'<b>Check.</b> The general formula $d_{\\min}^{2}=4E_s\\sin^{2}(\\pi/M)$ gives $4\\cdot9\\cdot(0.5)^{2}=9$. The cosine rule gives $9+9-2\\cdot9\\cos60^{\\circ}=9$. Both agree with the coordinates.',
+  err:'Drawing the first point at $0^{\\circ}$. The phase formula starts at $k=1$, so $\\theta_1=\\pi/2$, and the whole hexagon is rotated by $30^{\\circ}$ from the plain one.',
+  teach:'This is the examination shape with a six-point set. The offset rotates the picture but changes neither $d_{\\min}$ nor $N_{\\min}$. Ask the class why.',
+  figSol:()=>cfig(onCircle(3, range(1,6).map(k=>Math.PI*(2*k+1)/6)), {dTex:'3', tick:1}) },
 
-{ id:'D5-02', module:'M5', type:'binary', src:'CH9 s.72',
-  stem:'A binary frequency-shift keying system uses two orthogonal waveforms at the same $E_b/N_0=9$ dB.',
-  parts:['Give the two constellation points and the distance between them.',
-         'Give the bit error probability.',
-         'Give the penalty in decibels against BPSK.'],
-  sol:'<b>Given.</b> BFSK at $9$ dB, orthogonal waveforms.<br>'
-     +'<b>Find.</b> $d_{\\min}$, $P_b$, and the gap.<br>'
-     +'<b>Method.</b> Orthogonal waveforms need two basis functions, one for each. The points are on the two axes.<br>'
-     +'<b>Solution — (a).</b> The points are $(\\sqrt{E_b},0)$ and $(0,\\sqrt{E_b})$, a right angle apart. By Pythagoras $d_{\\min}=\\sqrt{2E_b}$ and $d_{\\min}^{2}=2E_b$.<br>'
-     +'<b>Solution — (b).</b> $\\dfrac{d_{\\min}^{2}}{2N_0}=\\dfrac{E_b}{N_0}=7.943$, so $P_b=Q(2.818)=2.41\\times10^{-3}$.<br>'
-     +'<b>Solution — (c).</b> BPSK reaches the same $P_b$ with half the energy, and $10\\log_{10}2=3.01$ dB.<br>'
-     +'<b>Check.</b> The two error probabilities are $3.36\\times10^{-5}$ and $2.41\\times10^{-3}$ — a factor of seventy for the same energy. The $3$ dB is not a small correction.',
-  err:'Drawing both points on one axis. Orthogonal waveforms are at a right angle by definition, and putting them on a line turns the answer into the antipodal one.',
-  teach:'Ask where the $\\sqrt{2}$ went. The distance fell from $2\\sqrt{E_b}$ to $\\sqrt{2E_b}$, a factor of $\\sqrt{2}$. Squaring it gives the factor of two in the $Q$ argument, which is the $3$ dB. Every appearance of $3$ dB in this module traces back to one $\\sqrt{2}$ in a picture.' },
+{ id:'D5-02', module:'M5', type:'psk', src:'Final Q3',
+  stem:'Consider an $M$-ary modulation scheme where the equally probable symbols have the following waveforms: $$s_k(t)=\\sqrt{24}\\cos\\!\\Big(2000\\pi t+\\frac{\\pi(4k-3)}{6}\\Big),\\quad k\\in\\{1,2,3\\},\\quad0\\le t\\le1.$$ These signals are planned to be transmitted over a standard AWGN channel with $\\mathcal{N}(0,N_0/2)$.',
+  parts:['[10 pts] Draw the signal constellation and the optimal decision regions for this signal constellation.',
+         '[10 pts] Determine the nearest-neighbour approximation of the average symbol error probability as a function of $E_{s,\\text{avg}}/N_0$.',
+         '[5 pts] How many bits does one symbol carry? Rewrite the result of part (b) as a function of $E_b/N_0$.'],
+  sol:'<b>Given.</b> Three equally likely waveforms of amplitude $\\sqrt{24}$ at $f_c=1000$ Hz on $0\\le t\\le1$, with phases $\\theta_k=\\pi(4k-3)/6$.<br>'
+     +'<b>Find.</b> The constellation and regions, $P_e$ against $E_{s,\\text{avg}}/N_0$, and the same against $E_b/N_0$.<br>'
+     +'<b>Method.</b> Use $\\psi_1(t)=\\sqrt2\\cos(2000\\pi t)$ and $\\psi_2(t)=-\\sqrt2\\sin(2000\\pi t)$. Then $A\\cos(2000\\pi t+\\theta)$ has coordinates $\\frac{A}{\\sqrt2}(\\cos\\theta,\\sin\\theta)$.<br>'
+     +'<b>Solution — (a).</b> The radius is $\\sqrt{24}/\\sqrt2=\\sqrt{12}=2\\sqrt3$. The angles are'
+     +'$$\\theta_1=\\frac{\\pi}{6}=30^{\\circ},\\quad\\theta_2=\\frac{5\\pi}{6}=150^{\\circ},\\quad\\theta_3=\\frac{9\\pi}{6}=270^{\\circ}.$$'
+     +'So $\\mathbf{s}_1=(3,\\sqrt3)$, $\\mathbf{s}_2=(-3,\\sqrt3)$ and $\\mathbf{s}_3=(0,-2\\sqrt3)$. Each region is a $120^{\\circ}$ wedge centred on its point. The boundaries are the rays at $90^{\\circ}$, $210^{\\circ}$ and $330^{\\circ}$.<br>'
+     +'<b>Solution — (b).</b> All three energies equal the squared radius, so $E_{s,\\text{avg}}=12$. From the coordinates of $\\mathbf{s}_1$ and $\\mathbf{s}_2$,'
+     +'$$\\begin{aligned}d_{12}^{2}&=(3-(-3))^{2}+(\\sqrt3-\\sqrt3)^{2}\\\\&=36.\\end{aligned}$$'
+     +'By symmetry every pair is $6$ apart. So $d_{\\min}=6$, $d_{\\min}^{2}=36=3E_{s,\\text{avg}}$, and each point has two neighbours: $N_{\\min}=2$. Substitute:'
+     +'$$\\begin{aligned}P_e&\\approx2Q\\Big(\\sqrt{\\frac{d_{\\min}^{2}}{2N_0}}\\Big)\\\\&=2Q\\Big(\\sqrt{\\frac{3E_{s,\\text{avg}}}{2N_0}}\\Big).\\end{aligned}$$<br>'
+     +'<b>Solution — (c).</b> One symbol carries $\\log_2 3=1.585$ bits. So $E_{s,\\text{avg}}=1.585E_b$, and'
+     +'$$P_e\\approx2Q\\Big(\\sqrt{\\frac{3(1.585)E_b}{2N_0}}\\Big)=2Q\\Big(\\sqrt{2.377\\frac{E_b}{N_0}}\\Big).$$<br>'
+     +'<b>Check.</b> The chord formula gives $d_{\\min}=2(2\\sqrt3)\\sin60^{\\circ}=2(2\\sqrt3)(\\sqrt3/2)=6$. The squared radius times three is $36$, the same value.',
+  err:'Writing $N_{\\min}=1$ because there are "only three points". Each point still has two neighbours at $d_{\\min}$, and each counts as a separate way to be wrong.',
+  teach:'Three points on a circle are the smallest odd PSK set. The regions are three wedges, and the answer carries a non-integer bit count.',
+  figSol:()=>cfig(onCircle(Math.sqrt(12), [Math.PI/6, 5*Math.PI/6, 3*Math.PI/2]), {dTex:'6', tick:2}) },
 
-{ id:'D5-03', module:'M5', type:'binary', src:'CH9 s.70',
-  stem:'A binary amplitude-shift keying system sends nothing for a $0$ and $\\sqrt{2E/T_b}\\cos(2\\pi f_c t)$ for a $1$, with the two bits equally likely. The system runs at $E_b/N_0=10$ dB, where $E_b$ is the <em>average</em> energy per bit.',
-  parts:['Give the average energy per bit in terms of $E$.',
-         'Give the distance between the two points in terms of $E_b$.',
-         'Give the bit error probability.'],
-  sol:'<b>Given.</b> On-off keying, equally likely bits, $E_b/N_0=10$ dB.<br>'
-     +'<b>Find.</b> $E_b$, $d_{\\min}$, $P_b$.<br>'
-     +'<b>Method.</b> One basis function carries both signals, so the constellation is two points on a line: $0$ and $\\sqrt{E}$.<br>'
-     +'<b>Solution — (a).</b> Half the bits cost $E$ and half cost nothing, so $E_b=E/2$ and $E=2E_b$.<br>'
-     +'<b>Solution — (b).</b> The distance is $\\sqrt{E}=\\sqrt{2E_b}$, so $d_{\\min}^{2}=2E_b$ — the same as BFSK.<br>'
-     +'<b>Solution — (c).</b> $\\dfrac{d_{\\min}^{2}}{2N_0}=\\dfrac{E_b}{N_0}=10$, so $P_b=Q(3.162)=7.83\\times10^{-4}$.<br>'
-     +'<b>Check.</b> On-off and orthogonal give the same answer by two different routes. One halves the energy and keeps the points on a line, the other keeps the energy and separates the points by a right angle. Both end at $d^{2}=2E_b$.',
-  err:'Using $E$ where $E_b$ is asked for. The transmitted symbol carries $E$. However, half the symbols carry nothing. Therefore, the average is $E/2$. Every comparison in this course is at equal average energy.',
-  teach:'Ask which scheme a designer would pick between on-off and BFSK, given that they have the same error probability. On-off needs one basis function and half the bandwidth, but its transmitter switches between zero and full power. The mathematics does not choose; the hardware does.' },
+{ id:'D5-03', module:'M5', type:'psk', src:'Final Q3',
+  stem:'Consider an $M$-ary modulation scheme where the equally probable symbols have the following waveforms: $$s_k(t)=2\\cos\\!\\Big(4000\\pi t+\\frac{(2k-1)\\pi}{8}\\Big),\\quad k\\in\\{1,\\ldots,8\\},\\quad0\\le t\\le2.$$ These signals are planned to be transmitted over a standard AWGN channel with $\\mathcal{N}(0,N_0/2)$.',
+  parts:['[8 pts] Find $E_{s,\\text{avg}}$, the number of bits per symbol and the average energy per bit $E_b$.',
+         '[8 pts] Draw the signal constellation and the optimal decision regions for this signal constellation.',
+         '[9 pts] Determine the nearest-neighbour approximation of the average symbol error probability as a function of $E_{s,\\text{avg}}/N_0$, and then as a function of $E_b/N_0$.'],
+  sol:'<b>Given.</b> Eight equally likely waveforms of amplitude $2$ at $f_c=2000$ Hz, now on $0\\le t\\le2$. The phases are $\\theta_k=(2k-1)\\pi/8$.<br>'
+     +'<b>Find.</b> $E_{s,\\text{avg}}$, bits per symbol, $E_b$, the constellation, and $P_e$ against both energies.<br>'
+     +'<b>Method.</b> With $T=2$ the orthonormal pair is $\\psi_1(t)=\\sqrt{2/2}\\cos(4000\\pi t)=\\cos(4000\\pi t)$ and $\\psi_2(t)=-\\sin(4000\\pi t)$. A symbol of amplitude $A$ then has radius $A\\sqrt{T/2}=A$.<br>'
+     +'<b>Solution — (a).</b> Integrate the squared waveform over the longer interval:'
+     +'$$\\begin{aligned}E_k&=\\int_0^2 4\\cos^2(4000\\pi t+\\theta_k)\\,dt\\\\&=2\\int_0^2\\big[1+\\cos(8000\\pi t+2\\theta_k)\\big]dt\\\\&=2\\Big[t+\\frac{\\sin(8000\\pi t+2\\theta_k)}{8000\\pi}\\Big]_0^2\\\\&=2(2-0)=4.\\end{aligned}$$'
+     +'The sine term is equal at $t=0$ and $t=2$, since $16000\\pi$ is a whole number of periods. So $E_{s,\\text{avg}}=4$. One symbol carries $\\log_2 8=3$ bits, so $E_b=4/3=1.333$.<br>'
+     +'<b>Solution — (b).</b> The points are $\\mathbf{s}_k=(2\\cos\\theta_k,\\,2\\sin\\theta_k)$ at $22.5^{\\circ},67.5^{\\circ},\\ldots,337.5^{\\circ}$ on a circle of radius $2$. Each region is a $45^{\\circ}$ wedge centred on its point. The boundaries are the rays at $0^{\\circ},45^{\\circ},90^{\\circ},\\ldots,315^{\\circ}$, which include both axes.<br>'
+     +'<b>Solution — (c).</b> The chord between neighbours is'
+     +'$$\\begin{aligned}d_{\\min}^{2}&=4E_{s,\\text{avg}}\\sin^{2}\\frac{\\pi}{8}\\\\&=4E_{s,\\text{avg}}(0.1464)\\\\&=0.5858\\,E_{s,\\text{avg}}.\\end{aligned}$$'
+     +'With $E_{s,\\text{avg}}=4$, $d_{\\min}=\\sqrt{2.343}=1.531$. Each point has two neighbours, so $N_{\\min}=2$:'
+     +'$$\\begin{aligned}P_e&\\approx2Q\\Big(\\sqrt{\\frac{0.5858E_{s,\\text{avg}}}{2N_0}}\\Big)\\\\&=2Q\\Big(\\sqrt{0.2929\\frac{E_{s,\\text{avg}}}{N_0}}\\Big)\\\\&=2Q\\Big(\\sqrt{0.8787\\frac{E_b}{N_0}}\\Big),\\end{aligned}$$'
+     +'where the last line uses $E_{s,\\text{avg}}=3E_b$.<br>'
+     +'<b>Check.</b> The cosine rule gives $d_{\\min}^{2}=4+4-2(4)\\cos45^{\\circ}=8-5.657=2.343$. This equals $0.5858\\times4=2.343$.',
+  err:'Using $A^{2}/2=2$ as the energy. That is the energy over one second, and this symbol lasts two seconds. The radius is $A\\sqrt{T/2}$, not $A/\\sqrt2$.',
+  teach:'The interval length is the twist. The energy doubles with $T$, and the orthonormal functions change with it, but the ratio $d_{\\min}^{2}/E_{s,\\text{avg}}$ does not.',
+  figSol:()=>cfig(onCircle(2, range(1,8).map(k=>(2*k-1)*Math.PI/8)), {dTex:'1.531', tick:1}) },
 
-{ id:'D5-04', module:'M5', type:'binary', src:'CH9 s.74',
-  stem:'A link must achieve $P_b=10^{-5}$.',
-  parts:['Give the $E_b/N_0$ in decibels that BPSK needs.',
-         'Give the $E_b/N_0$ in decibels that BFSK needs.'],
-  sol:'<b>Given.</b> A target error probability.<br>'
-     +'<b>Find.</b> The energy each scheme needs to reach it.<br>'
-     +'<b>Method.</b> Invert the $Q$ once, then read each scheme off its own $d^{2}$.<br>'
-     +'<b>Solution — (a).</b> $Q(x)=10^{-5}$ at $x=4.265$. For BPSK the argument is $\\sqrt{2E_b/N_0}$, so $2E_b/N_0=18.19$, $E_b/N_0=9.095$, and in decibels $9.59$ dB.<br>'
-     +'<b>Solution — (b).</b> For BFSK the argument is $\\sqrt{E_b/N_0}$, so $E_b/N_0=18.19$ and in decibels $12.60$ dB.<br>'
-     +'<b>Check.</b> The two answers differ by $12.60-9.59=3.01$ dB, which is the gap the geometry predicted before any number was computed.',
-  err:'Inverting $Q$ and then forgetting to square. The $x$ that comes out of the inversion is the whole argument, and the energy sits underneath a square root.',
-  teach:'Both parts need the same inverse value of $Q$. Calculate this value once. Then substitute the distance expression for each modulation method. The ratio directly gives the $3$ dB difference.' },
+{ id:'D5-04', module:'M5', type:'pam', src:'Final Q3',
+  stem:OPEN+'$$s_k(t)=2(2k-5)\\cos(5000\\pi t),\\quad k\\in\\{1,2,3,4\\},\\quad0\\le t\\le1.$$'+AWGN,
+  parts:[PDRAW(10), PNN(10), '[5 pts] Evaluate the approximation of part (b) at $E_{s,\\text{avg}}/N_0=22.5$.'],
+  sol:'<b>Given.</b> Four equally likely waveforms with amplitudes $2(2k-5)\\in\\{-6,-2,2,6\\}$ on one carrier at $2500$ Hz, $0\\le t\\le1$.<br>'
+     +'<b>Find.</b> The line constellation and its thresholds, $P_e$ against $E_{s,\\text{avg}}/N_0$, and its value at $22.5$.<br>'
+     +'<b>Method.</b> One function $\\psi_1(t)=\\sqrt2\\cos(5000\\pi t)$ carries all four waveforms. A waveform $c\\cos(5000\\pi t)$ has the coordinate $c/\\sqrt2$ on it. Then use $P_e\\approx N_{\\min}Q\\big(\\sqrt{d_{\\min}^{2}/2N_0}\\big)$.<br>'
+     +'<b>Solution — (a).</b> Write each waveform as a multiple of $\\psi_1$:'
+     +'$$s_k(t)=\\frac{2(2k-5)}{\\sqrt2}\\,\\sqrt2\\cos(5000\\pi t)=\\sqrt2(2k-5)\\,\\psi_1(t).$$'
+     +'The points are $-3\\sqrt2,-\\sqrt2,\\sqrt2,3\\sqrt2$, that is $-4.243,-1.414,1.414,4.243$. The optimal thresholds are the midpoints $-2\\sqrt2$, $0$ and $2\\sqrt2$. The two end regions run to $\\pm\\infty$.<br>'
+     +'<b>Solution — (b).</b> The energy of a point is its squared coordinate:'
+     +'$$\\begin{aligned}E_{s,\\text{avg}}&=\\frac{18+2+2+18}{4}\\\\&=10.\\end{aligned}$$'
+     +'Neighbouring points are $d_{\\min}=2\\sqrt2$ apart, so $d_{\\min}^{2}=8=0.8E_{s,\\text{avg}}$. The end points have one neighbour and the inner points two:'
+     +'$$N_{\\min}=\\frac{1+2+2+1}{4}=1.5.$$'
+     +'Substitute both:'
+     +'$$\\begin{aligned}P_e&\\approx1.5\\,Q\\Big(\\sqrt{\\frac{0.8E_{s,\\text{avg}}}{2N_0}}\\Big)\\\\&=1.5\\,Q\\Big(\\sqrt{0.4\\frac{E_{s,\\text{avg}}}{N_0}}\\Big).\\end{aligned}$$<br>'
+     +'<b>Solution — (c).</b> The argument is $\\sqrt{0.4\\times22.5}=\\sqrt9=3.00$. With $Q(3.00)=0.001350$, $P_e\\approx1.5(0.001350)=2.03\\times10^{-3}$.<br>'
+     +'<b>Check.</b> Integrate one waveform directly: $\\int_0^1 36\\cos^2(5000\\pi t)\\,dt=18\\big[t+\\frac{\\sin(10000\\pi t)}{10000\\pi}\\big]_0^1=18$. This equals $(3\\sqrt2)^{2}$. The family formula $d_{\\min}^{2}=12E_{s,\\text{avg}}/(M^{2}-1)=120/15=8$ also agrees.',
+  err:'Placing the points at $\\pm2,\\pm6$. Those are amplitudes. The coordinate is the amplitude times $\\sqrt{T/2}$, and with $T=1$ that divides by $\\sqrt2$.',
+  teach:'The examination shape on four amplitude levels. The fractional $N_{\\min}=1.5$ is the point to press.',
+  figSol:()=>cfig([-3,-1,1,3].map(c=>[c*R2,0]), {oneD:true, dTex:'2\\sqrt{2}', margin:2.4, xticks:[-3,-1,1,3].map(c=>+(c*R2).toFixed(3))}) },
 
-{ id:'D5-05', module:'M5', type:'mpsk', src:'CH9 s.79',
-  stem:'An $8$-PSK system operates at $E_s/N_0=13$ dB.',
-  parts:['Give $d_{\\min}$ in terms of $E_s$.',
-         'Give $N_{\\min}$.',
-         'Give the symbol error probability.'],
-  sol:'<b>Given.</b> $M=8$ on a circle of radius $\\sqrt{E_s}$, at $13$ dB.<br>'
-     +'<b>Find.</b> $d_{\\min}$, $N_{\\min}$, $P_e$.<br>'
-     +'<b>Method.</b> Two neighbouring points are separated by an angle $2\\pi/M$ on a circle of radius $\\sqrt{E_s}$. The chord across that angle is $2\\sqrt{E_s}\\sin(\\pi/M)$.<br>'
-     +'<b>Solution — (a).</b> $d_{\\min}=2\\sqrt{E_s}\\sin(\\pi/8)=0.765\\sqrt{E_s}$.<br>'
-     +'<b>Solution — (b).</b> Every point on a circle has one neighbour clockwise and one anticlockwise, so $N_{\\min}=2$.<br>'
-     +'<b>Solution — (c).</b> $P_e\\approx 2Q\\!\\left(\\sqrt{2E_s/N_0}\\,\\sin(\\pi/8)\\right)$. At $13$ dB, $E_s/N_0=19.95$, so the argument is $\\sqrt{39.91}\\times0.3827=2.417$ and $P_e\\approx 2Q(2.417)=1.56\\times10^{-2}$.<br>'
-     +'<b>Check.</b> One symbol in sixty-four is wrong. For eight-point PSK at only $13$ dB that is the right order of magnitude — the points are crowded on one circle, and it shows.',
-  err:'Using $\\sin(2\\pi/M)$ instead of $\\sin(\\pi/M)$. The half-angle comes from dropping a perpendicular from the centre onto the chord, which cuts the angle in two.',
-  teach:'Ask for $d_{\\min}$ at $M=2$ from the same formula: $2\\sqrt{E_s}\\sin(\\pi/2)=2\\sqrt{E_s}$, which is BPSK. A general formula that reproduces the case you already know is a formula you can trust.' },
+{ id:'D5-05', module:'M5', type:'pam', src:'Final Q3',
+  stem:OPEN+'$$s_k(t)=3\\sqrt2\\,(k-1)\\cos(3000\\pi t),\\quad k\\in\\{1,2,3\\},\\quad0\\le t\\le1.$$'+AWGN,
+  parts:[PDRAW(10), PNN(10), '[5 pts] The set is shifted so that its points are symmetric about the origin, with the same $d_{\\min}$. Find the saving in $E_{s,\\text{avg}}$ in decibels.'],
+  sol:'<b>Given.</b> Three equally likely waveforms $0$, $3\\sqrt2\\cos(3000\\pi t)$ and $6\\sqrt2\\cos(3000\\pi t)$ on $0\\le t\\le1$.<br>'
+     +'<b>Find.</b> The constellation and thresholds, $P_e$ against $E_{s,\\text{avg}}/N_0$, and the energy a symmetric set would save.<br>'
+     +'<b>Method.</b> Use $\\psi_1(t)=\\sqrt2\\cos(3000\\pi t)$. The waveform $3\\sqrt2(k-1)\\cos(3000\\pi t)$ equals $3(k-1)\\psi_1(t)$. The set is one-dimensional and not centred on the origin.<br>'
+     +'<b>Solution — (a).</b> The points are $0$, $3$ and $6$ on the $\\psi_1$ axis. The thresholds are the midpoints $1.5$ and $4.5$. Region $D_1$ is $\\psi_1<1.5$, $D_2$ is $1.5<\\psi_1<4.5$ and $D_3$ is $\\psi_1>4.5$.<br>'
+     +'<b>Solution — (b).</b> Average the squared coordinates:'
+     +'$$\\begin{aligned}E_{s,\\text{avg}}&=\\frac{0^{2}+3^{2}+6^{2}}{3}\\\\&=\\frac{45}{3}=15.\\end{aligned}$$'
+     +'Neighbours are $d_{\\min}=3$ apart, so $d_{\\min}^{2}=9=0.6E_{s,\\text{avg}}$. The end points have one neighbour and the middle point two, so $N_{\\min}=4/3$. Then'
+     +'$$\\begin{aligned}P_e&\\approx\\frac43\\,Q\\Big(\\sqrt{\\frac{0.6E_{s,\\text{avg}}}{2N_0}}\\Big)\\\\&=\\frac43\\,Q\\Big(\\sqrt{0.3\\frac{E_{s,\\text{avg}}}{N_0}}\\Big).\\end{aligned}$$<br>'
+     +'<b>Solution — (c).</b> The symmetric set with the same spacing is $\\{-3,0,3\\}$. Its average energy is $(9+0+9)/3=6$. The saving is'
+     +'$$10\\log_{10}\\frac{15}{6}=3.98\\ \\text{dB}.$$'
+     +'Its approximation becomes $\\frac43Q\\big(\\sqrt{0.75E_{s,\\text{avg}}/N_0}\\big)$, with the same $N_{\\min}$.<br>'
+     +'<b>Check.</b> An average energy is the spread about the mean plus the squared mean. The mean point is $3$ and the spread is $(9+0+9)/3=6$, so $6+3^{2}=15$. This agrees with part (b).',
+  err:'Saying the shift changes the error probability at fixed $N_0$. It does not: the distances stay the same. What changes is the energy spent to get them.',
+  teach:'This is the examination shape with an asymmetric set. Part (c) asks the question the asymmetry raises.',
+  figSol:()=>cfig([[0,0],[3,0],[6,0]], {oneD:true, dTex:'3', margin:3, tick:1.5}) },
 
-{ id:'D5-06', module:'M5', type:'mpsk', src:'CH9 s.78',
-  stem:'A QPSK system operates at $E_s/N_0=12$ dB.',
-  parts:['Give the symbol error probability.',
-         'Give the corresponding $E_b/N_0$ in decibels.',
-         'Give the bit error probability of BPSK at that same $E_b/N_0$, and comment.'],
-  sol:'<b>Given.</b> $M=4$ at $12$ dB per symbol.<br>'
-     +'<b>Find.</b> $P_e$, $E_b/N_0$, and the BPSK comparison.<br>'
-     +'<b>Method.</b> The same formula with $M=4$, then convert the energy.<br>'
-     +'<b>Solution — (a).</b> $\\sin(\\pi/4)=0.7071$ and $E_s/N_0=15.85$, so the argument is $\\sqrt{31.70}\\times0.7071=3.981$ and $P_e\\approx 2Q(3.981)=6.86\\times10^{-5}$.<br>'
-     +'<b>Solution — (b).</b> QPSK carries two bits a symbol, so $E_b=E_s/2$ and $E_b/N_0=12-3.01=8.99$ dB.<br>'
-     +'<b>Solution — (c).</b> BPSK at $8.99$ dB gives $P_b=Q\\!\\left(\\sqrt{2\\times7.925}\\right)=Q(3.981)=3.43\\times10^{-5}$ — exactly half the QPSK symbol error.<br>'
-     +'<b>Check.</b> The two $Q$ arguments came out identical. This is the whole reason QPSK is used. It is two BPSK systems sharing one carrier, one on the cosine and one on the sine. Therefore, it carries twice the bits at the same energy per bit and the same bit error rate.',
-  err:'Comparing QPSK and BPSK at the same $E_s/N_0$. That is not the comparison anyone wants: the schemes carry different numbers of bits per symbol, so the fair axis is energy per bit.',
-  teach:'The factor of two between $P_e$ and $P_b$ here is not a coincidence and it is not general either. It holds because a QPSK symbol error is almost always to a neighbour. This differs in exactly one of the two bits. That is Gray coding, and it is why constellations are labelled that way.' },
+{ id:'D5-06', module:'M5', type:'pam', src:'Final Q3',
+  stem:OPEN+'$$s_k(t)=2(k-3)\\cos(4000\\pi t),\\quad k\\in\\{1,\\ldots,5\\},\\quad0\\le t\\le0.5.$$'+AWGN,
+  parts:['[8 pts] Find $E_{s,\\text{avg}}$ and the number of bits carried by one symbol.',
+         PDRAW(8),
+         '[9 pts] Determine the nearest-neighbour approximation of the average symbol error probability as a function of $E_{s,\\text{avg}}/N_0$. Evaluate it at $E_{s,\\text{avg}}/N_0=36$.'],
+  sol:'<b>Given.</b> Five equally likely amplitudes $2(k-3)\\in\\{-4,-2,0,2,4\\}$ on a $2000$ Hz carrier. The symbol lasts $T=0.5$.<br>'
+     +'<b>Find.</b> $E_{s,\\text{avg}}$, bits per symbol, the constellation, and $P_e$ with its value at $36$.<br>'
+     +'<b>Method.</b> With $T=0.5$ the unit-energy carrier is $\\psi_1(t)=\\sqrt{2/T}\\cos(4000\\pi t)=2\\cos(4000\\pi t)$. So $2(k-3)\\cos(4000\\pi t)=(k-3)\\psi_1(t)$.<br>'
+     +'<b>Solution — (a).</b> Integrate one squared waveform over $0\\le t\\le0.5$:'
+     +'$$\\begin{aligned}E_k&=\\int_0^{0.5}4(k-3)^{2}\\cos^{2}(4000\\pi t)\\,dt\\\\&=2(k-3)^{2}\\Big[t+\\frac{\\sin(8000\\pi t)}{8000\\pi}\\Big]_0^{0.5}\\\\&=2(k-3)^{2}(0.5)=(k-3)^{2}.\\end{aligned}$$'
+     +'The sine is zero at both limits. Averaging $4,1,0,1,4$ gives $E_{s,\\text{avg}}=10/5=2$. One symbol carries $\\log_2 5=2.322$ bits.<br>'
+     +'<b>Solution — (b).</b> The points are $-2,-1,0,1,2$ on the $\\psi_1$ axis. The thresholds are $-1.5,-0.5,0.5,1.5$. The outer regions run to $\\pm\\infty$.<br>'
+     +'<b>Solution — (c).</b> The spacing is $d_{\\min}=1$, so $d_{\\min}^{2}=1=0.5E_{s,\\text{avg}}$. Two end points have one neighbour and three inner points have two:'
+     +'$$N_{\\min}=\\frac{1+2+2+2+1}{5}=1.6.$$'
+     +'Substitute:'
+     +'$$\\begin{aligned}P_e&\\approx1.6\\,Q\\Big(\\sqrt{\\frac{0.5E_{s,\\text{avg}}}{2N_0}}\\Big)\\\\&=1.6\\,Q\\Big(\\sqrt{\\frac{E_{s,\\text{avg}}}{4N_0}}\\Big).\\end{aligned}$$'
+     +'At $36$ the argument is $\\sqrt{9}=3.00$, so $P_e\\approx1.6(0.001350)=2.16\\times10^{-3}$.<br>'
+     +'<b>Check.</b> The family formula gives $d_{\\min}^{2}=12E_{s,\\text{avg}}/(M^{2}-1)=24/24=1$. The neighbour count is also $2(M-1)/M=8/5=1.6$.',
+  err:'Using $A^{2}/2$ for the energy. That rule holds for a one-second symbol. Here $T=0.5$, so the energy is $A^{2}T/2=A^{2}/4$.',
+  teach:'The half-second interval changes the unit-energy carrier to $2\\cos(\\cdot)$. Students who keep $\\sqrt2\\cos(\\cdot)$ get every coordinate wrong by $\\sqrt2$.',
+  figSol:()=>cfig([-2,-1,0,1,2].map(c=>[c,0]), {oneD:true, dTex:'1', margin:1.3, tick:0.5}) },
 
-{ id:'D5-07', module:'M5', type:'mpsk', src:'CH9 s.81',
-  stem:'A design moves from QPSK to $8$-PSK, holding the symbol error probability fixed.',
-  parts:['Give the ratio of the $E_s/N_0$ the two schemes need.',
-         'Give the cost in decibels, per symbol and per bit.'],
-  sol:'<b>Given.</b> Two PSK sizes at a fixed error probability.<br>'
-     +'<b>Find.</b> The extra energy $8$-PSK needs.<br>'
-     +'<b>Method.</b> A fixed error probability means a fixed $Q$ argument. Set the two arguments equal and solve for the ratio of the energies.<br>'
-     +'<b>Solution — (a).</b> The argument is $\\sqrt{2E_s/N_0}\\,\\sin(\\pi/M)$, so holding it fixed needs $(E_s/N_0)\\sin^{2}(\\pi/M)$ fixed. The ratio is $\\dfrac{\\sin^{2}(\\pi/4)}{\\sin^{2}(\\pi/8)}=\\dfrac{0.5}{0.1464}=3.414$.<br>'
-     +'<b>Solution — (b).</b> $10\\log_{10}3.414=5.33$ dB per symbol. Per bit the extra bit helps: $8$-PSK carries three bits where QPSK carries two, so the ratio is $3.414\\times\\frac{2}{3}=2.276$, or $3.57$ dB.<br>'
-     +'<b>Check.</b> Both energy differences are positive. The larger alphabet needs more energy because its points are closer at the same radius.',
-  err:'Quoting the per-symbol figure when the question is about a link budget. Link budgets are written in energy per bit, and the two answers differ by nearly two decibels here.',
-  teach:'Ask what the same calculation gives from $8$-PSK to $16$-PSK. The ratio of $\\sin^{2}$ is larger again, and each doubling costs more than the last. That is why PSK is rarely seen above eight points and QAM takes over.' },
+{ id:'D5-07', module:'M5', type:'qam', src:'Final Q3',
+  stem:OPEN+'$$\\begin{aligned}s_1(t)&=0,\\\\s_k(t)&=2\\sqrt2\\cos\\!\\Big(2000\\pi t+\\frac{\\pi}{2}+\\frac{2\\pi(k-2)}{3}\\Big),\\quad k\\in\\{2,3,4\\},\\end{aligned}$$ all on $0\\le t\\le1$.'+AWGN,
+  parts:[PDRAW(10), PNN(10), '[5 pts] Evaluate the approximation of part (b) at $E_{s,\\text{avg}}/N_0=6$.'],
+  sol:'<b>Given.</b> A zero signal and three waveforms of amplitude $2\\sqrt2$ at $1000$ Hz with phases $90^{\\circ},210^{\\circ},330^{\\circ}$.<br>'
+     +'<b>Find.</b> The constellation and regions, $P_e$ against $E_{s,\\text{avg}}/N_0$, and its value at $6$.<br>'
+     +'<b>Method.</b> Use $\\psi_1(t)=\\sqrt2\\cos(2000\\pi t)$ and $\\psi_2(t)=-\\sqrt2\\sin(2000\\pi t)$. The waveform $A\\cos(2000\\pi t+\\theta)$ has coordinates $\\frac{A}{\\sqrt2}(\\cos\\theta,\\sin\\theta)$.<br>'
+     +'<b>Solution — (a).</b> The radius is $2\\sqrt2/\\sqrt2=2$. So $\\mathbf{s}_1=(0,0)$, $\\mathbf{s}_2=(0,2)$, $\\mathbf{s}_3=(-\\sqrt3,-1)$ and $\\mathbf{s}_4=(\\sqrt3,-1)$. '
+     +'The bisector between $\\mathbf{s}_1$ and an outer point is the line at distance $1$ from the origin, perpendicular to that point. The three such lines form a triangle around the origin, which is $D_1$. '
+     +'The outer regions are separated by the bisectors of the outer pairs, the rays at $30^{\\circ}$, $150^{\\circ}$ and $270^{\\circ}$ from the triangle corners.<br>'
+     +'<b>Solution — (b).</b> Average the energies $0,4,4,4$:'
+     +'$$E_{s,\\text{avg}}=\\frac{0+4+4+4}{4}=3.$$'
+     +'The distances are $2$ from the centre to each outer point and $2\\sqrt3=3.464$ between outer points. So $d_{\\min}=2$ and $d_{\\min}^{2}=4=\\frac43E_{s,\\text{avg}}$. '
+     +'The centre has three neighbours at $d_{\\min}$ and each outer point has one:'
+     +'$$N_{\\min}=\\frac{3+1+1+1}{4}=1.5.$$'
+     +'Then'
+     +'$$\\begin{aligned}P_e&\\approx1.5\\,Q\\Big(\\sqrt{\\frac{4E_{s,\\text{avg}}/3}{2N_0}}\\Big)\\\\&=1.5\\,Q\\Big(\\sqrt{\\frac{2E_{s,\\text{avg}}}{3N_0}}\\Big).\\end{aligned}$$<br>'
+     +'<b>Solution — (c).</b> The argument is $\\sqrt{2(6)/3}=\\sqrt4=2.00$. With $Q(2.00)=0.02275$, $P_e\\approx1.5(0.02275)=3.41\\times10^{-2}$.<br>'
+     +'<b>Check.</b> Count pairs instead of points. Three pairs sit at $d_{\\min}$, and each pair gives two neighbour relations, so $N_{\\min}=2\\times3/4=1.5$.',
+  err:'Taking $E_{s,\\text{avg}}=4$, the energy of the outer points. The zero signal costs nothing, and it is one of four equally likely symbols.',
+  teach:'The examination shape with a zero signal, as in the original, but with a three-point outer ring. The centre region is a triangle, not a square.',
+  figSol:()=>cfig([[0,0]].concat(onCircle(2,[Math.PI/2, 7*Math.PI/6, 11*Math.PI/6])), {dTex:'2', tick:1}) },
 
-{ id:'D5-08', module:'M5', type:'mpsk', src:'CH9 s.80',
-  stem:'Compare $8$-PSK and $16$-PSK at the same $E_s$.',
-  parts:['Give $d_{\\min}$ for each in terms of $\\sqrt{E_s}$.',
-         'Give the ratio of their squared distances in decibels.'],
-  sol:'<b>Given.</b> Two PSK sizes at the same symbol energy.<br>'
-     +'<b>Find.</b> The two distances and the gap.<br>'
-     +'<b>Method.</b> One formula twice.<br>'
-     +'<b>Solution — (a).</b> $8$-PSK: $2\\sin(\\pi/8)=0.765$. $16$-PSK: $2\\sin(\\pi/16)=0.390$.<br>'
-     +'<b>Solution — (b).</b> The ratio of the squares is $(0.390/0.765)^{2}=0.260$, and $10\\log_{10}0.260=-5.85$ dB.<br>'
-     +'<b>Check.</b> Doubling the number of points on a fixed circle roughly halves the spacing. Therefore, the squared distance falls by roughly a factor of four, or $6$ dB. The exact figure of $5.85$ dB is a little better than that. This occurs because $\\sin(\\pi/16)$ is more than half of $\\sin(\\pi/8)$. The sine falls below its own angle, and it falls further for the larger angle.',
-  err:'Comparing the distances rather than their squares when converting to decibels. The $Q$ argument contains $d^{2}$. Therefore, the decibel figure is $20\\log_{10}$ of a distance ratio or $10\\log_{10}$ of a squared one. The same number, written two ways.',
-  teach:'The picture says it all: sixteen points on the same circle as eight are packed twice as tightly. Once that is seen, the direction of every answer here is known before the arithmetic starts, and the arithmetic only supplies the size.' },
+{ id:'D5-08', module:'M5', type:'qam', src:'Final Q3',
+  stem:OPEN+'$$s_{mn}(t)=\\sqrt2\\big[(2m-5)\\cos(3000\\pi t)-(2n-3)\\sin(3000\\pi t)\\big],$$ with $m\\in\\{1,2,3,4\\}$, $n\\in\\{1,2\\}$ and $0\\le t\\le1$.'+AWGN,
+  parts:[PDRAW(10), PNN(10), '[5 pts] Evaluate the approximation of part (b) at $E_{s,\\text{avg}}/N_0=27$.'],
+  sol:'<b>Given.</b> Eight equally likely waveforms. The cosine carries $2m-5\\in\\{-3,-1,1,3\\}$ and the sine carries $2n-3\\in\\{-1,1\\}$.<br>'
+     +'<b>Find.</b> The constellation and regions, $P_e$ against $E_{s,\\text{avg}}/N_0$, and its value at $27$.<br>'
+     +'<b>Method.</b> With $\\psi_1(t)=\\sqrt2\\cos(3000\\pi t)$ and $\\psi_2(t)=-\\sqrt2\\sin(3000\\pi t)$ the waveform reads $(2m-5)\\psi_1+(2n-3)\\psi_2$. So $\\mathbf{s}_{mn}=(2m-5,\\,2n-3)$.<br>'
+     +'<b>Solution — (a).</b> The points form a $4\\times2$ grid with $\\psi_1\\in\\{-3,-1,1,3\\}$ and $\\psi_2\\in\\{-1,1\\}$. The boundaries are the vertical lines $\\psi_1=-2,0,2$ and the horizontal line $\\psi_2=0$. Every region is a rectangle or a strip that runs to infinity.<br>'
+     +'<b>Solution — (b).</b> The average energy adds the averages on each axis:'
+     +'$$\\begin{aligned}E_{s,\\text{avg}}&=\\frac{9+1+1+9}{4}+\\frac{1+1}{2}\\\\&=5+1=6.\\end{aligned}$$'
+     +'Neighbours along either axis are $2$ apart, so $d_{\\min}=2$ and $d_{\\min}^{2}=4=\\frac23E_{s,\\text{avg}}$. '
+     +'The four inner points have three neighbours and the four outer points two, so $N_{\\min}=(4\\cdot3+4\\cdot2)/8=2.5$. Then'
+     +'$$\\begin{aligned}P_e&\\approx2.5\\,Q\\Big(\\sqrt{\\frac{2E_{s,\\text{avg}}/3}{2N_0}}\\Big)\\\\&=2.5\\,Q\\Big(\\sqrt{\\frac{E_{s,\\text{avg}}}{3N_0}}\\Big).\\end{aligned}$$<br>'
+     +'<b>Solution — (c).</b> The argument is $\\sqrt{27/3}=3.00$. So $P_e\\approx2.5(0.001350)=3.38\\times10^{-3}$.<br>'
+     +'<b>Check.</b> List the energies point by point: four points have $1+1=2$ and four have $9+1=10$. The average is $(8+40)/8=6$, as in part (b).',
+  err:'Reading the sine coefficient with the wrong sign. With $\\psi_2=-\\sqrt2\\sin$, the term $-(2n-3)\\sqrt2\\sin$ is $+(2n-3)\\psi_2$. The grid is symmetric here, so the error hides, but it moves points in an asymmetric set.',
+  teach:'A rectangular eight-point set in the examination shape. Students must count three and two neighbours, not the four of an interior QAM point.',
+  figSol:()=>cfig(grid([-3,-1,1,3],[1,-1]), {names:gridNames(4,2), dTex:'2', tick:1}) },
 
-{ id:'D5-09', module:'M5', type:'mpam', src:'CH9 s.85',
-  stem:'A $4$-PAM system has points at $\\pm A$ and $\\pm 3A$, and runs at $E_{s}/N_0=12$ dB.',
-  parts:['Give the average symbol energy in terms of $A$.',
-         'Give $N_{\\min}$.',
-         'Give the symbol error probability.'],
-  sol:'<b>Given.</b> Four equally spaced points on a line at $12$ dB.<br>'
-     +'<b>Find.</b> $E_{s,\\text{avg}}$, $N_{\\min}$, $P_e$.<br>'
-     +'<b>Method.</b> Average the squared coordinates, count the neighbours, then one $Q$.<br>'
-     +'<b>Solution — (a).</b> $E_{s,\\text{avg}}=\\frac{1}{4}(A^{2}+9A^{2}+A^{2}+9A^{2})=5A^{2}$, which is the general result $A^{2}(M^{2}-1)/3$ at $M=4$.<br>'
-     +'<b>Solution — (b).</b> The two outer points have one neighbour each and the two inner points have two, so $N_{\\min}=\\frac{1+2+2+1}{4}=1.5$, which is $2(M-1)/M$.<br>'
-     +'<b>Solution — (c).</b> $d_{\\min}=2A$, so $d_{\\min}^{2}=4A^{2}=\\frac{4}{5}E_{s}$ and $\\dfrac{d_{\\min}^{2}}{2N_0}=0.4\\,\\dfrac{E_s}{N_0}$. At $12$ dB that is $0.4\\times15.85=6.34$, so $P_e\\approx1.5\\,Q(2.518)=1.5\\times5.90\\times10^{-3}=8.9\\times10^{-3}$.<br>'
-     +'<b>Check.</b> $N_{\\min}=1.5$ is not a whole number, and it should not be — it is an average over points that differ in how exposed they are. Getting a whole number here means the end points were counted as though they had neighbours on both sides.',
-  err:'Using $N_{\\min}=2$ because each point has two neighbours. The end points have only one, and forgetting that overstates the error probability by a third.',
-  teach:'Ask which of the four symbols is the safest to send. The outer two: they can only be mistaken in one direction, so they are wrong half as often as the inner two. The average is what $N_{\\min}$ records.' },
+{ id:'D5-09', module:'M5', type:'qam', src:'Final Q3',
+  stem:OPEN+'$$s_{mn}(t)=(2m-5)\\cos(4000\\pi t)-(2n-5)\\sin(4000\\pi t),$$ with $m,n\\in\\{1,2,3,4\\}$ and $0\\le t\\le2$.'+AWGN,
+  parts:['[8 pts] Find $E_{s,\\text{avg}}$, the number of bits per symbol and the average energy per bit $E_b$.',
+         PDRAW(8),
+         '[9 pts] Determine the nearest-neighbour approximation of the average symbol error probability as a function of $E_{s,\\text{avg}}/N_0$ and of $E_b/N_0$. Evaluate it at $E_b/N_0=11.25$.'],
+  sol:'<b>Given.</b> Sixteen equally likely waveforms on a $2000$ Hz carrier, $0\\le t\\le2$, with coefficients $2m-5$ and $2n-5$ in $\\{-3,-1,1,3\\}$.<br>'
+     +'<b>Find.</b> $E_{s,\\text{avg}}$, bits per symbol, $E_b$, the constellation, and $P_e$ with its value at $E_b/N_0=11.25$.<br>'
+     +'<b>Method.</b> With $T=2$ the orthonormal pair is $\\psi_1(t)=\\cos(4000\\pi t)$ and $\\psi_2(t)=-\\sin(4000\\pi t)$, since $\\sqrt{2/T}=1$. So $\\mathbf{s}_{mn}=(2m-5,\\,2n-5)$.<br>'
+     +'<b>Solution — (a).</b> Check that $\\psi_1$ has unit energy:'
+     +'$$\\int_0^2\\cos^{2}(4000\\pi t)\\,dt=\\frac12\\Big[t+\\frac{\\sin(8000\\pi t)}{8000\\pi}\\Big]_0^2=1.$$'
+     +'Each axis averages $(9+1+1+9)/4=5$, so $E_{s,\\text{avg}}=5+5=10$. One symbol carries $\\log_2 16=4$ bits, so $E_b=10/4=2.5$.<br>'
+     +'<b>Solution — (b).</b> The points form a $4\\times4$ grid on $\\{-3,-1,1,3\\}^{2}$. The boundaries are the lines $\\psi_1=-2,0,2$ and $\\psi_2=-2,0,2$. Inner regions are squares, edge regions are half-strips and corner regions are quarter-planes.<br>'
+     +'<b>Solution — (c).</b> The spacing is $d_{\\min}=2$, so $d_{\\min}^{2}=4=0.4E_{s,\\text{avg}}$. Four corners have two neighbours, eight edge points three, and four inner points four:'
+     +'$$N_{\\min}=\\frac{4(2)+8(3)+4(4)}{16}=3.$$'
+     +'Substitute, then use $E_{s,\\text{avg}}=4E_b$:'
+     +'$$\\begin{aligned}P_e&\\approx3\\,Q\\Big(\\sqrt{\\frac{0.4E_{s,\\text{avg}}}{2N_0}}\\Big)\\\\&=3\\,Q\\Big(\\sqrt{\\frac{E_{s,\\text{avg}}}{5N_0}}\\Big)\\\\&=3\\,Q\\Big(\\sqrt{\\frac{4E_b}{5N_0}}\\Big).\\end{aligned}$$'
+     +'At $E_b/N_0=11.25$ the argument is $\\sqrt{9}=3.00$, so $P_e\\approx3(0.001350)=4.05\\times10^{-3}$.<br>'
+     +'<b>Check.</b> The square-grid formula gives $d_{\\min}^{2}=6E_{s,\\text{avg}}/(M-1)=60/15=4$. The pair count gives the same $N_{\\min}$: $24$ pairs at $d_{\\min}$, and $2\\times24/16=3$.',
+  err:'Writing $N_{\\min}=4$ because an interior point has four neighbours. Only four of the sixteen points are interior. The corners and edges pull the average down to $3$.',
+  teach:'Sixteen-point QAM in the examination shape, with the energy-per-bit form asked for. The two-second interval makes the basis functions plain cosines and sines.',
+  figSol:()=>cfig(grid([-3,-1,1,3],[3,1,-1,-3]), {names:gridNames(4,4), dTex:'2', tick:1, margin:1.6}) },
 
-{ id:'D5-10', module:'M5', type:'mpam', src:'CH9 s.86',
-  stem:'Compare $4$-PAM and $8$-PAM at the same average symbol energy.',
-  parts:['Give the ratio of their squared minimum distances.',
-         'Give the cost of the move in decibels.'],
-  sol:'<b>Given.</b> Two PAM sizes at equal energy.<br>'
-     +'<b>Find.</b> How much the distance falls.<br>'
-     +'<b>Method.</b> $d_{\\min}^{2}=12E_{s}/(M^{2}-1)$, so only $M^{2}-1$ changes.<br>'
-     +'<b>Solution — (a).</b> $\\dfrac{d_{8}^{2}}{d_{4}^{2}}=\\dfrac{M_4^{2}-1}{M_8^{2}-1}=\\dfrac{15}{63}=0.238$.<br>'
-     +'<b>Solution — (b).</b> $10\\log_{10}(63/15)=6.23$ dB. Doubling the number of levels costs about six decibels, and that figure holds for every doubling once $M$ is not small.<br>'
-     +'<b>Check.</b> For large $M$ the ratio approaches $M_4^{2}/M_8^{2}=1/4$ exactly, which is $6.02$ dB. The extra $0.2$ dB here is the $-1$ in $M^{2}-1$ still mattering at these small sizes.',
-  err:'Using $M$ rather than $M^{2}-1$. That gives $3$ dB instead of $6$, and it is the difference between a design that closes and one that does not.',
-  teach:'Six decibels for one extra bit a symbol is the price of packing points onto a line. Question D5-13 asks the same thing of QAM, where two dimensions are available, and the answer is very different. That comparison is the point of both questions.' },
+{ id:'D5-10', module:'M5', type:'qam', src:'Final Q3',
+  stem:OPEN+'$$s_k(t)=A_k\\cos\\!\\Big(2000\\pi t+\\frac{(k-1)\\pi}{4}\\Big),\\quad k\\in\\{1,\\ldots,8\\},\\quad0\\le t\\le1,$$ where $A_k=\\sqrt2$ for odd $k$ and $A_k=4$ for even $k$.'+AWGN,
+  parts:[PDRAW(10), PNN(10), '[5 pts] Which symbols have no neighbour at $d_{\\min}$? Evaluate the approximation at $E_{s,\\text{avg}}/N_0=40.5$.'],
+  sol:'<b>Given.</b> Eight waveforms at $1000$ Hz with phases $0,45^{\\circ},\\ldots,315^{\\circ}$. The odd ones have amplitude $\\sqrt2$ and the even ones amplitude $4$.<br>'
+     +'<b>Find.</b> The constellation and regions, $P_e$ against $E_{s,\\text{avg}}/N_0$, and the points without a nearest neighbour.<br>'
+     +'<b>Method.</b> Use $\\psi_1(t)=\\sqrt2\\cos(2000\\pi t)$ and $\\psi_2(t)=-\\sqrt2\\sin(2000\\pi t)$. The radius of a point is $A_k/\\sqrt2$ and its angle is its phase.<br>'
+     +'<b>Solution — (a).</b> The odd points lie on a circle of radius $1$ at $0^{\\circ},90^{\\circ},180^{\\circ},270^{\\circ}$: $\\mathbf{s}_1=(1,0)$, $\\mathbf{s}_3=(0,1)$, $\\mathbf{s}_5=(-1,0)$, $\\mathbf{s}_7=(0,-1)$. '
+     +'The even points lie on a circle of radius $4/\\sqrt2=2\\sqrt2$ at $45^{\\circ},135^{\\circ},\\ldots$: $\\mathbf{s}_2=(2,2)$, $\\mathbf{s}_4=(-2,2)$, $\\mathbf{s}_6=(-2,-2)$, $\\mathbf{s}_8=(2,-2)$. '
+     +'Each inner region is bounded by the diagonals $\\psi_2=\\pm\\psi_1$ and by the bisectors with its two outer neighbours. The bisector of $\\mathbf{s}_1$ and $\\mathbf{s}_2$ is $2\\psi_1+4\\psi_2=7$.<br>'
+     +'<b>Solution — (b).</b> Average the energies:'
+     +'$$E_{s,\\text{avg}}=\\frac{4(1)+4(8)}{8}=4.5.$$'
+     +'The three kinds of distance are'
+     +'$$\\begin{aligned}d_{13}&=\\sqrt{1^{2}+1^{2}}=\\sqrt2=1.414,\\\\d_{12}&=\\sqrt{1^{2}+2^{2}}=\\sqrt5=2.236,\\\\d_{24}&=4.\\end{aligned}$$'
+     +'So $d_{\\min}=\\sqrt2$ and $d_{\\min}^{2}=2=\\frac49E_{s,\\text{avg}}$. Each inner point has two neighbours at $d_{\\min}$ and each outer point none: $N_{\\min}=(4\\cdot2+4\\cdot0)/8=1$. Then'
+     +'$$\\begin{aligned}P_e&\\approx Q\\Big(\\sqrt{\\frac{4E_{s,\\text{avg}}/9}{2N_0}}\\Big)\\\\&=Q\\Big(\\sqrt{\\frac{2E_{s,\\text{avg}}}{9N_0}}\\Big).\\end{aligned}$$<br>'
+     +'<b>Solution — (c).</b> The outer points $\\mathbf{s}_2,\\mathbf{s}_4,\\mathbf{s}_6,\\mathbf{s}_8$ have no neighbour at $d_{\\min}$. At $40.5$ the argument is $\\sqrt{2(40.5)/9}=\\sqrt9=3.00$, so $P_e\\approx Q(3.00)=1.35\\times10^{-3}$.<br>'
+     +'<b>Check.</b> Evaluate the bisector at the midpoint of $\\mathbf{s}_1$ and $\\mathbf{s}_2$, which is $(1.5,1)$: $2(1.5)+4(1)=7$. The line passes through it, as a bisector must.',
+  err:'Counting the outer points as having neighbours at $\\sqrt5$. Only points at exactly $d_{\\min}$ enter $N_{\\min}$. The outer points contribute zero, and the average is $1$.',
+  teach:'Two rings rotated by $45^{\\circ}$. Half the points have no nearest neighbour, which is the lesson of the count.',
+  figSol:()=>cfig(range(1,8).map(k=>{ const r = k%2 ? 1 : 2*R2, t=(k-1)*Math.PI/4; return [r*Math.cos(t), r*Math.sin(t)]; }), {dTex:'\\sqrt{2}', tick:1, margin:1.4}) },
 
-{ id:'D5-11', module:'M5', type:'mpam', src:'CH9 s.85',
-  stem:'An $8$-PAM constellation is used.',
-  parts:['Give $N_{\\min}$.',
-         'Say which symbols contribute least to the error probability, and why.'],
-  sol:'<b>Given.</b> Eight equally spaced points on a line.<br>'
-     +'<b>Find.</b> The average neighbour count.<br>'
-     +'<b>Method.</b> Count the neighbours of each point at the minimum distance and average.<br>'
-     +'<b>Solution — (a).</b> Six interior points have two neighbours each and the two end points have one, so $N_{\\min}=\\dfrac{6\\times2+2\\times1}{8}=\\dfrac{14}{8}=1.75$, which agrees with $2(M-1)/M$.<br>'
-     +'<b>Solution — (b).</b> The two end points. Their decision regions run off to infinity on the outside, so noise pushing them outward never causes an error — only noise pushing them inward can.<br>'
-     +'<b>Check.</b> As $M$ grows, $2(M-1)/M$ approaches $2$: the two end points become a smaller and smaller fraction of the constellation, and their advantage stops mattering.',
-  err:'Counting the neighbours of one interior point and using that for all of them. The whole reason $N_{\\min}$ is defined as an average is that the points are not alike.',
-  teach:'This is the same idea as the corner points of a QAM square being the safest, and for the same reason. A point on the outside of a constellation has fewer directions in which it can be mistaken.' },
+{ id:'D5-11', module:'M5', type:'qam', src:'Final Q3',
+  stem:'Consider an $M$-ary modulation scheme where the four equally probable symbols have the waveforms drawn below, each on $0\\le t\\le1$. Each waveform is zero or a sinusoid at $2$ Hz. The peak value is $\\sqrt2$ for $s_2$ and $s_3$ and $2$ for $s_4$.'+AWGN,
+  figure:()=>{
+    const W = [t=>0, t=>R2*Math.cos(4*Math.PI*t), t=>-R2*Math.sin(4*Math.PI*t), t=>2*Math.cos(4*Math.PI*t+Math.PI/4)];
+    return `<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 22px;max-width:900px;margin:0 auto;width:100%">`
+      + W.map((f,i)=>{
+        const a = P.Axes({w:420,h:190,xr:[0,1],yr:[-2.5,2.5],xlabel:'t',ylabel:'s_{'+(i+1)+'}(t)',
+          pad:{l:46,r:26,t:20,b:36}, xticksOverride:[0.25,0.5,0.75,1], yticksOverride:[-2,-1,1,2]});
+        a.curve(f,{color:C.in, width:2.2});
+        return a.svg();
+      }).join('') + `</div>`;
+  },
+  parts:['[7 pts] Write each waveform in the form $A\\cos(4\\pi t+\\theta)$ and find its signal-space coordinates.',
+         PDRAW(8),
+         '[6 pts] Determine the nearest-neighbour approximation of the average symbol error probability as a function of $E_{s,\\text{avg}}/N_0$.',
+         '[4 pts] The four points are moved together so that their centre is at the origin. Find the saving in $E_{s,\\text{avg}}$ in decibels.'],
+  sol:'<b>Given.</b> $s_1=0$, and three $2$ Hz sinusoids on $0\\le t\\le1$ with peaks $\\sqrt2$, $\\sqrt2$ and $2$, read from the drawing.<br>'
+     +'<b>Find.</b> Amplitudes, phases and coordinates, the constellation, $P_e$, and the saving of a centred set.<br>'
+     +'<b>Method.</b> For $A\\cos(4\\pi t+\\theta)$ the value at $t=0$ is $A\\cos\\theta$ and the slope is $-4\\pi A\\sin\\theta$. A curve that falls first has $\\sin\\theta>0$. Then use $\\psi_1(t)=\\sqrt2\\cos(4\\pi t)$, $\\psi_2(t)=-\\sqrt2\\sin(4\\pi t)$.<br>'
+     +'<b>Solution — (a).</b> $s_2$ starts at its peak $\\sqrt2$, so $s_2(t)=\\sqrt2\\cos(4\\pi t)$. $s_3$ starts at $0$ and falls, so $\\theta=\\pi/2$ and $s_3(t)=\\sqrt2\\cos(4\\pi t+\\pi/2)=-\\sqrt2\\sin(4\\pi t)$. '
+     +'$s_4$ starts at $2\\cos\\theta=\\sqrt2$ and falls, so $\\theta=\\pi/4$. Expand $s_4$:'
+     +'$$\\begin{aligned}s_4(t)&=2\\cos\\frac{\\pi}{4}\\cos(4\\pi t)-2\\sin\\frac{\\pi}{4}\\sin(4\\pi t)\\\\&=\\sqrt2\\cos(4\\pi t)-\\sqrt2\\sin(4\\pi t)\\\\&=\\psi_1(t)+\\psi_2(t).\\end{aligned}$$'
+     +'So $\\mathbf{s}_1=(0,0)$, $\\mathbf{s}_2=(1,0)$, $\\mathbf{s}_3=(0,1)$ and $\\mathbf{s}_4=(1,1)$.<br>'
+     +'<b>Solution — (b).</b> The points are the corners of a unit square with one corner at the origin. The boundaries are the lines $\\psi_1=0.5$ and $\\psi_2=0.5$. So the four regions are the quadrants around the point $(0.5,0.5)$.<br>'
+     +'<b>Solution — (c).</b> Average the squared distances from the origin:'
+     +'$$E_{s,\\text{avg}}=\\frac{0+1+1+2}{4}=1.$$'
+     +'The sides are $d_{\\min}=1$, so $d_{\\min}^{2}=1=E_{s,\\text{avg}}$. Each corner has two neighbours, so $N_{\\min}=2$ and'
+     +'$$P_e\\approx2\\,Q\\Big(\\sqrt{\\frac{E_{s,\\text{avg}}}{2N_0}}\\Big).$$<br>'
+     +'<b>Solution — (d).</b> Centred, the corners are $(\\pm0.5,\\pm0.5)$ with energy $0.5$ each. The saving is $10\\log_{10}(1/0.5)=3.01$ dB.<br>'
+     +'<b>Check.</b> Integrate $s_4$ directly: $\\int_0^1 4\\cos^{2}(4\\pi t+\\pi/4)\\,dt=2\\big[t+\\frac{\\sin(8\\pi t+\\pi/2)}{8\\pi}\\big]_0^1=2$. This equals $1^{2}+1^{2}$.',
+  err:'Reading $s_3$ as $+\\sqrt2\\sin(4\\pi t)$. The drawing falls first, so it is $-\\sqrt2\\sin$, which is $+\\psi_2$. The opposite sign puts $\\mathbf{s}_3$ at $(0,-1)$.',
+  teach:'The examination shape with the waveforms given as a drawing. Reading the phase from the starting value and the first slope is the new skill.',
+  figSol:()=>cfig([[0,0],[1,0],[0,1],[1,1]], {dTex:'1', tick:0.5, margin:1.2}) },
 
-{ id:'D5-12', module:'M5', type:'qam', src:'CH9 s.92',
-  stem:'A $16$-QAM system operates at $E_{s}/N_0=15$ dB.',
-  parts:['Give $d_{\\min}$ in terms of $E_{s,\\text{avg}}$.',
-         'Give $N_{\\min}$.',
-         'Give the symbol error probability.'],
-  sol:'<b>Given.</b> A four-by-four square grid at $15$ dB.<br>'
-     +'<b>Find.</b> $d_{\\min}$, $N_{\\min}$, $P_e$.<br>'
-     +'<b>Method.</b> Use $E_{s,\\text{avg}}=(M-1)d^{2}/6$ for square QAM, then count neighbours by position.<br>'
-     +'<b>Solution — (a).</b> $d_{\\min}^{2}=\\dfrac{6E_{s,\\text{avg}}}{M-1}=\\dfrac{6E_{s}}{15}=0.4E_{s}$.<br>'
-     +'<b>Solution — (b).</b> Four corner points have two neighbours, eight edge points have three, and four interior points have four: $N_{\\min}=\\dfrac{4(2)+8(3)+4(4)}{16}=\\dfrac{48}{16}=3$.<br>'
-     +'<b>Solution — (c).</b> $\\dfrac{d_{\\min}^{2}}{2N_0}=0.2\\,\\dfrac{E_s}{N_0}=0.2\\times31.62=6.32$, so $P_e\\approx 3\\,Q(2.515)=3\\times5.95\\times10^{-3}=1.79\\times10^{-2}$.<br>'
-     +'<b>Check.</b> Count the neighbour total another way: the grid has $2\\times4\\times3=24$ neighbouring pairs, each counted twice, so $48$ ordered pairs over $16$ points gives $3$. The two counts agree.',
-  err:'Using $N_{\\min}=4$ from the interior points. Twelve of the sixteen points are on the boundary of the square, so the average is well below four.',
-  teach:'Ask for $N_{\\min}$ of $64$-QAM before computing it. The interior grows relative to the edge, so the answer must be between $3$ and $4$ — it is $3.5$. Predicting the range before doing the arithmetic is a habit worth having.' },
+{ id:'D5-12', module:'M5', type:'psk', src:'Final Q3',
+  stem:OPEN+'$$s_k(t)=2\\sqrt3\\cos\\!\\Big(2000\\pi t+\\frac{\\pi}{6}+\\frac{(k-1)\\pi}{2}\\Big),\\quad k\\in\\{1,2,3,4\\},\\quad0\\le t\\le1.$$'+AWGN,
+  parts:[PDRAW(10), PNN(8),
+         '[7 pts] With Gray labelling, one symbol error costs about one bit error. Find $E_b$, then compare the bit error probability with binary PSK at $E_b/N_0=4.5$.'],
+  sol:'<b>Given.</b> Four waveforms of amplitude $2\\sqrt3$ at $1000$ Hz with phases $30^{\\circ},120^{\\circ},210^{\\circ},300^{\\circ}$.<br>'
+     +'<b>Find.</b> The constellation and regions, $P_e$ against $E_{s,\\text{avg}}/N_0$, and the per-bit comparison with binary PSK.<br>'
+     +'<b>Method.</b> Use $\\psi_1(t)=\\sqrt2\\cos(2000\\pi t)$ and $\\psi_2(t)=-\\sqrt2\\sin(2000\\pi t)$. The radius is $2\\sqrt3/\\sqrt2=\\sqrt6$.<br>'
+     +'<b>Solution — (a).</b> The points are $\\sqrt6(\\cos\\theta_k,\\sin\\theta_k)$: $\\mathbf{s}_1=(2.121,1.225)$, $\\mathbf{s}_2=(-1.225,2.121)$, $\\mathbf{s}_3=(-2.121,-1.225)$, $\\mathbf{s}_4=(1.225,-2.121)$. '
+     +'Each region is a $90^{\\circ}$ wedge centred on its point. The boundaries are the rays at $75^{\\circ},165^{\\circ},255^{\\circ},345^{\\circ}$, so the regions are the quadrants turned by $30^{\\circ}$.<br>'
+     +'<b>Solution — (b).</b> All energies are $E_{s,\\text{avg}}=6$. Neighbours are $90^{\\circ}$ apart:'
+     +'$$\\begin{aligned}d_{\\min}^{2}&=6+6-2(6)\\cos90^{\\circ}\\\\&=12=2E_{s,\\text{avg}}.\\end{aligned}$$'
+     +'Each point has two neighbours, so'
+     +'$$\\begin{aligned}P_e&\\approx2\\,Q\\Big(\\sqrt{\\frac{2E_{s,\\text{avg}}}{2N_0}}\\Big)\\\\&=2\\,Q\\Big(\\sqrt{\\frac{E_{s,\\text{avg}}}{N_0}}\\Big).\\end{aligned}$$<br>'
+     +'<b>Solution — (c).</b> Each symbol carries $2$ bits, so $E_b=6/2=3$ and $E_{s,\\text{avg}}=2E_b$. Then $P_e\\approx2Q\\big(\\sqrt{2E_b/N_0}\\big)$. '
+     +'At $E_b/N_0=4.5$ the argument is $\\sqrt9=3.00$, so $P_e\\approx2.70\\times10^{-3}$ and $P_b\\approx P_e/2=1.35\\times10^{-3}$. '
+     +'Binary PSK gives $P_b=Q\\big(\\sqrt{2E_b/N_0}\\big)=Q(3.00)=1.35\\times10^{-3}$. The two agree.<br>'
+     +'<b>Check.</b> Subtract coordinates: $\\mathbf{s}_1-\\mathbf{s}_2=(3.346,-0.896)$, and $3.346^{2}+0.896^{2}=11.20+0.80=12.0$. This matches $d_{\\min}^{2}=12$.',
+  err:'Comparing the symbol error probability of the four-point set with the bit error probability of binary PSK. The symbol error is twice as large, but each symbol carries two bits.',
+  teach:'A four-point PSK set with a $30^{\\circ}$ offset, followed by the classic per-bit comparison. The offset changes nothing but the drawing.',
+  figSol:()=>cfig(onCircle(Math.sqrt(6), range(1,4).map(k=>Math.PI/6+(k-1)*Math.PI/2)), {dTex:'2\\sqrt{3}', tick:1}) },
 
-{ id:'D5-13', module:'M5', type:'qam', src:'CH9 s.93',
-  stem:'Compare $16$-QAM with $16$-PAM at the same average symbol energy. Both carry four bits a symbol.',
-  parts:['Give the squared minimum distance of each in terms of $E_{s}$.',
-         'Give the advantage of QAM in decibels.'],
-  sol:'<b>Given.</b> Sixteen points arranged on a square grid and on a line, at equal energy.<br>'
-     +'<b>Find.</b> The two distances and the gap.<br>'
-     +'<b>Method.</b> One formula each: $6E_s/(M-1)$ for square QAM, $12E_s/(M^{2}-1)$ for PAM.<br>'
-     +'<b>Solution — (a).</b> QAM: $6E_s/15=0.400E_s$. PAM: $12E_s/255=0.0471E_s$.<br>'
-     +'<b>Solution — (b).</b> The ratio is $0.400/0.0471=8.5$, and $10\\log_{10}8.5=9.29$ dB.<br>'
-     +'<b>Check.</b> Both carry four bits a symbol and both use the same average power, so the entire difference is the arrangement of the points. Nine decibels is an enormous return for using the second dimension that was there all along.',
-  err:'Comparing at the same $d_{\\min}$ instead of the same energy. At the same spacing the two constellations do have the same error probability. But PAM then needs eight and a half times the power. This is the same fact stated backwards.',
-  teach:'This one number is the reason QAM exists. Ask what would happen with three dimensions. The same argument would favour a cubic lattice again, and that is exactly what coded modulation does over several symbol periods.' },
+{ id:'D5-13', module:'M5', type:'pam', src:'Final Q3',
+  stem:OPEN+'$$s_k(t)=\\sqrt2\\,(2k-9)\\cos(2000\\pi t),\\quad k\\in\\{1,\\ldots,8\\},\\quad0\\le t\\le1.$$'+AWGN,
+  parts:['[8 pts] Find $E_{s,\\text{avg}}$, the number of bits per symbol and the average energy per bit $E_b$.',
+         PDRAW(8),
+         '[9 pts] Determine the nearest-neighbour approximation as a function of $E_{s,\\text{avg}}/N_0$ and of $E_b/N_0$. Find the $E_b/N_0$ in decibels that makes the $Q$ argument $3.00$, and the resulting $P_e$.'],
+  sol:'<b>Given.</b> Eight equally likely amplitudes $\\sqrt2(2k-9)$ on one $1000$ Hz carrier, $0\\le t\\le1$.<br>'
+     +'<b>Find.</b> $E_{s,\\text{avg}}$, bits, $E_b$, the line constellation, $P_e$ in both energies, and the $E_b/N_0$ for a $Q$ argument of $3.00$.<br>'
+     +'<b>Method.</b> With $\\psi_1(t)=\\sqrt2\\cos(2000\\pi t)$ each waveform is $(2k-9)\\psi_1(t)$. The points are $\\pm1,\\pm3,\\pm5,\\pm7$.<br>'
+     +'<b>Solution — (a).</b> Average the squared coordinates. By symmetry, average the four positive ones:'
+     +'$$\\begin{aligned}E_{s,\\text{avg}}&=\\frac{1+9+25+49}{4}\\\\&=\\frac{84}{4}=21.\\end{aligned}$$'
+     +'One symbol carries $\\log_2 8=3$ bits, so $E_b=21/3=7$.<br>'
+     +'<b>Solution — (b).</b> The eight points sit on the $\\psi_1$ axis at odd integers. The thresholds are $0,\\pm2,\\pm4,\\pm6$. The two end regions run to $\\pm\\infty$.<br>'
+     +'<b>Solution — (c).</b> The spacing is $d_{\\min}=2$, so $d_{\\min}^{2}=4=\\frac{4}{21}E_{s,\\text{avg}}$. Two end points have one neighbour and six inner points two, so $N_{\\min}=14/8=1.75$. Substitute, then use $E_{s,\\text{avg}}=3E_b$:'
+     +'$$\\begin{aligned}P_e&\\approx1.75\\,Q\\Big(\\sqrt{\\frac{4E_{s,\\text{avg}}/21}{2N_0}}\\Big)\\\\&=1.75\\,Q\\Big(\\sqrt{\\frac{2E_{s,\\text{avg}}}{21N_0}}\\Big)\\\\&=1.75\\,Q\\Big(\\sqrt{\\frac{2E_b}{7N_0}}\\Big).\\end{aligned}$$'
+     +'For an argument of $3.00$, solve $2E_b/(7N_0)=9$. This gives $E_b/N_0=31.5$, or $10\\log_{10}31.5=14.98$ dB. Then $P_e\\approx1.75(0.001350)=2.36\\times10^{-3}$.<br>'
+     +'<b>Check.</b> The family formula gives $E_{s,\\text{avg}}=A^{2}(M^{2}-1)/3=1\\cdot63/3=21$ with half-spacing $A=1$. The neighbour count $2(M-1)/M=14/8$ also agrees.',
+  err:'Converting $31.5$ to decibels with $20\\log_{10}$. An energy ratio takes $10\\log_{10}$. The factor $20$ belongs to amplitude ratios.',
+  teach:'Eight amplitude levels in the examination shape. The required $15$ dB per bit shows why amplitude-only sets stop at small $M$.',
+  figSol:()=>cfig([-7,-5,-3,-1,1,3,5,7].map(c=>[c,0]), {oneD:true, dTex:'2', margin:2.4, tick:2}) },
 
-{ id:'D5-14', module:'M5', type:'qam', src:'CH9 s.92',
-  stem:'A $64$-QAM constellation is an eight-by-eight square grid.',
-  parts:['Give the number of corner, edge and interior points.',
-         'Give $N_{\\min}$.'],
-  sol:'<b>Given.</b> An eight-by-eight grid.<br>'
-     +'<b>Find.</b> The neighbour count by position and its average.<br>'
-     +'<b>Method.</b> Count the three kinds of position, then average their neighbour counts.<br>'
-     +'<b>Solution — (a).</b> Four corners. The edges have $6$ points on each of the four sides, so $24$ edge points. The interior is a six-by-six block, so $36$ points. Total $4+24+36=64$.<br>'
-     +'<b>Solution — (b).</b> $N_{\\min}=\\dfrac{4(2)+24(3)+36(4)}{64}=\\dfrac{8+72+144}{64}=\\dfrac{224}{64}=3.5$.<br>'
-     +'<b>Check.</b> Count the neighbouring pairs instead: $2\\times8\\times7=112$ pairs, each giving two ordered pairs, so $224/64=3.5$. The two routes agree, and the second is quicker for any grid.',
-  err:'Counting eight points along each side and getting $32$ edge points, which double-counts the corners. Each side contributes $8-2=6$ points that are not corners.',
-  teach:'The $3.5$ against the $3$ of $16$-QAM says the constellation is becoming more like an infinite lattice, where every point has four neighbours. The interior always wins in the end.' },
+{ id:'D5-14', module:'M5', type:'psk', src:'Final Q3',
+  stem:OPEN+'$$s_k(t)=5\\sqrt2\\cos\\!\\Big(3000\\pi t+\\frac{2\\pi k}{5}-\\frac{\\pi}{10}\\Big),\\quad k\\in\\{1,\\ldots,5\\},\\quad0\\le t\\le1.$$'+AWGN,
+  parts:[PDRAW(10), PNN(10), '[5 pts] Evaluate the approximation of part (b) at $E_{s,\\text{avg}}/N_0=13$.'],
+  sol:'<b>Given.</b> Five waveforms of amplitude $5\\sqrt2$ at $1500$ Hz with phases $2\\pi k/5-\\pi/10$, $0\\le t\\le1$.<br>'
+     +'<b>Find.</b> The constellation and regions, $P_e$ against $E_{s,\\text{avg}}/N_0$, and its value at $13$.<br>'
+     +'<b>Method.</b> Use $\\psi_1(t)=\\sqrt2\\cos(3000\\pi t)$ and $\\psi_2(t)=-\\sqrt2\\sin(3000\\pi t)$. The radius is $5\\sqrt2/\\sqrt2=5$.<br>'
+     +'<b>Solution — (a).</b> The phases are'
+     +'$$\\theta_1=54^{\\circ},\\ \\theta_2=126^{\\circ},\\ \\theta_3=198^{\\circ},\\ \\theta_4=270^{\\circ},\\ \\theta_5=342^{\\circ}.$$'
+     +'So $\\mathbf{s}_4=(0,-5)$ and the set is symmetric about the $\\psi_2$ axis. Each region is a $72^{\\circ}$ wedge centred on its point. The boundaries are the rays at $18^{\\circ},90^{\\circ},162^{\\circ},234^{\\circ},306^{\\circ}$.<br>'
+     +'<b>Solution — (b).</b> Every energy is $5^{2}$, so $E_{s,\\text{avg}}=25$. The chord across $72^{\\circ}$ is'
+     +'$$\\begin{aligned}d_{\\min}^{2}&=4E_{s,\\text{avg}}\\sin^{2}36^{\\circ}\\\\&=4(25)(0.3455)\\\\&=34.55=1.382E_{s,\\text{avg}}.\\end{aligned}$$'
+     +'Each point has two neighbours, so $N_{\\min}=2$ and'
+     +'$$\\begin{aligned}P_e&\\approx2\\,Q\\Big(\\sqrt{\\frac{1.382E_{s,\\text{avg}}}{2N_0}}\\Big)\\\\&=2\\,Q\\Big(\\sqrt{0.6910\\frac{E_{s,\\text{avg}}}{N_0}}\\Big).\\end{aligned}$$<br>'
+     +'<b>Solution — (c).</b> The argument is $\\sqrt{0.6910\\times13}=\\sqrt{8.983}=2.997$, which the table reads as $3.00$. So $P_e\\approx2(0.001350)=2.70\\times10^{-3}$.<br>'
+     +'<b>Check.</b> The cosine rule gives $25+25-50\\cos72^{\\circ}=50-15.45=34.55$. This equals the chord value.',
+  err:'Using $\\sin(2\\pi/M)$ for the chord. The chord is $2r\\sin(\\text{half the angle})$, so the sine takes $\\pi/M=36^{\\circ}$.',
+  teach:'An odd $M$ with an offset that puts one point on the negative $\\psi_2$ axis. The offset is there to make students compute each angle.',
+  figSol:()=>cfig(onCircle(5, range(1,5).map(k=>2*Math.PI*k/5-Math.PI/10)), {dTex:'5.878', tick:2}) },
 
-{ id:'D5-15', module:'M5', type:'compare', src:'CH9 s.97',
-  stem:'An $8$-FSK system uses eight orthogonal waveforms at $E_s/N_0=10$ dB.',
-  parts:['Give the distance between any two constellation points.',
-         'Give $N_{\\min}$.',
-         'Give an estimate of the symbol error probability.'],
-  sol:'<b>Given.</b> Eight orthogonal waveforms at $10$ dB.<br>'
-     +'<b>Find.</b> $d$, $N_{\\min}$, $P_e$.<br>'
-     +'<b>Method.</b> Orthogonal signals need one basis function each, so the constellation is eight points on eight axes, each at distance $\\sqrt{E_s}$ from the origin.<br>'
-     +'<b>Solution — (a).</b> Any two points are at a right angle, so $d=\\sqrt{2E_s}$ — for <em>every</em> pair, not just the closest.<br>'
-     +'<b>Solution — (b).</b> Every point is at the minimum distance from all the others, so $N_{\\min}=M-1=7$.<br>'
-     +'<b>Solution — (c).</b> $\\dfrac{d^{2}}{2N_0}=\\dfrac{E_s}{N_0}=10$, so $P_e\\approx 7\\,Q(3.162)=7\\times7.83\\times10^{-4}=5.48\\times10^{-3}$.<br>'
-     +'<b>Check.</b> Here the union bound is a genuine bound and not just the nearest neighbours. This occurs because there are no distant points to leave out. Every pair is at the same distance.',
-  err:'Using $N_{\\min}=2$ out of habit from PSK. In $M$-FSK all $M-1$ other points are equally close, and that is what the extra dimensions buy.',
-  teach:'The distance $\\sqrt{2E_s}$ does not depend on $M$ at all, which is the striking part. Adding waveforms costs nothing in distance — but each new waveform needs its own frequency slot, so the price is paid in bandwidth instead.' },
+{ id:'D5-15', module:'M5', type:'qam', src:'Final Q3',
+  stem:OPEN+'$$\\begin{aligned}s_1(t)&=0,\\\\s_k(t)&=2\\cos\\!\\Big(2000\\pi t+\\frac{(k-2)\\pi}{3}\\Big),\\quad k\\in\\{2,\\ldots,7\\},\\end{aligned}$$ all on $0\\le t\\le1$.'+AWGN,
+  parts:[PDRAW(10), PNN(10), '[5 pts] At $E_{s,\\text{avg}}/N_0=12$, compare the conditional error probability of $s_1$ with that of an outer symbol.'],
+  sol:'<b>Given.</b> A zero signal and six waveforms of amplitude $2$ at $1000$ Hz, $60^{\\circ}$ apart in phase, starting at $0^{\\circ}$.<br>'
+     +'<b>Find.</b> The constellation and regions, $P_e$ against $E_{s,\\text{avg}}/N_0$, and the two conditional error probabilities at $12$.<br>'
+     +'<b>Method.</b> Use $\\psi_1(t)=\\sqrt2\\cos(2000\\pi t)$ and $\\psi_2(t)=-\\sqrt2\\sin(2000\\pi t)$. The outer radius is $2/\\sqrt2=\\sqrt2$.<br>'
+     +'<b>Solution — (a).</b> $\\mathbf{s}_1$ is the origin. $\\mathbf{s}_2,\\ldots,\\mathbf{s}_7$ sit on a circle of radius $\\sqrt2$ at $0^{\\circ},60^{\\circ},\\ldots,300^{\\circ}$. '
+     +'The bisectors between the centre and the six outer points form a regular hexagon at distance $\\sqrt2/2=0.707$ from the origin. That hexagon is $D_1$. The outer regions are separated by the rays at $30^{\\circ},90^{\\circ},\\ldots$ from the hexagon corners.<br>'
+     +'<b>Solution — (b).</b> Average the energies:'
+     +'$$E_{s,\\text{avg}}=\\frac{0+6(2)}{7}=\\frac{12}{7}=1.714.$$'
+     +'An outer point is $\\sqrt2$ from the centre. Its outer neighbours are $2\\sqrt2\\sin30^{\\circ}=\\sqrt2$ away as well. So $d_{\\min}=\\sqrt2$ and $d_{\\min}^{2}=2=\\frac76E_{s,\\text{avg}}$. '
+     +'The centre has six neighbours at $d_{\\min}$ and each outer point three:'
+     +'$$N_{\\min}=\\frac{6+6(3)}{7}=\\frac{24}{7}=3.429.$$'
+     +'Then'
+     +'$$\\begin{aligned}P_e&\\approx\\frac{24}{7}\\,Q\\Big(\\sqrt{\\frac{7E_{s,\\text{avg}}/6}{2N_0}}\\Big)\\\\&=\\frac{24}{7}\\,Q\\Big(\\sqrt{\\frac{7E_{s,\\text{avg}}}{12N_0}}\\Big).\\end{aligned}$$<br>'
+     +'<b>Solution — (c).</b> At $12$ the argument is $\\sqrt{7}=2.646$, read as $Q(2.65)=0.004025$. The centre can be mistaken six ways, so its conditional error is about $6(0.004025)=0.0242$. '
+     +'An outer point can be mistaken three ways, about $3(0.004025)=0.0121$. The average is $\\frac{24}{7}(0.004025)=0.0138$.<br>'
+     +'<b>Check.</b> Average the two conditional values with their weights: $\\frac17(0.0242)+\\frac67(0.0121)=0.00345+0.01035=0.0138$. This matches the average in part (c).',
+  err:'Missing the ring neighbours. On a hexagon the chord between neighbours equals the radius, so each outer point has two ring neighbours as well as the centre.',
+  teach:'The hexagonal set with a centre point. It shows that the inner point carries the largest error, which the average hides.',
+  figSol:()=>cfig([[0,0]].concat(onCircle(R2, range(2,7).map(k=>(k-2)*Math.PI/3))), {dTex:'\\sqrt{2}', tick:1, margin:1.25}) },
 
-{ id:'D5-16', module:'M5', type:'compare', src:'CH9 s.99',
-  stem:'Compare $16$-QAM and $16$-FSK on how many bits per second each carries in one hertz of bandwidth. Take the bandwidth of a QAM signal as $1/T_s$ and that of $M$-FSK as $M/(2T_s)$.',
-  parts:['Give the bits per second per hertz of $16$-QAM.',
-         'Give the same for $16$-FSK.',
-         'Say what each scheme pays for what it gets.'],
-  sol:'<b>Given.</b> Two schemes at $M=16$, with the stated bandwidths.<br>'
-     +'<b>Find.</b> The spectral efficiency of each.<br>'
-     +'<b>Method.</b> Bits per symbol divided by the bandwidth a symbol occupies.<br>'
-     +'<b>Solution — (a).</b> Four bits every $T_s$ into $1/T_s$ hertz: $4$ bits per second per hertz.<br>'
-     +'<b>Solution — (b).</b> Four bits every $T_s$ into $16/(2T_s)=8/T_s$ hertz: $4/8=0.5$ bits per second per hertz — eight times worse.<br>'
-     +'<b>Solution — (c).</b> QAM keeps the bandwidth fixed as $M$ grows and pays in energy, because the points crowd together. FSK keeps the distance between points fixed and pays in bandwidth, because each waveform needs its own frequency.<br>'
-     +'<b>Check.</b> QAM efficiency is $\\log_2 M$ and grows with $M$. FSK efficiency is $2\\log_2 M/M$ and falls with it. At $M=2$ the two are $1$ and $1$ — the schemes only part company once $M$ grows.',
-  err:'Treating bandwidth as a property of the scheme alone. It is set by the symbol rate as well, and the comparison only means anything with the symbol rate held fixed.',
-  teach:'Ask which one a deep-space link would use and which one a mobile phone would use. Deep space has bandwidth to spare and no energy. A phone has the opposite. The right answer depends entirely on which resource is scarce.' },
+{ id:'D5-16', module:'M5', type:'qam', src:'Final Q3',
+  stem:OPEN+'$$s_k(t)=\\begin{cases}\\sqrt2\\cos\\!\\big(2000\\pi t+(k-1)\\frac{\\pi}{2}\\big),&k\\in\\{1,2,3,4\\},\\\\2\\sqrt2\\cos\\!\\big(2000\\pi t+(k-5)\\frac{\\pi}{2}\\big),&k\\in\\{5,6,7,8\\},\\end{cases}$$ all on $0\\le t\\le1$.'+AWGN,
+  parts:[PDRAW(10), PNN(10), '[5 pts] Compare this set with $8$-PSK at the same $E_{s,\\text{avg}}$, in decibels.'],
+  sol:'<b>Given.</b> Two rings of four waveforms at the same four phases $0^{\\circ},90^{\\circ},180^{\\circ},270^{\\circ}$, with amplitudes $\\sqrt2$ and $2\\sqrt2$.<br>'
+     +'<b>Find.</b> The constellation and regions, $P_e$ against $E_{s,\\text{avg}}/N_0$, and the comparison with $8$-PSK.<br>'
+     +'<b>Method.</b> Use $\\psi_1(t)=\\sqrt2\\cos(2000\\pi t)$ and $\\psi_2(t)=-\\sqrt2\\sin(2000\\pi t)$. The radii are $1$ and $2$.<br>'
+     +'<b>Solution — (a).</b> The inner points are $(\\pm1,0)$ and $(0,\\pm1)$. The outer points are $(\\pm2,0)$ and $(0,\\pm2)$, each on the same ray as an inner point. '
+     +'The diagonals $\\psi_2=\\pm\\psi_1$ divide the plane into four wedges. In each wedge the bisector at radius $1.5$ separates the inner region, a triangle, from the outer region.<br>'
+     +'<b>Solution — (b).</b> Average the energies:'
+     +'$$E_{s,\\text{avg}}=\\frac{4(1)+4(4)}{8}=2.5.$$'
+     +'An inner point and the outer point on its ray are $1$ apart. Inner neighbours are $\\sqrt2$ apart and outer neighbours $2\\sqrt2$. So $d_{\\min}=1$ and $d_{\\min}^{2}=1=0.4E_{s,\\text{avg}}$. '
+     +'Every point has exactly one neighbour at $d_{\\min}$, so $N_{\\min}=1$:'
+     +'$$\\begin{aligned}P_e&\\approx Q\\Big(\\sqrt{\\frac{0.4E_{s,\\text{avg}}}{2N_0}}\\Big)\\\\&=Q\\Big(\\sqrt{\\frac{E_{s,\\text{avg}}}{5N_0}}\\Big).\\end{aligned}$$<br>'
+     +'<b>Solution — (c).</b> For $8$-PSK, $d_{\\min}^{2}=4E_{s,\\text{avg}}\\sin^{2}(\\pi/8)=0.5858E_{s,\\text{avg}}$. The ratio of the two coefficients gives'
+     +'$$10\\log_{10}\\frac{0.5858}{0.4}=1.66\\ \\text{dB}$$'
+     +'in favour of $8$-PSK. The ring set has the smaller $N_{\\min}$, $1$ against $2$, but that does not make up $1.66$ dB.<br>'
+     +'<b>Check.</b> The inner and outer points on one ray are $2-1=1$ apart. The coordinates give $(2-1)^{2}+0^{2}=1$, the same value.',
+  err:'Taking $d_{\\min}=\\sqrt2$ from the inner square. The radial pair is closer, and it sets $d_{\\min}=1$.',
+  teach:'Two aligned rings. The radial pair, not the ring, sets the distance, and the comparison with $8$-PSK shows the cost.',
+  figSol:()=>cfig(onCircle(1,[0,Math.PI/2,Math.PI,3*Math.PI/2]).concat(onCircle(2,[0,Math.PI/2,Math.PI,3*Math.PI/2])), {dTex:'1', tick:1, margin:1.3}) },
 
-{ id:'D5-17', module:'M5', type:'compare', src:'CH9 s.94',
-  stem:'A link must achieve a symbol error probability of $10^{-4}$.',
-  parts:['Give the $E_b/N_0$ in decibels that QPSK needs.',
-         'Give the $E_b/N_0$ in decibels that $16$-QAM needs.',
-         'Say what the extra energy buys.'],
-  sol:'<b>Given.</b> A target symbol error probability for two schemes.<br>'
-     +'<b>Find.</b> The energy per bit each needs.<br>'
-     +'<b>Method.</b> Divide out $N_{\\min}$, invert the $Q$, then convert from symbol energy to bit energy.<br>'
-     +'<b>Solution — (a).</b> QPSK has $N_{\\min}=2$, so $Q(x)=5\\times10^{-5}$ and $x=3.891$. The argument is $\\sqrt{E_s/N_0}$, so $E_s/N_0=15.14$, which is $11.80$ dB. Two bits a symbol, so $E_b/N_0=11.80-3.01=8.79$ dB.<br>'
-     +'<b>Solution — (b).</b> $16$-QAM has $N_{\\min}=3$, so $Q(x)=3.33\\times10^{-5}$ and $x=3.988$. The argument is $\\sqrt{0.2E_s/N_0}$, so $E_s/N_0=79.6$, which is $19.01$ dB. Four bits a symbol, so $E_b/N_0=19.01-6.02=12.98$ dB.<br>'
-     +'<b>Solution — (c).</b> About $4.2$ dB more energy per bit, in exchange for twice as many bits in the same bandwidth.<br>'
-     +'<b>Check.</b> The per-symbol figures differ by $7.2$ dB and the per-bit figures by $4.2$ dB. The $3$ dB between them is the extra bit a symbol paying part of its own way.',
-  err:'Inverting $Q$ on the target directly instead of on the target divided by $N_{\\min}$. It looks like a small change but it moves the answer by several tenths of a decibel, and in the wrong direction.',
-  teach:'This is the calculation behind every adaptive modulation scheme. When the signal is strong the link uses $16$-QAM and carries twice the data. When it weakens it drops to QPSK and keeps the errors down. Both settings hit the same error target.' },
+{ id:'D5-17', module:'M5', type:'psk', src:'Final Q3',
+  stem:'Consider a binary modulation scheme where the equally probable symbols have the following waveforms: $$s_1(t)=3\\cos(5000\\pi t),\\qquad s_2(t)=3\\cos\\!\\Big(5000\\pi t+\\frac{2\\pi}{3}\\Big),\\qquad0\\le t\\le2.$$'+AWGN,
+  parts:['[8 pts] Draw the signal constellation and the optimal decision boundary.',
+         '[9 pts] Determine the symbol error probability as a function of $E_{s,\\text{avg}}/N_0$. Explain why the nearest-neighbour approximation is exact here.',
+         '[8 pts] Which phase difference minimises the error probability at the same energy? Find the loss of the given set in decibels, and both error probabilities at $E_{s,\\text{avg}}/N_0=6$.'],
+  sol:'<b>Given.</b> Two waveforms of amplitude $3$ at $2500$ Hz, $0\\le t\\le2$, with phases $0$ and $120^{\\circ}$.<br>'
+     +'<b>Find.</b> The constellation and boundary, $P_e$, the best phase difference and the loss.<br>'
+     +'<b>Method.</b> With $T=2$ the orthonormal pair is $\\psi_1(t)=\\cos(5000\\pi t)$ and $\\psi_2(t)=-\\sin(5000\\pi t)$. The radius is $3\\sqrt{T/2}=3$.<br>'
+     +'<b>Solution — (a).</b> The points are $\\mathbf{s}_1=(3,0)$ and $\\mathbf{s}_2=(3\\cos120^{\\circ},3\\sin120^{\\circ})=(-1.5,2.598)$. '
+     +'The boundary is the perpendicular bisector of the two points. It passes through the origin, because both points have the same energy. It is the line at $60^{\\circ}$ and $240^{\\circ}$, halfway between the two phases.<br>'
+     +'<b>Solution — (b).</b> Both energies are $9$, so $E_{s,\\text{avg}}=9$. The distance is'
+     +'$$\\begin{aligned}d^{2}&=(3+1.5)^{2}+(0-2.598)^{2}\\\\&=20.25+6.75=27=3E_{s,\\text{avg}}.\\end{aligned}$$'
+     +'Each point has one neighbour, so'
+     +'$$\\begin{aligned}P_e&=Q\\Big(\\sqrt{\\frac{3E_{s,\\text{avg}}}{2N_0}}\\Big).\\end{aligned}$$'
+     +'This is exact. With two points there is one boundary, and the noise component across it is Gaussian with variance $N_0/2$.<br>'
+     +'<b>Solution — (c).</b> The distance is $2\\sqrt{E}\\sin(\\Delta\\theta/2)$, largest at $\\Delta\\theta=180^{\\circ}$. That is binary PSK, with $d^{2}=4E_{s,\\text{avg}}$. The loss is'
+     +'$$10\\log_{10}\\frac{4}{3}=1.25\\ \\text{dB}.$$'
+     +'At $6$, the given set has $Q(\\sqrt{9})=Q(3.00)=1.35\\times10^{-3}$. Binary PSK has $Q(\\sqrt{12})=Q(3.46)=2.70\\times10^{-4}$.<br>'
+     +'<b>Check.</b> The cosine rule gives $d^{2}=9+9-2(9)\\cos120^{\\circ}=18+9=27$. This agrees with the coordinates.',
+  err:'Calling the set orthogonal because the phases differ. Only a $90^{\\circ}$ difference gives zero correlation. At $120^{\\circ}$ the correlation is $\\cos120^{\\circ}=-0.5$.',
+  teach:'A binary set in the examination format. It connects phase difference to distance and shows that binary PSK is the best two-point set.',
+  figSol:()=>cfig([[3,0],[-1.5,1.5*R3]], {dTex:'3\\sqrt{3}', tick:1, margin:1.9}) },
 
-/* ---- full-length ----------------------------------------------------- */
+{ id:'D5-18', module:'M5', type:'fsk', src:'Final Q3',
+  stem:OPEN+'$$s_{1,2}(t)=\\pm2\\cos(2000\\pi t),\\qquad s_{3,4}(t)=\\pm2\\cos(3000\\pi t),\\qquad0\\le t\\le1.$$'+AWGN,
+  parts:['[8 pts] Show that the two carriers are orthogonal on $0\\le t\\le1$, and choose an orthonormal basis.',
+         PDRAW(8),
+         '[9 pts] Determine the nearest-neighbour approximation as a function of $E_{s,\\text{avg}}/N_0$. Evaluate it at $9$ and compare with a four-point PSK set of the same energy.'],
+  sol:'<b>Given.</b> Four waveforms: $\\pm2\\cos$ at $1000$ Hz and $\\pm2\\cos$ at $1500$ Hz, $0\\le t\\le1$.<br>'
+     +'<b>Find.</b> The orthogonality, the constellation and regions, $P_e$, and the comparison with four-point PSK.<br>'
+     +'<b>Method.</b> Two cosines are orthogonal when their product integrates to zero. Then each frequency is one axis of the constellation.<br>'
+     +'<b>Solution — (a).</b> Use the product-to-sum identity and integrate:'
+     +'$$\\begin{aligned}\\int_0^1\\cos(2000\\pi t)\\cos(3000\\pi t)\\,dt&=\\frac12\\int_0^1\\big[\\cos(1000\\pi t)+\\cos(5000\\pi t)\\big]dt\\\\&=\\frac12\\Big[\\frac{\\sin(1000\\pi t)}{1000\\pi}+\\frac{\\sin(5000\\pi t)}{5000\\pi}\\Big]_0^1\\\\&=0.\\end{aligned}$$'
+     +'Both sines are zero at $t=1$ and $t=0$. So take $\\psi_1(t)=\\sqrt2\\cos(2000\\pi t)$ and $\\psi_2(t)=\\sqrt2\\cos(3000\\pi t)$.<br>'
+     +'<b>Solution — (b).</b> Since $2\\cos(\\cdot)=\\sqrt2\\,\\psi(\\cdot)$, the points are $(\\pm\\sqrt2,0)$ and $(0,\\pm\\sqrt2)$. This is a square turned by $45^{\\circ}$. The regions are bounded by the diagonals $\\psi_2=\\pm\\psi_1$.<br>'
+     +'<b>Solution — (c).</b> Every energy is $2$, so $E_{s,\\text{avg}}=2$. Neighbours at right angles are $\\sqrt{2+2}=2$ apart, and opposite points $2\\sqrt2$. So $d_{\\min}^{2}=4=2E_{s,\\text{avg}}$ and $N_{\\min}=2$:'
+     +'$$\\begin{aligned}P_e&\\approx2\\,Q\\Big(\\sqrt{\\frac{2E_{s,\\text{avg}}}{2N_0}}\\Big)\\\\&=2\\,Q\\Big(\\sqrt{\\frac{E_{s,\\text{avg}}}{N_0}}\\Big).\\end{aligned}$$'
+     +'At $9$ this is $2Q(3.00)=2.70\\times10^{-3}$. Four-point PSK of the same energy has the same square and the same answer. It uses one carrier frequency instead of two.<br>'
+     +'<b>Check.</b> Compute the distance from the waveforms: $\\int_0^1\\big[2\\cos(2000\\pi t)-2\\cos(3000\\pi t)\\big]^{2}dt=2+2-0=4$. The cross term vanishes by part (a).',
+  err:'Treating $\\pm$ on one frequency as orthogonal. $2\\cos$ and $-2\\cos$ at the same frequency are antipodal, on one axis, not orthogonal.',
+  teach:'A biorthogonal set from two frequencies. It has the geometry of four-point PSK, so the comparison is a tie in energy and a loss in bandwidth.',
+  figSol:()=>cfig([[R2,0],[-R2,0],[0,R2],[0,-R2]], {dTex:'2', tick:1, margin:1.5}) },
 
-{ id:'D5-18', module:'M5', type:'full', src:'Final Q3',
-  stem:'A system uses $16$-QAM at a symbol rate of $10^{6}$ symbols per second with $E_s/N_0=18$ dB.',
-  parts:['Give the bit rate.',
-         'Give $d_{\\min}^{2}$ in terms of $E_s$, and $N_{\\min}$.',
-         'Give the symbol error probability.',
-         'Give the approximate bit error probability, assuming Gray coding.'],
-  sol:'<b>Given.</b> $16$-QAM, $10^{6}$ symbols a second, $18$ dB.<br>'
-     +'<b>Find.</b> Rate, geometry, $P_e$, $P_b$.<br>'
-     +'<b>Method.</b> Rate first, then the constellation, then one $Q$, then divide by the bits a symbol.<br>'
-     +'<b>Solution — (a).</b> Four bits a symbol at $10^{6}$ symbols a second is $4\\times10^{6}$ bits a second.<br>'
-     +'<b>Solution — (b).</b> $d_{\\min}^{2}=6E_s/15=0.4E_s$ and $N_{\\min}=3$, as in D5-12.<br>'
-     +'<b>Solution — (c).</b> $\\dfrac{d_{\\min}^{2}}{2N_0}=0.2\\times63.1=12.62$, so $P_e\\approx3Q(3.553)=3\\times1.91\\times10^{-4}=5.72\\times10^{-4}$.<br>'
-     +'<b>Solution — (d).</b> With Gray coding a symbol error almost always changes one bit out of four, so $P_b\\approx P_e/4=1.43\\times10^{-4}$.<br>'
-     +'<b>Check.</b> Three decibels more than D5-12 took the symbol error from $1.8\\times10^{-2}$ to $5.7\\times10^{-4}$ — a factor of thirty for a factor of two in power. The curve is steep here, which is exactly where a system is designed to sit.',
-  err:'Dividing $P_e$ by $16$ rather than by $4$. The divisor is the number of bits a symbol carries, not the number of symbols.',
-  teach:'Part (d) is an approximation twice over. It assumes the error goes to a neighbour, and it assumes the neighbours are Gray-labelled. Both are good at this error rate and both fail at low signal-to-noise ratio. This is worth saying out loud when the answer is written down.' },
+{ id:'D5-19', module:'M5', type:'fsk', src:'Final Q3',
+  stem:OPEN+'$$s_1(t)=0,\\qquad s_2(t)=3\\cos(4000\\pi t),\\qquad s_3(t)=3\\cos(5000\\pi t),\\qquad0\\le t\\le2.$$'+AWGN,
+  parts:[PDRAW(10), PNN(10), '[5 pts] Evaluate the approximation of part (b) at $E_{s,\\text{avg}}/N_0=12$.'],
+  sol:'<b>Given.</b> The zero signal and two cosines of amplitude $3$ at $2000$ Hz and $2500$ Hz, $0\\le t\\le2$.<br>'
+     +'<b>Find.</b> The constellation and regions, $P_e$ against $E_{s,\\text{avg}}/N_0$, and its value at $12$.<br>'
+     +'<b>Method.</b> The two cosines differ by $500$ Hz, a multiple of $1/(2T)=0.25$ Hz, so they are orthogonal on $0\\le t\\le2$. With $T=2$ the unit-energy functions are $\\psi_1(t)=\\cos(4000\\pi t)$ and $\\psi_2(t)=\\cos(5000\\pi t)$.<br>'
+     +'<b>Solution — (a).</b> Check the unit energy of $\\psi_1$:'
+     +'$$\\int_0^2\\cos^{2}(4000\\pi t)\\,dt=\\frac12\\Big[t+\\frac{\\sin(8000\\pi t)}{8000\\pi}\\Big]_0^2=1.$$'
+     +'So $\\mathbf{s}_1=(0,0)$, $\\mathbf{s}_2=(3,0)$ and $\\mathbf{s}_3=(0,3)$. $D_1$ is the square corner $\\psi_1<1.5$, $\\psi_2<1.5$. $D_2$ lies right of $\\psi_1=1.5$ and below the diagonal $\\psi_2=\\psi_1$. $D_3$ lies above $\\psi_2=1.5$ and above the diagonal.<br>'
+     +'<b>Solution — (b).</b> Average the energies:'
+     +'$$E_{s,\\text{avg}}=\\frac{0+9+9}{3}=6.$$'
+     +'The distances are $3$ from $\\mathbf{s}_1$ to each other point and $3\\sqrt2$ between $\\mathbf{s}_2$ and $\\mathbf{s}_3$. So $d_{\\min}=3$ and $d_{\\min}^{2}=9=1.5E_{s,\\text{avg}}$. '
+     +'$\\mathbf{s}_1$ has two neighbours and the others one each: $N_{\\min}=4/3$. Then'
+     +'$$\\begin{aligned}P_e&\\approx\\frac43\\,Q\\Big(\\sqrt{\\frac{1.5E_{s,\\text{avg}}}{2N_0}}\\Big)\\\\&=\\frac43\\,Q\\Big(\\sqrt{0.75\\frac{E_{s,\\text{avg}}}{N_0}}\\Big).\\end{aligned}$$<br>'
+     +'<b>Solution — (c).</b> The argument is $\\sqrt{0.75\\times12}=3.00$, so $P_e\\approx\\frac43(0.001350)=1.80\\times10^{-3}$.<br>'
+     +'<b>Check.</b> Compute $d_{23}^{2}$ from the waveforms: $\\int_0^2 9\\big[\\cos(4000\\pi t)-\\cos(5000\\pi t)\\big]^{2}dt=9+9-0=18$. So $d_{23}=3\\sqrt2$, larger than $d_{\\min}$.',
+  err:'Using $\\sqrt2\\cos$ as the basis. That has unit energy only on a one-second interval. On $0\\le t\\le2$ the unit-energy carrier is $\\cos$ itself.',
+  teach:'On-off keying and frequency keying in one set. The zero signal has two neighbours, so its region is the corner square.',
+  figSol:()=>cfig([[0,0],[3,0],[0,3]], {dTex:'3', tick:1, margin:1.6}) },
 
-{ id:'D5-19', module:'M5', type:'full', src:'Final Q3',
-  stem:'A designer must send three bits a symbol and is choosing between $8$-PSK and $8$-PAM at the same average symbol energy.',
-  parts:['Give $d_{\\min}^{2}$ for each in terms of $E_s$.',
-         'Give $N_{\\min}$ for each.',
-         'Give the symbol error probability of each at $E_s/N_0=15$ dB.',
-         'Say which to choose and why.'],
-  sol:'<b>Given.</b> Two eight-point constellations at equal energy.<br>'
-     +'<b>Find.</b> The geometry and the error probability of each.<br>'
-     +'<b>Method.</b> One formula each, then the same $Q$ twice.<br>'
-     +'<b>Solution — (a).</b> $8$-PSK: $d_{\\min}=2\\sqrt{E_s}\\sin(\\pi/8)$, so $d_{\\min}^{2}=0.586E_s$. $8$-PAM: $d_{\\min}^{2}=12E_s/63=0.190E_s$.<br>'
-     +'<b>Solution — (b).</b> $8$-PSK has $N_{\\min}=2$; $8$-PAM has $N_{\\min}=2(7)/8=1.75$.<br>'
-     +'<b>Solution — (c).</b> At $15$ dB, $E_s/N_0=31.62$. PSK: $\\sqrt{0.586\\times31.62/2}=\\sqrt{9.27}=3.044$, so $P_e\\approx2Q(3.044)=2.33\\times10^{-3}$. PAM: $\\sqrt{0.190\\times31.62/2}=\\sqrt{3.01}=1.735$, so $P_e\\approx1.75\\,Q(1.735)=1.75\\times0.0414=7.24\\times10^{-2}$.<br>'
-     +'<b>Solution — (d).</b> $8$-PSK, by a factor of thirty. Its points are spread over a circle in two dimensions. PAM crowds all eight onto one line, and the smaller $N_{\\min}$ nowhere near makes up for it.<br>'
-     +'<b>Check.</b> The distance ratio is $0.586/0.190=3.08$, or $4.9$ dB in favour of PSK. That is the same kind of advantage QAM has over PAM in D5-13, and for the same reason: a second dimension.',
-  err:'Deciding on $N_{\\min}$ alone. It sits outside the $Q$ and scales the answer by less than a factor of two. The distance sits inside and moves it by orders of magnitude.',
-  teach:'Both parts of the comparison are worth writing on one line: PSK wins on distance and loses on neighbour count, and distance wins. That ordering — geometry first, counting second — decides nearly every question in this module.' },
+{ id:'D5-20', module:'M5', type:'qam', src:'Final Q3',
+  stem:OPEN+'$$s_{mn}(t)=\\sqrt2\\big[2(m-2)\\cos(2000\\pi t)-(2n-3)\\sin(2000\\pi t)\\big],$$ with $m\\in\\{1,2,3\\}$, $n\\in\\{1,2\\}$ and $0\\le t\\le1$.'+AWGN,
+  parts:[PDRAW(10), PNN(10), '[5 pts] How many bits does one symbol carry? Evaluate the approximation at $E_{s,\\text{avg}}/N_0=16.5$.'],
+  sol:'<b>Given.</b> Six equally likely waveforms. The cosine carries $2(m-2)\\in\\{-2,0,2\\}$ and the sine carries $2n-3\\in\\{-1,1\\}$.<br>'
+     +'<b>Find.</b> The constellation and regions, $P_e$ against $E_{s,\\text{avg}}/N_0$, the bits per symbol and the value at $16.5$.<br>'
+     +'<b>Method.</b> With $\\psi_1(t)=\\sqrt2\\cos(2000\\pi t)$ and $\\psi_2(t)=-\\sqrt2\\sin(2000\\pi t)$, $\\mathbf{s}_{mn}=(2(m-2),\\,2n-3)$.<br>'
+     +'<b>Solution — (a).</b> The points form a $3\\times2$ grid: $\\psi_1\\in\\{-2,0,2\\}$, $\\psi_2\\in\\{-1,1\\}$. The boundaries are $\\psi_1=\\pm1$ and $\\psi_2=0$. The middle regions are half-strips and the side regions quarter-planes.<br>'
+     +'<b>Solution — (b).</b> Average the energies. Four points have $4+1=5$ and two have $0+1=1$:'
+     +'$$E_{s,\\text{avg}}=\\frac{4(5)+2(1)}{6}=\\frac{22}{6}=3.667.$$'
+     +'Horizontal and vertical neighbours are both $2$ apart, so $d_{\\min}^{2}=4=\\frac{12}{11}E_{s,\\text{avg}}$. The four side points have two neighbours and the two middle points three: $N_{\\min}=14/6=7/3$. Then'
+     +'$$\\begin{aligned}P_e&\\approx\\frac73\\,Q\\Big(\\sqrt{\\frac{12E_{s,\\text{avg}}/11}{2N_0}}\\Big)\\\\&=\\frac73\\,Q\\Big(\\sqrt{\\frac{6E_{s,\\text{avg}}}{11N_0}}\\Big).\\end{aligned}$$<br>'
+     +'<b>Solution — (c).</b> One symbol carries $\\log_2 6=2.585$ bits. At $16.5$ the argument is $\\sqrt{6(16.5)/11}=\\sqrt9=3.00$, so $P_e\\approx\\frac73(0.001350)=3.15\\times10^{-3}$.<br>'
+     +'<b>Check.</b> Count pairs: four horizontal pairs and three vertical pairs sit at $d_{\\min}$. So $N_{\\min}=2\\times7/6=7/3$.',
+  err:'Taking the vertical spacing as $1$. The sine coefficients are $\\pm1$, so the two rows are $2$ apart, the same as the columns.',
+  teach:'A six-point rectangle: not a power of two, with two kinds of point. The bit count is fractional, which students rarely meet.',
+  figSol:()=>cfig(grid([-2,0,2],[1,-1]), {names:gridNames(3,2), dTex:'2', tick:1, margin:1.5}) },
 
-{ id:'D5-20', module:'M5', type:'full', src:'Final Q3',
-  stem:'A channel allows $E_b/N_0=10$ dB and the link must reach a symbol error probability of $10^{-3}$.',
-  parts:['Say whether QPSK meets the requirement.',
-         'Say whether $8$-PSK meets it.',
-         'Say whether $16$-QAM meets it.',
-         'Choose the scheme that carries the most bits and still meets it.'],
-  sol:'<b>Given.</b> $E_b/N_0=10$ dB, target $P_e=10^{-3}$.<br>'
-     +'<b>Find.</b> Which schemes clear the target at this energy.<br>'
-     +'<b>Method.</b> Convert to $E_s/N_0$ for each scheme with $E_s=(\\log_2 M)E_b$, then apply that scheme\'s formula. $E_b/N_0=10$ means $E_b/N_0=10$ as a ratio.<br>'
-     +'<b>Solution — (a).</b> QPSK: $E_s/N_0=2\\times10=20$. The argument is $\\sqrt{2\\times20}\\sin(\\pi/4)=\\sqrt{40}\\times0.7071=4.472$, so $P_e\\approx2Q(4.472)=7.75\\times10^{-6}$. It meets the target with room to spare.<br>'
-     +'<b>Solution — (b).</b> $8$-PSK: $E_s/N_0=3\\times10=30$. The argument is $\\sqrt{60}\\times0.3827=2.965$, so $P_e\\approx2Q(2.965)=3.03\\times10^{-3}$. It fails, by a factor of three.<br>'
-     +'<b>Solution — (c).</b> $16$-QAM: $E_s/N_0=4\\times10=40$. The argument is $\\sqrt{0.2\\times40}=2.828$, so $P_e\\approx3Q(2.828)=7.03\\times10^{-3}$. It fails, by a factor of seven.<br>'
-     +'<b>Solution — (d).</b> QPSK, at two bits a symbol. Nothing larger clears the target at this energy.<br>'
-     +'<b>Check.</b> The three error probabilities increase with $M$: $7.8\\times10^{-6}$, $3.0\\times10^{-3}$, and $7.0\\times10^{-3}$. At fixed energy per bit, more bits per symbol decrease the point spacing.',
-  err:'Working the whole question at a fixed $E_s/N_0$. The channel fixes the energy per bit, so every scheme gets a different symbol energy, and that conversion is where the comparison is decided.',
-  teach:'The gap between QPSK and $8$-PSK is the interesting one: QPSK beats the target by more than two orders of magnitude and $8$-PSK misses it. Ask how much extra energy would rescue $8$-PSK — about $0.9$ dB — and the question turns into a design decision instead of an arithmetic one.' }
+{ id:'D5-21', module:'M5', type:'qam', src:'Final Q3',
+  stem:OPEN+'$$\\begin{aligned}s_k(t)&=2\\cos\\!\\Big(2000\\pi t+\\frac{(k-1)\\pi}{2}\\Big),\\quad k\\in\\{1,2,3\\},\\\\s_4(t)&=4\\cos\\!\\Big(2000\\pi t+\\frac{3\\pi}{2}\\Big),\\end{aligned}$$ all on $0\\le t\\le1$.'+AWGN,
+  parts:[PDRAW(10), PNN(10), '[5 pts] Compare with a regular four-point PSK set of the same $E_{s,\\text{avg}}$, in decibels.'],
+  sol:'<b>Given.</b> Three waveforms of amplitude $2$ at phases $0,90^{\\circ},180^{\\circ}$, and a fourth of amplitude $4$ at $270^{\\circ}$. The carrier is $1000$ Hz, $0\\le t\\le1$.<br>'
+     +'<b>Find.</b> The constellation and regions, $P_e$ against $E_{s,\\text{avg}}/N_0$, and the loss against regular four-point PSK.<br>'
+     +'<b>Method.</b> Use $\\psi_1(t)=\\sqrt2\\cos(2000\\pi t)$ and $\\psi_2(t)=-\\sqrt2\\sin(2000\\pi t)$. The radii are $2/\\sqrt2=\\sqrt2$ and $4/\\sqrt2=2\\sqrt2$.<br>'
+     +'<b>Solution — (a).</b> The points are $\\mathbf{s}_1=(\\sqrt2,0)$, $\\mathbf{s}_2=(0,\\sqrt2)$, $\\mathbf{s}_3=(-\\sqrt2,0)$ and $\\mathbf{s}_4=(0,-2\\sqrt2)$. '
+     +'The diagonals separate $\\mathbf{s}_2$ from $\\mathbf{s}_1$ and $\\mathbf{s}_3$. The bisector of $\\mathbf{s}_1$ and $\\mathbf{s}_4$ is $\\psi_1+2\\psi_2=-3/\\sqrt2$, and its mirror image separates $\\mathbf{s}_3$ from $\\mathbf{s}_4$. The region of $\\mathbf{s}_4$ is pushed down with its point.<br>'
+     +'<b>Solution — (b).</b> Average the energies:'
+     +'$$E_{s,\\text{avg}}=\\frac{2+2+2+8}{4}=3.5.$$'
+     +'The distances are $d_{12}=d_{23}=2$, $d_{13}=2\\sqrt2$, $d_{14}=d_{34}=\\sqrt{2+8}=\\sqrt{10}$ and $d_{24}=3\\sqrt2$. So $d_{\\min}=2$ and $d_{\\min}^{2}=4=\\frac87E_{s,\\text{avg}}$. '
+     +'$\\mathbf{s}_2$ has two neighbours, $\\mathbf{s}_1$ and $\\mathbf{s}_3$ one, and $\\mathbf{s}_4$ none: $N_{\\min}=4/4=1$. Then'
+     +'$$\\begin{aligned}P_e&\\approx Q\\Big(\\sqrt{\\frac{8E_{s,\\text{avg}}/7}{2N_0}}\\Big)\\\\&=Q\\Big(\\sqrt{\\frac{4E_{s,\\text{avg}}}{7N_0}}\\Big).\\end{aligned}$$<br>'
+     +'<b>Solution — (c).</b> Regular four-point PSK has $d_{\\min}^{2}=2E_{s,\\text{avg}}$. The loss is'
+     +'$$10\\log_{10}\\frac{2}{8/7}=10\\log_{10}1.75=2.43\\ \\text{dB}.$$'
+     +'Moving $\\mathbf{s}_4$ out cost energy and gave no distance, because $d_{\\min}$ is set by the three near points.<br>'
+     +'<b>Check.</b> The midpoint of $\\mathbf{s}_1$ and $\\mathbf{s}_4$ is $(0.707,-1.414)$. Then $0.707+2(-1.414)=-2.121=-3/\\sqrt2$, so the bisector passes through it.',
+  err:'Keeping the PSK answer $N_{\\min}=2$. The point off the circle has no neighbour at $d_{\\min}$, and $\\mathbf{s}_1$, $\\mathbf{s}_3$ lose one each.',
+  teach:'One point off the circle breaks the symmetry. The neighbour count must be done point by point.',
+  figSol:()=>cfig([[R2,0],[0,R2],[-R2,0],[0,-2*R2]], {dTex:'2', tick:1, margin:1.5}) },
+
+{ id:'D5-22', module:'M5', type:'qam', src:'Final Q3',
+  stem:OPEN+'$$s_{1,2}(t)=\\pm\\sqrt2\\cos(3000\\pi t),\\qquad s_{3,4}(t)=2\\sqrt2\\cos\\!\\Big(3000\\pi t\\pm\\frac{\\pi}{2}\\Big),\\qquad0\\le t\\le1.$$'+AWGN,
+  parts:[PDRAW(10), PNN(10),
+         '[5 pts] The next distance is only slightly larger than $d_{\\min}$. Add its terms to the approximation and evaluate both at $E_{s,\\text{avg}}/N_0=11.25$.'],
+  sol:'<b>Given.</b> $\\pm\\sqrt2\\cos(3000\\pi t)$, and two waveforms of amplitude $2\\sqrt2$ at phases $\\pm90^{\\circ}$, on $0\\le t\\le1$.<br>'
+     +'<b>Find.</b> The constellation and regions, $P_e$ against $E_{s,\\text{avg}}/N_0$, and the effect of the second distance.<br>'
+     +'<b>Method.</b> Use $\\psi_1(t)=\\sqrt2\\cos(3000\\pi t)$ and $\\psi_2(t)=-\\sqrt2\\sin(3000\\pi t)$. Note $\\cos(x+\\pi/2)=-\\sin x$, so $s_3=2\\psi_2$ and $s_4=-2\\psi_2$.<br>'
+     +'<b>Solution — (a).</b> The points are $\\mathbf{s}_1=(1,0)$, $\\mathbf{s}_2=(-1,0)$, $\\mathbf{s}_3=(0,2)$ and $\\mathbf{s}_4=(0,-2)$, a rhombus. '
+     +'The $\\psi_2$ axis separates $\\mathbf{s}_1$ from $\\mathbf{s}_2$ near the origin. The bisector of $\\mathbf{s}_1$ and $\\mathbf{s}_3$ is $-2\\psi_1+4\\psi_2=3$, and its mirror images bound the other pairs.<br>'
+     +'<b>Solution — (b).</b> Average the energies:'
+     +'$$E_{s,\\text{avg}}=\\frac{1+1+4+4}{4}=2.5.$$'
+     +'The distances are $d_{12}=2$, $d_{34}=4$ and $\\sqrt{1+4}=\\sqrt5=2.236$ for the four mixed pairs. So $d_{\\min}=2$ and $d_{\\min}^{2}=4=1.6E_{s,\\text{avg}}$. Only $\\mathbf{s}_1$ and $\\mathbf{s}_2$ have a neighbour at $d_{\\min}$: $N_{\\min}=2/4=0.5$. Then'
+     +'$$\\begin{aligned}P_e&\\approx0.5\\,Q\\Big(\\sqrt{\\frac{1.6E_{s,\\text{avg}}}{2N_0}}\\Big)\\\\&=0.5\\,Q\\Big(\\sqrt{0.8\\frac{E_{s,\\text{avg}}}{N_0}}\\Big).\\end{aligned}$$<br>'
+     +'<b>Solution — (c).</b> The four mixed pairs have $d^{2}=5=2E_{s,\\text{avg}}$. Each point is in two of them, so they add $2Q\\big(\\sqrt{E_{s,\\text{avg}}/N_0}\\big)$. At $11.25$,'
+     +'$$\\begin{aligned}0.5\\,Q(\\sqrt{9})&=0.5(0.001350)=6.75\\times10^{-4},\\\\2\\,Q(\\sqrt{11.25})&=2\\,Q(3.35)=2(0.0004041)=8.08\\times10^{-4}.\\end{aligned}$$'
+     +'The second term is larger than the first. The estimate with both is $1.48\\times10^{-3}$, more than twice the nearest-neighbour value.<br>'
+     +'<b>Check.</b> The midpoint of $\\mathbf{s}_1$ and $\\mathbf{s}_3$ is $(0.5,1)$. Then $-2(0.5)+4(1)=3$, so the bisector passes through it.',
+  err:'Trusting the nearest-neighbour form when the second distance is close to $d_{\\min}$. With $N_{\\min}=0.5$ and four pairs at $1.12d_{\\min}$, the dropped terms dominate.',
+  teach:'The examination shape where the approximation misleads. Part (c) makes the student test the approximation instead of trusting it.',
+  figSol:()=>cfig([[1,0],[-1,0],[0,2],[0,-2]], {dTex:'2', tick:1, margin:1.4}) },
+
+/* ---- creative questions in the same format ---------------------------- */
+
+{ id:'D5-23', module:'M5', type:'design', src:'Final Q3 (variant)',
+  stem:'Five equally probable waveforms are transmitted over a standard AWGN channel with $\\mathcal{N}(0,N_0/2)$. The figure shows their optimal decision regions $D_1,\\ldots,D_5$ on the basis $\\psi_1(t)=\\sqrt2\\cos(2000\\pi t)$, $\\psi_2(t)=-\\sqrt2\\sin(2000\\pi t)$, $0\\le t\\le1$. '
+      +'The central region is the square $|\\psi_1|<1$, $|\\psi_2|<1$, and the diagonals split the rest. One waveform is the zero signal. The other four have equal energy, and $E_{s,\\text{avg}}=3.2$.',
+  figure:()=>cfig([[0,0],[2,0],[0,2],[-2,0],[0,-2]], {hide:true, tick:1, margin:1.6,
+    regionNames:['D_1','D_2','D_3','D_4','D_5'], regionAt:[[0,0],[2.6,0.5],[-0.5,2.6],[-2.6,-0.5],[0.5,-2.6]]}),
+  parts:['[8 pts] Locate the five signal points from the regions, and confirm the value of $E_{s,\\text{avg}}$.',
+         '[7 pts] Write the five waveforms $s_1(t),\\ldots,s_5(t)$, with $s_k$ the symbol decided in $D_k$.',
+         '[10 pts] Determine the nearest-neighbour approximation of the average symbol error probability as a function of $E_{s,\\text{avg}}/N_0$. Evaluate it at $E_{s,\\text{avg}}/N_0=14.4$.'],
+  sol:'<b>Given.</b> The five regions: a square $|\\psi_1|<1$, $|\\psi_2|<1$ in the centre, and four outer regions split by the diagonals. The zero signal is one of the points, and $E_{s,\\text{avg}}=3.2$.<br>'
+     +'<b>Find.</b> The points, the waveforms, and $P_e$ with its value at $14.4$.<br>'
+     +'<b>Method.</b> A boundary between two regions is the perpendicular bisector of their two points. So each point is the mirror image of its neighbour in the shared boundary.<br>'
+     +'<b>Solution — (a).</b> The zero signal is in the square $D_1$, so $\\mathbf{s}_1=(0,0)$. The boundary between $D_1$ and $D_2$ is the line $\\psi_1=1$. The mirror image of the origin in it is $\\mathbf{s}_2=(2,0)$. '
+     +'The same step gives $\\mathbf{s}_3=(0,2)$, $\\mathbf{s}_4=(-2,0)$ and $\\mathbf{s}_5=(0,-2)$. The bisector of $\\mathbf{s}_2$ and $\\mathbf{s}_3$ is $\\psi_2=\\psi_1$, which is the diagonal drawn. The energy is'
+     +'$$E_{s,\\text{avg}}=\\frac{0+4(2^{2})}{5}=\\frac{16}{5}=3.2.$$<br>'
+     +'<b>Solution — (b).</b> Invert $c_1\\psi_1+c_2\\psi_2=\\sqrt2\\,[c_1\\cos(2000\\pi t)-c_2\\sin(2000\\pi t)]$ for each point:'
+     +'$$\\begin{aligned}s_1(t)&=0,\\\\s_2(t)&=2\\sqrt2\\cos(2000\\pi t),\\\\s_3(t)&=-2\\sqrt2\\sin(2000\\pi t)=2\\sqrt2\\cos(2000\\pi t+\\tfrac{\\pi}{2}),\\\\s_4(t)&=-2\\sqrt2\\cos(2000\\pi t)=2\\sqrt2\\cos(2000\\pi t+\\pi),\\\\s_5(t)&=2\\sqrt2\\sin(2000\\pi t)=2\\sqrt2\\cos(2000\\pi t+\\tfrac{3\\pi}{2}).\\end{aligned}$$<br>'
+     +'<b>Solution — (c).</b> The centre is $2$ from each outer point. Neighbouring outer points are $2\\sqrt2$ apart. So $d_{\\min}=2$ and $d_{\\min}^{2}=4=1.25E_{s,\\text{avg}}$. '
+     +'The centre has four neighbours and each outer point one: $N_{\\min}=(4+4)/5=1.6$. Then'
+     +'$$\\begin{aligned}P_e&\\approx1.6\\,Q\\Big(\\sqrt{\\frac{1.25E_{s,\\text{avg}}}{2N_0}}\\Big)\\\\&=1.6\\,Q\\Big(\\sqrt{0.625\\frac{E_{s,\\text{avg}}}{N_0}}\\Big).\\end{aligned}$$'
+     +'At $14.4$ the argument is $\\sqrt{9}=3.00$, so $P_e\\approx1.6(0.001350)=2.16\\times10^{-3}$.<br>'
+     +'<b>Check.</b> Integrate $s_2$ directly: $\\int_0^1 8\\cos^{2}(2000\\pi t)\\,dt=4\\big[t+\\frac{\\sin(4000\\pi t)}{4000\\pi}\\big]_0^1=4$. This equals $2^{2}$, the squared distance of $\\mathbf{s}_2$ from the origin.',
+  err:'Placing the outer points on the square\'s edge at $\\psi_1=1$. The edge is halfway between two points, not at a point. The point lies twice as far out.',
+  teach:'A reversed question: the regions are given and the signals are asked for. The mirror-image rule is the whole method.',
+  figSol:()=>cfig([[0,0],[2,0],[0,2],[-2,0],[0,-2]], {dTex:'2', tick:1, margin:1.6}) },
+
+{ id:'D5-24', module:'M5', type:'design', src:'Final Q3 (variant)',
+  stem:'Four equally probable waveforms $s_k(t)=c_k\\sqrt2\\cos(2000\\pi t)$, $0\\le t\\le1$, with $c_1<c_2<c_3<c_4$, are detected optimally after a standard AWGN channel with $\\mathcal{N}(0,N_0/2)$. '
+      +'The figure shows the decision thresholds on the axis $\\psi_1(t)=\\sqrt2\\cos(2000\\pi t)$. The smallest coefficient is $c_1=-2$.',
+  figure:()=>cfig([[-2,0],[0,0],[2,0],[6,0]], {oneD:true, hide:true, xticks:[-1,1,4], margin:2.2,
+    regionNames:['D_1','D_2','D_3','D_4'], regionAt:[[-2.2,0],[0,0],[2.5,0],[6,0]]}),
+  parts:['[8 pts] Find $c_2$, $c_3$ and $c_4$ from the thresholds.',
+         '[7 pts] Find $E_{s,\\text{avg}}$ and write the four waveforms.',
+         '[6 pts] Determine the nearest-neighbour approximation of the average symbol error probability as a function of $E_{s,\\text{avg}}/N_0$.',
+         '[4 pts] Give the four-point set with the same $d_{\\min}$ and the least $E_{s,\\text{avg}}$. Find its saving in decibels.'],
+  sol:'<b>Given.</b> Thresholds at $-1$, $1$ and $4$ on the $\\psi_1$ axis, and $c_1=-2$.<br>'
+     +'<b>Find.</b> $c_2,c_3,c_4$, the waveforms and $E_{s,\\text{avg}}$, $P_e$, and the best set with the same $d_{\\min}$.<br>'
+     +'<b>Method.</b> The coordinate of $s_k$ on $\\psi_1$ is $c_k$. An optimal threshold between equally likely neighbours is their midpoint, so $c_{k+1}=2\\lambda_k-c_k$.<br>'
+     +'<b>Solution — (a).</b> Apply the midpoint rule one threshold at a time:'
+     +'$$\\begin{aligned}c_2&=2(-1)-(-2)=0,\\\\c_3&=2(1)-0=2,\\\\c_4&=2(4)-2=6.\\end{aligned}$$<br>'
+     +'<b>Solution — (b).</b> The waveforms are $s_1(t)=-2\\sqrt2\\cos(2000\\pi t)$, $s_2(t)=0$, $s_3(t)=2\\sqrt2\\cos(2000\\pi t)$ and $s_4(t)=6\\sqrt2\\cos(2000\\pi t)$. The energy of $s_k$ is $c_k^{2}$:'
+     +'$$E_{s,\\text{avg}}=\\frac{4+0+4+36}{4}=11.$$<br>'
+     +'<b>Solution — (c).</b> The gaps are $2$, $2$ and $4$. So $d_{\\min}=2$ and $d_{\\min}^{2}=4=\\frac{4}{11}E_{s,\\text{avg}}$. The neighbour counts are $1,2,1,0$, so $N_{\\min}=1$:'
+     +'$$\\begin{aligned}P_e&\\approx Q\\Big(\\sqrt{\\frac{4E_{s,\\text{avg}}/11}{2N_0}}\\Big)\\\\&=Q\\Big(\\sqrt{\\frac{2E_{s,\\text{avg}}}{11N_0}}\\Big).\\end{aligned}$$<br>'
+     +'<b>Solution — (d).</b> The least energy for spacing $2$ is the centred set $\\{-3,-1,1,3\\}$, with $E_{s,\\text{avg}}=(9+1+1+9)/4=5$. The saving is $10\\log_{10}(11/5)=3.42$ dB. Its $N_{\\min}$ rises to $1.5$, a much smaller effect.<br>'
+     +'<b>Check.</b> The midpoints of $-2,0,2,6$ are $-1$, $1$ and $4$. These are the thresholds in the figure.',
+  err:'Putting each point in the middle of its region. The end regions are unbounded, and the inner regions need not be centred on their points when the gaps differ.',
+  teach:'A reversed one-dimensional question. The widened last gap costs energy and buys nothing.',
+  figSol:()=>cfig([[-2,0],[0,0],[2,0],[6,0]], {oneD:true, dTex:'2', xticks:[-2,-1,1,2,4,6], margin:2.2}) },
+
+{ id:'D5-25', module:'M5', type:'pam', src:'Final Q3 (variant)',
+  stem:OPEN+'$$s_k(t)=c_k\\sqrt2\\cos(2000\\pi t),\\quad c_k\\in\\{-2,\\,0,\\,1,\\,3\\},\\quad0\\le t\\le1.$$'+AWGN,
+  parts:[PDRAW(8), PNN(7),
+         '[5 pts] Evaluate the approximation of part (b) at $E_{s,\\text{avg}}/N_0=28$.',
+         '[5 pts] Find the exact symbol error probability at the same value from the thresholds, and compare.'],
+  sol:'<b>Given.</b> Four equally likely coefficients $-2,0,1,3$ on the unit-energy carrier $\\psi_1(t)=\\sqrt2\\cos(2000\\pi t)$.<br>'
+     +'<b>Find.</b> The constellation and thresholds, $P_e$ against $E_{s,\\text{avg}}/N_0$, its value at $28$, and the exact value.<br>'
+     +'<b>Method.</b> The points are the coefficients themselves. The noise on $\\psi_1$ is Gaussian with variance $\\sigma^{2}=N_0/2$, so each conditional error is a sum of $Q$ terms.<br>'
+     +'<b>Solution — (a).</b> The points are $-2,0,1,3$ on the $\\psi_1$ axis. The thresholds are the midpoints $-1$, $0.5$ and $2$.<br>'
+     +'<b>Solution — (b).</b> The energy is $E_{s,\\text{avg}}=(4+0+1+9)/4=3.5$. The gaps are $2$, $1$ and $2$, so $d_{\\min}=1$ and $d_{\\min}^{2}=1=\\frac27E_{s,\\text{avg}}$. '
+     +'Only $s_2$ and $s_3$ have a neighbour at $d_{\\min}$: $N_{\\min}=(0+1+1+0)/4=0.5$. Then'
+     +'$$\\begin{aligned}P_e&\\approx0.5\\,Q\\Big(\\sqrt{\\frac{2E_{s,\\text{avg}}/7}{2N_0}}\\Big)\\\\&=0.5\\,Q\\Big(\\sqrt{\\frac{E_{s,\\text{avg}}}{7N_0}}\\Big).\\end{aligned}$$<br>'
+     +'<b>Solution — (c).</b> At $28$ the argument is $\\sqrt4=2.00$. So $P_e\\approx0.5(0.02275)=1.14\\times10^{-2}$.<br>'
+     +'<b>Solution — (d).</b> Here $N_0=3.5/28=0.125$, so $\\sigma=\\sqrt{0.0625}=0.25$. Each symbol errs when the noise crosses a threshold on either side:'
+     +'$$\\begin{aligned}P(e|s_1)&=Q(1/\\sigma)=Q(4),\\\\P(e|s_2)&=Q(1/\\sigma)+Q(0.5/\\sigma)=Q(4)+Q(2),\\\\P(e|s_3)&=Q(0.5/\\sigma)+Q(1/\\sigma)=Q(2)+Q(4),\\\\P(e|s_4)&=Q(1/\\sigma)=Q(4).\\end{aligned}$$'
+     +'Average the four:'
+     +'$$\\begin{aligned}P_e&=\\tfrac14\\big[2Q(2)+4Q(4)\\big]\\\\&=0.5(0.02275)+3.167\\times10^{-5}\\\\&=1.141\\times10^{-2}.\\end{aligned}$$'
+     +'The approximation is low by only $0.3\\%$. The pairs at distance $2$ add the $Q(4)$ term, which is tiny.<br>'
+     +'<b>Check.</b> The exact result equals the nearest-neighbour term plus one second-distance term, $1\\cdot Q\\big(\\sqrt{4E_{s,\\text{avg}}/(7N_0)}\\big)=Q(4)$. Adding $0.011375$ and $0.0000317$ gives $0.011407$.',
+  err:'Giving every inner point two neighbours out of habit. Here $s_2$ is $2$ from $s_1$ but only $1$ from $s_3$, so it has one neighbour at $d_{\\min}$.',
+  teach:'Neighbour counts that differ point by point, and a one-dimensional set where the exact answer is easy. Compare with D5-22, where the approximation fails.',
+  figSol:()=>cfig([[-2,0],[0,0],[1,0],[3,0]], {oneD:true, dTex:'1', xticks:[-2,-1,0.5,1,2,3], margin:1.6}) },
+
+{ id:'D5-26', module:'M5', type:'design', src:'Final Q3 (variant)',
+  stem:'Two sets of sixteen equally probable waveforms are proposed, both on $0\\le t\\le1$: $$\\text{A:}\\ s_k(t)=2\\sqrt5\\cos\\!\\Big(2000\\pi t+\\frac{k\\pi}{8}\\Big),\\ k\\in\\{1,\\ldots,16\\},$$ $$\\text{B:}\\ s_{mn}(t)=\\sqrt2\\big[(2m-5)\\cos(2000\\pi t)-(2n-5)\\sin(2000\\pi t)\\big],\\ m,n\\in\\{1,2,3,4\\}.$$'+AWGN,
+  parts:['[8 pts] Show that the two sets have the same $E_{s,\\text{avg}}$, and draw both constellations with their optimal decision regions.',
+         '[9 pts] Determine the nearest-neighbour approximation of the average symbol error probability of each set as a function of $E_{s,\\text{avg}}/N_0$.',
+         '[8 pts] Which set is better at equal $E_{s,\\text{avg}}$, and by how many decibels? Evaluate both approximations at $E_{s,\\text{avg}}/N_0=45$.'],
+  sol:'<b>Given.</b> Set A: sixteen phases of one amplitude $2\\sqrt5$. Set B: a $4\\times4$ grid with coefficients in $\\{-3,-1,1,3\\}$.<br>'
+     +'<b>Find.</b> Both energies and constellations, both approximations, and the difference in decibels.<br>'
+     +'<b>Method.</b> Use $\\psi_1(t)=\\sqrt2\\cos(2000\\pi t)$ and $\\psi_2(t)=-\\sqrt2\\sin(2000\\pi t)$ for both. Then compare $d_{\\min}^{2}/E_{s,\\text{avg}}$.<br>'
+     +'<b>Solution — (a).</b> Set A lies on a circle of radius $2\\sqrt5/\\sqrt2=\\sqrt{10}$, so $E_{s,\\text{avg}}=10$. Its regions are sixteen wedges of $22.5^{\\circ}$. '
+     +'Set B has $\\mathbf{s}_{mn}=(2m-5,\\,2n-5)$ with average $5$ per axis, so $E_{s,\\text{avg}}=10$ as well. Its regions are the squares and strips of the grid lines $0,\\pm2$.<br>'
+     +'<b>Solution — (b).</b> For set A the chord is'
+     +'$$\\begin{aligned}d_{\\min}^{2}&=4E_{s,\\text{avg}}\\sin^{2}\\frac{\\pi}{16}\\\\&=4(0.03806)E_{s,\\text{avg}}\\\\&=0.1522\\,E_{s,\\text{avg}},\\end{aligned}$$'
+     +'with $N_{\\min}=2$. For set B, $d_{\\min}=2$, so $d_{\\min}^{2}=4=0.4E_{s,\\text{avg}}$, with $N_{\\min}=3$. So'
+     +'$$\\begin{aligned}P_e^{A}&\\approx2\\,Q\\Big(\\sqrt{0.07612\\frac{E_{s,\\text{avg}}}{N_0}}\\Big),\\\\P_e^{B}&\\approx3\\,Q\\Big(\\sqrt{0.2\\frac{E_{s,\\text{avg}}}{N_0}}\\Big).\\end{aligned}$$<br>'
+     +'<b>Solution — (c).</b> Set B is better by'
+     +'$$10\\log_{10}\\frac{0.4}{0.1522}=4.20\\ \\text{dB}.$$'
+     +'At $45$, set A has the argument $\\sqrt{0.07612\\times45}=\\sqrt{3.425}=1.851$, so $P_e^{A}\\approx2Q(1.85)=2(0.03216)=6.43\\times10^{-2}$. '
+     +'Set B has $\\sqrt{0.2\\times45}=3.00$, so $P_e^{B}\\approx3(0.001350)=4.05\\times10^{-3}$.<br>'
+     +'<b>Check.</b> For set A, $d_{\\min}=2\\sqrt{10}\\sin11.25^{\\circ}=6.325(0.1951)=1.234$, and $1.234^{2}=1.522$. This is $0.1522\\times10$.',
+  err:'Comparing the $Q$ arguments in decibels with $10\\log_{10}$ of their ratio. The arguments are square roots, so the energy ratio is the ratio of $d_{\\min}^{2}$ values.',
+  teach:'The comparison the module makes between PSK and QAM, worked with two examination-style sets. The ring wastes the inside of the circle.',
+  figSol:()=>pair(cfig(onCircle(Math.sqrt(10), range(1,16).map(k=>k*Math.PI/8)), {dTex:false, tick:1, margin:2.3, title:'\\text{A:}\\ d_{\\min}=1.234'}),
+                  cfig(grid([-3,-1,1,3],[3,1,-1,-3]), {names:gridNames(4,4), dTex:'2', tick:1, margin:1.5, title:'\\text{B}'})) },
+
+{ id:'D5-27', module:'M5', type:'fsk', src:'Final Q3 (variant)',
+  stem:'Consider a binary modulation scheme where the equally probable symbols have the following waveforms: $$s_1(t)=2\\cos(2000\\pi t),\\qquad s_2(t)=2\\cos\\big(2\\pi(1000.75)t\\big),\\qquad0\\le t\\le1.$$'+AWGN,
+  parts:['[8 pts] Find the energies and the correlation coefficient $\\rho=\\langle s_1,s_2\\rangle/E$. Neglect terms at the double frequency.',
+         '[8 pts] Use Gram–Schmidt to find the signal points, and draw the constellation with its optimal decision boundary.',
+         '[9 pts] Find the error probability as a function of $E_{s,\\text{avg}}/N_0$. Compare it with the orthogonal choice $f_2=1000.5$ Hz at $E_{s,\\text{avg}}/N_0=7.5$.'],
+  sol:'<b>Given.</b> Two cosines of amplitude $2$ on $0\\le t\\le1$, at $1000$ Hz and $1000.75$ Hz.<br>'
+     +'<b>Find.</b> $E$, $\\rho$, the two points, the boundary, and $P_e$ against the orthogonal choice.<br>'
+     +'<b>Method.</b> A frequency gap of $0.75$ Hz is not a multiple of $1/(2T)=0.5$ Hz, so the two waveforms are not orthogonal. The distance is $d^{2}=2E(1-\\rho)$.<br>'
+     +'<b>Solution — (a).</b> The energy of $s_1$ is $\\int_0^1 4\\cos^{2}(2000\\pi t)\\,dt=2\\big[t+\\frac{\\sin(4000\\pi t)}{4000\\pi}\\big]_0^1=2$. The same step gives $2$ for $s_2$, since $\\sin(4003\\pi)=0$. Now the inner product:'
+     +'$$\\begin{aligned}\\langle s_1,s_2\\rangle&=\\int_0^1 4\\cos(2000\\pi t)\\cos(2001.5\\pi t)\\,dt\\\\&\\approx2\\int_0^1\\cos(1.5\\pi t)\\,dt\\\\&=2\\Big[\\frac{\\sin(1.5\\pi t)}{1.5\\pi}\\Big]_0^1\\\\&=2\\cdot\\frac{-1}{1.5\\pi}=-0.4244.\\end{aligned}$$'
+     +'So $\\rho=-0.4244/2=-0.2122$.<br>'
+     +'<b>Solution — (b).</b> Take $\\psi_1=s_1/\\sqrt2$, so $\\mathbf{s}_1=(\\sqrt2,0)=(1.414,0)$. The projection of $s_2$ on $\\psi_1$ is $\\rho\\sqrt E=-0.3001$. The rest lies on $\\psi_2$:'
+     +'$$\\sqrt E\\sqrt{1-\\rho^{2}}=1.414\\sqrt{1-0.04503}=1.382.$$'
+     +'So $\\mathbf{s}_2=(-0.300,\\,1.382)$. The angle between the points is $\\arccos(-0.2122)=102.3^{\\circ}$. The boundary is their perpendicular bisector, a line through the origin.<br>'
+     +'<b>Solution — (c).</b> The distance is'
+     +'$$\\begin{aligned}d^{2}&=2E(1-\\rho)\\\\&=2(2)(1.2122)=4.849,\\end{aligned}$$'
+     +'so $d=2.202$. With two points, $P_e=Q\\big(\\sqrt{d^{2}/2N_0}\\big)=Q\\big(\\sqrt{1.2122E_{s,\\text{avg}}/N_0}\\big)$. '
+     +'At $7.5$ the argument is $\\sqrt{9.092}=3.015$, and $Q(3.02)=1.26\\times10^{-3}$. The orthogonal choice has $\\rho=0$ and $Q(\\sqrt{7.5})=Q(2.74)=3.07\\times10^{-3}$. '
+     +'The negative correlation gains $10\\log_{10}1.2122=0.84$ dB.<br>'
+     +'<b>Check.</b> The coordinates give $d^{2}=(1.414+0.300)^{2}+1.382^{2}=2.938+1.910=4.848$. This agrees with $2E(1-\\rho)$.',
+  err:'Assuming any two frequencies give orthogonal waveforms. The correlation is zero only when the gap is a multiple of $1/(2T)$. Here it is negative, which helps.',
+  teach:'A frequency pair that is not orthogonal, worked through Gram–Schmidt. The negative correlation beats the orthogonal spacing, which surprises most students.',
+  figSol:()=>cfig([[R2,0],[R2*(-2/(3*Math.PI)), R2*Math.sqrt(1-(2/(3*Math.PI))**2)]], {dTex:'2.202', tick:0.5, margin:1.1}) },
+
+{ id:'D5-28', module:'M5', type:'design', src:'Final Q3 (variant)',
+  stem:'Eight equally probable waveforms are formed from two rings on $0\\le t\\le1$: $$s_k(t)=\\begin{cases}\\sqrt2\\cos\\!\\big(2000\\pi t+(k-1)\\frac{\\pi}{2}\\big),&k\\in\\{1,2,3,4\\},\\\\R\\sqrt2\\cos\\!\\big(2000\\pi t+(k-5)\\frac{\\pi}{2}\\big),&k\\in\\{5,6,7,8\\},\\end{cases}$$ with $R>1$.'+AWGN,
+  parts:['[7 pts] Find $d_{\\min}$ as a function of $R$.',
+         '[8 pts] Find the $R$ that maximises $d_{\\min}^{2}/E_{s,\\text{avg}}$, and that maximum.',
+         '[6 pts] For this $R$, draw the constellation and regions, and determine the nearest-neighbour approximation as a function of $E_{s,\\text{avg}}/N_0$.',
+         '[4 pts] Compare the result with $8$-PSK.'],
+  sol:'<b>Given.</b> An inner ring of radius $1$ and an outer ring of radius $R$, at the same four phases.<br>'
+     +'<b>Find.</b> $d_{\\min}(R)$, the best $R$, the approximation at that $R$, and the comparison with $8$-PSK.<br>'
+     +'<b>Method.</b> With $\\psi_1(t)=\\sqrt2\\cos(2000\\pi t)$ and $\\psi_2(t)=-\\sqrt2\\sin(2000\\pi t)$, the rings have radii $1$ and $R$. List every kind of distance, then maximise the ratio.<br>'
+     +'<b>Solution — (a).</b> There are four kinds of pair:'
+     +'$$\\begin{aligned}\\text{inner, }90^{\\circ}:&\\ \\sqrt2,\\\\\\text{same ray}:&\\ R-1,\\\\\\text{inner-outer, }90^{\\circ}:&\\ \\sqrt{1+R^{2}},\\\\\\text{outer, }90^{\\circ}:&\\ R\\sqrt2.\\end{aligned}$$'
+     +'For $R>1$, $\\sqrt{1+R^{2}}>R-1$ and $R\\sqrt2>\\sqrt2$. So $d_{\\min}=\\min(R-1,\\sqrt2)$.<br>'
+     +'<b>Solution — (b).</b> The energy is $E_{s,\\text{avg}}=(4+4R^{2})/8=(1+R^{2})/2$. For $R\\le1+\\sqrt2$ the ratio is $g(R)=2(R-1)^{2}/(1+R^{2})$. Differentiate:'
+     +'$$\\begin{aligned}g\'(R)&=\\frac{4(R-1)(1+R^{2})-4R(R-1)^{2}}{(1+R^{2})^{2}}\\\\&=\\frac{4(R-1)(1+R)}{(1+R^{2})^{2}}>0.\\end{aligned}$$'
+     +'So $g$ rises up to $R=1+\\sqrt2$. Beyond it $d_{\\min}=\\sqrt2$ is fixed while the energy grows, so the ratio falls. The best ring ratio is $R=1+\\sqrt2=2.414$. There $E_{s,\\text{avg}}=2+\\sqrt2=3.414$ and'
+     +'$$\\frac{d_{\\min}^{2}}{E_{s,\\text{avg}}}=\\frac{2}{2+\\sqrt2}=2-\\sqrt2=0.5858.$$<br>'
+     +'<b>Solution — (c).</b> At this $R$ an inner point has two inner neighbours and one outer neighbour at $\\sqrt2$. An outer point has one. So $N_{\\min}=(4\\cdot3+4\\cdot1)/8=2$, and'
+     +'$$P_e\\approx2\\,Q\\Big(\\sqrt{0.2929\\frac{E_{s,\\text{avg}}}{N_0}}\\Big).$$'
+     +'The diagonals split the plane into four wedges, and the bisector at radius $(1+R)/2=1.707$ separates inner from outer in each.<br>'
+     +'<b>Solution — (d).</b> $8$-PSK has $d_{\\min}^{2}=4\\sin^{2}(\\pi/8)E_{s,\\text{avg}}=(2-\\sqrt2)E_{s,\\text{avg}}$ and $N_{\\min}=2$. The two approximations are identical.<br>'
+     +'<b>Check.</b> Evaluate $g$ on both sides: $g(2)=2(1)/5=0.40$ and $g(2.414)=0.5858$. For $R=3$, $d_{\\min}=\\sqrt2$ and $g=2/5=0.40$. The value at $1+\\sqrt2$ is the largest.',
+  err:'Maximising $d_{\\min}$ alone. Pushing the outer ring out always helps $d_{\\min}$ up to $\\sqrt2$, but the energy grows too. The ratio is what matters.',
+  teach:'A design question with a derivative. The optimum ties exactly with $8$-PSK, a result worth checking on the board.',
+  figSol:()=>{ const R = 1+R2; return cfig(onCircle(1,[0,Math.PI/2,Math.PI,3*Math.PI/2]).concat(onCircle(R,[0,Math.PI/2,Math.PI,3*Math.PI/2])), {dTex:'\\sqrt{2}', tick:1, margin:1.3}); } },
+
+{ id:'D5-29', module:'M5', type:'design', src:'Final Q3 (variant)',
+  stem:'A set of $M$ equally probable waveforms $s(t)=a\\sqrt2\\cos(2000\\pi t)-b\\sqrt2\\sin(2000\\pi t)$, $0\\le t\\le1$, is transmitted over a standard AWGN channel with $\\mathcal{N}(0,N_0/2)$. '
+      +'The points $(a,b)$ form a square grid centred on the origin. The nearest-neighbour approximation of the set is $$P_e\\approx3\\,Q\\Big(\\sqrt{\\frac{E_{s,\\text{avg}}}{5N_0}}\\Big),$$ and $E_{s,\\text{avg}}=2.5$.',
+  parts:['[8 pts] Find $M$ and $d_{\\min}$.',
+         '[7 pts] Give the values that $a$ and $b$ take, and confirm $N_{\\min}=3$.',
+         PDRAW(6),
+         '[4 pts] Find the bits per symbol and $E_b$, and write the approximation as a function of $E_b/N_0$.'],
+  sol:'<b>Given.</b> A centred square grid, $P_e\\approx3Q\\big(\\sqrt{E_{s,\\text{avg}}/5N_0}\\big)$, and $E_{s,\\text{avg}}=2.5$.<br>'
+     +'<b>Find.</b> $M$, $d_{\\min}$, the coefficient values, the constellation, and the per-bit form.<br>'
+     +'<b>Method.</b> For an $M$-point square grid, $d_{\\min}^{2}=6E_{s,\\text{avg}}/(M-1)$. Match the $Q$ argument to $\\sqrt{d_{\\min}^{2}/2N_0}$.<br>'
+     +'<b>Solution — (a).</b> Set the two arguments equal:'
+     +'$$\\begin{aligned}\\frac{6E_{s,\\text{avg}}}{2(M-1)N_0}&=\\frac{E_{s,\\text{avg}}}{5N_0},\\\\\\frac{3}{M-1}&=\\frac15,\\\\M&=16.\\end{aligned}$$'
+     +'Then $d_{\\min}^{2}=6(2.5)/15=1$, so $d_{\\min}=1$.<br>'
+     +'<b>Solution — (b).</b> Sixteen points make four levels per axis, spaced $1$ apart and centred: $a,b\\in\\{-1.5,-0.5,0.5,1.5\\}$. '
+     +'Four corners have two neighbours, eight edge points three and four inner points four. So $N_{\\min}=(8+24+16)/16=3$, as given.<br>'
+     +'<b>Solution — (c).</b> The boundaries are the lines $\\psi_1=0,\\pm1$ and $\\psi_2=0,\\pm1$ with $\\psi_1(t)=\\sqrt2\\cos(2000\\pi t)$ and $\\psi_2(t)=-\\sqrt2\\sin(2000\\pi t)$. The inner regions are unit squares.<br>'
+     +'<b>Solution — (d).</b> One symbol carries $\\log_2 16=4$ bits, so $E_b=2.5/4=0.625$. With $E_{s,\\text{avg}}=4E_b$, $P_e\\approx3Q\\big(\\sqrt{4E_b/5N_0}\\big)$.<br>'
+     +'<b>Check.</b> Average the squared levels on one axis: $(2.25+0.25+0.25+2.25)/4=1.25$. Two axes give $2.5$, the stated $E_{s,\\text{avg}}$.',
+  err:'Matching only the factor $3$ and guessing QAM from it. The ratio $d_{\\min}^{2}/E_{s,\\text{avg}}=0.4$ fixes $M$. The factor $3$ then confirms it.',
+  teach:'A reversed question from the error expression back to the set. It forces the student to read a formula as geometry.',
+  figSol:()=>cfig(grid([-1.5,-0.5,0.5,1.5],[1.5,0.5,-0.5,-1.5]), {names:gridNames(4,4), dTex:'1', tick:0.5, margin:0.8}) },
+
+{ id:'D5-30', module:'M5', type:'qam', src:'Final Q3 (variant)',
+  stem:OPEN+'$$\\begin{aligned}s_0(t)&=0,\\\\s_k(t)&=3\\cos\\!\\Big(3000\\pi t+\\frac{k\\pi}{4}\\Big),\\quad k\\in\\{1,\\ldots,8\\},\\end{aligned}$$ all on $0\\le t\\le2$.'+AWGN,
+  parts:[PDRAW(8), PNN(9),
+         '[8 pts] Compare this set with $8$-PSK at the same $E_{s,\\text{avg}}$, both in decibels and in bits per symbol.'],
+  sol:'<b>Given.</b> The zero signal and eight waveforms of amplitude $3$ at $1500$ Hz, $45^{\\circ}$ apart, on $0\\le t\\le2$.<br>'
+     +'<b>Find.</b> The constellation and regions, $P_e$ against $E_{s,\\text{avg}}/N_0$, and the comparison with $8$-PSK.<br>'
+     +'<b>Method.</b> With $T=2$ the orthonormal pair is $\\psi_1(t)=\\cos(3000\\pi t)$ and $\\psi_2(t)=-\\sin(3000\\pi t)$. The radius is $3\\sqrt{T/2}=3$.<br>'
+     +'<b>Solution — (a).</b> $\\mathbf{s}_0$ is the origin and $\\mathbf{s}_1,\\ldots,\\mathbf{s}_8$ lie on a circle of radius $3$ at $45^{\\circ},90^{\\circ},\\ldots,360^{\\circ}$. '
+     +'The bisectors between the centre and the ring form a regular octagon at distance $1.5$ from the origin, which is $D_0$. The ring regions are wedges outside it, split by the rays at $22.5^{\\circ},67.5^{\\circ},\\ldots$.<br>'
+     +'<b>Solution — (b).</b> Average the energies:'
+     +'$$E_{s,\\text{avg}}=\\frac{0+8(9)}{9}=8.$$'
+     +'Ring neighbours are $2(3)\\sin(\\pi/8)=2.296$ apart, and the centre is $3$ from each. So $d_{\\min}=2.296$ and'
+     +'$$\\begin{aligned}d_{\\min}^{2}&=36\\sin^{2}\\frac{\\pi}{8}=5.272\\\\&=0.6590\\,E_{s,\\text{avg}}.\\end{aligned}$$'
+     +'Each ring point has two neighbours and the centre none: $N_{\\min}=16/9=1.778$. Then'
+     +'$$\\begin{aligned}P_e&\\approx\\frac{16}{9}\\,Q\\Big(\\sqrt{\\frac{0.6590E_{s,\\text{avg}}}{2N_0}}\\Big)\\\\&=\\frac{16}{9}\\,Q\\Big(\\sqrt{0.3295\\frac{E_{s,\\text{avg}}}{N_0}}\\Big).\\end{aligned}$$<br>'
+     +'<b>Solution — (c).</b> $8$-PSK of the same energy has $d_{\\min}^{2}=0.5858E_{s,\\text{avg}}$. The ratio is $0.6590/0.5858=9/8$, so the nine-point set is better by'
+     +'$$10\\log_{10}\\frac98=0.51\\ \\text{dB}.$$'
+     +'It also carries $\\log_2 9=3.170$ bits instead of $3$. The zero signal lowers the average energy without reducing $d_{\\min}$.<br>'
+     +'<b>Check.</b> The cosine rule gives $d_{\\min}^{2}=9+9-18\\cos45^{\\circ}=18-12.73=5.272$. This matches the chord value.',
+  err:'Counting the centre as a nearest neighbour of every ring point. It is $3$ away, more than $d_{\\min}=2.296$, so it enters only the second-order terms.',
+  teach:'Adding a zero signal to $8$-PSK helps at equal average energy. It is a counter-intuitive result that follows from the definitions.',
+  figSol:()=>cfig([[0,0]].concat(onCircle(3, range(1,8).map(k=>k*Math.PI/4))), {names:range(0,8).map(k=>'s_{'+k+'}'), dTex:'2.296', tick:1, margin:1.5}) }
 
 ]);
 
+/* ======================================================================
+   The scene that carries them.
+   ====================================================================== */
 window.DRILL_M5 = [
 
 { id:'m5-drill', module:'M5', nav:'Module 5 · practice questions',
   title:'Module 5 — practice questions',
-  objective:'Twenty open-ended questions with worked solutions.',
-  keywords:'practice questions module 5 bpsk bfsk bask psk pam qam fsk error probability comparison',
+  objective:'Thirty examination questions on signal sets, decision regions and the nearest-neighbour approximation, with worked solutions.',
+  keywords:'practice questions module 5 constellation decision regions nearest neighbour approximation psk pam qam fsk average symbol energy',
   steps:0, blocks:[
-  {t:'eyebrow', text:'Module 5 · Practice D5-01 … D5-20'},
+  {t:'eyebrow', text:'Module 5 · Practice D5-01 … D5-30'},
   {t:'title', text:'Practice questions'},
-  {t:'small', html:'Work each question before opening its solution. Use these checks:<ul><li>State whether each energy is per symbol or per bit.</li><li>$N_{\\min}$ can be noninteger.</li><li>A general formula must give the binary result at $M=2$.</li><li>More bits per symbol at fixed $E_b$ reduce point spacing.</li></ul>'},
+  {t:'small', html:'Work each question before opening its solution. Expand every waveform on the two carrier functions first. Draw the perpendicular bisectors of close pairs. Count neighbours point by point, so $N_{\\min}$ may be a fraction. Write $d_{\\min}^{2}$ as a multiple of $E_{s,\\text{avg}}$ before using $Q$.'},
   {t:'rule', short:true},
   {t:'drill', module:'M5'}
 ]}
