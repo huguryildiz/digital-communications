@@ -588,6 +588,13 @@ h3.sub{
 .hi-reflect{ --hi:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 5h16v10.5h-9l-4.5 4v-4H4z'/%3E%3Cpath d='M8 9h8M8 12h5'/%3E%3C/svg%3E"); }
 .hi-next{ --hi:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 12h15M14 7l5 5-5 5'/%3E%3C/svg%3E"); }
 .proj-card .rc-q, .proj-card.is-open .rc-q{ font-size:calc(23px * var(--ts)); opacity:1; visibility:visible; transform:none; }
+/* on the stage the deck reads at a raised type scale and fills it: the list
+   stretches to the height of the briefs and its cards share it */
+body:not([data-layout=phone]) .proj{ --ts:1.32; align-items:stretch; }
+body:not([data-layout=phone]) .proj-card .rc-glyph{ width:156px; }
+body[data-display=projector]:not([data-layout=phone]) .proj{ --ts:1.6; }
+body:not([data-layout=phone]) .proj-left{ display:flex; flex-direction:column; }
+body:not([data-layout=phone]) .proj-left .recall-list{ flex:1; grid-auto-rows:1fr; }
 body[data-motion=reduced] .proj-brief{ transition:none; }
 body[data-motion=reduced] .rc-face{ transition:none; transform:none; }
 @media (prefers-reduced-motion:reduce){ .rc-face{ transition:none; transform:none; } }
