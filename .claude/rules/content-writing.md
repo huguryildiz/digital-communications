@@ -94,6 +94,13 @@ decides for. See `figures-and-math.md` and `DESIGN.md` for where these tokens li
   stays periodic, unstable stays unstable). `src` names the paper question and renders only in the
   instructor edition. Where a module carries a different count for a recorded reason, state the reason
   in `TODO.md` or `.claude/reference/history.md`, not silently.
+- Since 2026-09-25, a question's shape may also come from a textbook problem that already has the
+  examination form: three or four parts that can be done by hand, an answer that can be drawn, and only
+  material the module teaches. At most a quarter of a module's thirty come from this second source. Such
+  a question replaces the closest duplicate of a question that stays, so the count stays thirty. It
+  keeps the problem's shape and nothing else: the statement is rewritten in the course's wording and
+  every number is new. `src` names the problem (`'Madhow P6.28'`) and renders only in the instructor
+  edition. The plan is `.claude/plans/2026-09-24-madhow-question-transfer.md`.
 - A slide may ask for a prediction with `note.ask` choices (one per teaching slide, in the card headed
   **Given**), and a module closes before its summary with one quick-check slide of six short
   predictions in a 3×2 grid. A prediction needs no paper calculation, gives its reason in one sentence,
