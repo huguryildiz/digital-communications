@@ -1,8 +1,10 @@
 /* ==========================================================================
    Practice questions — Module 4.
 
-   Thirty questions in the form of the midterm and final examinations. Four
-   shapes, one per type below:
+   Thirty questions in the form of the midterm and final examinations. Six
+   shapes, one per type below. Three questions take their shape from a
+   textbook problem (src 'Madhow P6.xx') and keep the id of the question they
+   replaced: D4-04 (bound), D4-05 (mismatch) and D4-26 (erasure).
 
      binary  — two drawn waveforms in white Gaussian noise, the correlator or
                matched-filter demodulator, the conditional densities of its
@@ -13,7 +15,11 @@
                decision regions, and the nearest-neighbour approximation of
                the symbol error probability as a function of E_s,avg/N0;
      bound   — the union bound against the nearest-neighbour form, and two
-               constellations compared at equal average energy.
+               constellations compared at equal average energy;
+     erasure — a receiver with a third outcome, an erasure zone along the
+               boundaries: error and erasure probabilities, bound and exact;
+     mismatch— a gain error moves the samples against fixed thresholds: the
+               conditional errors, the average error and the loss in dB.
 
    Every Q value is quoted as a table would give it: the argument rounded to
    two decimals. verify/drills_m4.py re-derives every stated number by a
@@ -122,6 +128,7 @@ function dens(o){
   });
   const items = o.comps.map(c=>[c.col, c.tex]);
   items.push([C.dec.err, '\\text{error area}', 'fill']);
+  (o.moreLegend||[]).forEach(it=>items.push(it));
   legend(a, items, o.legend||'tr');
   if(o.over) o.over(a);
   return a.svg();
@@ -138,7 +145,7 @@ const PTCOL  = () => [C.in, C.out, C.mid, C.h];
 function cons(o){
   const xr = o.xr, yr = o.yr, n = o.n || 72;
   const a = P.Axes({w:o.w||560, h:o.h||420, xr:xr, yr:yr,
-    xlabel:'\\psi_1', ylabel: o.oneD ? '' : '\\psi_2', pad:{l:52,r:24,t:26,b:42},
+    xlabel:o.xlabel||'\\psi_1', ylabel: o.oneD ? '' : (o.ylabel||'\\psi_2'), pad:o.pad||{l:52,r:24,t:26,b:42},
     xstep:o.xstep, ystep:o.ystep, xtarget:6, ytarget:5,
     yticksOverride: o.oneD ? [] : null,
     xtickfmt: v=>(o.hideX||[]).some(h=>Math.abs(h-v)<1e-9) ? '' : P.fmt(v,3),
@@ -204,6 +211,36 @@ function hPair(o){
   return row([A.svg(), B.svg()], 18);
 }
 
+/* ---- the Gaussian tail for drawn curves only (Borjesson-Sundberg form,
+   relative error below 0.3%); every stated number comes from a Q table ---- */
+function Qfn(x){
+  if(x < 0) return 1 - Qfn(-x);
+  return Math.exp(-x*x/2)/((0.661*x + 0.339*Math.sqrt(x*x + 5.51))*Math.sqrt(2*Math.PI));
+}
+
+/* ---- four quadrant regions with a cross-shaped erasure zone ----
+   The zone |y1|<b or |y2|<b decides for no symbol, so it keeps the page
+   colour under a light hatch; its edges are the decision boundaries. */
+function erasureFig(o){
+  const L = o.lim, b = o.b;
+  const a = P.Axes({w:o.w||540, h:o.h||500, xr:[-L,L], yr:[-L,L], xlabel:'y_1', ylabel:'y_2',
+    pad:{l:52,r:24,t:26,b:42}, xstep:1, ystep:1, xtarget:7, ytarget:7});
+  const rc = REGCOL(), pc = PTCOL();
+  o.pts.forEach((p,k)=>{ const sx = Math.sign(p.x), sy = Math.sign(p.y);
+    a.rect(sx*b, sy*b, sx*L, sy*L, {fill:rc[k % rc.length]}); });
+  for(let v=-L; v<=L-2*b+1e-9; v+=0.3){
+    a.poly([[-b,v],[b,v+2*b]], {color:C.ruleStrong, width:1});
+    a.poly([[v,-b],[v+2*b,b]], {color:C.ruleStrong, width:1});
+  }
+  [-b,b].forEach(e=>{ a.poly([[e,-L],[e,L]], {color:C.ink, width:1.5});
+                      a.poly([[-L,e],[L,e]], {color:C.ink, width:1.5}); });
+  o.pts.forEach((p,k)=>a.point(p.x, p.y, {color:pc[k % pc.length], r:6}));
+  o.pts.forEach((p,k)=>a.note(p.x, p.y, p.tex, {tex:true, fs:14, color:pc[k % pc.length],
+    dx:p.x>0?10:-10, dy:-12, anchor:p.x>0?'start':'end'}));
+  if(o.over) o.over(a);
+  return a.svg();
+}
+
 /* ======================================================================
    The taxonomy: the examination question types this module answers.
    ====================================================================== */
@@ -234,7 +271,21 @@ CONTENT.DRILLTYPES.M4 = [
     method:['List every pairwise distance $d_{kj}$. The union bound adds one $Q\\!\\left(\\sqrt{d_{kj}^{2}/2N_0}\\right)$ for every other point, averaged over the transmitted point.',
             'The nearest-neighbour form keeps only the terms at $d_{\\min}$. It is an approximation and can fall below the true value.',
             'To compare two constellations, express both $d_{\\min}^{2}$ in terms of the same $E_{s,\\text{avg}}$ first. The larger $d_{\\min}^{2}$ wins, and $N_{\\min}$ only scales the answer.'],
-    go:'m4-union' }
+    go:'m4-union' },
+
+  { k:'erasure', name:'A decision with an erasure zone',
+    asks:'The receiver puts out an erasure when the observation lies near a boundary. Find the regions, the error and erasure probabilities by the intelligent union bound, and their exact values.',
+    method:['Draw the regions with the zone cut out. From a signal point, measure the distance to the near edge of the zone and to its far edge.',
+            'An error must cross a far edge, and an erasure only a near edge. The intelligent union bound adds one $Q$ term for each face of that kind.',
+            'When the zone is made of strips along the axes, the two coordinates are independent. The exact probabilities are then products of one-coordinate probabilities.'],
+    go:'m4-intel' },
+
+  { k:'mismatch', name:'A receiver with misplaced thresholds',
+    asks:'A wrong gain scales the samples while the thresholds stay at their nominal places. Find the conditional errors, the average error and the loss in decibels.',
+    method:['Scale the samples and keep the thresholds. List the distance from each sample to each threshold beside it.',
+            'In one dimension the error of a symbol is one $Q$ term for each threshold beside it. The terms add exactly, because the error events cannot happen together.',
+            'At high signal-to-noise ratio the smallest distance decides. The loss in decibels is $20\\log_{10}$ of the correct distance over that smallest distance.'],
+    go:'m4-regions' }
 ];
 
 CONTENT.DRILL = CONTENT.DRILL.concat([
@@ -313,54 +364,71 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   err:'Dropping $-E_i/2$ from the correlation metric. With $E_1=16$ and $E_0=0$ the receiver then decides "1" for every $Y>0$, and $P(e\\mid 0)$ becomes one half.',
   teach:'Part (d) ties the examination shape to the correlation metric of the module. An on-off pair is the case where the energy term cannot be left out.' },
 
-{ id:'D4-04', module:'M4', type:'binary', src:'MT Q3 (variant)',
-  stem:'Two equiprobable messages, "0" and "1", are sent over an additive white Gaussian noise channel with $N_0/2=0.5$ W/Hz. The waveforms are $s_0(t)=3$ for $0\\le t<1$ and $s_1(t)=3$ for $1\\le t<2$, each zero elsewhere in $[0,2]$. The two waveforms are not multiples of one pulse. The receiver therefore uses two correlators, with basis functions $\\psi_1(t)$ and $\\psi_2(t)$, sampled at $T=2$ s. Their outputs form $\\mathbf{Y}=(Y_1,Y_2)$. According to the information given above,',
-  figure: () => waves(
-    {name:'s_0(t)', xr:[0,2.4], yr:[-1,4], pts:[[0,0],[0,3],[1,3],[1,0],[2.4,0]], xstep:0.5, ystep:1},
-    {name:'s_1(t)', xr:[0,2.4], yr:[-1,4], pts:[[0,0],[1,0],[1,3],[2,3],[2,0],[2.4,0]], xstep:0.5, ystep:1}),
-  parts:['[6 pts] Find an orthonormal basis $\\psi_1(t)$, $\\psi_2(t)$ and the signal vectors $\\mathbf{s}_0$ and $\\mathbf{s}_1$.',
-         '[6 pts] Write the conditional joint PDFs $f_{\\mathbf{Y}}(y_1,y_2\\mid 0)$ and $f_{\\mathbf{Y}}(y_1,y_2\\mid 1)$.',
-         '[6 pts] Find the ML decision rule and draw the two decision regions.',
-         '[7 pts] Calculate the average probability of bit error $P_b$.'],
-  sol:'<b>Given.</b> Two rectangular pulses of height $3$ on disjoint unit intervals. Equal priors, $N_0/2=0.5$ W/Hz.<br>'
-     +'<b>Find.</b> The basis, the vectors, the joint densities, the ML regions and $P_b$.<br>'
-     +'<b>Method.</b> The pulses do not overlap, so they are orthogonal and each gives one basis function. Each coordinate carries independent noise of variance $N_0/2$. The ML rule is minimum distance, and $P_b$ depends only on $d=\\|\\mathbf{s}_0-\\mathbf{s}_1\\|$.<br>'
-     +'<b>Solution — (a).</b> $E_0=\\int_0^1 3^{2}\\,dt=9$, so $\\psi_1(t)=s_0(t)/3=1$ for $0\\le t<1$. The inner product is $\\int_0^2 s_0(t)s_1(t)\\,dt=0$, because the pulses never overlap. So Gram–Schmidt leaves $s_1$ unchanged and $\\psi_2(t)=s_1(t)/3=1$ for $1\\le t<2$. The vectors are $$\\mathbf{s}_0=(3,\\,0),\\qquad \\mathbf{s}_1=(0,\\,3).$$<br>'
-     +'<b>Solution — (b).</b> $Y_1$ and $Y_2$ are independent, each with variance $\\sigma^{2}=0.5$. So $2\\sigma^{2}=1$ and $1/(2\\pi\\sigma^{2})=1/\\pi$: $$f_{\\mathbf{Y}}(y_1,y_2\\mid 0)=\\frac1\\pi\\exp\\!\\left(-(y_1-3)^{2}-y_2^{2}\\right)$$ $$f_{\\mathbf{Y}}(y_1,y_2\\mid 1)=\\frac1\\pi\\exp\\!\\left(-y_1^{2}-(y_2-3)^{2}\\right)$$<br>'
-     +'<b>Solution — (c).</b> Decide "0" when $\\mathbf{y}$ is closer to $\\mathbf{s}_0$: $$\\begin{aligned}(y_1-3)^{2}+y_2^{2}&<y_1^{2}+(y_2-3)^{2}\\\\-6y_1+9&<-6y_2+9\\\\y_1&>y_2\\end{aligned}$$ The boundary is the line $y_2=y_1$, the perpendicular bisector of the two points. The region of "0" lies below it and the region of "1" above it.<br>'
-     +'<b>Solution — (d).</b> The distance is $$d=\\sqrt{(3-0)^{2}+(0-3)^{2}}=3\\sqrt2=4.243.$$ The boundary is $d/2$ from each point, and the noise along the line joining them has standard deviation $\\sigma=\\sqrt{0.5}=0.7071$. So $$P_b=Q\\!\\left(\\frac{d/2}{\\sigma}\\right)=Q\\!\\left(\\frac{2.121}{0.7071}\\right)=Q(3.00)=1.350\\times10^{-3}.$$<br>'
-     +'<b>Check.</b> Use the rule of part (c) directly. Let $Z=Y_1-Y_2$. Given "0", $Z=3+N_1-N_2$, with variance $0.5+0.5=1$. An error is $Z<0$, so $P(e\\mid0)=Q(3/1)=Q(3.00)$, the same value.',
-  figSol: () => cons({xr:[-1.5,4.5], yr:[-1.5,4.5], w:520, h:440, xstep:1, ystep:1,
-    pts:[{x:3,y:0,tex:'\\mathbf{s}_0'},{x:0,y:3,tex:'\\mathbf{s}_1'}],
-    dmin:[0,1], dminAt:[2.2,1.2], dminAnchor:'start', hideX:[3], hideY:[3],
-    over:a=>{ a.note(3.2,3.9,'y_2=y_1',{tex:true,fs:14,color:C.ink,anchor:'end'}); }}),
-  err:'Using only $Y_1$ with the threshold $1.5$. That throws away $Y_2$, which also carries the signal. The error rises to $Q(1.5/0.7071)=Q(2.12)$, about twelve times larger.',
-  teach:'A variant of the examination shape: the two waveforms need two basis functions. The check with $Z=Y_1-Y_2$ shows that only the component along $\\mathbf{s}_0-\\mathbf{s}_1$ matters.' },
+{ id:'D4-04', module:'M4', type:'bound', src:'Madhow P6.17',
+  stem:'A symbol of length $T=2$ s has four slots of $0.5$ s. The pulse in slot $i$ is $p_i(t)=2$ for $0.5(i-1)\\le t<0.5i$, and zero elsewhere, with $i=1,\\ldots,4$. Two sets of four equally likely signals are built from these pulses. Set A puts one pulse in one slot, $s_i(t)=p_i(t)$. Set B puts pulses in two slots: $$s_1=p_1+p_2,\\quad s_2=p_3+p_4,\\quad s_3=p_1+p_3,\\quad s_4=p_2+p_4.$$ The channel adds white Gaussian noise with power spectral density $N_0/2$. Let $E_p$ be the energy of one pulse. The receiver uses the basis $\\psi_i(t)=p_i(t)/\\sqrt{E_p}$ and forms $r_i=\\int_0^T r(t)\\psi_i(t)\\,dt$. According to the information given above,',
+  parts:['[6 pts] Find $E_p$, the four signal vectors of each set, and the energy per bit $E_b$ of each set.',
+         '[7 pts] Find every pairwise distance in each set in terms of its $E_b$. Write the union bound on the symbol error probability $P_e$ of each set as a function of $E_b/N_0$.',
+         '[6 pts] Find the penalty of set B in decibels at high $E_b/N_0$. Evaluate both union bounds at $E_b/N_0=4$.',
+         '[6 pts] Show that the ML receiver for set B needs only the signs of $Z_1=r_1-r_4$ and $Z_2=r_2-r_3$. Find the exact $P_e$ of set B and evaluate it at $E_b/N_0=4$.'],
+  sol:'<b>Given.</b> Four pulses of height $2$ and width $0.5$ s in disjoint slots. Set A uses one slot, set B two. Equal priors, noise power spectral density $N_0/2$.<br>'
+     +'<b>Find.</b> $E_p$, the vectors, $E_b$ of each set, the distances, the two union bounds, the penalty of set B, and the exact $P_e$ of set B.<br>'
+     +'<b>Method.</b> The pulses do not overlap, so they are orthogonal, and each one gives one basis direction. A vector then lists which slots carry a pulse. The union bound needs only the pairwise distances. For set B all energies are equal, so the ML rule becomes a largest-correlation rule, and that splits into two independent sign tests.<br>'
+     +'<b>Solution — (a).</b> The energy of one pulse is $$E_p=\\int_0^{0.5}2^{2}\\,dt=4\\Big[\\,t\\,\\Big]_0^{0.5}=2.$$ So $p_i(t)=\\sqrt2\\,\\psi_i(t)$, and every pulse adds $\\sqrt2$ to its own coordinate. For set A: $$\\begin{aligned}\\mathbf{s}_1&=(\\sqrt2,0,0,0)\\\\\\mathbf{s}_2&=(0,\\sqrt2,0,0)\\\\\\mathbf{s}_3&=(0,0,\\sqrt2,0)\\\\\\mathbf{s}_4&=(0,0,0,\\sqrt2)\\end{aligned}$$ For set B: $$\\begin{aligned}\\mathbf{s}_1&=(\\sqrt2,\\sqrt2,0,0)\\\\\\mathbf{s}_2&=(0,0,\\sqrt2,\\sqrt2)\\\\\\mathbf{s}_3&=(\\sqrt2,0,\\sqrt2,0)\\\\\\mathbf{s}_4&=(0,\\sqrt2,0,\\sqrt2)\\end{aligned}$$ Four symbols carry $\\log_2 4=2$ bits. In set A every signal has energy $E_s=2$, so $E_b=2/2=1$. In set B every signal has energy $E_s=2+2=4$, so $E_b=4/2=2$.<br>'
+     +'<b>Solution — (b).</b> In set A two signals differ in two coordinates, by $\\sqrt2$ in each. So every pair has $$d^{2}=(\\sqrt2)^{2}+(\\sqrt2)^{2}=4=4E_b.$$ In set B, start from $\\mathbf{s}_1$ and square the coordinate differences: $$\\begin{aligned}\\|\\mathbf{s}_1-\\mathbf{s}_2\\|^{2}&=2+2+2+2=8=4E_b\\\\\\|\\mathbf{s}_1-\\mathbf{s}_3\\|^{2}&=0+2+2+0=4=2E_b\\\\\\|\\mathbf{s}_1-\\mathbf{s}_4\\|^{2}&=2+0+0+2=4=2E_b\\end{aligned}$$ Every point of set B has the same pattern: two others at $d^{2}=2E_b$ and one at $d^{2}=4E_b$. The union bound adds $Q\\!\\left(\\sqrt{d^{2}/2N_0}\\right)$ over the other three points. The sum is the same for every transmitted point, so it is also the average: $$P_e^{A}\\le3\\,Q\\!\\left(\\sqrt{\\frac{2E_b}{N_0}}\\right)$$ $$P_e^{B}\\le2\\,Q\\!\\left(\\sqrt{\\frac{E_b}{N_0}}\\right)+Q\\!\\left(\\sqrt{\\frac{2E_b}{N_0}}\\right)$$<br>'
+     +'<b>Solution — (c).</b> At high $E_b/N_0$ the term with the smallest distance dominates. Set A has $d_{\\min}^{2}=4E_b$ and set B has $d_{\\min}^{2}=2E_b$. Set B needs twice the $E_b$ to reach the same $Q$ argument. Its penalty is $$10\\log_{10}\\frac{4}{2}=3.01\\ \\text{dB}.$$ At $E_b/N_0=4$ the arguments are $\\sqrt{2(4)}=\\sqrt8=2.828\\approx2.83$ and $\\sqrt4=2.00$: $$\\begin{aligned}P_e^{A}&\\le3\\,Q(2.83)\\\\&=3(0.002327)=0.006981\\end{aligned}$$ $$\\begin{aligned}P_e^{B}&\\le2\\,Q(2.00)+Q(2.83)\\\\&=0.04550+0.002327=0.04783\\end{aligned}$$<br>'
+     +'<b>Solution — (d).</b> Expand the squared distance: $\\|\\mathbf{r}-\\mathbf{s}_i\\|^{2}=\\|\\mathbf{r}\\|^{2}-2\\langle\\mathbf{r},\\mathbf{s}_i\\rangle+E_i$. All four $E_i$ equal $4$, so only the correlation changes with $i$. ML picks the largest correlation. Divided by $\\sqrt2$, the four correlations are $r_1+r_2$, $r_3+r_4$, $r_1+r_3$ and $r_2+r_4$. Decide $s_1$ when $r_1+r_2$ beats each of the others: $$\\begin{aligned}(r_1+r_2)-(r_1+r_3)&=r_2-r_3=Z_2>0\\\\(r_1+r_2)-(r_2+r_4)&=r_1-r_4=Z_1>0\\\\(r_1+r_2)-(r_3+r_4)&=Z_1+Z_2>0\\end{aligned}$$ The third line holds whenever the first two do. So decide $s_1$ when $Z_1>0$ and $Z_2>0$. The same steps decide $s_2$ for $Z_1<0,\\ Z_2<0$, $s_3$ for $Z_1>0,\\ Z_2<0$ and $s_4$ for $Z_1<0,\\ Z_2>0$.<br>'
+     +'<b>Solution — (d), exact error.</b> Given $s_1$, $$Z_1=\\sqrt2+n_1-n_4,\\qquad Z_2=\\sqrt2+n_2-n_3.$$ Each $n_i$ has variance $N_0/2$, so each $Z$ has variance $N_0$. The two use different noise terms, so they are independent. One sign is wrong with probability $$Q\\!\\left(\\frac{\\sqrt2}{\\sqrt{N_0}}\\right)=Q\\!\\left(\\sqrt{\\frac{E_p}{N_0}}\\right)=Q\\!\\left(\\sqrt{\\frac{E_b}{N_0}}\\right),$$ because $E_b=E_p=2$ for set B. The decision is right only when both signs are right: $$P_e^{B}=1-\\left[1-Q\\!\\left(\\sqrt{\\frac{E_b}{N_0}}\\right)\\right]^{2}.$$ At $E_b/N_0=4$: $$\\begin{aligned}P_e^{B}&=1-(1-0.02275)^{2}\\\\&=1-0.95502\\\\&=0.04498\\end{aligned}$$<br>'
+     +'<b>Check.</b> The exact value lies below the bound, $0.04498<0.04783$. Expand the exact form: $1-(1-Q)^{2}=2Q-Q^{2}$. So the gap is the far term plus the overlap term: $$\\begin{aligned}Q(2.83)+Q(2.00)^{2}&=0.002327+0.000518\\\\&=0.002845\\end{aligned}$$ This equals $0.04783-0.04498=0.00285$.',
+  figSol: () => {
+    const B = cons({xr:[-2.2,2.2], yr:[-2.2,2.2], w:470, h:450, xstep:1, ystep:1,
+      xlabel:'(r_1-r_4)/\\sqrt2', ylabel:'(r_2-r_3)/\\sqrt2', pad:{l:56,r:24,t:30,b:48},
+      pts:[{x:1,y:1,c:0,tex:'\\mathbf{s}_1'},{x:-1,y:-1,c:2,tex:'\\mathbf{s}_2',dx:-8,dy:20,anchor:'end'},
+           {x:1,y:-1,c:1,tex:'\\mathbf{s}_3',dy:20},{x:-1,y:1,c:3,tex:'\\mathbf{s}_4',dx:-8,anchor:'end'}],
+      lines:[{pts:[[1,1],[-1,-1]], dash:'4 4'}],
+      dmin:[0,2], dminAt:[1.12,0.28], dminAnchor:'start', hideX:[-1,1], hideY:[-1,1],
+      over:a=>a.note(-0.2,0.34,'d^{2}=4E_b',{tex:true,fs:13,color:C.muted,anchor:'end'})});
+    const g = P.Axes({w:560, h:450, xr:[0,14], yr:[-6,-0.02], xlabel:'E_b/N_0\\;(\\mathrm{dB})', ylabel:'P_e',
+      ytickfmt:P.decade, yticksOverride:P.decades(-6,-1), zeroAxes:false,
+      pad:{l:62,r:24,t:30,b:48}, xstep:2, xtarget:7, ytarget:7});
+    const lin = x => Math.pow(10, x/10), cl = v => Math.log10(Math.max(1e-12, v));
+    const bA = x => 3*Qfn(Math.sqrt(2*lin(x)));
+    const bB = x => 2*Qfn(Math.sqrt(lin(x))) + Qfn(Math.sqrt(2*lin(x)));
+    const eB = x => { const q = Qfn(Math.sqrt(lin(x))); return 2*q - q*q; };
+    g.curve(x=>cl(bA(x)), {color:C.in, width:2.4});
+    g.curve(x=>cl(bB(x)), {color:C.mid, width:2.4});
+    g.curve(x=>cl(eB(x)), {color:C.mid, width:2, dash:'6 4'});
+    const at = (f, v) => { let lo = 0, hi = 20; for(let k=0;k<60;k++){ const m=(lo+hi)/2; if(f(m) > v) lo = m; else hi = m; } return lo; };
+    g.span(at(bA,1e-5), at(bB,1e-5), -5, '\\approx3\\ \\text{dB}', {tex:true, color:C.ink, fs:13});
+    g.vline(10*Math.log10(4), {color:C.muted, dash:'2 4', width:1.2});
+    legend(g, [[C.in,'\\text{A, union bound}'],[C.mid,'\\text{B, union bound}'],[C.mid,'\\text{B, exact}','6 4']], 'bl');
+    return row([B, g.svg()], 18); },
+  err:'Comparing the two sets at the same pulse height instead of the same $E_b$. Set B spends two pulses on every symbol, so its $E_b$ is twice that of set A at equal height.',
+  teach:'Two four-ary sets from the same pulses, compared by distance per unit of energy. Part (d) is a rare case where the exact error is easy. Set B is a square constellation lying in a plane of the four-dimensional space.' },
 
-{ id:'D4-05', module:'M4', type:'binary', src:'MT Q3 (variant)',
-  stem:'Two messages are sent over an additive white Gaussian noise channel with $N_0/2=1$ W/Hz. Message "0" is sent with probability $0.3$ and message "1" with probability $0.7$. The waveforms $s_0(t)$ and $s_1(t)$ are drawn below, with $T=4$ s. The received signal passes through the following correlator-type demodulator. According to the information given above,',
-  figure: () => waves(
-    {name:'s_0(t)', xr:[0,4.5], yr:[-2,2], pts:[[0,0],[0,-1],[4,-1],[4,0],[4.5,0]], ystep:1},
-    {name:'s_1(t)', xr:[0,4.5], yr:[-2,2], pts:[[0,0],[0,1],[4,1],[4,0],[4.5,0]], ystep:1})
-    + receiver('corr'),
-  parts:['[5 pts] Find $\\psi(t)$ and the coordinates $s_0$ and $s_1$.',
-         '[6 pts] Determine the conditional PDFs $f_Y(y\\mid 1)$ and $f_Y(y\\mid 0)$.',
-         '[7 pts] Find the optimal (MAP) decision threshold $\\lambda$.',
-         '[7 pts] Calculate $P_b$ for this threshold, and compare it with the receiver that uses the ML threshold.'],
-  sol:'<b>Given.</b> $s_0(t)=-1$ and $s_1(t)=1$ for $0\\le t<4$. $P_0=0.3$, $P_1=0.7$, $N_0/2=1$ W/Hz.<br>'
-     +'<b>Find.</b> $\\psi(t)$, $s_0$, $s_1$, the densities, the MAP threshold, and $P_b$ for the MAP and ML thresholds.<br>'
-     +'<b>Method.</b> The MAP rule compares $P_i\\,f_Y(y\\mid i)$, not $f_Y(y\\mid i)$ alone. Take logarithms and solve the resulting linear inequality for $y$.<br>'
-     +'<b>Solution — (a).</b> $E=\\int_0^4 1^{2}\\,dt=4$, so $\\psi(t)=1/\\sqrt4=1/2$ for $0\\le t<4$. Then $$s_1=\\int_0^4 (1)\\tfrac12\\,dt=2,\\qquad s_0=\\int_0^4(-1)\\tfrac12\\,dt=-2.$$<br>'
-     +'<b>Solution — (b).</b> With $\\sigma^{2}=1$: $$f_Y(y\\mid 1)=\\frac{1}{\\sqrt{2\\pi}}e^{-(y-2)^{2}/2},\\qquad f_Y(y\\mid 0)=\\frac{1}{\\sqrt{2\\pi}}e^{-(y+2)^{2}/2}.$$<br>'
-     +'<b>Solution — (c).</b> Decide "1" when $0.7\\,f_Y(y\\mid1)>0.3\\,f_Y(y\\mid0)$. Take the natural logarithm of both sides: $$\\ln0.7-\\frac{(y-2)^{2}}{2}>\\ln0.3-\\frac{(y+2)^{2}}{2}.$$ Move the squares to one side: $$\\frac{(y+2)^{2}-(y-2)^{2}}{2}>\\ln\\frac{0.3}{0.7}.$$ The numerator is $8y$, so $4y>\\ln(0.3/0.7)=-0.8473$. Divide by $4$, which is positive: $$y>\\lambda=-0.2118.$$<br>'
-     +'<b>Solution — (d).</b> Given "0", an error is $Y>\\lambda$. Given "1", it is $Y<\\lambda$: $$\\begin{aligned}P(e\\mid0)&=Q\\!\\left(\\frac{-0.2118+2}{1}\\right)\\approx Q(1.79)=0.03673\\\\P(e\\mid1)&=Q\\!\\left(\\frac{2+0.2118}{1}\\right)\\approx Q(2.21)=0.01355\\end{aligned}$$ Weight by the priors: $$\\begin{aligned}P_b&=0.3(0.03673)+0.7(0.01355)\\\\&=0.01102+0.00949\\\\&=0.02050\\end{aligned}$$ The ML threshold $\\lambda=0$ gives $P_b=Q(2.00)=0.02275$. The MAP threshold is about $10\\%$ better.<br>'
-     +'<b>Check.</b> At the MAP threshold the two weighted densities must be equal. With $\\phi(x)=e^{-x^{2}/2}/\\sqrt{2\\pi}$: $0.3\\,\\phi(1.788)=0.3(0.08067)=0.02420$ and $0.7\\,\\phi(2.212)=0.7(0.03457)=0.02420$. They agree.',
-  figSol: () => dens({xr:[-5.5,5.5], xstep:1, cuts:[-0.2118], ml:[0], weighted:true,
-    comps:[{m:-2, s:1, p:0.3, col:C.in, tex:'0.3\\,f_Y(y\\mid 0)'},
-           {m:2, s:1, p:0.7, col:C.out, tex:'0.7\\,f_Y(y\\mid 1)'}],
-    cutTex:['\\lambda=-0.212'], cutAnchor:['end'], legend:'tl', head:1.8}),
-  err:'Moving $\\lambda$ towards $s_1=2$ because "1" is more likely. The more likely symbol gets the larger region, so $\\lambda$ moves towards $s_0$ and is negative.',
-  teach:'The drawing is the midterm shape and the priors come from the final. The check at the threshold is a quick test that the sign of the shift is right.' },
+{ id:'D4-05', module:'M4', type:'mismatch', src:'Madhow P6.28',
+  stem:'A 4-PAM receiver expects the noiseless samples $-6$, $-2$, $2$ and $6$. It decides with the fixed thresholds $-4$, $0$ and $4$. The four symbols are equally likely. The noise on the sample is Gaussian with mean $0$ and variance $1$. A faulty gain stage scales the noiseless samples by a factor $g$, so they arrive at $\\pm2g$ and $\\pm6g$. The thresholds and the noise variance do not change. The gain stage divides its input by $\\sqrt{\\hat P}$, where $\\hat P$ is its estimate of the received power $P$. According to the information given above,',
+  parts:['[5 pts] For $g=0.85$, sketch the thresholds and the four noiseless samples. Give the distance from each sample to each threshold beside it.',
+         '[7 pts] For $g=0.85$, find the conditional error probability of an inner and of an outer symbol, and the average symbol error probability $P_e$.',
+         '[7 pts] Repeat part (b) for $g=1.15$.',
+         '[6 pts] For each $g$, give the loss in decibels at high signal-to-noise ratio against thresholds at the midpoints of the scaled samples. Say which gain is worse, and whether $\\hat P$ is too large or too small.'],
+  sol:'<b>Given.</b> Nominal samples $\\pm2$ and $\\pm6$, thresholds $-4$, $0$, $4$, noise standard deviation $\\sigma=1$, equal priors. First $g=0.85$, then $g=1.15$.<br>'
+     +'<b>Find.</b> The distances to the thresholds, the conditional errors and $P_e$ for both gains, the loss of each in decibels, and the power error.<br>'
+     +'<b>Method.</b> The thresholds stay and only the samples move. So each symbol has its own distance to each threshold beside it. In one dimension an error past one threshold is one Gaussian tail. The negative samples mirror the positive ones, so work with the two positive samples.<br>'
+     +'<b>Solution — (a).</b> With $g=0.85$ the samples are $\\pm2(0.85)=\\pm1.7$ and $\\pm6(0.85)=\\pm5.1$. The inner sample $1.7$ lies between the thresholds $0$ and $4$. Its distances are $$1.7-0=1.7,\\qquad 4-1.7=2.3.$$ The outer sample $5.1$ has one threshold beside it, at distance $5.1-4=1.1$. With the correct gain every distance would be $2$. The shrink moves the outer sample towards threshold $4$ and the inner sample towards $0$.<br>'
+     +'<b>Solution — (b).</b> Given $1.7$, an error is $Y<0$ or $Y>4$. The two events cannot happen together, so the intelligent union bound is exact here: $$\\begin{aligned}P(e\\mid1.7)&=Q\\!\\left(\\frac{1.7}{1}\\right)+Q\\!\\left(\\frac{2.3}{1}\\right)\\\\&=Q(1.70)+Q(2.30)\\\\&=0.04457+0.01072\\\\&=0.05529\\end{aligned}$$ Given $5.1$, an error is $Y<4$: $$P(e\\mid5.1)=Q\\!\\left(\\frac{1.1}{1}\\right)=Q(1.10)=0.1357.$$ Two of the four symbols are inner and two are outer, each with probability $\\tfrac14$: $$\\begin{aligned}P_e&=\\tfrac12(0.05529)+\\tfrac12(0.1357)\\\\&=0.02765+0.06785\\\\&=0.09550\\end{aligned}$$<br>'
+     +'<b>Solution — (c).</b> With $g=1.15$ the samples are $\\pm2.3$ and $\\pm6.9$. The inner sample is $2.3$ from threshold $0$ and $4-2.3=1.7$ from threshold $4$. The outer sample is $6.9-4=2.9$ from threshold $4$. Then $$\\begin{aligned}P(e\\mid2.3)&=Q(2.30)+Q(1.70)\\\\&=0.01072+0.04457\\\\&=0.05529\\end{aligned}$$ $$P(e\\mid6.9)=Q(2.90)=0.001866.$$ Average over the four symbols: $$\\begin{aligned}P_e&=\\tfrac12(0.05529)+\\tfrac12(0.001866)\\\\&=0.02765+0.000933\\\\&=0.02858\\end{aligned}$$<br>'
+     +'<b>Solution — (d).</b> Thresholds at the midpoints of the scaled samples would keep every distance at half the spacing, $2g$. At high signal-to-noise ratio the smallest distance decides $P_e$, because its $Q$ term is far larger than the others. To bring that distance back to $2g$, the amplitude must grow by their ratio, and the energy by the ratio squared. So the loss is $20\\log_{10}$ of the ratio: $$g=0.85:\\quad 20\\log_{10}\\frac{1.7}{1.1}=3.78\\ \\text{dB}$$ $$g=1.15:\\quad 20\\log_{10}\\frac{2.3}{1.7}=2.63\\ \\text{dB}$$ The low gain is worse. It pushes the outer samples towards the only threshold they have.<br>'
+     +'<b>Solution — (d), power estimate.</b> The stage should divide by $\\sqrt P$. It divides by $\\sqrt{\\hat P}$, so the samples are scaled by $g=\\sqrt{P/\\hat P}$. Square both sides and solve: $\\hat P=P/g^{2}$. For $g=0.85$, $\\hat P=1.384\\,P$, too large by $10\\log_{10}1.384=1.41$ dB. For $g=1.15$, $\\hat P=0.756\\,P$, too small by $1.21$ dB. A gain below one means the stage overestimated the power.<br>'
+     +'<b>Check.</b> Put $g=1$ back. Every distance is $2$, so $P(e\\mid2)=2Q(2.00)$ and $P(e\\mid6)=Q(2.00)$. Then $P_e=\\tfrac12(2)(0.02275)+\\tfrac12(0.02275)=1.5(0.02275)=0.03413$. This is the ordinary 4-PAM value $N_{\\min}Q(d_{\\min}/2\\sigma)$ with $N_{\\min}=1.5$.',
+  figSol: () => {
+    const comps = g => [-6,-2,2,6].map((m,k)=>({m:m*g, s:1, p:0.25, col:[C.in,C.out,C.mid,C.h][k],
+      tex:'f_Y(y\\mid '+(m<0?'{-}':'')+Math.abs(m)+')'}));
+    const panel = (g, name) => dens({xr:[-9.5,9.5], xstep:2, cuts:[-4,0,4], ml:[-6,-2,2,6], w:720, h:380,
+      comps:comps(g), cutTex:['-4','0','4'], cutAnchor:['end','start','start'], legend:'tr', head:3.0, moreLegend:[[C.muted,'\\text{nominal sample}','2 4']],
+      over:a=>a.note(-9.3, 0.4*3.0*0.84, name, {tex:true, fs:14, color:C.ink})});
+    return panel(0.85, 'g=0.85') + panel(1.15, 'g=1.15'); },
+  err:'Moving the thresholds with the samples. The thresholds stay at $-4$, $0$ and $4$. Only the samples move, so an inner sample has two different distances, and an outer sample at $g=0.85$ is only $1.1$ from its threshold.',
+  teach:'A receiver that is slightly wrong. Ask first which sample moved towards a threshold, then compute. The dotted lines in the solution figure mark the nominal samples. The sign of the power error in part (d) is a two-line argument that students often reverse.' },
 
 { id:'D4-06', module:'M4', type:'binary', src:'MT Q3',
   stem:'Two equiprobable messages, "0" and "1", are sent over an additive white Gaussian noise channel with $N_0/2=0.36$ W/Hz. The waveforms are $s_0(t)=\\sin(\\pi t)$ and $s_1(t)=3\\sin(\\pi t)$ for $0\\le t\\le2$ s, drawn below. The received signal passes through a correlator-type demodulator with $T=2$ s. According to the information given above,',
@@ -800,24 +868,29 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   err:'Taking $N_{\\min}=4$, as in a large square grid. In a $4\\times2$ grid no point has four neighbours, and the average is $2.5$.',
   teach:'A rectangular eight-point set in the examination shape. The neighbour count by pairs in the check is the fast way to get $N_{\\min}$.' },
 
-{ id:'D4-26', module:'M4', type:'mary', src:'Final Q3 (variant)',
-  stem:'Consider an $M$-ary modulation scheme where the equally probable symbols have the waveforms $s_1(t)=0$ and $$s_k(t)=2\\sqrt2\\cos\\!\\left(2000\\pi t+\\frac{(k-2)\\pi}{2}\\right),\\qquad k\\in\\{2,3,4,5\\},\\ 0\\le t\\le1.$$ These signals are planned to be transmitted over a standard AWGN channel with $\\mathcal{N}(0,N_0/2)$. According to the information given above,',
-  parts:['[8 pts] Find the five signal points and $E_{s,\\text{avg}}$.',
-         '[8 pts] Draw the signal constellation and the optimal decision regions.',
-         '[9 pts] Determine the nearest-neighbour approximation of the average symbol error probability as a function of $E_{s,\\text{avg}}/N_0$.'],
-  sol:'<b>Given.</b> One zero signal and four carrier pulses of amplitude $2\\sqrt2$ at phases $0,\\pi/2,\\pi,3\\pi/2$. $T=1$ s, equal priors.<br>'
-     +'<b>Find.</b> The points, $E_{s,\\text{avg}}$, the regions and $P_e$.<br>'
-     +'<b>Method.</b> The phase-$\\theta$ pulse has the point $2(\\cos\\theta,\\sin\\theta)$. The centre point has neighbours on all sides, the outer points only one.<br>'
-     +'<b>Solution — (a).</b> $\\mathbf{s}_1=(0,0)$, $\\mathbf{s}_2=(2,0)$, $\\mathbf{s}_3=(0,2)$, $\\mathbf{s}_4=(-2,0)$ and $\\mathbf{s}_5=(0,-2)$. $$E_{s,\\text{avg}}=\\frac{0+4(4)}{5}=3.2.$$<br>'
-     +'<b>Solution — (b).</b> The bisector of $\\mathbf{s}_1$ and $\\mathbf{s}_2$ is $r_1=1$. With the other three it gives the square $|r_1|<1$, $|r_2|<1$, the region of the centre point. The bisector of $\\mathbf{s}_2$ and $\\mathbf{s}_3$ is $r_2=r_1$. So the region of $\\mathbf{s}_2$ is $r_1>1$ with $|r_2|<r_1$, and the others follow by rotation.<br>'
-     +'<b>Solution — (c).</b> The centre is $2$ from each outer point. Two outer points are $2\\sqrt2$ apart. So $d_{\\min}=2$. The centre has $4$ neighbours at $d_{\\min}$ and each outer point has $1$: $$N_{\\min}=\\frac{4+4(1)}{5}=1.6.$$ With $d_{\\min}^{2}=4=\\frac{5}{4}E_{s,\\text{avg}}$: $$P_e\\approx1.6\\,Q\\!\\left(\\sqrt{\\frac{5E_{s,\\text{avg}}}{8N_0}}\\right).$$<br>'
-     +'<b>Check.</b> Count pairs at distance $2$: the centre with each outer point, $4$ pairs. Each pair counts twice: $2(4)/5=1.6$.',
-  figSol: () => cons({xr:[-3.2,3.2], yr:[-3,3], w:520, h:480, xstep:1, ystep:1,
-    pts:[{x:0,y:0,c:3,tex:'\\mathbf{s}_1',dx:8,dy:-10},{x:2,y:0,c:0,tex:'\\mathbf{s}_2'},{x:0,y:2,c:1,tex:'\\mathbf{s}_3'},{x:-2,y:0,c:0,tex:'\\mathbf{s}_4',dx:-8,anchor:'end'},{x:0,y:-2,c:1,tex:'\\mathbf{s}_5',dy:18}],
-    dmin:[0,1], dminAt:[1.25,-0.4], dminAnchor:'start', hideX:[-2,-1,1,2], hideY:[-2,-1,1,2],
-    nn:[[0,2],[0,3],[0,4]]}),
-  err:'Taking $d_{\\min}=2\\sqrt2$, the spacing of the outer ring. The centre point is closer to every outer point, so $d_{\\min}=2$.',
-  teach:'A variant in the examination format: a point in the middle of a ring. It shows that the centre point dominates the error count.' },
+{ id:'D4-26', module:'M4', type:'erasure', src:'Madhow P6.24',
+  stem:'A QPSK receiver works on the two correlator outputs $\\mathbf{y}=(y_1,y_2)$. The four equally likely signal points are $\\mathbf{s}_1=(2,2)$, $\\mathbf{s}_2=(-2,2)$, $\\mathbf{s}_3=(-2,-2)$ and $\\mathbf{s}_4=(2,-2)$. Each coordinate carries independent Gaussian noise with mean $0$ and variance $N_0/2=0.64$. The receiver does not decide when the observation lies close to a boundary. If $|y_1|<0.4$ or $|y_2|<0.4$, it puts out an erasure, a mark that means "no decision". Otherwise it decides the point in the quadrant of $\\mathbf{y}$. Let $d$ be the distance between neighbouring points, $d_1$ the width of each erasure strip, and $\\alpha=d_1/d$. The energy per bit is $E_b=E_{s,\\text{avg}}/2$. According to the information given above,',
+  parts:['[6 pts] Find $d$, $d_1$, $\\alpha$, $E_b$ and $E_b/N_0$. Draw the decision regions and the erasure zone.',
+         '[7 pts] Use the intelligent union bound to approximate the symbol error probability $p$ and the erasure probability $q$. Write each as a function of $E_b/N_0$ and $\\alpha$, then evaluate it.',
+         '[7 pts] Find $p$ and $q$ exactly, as products of probabilities of the two coordinates, and evaluate them.',
+         '[5 pts] Find the symbol error probability of the ordinary QPSK receiver, which has no erasure zone. State what the zone gains and what it costs.'],
+  sol:'<b>Given.</b> Points $(\\pm2,\\pm2)$ with equal priors. Noise variance $\\sigma^{2}=N_0/2=0.64$ on each coordinate, so $\\sigma=0.8$ and $N_0=1.28$. Erasure strips $|y_1|<0.4$ and $|y_2|<0.4$.<br>'
+     +'<b>Find.</b> $d$, $d_1$, $\\alpha$, $E_b$, $E_b/N_0$, the regions, $p$ and $q$ by the bound and exactly, and $P_e$ without the zone.<br>'
+     +'<b>Method.</b> By symmetry all four points have the same $p$ and $q$, so take $\\mathbf{s}_1=(2,2)$. Each coordinate has three outcomes: the right side, the strip, or the wrong side. The noise on the two coordinates is independent, so their probabilities multiply.<br>'
+     +'<b>Solution — (a).</b> Neighbouring points such as $(2,2)$ and $(-2,2)$ are $d=4$ apart. Each strip runs from $-0.4$ to $0.4$, so $d_1=0.8$ and $$\\alpha=\\frac{d_1}{d}=\\frac{0.8}{4}=0.2.$$ Every point has energy $2^{2}+2^{2}=8$, so $E_{s,\\text{avg}}=8$ and $E_b=4$. Then $$\\frac{E_b}{N_0}=\\frac{4}{1.28}=3.125.$$ The region of $\\mathbf{s}_1$ is $y_1>0.4$ and $y_2>0.4$: the first quadrant with the strips cut away. The other three regions follow by symmetry. The cross where $|y_1|<0.4$ or $|y_2|<0.4$ is the erasure zone.<br>'
+     +'<b>Solution — (b).</b> Take $\\mathbf{s}_1$ sent. The near edge of each strip is $2-0.4=1.6$ from the point, which is $\\tfrac d2(1-\\alpha)$. The far edge is $2+0.4=2.4$, which is $\\tfrac d2(1+\\alpha)$. An error needs $y_1<-0.4$ or $y_2<-0.4$, a crossing of one of two far edges. An erasure needs a crossing of one of two near edges. The intelligent union bound adds one term for each of these faces. Write the scale in terms of $E_b$ first. Here $d^{2}=16=4E_b$, so $$\\frac{d/2}{\\sigma}=\\sqrt{\\frac{d^{2}}{2N_0}}=\\sqrt{\\frac{2E_b}{N_0}}.$$ Hence $$p\\approx2\\,Q\\!\\left((1+\\alpha)\\sqrt{\\frac{2E_b}{N_0}}\\right),\\qquad q\\approx2\\,Q\\!\\left((1-\\alpha)\\sqrt{\\frac{2E_b}{N_0}}\\right).$$ With $\\sqrt{2(3.125)}=\\sqrt{6.25}=2.5$: $$\\begin{aligned}p&\\approx2\\,Q\\bigl(1.2(2.5)\\bigr)=2\\,Q(3.00)=2.700\\times10^{-3}\\\\q&\\approx2\\,Q\\bigl(0.8(2.5)\\bigr)=2\\,Q(2.00)=0.04550\\end{aligned}$$<br>'
+     +'<b>Solution — (c).</b> On one coordinate $y_i=2+n_i$. Let $c$ be the probability that it lands on the right side, and $w$ that it lands on the wrong side: $$\\begin{aligned}c&=1-Q\\!\\left((1-\\alpha)\\sqrt{2E_b/N_0}\\right)\\\\&=1-Q\\!\\left(\\tfrac{1.6}{0.8}\\right)=1-Q(2.00)=0.97725\\end{aligned}$$ $$\\begin{aligned}w&=Q\\!\\left((1+\\alpha)\\sqrt{2E_b/N_0}\\right)\\\\&=Q\\!\\left(\\tfrac{2.4}{0.8}\\right)=Q(3.00)=0.00135\\end{aligned}$$ A correct decision needs both coordinates on the right side, with probability $c^{2}$. A decision of any kind needs both outside the strips, with probability $(c+w)^{2}$. So $$\\begin{aligned}q&=1-(c+w)^{2}\\\\&=1-(0.97860)^{2}\\\\&=1-0.95766=0.04234\\end{aligned}$$ $$\\begin{aligned}p&=(c+w)^{2}-c^{2}\\\\&=0.95766-0.95502\\\\&=2.640\\times10^{-3}\\end{aligned}$$ Both values of part (b) lie above these, $2.700\\times10^{-3}>2.640\\times10^{-3}$ and $0.04550>0.04234$, as a union bound must.<br>'
+     +'<b>Solution — (d).</b> Without the zone the boundaries are the axes, $2$ from the point. Each coordinate is wrong with probability $Q(2/0.8)=Q(2.50)=0.006210$. The symbol is right only when both are right: $$\\begin{aligned}P_e&=1-(1-0.006210)^{2}\\\\&=1-0.98762\\\\&=0.01238\\end{aligned}$$ The zone cuts wrong decisions from $0.01238$ to $0.00264$, about $4.7$ times fewer. It pays with $4.23\\%$ of the symbols erased. An erasure is flagged, so a later decoder knows which symbols to distrust. A wrong decision carries no flag.<br>'
+     +'<b>Check.</b> The three outcomes must add to one: $$\\begin{aligned}c^{2}+p+q&=0.95502+0.00264+0.04234\\\\&=1.00000\\end{aligned}$$ Also $p=w(2c+w)=0.00135(1.95585)=2.640\\times10^{-3}$, the value of part (c).',
+  figSol: () => erasureFig({lim:3.4, b:0.4,
+    pts:[{x:2,y:2,tex:'\\mathbf{s}_1'},{x:-2,y:2,tex:'\\mathbf{s}_2'},{x:-2,y:-2,tex:'\\mathbf{s}_3'},{x:2,y:-2,tex:'\\mathbf{s}_4'}],
+    over:a=>{ a.poly([[2,2],[0.4,2]], {color:C.muted, width:1.4, dash:'3 3'});
+      a.poly([[2,1.4],[-0.4,1.4]], {color:C.err, width:2});
+      a.note(1.2, 2, '1.6', {tex:true, fs:13, color:C.muted, anchor:'middle', dy:-10});
+      a.note(0.8, 1.4, '2.4', {tex:true, fs:13, color:C.err, anchor:'middle', dy:18});
+      a.note(-2.45, 0.2, '\\text{erasure}', {tex:true, fs:13, color:C.ink, anchor:'middle', dy:4}); }}),
+  err:'Measuring the error distance to the axis, $2/0.8=2.5$, as in ordinary QPSK. With the zone an error must pass the far edge of a strip, $2.4$ from the point, so the argument is $3.00$.',
+  teach:'A decision with three outcomes. The intelligent union bound works face by face, once for the error faces and once for the erasure faces. Part (d) shows the trade: fewer wrong decisions for a few flagged ones.' },
 
 { id:'D4-27', module:'M4', type:'mary', src:'Final Q3',
   stem:'Consider an $M$-ary modulation scheme where the equally probable symbols have the waveforms $$s_k(t)=2\\cos\\!\\left(2000\\pi t+\\frac{2\\pi k}{3}+\\frac\\pi2\\right),\\qquad k\\in\\{0,1,2\\},\\ 0\\le t\\le1.$$ These signals are planned to be transmitted over a standard AWGN channel with $\\mathcal{N}(0,N_0/2)$. According to the information given above,',

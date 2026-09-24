@@ -133,13 +133,13 @@ TABLE_TOL = 1.5e-2
 
 # ── the Q table values quoted in the solutions ──────────────────────────────
 
-QTAB = {1.00: 0.1587, 1.06: 0.1446, 1.09: 0.1379, 1.13: 0.1292, 1.17: 0.1210,
+QTAB = {1.00: 0.1587, 1.10: 0.1357, 1.06: 0.1446, 1.09: 0.1379, 1.13: 0.1292, 1.17: 0.1210,
         1.18: 0.1190, 1.25: 0.1056, 1.33: 0.09176, 1.36: 0.08691, 1.41: 0.07927,
         1.49: 0.06811, 1.50: 0.06681, 1.64: 0.05050, 1.66: 0.04846, 1.67: 0.04746,
-        1.73: 0.04182, 1.77: 0.03836, 1.79: 0.03673, 1.83: 0.03362, 1.87: 0.03074,
-        2.00: 0.02275, 2.10: 0.01786, 2.17: 0.01500, 2.21: 0.01355, 2.24: 0.01255,
-        2.27: 0.01160, 2.42: 0.007760, 2.50: 0.006210, 2.58: 0.004940, 2.77: 2.803e-3,
-        2.86: 0.002118, 3.00: 1.350e-3, 3.09: 1.001e-3, 3.10: 0.968e-3, 3.23: 6.190e-4,
+        1.70: 0.04457, 1.73: 0.04182, 1.77: 0.03836, 1.83: 0.03362, 1.87: 0.03074,
+        2.00: 0.02275, 2.10: 0.01786, 2.17: 0.01500, 2.24: 0.01255,
+        2.27: 0.01160, 2.30: 0.01072, 2.42: 0.007760, 2.50: 0.006210, 2.58: 0.004940, 2.77: 2.803e-3,
+        2.83: 0.002327, 2.86: 0.002118, 2.90: 0.001866, 3.00: 1.350e-3, 3.09: 1.001e-3, 3.10: 0.968e-3, 3.23: 6.190e-4,
         3.61: 1.531e-4, 0.10: 0.4602, 0.65: 0.2578, 1.35: 0.08851}
 for x, q in QTAB.items():
     add(f"Q table Q({x:.2f})", q, lambda x=x: Qint(x), tol=1.5e-3)
@@ -171,20 +171,95 @@ add("D4-03 s1", 4, lambda: math.sqrt(inner(tri(t), tri(t), t)))
 add("D4-03 Pb", 0.006210, lambda: pb_threshold(0, 4, 0.8, .5, .5, 2))
 add("D4-03 Q argument", 2.50, lambda: math.sqrt(16 / (2 * 1.28)))
 
-# ── D4-04 ───────────────────────────────────────────────────────────────────
-c, t, S = coords([lambda t: 3.0 * (t < 1), lambda t: 3.0 * ((t >= 1) & (t < 2))], 2)
-add("D4-04 d", 4.243, lambda: float(np.linalg.norm(c[0] - c[1])))
-add("D4-04 Pb (Monte Carlo)", 1.350e-3, lambda: mc_2d_map(c, [.5, .5], 1.0, n=4_000_000, seed=4), tol=0.06)
-add("D4-04 single-coordinate error", 0.0170, lambda: Qint(1.5 / math.sqrt(.5)), tol=5e-3)
+# ── D4-04 (Madhow P6.17 shape) ──────────────────────────────────────────────
+# Vectors by Gram-Schmidt on the sampled pulses; distances and bounds from
+# those vectors; the exact error of set B by a Monte Carlo minimum-distance
+# receiver in four dimensions, which never uses the sign-test argument.
+slot = lambda i: (lambda t: 2.0 * ((t >= 0.5 * (i - 1)) & (t < 0.5 * i)))
+cA, t, S = coords([slot(i) for i in range(1, 5)], 2)
+pairsB = [(1, 2), (3, 4), (1, 3), (2, 4)]
+tt = grid(2)
+SB = [slot(i)(tt) + slot(j)(tt) for i, j in pairsB]
+BB = gram_schmidt([slot(i)(tt) for i in range(1, 5)], tt)
+cB = [np.array([inner(s, b, tt) for b in BB]) for s in SB]
+EbA = lambda: es_avg(cA) / 2
+EbB = lambda: es_avg(cB) / 2
+def union_eb(pts, ebn0):
+    P = np.asarray(pts, float)
+    Eb = es_avg(P) / 2
+    N0 = Eb / ebn0
+    tot = sum(Qint(math.sqrt(np.sum((P[k] - P[j]) ** 2) / (2 * N0)))
+              for k in range(4) for j in range(4) if j != k)
+    return tot / 4
+def mc_exact_B(ebn0, n=2_000_000, seed=404):
+    rng = np.random.default_rng(seed)
+    P = np.asarray(cB, float)
+    N0 = (es_avg(P) / 2) / ebn0
+    idx = rng.integers(0, 4, n)
+    r = P[idx] + rng.normal(0, math.sqrt(N0 / 2), size=(n, 4))
+    d = ((r[:, None, :] - P[None, :, :]) ** 2).sum(-1)
+    return float(np.mean(d.argmin(1) != idx))
+def mc_sign_agree(n=400_000, seed=405):
+    rng = np.random.default_rng(seed)
+    P = np.asarray(cB, float)
+    idx = rng.integers(0, 4, n)
+    r = P[idx] + rng.normal(0, 0.8, size=(n, 4))
+    ml = ((r[:, None, :] - P[None, :, :]) ** 2).sum(-1).argmin(1)
+    z1, z2 = r[:, 0] - r[:, 3], r[:, 1] - r[:, 2]
+    sg = np.where(z1 > 0, np.where(z2 > 0, 0, 2), np.where(z2 > 0, 3, 1))
+    return float(np.mean(ml == sg))
+add("D4-04 E_p", 2, lambda: inner(slot(1)(tt), slot(1)(tt), tt))
+add("D4-04 set A coordinate sqrt2", 1.414, lambda: float(np.max(np.abs(cA[0]))), tol=1e-3)
+add("D4-04 set A Eb", 1, EbA)
+add("D4-04 set B Eb", 2, EbB)
+add("D4-04 set A d^2/Eb", 4, lambda: dmin_nmin(cA)[0] ** 2 / EbA())
+add("D4-04 set A Nmin (all three at dmin)", 3, lambda: dmin_nmin(np.round(cA, 4))[1])
+add("D4-04 set B dmin^2/Eb", 2, lambda: dmin_nmin(cB)[0] ** 2 / EbB())
+add("D4-04 set B Nmin", 2, lambda: dmin_nmin(np.round(cB, 4))[1])
+add("D4-04 set B far d^2/Eb", 4, lambda: float(np.max([np.sum((cB[0] - q) ** 2) for q in cB])) / EbB())
+add("D4-04 penalty dB", 3.01, lambda: 10 * math.log10((dmin_nmin(cA)[0] ** 2 / EbA()) / (dmin_nmin(cB)[0] ** 2 / EbB())), tol=2e-3)
+add("D4-04 sqrt 8", 2.828, lambda: math.sqrt(8), tol=1e-3)
+add("D4-04 union A at 4", 0.006981, lambda: union_eb(cA, 4), tol=TABLE_TOL)
+add("D4-04 union B at 4", 0.04783, lambda: union_eb(cB, 4), tol=TABLE_TOL)
+add("D4-04 exact B at 4 (Monte Carlo)", 0.04498, lambda: mc_exact_B(4), tol=0.01)
+add("D4-04 sign tests agree with ML", 1.0, mc_sign_agree, tol=1e-9)
+add("D4-04 1-0.97725^2 check", 0.95502, lambda: (1 - Qint(2)) ** 2, tol=1e-4)
+add("D4-04 bound minus exact", 0.002845, lambda: Qint(2.83) + Qint(2) ** 2, tol=6e-3)
 
-# ── D4-05 ───────────────────────────────────────────────────────────────────
-add("D4-05 lambda", -0.2118, lambda: map_threshold(-2, 2, 1, .3, .7))
-add("D4-05 Pb", 0.02050, lambda: pb_threshold(-2, 2, 1, .3, .7, map_threshold(-2, 2, 1, .3, .7)), tol=3e-3)
-add("D4-05 ln(0.3/0.7)", -0.8473, lambda: math.log(.3) - math.log(.7))
-add("D4-05 0.3 phi(1.788)", 0.02420, lambda: .3 * phi(1.7882), tol=3e-3)
-add("D4-05 0.7 phi(2.212)", 0.02420, lambda: .7 * phi(2.2118), tol=3e-3)
-add("D4-05 phi(1.788)", 0.08067, lambda: phi(1.7882), tol=3e-3)
-add("D4-05 phi(2.212)", 0.03457, lambda: phi(2.2118), tol=3e-3)
+# ── D4-05 (Madhow P6.28 shape) ──────────────────────────────────────────────
+# Conditional errors by integrating each density over the mismatched decision
+# intervals; the average also by a seeded 1-D Monte Carlo run; the loss from
+# a brute-force search for the smallest sample-to-threshold distance.
+TH5 = [-4.0, 0.0, 4.0]
+def pe_mis(g, sym=None):
+    edges = [-np.inf] + TH5 + [np.inf]
+    pts = [-6 * g, -2 * g, 2 * g, 6 * g]
+    errs = [1 - tail(m, 1, edges[k], edges[k + 1]) for k, m in enumerate(pts)]
+    return errs[sym] if sym is not None else float(np.mean(errs))
+def mc_mis(g, n=4_000_000, seed=505):
+    rng = np.random.default_rng(seed)
+    idx = rng.integers(0, 4, n)
+    y = np.array([-6, -2, 2, 6])[idx] * g + rng.normal(0, 1, n)
+    return float(np.mean(np.digitize(y, TH5) != idx))
+def min_dist(g):
+    return min(abs(p - th) for p in [-6 * g, -2 * g, 2 * g, 6 * g] for th in TH5)
+add("D4-05 inner sample g=0.85", 1.7, lambda: 2 * .85)
+add("D4-05 outer sample g=0.85", 5.1, lambda: 6 * .85)
+add("D4-05 P(e|inner) g=0.85", 0.05529, lambda: pe_mis(.85, 2), tol=TABLE_TOL)
+add("D4-05 P(e|outer) g=0.85", 0.1357, lambda: pe_mis(.85, 3), tol=TABLE_TOL)
+add("D4-05 Pe g=0.85", 0.09550, lambda: pe_mis(.85), tol=TABLE_TOL)
+add("D4-05 Pe g=0.85 (Monte Carlo)", 0.09550, lambda: mc_mis(.85), tol=0.01)
+add("D4-05 P(e|inner) g=1.15", 0.05529, lambda: pe_mis(1.15, 2), tol=TABLE_TOL)
+add("D4-05 P(e|outer) g=1.15", 0.001866, lambda: pe_mis(1.15, 3), tol=TABLE_TOL)
+add("D4-05 Pe g=1.15", 0.02858, lambda: pe_mis(1.15), tol=TABLE_TOL)
+add("D4-05 Pe g=1.15 (Monte Carlo)", 0.02858, lambda: mc_mis(1.15, seed=506), tol=0.02)
+add("D4-05 loss dB g=0.85", 3.78, lambda: 20 * math.log10(2 * .85 / min_dist(.85)), tol=2e-3)
+add("D4-05 loss dB g=1.15", 2.63, lambda: 20 * math.log10(2 * 1.15 / min_dist(1.15)), tol=2e-3)
+add("D4-05 Phat/P g=0.85", 1.384, lambda: optimize.brentq(lambda r: math.sqrt(1 / r) - .85, .1, 10), tol=1e-3)
+add("D4-05 Phat/P g=1.15", 0.756, lambda: optimize.brentq(lambda r: math.sqrt(1 / r) - 1.15, .1, 10), tol=1e-3)
+add("D4-05 Phat excess dB g=0.85", 1.41, lambda: 10 * math.log10(1 / .85 ** 2), tol=5e-3)
+add("D4-05 Phat shortfall dB g=1.15", 1.21, lambda: -10 * math.log10(1 / 1.15 ** 2), tol=5e-3)
+add("D4-05 Pe g=1 (nominal 4-PAM)", 0.03413, lambda: pe_mis(1.0), tol=2e-3)
 
 # ── D4-06 ───────────────────────────────────────────────────────────────────
 c, t, S = coords([lambda t: np.sin(np.pi * t), lambda t: 3 * np.sin(np.pi * t)], 2)
@@ -369,12 +444,39 @@ add("D4-25 dmin", 2, lambda: dmin_nmin(p25)[0])
 add("D4-25 Nmin", 2.5, lambda: dmin_nmin(p25)[1])
 add("D4-25 dmin^2/Es", 2 / 3, lambda: dmin_nmin(p25)[0] ** 2 / es_avg(p25))
 
-p26 = mary([lambda t: 1e-12 * np.cos(2000 * np.pi * t)] +
-           [carrier(2 * math.sqrt(2), 1000, (k - 2) * math.pi / 2) for k in range(2, 6)], 1)
-add("D4-26 Es,avg", 3.2, lambda: es_avg(p26))
-add("D4-26 dmin", 2, lambda: dmin_nmin(p26)[0])
-add("D4-26 Nmin", 1.6, lambda: dmin_nmin(p26)[1])
-add("D4-26 dmin^2/Es", 1.25, lambda: dmin_nmin(p26)[0] ** 2 / es_avg(p26))
+# ── D4-26 (Madhow P6.24 shape) ──────────────────────────────────────────────
+# The exact error and erasure by a 2-D Monte Carlo run of the erasure
+# receiver itself, and by integrating the joint density over the regions.
+S26, B26, SIG26 = 2.0, 0.4, 0.8
+def erasure_mc(b, n=4_000_000, seed=2626):
+    rng = np.random.default_rng(seed)
+    y = S26 + rng.normal(0, SIG26, size=(n, 2))       # s1 = (2, 2) sent; symmetry covers the rest
+    erased = (np.abs(y) < b).any(1)
+    wrong = (~erased) & (y < 0).any(1)
+    return float(np.mean(wrong)), float(np.mean(erased))
+def erasure_quad(b):
+    right = tail(S26, SIG26, b, np.inf)
+    decided = right + tail(S26, SIG26, -np.inf, -b)
+    return decided ** 2 - right ** 2, 1 - decided ** 2
+mc26 = erasure_mc(B26)
+add("D4-26 d", 4, lambda: float(np.linalg.norm(np.array([2, 2]) - np.array([-2, 2]))))
+add("D4-26 alpha", 0.2, lambda: 2 * B26 / 4)
+add("D4-26 Eb", 4, lambda: es_avg([(2, 2), (-2, 2), (-2, -2), (2, -2)]) / 2)
+add("D4-26 Eb/N0", 3.125, lambda: 4 / (2 * SIG26 ** 2))
+add("D4-26 sqrt(2Eb/N0)", 2.5, lambda: math.sqrt(2 * 4 / (2 * SIG26 ** 2)))
+add("D4-26 p bound", 2.700e-3, lambda: 2 * Qint((S26 + B26) / SIG26), tol=2e-3)
+add("D4-26 q bound", 0.04550, lambda: 2 * Qint((S26 - B26) / SIG26), tol=2e-3)
+add("D4-26 c", 0.97725, lambda: tail(S26, SIG26, B26, np.inf), tol=1e-4)
+add("D4-26 w", 0.00135, lambda: tail(S26, SIG26, -np.inf, -B26), tol=2e-3)
+add("D4-26 (c+w)^2", 0.95766, lambda: 1 - erasure_quad(B26)[1], tol=1e-4)
+add("D4-26 c^2", 0.95502, lambda: tail(S26, SIG26, B26, np.inf) ** 2, tol=1e-4)
+add("D4-26 p exact", 2.640e-3, lambda: erasure_quad(B26)[0], tol=2e-3)
+add("D4-26 q exact", 0.04234, lambda: erasure_quad(B26)[1], tol=2e-3)
+add("D4-26 p (Monte Carlo)", 2.640e-3, lambda: mc26[0], tol=0.04)
+add("D4-26 q (Monte Carlo)", 0.04234, lambda: mc26[1], tol=0.01)
+add("D4-26 QPSK without zone", 0.01238, lambda: erasure_mc(0.0, seed=2627)[0], tol=0.02)
+add("D4-26 error ratio", 4.7, lambda: erasure_quad(0.0)[0] / erasure_quad(B26)[0], tol=0.01)
+add("D4-26 2c+w", 1.95585, lambda: 2 * (1 - Qint(2)) + Qint(3), tol=1e-4)
 
 p27 = mary([carrier(2, 1000, 2 * math.pi * k / 3 + math.pi / 2) for k in range(3)], 1)
 add("D4-27 Es,avg", 2, lambda: es_avg(p27))
