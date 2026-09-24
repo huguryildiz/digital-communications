@@ -1090,12 +1090,12 @@ const SC = [
   ]}
 ]},
 
-{ id:'m4-observe', module:'M4', nav:'From waveform to point', title:'From waveform to point',
+{ id:'m4-observe', module:'M4', nav:'The observation vector', title:'The observation vector',
   objective:'Show how a bank of correlators turns the received waveform into a point r = s + n.',
   keywords:'correlator bank demodulator running integral received waveform signal plus noise point observation vector frames',
   src:'CH9 s.24–25', slide:true, steps:2, blocks:[
   {t:'eyebrow', text:'Module 4 · The observation'},
-  {t:'title', text:'From waveform to point'},
+  {t:'title', text:'The observation vector'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true, frames:{labels:['$r(t)$','integrate','$r_1,\\;r_2$','$\\mathbf{r}$']}, svg:figObserve,
       caption:'$r(t)$ is $s_i(t)$ plus noise over one symbol, $T=1$. Each running integral of $r(t)\\,\\psi_j(t)$ ends at one coordinate of $\\mathbf r$.'},

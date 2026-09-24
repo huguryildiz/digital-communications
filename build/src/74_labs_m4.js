@@ -1,7 +1,7 @@
 /* ==========================================================================
    Module 4 laboratories.
 
-   U · From waveform to point (section 4.1) — one symbol of a two-dimensional
+   U · The correlator bank (section 4.1) — one symbol of a two-dimensional
        set is sent through white Gaussian noise. The noisy r(t) is drawn, the
        two correlators integrate it over 0 < t < T, and at t = T the point
        (r1, r2) lands in the signal space beside the point that was sent.
