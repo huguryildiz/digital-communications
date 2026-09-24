@@ -11,9 +11,94 @@ function Q(x){ const t=1/(1+0.2316419*Math.abs(x));
 window.C2 = [
 
 {t:'h1', num:'CHAPTER 2', text:'Baseband transmission of digital signals'},
-{t:'p', lead:true, text:'Chapter 1 produced a stream of bits. Each bit now becomes a waveform, and the channel adds noise. The receiver must identify the transmitted waveform. This chapter selects the receiver filter and decision threshold. It also studies pulse overlap in a bandlimited channel.'},
+{t:'p', lead:true, text:'Chapter 1 produced a stream of bits. Each bit now becomes a waveform, and the channel adds noise. The receiver must identify the transmitted waveform. This chapter first describes noise as a random signal. It then selects the receiver filter and decision threshold. It also studies pulse overlap in a bandlimited channel.'},
 
-{t:'h2', num:'2.1', text:'The matched filter'},
+{t:'h2', num:'2.1', text:'Random signals'},
+{t:'p', text:'Noise is a random signal: nobody knows its waveform in advance. The receiver still has to be designed against it. This section collects the few facts about random signals that the rest of the chapter uses.'},
+{t:'p', text:'A <b>random process</b> $X(t)$ gives one waveform for each outcome of an experiment. Each waveform is a <b>sample function</b>, and the set of all sample functions is the <b>ensemble</b>. Fix a time $t_0$ and let the outcome vary. Then $X(t_0)$ is a random variable with its own density $f_{X(t_0)}(x)$.'},
+{t:'p', text:'Two averages over the ensemble describe a random process well enough for this course. The mean is the average value at one time. The autocorrelation is the average product of two values $\\tau$ apart.'},
+{t:'eqbox', cap:'Mean and autocorrelation', tex:[
+  '\\mu_X(t)=E\\bigl[X(t)\\bigr],\\qquad R_X(t,t+\\tau)=E\\bigl[X(t)\\,X(t+\\tau)\\bigr]'],
+ after:'Both are averages across the ensemble at fixed times, not averages along one waveform. The autocorrelation is large when two values $\\tau$ apart tend to move together.'},
+{t:'p', text:'A process is <b>wide-sense stationary</b> when its mean is a constant and $R_X(t,t+\\tau)$ depends only on the gap $\\tau$. A shift of the time origin then changes neither, and we write $R_X(\\tau)$. Three properties follow from the definition.'},
+{t:'eqbox', cap:'Properties of the autocorrelation', tex:[
+  'R_X(0)=E\\bigl[X^{2}(t)\\bigr]=P_X',
+  'R_X(-\\tau)=E\\bigl[X(t)\\,X(t-\\tau)\\bigr]=E\\bigl[X(s+\\tau)\\,X(s)\\bigr]=R_X(\\tau)',
+  'E\\bigl[(X(t)\\pm X(t+\\tau))^{2}\\bigr]=2R_X(0)\\pm2R_X(\\tau)\\ge0\\quad\\Rightarrow\\quad|R_X(\\tau)|\\le R_X(0)'],
+ after:'The first line is the average power. The second substitutes $s=t-\\tau$. The third expands a square, which can never be negative, and uses both signs.'},
+
+{t:'ex', hd:'Example 2.1 — a sinusoid with a random phase', rows:[
+ ['Given','$X(t)=A\\cos(2\\pi f_0t+\\Theta)$ with $A=3$ V, $f_0=1$ kHz, and $\\Theta$ uniform on $[0,2\\pi)$, so its density is $1/(2\\pi)$ there.'],
+ ['Find','The mean $\\mu_X$, the autocorrelation $R_X(\\tau)$ and the power $P_X$.'],
+ ['Method','Average over the phase with its density. Turn the product of two cosines into a sum with $\\cos a\\cos b=\\tfrac12\\cos(a-b)+\\tfrac12\\cos(a+b)$.'],
+ ['Solution','The mean is $\\mu_X=\\frac{1}{2\\pi}\\int_0^{2\\pi}A\\cos(2\\pi f_0t+\\theta)\\,d\\theta=0$, since a cosine integrates to zero over a full period of $\\theta$. For the autocorrelation, $R_X=\\frac{A^{2}}{2}E\\bigl[\\cos(2\\pi f_0\\tau)\\bigr]+\\frac{A^{2}}{2}E\\bigl[\\cos(4\\pi f_0t+2\\pi f_0\\tau+2\\Theta)\\bigr]$. The second average is zero for the same reason. So $R_X(\\tau)=\\frac{A^{2}}{2}\\cos(2\\pi f_0\\tau)=4.5\\cos(2\\pi f_0\\tau)$ $\\text{V}^{2}$, and $P_X=R_X(0)=4.5$ $\\text{V}^{2}$.'],
+ ['Check','The mean is constant and $R_X$ depends on $\\tau$ only, so the process is wide-sense stationary. The time average of one sample function, $A^{2}\\cos^{2}$ over a period, is also $A^{2}/2=4.5$ $\\text{V}^{2}$.']
+]},
+{t:'box', kind:'err', hd:'Common error', html:'Use $A^{2}/2$, not $A^{2}$, for the power of the sinusoid. Dropping the $\\tfrac12$ of the product formula gives $9$ $\\text{V}^{2}$.'},
+
+{t:'p', text:'The autocorrelation says how fast a process changes. Its Fourier transform says the same thing in frequency. It is the <b>power spectral density</b> $S_X(f)$, the power per hertz at each frequency.'},
+{t:'eqbox', cap:'The Wiener–Khinchin theorem, and the power', tex:[
+  'S_X(f)=\\int_{-\\infty}^{\\infty}R_X(\\tau)\\,e^{-j2\\pi f\\tau}\\,d\\tau',
+  'P_X=R_X(0)=\\int_{-\\infty}^{\\infty}S_X(f)\\,df'],
+ after:'The second line sets $\\tau=0$ in the inverse transform $R_X(\\tau)=\\int S_X(f)e^{j2\\pi f\\tau}df$. The spectral density is real, even and never negative. For the random-phase sinusoid it is $\\frac{A^{2}}{4}\\bigl[\\delta(f-f_0)+\\delta(f+f_0)\\bigr]$, all its power at $\\pm f_0$.'},
+{t:'p', text:'A process whose values stay alike for a long time has a narrow spectrum. Take $R_X(\\tau)=e^{-|\\tau|/\\tau_c}$, where $\\tau_c$ is the correlation time. The function is even, so the transform keeps only the cosine part.'},
+{t:'eqbox', cap:'A correlation time and a bandwidth', tex:[
+  'S_X(f)=2\\int_0^{\\infty}e^{-\\tau/\\tau_c}\\cos(2\\pi f\\tau)\\,d\\tau=\\frac{2\\,(1/\\tau_c)}{(1/\\tau_c)^{2}+(2\\pi f)^{2}}=\\frac{2\\tau_c}{1+(2\\pi f\\tau_c)^{2}}'],
+ after:'The integral is the standard one, $\\int_0^\\infty e^{-a\\tau}\\cos(b\\tau)\\,d\\tau=a/(a^{2}+b^{2})$, with $a=1/\\tau_c$ and $b=2\\pi f$. The spectrum falls to half its peak at $f=1/(2\\pi\\tau_c)$, so a short correlation time means a wide band. The area stays $R_X(0)=1$.'},
+
+{t:'p', text:'Thermal noise is modelled as <b>white noise</b>: its spectral density is the same constant at every frequency. The inverse transform of a constant is an impulse.'},
+{t:'eqbox', cap:'White noise', tex:[
+  'S_W(f)=\\frac{N_0}{2}\\quad\\text{for all }f,\\qquad R_W(\\tau)=\\frac{N_0}{2}\\,\\delta(\\tau)'],
+ after:'Two values of white noise at different times are uncorrelated, however close they are. The density is two-sided: $N_0/2$ on positive and on negative frequencies.'},
+{t:'box', kind:'warn', hd:'A model', html:'The area under a flat density is infinite, so no real noise is white. Thermal noise at room temperature stays within $10\\%$ of flat up to $10^{12}$ Hz. That is far above any receiver band, and the receiver filter removes the rest.'},
+{t:'p', text:'A receiver never sees all of that band. Noise of density $N_0/2$ on $|f|<B$ only has a finite power and a finite autocorrelation. Its autocorrelation is the inverse transform of a rectangle.'},
+{t:'eqbox', cap:'Bandlimited white noise', tex:[
+  'R(\\tau)=\\int_{-B}^{B}\\frac{N_0}{2}\\,e^{j2\\pi f\\tau}\\,df=\\frac{N_0}{2}\\cdot\\frac{\\sin(2\\pi B\\tau)}{\\pi\\tau}=N_0B\\operatorname{sinc}(2B\\tau)'],
+ after:'Here $\\operatorname{sinc}(x)=\\sin(\\pi x)/(\\pi x)$. The power is $R(0)=N_0B$. The zeros fall at $\\tau=k/(2B)$, so samples taken $1/(2B)$ apart are uncorrelated.'},
+
+{t:'p', text:'A receiver filters its input, so we need the random signal at the output of a linear time-invariant filter $h(t)$. The output is $Y(t)=\\int h(u)\\,X(t-u)\\,du$. Take the expectation inside the integral.'},
+{t:'eqbox', cap:'A random signal through a filter', tex:[
+  'E\\bigl[Y(t)\\bigr]=\\int_{-\\infty}^{\\infty}h(u)\\,E\\bigl[X(t-u)\\bigr]\\,du=\\mu_X\\int_{-\\infty}^{\\infty}h(u)\\,du=\\mu_X\\,H(0)',
+  'R_Y(\\tau)=\\int\\!\\!\\int h(u)\\,h(v)\\,R_X(\\tau+u-v)\\,du\\,dv=h(\\tau)*h(-\\tau)*R_X(\\tau)',
+  'S_Y(f)=H(f)\\,H^{*}(f)\\,S_X(f)=|H(f)|^{2}\\,S_X(f)'],
+ after:'The second line writes out $E[Y(t)Y(t+\\tau)]$ with the two convolution integrals. For a stationary input it depends on $\\tau$ only, so the output is stationary too. The third line transforms each factor: for a real $h$, $h(-\\tau)$ becomes $H^{*}(f)$. The phase of the filter drops out.'},
+{t:'p', text:'For white noise at the input, $S_Y(f)=\\frac{N_0}{2}|H(f)|^{2}$. Its area is the output noise power. It is convenient to describe it by one width.'},
+{t:'eqbox', cap:'Filtered white noise and the noise-equivalent bandwidth', tex:[
+  'P_Y=\\int_{-\\infty}^{\\infty}\\frac{N_0}{2}\\,|H(f)|^{2}\\,df=N_0\\,B_{\\text{neq}}\\,H_{\\max}^{2},\\qquad B_{\\text{neq}}=\\frac{\\int_{-\\infty}^{\\infty}|H(f)|^{2}\\,df}{2H_{\\max}^{2}}',
+  '\\int_{-\\infty}^{\\infty}\\frac{df}{1+(2\\pi fRC)^{2}}=\\frac{1}{2\\pi RC}\\int_{-\\infty}^{\\infty}\\frac{du}{1+u^{2}}=\\frac{\\pi}{2\\pi RC}=\\frac{1}{2RC}\\quad\\Rightarrow\\quad B_{\\text{neq}}=\\frac{1}{4RC}'],
+ after:'$B_{\\text{neq}}$ is the half-width of an ideal filter with the same peak gain that passes the same noise power. The second line is the RC lowpass filter, $|H(f)|^{2}=1/\\bigl(1+(2\\pi fRC)^{2}\\bigr)$, with the substitution $u=2\\pi fRC$. Its $B_{\\text{neq}}$ is $\\pi/2$ times its $3$ dB frequency $1/(2\\pi RC)$.'},
+
+{t:'figrow', n:2, items:[
+ {svg:()=>{const tc=0.3, a=ax({w:330,h:190,xr:[-2.2,2.2],yr:[0,2.3],xlabel:'f\\;(\\text{kHz})',
+    ylabel:'S_X(f)',xtarget:5,ytarget:3});
+   const S=f=>2*tc/(1+Math.pow(2*Math.PI*f*tc,2)), S2=f=>2/(1+Math.pow(2*Math.PI*f,2));
+   a.curve(S,{color:C.in,width:2.2,n:500}); a.curve(S2,{color:C.in,width:1.6,dash:'6 4',n:500});
+   return a.svg();},
+  cap:'The spectral density of $R_X(\\tau)=e^{-|\\tau|/\\tau_c}$ for $\\tau_c=0.3$ ms (solid) and $\\tau_c=1$ ms (dashed). The slower process has the narrower spectrum, and both areas are $1$.'},
+ {svg:()=>{const rc=1, bn=1/(4*rc), a=ax({w:330,h:190,xr:[-1,1],yr:[0,1.3],xlabel:'f\\;(\\text{kHz})',
+    ylabel:'|H(f)|^{2}',xtarget:5,ytarget:3});
+   a.curve(f=>1/(1+Math.pow(2*Math.PI*f*rc,2)),{color:C.h,width:2.2,n:500});
+   a.poly([[-bn,0],[-bn,1],[bn,1],[bn,0]],{color:C.slate,width:1.8,dash:'6 4'});
+   return a.svg();},
+  cap:'An RC filter with $RC=1$ ms and the ideal filter of the same area (dashed). Its half-width is $B_{\\text{neq}}=250$ Hz, wider than the $3$ dB frequency of $159$ Hz.'}
+]},
+
+{t:'ex', hd:'Example 2.2 — white noise through an RC filter', rows:[
+ ['Given','White noise with $N_0/2=10^{-8}$ W/Hz enters an RC lowpass filter with $RC=1$ ms.'],
+ ['Find','The noise-equivalent bandwidth $B_{\\text{neq}}$ and the output noise power $P_Y$.'],
+ ['Method','Use $B_{\\text{neq}}=1/(4RC)$ with $H_{\\max}=1$, then $P_Y=N_0B_{\\text{neq}}$.'],
+ ['Solution','$B_{\\text{neq}}=1/(4\\times10^{-3})=250$ Hz. With $N_0=2\\times10^{-8}$ W/Hz, $P_Y=(2\\times10^{-8})(250)=5\\times10^{-6}$ W.'],
+ ['Check','Work in time instead. The impulse response is $h(t)=\\frac{1}{RC}e^{-t/RC}$ for $t\\ge0$, so $\\int_0^{\\infty}h^{2}(t)\\,dt=\\frac{1}{R^{2}C^{2}}\\cdot\\frac{RC}{2}=\\frac{1}{2RC}=500$ $\\text{s}^{-1}$. By Parseval, $P_Y=\\frac{N_0}{2}\\int h^{2}\\,dt=(10^{-8})(500)=5\\times10^{-6}$ W.']
+]},
+{t:'box', kind:'err', hd:'Common error', html:'Use $B_{\\text{neq}}=1/(4RC)$, not the $3$ dB frequency $1/(2\\pi RC)$, for the noise power. The $3$ dB width gives $3.18\\times10^{-6}$ W, which is $\\pi/2$ too small.'},
+
+{t:'p', text:'Thermal noise is the sum of the currents of very many electrons, each small and independent. By the central limit theorem such a sum is Gaussian. A linear filter keeps a Gaussian process Gaussian, because every output value is a weighted sum of input values.'},
+{t:'eqbox', cap:'One sample of filtered noise', tex:[
+  'Y(t_0)\\sim\\mathcal{N}\\bigl(0,\\sigma^{2}\\bigr),\\qquad\\sigma^{2}=P_Y=\\frac{N_0}{2}\\int_{-\\infty}^{\\infty}|H(f)|^{2}\\,df',
+  'P\\bigl(Y(t_0)>a\\bigr)=Q\\!\\left(\\frac{a}{\\sigma}\\right)'],
+ after:'This holds for zero-mean white Gaussian noise at the input. $Q(x)=\\tfrac12\\operatorname{erfc}(x/\\sqrt2)$ is the Gaussian tail. For $\\sigma=2$ mV, the chance that a sample exceeds $4$ mV is $Q(2)=0.0228$. Every decision in this chapter rests on this sample.'},
+
+{t:'h2', num:'2.2', text:'The matched filter'},
 {t:'p', text:'Over one bit interval the receiver sees $x(t)=g(t)+w(t)$, the waveform plus white Gaussian noise of two-sided density $N_0/2$. It passes this through a filter and takes one sample at the end of the interval. Because the filter is linear, its output splits the same way, into a signal part $g_0(t)=g*h$ and a noise part $n(t)=w*h$.'},
 {t:'p', text:'The quantity worth maximising is the signal at the sampling instant against the noise power that accompanies it. Call this ratio $\\eta$.'},
 {t:'eqbox', cap:'The peak pulse signal-to-noise ratio',
@@ -47,7 +132,7 @@ window.C2 = [
   cap:'Three pulses of the same energy. Against white Gaussian noise a matched-filter receiver performs identically on all three.'}
 ]},
 
-{t:'ex', hd:'Example 2.1 — matched filter of a rectangular pulse', rows:[
+{t:'ex', hd:'Example 2.3 — matched filter of a rectangular pulse', rows:[
  ['Given','$s(t)=A$ on $[0,T]$, with $A=2$ V, $T=0.5$ ms and $N_0/2=10^{-4}$ W/Hz.'],
  ['Find','The matched filter $h(t)$, the output $y(t)$ and the largest peak SNR $\\eta_{\\max}$.'],
  ['Method','Reverse and shift the pulse to get $h(t)$. Slide it across $s(t)$ to get $y(t)$. Then use $\\eta_{\\max}=2E/N_0$.'],
@@ -56,7 +141,7 @@ window.C2 = [
 ]},
 {t:'box', kind:'err', hd:'Common error', html:'Use $N_0=2\\times10^{-4}$ W/Hz in $2E/N_0$, not $N_0/2$. Using $N_0/2$ in place of $N_0$ gives $40$, twice the true value.'},
 
-{t:'h2', num:'2.2', text:'From waveform to number'},
+{t:'h2', num:'2.3', text:'From waveform to number'},
 {t:'p', text:'Both waveforms of a binary baseband system are multiples of one shape, so a single unit-energy function carries both. With $\\psi(t)=1/\\sqrt{T_b}$ on the bit interval, polar NRZ is $s_m(t)=s_m\\psi(t)$ with $s_0=-A\\sqrt{T_b}$ and $s_1=+A\\sqrt{T_b}$. Both carry energy $E_b=A^{2}T_b$, so $A\\sqrt{T_b}=\\sqrt{E_b}$ and the two waveforms have become two <em>numbers</em>, $\\pm\\sqrt{E_b}$, on one axis.'},
 {t:'p', text:'This axis is a signal space of one dimension, the axis of $\\psi(t)$. The point $s_0=-\\sqrt{E_b}$ stands for the waveform $s_0(t)$, and $s_1=+\\sqrt{E_b}$ for $s_1(t)$.'},
 {t:'eqbox', cap:'The two symbols as points',
@@ -77,7 +162,7 @@ window.C2 = [
   '\\begin{aligned}E[n^{2}]&=\\int_0^{T_b}\\!\\!\\int_0^{T_b}E[w(\\tau)w(u)]\\,\\psi(\\tau)\\psi(u)\\,d\\tau\\,du\\\\&=\\int_0^{T_b}\\!\\!\\int_0^{T_b}\\frac{N_0}{2}\\,\\delta(\\tau-u)\\,\\psi(\\tau)\\psi(u)\\,d\\tau\\,du\\\\&=\\frac{N_0}{2}\\int_0^{T_b}\\psi^{2}(\\tau)\\,d\\tau=\\frac{N_0}{2}\\end{aligned}'],
  after:'The inner integral sifts $\\delta(\\tau-u)$ against $\\psi(u)$, leaving $\\psi(\\tau)$. The unit energy of $\\psi$ then makes the answer $N_0/2$, independent of the interval length.'},
 
-{t:'h2', num:'2.3', text:'The decision and its error probability'},
+{t:'h2', num:'2.4', text:'The decision and its error probability'},
 {t:'eqbox', cap:'What the detector is given', tex:[
   '\\sigma_n^{2}=\\frac{N_0}{2}',
   'y=s_m+n\\;\\sim\\;\\mathcal{N}\\!\\left(s_m,\\;\\frac{N_0}{2}\\right)'],
@@ -131,7 +216,7 @@ window.C2 = [
   return a.svg();
 }, cap:'Bit error probability against $E_b/N_0$. Past about $8$ dB every extra decibel is worth roughly an order of magnitude in error rate.'},
 
-{t:'ex', hd:'Example 2.2 — unequal priors', rows:[
+{t:'ex', hd:'Example 2.4 — unequal priors', rows:[
  ['Given','A binary PAM system with correlator output $y=\\pm\\sqrt{E_b}+n$, where $P(s_1)=0.3$, $E_b=1$ and $N_0=0.1$.'],
  ['Find','The optimal threshold and the average error probability there.'],
  ['Method','Threshold from the log-ratio of the priors. Each conditional error from a Gaussian tail. Average by weighting.'],
@@ -141,7 +226,7 @@ window.C2 = [
 
 {t:'page'},
 
-{t:'h2', num:'2.4', text:'Intersymbol interference'},
+{t:'h2', num:'2.5', text:'Intersymbol interference'},
 {t:'p', text:'Everything above assumed an ideal channel. A real bandlimited channel spreads each pulse in time. Therefore, one pulse can enter adjacent symbol intervals. Write the received signal as a train of the overall pulse $p$. Sampling at $t_i=iT_b$ separates the wanted pulse from intersymbol interference.'},
 {t:'eqbox', cap:'Where the interference comes from',
  tex:'y(t_i)=\\underbrace{\\mu a_i}_{\\text{wanted}}+\\underbrace{\\mu\\sum_{k\\ne i}a_k\\,p\\bigl((i-k)T_b\\bigr)}_{\\text{intersymbol interference}}+\\;n(t_i)',
@@ -181,7 +266,7 @@ window.C2 = [
 {t:'eqbox', cap:'Eye closure', tex:'1-2q=0\\;\\Longrightarrow\\;e^{-2\\pi BT_b}=\\tfrac12\\;\\Longrightarrow\\;BT_b=\\frac{\\ln2}{2\\pi}=0.110',
  after:'Below $BT_b=0.110$ some bit patterns cross zero at the sampling instant, and decisions fail even without noise. At $BT_b=0.25$, $q=0.208$, so $1-q=0.792$ and $1-2q=0.584$. At $BT_b=0.3$, $q=0.152$ and the opening $2(1-2q)$ is $1.39$.'},
 
-{t:'ex', hd:'Example 2.3 — a sample with a bit-pattern history', rows:[
+{t:'ex', hd:'Example 2.5 — a sample with a bit-pattern history', rows:[
  ['Given','Bits $0\\,0\\,0\\,1\\,1\\,1\\,0\\,1$ sent after a line idle at the level of a $0$ ($a_k=-1$), through an RC channel with $BT_b=0.25$, so $q=0.208$.'],
  ['Find','The sample at the end of the seventh bit, $y_7$.'],
  ['Method','Add the bit\'s own share $(1-q)$ or $-(1-q)$ to the tails of every earlier bit, each weighted by $(1-q)q^{m}$.'],
@@ -190,7 +275,7 @@ window.C2 = [
 ]},
 {t:'box', kind:'err', hd:'Common error', html:'Use the full history of bits, not only the previous bit. Each earlier bit still contributes through its own tail $(1-q)q^{m}$, however small.'},
 
-{t:'h2', num:'2.5', text:'Nyquist\'s criterion and the raised cosine'},
+{t:'h2', num:'2.6', text:'Nyquist\'s criterion and the raised cosine'},
 {t:'p', text:'The interference vanishes exactly when the overall pulse is zero at every sampling instant but its own. Sampling $p$ at those instants and transforming turns that requirement into a statement about the spectrum.'},
 {t:'eqbox', cap:'Nyquist\'s criterion for distortionless transmission', tex:[
   'p\\bigl((i-k)T_b\\bigr)=\\begin{cases}1,&i=k\\\\0,&i\\ne k\\end{cases}',
@@ -220,7 +305,7 @@ window.C2 = [
   cap:'Their pulses. All three vanish at every non-zero multiple of $T_b$. The tails differ by orders of magnitude.'}
 ]},
 
-{t:'ex', hd:'Example 2.4 — fitting a rate into a channel', rows:[
+{t:'ex', hd:'Example 2.6 — fitting a rate into a channel', rows:[
  ['Given','A channel of bandwidth $48$ kHz is to carry $64$ kbit/s with raised-cosine shaping.'],
  ['Find','The Nyquist bandwidth and the largest roll-off that fits.'],
  ['Method','$W=R_b/2$, then $(1+\\alpha)W\\le B$.'],
@@ -228,7 +313,7 @@ window.C2 = [
  ['Check','At $\\alpha=0$, the signal needs only $32$ kHz and still fits. However, its pulse decays as $1/t$, and its ideal filter cannot be built. Using the available bandwidth gives a pulse that decays as $1/t^{3}$. The spectral efficiency is $64/48=1.33$ bit/s/Hz, below the theoretical maximum of $2$.']
 ]},
 
-{t:'ex', hd:'Example 2.5 — the bandwidth of a raised-cosine link', rows:[
+{t:'ex', hd:'Example 2.7 — the bandwidth of a raised-cosine link', rows:[
  ['Given','A link sends $R_b=20$ kb/s with raised-cosine pulses and $\\alpha=0.5$.'],
  ['Find','$W$, $f_1$ and $B_T$.'],
  ['Method','$W=R_b/2$, then $f_1=W(1-\\alpha)$ and $B_T=W(1+\\alpha)$.'],
@@ -241,7 +326,7 @@ window.C2 = [
 {t:'eqbox', cap:'The root-raised-cosine split', tex:'H_T(f)\\,H_R(f)=P(f),\\qquad H_T(f)=H_R(f)=\\sqrt{P(f)}',
  after:'For a real, even $\\sqrt{P(f)}$, $H_R=H_T^{*}$, so the receive filter is matched to the transmitted pulse. The link then has both the smallest error probability and zero interference. At $\\alpha=0.5$ the raised cosine is at half height at $f=W$, so $\\sqrt{2W\\,P(W)}=\\sqrt{0.5}=0.707$.'},
 
-{t:'h2', num:'2.6', text:'Summary'},
+{t:'h2', num:'2.7', text:'Summary'},
 {t:'table', head:['Result','Statement','Anchor'], rows:[
  ['Matched filter','$h_{\\mathrm{opt}}(t)=g(T-t)$','PS CH8.3.2'],
  ['What it achieves','$\\eta_{\\max}=2E/N_0$, independent of the pulse shape','PS CH8.3.2'],

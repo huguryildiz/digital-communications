@@ -73,18 +73,20 @@ CONTENT.SECTIONS = {
 
   M2: [
     { n:'2.0', title:'Opening',                        ids:['m2-open'] },
-    { n:'2.1', title:'The matched filter',             ids:[
+    { n:'2.1', title:'Random signals',                 ids:[
+        'm2-rp-ensemble','m2-rp-acf','m2-rp-wss','m2-rp-ex-phase','m2-rp-psd','m2-rp-white','m2-rp-lti','m2-rp-filtered','m2-rp-gauss','m2-real-random','m2-lab-t','m2-code-random'] },
+    { n:'2.2', title:'The matched filter',             ids:[
         'm2-receiver','m2-model','m2-schwarz','m2-matched','m2-conv','m2-props','m2-ex-mf','m2-real-matched','m2-lab-c','m2-code-matched'] },
-    { n:'2.2', title:'The demodulator',                ids:[
+    { n:'2.3', title:'The demodulator',                ids:[
         'm2-basis','m2-space','m2-demod','m2-correlator','m2-real-demod','m2-lab-p','m2-code-demod'] },
-    { n:'2.3', title:'The decision and its error',     ids:[
+    { n:'2.4', title:'The decision and its error',     ids:[
         'm2-stat','m2-errors','m2-threshold','m2-threshold-b','m2-q','m2-pe','m2-ex-pe','m2-ex-pe-b','m2-real-decision','m2-lab-d','m2-code-decision'] },
-    { n:'2.4', title:'Intersymbol interference',       ids:[
+    { n:'2.5', title:'Intersymbol interference',       ids:[
         'm2-isi','m2-isi-term','m2-ex-isi','m2-eye','m2-eye-close','m2-eye-noise','m2-real-isi','m2-lab-q','m2-code-isi'] },
-    { n:'2.5', title:'Nyquist and the raised cosine',  ids:[
+    { n:'2.6', title:'Nyquist and the raised cosine',  ids:[
         'm2-nyq-sinc','m2-nyquist','m2-nyq-channel','m2-sinc-timing','m2-rcos','m2-rcos-pulse','m2-ex-rc','m2-srrc','m2-real-nyquist','m2-lab-e','m2-code-nyquist'] },
-    { n:'2.6', title:'The link in practice',           ids:['m2-equalizer','m2-timing','m2-psd','m2-repeater'] },
-    { n:'2.7', title:'Summary',                        ids:['m2-chain','m2-quick','m2-synth','m2-projects'] }
+    { n:'2.7', title:'The link in practice',           ids:['m2-equalizer','m2-timing','m2-psd','m2-repeater'] },
+    { n:'2.8', title:'Summary',                        ids:['m2-chain','m2-quick','m2-synth','m2-projects'] }
   ],
 
   M3: [
@@ -191,6 +193,16 @@ CONTENT.BOOK = {
      and a well-formed wrong anchor is the one failure the marker cannot catch.
      The code pages carry none, as in Module 1. */
   'm2-open':'8.3',
+  /* Section 2.1 gathers the random-signal facts the receiver needs. They are
+     chapter 5 of the book, each read there: random processes 5.2 (p. 209),
+     statistical averages 5.2.1, wide-sense stationarity 5.2.2, random
+     processes and linear systems 5.2.4, the power spectral density and the
+     spectra in LTI systems 5.2.5, Gaussian processes 5.3.1 (thermal noise as a
+     Gaussian process is argued in the opening of 5.3), white processes 5.3.2,
+     and filtered noise with the noise-equivalent bandwidth 5.3.3. */
+  'm2-rp-ensemble':'5.2', 'm2-rp-acf':'5.2.1', 'm2-rp-wss':'5.2.2', 'm2-rp-ex-phase':'5.2.1',
+  'm2-rp-psd':'5.2.5', 'm2-rp-white':'5.3.2', 'm2-rp-lti':'5.2.4, 5.2.5', 'm2-rp-filtered':'5.3.3',
+  'm2-rp-gauss':'5.3.1', 'm2-real-random':'5.3', 'm2-lab-t':'5.2.5, 5.3.3',
   'm2-receiver':'8.3.2', 'm2-model':'8.3.2', 'm2-schwarz':'8.3.2', 'm2-matched':'8.3.2', 'm2-conv':'8.3.2', 'm2-props':'8.3.2',
   'm2-ex-mf':'8.3.2', 'm2-real-matched':'8.3.2', 'm2-lab-c':'8.3.2',
   'm2-basis':'8.2.1', 'm2-space':'8.2.1', 'm2-demod':'8.3.1', 'm2-correlator':'8.3.1', 'm2-real-demod':'8.3.1', 'm2-lab-p':'8.3.1',
@@ -202,10 +214,10 @@ CONTENT.BOOK = {
   /* Splitting the raised cosine between the two ends is 10.5.1, "Design of
      Transmitting and Receiving Filters for a Known Channel", read there. */
   'm2-srrc':'10.5.1',
-  /* Section 2.6 is a survey of what a real link adds, read in the book at
+  /* Section 2.7 is a survey of what a real link adds, read in the book at
      10.5.2 (channel equalization), 8.9.1 (early-late gate synchronizers), 10.2
      (the power spectrum of digitally modulated signals) and 8.10 (regenerative
-     repeaters). The noisy eye in 2.4 carries no anchor, like the other eye
+     repeaters). The noisy eye in 2.5 carries no anchor, like the other eye
      scenes. */
   'm2-equalizer':'10.5.2', 'm2-timing':'8.9.1', 'm2-psd':'10.2', 'm2-repeater':'8.10',
   'm2-chain':'8.3', 'm2-quick':'8.3, 10.3.1', 'm2-synth':'8.3, 10.3.1', 'm2-projects':'8.3, 10.3.1',
