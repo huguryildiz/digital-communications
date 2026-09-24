@@ -176,12 +176,12 @@ def _m5_claim(name, scheme, esn0_db, trials):
 
 
 CLAIMS += [
-    _m5_claim("D5-01 BPSK, Es/N0 = 9 dB", "bpsk", 9.0, 5_000_000),
-    _m5_claim("D5-02 BFSK, Es/N0 = 9 dB", "bfsk", 9.0, 1_000_000),
-    _m5_claim("D5-03 on-off keying, Es/N0 = 10 dB", "bask", 10.0, 2_000_000),
-    _m5_claim("D5-06 QPSK, Es/N0 = 12 dB", "psk4", 12.0, 5_000_000),
-    _m5_claim("D5-05 8-PSK, Es/N0 = 13 dB", "psk8", 13.0, 1_000_000),
-    _m5_claim("D5-09 4-PAM, Es/N0 = 12 dB", "pam4", 12.0, 1_000_000),
-    _m5_claim("D5-12 16-QAM, Es/N0 = 15 dB", "qam16", 15.0, 1_000_000),
-    _m5_claim("D5-18 16-QAM, Es/N0 = 18 dB", "qam16", 18.0, 5_000_000),
+    _m5_claim("Module 5, BPSK, Es/N0 = 9 dB", "bpsk", 9.0, 5_000_000),
+    _m5_claim("Module 5, BFSK, Es/N0 = 9 dB", "bfsk", 9.0, 1_000_000),
+    _m5_claim("Module 5, on-off keying, Es/N0 = 10 dB", "bask", 10.0, 2_000_000),
+    _m5_claim("Module 5, QPSK, Es/N0 = 12 dB", "psk4", 12.0, 5_000_000),
+    _m5_claim("Module 5, 8-PSK, Es/N0 = 13 dB", "psk8", 13.0, 1_000_000),
+    _m5_claim("Module 5, 4-PAM, Es/N0 = 12 dB", "pam4", 12.0, 1_000_000),
+    _m5_claim("Module 5, 16-QAM, Es/N0 = 15 dB", "qam16", 15.0, 1_000_000),
+    _m5_claim("Module 5, 16-QAM, Es/N0 = 18 dB", "qam16", 18.0, 5_000_000),
 ]
