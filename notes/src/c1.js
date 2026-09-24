@@ -39,6 +39,18 @@ function banding(){
   return a.svg();
 }
 
+/* Delta modulation of a signal with one steep rise. The staircase moves one
+   step a sample, so on the rise it falls behind: slope overload. */
+function deltaMod(){
+  const N=120, D=0.06, x=n=>0.55*Math.tanh((n-38)/6)+0.08*Math.sin(2*Math.PI*n/22);
+  const a=ax({w:700,h:230,xr:[0,N],yr:[-0.85,0.85],xlabel:'n',ylabel:'x[n],\\;\\hat x[n]',ytarget:4});
+  const pts=[]; let v=x(0);
+  for(let n=0;n<N;n++){ v+= x(n)>=v ? D : -D; pts.push([n,v],[n+1,v]); }
+  a.curve(x,{color:C.in,width:2.0});
+  a.poly(pts,{color:C.mid,width:1.6});
+  return a.svg();
+}
+
 window.C1 = [
 
 /* ---------------- cover and contents ---------------- */
@@ -48,7 +60,7 @@ window.C1 = [
 
 {t:'h1', text:'Contents', rule:false},
 {t:'toc', items:[
- ['1','The transition from analog to digital','Impulse-train sampling and the replication of the spectrum. The sampling theorem. Reconstruction and sinc interpolation. Uniform quantization, the error it makes, and the signal-to-quantization-noise ratio. Companding. Encoding, line codes and pulse code modulation.','PS CH7.1&ndash;7.4'],
+ ['1','The transition from analog to digital','Impulse-train sampling and the replication of the spectrum. The sampling theorem. Reconstruction and sinc interpolation. Uniform quantization, overload, the error it makes, and the signal-to-quantization-noise ratio. Dither. Companding. Encoding, line codes and pulse code modulation. DPCM and delta modulation. Speech, audio and image coding.','PS CH7.1&ndash;7.7'],
  ['2','Baseband transmission of digital signals','Matched filtering. Correlator and matched-filter demodulators. The decision statistic, optimal threshold, and bit error probability. Intersymbol interference and the eye pattern. Nyquist\'s criterion and the raised cosine.','PS CH8.2&ndash;8.3, PS CH10.1, PS CH10.3'],
  ['3','Geometric representation of signal waveforms','Signals as vectors. Orthonormal bases, coordinates, energy and distance. The constellation diagram. The Gram&ndash;Schmidt procedure.','PS CH8.1'],
  ['4','The optimal receiver in additive white Gaussian noise','Correlator banks. The MAP and ML rules. Minimum-distance detection. Decision regions. The union bound and the nearest-neighbour approximation.','PS CH8.3&ndash;8.4'],
@@ -104,6 +116,7 @@ window.C1 = [
 ]},
 
 {t:'box', kind:'warn', hd:'Aliasing', html:'When the replicas overlap, a high message frequency combines with a low frequency from a replica. No filter can separate these components. The samples no longer determine the original signal. A real signal is not strictly bandlimited, so a <b>guard band</b> $f_g$ separates the message and the first replica. Then $f_s=2W+f_g$. An anti-aliasing filter removes frequencies above $W$ before sampling.'},
+{t:'p', text:'A camera samples in space. An image $N$ pixels wide holds at most $N/2$ cycles across its width without aliasing, two pixels a cycle. A finer pattern, such as a striped shirt, folds back into a coarser false pattern called <b>moir&eacute;</b>. Many cameras put a slight blur in front of the sensor for the same reason an anti-aliasing filter precedes a sampler.'},
 
 {t:'h2', num:'1.2', text:'The sampling theorem and reconstruction'},
 {t:'box', kind:'def', hd:'Sampling theorem', html:'If $G(f)=0$ for $|f|\\ge W$ and $f_s\\ge 2W$, then $g(t)$ is determined completely by its samples $g(nT_s)$ and can be recovered from them exactly. If $f_s<2W$, aliasing occurs and the recovery fails. The rate $2W$ is the <b>Nyquist rate</b> and $T_s=1/(2W)$ the <b>Nyquist interval</b>.'},
@@ -166,6 +179,9 @@ window.C1 = [
  'Each level is the <b>centroid</b> of its region: $v_k=E[M\\mid M\\in\\mathcal{J}_k]$. This minimizes the mean-square error in that region.'
 ]},
 {t:'p', text:'The two conditions depend on each other, so apply them in turn. A uniform quantizer satisfies both conditions for a uniform input.'},
+{t:'p', text:'A quantizer spanning $[-m_{\\max},m_{\\max}]$ makes two kinds of error. An input beyond $\\pm m_{\\max}$ is clipped to the outer level, and its error has no bound. This is <b>overload</b>. Inside the range the error stays within $\\pm\\Delta/2$. This is <b>granular noise</b>.'},
+{t:'p', text:'A wider range reduces overload but makes $\\Delta$ and the granular noise larger. For a Gaussian input and $3$ bits, the SQNR is largest at $m_{\\max}=2.34\\sigma$, with $14.27$ dB. At $m_{\\max}=\\sigma$ it falls to $6.97$ dB, because about $32\\%$ of the samples are clipped.'},
+{t:'box', kind:'err', hd:'Common error', html:'Set $m_{\\max}$ from the rare peaks of the signal, not from its typical size. A range equal to one standard deviation clips a third of a Gaussian signal.'},
 
 {t:'h2', num:'1.4', text:'Quantization noise and the signal-to-noise ratio'},
 {t:'p', text:'The quantization error is $Q=M-\\mathbb{Q}(M)$. Nearest-level quantization keeps this error between $-\\Delta/2$ and $\\Delta/2$.'},
@@ -199,6 +215,11 @@ window.C1 = [
  ['Check','The central region alone contributes $79.50$, and it holds the $68\\%$ of the mass with $|X|<20$ and an error of up to $20$. That is where a five-level quantizer spends its error, and it is why the answer is a few decibels rather than a few tens.']
 ]},
 {t:'box', kind:'err', hd:'Model limit', html:'This quantizer is coarse, and its outer regions are unbounded. A sample at $x=120$ has an error of $90$. The formula $\\Delta^2/12$ predicts $10.8$ dB, but direct integration gives $3.28$ dB.'},
+{t:'p', text:'Every source gains $6.02$ dB a bit. The source sets only the intercept $\\alpha=10\\log_{10}(3P_M/m_{\\max}^{2})$:'},
+{t:'eq', tex:'\\begin{aligned}\\text{sinusoid: }&\\quad 10\\log_{10}\\frac{3(A^{2}/2)}{A^{2}}=1.76\\ \\text{dB}\\\\\\text{uniform on }[-1,1]\\text{: }&\\quad 10\\log_{10}\\frac{3(1/3)}{1}=0\\ \\text{dB}\\\\\\text{Gaussian, }m_{\\max}=4\\sigma\\text{: }&\\quad 10\\log_{10}\\frac{3\\sigma^{2}}{16\\sigma^{2}}=-7.27\\ \\text{dB}\\end{aligned}'},
+{t:'p', text:'At equal $R$ the Gaussian source sits $1.76-(-7.27)=9.03$ dB below the sinusoid. Its rare large peaks force a wide range, so typical samples use few of the levels.'},
+{t:'p', text:'At a few bits the error follows the signal. On speech it sounds like distortion, not like hiss, and the uniform error model no longer holds. <b>Dither</b> is a small random signal, about one step wide, added before the quantizer. Each output still sits on a level, but the error no longer follows the signal. Averaged over time, or by the eye over neighbouring pixels, the output follows the input between the levels.'},
+{t:'p', text:'For example, let an input sit $0.3\\Delta$ above a level, with dither uniform on $[-\\Delta/2,\\Delta/2]$. The next boundary is $0.5\\Delta$ up, so the level above is chosen when the dither exceeds $0.2\\Delta$. That happens $30\\%$ of the time, and the average output is $0.3\\Delta$ above the level. Dither adds noise power. It trades a pattern that the ear or eye notices for a hiss or grain that it ignores.'},
 
 {t:'page'},
 
@@ -223,8 +244,9 @@ window.C1 = [
   a.note(-0.97,0.62,'A\\text{-law}',{tex:true,fs:13,color:C.h});
   return a.svg();
 }, cap:'The identity line shows the result without companding. Both compressors use much of the output range for small input amplitudes.'},
+{t:'p', text:'With a uniform quantizer the noise power $\\Delta^{2}/12$ does not depend on the signal. When a talker drops $20$ dB below full scale, the SQNR drops by $20$ dB. The $\\mu$-law steps shrink with the signal, so its SQNR hardly changes over a wide range of levels.'},
 
-{t:'h2', num:'1.6', text:'Encoding, line codes and pulse code modulation'},
+{t:'h2', num:'1.6', text:'PCM, DPCM and delta modulation'},
 {t:'p', text:'With $L=2^{R}$ levels, each sample needs $R$ bits. At $f_s$ samples per second, the bit rate is $R_b=Rf_s$.'},
 {t:'p', text:'<b>Natural binary coding</b> assigns increasing binary values to the levels. Adjacent <b>Gray</b> words differ by one bit. Thus, a small level error changes only one Gray-coded bit.'},
 {t:'p', text:'A <b>line code</b> converts the bits into a waveform. Unipolar NRZ has a DC component that causes droop in an AC-coupled stage. Balanced polar NRZ has no DC component.'},
@@ -253,10 +275,41 @@ window.C1 = [
  ['Check','At $t=3$, the sample is $8|\\operatorname{sinc}(1)|=0$. The sinc function is zero at every nonzero integer. The interpolation formula uses the same property.']
 ]},
 
+{t:'h3', text:'The bandwidth of PCM'},
+{t:'p', text:'A binary stream of $R_b$ bits a second needs a bandwidth of at least $R_b/2$ hertz. Chapter 2 shows why.'},
+{t:'eqbox', cap:'Least bandwidth of PCM', tex:[
+  'B_T\\ge\\frac{R_b}{2}=\\frac{R\\,f_s}{2}',
+  'B_T\\ge RW\\quad\\text{at } f_s=2W'],
+ after:'Each extra bit adds $6.02$ dB of SQNR and $W$ hertz of bandwidth. Telephone PCM at $f_s=8$ kHz and $R=8$ bits sends $64$ kb/s and needs at least $32$ kHz, eight times the $4$ kHz of the voice.'},
+
+{t:'h3', text:'Bit errors'},
+{t:'p', text:'A channel error flips one bit of a code word. With natural binary coding, bit $b$ counted from $0$ at the right moves the decoded value by $2^{b}\\Delta$. A wrong first bit, $b=R-1$, moves the sample by $2^{R-1}\\Delta=m_{\\max}$, half the range. For $R=8$ and $\\Delta=1/128$ V that is $1$ V. On speech it sounds as a click, far louder than the quantization noise.'},
+
+{t:'h3', text:'Differential PCM'},
+{t:'p', text:'Neighbouring samples of speech are close. <b>DPCM</b> quantizes the difference between a sample and its prediction, which has a much smaller range than the sample.'},
+{t:'eqbox', cap:'DPCM with the last decoded value as prediction', tex:[
+  'e[n]=x[n]-\\hat x[n-1]',
+  '\\hat x[n]=\\hat x[n-1]+\\mathbb{Q}\\bigl(e[n]\\bigr)'],
+ after:'The encoder predicts from $\\hat x[n-1]$, which the decoder also has. So $x[n]-\\hat x[n]=e[n]-\\mathbb{Q}(e[n])$, and quantization errors do not pile up.'},
+{t:'p', text:'For speech at $8$ kHz, DPCM with $4$ bits a sample matches PCM with $8$. That is $32$ kb/s in place of $64$ kb/s.'},
+
+{t:'h3', text:'Delta modulation'},
+{t:'p', text:'<b>Delta modulation</b> is DPCM with a two-level quantizer. Each bit moves a staircase up or down by $\\Delta$. The staircase climbs at most $\\Delta$ every $T_s$, so it follows the signal only while'},
+{t:'eq', tex:'\\left|\\frac{dx}{dt}\\right|\\le\\frac{\\Delta}{T_s}=\\Delta f_s'},
+{t:'fig', svg:()=>deltaMod(), cap:'A signal with one steep rise and the delta-modulation staircase. On the rise the staircase falls behind (slope overload). Where the signal is flat it hunts by $\\pm\\Delta$ (granular noise).'},
+{t:'ex', hd:'Example 1.5 \u2014 the step of a delta modulator', rows:[
+ ['Given','$x(t)=\\sin(2\\pi\\,1000\\,t)$, sampled at $f_s=64$ kHz by a delta modulator.'],
+ ['Find','The smallest step $\\Delta$ that avoids slope overload.'],
+ ['Method','Find the largest slope of $x$, then apply $|dx/dt|\\le\\Delta f_s$.'],
+ ['Solution','$dx/dt=2\\pi(1000)\\cos(2\\pi\\,1000\\,t)$, whose largest value is $2\\pi(1000)=6283$ per second. So $\\Delta\\ge6283/64\\,000=0.098$.'],
+ ['Check','A larger $\\Delta$ avoids overload but raises the granular noise, which grows with $\\Delta$.']
+]},
+{t:'box', kind:'err', hd:'Common error', html:'Use the largest slope of the signal, $2\\pi f_0A$, not its peak value $A$. The staircase fails where the signal changes fastest.'},
+
 {t:'h2', num:'1.7', text:'Vector quantization'},
 {t:'p', text:'<b>Scalar quantization</b> processes one sample at a time. It does not use the dependence between neighboring samples.'},
 {t:'p', text:'<b>Vector quantization</b> treats $n$ samples as one point in $n$ dimensions. A <b>codebook</b> contains the allowed output points. The quantizer selects the nearest codebook point.'},
-{t:'ex', hd:'Example 1.5 \u2014 pairs of neighbouring samples', rows:[
+{t:'ex', hd:'Example 1.6 \u2014 pairs of neighbouring samples', rows:[
  ['Given','$L=16$ levels, and a signal smooth enough that a sample never moves more than one step from the one before it.'],
  ['Find','What a pair costs, quantized separately and quantized together.'],
  ['Method','Count the pairs each scheme has to be able to name, and take the base-two logarithm.'],
@@ -268,7 +321,7 @@ window.C1 = [
  {svg:()=>banding(), cap:'The coarse quantizer changes a smooth gradient into flat steps. Each step boundary appears as a false line.'}
 ]},
 {t:'box', kind:'warn', hd:'Source dependence', html:'Most of the rate reduction comes from dependence between neighboring samples. Better cell shapes can give a smaller gain for independent samples. This course does not develop that case.'},
-{t:'ex', hd:'Example 1.6 \u2014 quantizing an image', rows:[
+{t:'ex', hd:'Example 1.7 \u2014 quantizing an image', rows:[
  ['Given','A $512\\times512$ greyscale image at $8$ bits a pixel, so $L=256$ levels.'],
  ['Find','The size of the file, and the size and the cost at $L=32$.'],
  ['Solution','$512^{2}(8)=2\\,097\\,152$ bits, which is $256$ KiB. At $L=32$ the rate is $R=\\log_2 32=5$ bits a pixel, so $1\\,310\\,720$ bits or $160$ KiB \u2014 $37.5\\%$ smaller.'],
@@ -276,7 +329,33 @@ window.C1 = [
  ['Check','The decoder cannot recover the position of a pixel inside its quantization interval. Therefore, this compression is <b>lossy</b>. JPEG also quantizes transformed image blocks.']
 ]},
 
-{t:'h2', num:'1.8', text:'Summary'},
+{t:'h2', num:'1.8', text:'Speech, audio and image coding'},
+{t:'p', text:'The same three steps, sampling, quantization and encoding, sit under the coders in everyday use. This section shows four of them briefly.'},
+
+{t:'h3', text:'Linear predictive coding'},
+{t:'p', text:'LPC does not send the waveform. It sends a model of the voice every $20$ ms, $160$ samples at $8$ kHz, and the receiver runs the model to make the speech again.'},
+{t:'eqbox', cap:'The all-pole model of speech', tex:'x_n=\\sum_{i=1}^{p}a_i\\,x_{n-i}+G\\,w_n',
+ after:'$w_n$ is a pulse train for a voiced sound and white noise for an unvoiced one. The coefficients $a_i$ describe the shape of the vocal tract, and the peaks of the filter are the formants.'},
+{t:'p', text:'Each frame sends the $a_i$, the gain $G$, the pitch and one voiced bit. A coder with $48$ bits a $20$ ms frame runs at $48(50)=2400$ b/s, against $64$ kb/s for PCM.'},
+
+{t:'h3', text:'Time-division multiplexing'},
+{t:'p', text:'Many PCM calls share one line by taking turns. Each call gets one slot in every frame, and a frame lasts one sampling interval, $125\\ \\mu$s at $8$ kHz.'},
+{t:'eqbox', cap:'The T1 frame', tex:[
+  '24(8)+1=193\\ \\text{bits a frame}',
+  '193(8000)=1.544\\ \\text{Mb/s}'],
+ after:'The extra bit marks the start of each frame. The $24$ calls alone need $24(64)=1.536$ Mb/s. Four T1 lines make a $6.312$ Mb/s line, and seven of those a $44.736$ Mb/s line. Europe and T&uuml;rkiye use E1: $32$ slots of $64$ kb/s, $2.048$ Mb/s.'},
+
+{t:'h3', text:'Oversampling and sigma-delta conversion'},
+{t:'p', text:'At a rate far above $2W$, neighbouring samples are nearly equal, and one bit a sample can carry the change. A sigma-delta converter integrates the error between the input and its one-bit output:'},
+{t:'eq', tex:'\\begin{aligned}v[n]&=v[n-1]+x[n]-y[n-1]\\\\y[n]&=\\operatorname{sgn}\\bigl(v[n]\\bigr)\\end{aligned}'},
+{t:'p', text:'The running average of the bits $y$ stays on the input. A lowpass filter removes the fast swings of the bits and returns the signal. A CD player that oversamples $44.1$ kHz audio by $U=256$ runs its one-bit converter at $256(44.1\\ \\text{kHz})=11.2896$ MHz.'},
+
+{t:'h3', text:'Transform coding and JPEG'},
+{t:'p', text:'JPEG cuts a picture into $8\\times8$ blocks and takes the discrete cosine transform of each. Most of the energy of a block lands in a few low-frequency coefficients.'},
+{t:'p', text:'Each coefficient has its own uniform step, larger at high frequencies. Most high-frequency coefficients round to zero and cost almost nothing to send. At a coarse step each block keeps little more than its average, and the picture breaks into visible $8\\times8$ squares.'},
+{t:'p', text:'A $512\\times512$ picture coded at $0.5$ bit a pixel takes $512^{2}(0.5)/8=16\\,384$ bytes, or $16$ KiB. That is sixteen times less than at $8$ bits a pixel.'},
+
+{t:'h2', num:'1.9', text:'Summary'},
 {t:'table', head:['Result','Statement','Anchor'], rows:[
  ['Replication','$G_\\delta(f)=f_s\\sum_n G(f-nf_s)$','PS CH7.1.1'],
  ['Sampling theorem','$f_s\\ge 2W$ for a message bandlimited to $W$','PS CH7.1.1'],
@@ -285,6 +364,10 @@ window.C1 = [
  ['Error power','$E[Q^{2}]=\\Delta^{2}/12$, when the step is small','PS CH7.2.1'],
  ['Signal-to-noise','$\\mathrm{SQNR}\\;[\\mathrm{dB}]=\\alpha+6.02R$','PS CH7.2.1'],
  ['Bit rate','$R_b=Rf_s$','PS CH7.3, 7.4.1'],
+ ['PCM bandwidth','$B_T\\ge R_b/2=RW$ at $f_s=2W$','PS CH7.4.1'],
+ ['DPCM','quantize $e[n]=x[n]-\\hat x[n-1]$','PS CH7.4.2'],
+ ['Delta modulation','no slope overload while $|dx/dt|\\le\\Delta f_s$','PS CH7.4.3'],
+ ['T1 line','$193$ bits every $125\\ \\mu$s, $1.544$ Mb/s','PS CH7.6.1'],
  ['Vector quantization','round $n$ samples together and use a codebook','PS CH7.2.2']
 ]},
 {t:'p', text:'Sampling is reversible and quantization is not. Everything after this chapter takes the bit stream as given and asks what the channel does to it.'}

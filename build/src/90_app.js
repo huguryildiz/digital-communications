@@ -180,10 +180,11 @@ const RENDER = (() => {
         ${b.ask?askBody(b.html):symLinks(md(b.html))}${b.ask?askHTML(b.ask):''}</div>`,
     /* A legend is drawn inside the plot it keys, as a small card in a corner
        (`at`: 'tr' by default, 'tl', or 'tl-axis' for a plot whose vertical
-       axis is its left edge). A third item entry marks a dashed trace; a fourth
+       axis is its left edge). A third item entry marks a dashed trace, or 'dot'
+       for a set of plotted points; a fourth
        and fifth are the first and last frame at which the entry shows in a figure played in frames. blocks() hands the legend that follows a
        fig to that fig, so the scene data keeps writing it as its own block. */
-    legend:  (b, fi) => `<div class="legend in-plot lg-at-${b.at||'tr'}">${b.items.map(([c,l,dash,from,until])=>`<i class="lg-${c}${dash?' lg-dash':''}"${
+    legend:  (b, fi) => `<div class="legend in-plot lg-at-${b.at||'tr'}">${b.items.map(([c,l,dash,from,until])=>`<i class="lg-${c}${dash==='dot'?' lg-dot':dash?' lg-dash':''}"${
           from!=null ? ` data-lg-from="${from}" data-lg-until="${until!=null?until:''}"${fi!=null && (fi<from || (until!=null && fi>until)) ? ' hidden' : ''}` : ''}>${md(l)}</i>`).join('')}</div>`,
     wex:     b => `<div class="wex">${b.rows.map(([k,v])=>
         `<div class="wex-row"><div class="wex-k">${md(k)}</div><div class="wex-v">${symLinks(md(v))}</div></div>`).join('')}</div>`,

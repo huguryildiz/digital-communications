@@ -55,19 +55,20 @@ CONTENT.SECTIONS = {
   M1: [
     { n:'1.0', title:'Opening',                        ids:['m1-open'] },
     { n:'1.1', title:'The sampling theorem',           ids:[
-        'm1-ft-review','m1-sampler','m1-spectrum','m1-spectrum-b','m1-cases','m1-theorem','m1-real-sampling','m1-lab-l','m1-code-sampling'] },
+        'm1-ft-review','m1-sampler','m1-spectrum','m1-spectrum-b','m1-cases','m1-theorem','m1-moire','m1-real-sampling','m1-lab-l','m1-code-sampling'] },
     { n:'1.2', title:'Reconstruction',                 ids:[
         'm1-lpf','m1-lpf-b','m1-interp','m1-interp-b','m1-ex-nyquist','m1-ex-nyquist-b','m1-real-reconstruct','m1-lab-m','m1-code-reconstruct'] },
     { n:'1.3', title:'Quantization',                   ids:[
-        'm1-quant','m1-quant-b','m1-quant-walk','m1-lloydmax','m1-real-quant','m1-lab-n','m1-code-quant'] },
+        'm1-quant','m1-quant-b','m1-quant-walk','m1-lloydmax','m1-overload','m1-real-quant','m1-lab-n','m1-code-quant'] },
     { n:'1.4', title:'Quantization noise and SQNR',    ids:[
-        'm1-qnoise','m1-qnoise-b','m1-qnoise-c','m1-sqnr','m1-ex-cos','m1-ex-cos-s','m1-ex-cos-b','m1-ex-unif','m1-ex-unif-b','m1-ex-gauss','m1-ex-gauss-q','m1-ex-gauss-b','m1-real-sqnr','m1-lab-a','m1-code-sqnr'] },
+        'm1-qnoise','m1-qnoise-b','m1-qnoise-c','m1-sqnr','m1-sqnr-def','m1-ex-cos','m1-ex-unif','m1-ex-gauss','m1-sqnr-sources','m1-hear-bits','m1-dither','m1-real-sqnr','m1-lab-a','m1-code-sqnr'] },
     { n:'1.5', title:'Non-uniform quantization',       ids:[
-        'm1-nonuniform','m1-companding','m1-real-companding','m1-lab-o','m1-code-companding'] },
-    { n:'1.6', title:'Pulse code modulation',          ids:[
-        'm1-encode','m1-linecodes','m1-ex-pcm','m1-ex-pcm-s','m1-ex-pcm-b','m1-real-pcm','m1-lab-b','m1-code-pcm'] },
+        'm1-nonuniform','m1-compander','m1-companding','m1-hear-mu','m1-real-companding','m1-lab-o','m1-code-companding'] },
+    { n:'1.6', title:'PCM, DPCM and delta modulation', ids:[
+        'm1-encode','m1-linecodes','m1-ex-pcm','m1-ex-pcm-s','m1-ex-pcm-b','m1-pcm-bw','m1-biterror','m1-dpcm','m1-dm','m1-real-pcm','m1-lab-b','m1-code-pcm'] },
     { n:'1.7', title:'Vector quantization',            ids:['m1-vq','m1-vq-image'] },
-    { n:'1.8', title:'Summary',                        ids:['m1-quick','m1-synth'] }
+    { n:'1.8', title:'Speech, audio and image coding', ids:['m1-lpc','m1-t1','m1-sigmadelta','m1-jpeg'] },
+    { n:'1.9', title:'Summary',                        ids:['m1-chain','m1-quick','m1-synth','m1-projects'] }
   ],
 
   M2: [
@@ -155,15 +156,25 @@ CONTENT.BOOK = {
   'm1-ex-nyquist':'7.1.1', 'm1-ex-nyquist-b':'7.1.1', 'm1-real-reconstruct':'7.1.1',
   'm1-quant':'7.2.1', 'm1-quant-b':'7.2.1', 'm1-quant-walk':'7.2.1', 'm1-lloydmax':'7.2.1', 'm1-real-quant':'7.2.1', 'm1-lab-a':'7.2.1',
   'm1-lab-l':'7.1.1', 'm1-lab-m':'7.1.1', 'm1-lab-n':'7.2.1', 'm1-lab-o':'7.2.1',
-  'm1-qnoise':'7.2.1', 'm1-qnoise-b':'7.2.1', 'm1-qnoise-c':'7.2.1', 'm1-sqnr':'7.2.1', 'm1-real-sqnr':'7.2.1',
-  'm1-ex-cos':'7.2.1', 'm1-ex-cos-s':'7.2.1', 'm1-ex-cos-b':'7.2.1', 'm1-ex-unif':'7.2.1', 'm1-ex-unif-b':'7.2.1',
-  'm1-ex-gauss':'7.2.1', 'm1-ex-gauss-q':'7.2.1', 'm1-ex-gauss-b':'7.2.1',
-  'm1-nonuniform':'7.2.1', 'm1-companding':'7.2.1', 'm1-real-companding':'7.2.1',
+  'm1-qnoise':'7.2.1', 'm1-qnoise-b':'7.2.1', 'm1-qnoise-c':'7.2.1', 'm1-sqnr':'7.2.1', 'm1-sqnr-def':'7.2.1', 'm1-real-sqnr':'7.2.1',
+  'm1-ex-cos':'7.2.1', 'm1-ex-unif':'7.2.1', 'm1-ex-gauss':'7.2.1', 'm1-sqnr-sources':'7.2.1',
+  'm1-nonuniform':'7.2.1', 'm1-compander':'7.2.1', 'm1-companding':'7.2.1', 'm1-real-companding':'7.2.1',
+  'm1-overload':'7.2.1', 'm1-hear-mu':'7.4.1',
+  /* Waveform coding beyond plain PCM, each read in the book: 7.4.1 closes on
+     the bandwidth a PCM system needs, 7.3 defines natural binary and Gray
+     coding, 7.4.2 is DPCM and 7.4.3 delta modulation. Section 1.8 follows the
+     book's 7.5 (LPC), 7.6.1 (telephone TDM and the T1 hierarchy), 7.6.2 (the
+     CD player's oversampling and sigma-delta converter) and 7.7 (JPEG). The
+     chain that closes the module is the PCM block diagram of 7.4.1. The
+     aliasing-in-an-image, hearing and dither scenes carry no anchor: the book
+     does not develop them. */
+  'm1-pcm-bw':'7.4.1', 'm1-biterror':'7.3', 'm1-dpcm':'7.4.2', 'm1-dm':'7.4.3',
+  'm1-lpc':'7.5', 'm1-t1':'7.6.1', 'm1-sigmadelta':'7.6.2', 'm1-jpeg':'7.7', 'm1-chain':'7.4.1',
   'm1-encode':'7.3', 'm1-ex-pcm':'7.4.1', 'm1-ex-pcm-s':'7.4.1', 'm1-ex-pcm-b':'7.4.1', 'm1-real-pcm':'7.4', 'm1-lab-b':'7.4',
   /* Vector quantization is section 7.2.2 of the book, "Vector Quantization",
      p. 309 — read there, not inferred from the neighbouring section number. */
   'm1-vq':'7.2.2', 'm1-vq-image':'7.2.2',
-  'm1-quick':'7.4.1', 'm1-synth':'7.4.1',
+  'm1-quick':'7.4.1', 'm1-synth':'7.4.1', 'm1-projects':'7.4.1',
 
   /* Module 2 spans two chapters of the book, and that is not an accident of
      this course's numbering: the matched filter, the demodulators and the error

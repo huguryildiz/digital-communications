@@ -109,6 +109,20 @@ this file and Module 1 disagree, Module 1 is the evidence and this file is corre
 scene for each element is named where the element is described, using Module 1's own scene ids from
 `build/src/82_scenes_m1.js`.
 
+**Module 1 content and design frozen, 2026-09-24.** Module 1 runs from 1.0 to 1.9 and closes with
+the chain from sound to bits (`m1-chain`), the quick check and the recall deck. Two sections are
+surveys and carry no gallery, laboratory or code page: 1.7 (vector quantization) and 1.8 (speech,
+audio and image coding). Every other teaching section ends gallery, laboratory, code. An audit on
+that date found every Module 1 slide inside the figure and card budget, with a normal-view fit of at
+least 0.90 except the gallery `m1-real-sampling` (0.895). It found no KaTeX error and no literal
+mathematics in any Module 1 scene, and every stated number has a PASS line. The only text-collision
+flags left in Module 1 are two on the animated opening `m1-open`, which predate the audit. A change to
+a Module 1 slide now needs the owner's word, as for any other locked part.
+
+A figure of stacked panels nests one `<svg>` per panel inside the figure's own `<svg>` (`m1-overload`,
+`m1-pcm-bw`). Each panel keeps its own axes and coordinates, and `textclash.js` measures each nested
+panel on its own.
+
 ## Overview
 
 **Creative North Star: "The lecture deck of a careful department"**

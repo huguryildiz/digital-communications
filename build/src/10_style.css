@@ -699,13 +699,15 @@ figure.fig, .plot-wrap{ position:relative; }
 body[data-theme=dark] .legend.in-plot{ background:color-mix(in srgb, var(--paper-2) 90%, #fff); border-color:var(--rule-strong, var(--rule)); box-shadow:0 1px 4px rgba(0,0,0,.25); }
 .lg-in{ color:var(--sig-in); --lg-c:var(--sig-in); } .lg-h{ color:var(--sig-h); --lg-c:var(--sig-h); }
 .lg-out{ color:var(--sig-out); --lg-c:var(--sig-out); } .lg-mid{ color:var(--sig-mid); --lg-c:var(--sig-mid); }
-.lg-err{ color:var(--sig-err); --lg-c:var(--sig-err); }
+.lg-err{ color:var(--sig-err); --lg-c:var(--sig-err); } .lg-slate{ color:var(--slate); --lg-c:var(--slate); }
 /* on the light page a coloured label is thin on paper: the swatch carries the
    colour and the label is set in graphite */
 body:not([data-theme=dark]) .legend i{ color:var(--graphite); }
 body:not([data-theme=dark]) .legend i::before{ background:var(--lg-c, currentColor); }
 /* a dashed trace gets a dashed swatch */
 body .legend i.lg-dash::before{ background:repeating-linear-gradient(90deg, var(--lg-c, currentColor) 0 7px, transparent 7px 11px); }
+/* a set of plotted points gets a dot, centred in the swatch width */
+.legend i.lg-dot::before{ width:10px; height:10px; border-radius:50%; margin:0 8px; }
 
 /* ==========================================================================
    Figures

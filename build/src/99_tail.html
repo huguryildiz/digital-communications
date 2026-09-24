@@ -53,6 +53,17 @@
      them. The chapter view it returns is what the contents surfaces render. */
   const CHAPTERS = window.applyNumbering(SCENES);
 
+  /* Next and Previous walk the scene array, so the array takes the order the
+     contents rail shows. A scene file may keep its laboratories and code pages
+     together at the end; each listed scene moves into its section's place, and
+     a scene no section lists (the questions) keeps its own slot. */
+  const rank = {};
+  CHAPTERS.forEach(ch=>ch.sections.forEach(sec=>sec.scenes.forEach(s=>{ rank[s.id] = Object.keys(rank).length; })));
+  const slots = [], listed = [];
+  SCENES.forEach((s,i)=>{ if(s.id in rank){ slots.push(i); listed.push(s); } });
+  listed.sort((a,b)=>rank[a.id]-rank[b.id]);
+  slots.forEach((i,k)=>{ SCENES[i] = listed[k]; });
+
   APP.init({ scenes:SCENES, modules:CONTENT.MODULES, chapters:CHAPTERS, render:RENDER.draw });
   APP.wireSearch();
   RENDER.draw();

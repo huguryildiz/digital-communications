@@ -16,7 +16,7 @@ const CODE_BANKS_M1 = {
   'm1-code-quant':       ['quant-midrise', 'quant-midtread', 'quant-signal'],
   'm1-code-sqnr':        ['sqnr-cos', 'sqnr-uniform', 'sqnr-gauss', 'sqnr-perbit'],
   'm1-code-companding':  ['comp-laws', 'comp-sqnr'],
-  'm1-code-pcm':         ['pcm-example', 'pcm-gray', 'pcm-linecode']
+  'm1-code-pcm':         ['pcm-example', 'pcm-gray', 'pcm-linecode', 'pcm-dpcm', 'pcm-dm']
 };
 
 const CODE_M1 = {
@@ -778,6 +778,93 @@ plt.step(t, p, where='post', linewidth=1.5)
 plt.xlabel(r'bit interval')
 plt.legend(['unipolar NRZ', 'polar NRZ'])
 plt.grid(True)
+plt.show()`},
+
+'pcm-dpcm': {
+  title:'PCM against DPCM at four bits',
+  what:'Codes a slow signal at $8$ kHz with $4$-bit PCM over its whole range and with $4$-bit DPCM, which quantizes only the difference from the last decoded value.',
+  try:'Change the DPCM range $0.25$ to $0.1$. Predict whether the SQNR rises or overload sets in.',
+  out:'largest |x[n]| = 0.990, largest |x[n]-x[n-1]| = 0.194\nSQNR, 4-bit PCM  = 24.81 dB\nSQNR, 4-bit DPCM = 36.38 dB',
+  m:`% PCM against DPCM, 4 bits a sample, on a slow signal sampled at 8 kHz
+n = 0:399;
+x = 0.8*sin(2*pi*200*n/8000) + 0.2*sin(2*pi*450*n/8000);
+% R-bit mid-rise quantizer on [-vmax, vmax]
+Q = @(v, vmax, R) min(max((floor(v/(2*vmax/2^R)) + 0.5)*(2*vmax/2^R), ...
+        -vmax + vmax/2^R), vmax - vmax/2^R);
+
+xp = Q(x, 1.0, 4);                         % PCM over the whole range
+xd = zeros(size(x)); prev = 0;
+for k = 1:length(x)                        % DPCM: quantize e[n] = x[n] - xhat[n-1]
+    prev = prev + Q(x(k) - prev, 0.25, 4);
+    xd(k) = prev;
+end
+snr = @(y) 10*log10(mean(x.^2)/mean((x - y).^2));
+fprintf('largest |x[n]| = %.3f, largest |x[n]-x[n-1]| = %.3f\\n', max(abs(x)), max(abs(diff(x))))
+fprintf('SQNR, 4-bit PCM  = %5.2f dB\\n', snr(xp))
+fprintf('SQNR, 4-bit DPCM = %5.2f dB\\n', snr(xd))
+plot(n, x, n, xd, 'LineWidth', 1.3), grid on
+xlabel('n'), ylabel('x[n], xhat[n]')`,
+  py:`import numpy as np
+import matplotlib.pyplot as plt
+
+# PCM against DPCM, 4 bits a sample, on a slow signal sampled at 8 kHz
+n = np.arange(400)
+x = 0.8*np.sin(2*np.pi*200*n/8000) + 0.2*np.sin(2*np.pi*450*n/8000)
+def Q(v, vmax, R):                         # R-bit mid-rise quantizer on [-vmax, vmax]
+    D = 2*vmax/2**R
+    return np.clip((np.floor(v/D) + 0.5)*D, -vmax + D/2, vmax - D/2)
+xp = Q(x, 1.0, 4)                          # PCM over the whole range
+xd = np.zeros(len(x)); prev = 0.0
+for k in range(len(x)):                    # DPCM: quantize e[n] = x[n] - xhat[n-1]
+    prev = prev + Q(x[k] - prev, 0.25, 4)
+    xd[k] = prev
+snr = lambda y: 10*np.log10(np.mean(x**2)/np.mean((x - y)**2))
+print(f'largest |x[n]| = {np.max(np.abs(x)):.3f}, largest |x[n]-x[n-1]| = {np.max(np.abs(np.diff(x))):.3f}')
+print(f'SQNR, 4-bit PCM  = {snr(xp):5.2f} dB')
+print(f'SQNR, 4-bit DPCM = {snr(xd):5.2f} dB')
+plt.plot(n, x, n, xd, linewidth=1.3)
+plt.xlabel(r'$n$'); plt.ylabel(r'$x[n],\\ \\hat x[n]$'); plt.grid(True)
+plt.show()`},
+
+'pcm-dm': {
+  title:'Delta modulation and slope overload',
+  what:'Runs a one-bit delta modulator on $x(t)=\\sin(2\\pi\\,1000\\,t)$ at $f_s=64$ kHz for three steps and prints the largest error of each.',
+  try:'Predict the largest error at a step of $0.08$, just under $2\\pi f_0/f_s$.',
+  out:'least step, 2 pi f0 / fs = 0.0982\nstep = 0.05   largest error = 0.682\nstep = 0.10   largest error = 0.100\nstep = 0.20   largest error = 0.200',
+  m:`% Delta modulation of x(t) = sin(2 pi 1000 t) at fs = 64 kHz
+fs = 64000; f0 = 1000;
+n = 0:127;
+x = sin(2*pi*f0*n/fs);
+fprintf('least step, 2 pi f0 / fs = %.4f\\n', 2*pi*f0/fs)
+for D = [0.05 0.1 0.2]
+    xh = zeros(size(x)); prev = 0;
+    for k = 1:length(x)                    % one bit: step up or step down
+        if x(k) >= prev, prev = prev + D; else, prev = prev - D; end
+        xh(k) = prev;
+    end
+    fprintf('step = %.2f   largest error = %.3f\\n', D, max(abs(x - xh)))
+end
+stairs(n, xh, 'LineWidth', 1.3), hold on
+plot(n, x, 'LineWidth', 1.3), hold off, grid on
+xlabel('n'), ylabel('x[n], xhat[n]')`,
+  py:`import numpy as np
+import matplotlib.pyplot as plt
+
+# Delta modulation of x(t) = sin(2 pi 1000 t) at fs = 64 kHz
+fs, f0 = 64000, 1000
+n = np.arange(128)
+x = np.sin(2*np.pi*f0*n/fs)
+print(f'least step, 2 pi f0 / fs = {2*np.pi*f0/fs:.4f}')
+for D in [0.05, 0.1, 0.2]:
+    xh = np.zeros(len(x)); prev = 0.0
+    for k in range(len(x)):                # one bit: step up or step down
+        prev = prev + (D if x[k] >= prev else -D)
+        xh[k] = prev
+    err = np.max(np.abs(x - xh))
+    print(f'step = {D:.2f}   largest error = {err:.3f}')
+plt.step(n, xh, where='post', linewidth=1.3)
+plt.plot(n, x, linewidth=1.3)
+plt.xlabel(r'$n$'); plt.ylabel(r'$x[n],\\ \\hat x[n]$'); plt.grid(True)
 plt.show()`}
 
 };

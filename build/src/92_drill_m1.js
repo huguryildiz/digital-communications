@@ -429,7 +429,7 @@ window.DRILL_M1 = [
   steps:0, blocks:[
   {t:'eyebrow', text:'Module 1 · Practice D1-01 … D1-21'},
   {t:'title', text:'Practice questions'},
-  {t:'small', html:'Work each question before opening its solution. Use these checks:<ul><li>Bit rate equals resolution times sampling rate.</li><li>Each added bit increases SQNR by $6.02$ dB.</li><li>Quantization error is at most half a step.</li><li>Round a required level count upward.</li></ul>'},
+  {t:'small', html:'Work each question before opening its solution. Check that the bit rate is the resolution times the sampling rate. Each added bit adds $6.02$ dB of SQNR. The quantization error is at most half a step. A required level count rounds upward.'},
   {t:'rule', short:true},
   {t:'drill', module:'M1'}
 ]}

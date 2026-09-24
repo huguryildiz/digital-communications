@@ -520,14 +520,14 @@ Object.assign(LABS, (function(){
 
       const ph = PHONE();
       const win = Math.min(NA, st.wave==='gauss' ? 220 : NA);
-      const ax = P.Axes({w:ph?300:820,h:ph?230:185,xr:[0,win],yr:[-1.35*MMAX,1.35*MMAX],
+      const ax = P.Axes({w:ph?300:820,h:ph?230:300,xr:[0,win],yr:[-1.35*MMAX,1.35*MMAX],
         xlabel:'n',ylabel:'m[n],\\;\\mathbb{Q}(m[n])',pad:{l:ph?42:56,r:ph?16:26,t:24,b:38},
         xtarget:ph?4:6,ytarget:4});
       for(let k=0;k<Lv;k++) ax.hline(-MMAX+(k+0.5)*d,{color:P.COL.rule,dash:'2 5'});
       ax.poly(x.slice(0,win).map((s,i)=>[i,s]),{color:P.COL.in});
       ax.poly(v.slice(0,win).map((s,i)=>[i,s]),{color:P.COL.mid,width:1.8});
 
-      const bx = P.Axes({w:ph?300:820,h:ph?200:160,xr:[0,win],yr:[-1.9*d,1.9*d],
+      const bx = P.Axes({w:ph?300:820,h:ph?200:240,xr:[0,win],yr:[-1.9*d,1.9*d],
         xlabel:'n',ylabel:'q[n]',pad:{l:ph?42:56,r:ph?16:26,t:22,b:38},xtarget:ph?4:6,ytarget:3});
       bx.hline(d/2,{color:P.COL.err,dash:'4 4'}); bx.hline(-d/2,{color:P.COL.err,dash:'4 4'});
       bx.poly(e.slice(0,win).map((s,i)=>[i,s]),{color:P.COL.err,width:1.5});
@@ -689,12 +689,12 @@ Object.assign(LABS, (function(){
       const shown = rec.slice(0, 4*st.phase);
 
       const ph = PHONE();
-      const ax = P.Axes({w:ph?300:820,h:ph?230:185,xr:[0,NB],yr:[-1.35,1.35],
+      const ax = P.Axes({w:ph?300:820,h:ph?230:300,xr:[0,NB],yr:[-1.35,1.35],
         xlabel:'n',ylabel:'m[n],\\;\\hat{m}[n]',pad:{l:ph?42:56,r:ph?16:26,t:24,b:38},xtarget:ph?4:6,ytarget:4});
       ax.poly(src.map((s,i)=>[i,s]),{color:P.COL.in});
       ax.poly(shown.map((s,i)=>[i,s]),{color:P.COL.out,width:1.8});
 
-      const bx = P.Axes({w:ph?300:820,h:ph?190:150,xr:[0,NB],yr:[-0.42,0.42],
+      const bx = P.Axes({w:ph?300:820,h:ph?190:240,xr:[0,NB],yr:[-0.42,0.42],
         xlabel:'n',ylabel:'m[n]-\\hat{m}[n]',pad:{l:ph?42:56,r:ph?16:26,t:22,b:38},xtarget:ph?4:6,ytarget:3});
       bx.poly(err.slice(0, 4*st.phase).map((s,i)=>[i,s]),{color:P.COL.err,width:1.5});
 
