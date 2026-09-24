@@ -20,7 +20,8 @@
 const P = PLOT, C = P.COL;
 const fr = (n,D) => '\\tfrac{'+n+'}{'+D+'}';
 
-/* The pmf of a derived source. One stem a symbol, in the order of the
+/* The pmf of a derived source. One stem a symbol with a round head, as a
+   sequence of probabilities is drawn, in the order of the
    symbols and one unit apart, each tip labelled with its probability over the
    common denominator, so the vertical axis needs no numbers. The positions
    are 1..K rather than the symbol values: the alphabet is a set of labels, and
@@ -31,7 +32,9 @@ function figPmf(o){
   const a = P.Axes({w:720, h:230, xr:[0.3, K+0.7], yr:[0, top*1.36],
     xlabel:sm, ylabel:'P('+o.name+'='+sm+')', pad:{l:24,r:30,t:24,b:44},
     xticksOverride:xs, xtickfmt:(v=>String(o.v[Math.round(v)-1])), yticksOverride:[], grid:false});
-  a.stem(xs.map((x,i)=>[x, o.n[i]/o.D]), {color:C.in});
+  xs.forEach((x,i)=>{ const p = o.n[i]/o.D;
+    a.poly([[x,0],[x,p]], {color:C.in, width:2});
+    a.point(x, p, {color:C.in, r:4.5}); });
   xs.forEach((x,i)=>a.note(x, o.n[i]/o.D + top*0.13, fr(o.n[i],o.D),
     {tex:true, fs:14, color:C.in, anchor:'middle'}));
   return a.svg();
@@ -45,7 +48,8 @@ function figGiven(o){
   const a = P.Axes({w:720, h:200, xr:[0.3, K+0.7], yr:[0, top*1.36],
     xlabel:sm, ylabel:'p_'+o.name+'('+sm+')', pad:{l:24,r:26,t:24,b:44},
     xticksOverride:xs, xtickfmt:(v=>String(o.v[Math.round(v)-1])), yticksOverride:[], grid:false});
-  a.stem(xs.map((x,i)=>[x, o.h[i]]), {color:C.in});
+  xs.forEach((x,i)=>{ a.poly([[x,0],[x,o.h[i]]], {color:C.in, width:2});
+    a.point(x, o.h[i], {color:C.in, r:4.5}); });
   xs.forEach((x,i)=>a.note(x, o.h[i] + top*0.13, o.lab[i],
     {tex:true, fs:14, color:C.in, anchor:'middle'}));
   return a.svg();
