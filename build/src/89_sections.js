@@ -74,13 +74,17 @@ CONTENT.SECTIONS = {
   M2: [
     { n:'2.0', title:'Opening',                        ids:['m2-open'] },
     { n:'2.1', title:'The matched filter',             ids:[
-        'm2-model','m2-schwarz','m2-matched','m2-props','m2-lab-c'] },
-    { n:'2.2', title:'The demodulator',                ids:['m2-basis','m2-correlator'] },
+        'm2-receiver','m2-model','m2-schwarz','m2-matched','m2-conv','m2-props','m2-ex-mf','m2-real-matched','m2-lab-c','m2-code-matched'] },
+    { n:'2.2', title:'The demodulator',                ids:[
+        'm2-basis','m2-space','m2-demod','m2-correlator','m2-real-demod','m2-lab-p','m2-code-demod'] },
     { n:'2.3', title:'The decision and its error',     ids:[
-        'm2-stat','m2-threshold','m2-pe','m2-ex-pe','m2-lab-d'] },
-    { n:'2.4', title:'Intersymbol interference',       ids:['m2-isi','m2-eye','m2-lab-e'] },
-    { n:'2.5', title:'Nyquist and the raised cosine',  ids:['m2-nyquist','m2-rcos'] },
-    { n:'2.6', title:'Summary',                        ids:['m2-synth'] }
+        'm2-stat','m2-errors','m2-threshold','m2-threshold-b','m2-q','m2-pe','m2-ex-pe','m2-ex-pe-b','m2-real-decision','m2-lab-d','m2-code-decision'] },
+    { n:'2.4', title:'Intersymbol interference',       ids:[
+        'm2-isi','m2-isi-term','m2-ex-isi','m2-eye','m2-eye-close','m2-eye-noise','m2-real-isi','m2-lab-q','m2-code-isi'] },
+    { n:'2.5', title:'Nyquist and the raised cosine',  ids:[
+        'm2-nyq-sinc','m2-nyquist','m2-nyq-channel','m2-sinc-timing','m2-rcos','m2-rcos-pulse','m2-ex-rc','m2-srrc','m2-real-nyquist','m2-lab-e','m2-code-nyquist'] },
+    { n:'2.6', title:'The link in practice',           ids:['m2-equalizer','m2-timing','m2-psd','m2-repeater'] },
+    { n:'2.7', title:'Summary',                        ids:['m2-chain','m2-quick','m2-synth','m2-projects'] }
   ],
 
   M3: [
@@ -182,18 +186,29 @@ CONTENT.BOOK = {
      criterion and the raised cosine are developed in chapter 10. Each was read
      in the book before it was written here.
 
-     The eye-pattern scene carries no anchor. The book does describe the eye
+     The two eye-pattern scenes carry no anchor. The book does describe the eye
      pattern, but not under a heading this module can point at without guessing,
-     and a well-formed wrong anchor is the one failure the marker cannot catch. */
+     and a well-formed wrong anchor is the one failure the marker cannot catch.
+     The code pages carry none, as in Module 1. */
   'm2-open':'8.3',
-  'm2-model':'8.3.2', 'm2-schwarz':'8.3.2', 'm2-matched':'8.3.2', 'm2-props':'8.3.2',
-  'm2-lab-c':'8.3.2',
-  'm2-basis':'8.2.1', 'm2-correlator':'8.3.1',
-  'm2-stat':'8.3.3', 'm2-threshold':'8.3.3', 'm2-pe':'8.3.3', 'm2-ex-pe':'8.3.3',
-  'm2-lab-d':'8.3.3',
-  'm2-isi':'10.1.1', 'm2-lab-e':'10.1.1',
-  'm2-nyquist':'10.3.1', 'm2-rcos':'10.3.1',
-  'm2-synth':'8.3, 10.3.1',
+  'm2-receiver':'8.3.2', 'm2-model':'8.3.2', 'm2-schwarz':'8.3.2', 'm2-matched':'8.3.2', 'm2-conv':'8.3.2', 'm2-props':'8.3.2',
+  'm2-ex-mf':'8.3.2', 'm2-real-matched':'8.3.2', 'm2-lab-c':'8.3.2',
+  'm2-basis':'8.2.1', 'm2-space':'8.2.1', 'm2-demod':'8.3.1', 'm2-correlator':'8.3.1', 'm2-real-demod':'8.3.1', 'm2-lab-p':'8.3.1',
+  'm2-stat':'8.3.3', 'm2-errors':'8.3.3', 'm2-threshold':'8.3.3', 'm2-threshold-b':'8.3.3', 'm2-q':'8.3.3', 'm2-pe':'8.3.3',
+  'm2-ex-pe':'8.3.3', 'm2-ex-pe-b':'8.3.3', 'm2-real-decision':'8.3.3', 'm2-lab-d':'8.3.3',
+  'm2-isi':'10.1.1', 'm2-isi-term':'10.1.1', 'm2-ex-isi':'10.1.1', 'm2-real-isi':'10.1.1', 'm2-lab-q':'10.1.1',
+  'm2-nyq-sinc':'10.3.1', 'm2-nyquist':'10.3.1', 'm2-nyq-channel':'10.3.1', 'm2-sinc-timing':'10.3.1',
+  'm2-rcos':'10.3.1', 'm2-rcos-pulse':'10.3.1', 'm2-ex-rc':'10.3.1', 'm2-real-nyquist':'10.3.1', 'm2-lab-e':'10.3.1',
+  /* Splitting the raised cosine between the two ends is 10.5.1, "Design of
+     Transmitting and Receiving Filters for a Known Channel", read there. */
+  'm2-srrc':'10.5.1',
+  /* Section 2.6 is a survey of what a real link adds, read in the book at
+     10.5.2 (channel equalization), 8.9.1 (early-late gate synchronizers), 10.2
+     (the power spectrum of digitally modulated signals) and 8.10 (regenerative
+     repeaters). The noisy eye in 2.4 carries no anchor, like the other eye
+     scenes. */
+  'm2-equalizer':'10.5.2', 'm2-timing':'8.9.1', 'm2-psd':'10.2', 'm2-repeater':'8.10',
+  'm2-chain':'8.3', 'm2-quick':'8.3, 10.3.1', 'm2-synth':'8.3, 10.3.1', 'm2-projects':'8.3, 10.3.1',
 
   /* All of Module 3 is section 8.1 of the book, "Geometric Representation of
      Signal Waveforms", p. 348 — read there rather than inferred. This is also

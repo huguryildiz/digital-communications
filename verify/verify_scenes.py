@@ -315,7 +315,7 @@ def _m2_threshold(eb, n0, p0):
     return (n0 / (4 * math.sqrt(eb))) * math.log(p0 / (1 - p0))
 
 
-def _m2_example():
+def _m2_example(sig=None):
     """The unequal-prior example of scene 2.3.4, computed from the definitions.
 
     The scene reaches the two conditional errors through the Gaussian tail; this
@@ -325,7 +325,7 @@ def _m2_example():
     eb, n0, p1 = 1.0, 0.1, 0.3
     p0 = 1 - p1
     lam = _m2_threshold(eb, n0, p0)
-    sig = math.sqrt(n0 / 2)
+    sig = math.sqrt(n0 / 2) if sig is None else sig
     a = math.sqrt(eb)
     e0 = float(_Q((lam + a) / sig))
     e1 = float(_Q((a - lam) / sig))
@@ -345,6 +345,123 @@ def _raised_cosine(t, alpha, w=0.5):
         return float(np.sinc(2 * w * t) * math.pi / 4)
     return float(np.sinc(2 * w * t) * math.cos(2 * math.pi * alpha * w * t) / den)
 
+
+
+# The remaining Module 2 helpers work numerically on grids: energies and
+# filter outputs by quadrature, the RC channel by convolution, thresholds by a
+# search over P_e. None of them uses the closed forms the slides derive.
+
+_M2_N = 20_000
+
+
+def _m2_energy(s, T):
+    t = (np.arange(_M2_N) + 0.5) * T / _M2_N
+    return float(np.sum(s(t) ** 2) * T / _M2_N)
+
+
+def _m2_schwarz_ratio(b):
+    """(int G H)^2 / (int G^2 int H^2) for two Gaussian spectra of widths 1 and b."""
+    f = np.linspace(-12, 12, 200_001)
+    G, H = np.exp(-f ** 2), np.exp(-f ** 2 / b ** 2)
+    return float(np.trapz(G * H, f) ** 2 / (np.trapz(G ** 2, f) * np.trapz(H ** 2, f)))
+
+
+def _m2_mf_output(s, t):
+    """y(t)/E for a pulse on [0, 1] through h(tau) = s(1 - tau)."""
+    n = 4000
+    u = (np.arange(n) + 0.5) / n
+    su = s(u)
+    E = np.sum(su ** 2) / n
+    v = 1 - t + u                       # h(t - u) = s(1 - t + u), inside [0, 1] only
+    inside = (v >= 0) & (v <= 1)
+    return float(np.sum(su[inside] * s(v[inside])) / n / E)
+
+
+def _m2_barker(side=False):
+    c = [1, -1, 1, 1, -1, 1, 1, 1, -1, -1, -1]
+    r = np.correlate(c, c, mode="full")
+    return [int(v) for k, v in enumerate(r) if (k != len(c) - 1) or not side]
+
+
+def _m2_noise_sd(n0):
+    """sqrt(E[n^2]) with E[n^2] = (N0/2) int psi^2, psi rectangular of unit energy."""
+    Tb = 1e-3
+    psi = lambda t: np.full_like(t, 1 / math.sqrt(Tb))
+    return math.sqrt(n0 / 2 * _m2_energy(psi, Tb))
+
+
+def _m2_density(y, m, s):
+    return math.exp(-(y - m) ** 2 / (2 * s * s)) / (s * math.sqrt(2 * math.pi))
+
+
+def _m2_tail(m, s, x):
+    """P(Y > x) for Y ~ N(m, s^2), by quadrature of the density."""
+    y = np.linspace(x, m + 40 * s, 400_001)
+    return float(np.trapz(np.exp(-(y - m) ** 2 / (2 * s * s)) / (s * math.sqrt(2 * math.pi)), y))
+
+
+def _m2_argmin_pe(eb, n0, p0):
+    """The threshold that minimises P_e, found by a golden-section search."""
+    a, s = math.sqrt(eb), math.sqrt(n0 / 2)
+    pe = lambda l: p0 * float(_Q((l + a) / s)) + (1 - p0) * float(_Q((a - l) / s))
+    lo, hi, g = -a, a, (math.sqrt(5) - 1) / 2
+    for _ in range(200):
+        c, d = hi - g * (hi - lo), lo + g * (hi - lo)
+        if pe(c) < pe(d):
+            hi = d
+        else:
+            lo = c
+    return (lo + hi) / 2
+
+
+def _m2_rc_samples(bits, bt, hist=-1, per_bit=4000):
+    """Polar bits through the RC lowpass of bandwidth B (T_b = 1), simulated
+    step by step; the line sits at `hist` before t = 0. Returns y at the end of
+    each bit."""
+    tau = 1 / (2 * math.pi * bt)
+    dt = 1 / per_bit
+    a = math.exp(-dt / tau)
+    y, out = float(hist), []
+    for b in bits:
+        x = 1.0 if b else -1.0
+        for _ in range(per_bit):
+            y = a * y + (1 - a) * x
+        out.append(y)
+    return out
+
+
+def _m2_eye_opening(bt, n=24):
+    """2 min over all n-bit patterns of a_k y_k at the last bit, line at rest before."""
+    one = _m2_rc_samples([1] + [0] * (n - 1), bt, hist=0)
+    # the response to one +1 bit alone: subtract the response to -1 in its place
+    minus = _m2_rc_samples([0] * n, bt, hist=0)
+    r = [(p - m) / 2 for p, m in zip(one, minus)]      # samples of a unit bit
+    worst = r[0] - sum(abs(v) for v in r[1:])
+    return 2 * worst
+
+
+def _m2_rc_spec(u, a):
+    """2W P(f) of the raised cosine, with u = f/W."""
+    u = np.abs(np.asarray(u, dtype=float))
+    f1 = 1 - a
+    out = np.where(u < f1, 1.0, 0.0)
+    if a > 0:
+        roll = (u >= f1) & (u < 1 + a)
+        out = np.where(roll, 0.5 * (1 + np.cos(math.pi * (u - f1) / (2 * a))), out)
+    return out if out.ndim else float(out)
+
+
+def _m2_tiling_dev(P, step):
+    """Largest deviation from 1 of the sum of copies of P spaced by one
+    Nyquist rate: step 1 in f/R_b, or step 2 in f/W."""
+    u = np.linspace(-0.5 * step, 0.5 * step, 2001)
+    s = sum(P(u - n * step) for n in range(-4, 5))
+    return float(np.max(np.abs(s - 1)))
+
+
+def _m2_band_edge(a):
+    u = np.linspace(0, 3, 300_001)
+    return float(u[np.nonzero(_m2_rc_spec(u, a) > 1e-12)[0][-1]])
 
 
 # ── Module 3 ────────────────────────────────────────────────────────────────
@@ -851,37 +968,172 @@ CHECKS: list[dict] = [
      "stated": 65536, "derive": lambda: 2 ** 16},
 
     # ---- 2.1, the matched filter ----------------------------------------
-    {"name": "2.1.4 the matched-filter bound for a unit-energy pulse",
-     "stated": 2.0, "derive": lambda: 2 * 1.0 / 1.0},
+    # The matched-filter numbers are re-derived by integrating the pulses on a
+    # grid, not by quoting 2E/N0.
+    {"name": "2.1.1 N0 from a two-sided density of 1e-9 W/Hz", "stated": 2e-9,
+     "derive": lambda: 2 * 1e-9},
+    {"name": "2.1.2 peak pulse SNR of 2 mV over 1e-6 V^2", "stated": 4.0,
+     "derive": lambda: (2e-3) ** 2 / 1e-6},
+    {"name": "2.1.3 bound 2E/N0 for E = 5e-7 J, N0 = 1e-7", "stated": 10.0,
+     "derive": lambda: 2 * _m2_energy(lambda t: np.full_like(t, math.sqrt(5e-7)), 1.0) / 1e-7, "tol": 1e-6},
+    {"name": "2.1.3 Schwarz ratio 2b/(1+b^2) is 1 at b = 1", "stated": 1.0,
+     "derive": lambda: _m2_schwarz_ratio(1.0), "tol": 1e-6},
+    {"name": "2.1.4 matched filter of the ramp at t = 0", "stated": 1.0,
+     "derive": lambda: (lambda T: T / T)(1.0)},
+    {"name": "2.1.5 rectangle through its matched filter at T/2, in units of E", "stated": 0.5,
+     "derive": lambda: _m2_mf_output(lambda t: np.ones_like(t), 0.5), "tol": 2e-3},
+    {"name": "2.1.5 rectangle through its matched filter at T, in units of E", "stated": 1.0,
+     "derive": lambda: _m2_mf_output(lambda t: np.ones_like(t), 1.0), "tol": 2e-3},
+    {"name": "2.1.6 half-sine pulse of unit energy peaks at E", "stated": 1.0,
+     "derive": lambda: _m2_mf_output(lambda t: math.sqrt(2) * np.sin(np.pi * t), 1.0), "tol": 2e-3},
+    {"name": "2.1.6 peak SNR for E = 1e-6 J, N0 = 1e-7", "stated": 20.0,
+     "derive": lambda: 2 * 1e-6 / 1e-7},
+    {"name": "2.1.7 energy of A = 2 V over T = 0.5 ms", "stated": 2e-3,
+     "derive": lambda: _m2_energy(lambda t: np.full_like(t, 2.0), 0.5e-3), "tol": 1e-6},
+    {"name": "2.1.7 largest peak SNR of the worked example", "stated": 20.0,
+     "derive": lambda: 2 * _m2_energy(lambda t: np.full_like(t, 2.0), 0.5e-3) / (2 * 1e-4), "tol": 1e-6},
+    {"name": "2.1.7 the same, in dB", "stated": 13.0,
+     "derive": lambda: 10 * math.log10(20.0), "tol": 2e-3},
+    {"name": "2.1.8 chirp resolution 1/B for B = 5 MHz, us", "stated": 0.2,
+     "derive": lambda: 1 / 5e6 * 1e6},
+    {"name": "2.1.8 Barker-11 autocorrelation peak", "stated": 11,
+     "derive": lambda: max(_m2_barker()), "tol": 1e-9},
+    {"name": "2.1.8 Barker-11 largest side value is 0 or -1 (checked as 1 + max |R|)", "stated": 2.0,
+     "derive": lambda: 1 + max(abs(v) for v in _m2_barker(side=True)), "tol": 1e-9},
+    {"name": "2.1.8 range of an echo at 5.83 ms, m", "stated": 1.00,
+     "derive": lambda: 343 * 5.83e-3 / 2, "tol": 5e-3},
+    {"name": "2.1.8 bit time at 9600 baud, us", "stated": 104.2,
+     "derive": lambda: 1e6 / 9600, "tol": 5e-4},
 
-    # ---- 2.3.4, the unequal-prior example -------------------------------
-    {"name": "2.3.4 optimal threshold", "stated": 0.0212,
-     "derive": lambda: _m2_example()["lam"], "tol": 2e-3},
-    {"name": "2.3.4 P(error | s0)", "stated": 2.475e-6,
-     "derive": lambda: _m2_example()["e0"], "tol": 5e-4},
-    {"name": "2.3.4 P(error | s1)", "stated": 6.005e-6,
-     "derive": lambda: _m2_example()["e1"], "tol": 5e-4},
-    {"name": "2.3.4 average error probability", "stated": 3.534e-6,
-     "derive": lambda: _m2_example()["pe"], "tol": 5e-4},
-    {"name": "2.3.4 error probability with the threshold left at zero",
-     "stated": 3.872e-6, "derive": lambda: _m2_example()["pe0"], "tol": 5e-4},
+    # ---- 2.2, the demodulator -------------------------------------------
+    {"name": "2.2.1 bit energy of A = 2 V over 1 ms, J", "stated": 4e-3,
+     "derive": lambda: _m2_energy(lambda t: np.full_like(t, 2.0), 1e-3), "tol": 1e-6},
+    {"name": "2.2.2 distance 2 sqrt(Eb) for Eb = 4 mJ", "stated": 0.126,
+     "derive": lambda: 2 * math.sqrt(4e-3), "tol": 5e-3},
+    {"name": "2.2.3 noise standard deviation for N0 = 2e-4", "stated": 0.01,
+     "derive": lambda: _m2_noise_sd(2e-4), "tol": 3e-2},
+    {"name": "2.2.4 matched-filter output at 1.5 Tb for the rectangular basis", "stated": 0.5,
+     "derive": lambda: _m2_mf_output(lambda t: np.ones_like(t), 1.5), "tol": 2e-3},
+    {"name": "2.2.5 loss of sampling 0.1 Tb early, dB", "stated": 0.92,
+     "derive": lambda: -10 * math.log10(0.9 ** 2), "tol": 6e-3},
+
+    # ---- 2.3, the decision and its error ----------------------------------
+    {"name": "2.3.1 spread of y for N0 = 0.5", "stated": 0.5,
+     "derive": lambda: math.sqrt(0.5 / 2)},
+    {"name": "2.3.2 P(err | s0) = Q(2) at lambda = 0", "stated": 0.0228,
+     "derive": lambda: _m2_tail(-1.0, 0.5, 0.0), "tol": 3e-3},
+    {"name": "2.3.3 optimal threshold for p0 = 0.7, N0 = 0.5", "stated": 0.106,
+     "derive": lambda: _m2_argmin_pe(1.0, 0.5, 0.7), "tol": 5e-3},
+    {"name": "2.3.5 Q(1)", "stated": 0.159, "derive": lambda: _m2_tail(0.0, 1.0, 1.0), "tol": 3e-3},
+    {"name": "2.3.5 Q(3)", "stated": 1.35e-3, "derive": lambda: _m2_tail(0.0, 1.0, 3.0), "tol": 5e-3},
+    {"name": "2.3.6 Pb at Eb/N0 = 4", "stated": 2.3e-3,
+     "derive": lambda: float(_Q(math.sqrt(8))), "tol": 2e-2},
+    {"name": "2.3.6 the value with the factor 2 dropped, Q(2)", "stated": 2.3e-2,
+     "derive": lambda: float(_Q(2.0)), "tol": 2e-2},
+    {"name": "2.3.7 optimal threshold of the worked example, by search", "stated": 0.0212,
+     "derive": lambda: _m2_argmin_pe(1.0, 0.1, 0.7), "tol": 5e-3},
+    {"name": "2.3.7 weighted densities at the threshold", "stated": 3.70e-5,
+     "derive": lambda: 0.7 * _m2_density(_m2_example()["lam"], -1.0, math.sqrt(0.05)), "tol": 5e-3},
+    {"name": "2.3.8 P(err | s0) of the worked example", "stated": 2.48e-6,
+     "derive": lambda: _m2_example()["e0"], "tol": 5e-3},
+    {"name": "2.3.8 P(err | s1) of the worked example", "stated": 6.01e-6,
+     "derive": lambda: _m2_example()["e1"], "tol": 5e-3},
+    {"name": "2.3.8 average error probability at the optimum", "stated": 3.53e-6,
+     "derive": lambda: _m2_example()["pe"], "tol": 5e-3},
+    {"name": "2.3.8 error probability with the threshold at zero", "stated": 3.87e-6,
+     "derive": lambda: _m2_example()["pe0"], "tol": 5e-3},
+    {"name": "2.3.8 ratio of the two, about 1.10", "stated": 1.10,
+     "derive": lambda: _m2_example()["pe0"] / _m2_example()["pe"], "tol": 5e-3},
+    {"name": "2.3.8 the wrong sigma raises Pe over a hundred times (ratio / 100 > 1)", "stated": 2.0,
+     "derive": lambda: 1.0 + (_m2_example(sig=math.sqrt(0.1))["pe"] / _m2_example()["pe"] > 100), "tol": 1e-9},
+    {"name": "2.3.9 Eb/N0 for Pb = 1e-10, dB", "stated": 13.1,
+     "derive": lambda: 10 * math.log10(_m6_qinv(1e-10) ** 2 / 2), "tol": 4e-3},
+    {"name": "2.3.9 sqrt(2 Eb/N0) at that point", "stated": 6.36,
+     "derive": lambda: _m6_qinv(1e-10), "tol": 2e-3},
+    {"name": "2.3.9 sensor threshold 0.125 ln 9", "stated": 0.275,
+     "derive": lambda: _m2_argmin_pe(1.0, 0.5, 0.9), "tol": 5e-3},
+    {"name": "2.3.9 Q(3)/Q(4) exceeds 40 (checked as the smallest ratio above 3)", "stated": 42.6,
+     "derive": lambda: min(float(_Q(k) / _Q(k + 1)) for k in (3, 4, 5)), "tol": 5e-3},
+
+    # ---- 2.4, intersymbol interference ------------------------------------
+    # The RC channel is simulated by convolving the bit pattern with the
+    # impulse response on a grid, not through the closed forms in q.
+    {"name": "2.4.1 q at BTb = 0.25", "stated": 0.208,
+     "derive": lambda: 1 - _m2_rc_samples([1], 0.25, hist=0)[0], "tol": 5e-3},
+    {"name": "2.4.1 one bit reaches 1 - q", "stated": 0.792,
+     "derive": lambda: _m2_rc_samples([1], 0.25, hist=0)[0], "tol": 5e-3},
+    {"name": "2.4.2 a 1 after a long run of 0s", "stated": 0.584,
+     "derive": lambda: _m2_rc_samples([0, 0, 0, 1], 0.25)[3], "tol": 5e-3},
+    {"name": "2.4.3 the seventh sample of 0 0 0 1 1 1 0 1", "stated": -0.588,
+     "derive": lambda: _m2_rc_samples([0, 0, 0, 1, 1, 1, 0, 1], 0.25)[6], "tol": 5e-3},
+    {"name": "2.4.4 eye opening at BTb = 0.3, all 128 patterns", "stated": 1.39,
+     "derive": lambda: _m2_eye_opening(0.3), "tol": 5e-3},
+    {"name": "2.4.5 closing bandwidth ln2/(2 pi)", "stated": 0.110,
+     "derive": lambda: _m6_bisect(lambda b: _m2_eye_opening(b), 0.05, 0.2), "tol": 5e-3},
+    {"name": "2.4.5 opening at BTb = 0.1 is negative (shifted by one)", "stated": 1 - 0.134,
+     "derive": lambda: 1 + _m2_eye_opening(0.1), "tol": 5e-3},
+    {"name": "2.4.4 q at BTb = 0.3", "stated": 0.152,
+     "derive": lambda: 1 - _m2_rc_samples([1], 0.3, hist=0)[0], "tol": 5e-3},
+    {"name": "2.4.5 q at BTb = 0.1", "stated": 0.533,
+     "derive": lambda: 1 - _m2_rc_samples([1], 0.1, hist=0)[0], "tol": 5e-3},
+    {"name": "2.4.5 half-opening 1 - 2q at BTb = 0.1", "stated": -0.067,
+     "derive": lambda: _m2_eye_opening(0.1) / 2, "tol": 1e-2},
+    {"name": "2.4.6 q at BTb = 0.15", "stated": 0.39,
+     "derive": lambda: math.exp(-2 * math.pi * 0.15), "tol": 5e-3},
+    {"name": "2.4.6 fibre pulse width sqrt(20^2 + 34^2), ps", "stated": 39.4,
+     "derive": lambda: math.hypot(20, 17 * 20 * 0.1), "tol": 3e-3},
 
     # ---- 2.5, Nyquist and the raised cosine ------------------------------
     # The raised cosine must vanish at every non-zero multiple of T_b for every
     # roll-off. Five roll-offs and eight instants are checked at once: the
     # largest magnitude found, shifted by one so a relative test means something.
-    {"name": "2.5.2 the raised cosine vanishes at every non-zero sampling instant",
+    {"name": "2.5.6 the raised cosine vanishes at every non-zero sampling instant",
      "stated": 1.0,
      "derive": lambda: 1.0 + max(abs(_raised_cosine(float(k), a))
                                  for a in (0.0, 0.25, 0.5, 0.75, 1.0)
                                  for k in range(1, 9)),
      "tol": 1e-9},
-    {"name": "2.5.2 the raised cosine is one at the origin", "stated": 1.0,
+    {"name": "2.5.6 the raised cosine is one at the origin", "stated": 1.0,
      "derive": lambda: _raised_cosine(0.0, 0.5)},
-    {"name": "2.5.1 Nyquist bandwidth for 20 kbit/s", "stated": 10e3,
+    {"name": "2.5.6 alpha = 1 also vanishes at 1.5 Tb (shifted by one)", "stated": 1.0,
+     "derive": lambda: 1.0 + abs(_raised_cosine(1.5, 1.0)), "tol": 1e-9},
+    {"name": "2.5.2 triangular spectrum: copies add to Tb (max deviation, shifted by one)", "stated": 1.0,
+     "derive": lambda: 1.0 + _m2_tiling_dev(lambda u: np.maximum(0, 1 - np.abs(u)), 1), "tol": 1e-9},
+    {"name": "2.5.5 raised-cosine copies add to a constant (max deviation, shifted by one)", "stated": 1.0,
+     "derive": lambda: 1.0 + max(_m2_tiling_dev(lambda u, a=a: _m2_rc_spec(u, a), 2) for a in (0.25, 0.5, 1.0)), "tol": 1e-9},
+    {"name": "2.5.3 minimum bandwidth for 64 kb/s", "stated": 32e3,
+     "derive": lambda: 64e3 / 2},
+    {"name": "2.5.4 sinc(0.1)", "stated": 0.984, "derive": lambda: float(np.sinc(0.1)), "tol": 1e-3},
+    {"name": "2.5.4 interference summed over 1 <= |k| <= 20 at 0.1 Tb", "stated": 0.71,
+     "derive": lambda: sum(abs(float(np.sinc(k + 0.1))) for k in range(-20, 21) if k), "tol": 5e-3},
+    {"name": "2.5.5 bandwidth for W = 5 kHz, alpha = 0.25", "stated": 6.25e3,
+     "derive": lambda: 5e3 * (1 + 0.25)},
+    {"name": "2.5.7 Nyquist bandwidth for 20 kbit/s", "stated": 10e3,
      "derive": lambda: 20e3 / 2},
-    {"name": "2.5.2 transmission bandwidth at alpha = 0.5", "stated": 15e3,
-     "derive": lambda: (1 + 0.5) * 10e3},
+    {"name": "2.5.7 flat band edge f1", "stated": 5e3,
+     "derive": lambda: 10e3 * (1 - 0.5)},
+    {"name": "2.5.7 transmission bandwidth at alpha = 0.5", "stated": 15e3,
+     "derive": lambda: _m2_band_edge(0.5) * 10e3, "tol": 2e-3},
+    {"name": "2.5.8 root raised cosine at f = W", "stated": 0.707,
+     "derive": lambda: math.sqrt(_m2_rc_spec(1.0, 0.5)), "tol": 1e-3},
+    {"name": "2.5.9 satellite TV bandwidth 13.75(1.35), MHz", "stated": 18.6,
+     "derive": lambda: 27.5 / 2 * 1.35, "tol": 3e-3},
+    {"name": "2.5.9 3G bandwidth 1.92(1.22), MHz", "stated": 2.34,
+     "derive": lambda: 3.84 / 2 * 1.22, "tol": 3e-3},
+
+    # ---- 2.6, summary and quick check -----------------------------------
+    {"name": "2.6.1 Pb at 9.6 dB", "stated": 9.7e-6,
+     "derive": lambda: float(_Q(math.sqrt(2 * 10 ** 0.96))), "tol": 5e-3},
+    {"name": "2.6.1 Eb/N0 of 9.6 dB as a ratio", "stated": 9.12,
+     "derive": lambda: 10 ** 0.96, "tol": 1e-3},
+    {"name": "2.6.1 argument of Q at 9.6 dB", "stated": 4.27,
+     "derive": lambda: math.sqrt(2 * 10 ** 0.96), "tol": 2e-3},
+    {"name": "2.6.2 peak SNR for E = 2 uJ, N0 = 1e-7", "stated": 40.0,
+     "derive": lambda: 2 * 2e-6 / 1e-7},
+    {"name": "2.6.2 Pb at Eb/N0 = 8 is Q(4)", "stated": 3.2e-5,
+     "derive": lambda: float(_Q(4.0)), "tol": 2e-2},
+    {"name": "2.6.2 raised-cosine bandwidth for 1 Mb/s, alpha = 0.5, MHz", "stated": 0.75,
+     "derive": lambda: 1.0 / 2 * 1.5},
 
     # ---- 3.3.2, the Gram-Schmidt example ---------------------------------
     # The procedure is run numerically on the sampled waveforms rather than
