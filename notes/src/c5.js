@@ -141,7 +141,7 @@ window.C5 = [
  cap:'Symbol error probability against energy per bit for four sizes of PSK. $M=2,4,8,16$ from left to right. $M=2$ and $M=4$ lie almost on top of each other. This is why QPSK is everywhere. It carries twice the bits of BPSK for the same energy per bit.'},
 
 {t:'h2', num:'5.6', text:'Summary'},
-{t:'table', head:['Scheme','$d_{\\min}^{2}$','$N_{\\min}$','Anchor'], rows:[
+{t:'table', cap:'Minimum squared distance $d_{\\min}^{2}$ and number of nearest neighbours $N_{\\min}$ for each scheme.', head:['Scheme','$d_{\\min}^{2}$','$N_{\\min}$','Anchor'], rows:[
  ['BPSK','$4E_b$','$1$','PS CH8.6.1'],
  ['BFSK, BASK','$2E_b$','$1$','PS CH9.5'],
  ['$M$-PSK','$4E_s\\sin^{2}(\\pi/M)$','$2$','PS CH8.6.3'],

@@ -285,7 +285,7 @@ window.C3 = [
  after:'All the length $\\sqrt2$ of $\\mathbf{s}_1$ now lies on $\\psi_1\'$. Its energy is still $2$.'},
 
 {t:'h2', num:'3.4', text:'Summary'},
-{t:'table', head:['Result','Statement','Anchor'], rows:[
+{t:'table', cap:'Summary of Chapter 3: the geometric representation of signal waveforms.', head:['Result','Statement','Anchor'], rows:[
  ['Orthonormal set','$\\int\\psi_j\\psi_k\\,dt=1$ if $j=k$, else $0$','PS CH8.1'],
  ['Analysis','$s_{ij}=\\int_0^{T}s_i\\psi_j\\,dt$, one correlator for each basis function','PS CH8.1'],
  ['Synthesis','$s_i(t)=\\sum_js_{ij}\\psi_j(t)$','PS CH8.1'],

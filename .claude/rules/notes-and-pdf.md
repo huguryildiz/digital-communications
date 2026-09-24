@@ -23,3 +23,29 @@ do not read the PDFs.
 `notes/src/notes.css` still carries an earlier palette than the artifact's own tokens; the lecture
 notes and the artifact are not guaranteed to read as the same colour until that gap is closed. Do not
 assume the two are in step without checking `10_style.css` against `notes/src/notes.css` directly.
+
+## Print layout
+
+These rules are shared with the other course repository (`signals-and-systems` and
+`digital-communications`); a change to one is made in both.
+
+- `notes/topdf.js` prints each document in one pass from the `@page` rules in `notes/src/notes.css`,
+  with `preferCSSPageSize`, `outline` (PDF bookmarks) and `tagged`. The cover is the named page `cover`
+  with no margin, so it has no footer. Do not print the cover separately and join the files: the join
+  drops the title, the tags, the bookmarks and every internal link.
+- Every page except the cover has the footer `© 2026 Hüseyin Uğur Yıldız · huguryildiz.com · Course
+  content: CC BY-NC-SA 4.0` at the left and `<edition> · <page>` at the right, and the running head
+  `<course> — <edition>` at the top right.
+- Print at scale 1. If an equation overflows, fix the equation; do not shrink the document.
+- A numbered `h1` (CHAPTER, APPENDIX, MODULE, PART) always starts a new page. Titles are navy, section
+  titles slate, numbers coral, all from the `DESIGN.md` tokens.
+- The contents lists every chapter and its numbered sections. Each row links to its heading, and
+  `topdf.js` writes the page number in a second pass. It fails when a target is missing or when writing
+  the numbers moves one.
+- In the lecture notes every figure and every table has a caption (`cap`). They are numbered by chapter
+  (Figure 3.4, Table A.2) and listed in the List of Figures and the List of Tables after the contents.
+  A list entry is the caption's first sentence; give a `short` field when that sentence is too long to
+  name the figure. The browser logs `NOTES: … has no caption` for each gap, and `topdf.js` prints the
+  count. Ship with none.
+- Callouts (`box`) and worked examples carry a small stroke icon chosen by `kind` from `ICONS` in
+  `notes/src/render.js`. A new kind gets its icon there, in the same 24-unit stroke set.

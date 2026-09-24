@@ -356,7 +356,7 @@ window.C1 = [
 {t:'p', text:'A $512\\times512$ picture coded at $0.5$ bit a pixel takes $512^{2}(0.5)/8=16\\,384$ bytes, or $16$ KiB. That is sixteen times less than at $8$ bits a pixel.'},
 
 {t:'h2', num:'1.9', text:'Summary'},
-{t:'table', head:['Result','Statement','Anchor'], rows:[
+{t:'table', cap:'Summary of Chapter 1: from an analog signal to bits.', head:['Result','Statement','Anchor'], rows:[
  ['Replication','$G_\\delta(f)=f_s\\sum_n G(f-nf_s)$','PS CH7.1.1'],
  ['Sampling theorem','$f_s\\ge 2W$ for a message bandlimited to $W$','PS CH7.1.1'],
  ['Reconstruction','$g_r(t)=\\sum_n g(nT_s)\\operatorname{sinc}(2Wt-n)$, filter gain $1/(2W)$','PS CH7.1.1'],

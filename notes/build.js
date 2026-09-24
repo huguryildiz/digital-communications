@@ -39,7 +39,7 @@ const html=`<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
 <script>window.ICON_SVG=${MARK};</script>
 <script>${g(S('src/render.js'))}</script>
 ${chapters.map(f=>`<script>${g(S('src/'+f))}</script>`).join('\n')}
-<script>renderNotes([].concat(${globals.join(',') || ''},[{t:'colophon',doc:'Lecture Notes'}]), document.getElementById('doc')); document.title=document.title;</script>
+<script>renderNotes([].concat(${globals.join(',') || ''},[{t:'colophon',doc:'Lecture Notes'}]), document.getElementById('doc'), {captions:true}); document.title=document.title;</script>
 </body></html>`;
 fs.mkdirSync(path.join(__dirname,'..','dist'),{recursive:true});
 fs.writeFileSync(path.join(__dirname,'..','dist','Lecture_Notes.html'), html);

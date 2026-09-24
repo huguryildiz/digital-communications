@@ -111,7 +111,7 @@ window.C4 = [
  cap:'The constellation, its four regions, and the observations the receiver sees when the top-right point is sent. The exact error probability is the fraction of that cloud outside its own region. The bound adds three separate two-point questions and counts the overlaps twice.'},
 
 {t:'h2', num:'4.5', text:'Summary'},
-{t:'table', head:['Result','Statement','Anchor'], rows:[
+{t:'table', cap:'Summary of Chapter 4: the optimal receiver in additive white Gaussian noise.', head:['Result','Statement','Anchor'], rows:[
  ['Observation','$\\mathbf{r}=\\mathbf{s}_i+\\mathbf{n}$, each $n_k\\sim\\mathcal{N}(0,N_0/2)$, independent','PS CH8.4.1'],
  ['MAP rule','minimise $\\|\\mathbf{r}-\\mathbf{s}_i\\|^{2}-N_0\\ln P(\\mathbf{s}_i)$','PS CH8.4.1'],
  ['ML rule','minimise $\\|\\mathbf{r}-\\mathbf{s}_i\\|^{2}$: choose the nearest point','PS CH8.4.1'],

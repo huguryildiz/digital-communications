@@ -21,7 +21,7 @@ window.CA = [
  '\\Delta=\\frac{2V}{L}=\\frac{2V}{2^{n}},\\qquad |e|\\le\\frac{\\Delta}{2}',
  '\\sigma_q^{2}=\\frac{\\Delta^{2}}{12},\\qquad \\mathrm{SQNR}\\big|_{\\mathrm{dB}}=6.02n+1.76'],
  after:'The $1.76$ assumes a full-scale sinusoid. The formula is an approximation at small $n$. At three bits it gives $19.82$ dB where the measured value is $19.09$ dB, and the gap halves with each extra bit.'},
-{t:'table', head:['Result','Statement','Chapter'], rows:[
+{t:'table', cap:'Companding and the PCM bit rate.', head:['Result','Statement','Chapter'], rows:[
  ['Companding','$\\mu$-law and A-law compress before quantizing so that the signal-to-noise ratio is flat across the range','1'],
  ['PCM rate','$R=nf_s$ bits a second for $n$ bits a sample','1']
 ]},
@@ -58,7 +58,7 @@ window.CA = [
 
 /* ---------------------------------------------------------------- 5 ------ */
 {t:'h2', num:'A.5', text:'Digital modulation — Chapter 5'},
-{t:'table', head:['Scheme','$d_{\\min}^{2}$','$N_{\\min}$'], rows:[
+{t:'table', cap:'Minimum squared distance and number of nearest neighbours for each scheme.', head:['Scheme','$d_{\\min}^{2}$','$N_{\\min}$'], rows:[
  ['BPSK','$4E_b$','$1$'],
  ['BFSK, BASK','$2E_b$','$1$'],
  ['$M$-PSK','$4E_s\\sin^{2}(\\pi/M)$','$2$'],

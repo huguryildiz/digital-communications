@@ -169,7 +169,7 @@ window.C6 = [
 
 {t:'h2', num:'6.5', text:'Codes that can be read back'},
 {t:'p', text:'Short codewords are useful only when the receiver can separate them. A code is <b>uniquely decodable</b> if each coded bit string has one source-symbol sequence. A <b>prefix code</b> has no codeword that begins another codeword. This stronger condition permits immediate decoding when the last codeword bit arrives. A prefix code is also <b>instantaneous</b>.'},
-{t:'table', head:['Symbol','Code I','Code II','Code III'], rows:[
+{t:'table', cap:'Three codes for the same four symbols.', head:['Symbol','Code I','Code II','Code III'], rows:[
  ['$s_1$','0','0','0'],
  ['$s_2$','1','10','01'],
  ['$s_3$','00','110','011'],
@@ -289,7 +289,7 @@ window.C6 = [
 {t:'box', kind:'warn', hd:'A floor that is approached and never touched', html:'Reaching the limit needs infinite bandwidth, and the rate per hertz goes to zero on the way. Coherent binary PSK needs about $9.6$ dB for an error probability of $10^{-5}$, so it sits some $11$ dB above the floor. Closing that gap is what channel coding was invented for. This course stops at the uncoded schemes, which is where the gap is widest and easiest to see.'},
 
 {t:'h2', num:'6.13', text:'Summary'},
-{t:'table', head:['Result','Statement','Anchor'], rows:[
+{t:'table', cap:'Summary of Chapter 6: information, entropy and source coding.', head:['Result','Statement','Anchor'], rows:[
  ['Self-information','$I(s_k)=-\\log_2 p_k$','PS CH12.1.1'],
  ['Entropy','$H(S)=-\\sum_k p_k\\log_2 p_k$','PS CH12.1.1'],
  ['Bounds','$0\\le H(S)\\le\\log_2 K$','PS CH12.1.1'],

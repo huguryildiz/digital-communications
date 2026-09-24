@@ -242,7 +242,7 @@ window.C2 = [
  after:'For a real, even $\\sqrt{P(f)}$, $H_R=H_T^{*}$, so the receive filter is matched to the transmitted pulse. The link then has both the smallest error probability and zero interference. At $\\alpha=0.5$ the raised cosine is at half height at $f=W$, so $\\sqrt{2W\\,P(W)}=\\sqrt{0.5}=0.707$.'},
 
 {t:'h2', num:'2.6', text:'Summary'},
-{t:'table', head:['Result','Statement','Anchor'], rows:[
+{t:'table', cap:'Summary of Chapter 2: baseband transmission and the matched filter.', head:['Result','Statement','Anchor'], rows:[
  ['Matched filter','$h_{\\mathrm{opt}}(t)=g(T-t)$','PS CH8.3.2'],
  ['What it achieves','$\\eta_{\\max}=2E/N_0$, independent of the pulse shape','PS CH8.3.2'],
  ['Decision statistic','$y=s_m+n$, $\\;n\\sim\\mathcal{N}(0,N_0/2)$','PS CH8.3.1'],

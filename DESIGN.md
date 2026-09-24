@@ -181,8 +181,11 @@ tints: cyan `#4FBECE`, amber `#E5B255`, green `#82C27B`, violet `#AC99DC`, red `
 colour, so a palette change that skips `textclash.js` makes the gate report on colours the artifact no
 longer draws.
 
-`notes/src/notes.css` still carries an earlier, lighter-only palette. The lecture notes and the
-artifact are therefore not guaranteed to be the same colour; this is a known gap, not a decision.
+`notes/src/notes.css` takes coral, slate and navy from the table above: navy for chapter and
+contents titles, slate for section titles, coral for every number. Its page, ink and hairline values
+are still an earlier, lighter-only palette, so the lecture notes and the artifact are not guaranteed to
+be the same colour; this is a known gap, not a decision. The print layout rules are in
+`.claude/rules/notes-and-pdf.md`.
 
 ### The public cover page
 

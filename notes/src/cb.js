@@ -450,7 +450,7 @@ window.CB = [
   cap:'$\\rho=0.99$. All ten symbols occur about equally often. $H=3.322$ bits, $\\bar{L}=3.395$ bits.'}
 ]},
 
-{t:'table', head:['Source','$H$','$\\bar{L}$','$\\eta$','Compression against $4$ bits'], rows:[
+{t:'table', cap:'Entropy, average codeword length, efficiency and compression for the three sources.', head:['Source','$H$','$\\bar{L}$','$\\eta$','Compression against $4$ bits'], rows:[
  ['The digit source','$2.550$','$2.636$','$96.7\\%$','$34.1\\%$'],
  ['$\\rho=0.01$','$2.322$','$2.400$','$96.7\\%$','$40.0\\%$'],
  ['$\\rho=0.99$','$3.322$','$3.395$','$97.8\\%$','$15.1\\%$']
