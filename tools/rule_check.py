@@ -2,7 +2,7 @@
 """R8: fail on any banned provenance phrase, on any figure label that is
 mathematics written as something other than LaTeX (R7), and on prose that a
 second-year reader cannot take in one read (R10)."""
-import re, sys, glob, os
+import html, re, sys, glob, os
 # The list is matched case-insensitively, so a phrase opening a sentence is
 # caught as readily as one inside it. Write each pattern in lower case.
 # Two patterns are narrower here than in the course this list came from, and
@@ -248,9 +248,7 @@ def prose_of(s):
        one object), an HTML tag is nothing, and an entity is its character."""
     s = re.sub(r'\$[^$]*\$', ' MATH ', s)
     s = re.sub(r'<[^>]*>', ' ', s)
-    s = (s.replace('&mdash;', '—').replace('&ndash;', '–')
-          .replace('&nbsp;', ' ').replace('&amp;', '&')
-          .replace('&lt;', '<').replace('&gt;', '>'))
+    s = html.unescape(s).replace('\xa0', ' ')
     s = s.replace("\\'", "'").replace('\\\\', '\\')
     return re.sub(r'\s+', ' ', s).strip()
 

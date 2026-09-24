@@ -664,7 +664,7 @@ function figGrayTable(v){
   ['level','natural','Gray'].forEach((h,i)=>a.note(0.5+i, 7.6, h, {fs:15, color:C.muted, anchor:'middle', weight:600}));
   /* each Gray word is a placeholder here, split into one tspan per bit below */
   rows.forEach((r,k)=>{ const y = 6.7 - k*s;
-    r.forEach((cell,i)=>a.note(0.5+i, y, i===2 ? '§G'+k+'§' : cell, {fs, color:i===2?C.out:C.ink, anchor:'middle'})); });
+    r.forEach((cell,i)=>a.note(0.5+i, y, i===2 ? '@G'+k+'@' : cell, {fs, color:i===2?C.out:C.ink, anchor:'middle'})); });
   /* the middle pair, where natural binary changes all R bits */
   const m = L/2;
   a.rect(1.12, 6.7-(m-1)*s-0.42*s/0.9, 1.88, 6.7-m*s+0.52*s/0.9, {stroke:C.err, width:1.4, dash:'4 3'});
@@ -688,7 +688,7 @@ function figGrayTable(v){
     css += kf(`gy${L}b${k}`, k, `fill:${C.out}`, `fill:${C.h}`);
   }
   const bitOf = (w, j) => { for(const k of [w-1, w]) if(k>=0 && k<L-1 && flip(k)===j) return k; return -1; };
-  const svg = a.svg().replace(/§G(\d+)§/g, (_, w) => { w = +w;
+  const svg = a.svg().replace(/@G(\d+)@/g, (_, w) => { w = +w;
     return rows[w][2].split('').map((c,j)=>{ const k = bitOf(w, j);
       return k<0 ? `<tspan>${c}</tspan>` : `<tspan class="gy-anim" style="animation-name:gy${L}b${k}">${c}</tspan>`; }).join(''); });
   return svg.replace(/(<svg[^>]*>)/, `$1<style>.gy-anim{animation-duration:${(1.1*(L-1)).toFixed(1)}s;animation-iteration-count:infinite;animation-timing-function:linear}

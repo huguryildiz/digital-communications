@@ -333,7 +333,7 @@ window.C1 = [
 {t:'p', text:'The same three steps, sampling, quantization and encoding, sit under the coders in everyday use. This section shows four of them briefly.'},
 
 {t:'h3', text:'Linear predictive coding'},
-{t:'p', text:'LPC does not send the waveform. It sends a model of the voice every $20$ ms, $160$ samples at $8$ kHz, and the receiver runs the model to make the speech again.'},
+{t:'p', text:'LPC does not send the waveform. Every $20$ ms, that is $160$ samples at $8$ kHz, it sends a model of the voice. The receiver runs the model to make the speech again.'},
 {t:'eqbox', cap:'The all-pole model of speech', tex:'x_n=\\sum_{i=1}^{p}a_i\\,x_{n-i}+G\\,w_n',
  after:'$w_n$ is a pulse train for a voiced sound and white noise for an unvoiced one. The coefficients $a_i$ describe the shape of the vocal tract, and the peaks of the filter are the formants.'},
 {t:'p', text:'Each frame sends the $a_i$, the gain $G$, the pitch and one voiced bit. A coder with $48$ bits a $20$ ms frame runs at $48(50)=2400$ b/s, against $64$ kb/s for PCM.'},
