@@ -1,478 +1,2592 @@
 /* ==========================================================================
    Practice questions — Module 6.
 
-   The exam analysis names Final Q4 for this material but records only which
-   papers carried it, not what it asked. So the six shapes below come from the
-   worked examples in the slides, exactly as they did for Modules 3, 4 and 5:
-   an entropy, an extension, a code to measure, a Kraft test, and a Huffman
-   code to build and then to judge.
+   Thirty questions in the form of the final examination's source-coding
+   question: a source derived from one or two others by a mapping, then its
+   entropy, a binary Huffman code and the efficiency of that code. The close
+   variants change the range, the mapping and the input pmfs so that the
+   alphabets run from four to eight symbols and the trees differ. The last
+   eight keep the examination format and add one twist each: a fixed-length
+   comparison, two tie-breaking rules, a second-order extension, the entropy
+   of the function against its input, a Kraft test, rounded-up lengths, and a
+   reversed question.
+
+   Every solution works with numerators over a common denominator, so ties are
+   exact. The Huffman lists place a merged sum as high as possible among equal
+   values, and the upper entry of a merge takes 0. The codewords and the merge
+   order drawn in each solution figure are the ones the solution text states.
    ========================================================================== */
 (function(){
+const P = PLOT, C = P.COL;
+const fr = (n,D) => '\\tfrac{'+n+'}{'+D+'}';
 
+/* The pmf of a derived source. One stem a symbol, in the order of the
+   symbols and one unit apart, each tip labelled with its probability over the
+   common denominator, so the vertical axis needs no numbers. The positions
+   are 1..K rather than the symbol values: the alphabet is a set of labels, and
+   a zero among them would otherwise sit under the vertical axis. */
+function figPmf(o){
+  const K = o.v.length, top = Math.max(...o.n)/o.D;
+  const sm = o.name.toLowerCase(), xs = o.v.map((_,i)=>i+1);
+  const a = P.Axes({w:720, h:230, xr:[0.3, K+0.7], yr:[0, top*1.36],
+    xlabel:sm, ylabel:'P('+o.name+'='+sm+')', pad:{l:24,r:30,t:24,b:44},
+    xticksOverride:xs, xtickfmt:(v=>String(o.v[Math.round(v)-1])), yticksOverride:[], grid:false});
+  a.stem(xs.map((x,i)=>[x, o.n[i]/o.D]), {color:C.in});
+  xs.forEach((x,i)=>a.note(x, o.n[i]/o.D + top*0.13, fr(o.n[i],o.D),
+    {tex:true, fs:14, color:C.in, anchor:'middle'}));
+  return a.svg();
+}
+
+/* A pmf given in the question with its constant still unknown. The stems are
+   drawn to their relative sizes and labelled in terms of c. */
+function figGiven(o){
+  const K = o.v.length, top = Math.max(...o.h);
+  const sm = o.name.toLowerCase(), xs = o.v.map((_,i)=>i+1);
+  const a = P.Axes({w:720, h:200, xr:[0.3, K+0.7], yr:[0, top*1.36],
+    xlabel:sm, ylabel:'p_'+o.name+'('+sm+')', pad:{l:24,r:26,t:24,b:44},
+    xticksOverride:xs, xtickfmt:(v=>String(o.v[Math.round(v)-1])), yticksOverride:[], grid:false});
+  a.stem(xs.map((x,i)=>[x, o.h[i]]), {color:C.in});
+  xs.forEach((x,i)=>a.note(x, o.h[i] + top*0.13, o.lab[i],
+    {tex:true, fs:14, color:C.in, anchor:'middle'}));
+  return a.svg();
+}
+
+/* The Huffman tree with its merge order, beside the code table.
+   Leaves sit in one column, in the order of their codewords, so no branch
+   crosses another. Merge k sits in column k: the two entries it joins run
+   right to that column, the upper one labelled 0 and the lower 1, and the
+   node carries the probability of the sum. Reading a leaf's labels from the
+   root back gives its codeword, which the table repeats. */
+function figHuff(o){
+  const K = o.n.length, W = 720, rh = 30, top = o.head ? 66 : 46, H = top + K*rh + 10;
+  const a = P.Axes({w:W, h:H, xr:[0,W], yr:[0,H], pad:{l:0,r:0,t:0,b:0},
+    xticksOverride:[], yticksOverride:[], grid:false, zeroAxes:false, arrows:false});
+  const up = y => H - y;
+  const rows = o.codes.map((c,i)=>i).sort((i,j)=> o.codes[i] < o.codes[j] ? -1 : 1);
+  const X0 = 270, X1 = W - 44, step = (X1 - X0)/Math.max(1, K-1);
+  const X = {}, Y = {}, pr = {};
+  rows.forEach((i,r)=>{ const c = o.codes[i]; X[c] = X0; Y[c] = top + r*rh + rh/2; pr[c] = o.n[i]; });
+  o.order.forEach((p,k)=>{ X[p] = X0 + (k+1)*step; Y[p] = (Y[p+'0'] + Y[p+'1'])/2; pr[p] = pr[p+'0'] + pr[p+'1']; });
+  const sm = o.name.toLowerCase(), hy = top - 14;
+  if(o.head) a.note(10, up(20), o.head, {tex:true, fs:14, color:C.ink});
+  a.note(30, up(hy-3), sm, {tex:true, fs:14, color:C.ink, anchor:'middle'});
+  a.note(94, up(hy-3), 'P('+o.name+'='+sm+')', {tex:true, fs:14, color:C.ink, anchor:'middle'});
+  a.note(172, up(hy), 'codeword', {fs:13, color:C.ink, anchor:'middle'});
+  a.note(232, up(hy-3), 'l', {tex:true, fs:14, color:C.ink, anchor:'middle'});
+  a.note(X0, up(hy), 'merge', {fs:12, color:C.muted, anchor:'middle'});
+  o.order.forEach((p,k)=>a.note(X[p], up(hy), String(k+1), {fs:12, color:C.muted, anchor:'middle'}));
+  a.poly([[8, up(top-4)], [W-8, up(top-4)]], {color:C.grid, width:1});
+  rows.forEach(i=>{ const c = o.codes[i], y = Y[c];
+    a.note(30, up(y+2), o.lab[i], {tex:true, fs:14, color:C.in, anchor:'middle'});
+    a.note(94, up(y+2), fr(o.n[i], o.D), {tex:true, fs:14, color:C.in, anchor:'middle'});
+    a.note(172, up(y+5), c, {fs:14, color:C.out, anchor:'middle', weight:600});
+    a.note(232, up(y+5), String(c.length), {fs:14, color:C.ink, anchor:'middle'});
+  });
+  o.order.forEach(p=>{ const xp = X[p];
+    ['0','1'].forEach(b=>{ const c = p+b;
+      a.poly([[X[c], up(Y[c])], [xp, up(Y[c])]], {color:C.muted, width:1.5});
+      a.note(xp-8, up(Y[c]-5), b, {fs:12, color:C.muted, anchor:'end'}); });
+    a.poly([[xp, up(Y[p+'0'])], [xp, up(Y[p+'1'])]], {color:C.muted, width:1.5});
+  });
+  rows.forEach(i=>a.point(X0, up(Y[o.codes[i]]), {color:C.in, r:4}));
+  o.order.forEach(p=>{ a.point(X[p], up(Y[p]), {color:C.mid, r:4.2});
+    if(p !== '') a.note(X[p]+7, up(Y[p]-9), fr(pr[p], o.D), {tex:true, fs:12, color:C.mid}); });
+  return a.svg();
+}
+
+/* ======================================================================
+   The taxonomy: the three columns of the examination question, and three
+   shapes that add one judgement to it.
+   ====================================================================== */
 CONTENT.DRILLTYPES.M6 = [
-  { k:'selfinfo', name:'The information in one symbol',
-    asks:'A probability is given. Find the self-information, or find the probability that carries a stated number of bits.',
-    method:['$I(s_k)=-\\log_2 p_k$. Going the other way, $p_k=2^{-I}$.',
-            'A probability that is a power of two gives a whole number of bits. This is why $1/2$, $1/4$ and $1/8$ turn up in every exercise.',
-            'For independent symbols the information adds, because the probabilities multiply and the logarithm turns a product into a sum.'],
-    go:'m6-selfinfo' },
-
-  { k:'entropy', name:'The entropy of a source',
-    asks:'A set of probabilities is given. Find the entropy and compare it with its bounds.',
-    method:['$H(S)=-\\sum_k p_k\\log_2 p_k$. Compute one term at a time and keep four decimals. The answers in this module are small and the rounding shows.',
-            'Check $0\\le H(S)\\le\\log_2 K$ every time. A value above $\\log_2 K$ means a sign or a base was lost.',
-            'Convert with $\\log_2 x=\\ln x/\\ln 2$ if the calculator has no base-two logarithm.'],
+  { k:'fx', name:'A function of one uniform source',
+    asks:'A uniform source $X$ and a mapping $Y\\triangleq f(X)$ are given: a remainder, an absolute value, a square, a floor, a maximum or a bit count. Find the entropy of $Y$, a binary Huffman code and its efficiency.',
+    method:['List $f(x)$ for every value of $X$. A remainder is taken in $\\{0,\\ldots,m-1\\}$, also for a negative number.',
+            'Add the probabilities of the values that give the same $y$. The pmf of $Y$ adds to one, and $H(Y)\\le\\log_2 K$ for $K$ symbols.',
+            'Build the Huffman code on numerators over a common denominator. Then $\\bar{L}=\\sum_y P(Y=y)\\,l(y)$ and $\\eta=H(Y)/\\bar{L}$.'],
     go:'m6-entropy' },
 
-  { k:'extension', name:'An extended source',
-    asks:'A source is extended by $n$. Find the size of the new alphabet and its entropy.',
-    method:['The $n$-th extension has $K^n$ symbols, one for each block of $n$.',
-            '$H(S^n)=nH(S)$, and it holds because the source is memoryless — the block probabilities are products, and independent information adds.',
-            'Per symbol nothing has changed: $H(S^n)/n$ is $H(S)$ again. What changes is how much of a whole bit gets wasted in rounding.'],
-    go:'m6-extension' },
+  { k:'fxz', name:'A function of two sources, one with an unknown constant',
+    asks:'A uniform $X$ and an independent $Z$ whose pmf holds a constant $c$ are given, with $Y\\triangleq f(X,Z)$. Find $c$, then the entropy, a Huffman code and its efficiency.',
+    method:['Find $c$ from $\\sum_z p_Z(z)=1$. A negative exponent inverts the base, so $\\left(\\tfrac13\\right)^{-1}=3$.',
+            'Over a common denominator, the pair $(x,z)$ has weight $n_X(x)\\,n_Z(z)$. Add the weights of the pairs that give the same $y$.',
+            'Check that the numerators add to the denominator before the tree is built. Then code and judge as for one source.'],
+    go:'m6-huffman' },
 
-  { k:'code', name:'Measuring a code',
-    asks:'A code is given with the probabilities. Find its average length and efficiency, and say whether it is a prefix code.',
-    method:['$\\bar{L}=\\sum_k p_k l_k$, then $\\eta=H(S)/\\bar{L}$. The efficiency can never exceed one.',
-            'For the prefix test, compare every codeword with every other: if any one is the start of another, it is not a prefix code.',
-            'To decode a string with a prefix code, read bits until they match a codeword, emit it, and start again. No backtracking is ever needed.'],
-    go:'m6-prefix' },
+  { k:'sum', name:'Two independent sources described by ratios',
+    asks:'Two independent sources are given by alphabets and ratio statements, and $Z$ is their sum, difference, product, minimum or distance. Find the entropy, a Huffman code and its efficiency.',
+    method:['Turn each ratio statement into probabilities. Call the smallest one $q$, write the others as multiples of it, and use the sum of one.',
+            'Tabulate $z$ for every pair $(x,y)$, and add the product probabilities of the cells with the same $z$.',
+            'Merge the two smallest, $0$ to the upper and $1$ to the lower, and place each sum as high as possible among equals.'],
+    go:'m6-coding' },
 
-  { k:'kraft', name:'The Kraft inequality',
-    asks:'A set of codeword lengths is given. Say whether a prefix code with those lengths exists.',
-    method:['Compute $\\sum_k 2^{-l_k}$. At most one and such a code exists. Above one and none does.',
-            'Read it as a budget: a codeword of length $l$ spends $2^{-l}$ of the tree.',
-            'Passing does not make a particular code a prefix code — it only says that some code with those lengths is one.'],
-    go:'m6-kraft' },
+  { k:'judge', name:'Judging a code',
+    asks:'A source is coded twice, or a proposed code is given. Compare with a fixed-length code, test the Kraft inequality, or compare the length variance of two Huffman codes.',
+    method:['A fixed-length code needs $\\lceil\\log_2 K\\rceil$ bits. Lengths $l_k$ admit a prefix code only if $\\sum_k 2^{-l_k}\\le 1$.',
+            'An average length below the entropy is impossible for a uniquely decodable code. Two Huffman codes of one source have the same $\\bar{L}$.',
+            'Codes with equal $\\bar{L}$ differ in $\\sigma^{2}=\\sum_k p_k(l_k-\\bar{L})^{2}$. The smaller variance gives the steadier bit rate.'],
+    go:'m6-huffman-var' },
 
-  { k:'huffman', name:'Building and judging a Huffman code',
-    asks:'A set of probabilities is given. Build the code, then find its average length, efficiency and variance.',
-    method:['Merge the two least likely, label them $0$ and $1$, put the sum back in the list, and repeat until two are left.',
-            'On a tie, place the merged symbol as high as possible. Both choices give the same $\\bar{L}$. Only the high one gives the least variance.',
-            'Finish with $\\bar{L}$, $\\eta=H(S)/\\bar{L}$ and $\\sigma^{2}=\\sum_k p_k(l_k-\\bar{L})^{2}$, and check $H(S)\\le\\bar{L}<H(S)+1$.'] },
+  { k:'block', name:'Coding the second-order extension',
+    asks:'A source with few symbols is coded one symbol at a time, then in pairs. Compare the bits per symbol and the efficiencies.',
+    method:['The extension has $K^{2}$ symbols. For a memoryless source each pair probability is a product.',
+            'Build the Huffman code on the pairs, then divide its average length by two.',
+            'Since $H(S^{2})=2H(S)$, the pair code has efficiency $2H(S)/\\bar{L}_2$. It is never below that of the single-symbol code.'],
+    go:'m6-bound' },
 
-  { k:'universal', name:'Parsing for a universal code',
-    asks:'A stream or a list of parsed pieces is given. Encode them, or decode a received block.',
-    method:['Each new piece is the shortest run not yet stored, so everything but its last bit is already in the dictionary. Find that entry: it is the pointer.',
-            'A transmitted block is the pointer in binary followed by the one new bit. To decode, split the last bit off first — it is the innovation — and read the rest as a position.',
-            'Check every piece by confirming its own start is already stored. If it is not, the parse was wrong.'],
-    go:'m6-lz' },
-
-  { k:'channel', name:'A channel and what it lets through',
-    asks:'A channel matrix and an input distribution are given. Find the output distribution, the entropies and the mutual information.',
-    method:['Check the matrix first: every row sums to one. Columns need not, and expecting them to is the usual first mistake.',
-            'Joint is $p(x_j,y_k)=p(y_k\\mid x_j)p(x_j)$. The output distribution is the column sums of that.',
-            '$H(Y\\mid X)=\\sum_j p(x_j)H(\\text{row }j)$, then $I(X;Y)=H(Y)-H(Y\\mid X)$. Going through $H(X\\mid Y)$ instead needs Bayes\' rule and is longer.'],
-    go:'m6-mutual' },
-
-  { k:'capacity', name:'Capacity, and what it permits',
-    asks:'A channel is given, discrete or bandlimited. Find its capacity and say what rate it supports.',
-    method:['For the binary symmetric channel $C=1-H(p)$, reached with equally likely inputs. For anything asymmetric, write $I(X;Y)$ as a function of the input distribution and maximise it.',
-            'For a bandlimited channel $C=B\\log_2(1+P/N_0B)$ bits per second. Keep the units straight: bits per <em>use</em> for a discrete channel, bits per <em>second</em> for this one.',
-            'Reliable communication needs $R_b<C$. Nothing else about the code enters the answer.'],
-    go:'m6-capacity' }
+  { k:'info', name:'The entropy of a function against its inputs',
+    asks:'A source derived from others is given. Besides its code, find the joint entropy, a conditional entropy or the mutual information between the output and an input.',
+    method:['A function of $X$ has $H(Y\\mid X)=0$, so $I(X;Y)=H(Y)$ and $H(X,Y)=H(X)$.',
+            'For $Z=X+Y$ with independent inputs, fixing $X$ leaves only the uncertainty of $Y$, so $H(Z\\mid X)=H(Y)$.',
+            'Check $H(Y)\\le H(X)$ for a function, and $I(X;Z)\\le\\min\\{H(X),H(Z)\\}$ for any pair.'],
+    go:'m6-condent' }
 ];
 
+/* ======================================================================
+   The questions.
+   ====================================================================== */
 CONTENT.DRILL = CONTENT.DRILL.concat([
+{ id:'D6-01', module:'M6', type:'fx', src:'Final Q4',
+  stem:'Let $X$ be a discrete memoryless source (DMS) which is modeled as a uniform random variable taking the integer values between $-4$ and $4$. Let $Y\\triangleq X^{3}\\;(\\bmod 5)$ be another DMS which is a function of $X$. Here $a\\bmod m$ denotes the remainder of $a$ on division by $m$, taken in $\\{0,1,\\ldots,m-1\\}$.',
+  parts:['[10 pts] Calculate the entropy of the source, $Y$.',
+         '[10 pts] Design a <em>binary</em> Huffman code for the source, $Y$.',
+         '[5 pts] Calculate the coding efficiency of the Huffman code designed in part (b).'],
+  figSol: () => figPmf({v:[0,1,2,3,4],n:[1,2,2,2,2],D:9,name:'Y'})+figHuff({n:[1,2,2,2,2],D:9,name:'Y',lab:['0','1','2','3','4'],codes:['001','01','10','11','000'],order:['00','1','0','']}),
+  sol:'<b>Given.</b> $X$ is uniform on the nine integers $-4,\\ldots,4$, and $Y=X^{3}\\bmod 5$.<br>'
+     +'<b>Find.</b> $H(Y)$, a binary Huffman code for $Y$, and its coding efficiency.<br>'
+     +'<b>Method.</b> List $Y$ for every value of $X$, then add the probabilities that give the same value of $Y$. The entropy is $H(Y)=\\sum_{y}P(Y=y)\\log_2\\frac{1}{P(Y=y)}$, in bits because the logarithm has base two. Huffman\'s procedure fits the code part, since no prefix code for single symbols has a smaller average length. Merge the two smallest, give $0$ to the upper and $1$ to the lower, and place each sum as high as possible among equals. The efficiency is $\\eta=H(Y)/\\bar{L}$.<br>'
+     +'<b>Solution — (a).</b> '
+     +'Each of the nine values of $X$ has probability $\\tfrac{1}{9}$. A negative cube needs care with the remainder.'
+     +' For example $(-4)^{3}=-64=5(-13)+1$, so $-64\\bmod 5=1$. The table groups the values of $X$ by the value of $Y$.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c}'
+     +' y&x\\ \\text{values}&P(Y=y)\\\\\\hline'
+     +' 0&0&\\frac{1}{9}\\\\'
+     +' 1&-4,\\,1&\\frac{2}{9}\\\\'
+     +' 2&-2,\\,3&\\frac{2}{9}\\\\'
+     +' 3&-3,\\,2&\\frac{2}{9}\\\\'
+     +' 4&-1,\\,4&\\frac{2}{9}'
+     +'\\end{array}$$</div>'
+     +'The probabilities add to $\\frac{9}{9}=1$. The entropy is'
+     +'$$\\begin{aligned}'
+     +' H(Y)&=\\sum_{y}P(Y=y)\\log_2\\frac{1}{P(Y=y)}\\\\'
+     +'&=4\\cdot\\frac{2}{9}\\log_2 \\frac{9}{2}+\\frac{1}{9}\\log_2 9\\\\'
+     +'&=4(0.4822)+0.3522\\\\'
+     +'&=2.2810\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$<br>'
+     +'<b>Solution — (b).</b> '
+     +'Work with the numerators over $9$. Each line gives one merge and the new list, with the new sum in bold.<br>'
+     +'Start: $2,2,2,2,1$.<br>'
+     +'Merge $1$: $2+1=3$, list $\\mathbf{3},2,2,2$.<br>'
+     +'Merge $2$: $2+2=4$, list $\\mathbf{4},3,2$.<br>'
+     +'Merge $3$: $3+2=5$, list $\\mathbf{5},4$.<br>'
+     +'Merge $4$: $5+4=9$, list $\\mathbf{9}$.<br>'
+     +'In every merge the upper entry takes $0$ and the lower entry takes $1$. Reading the labels from the root back to each symbol gives the code.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c|c}'
+     +' y&P(Y=y)&\\text{codeword}&l\\\\\\hline'
+     +' 4&\\frac{2}{9}&\\mathtt{000}&3\\\\'
+     +' 0&\\frac{1}{9}&\\mathtt{001}&3\\\\'
+     +' 1&\\frac{2}{9}&\\mathtt{01}&2\\\\'
+     +' 2&\\frac{2}{9}&\\mathtt{10}&2\\\\'
+     +' 3&\\frac{2}{9}&\\mathtt{11}&2'
+     +'\\end{array}$$</div><br>'
+     +'<b>Solution — (c).</b> '
+     +'The average codeword length is'
+     +'$$\\begin{aligned}'
+     +'\\bar{L}&=\\sum_{y}P(Y=y)\\,l(y)\\\\'
+     +'&=\\frac{1}{9}\\bigl[2(3)+1(3)+2(2)+2(2)+2(2)\\bigr]\\\\'
+     +'&=\\frac{21}{9}\\\\'
+     +'&=\\frac{7}{3}\\\\'
+     +'&=2.3333\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$'
+     +'The coding efficiency is'
+     +'$$\\begin{aligned}'
+     +'\\eta&=\\frac{H(Y)}{\\bar{L}}\\\\'
+     +'&=\\frac{2.2810}{2.3333}\\\\'
+     +'&=0.9776'
+     +'\\end{aligned}$$'
+     +'In percent, $\\eta=97.76\\%$.<br>'
+     +'<b>Check.</b> '
+     +'The average length also equals the sum of the probabilities formed by the merges, the root included:'
+     +'$$\\bar{L}=\\frac{3+4+5+9}{9}=\\frac{21}{9}$$'
+     +'This matches part (c). The entropy follows by a second route, from the numerators $n_y=9\\,P(Y=y)$:'
+     +'$$\\begin{aligned}'
+     +' H(Y)&=\\log_2 9-\\frac{1}{9}\\sum_{y}n_y\\log_2 n_y\\\\'
+     +'&=3.1699-\\frac{1}{9}\\bigl(4\\cdot2\\log_2 2\\bigr)\\\\'
+     +'&=3.1699-0.8889\\\\'
+     +'&=2.2810'
+     +'\\end{aligned}$$'
+     +'The Kraft sum is $3\\cdot 2^{-2}+2\\cdot 2^{-3}=1$, so the tree has no unused branch. The bound $2.2810\\le 2.3333<3.2810$ holds.'
+     +' The cube only permutes the residues modulo $5$, so each $P(Y=y)$ is the probability of one residue of $X$.'
+     +' Nine consecutive integers hold residue $0$ once and every other residue twice, as the table shows.',
+  err:'Taking $-64\\bmod 5=-4$. The remainder lies in $\\{0,1,2,3,4\\}$, so $-64\\bmod 5=1$. A negative remainder invents symbols that $Y$ never takes.',
+  teach:'This is the examination shape with a new range and a new modulus. The cube permutes the residues modulo $5$, so only the count of each residue in the range matters.' },
 
-/* ---- single-skill ---------------------------------------------------- */
+{ id:'D6-02', module:'M6', type:'fx', src:'Final Q4',
+  stem:'Let $X$ be a discrete memoryless source (DMS) which is modeled as a uniform random variable taking the integer values between $0$ and $9$. Let $Y\\triangleq X^{2}\\;(\\bmod 10)$ be another DMS which is a function of $X$. Here $a\\bmod m$ denotes the remainder of $a$ on division by $m$, taken in $\\{0,1,\\ldots,m-1\\}$. In words, $Y$ is the last decimal digit of $X^{2}$.',
+  parts:['[10 pts] Calculate the entropy of the source, $Y$.',
+         '[10 pts] Design a <em>binary</em> Huffman code for the source, $Y$.',
+         '[5 pts] Calculate the coding efficiency of the Huffman code designed in part (b).'],
+  figSol: () => figPmf({v:[0,1,4,5,6,9],n:[1,2,2,1,2,2],D:10,name:'Y'})+figHuff({n:[1,2,2,1,2,2],D:10,name:'Y',lab:['0','1','4','5','6','9'],codes:['010','10','11','011','000','001'],order:['01','00','1','0','']}),
+  sol:'<b>Given.</b> $X$ is uniform on $0,1,\\ldots,9$, and $Y=X^{2}\\bmod 10$.<br>'
+     +'<b>Find.</b> $H(Y)$, a binary Huffman code for $Y$, and its coding efficiency.<br>'
+     +'<b>Method.</b> List $Y$ for every value of $X$, then add the probabilities that give the same value of $Y$. The entropy is $H(Y)=\\sum_{y}P(Y=y)\\log_2\\frac{1}{P(Y=y)}$, in bits because the logarithm has base two. Huffman\'s procedure fits the code part, since no prefix code for single symbols has a smaller average length. Merge the two smallest, give $0$ to the upper and $1$ to the lower, and place each sum as high as possible among equals. The efficiency is $\\eta=H(Y)/\\bar{L}$.<br>'
+     +'<b>Solution — (a).</b> '
+     +'Each of the ten values of $X$ has probability $\\tfrac{1}{10}$. For example $7^{2}=49$ gives $Y=9$, and $4^{2}=16$ gives $Y=6$.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c}'
+     +' y&x\\ \\text{values}&P(Y=y)\\\\\\hline'
+     +' 0&0&\\frac{1}{10}\\\\'
+     +' 1&1,\\,9&\\frac{2}{10}\\\\'
+     +' 4&2,\\,8&\\frac{2}{10}\\\\'
+     +' 5&5&\\frac{1}{10}\\\\'
+     +' 6&4,\\,6&\\frac{2}{10}\\\\'
+     +' 9&3,\\,7&\\frac{2}{10}'
+     +'\\end{array}$$</div>'
+     +'The probabilities add to $\\frac{10}{10}=1$. The entropy is'
+     +'$$\\begin{aligned}'
+     +' H(Y)&=\\sum_{y}P(Y=y)\\log_2\\frac{1}{P(Y=y)}\\\\'
+     +'&=4\\cdot\\frac{2}{10}\\log_2 5+2\\cdot\\frac{1}{10}\\log_2 10\\\\'
+     +'&=4(0.46439)+2(0.33219)\\\\'
+     +'&=2.5219\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$<br>'
+     +'<b>Solution — (b).</b> '
+     +'Work with the numerators over $10$. Each line gives one merge and the new list, with the new sum in bold.<br>'
+     +'Start: $2,2,2,2,1,1$.<br>'
+     +'Merge $1$: $1+1=2$, list $\\mathbf{2},2,2,2,2$.<br>'
+     +'Merge $2$: $2+2=4$, list $\\mathbf{4},2,2,2$.<br>'
+     +'Merge $3$: $2+2=4$, list $\\mathbf{4},4,2$.<br>'
+     +'Merge $4$: $4+2=6$, list $\\mathbf{6},4$.<br>'
+     +'Merge $5$: $6+4=10$, list $\\mathbf{10}$.<br>'
+     +'In every merge the upper entry takes $0$ and the lower entry takes $1$. Reading the labels from the root back to each symbol gives the code.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c|c}'
+     +' y&P(Y=y)&\\text{codeword}&l\\\\\\hline'
+     +' 6&\\frac{2}{10}&\\mathtt{000}&3\\\\'
+     +' 9&\\frac{2}{10}&\\mathtt{001}&3\\\\'
+     +' 0&\\frac{1}{10}&\\mathtt{010}&3\\\\'
+     +' 5&\\frac{1}{10}&\\mathtt{011}&3\\\\'
+     +' 1&\\frac{2}{10}&\\mathtt{10}&2\\\\'
+     +' 4&\\frac{2}{10}&\\mathtt{11}&2'
+     +'\\end{array}$$</div><br>'
+     +'<b>Solution — (c).</b> '
+     +'The average codeword length is'
+     +'$$\\begin{aligned}'
+     +'\\bar{L}&=\\sum_{y}P(Y=y)\\,l(y)\\\\'
+     +'&=\\frac{1}{10}\\bigl[2(3)+2(3)+1(3)+1(3)\\\\&\\qquad+2(2)+2(2)\\bigr]\\\\'
+     +'&=\\frac{26}{10}\\\\'
+     +'&=\\frac{13}{5}\\\\'
+     +'&=2.6000\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$'
+     +'The coding efficiency is'
+     +'$$\\begin{aligned}'
+     +'\\eta&=\\frac{H(Y)}{\\bar{L}}\\\\'
+     +'&=\\frac{2.5219}{2.6000}\\\\'
+     +'&=0.9700'
+     +'\\end{aligned}$$'
+     +'In percent, $\\eta=97.00\\%$.<br>'
+     +'<b>Check.</b> '
+     +'The average length also equals the sum of the probabilities formed by the merges, the root included:'
+     +'$$\\bar{L}=\\frac{2+4+4+6+10}{10}=\\frac{26}{10}$$'
+     +'This matches part (c). The entropy follows by a second route, from the numerators $n_y=10\\,P(Y=y)$:'
+     +'$$\\begin{aligned}'
+     +' H(Y)&=\\log_2 10-\\frac{1}{10}\\sum_{y}n_y\\log_2 n_y\\\\'
+     +'&=3.3219-\\frac{1}{10}\\bigl(4\\cdot2\\log_2 2\\bigr)\\\\'
+     +'&=3.3219-0.8000\\\\'
+     +'&=2.5219'
+     +'\\end{aligned}$$'
+     +'The Kraft sum is $2\\cdot 2^{-2}+4\\cdot 2^{-3}=1$, so the tree has no unused branch. The bound $2.5219\\le 2.6000<3.5219$ holds.'
+     +' Each digit other than $0$ and $5$ comes from a pair $x$ and $10-x$, because $(10-x)^{2}=100-20x+x^{2}$ ends in the same digit as $x^{2}$.',
+  err:'Listing the digits $0,1,4,5,6,9$ and treating them as equally likely. The digits $0$ and $5$ each come from one value of $X$, and the other four from two.',
+  teach:'Ask first which last digits a square can never have. The answer $2,3,7,8$ gives the alphabet of $Y$ before any probability is computed.' },
 
-{ id:'D6-01', module:'M6', type:'selfinfo', src:'CH10 s.4',
-  stem:'A source emits a symbol of probability $1/4$ and, independently, a second of probability $1/32$.',
-  parts:['Give the information each symbol carries.',
-         'Give the information in the pair, two ways.'],
-  sol:'<b>Given.</b> Two independent symbols with $p=1/4$ and $p=1/32$.<br>'
-     +'<b>Find.</b> $I$ for each and for the pair.<br>'
-     +'<b>Method.</b> $I(s_k)=-\\log_2 p_k$. For independent symbols the information adds.<br>'
-     +'<b>Solution — (a).</b> $-\\log_2\\frac14=2$ bits and $-\\log_2\\frac{1}{32}=5$ bits.<br>'
-     +'<b>Solution — (b).</b> Adding: $2+5=7$ bits. Or directly: the pair has probability $\\frac14\\times\\frac{1}{32}=\\frac{1}{128}$, and $-\\log_2\\frac{1}{128}=7$ bits.<br>'
-     +'<b>Check.</b> The two routes agree, which is the third property of self-information doing its job. It is also the reason the measure has to be a logarithm: no other function turns a product of probabilities into a sum of anything.',
-  err:'Multiplying the two informations instead of adding them. The probabilities multiply; their logarithms add.',
-  teach:'Ask what probability carries exactly one bit. The answer $1/2$ says what a bit <em>is</em>: the information in one fair coin flip. Every other number in this module is measured against that.' },
+{ id:'D6-03', module:'M6', type:'fx', src:'Final Q4',
+  stem:'Let $X$ be a discrete memoryless source (DMS) which is modeled as a uniform random variable taking the integer values between $1$ and $12$. Let $Y\\triangleq \\left\\lfloor 12/X\\right\\rfloor$ be another DMS which is a function of $X$. Here $\\lfloor u\\rfloor$ is the largest integer not greater than $u$.',
+  parts:['[10 pts] Calculate the entropy of the source, $Y$.',
+         '[10 pts] Design a <em>binary</em> Huffman code for the source, $Y$.',
+         '[5 pts] Calculate the coding efficiency of the Huffman code designed in part (b).'],
+  figSol: () => figPmf({v:[1,2,3,4,6,12],n:[6,2,1,1,1,1],D:12,name:'Y'})+figHuff({n:[6,2,1,1,1,1],D:12,name:'Y',lab:['1','2','3','4','6','12'],codes:['1','001','010','011','0000','0001'],order:['000','01','00','0','']}),
+  sol:'<b>Given.</b> $X$ is uniform on $1,2,\\ldots,12$, and $Y=\\lfloor 12/X\\rfloor$.<br>'
+     +'<b>Find.</b> $H(Y)$, a binary Huffman code for $Y$, and its coding efficiency.<br>'
+     +'<b>Method.</b> List $Y$ for every value of $X$, then add the probabilities that give the same value of $Y$. The entropy is $H(Y)=\\sum_{y}P(Y=y)\\log_2\\frac{1}{P(Y=y)}$, in bits because the logarithm has base two. Huffman\'s procedure fits the code part, since no prefix code for single symbols has a smaller average length. Merge the two smallest, give $0$ to the upper and $1$ to the lower, and place each sum as high as possible among equals. The efficiency is $\\eta=H(Y)/\\bar{L}$.<br>'
+     +'<b>Solution — (a).</b> '
+     +'Each of the twelve values of $X$ has probability $\\tfrac{1}{12}$. The floor keeps the integer part.'
+     +' For example $\\lfloor 12/5\\rfloor=\\lfloor 2.4\\rfloor=2$ and $\\lfloor 12/7\\rfloor=\\lfloor 1.71\\rfloor=1$.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c}'
+     +' y&x\\ \\text{values}&P(Y=y)\\\\\\hline'
+     +' 1&7,\\,8,\\,9,\\,10,\\,11,\\,12&\\frac{6}{12}\\\\'
+     +' 2&5,\\,6&\\frac{2}{12}\\\\'
+     +' 3&4&\\frac{1}{12}\\\\'
+     +' 4&3&\\frac{1}{12}\\\\'
+     +' 6&2&\\frac{1}{12}\\\\'
+     +' 12&1&\\frac{1}{12}'
+     +'\\end{array}$$</div>'
+     +'The probabilities add to $\\frac{12}{12}=1$. The entropy is'
+     +'$$\\begin{aligned}'
+     +' H(Y)&=\\sum_{y}P(Y=y)\\log_2\\frac{1}{P(Y=y)}\\\\'
+     +'&=\\frac{6}{12}\\log_2 2+\\frac{2}{12}\\log_2 6+4\\cdot\\frac{1}{12}\\log_2 12\\\\'
+     +'&=0.50000+0.43083+4(0.29875)\\\\'
+     +'&=2.1258\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$<br>'
+     +'<b>Solution — (b).</b> '
+     +'Work with the numerators over $12$. Each line gives one merge and the new list, with the new sum in bold.<br>'
+     +'Start: $6,2,1,1,1,1$.<br>'
+     +'Merge $1$: $1+1=2$, list $6,\\mathbf{2},2,1,1$.<br>'
+     +'Merge $2$: $1+1=2$, list $6,\\mathbf{2},2,2$.<br>'
+     +'Merge $3$: $2+2=4$, list $6,\\mathbf{4},2$.<br>'
+     +'Merge $4$: $4+2=6$, list $\\mathbf{6},6$.<br>'
+     +'Merge $5$: $6+6=12$, list $\\mathbf{12}$.<br>'
+     +'In every merge the upper entry takes $0$ and the lower entry takes $1$. Reading the labels from the root back to each symbol gives the code.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c|c}'
+     +' y&P(Y=y)&\\text{codeword}&l\\\\\\hline'
+     +' 6&\\frac{1}{12}&\\mathtt{0000}&4\\\\'
+     +' 12&\\frac{1}{12}&\\mathtt{0001}&4\\\\'
+     +' 2&\\frac{2}{12}&\\mathtt{001}&3\\\\'
+     +' 3&\\frac{1}{12}&\\mathtt{010}&3\\\\'
+     +' 4&\\frac{1}{12}&\\mathtt{011}&3\\\\'
+     +' 1&\\frac{6}{12}&\\mathtt{1}&1'
+     +'\\end{array}$$</div><br>'
+     +'<b>Solution — (c).</b> '
+     +'The average codeword length is'
+     +'$$\\begin{aligned}'
+     +'\\bar{L}&=\\sum_{y}P(Y=y)\\,l(y)\\\\'
+     +'&=\\frac{1}{12}\\bigl[1(4)+1(4)+2(3)+1(3)\\\\&\\qquad+1(3)+6(1)\\bigr]\\\\'
+     +'&=\\frac{26}{12}\\\\'
+     +'&=\\frac{13}{6}\\\\'
+     +'&=2.1667\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$'
+     +'The coding efficiency is'
+     +'$$\\begin{aligned}'
+     +'\\eta&=\\frac{H(Y)}{\\bar{L}}\\\\'
+     +'&=\\frac{2.1258}{2.1667}\\\\'
+     +'&=0.9811'
+     +'\\end{aligned}$$'
+     +'In percent, $\\eta=98.11\\%$.<br>'
+     +'<b>Check.</b> '
+     +'The average length also equals the sum of the probabilities formed by the merges, the root included:'
+     +'$$\\bar{L}=\\frac{2+2+4+6+12}{12}=\\frac{26}{12}$$'
+     +'This matches part (c). The entropy follows by a second route, from the numerators $n_y=12\\,P(Y=y)$:'
+     +'$$\\begin{aligned}'
+     +' H(Y)&=\\log_2 12-\\frac{1}{12}\\sum_{y}n_y\\log_2 n_y\\\\'
+     +'&=3.5850-\\frac{1}{12}\\bigl(6\\log_2 6+2\\log_2 2\\bigr)\\\\'
+     +'&=3.5850-1.4591\\\\'
+     +'&=2.1258'
+     +'\\end{aligned}$$'
+     +'The Kraft sum is $2^{-1}+3\\cdot 2^{-3}+2\\cdot 2^{-4}=1$, so the tree has no unused branch. The bound $2.1258\\le 2.1667<3.1258$ holds.',
+  err:'Taking $Y=12/X$ as a real number, which gives twelve different values. The floor sends $X=7,\\ldots,12$ to the single symbol $Y=1$.',
+  teach:'One symbol carries half the probability, so it gets a single bit. The four symbols of probability $\\tfrac{1}{12}$ show the rule for placing sums.' },
 
-{ id:'D6-02', module:'M6', type:'selfinfo', src:'CH10 s.4',
-  stem:'A symbol carries $3$ bits of self-information.',
-  parts:['Give its probability.',
-         'Say what happens to the information if the probability is halved.'],
-  sol:'<b>Given.</b> $I(s_k)=3$ bits.<br>'
-     +'<b>Find.</b> $p_k$, and the effect of halving it.<br>'
-     +'<b>Method.</b> Invert $I=-\\log_2 p$, which gives $p=2^{-I}$.<br>'
-     +'<b>Solution — (a).</b> $p_k=2^{-3}=1/8$.<br>'
-     +'<b>Solution — (b).</b> Halving to $1/16$ gives $-\\log_2\\frac{1}{16}=4$ bits: one more bit, not twice as many.<br>'
-     +'<b>Check.</b> Every halving of the probability adds exactly one bit, because $\\log_2$ of a half is $-1$. That is the whole behaviour of the measure in one sentence.',
-  err:'Reading "halved" as "the information doubles". The logarithm turns a factor into an addition, and this is exactly where that matters.',
-  teach:'The rule that one halving costs one bit is worth memorising. It makes almost every estimate in this module doable without a calculator. A probability of $1/1000$ is about ten halvings from one. Therefore, about $10$ bits.' },
+{ id:'D6-04', module:'M6', type:'fx', src:'Final Q4',
+  stem:'Let $X$ be a discrete memoryless source (DMS) which is modeled as a uniform random variable taking the integer values between $0$ and $15$. Each value of $X$ is written as a four-bit binary word. Let $Y$ be the number of ones in that word. $Y$ is another DMS which is a function of $X$.',
+  parts:['[10 pts] Calculate the entropy of the source, $Y$.',
+         '[10 pts] Design a <em>binary</em> Huffman code for the source, $Y$.',
+         '[5 pts] Calculate the coding efficiency of the Huffman code designed in part (b).'],
+  figSol: () => figPmf({v:[0,1,2,3,4],n:[1,4,6,4,1],D:16,name:'Y'})+figHuff({n:[1,4,6,4,1],D:16,name:'Y',lab:['0','1','2','3','4'],codes:['110','01','00','10','111'],order:['11','1','0','']}),
+  sol:'<b>Given.</b> $X$ is uniform on $0,\\ldots,15$, and $Y$ is the number of ones in the four-bit word of $X$.<br>'
+     +'<b>Find.</b> $H(Y)$, a binary Huffman code for $Y$, and its coding efficiency.<br>'
+     +'<b>Method.</b> List $Y$ for every value of $X$, then add the probabilities that give the same value of $Y$. The entropy is $H(Y)=\\sum_{y}P(Y=y)\\log_2\\frac{1}{P(Y=y)}$, in bits because the logarithm has base two. Huffman\'s procedure fits the code part, since no prefix code for single symbols has a smaller average length. Merge the two smallest, give $0$ to the upper and $1$ to the lower, and place each sum as high as possible among equals. The efficiency is $\\eta=H(Y)/\\bar{L}$.<br>'
+     +'<b>Solution — (a).</b> '
+     +'Each of the sixteen values of $X$ has probability $\\tfrac{1}{16}$. For example $X=11$ is the word $1011$, which has three ones.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c}'
+     +' y&x\\ \\text{values}&P(Y=y)\\\\\\hline'
+     +' 0&0&\\frac{1}{16}\\\\'
+     +' 1&1,\\,2,\\,4,\\,8&\\frac{4}{16}\\\\'
+     +' 2&3,\\,5,\\,6,\\,9,\\,10,\\,12&\\frac{6}{16}\\\\'
+     +' 3&7,\\,11,\\,13,\\,14&\\frac{4}{16}\\\\'
+     +' 4&15&\\frac{1}{16}'
+     +'\\end{array}$$</div>'
+     +'The probabilities add to $\\frac{16}{16}=1$. The entropy is'
+     +'$$\\begin{aligned}'
+     +' H(Y)&=\\sum_{y}P(Y=y)\\log_2\\frac{1}{P(Y=y)}\\\\'
+     +'&=\\frac{6}{16}\\log_2 \\frac{8}{3}+2\\cdot\\frac{4}{16}\\log_2 4+2\\cdot\\frac{1}{16}\\log_2 16\\\\'
+     +'&=0.5306+2(0.5000)+2(0.2500)\\\\'
+     +'&=2.0306\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$<br>'
+     +'<b>Solution — (b).</b> '
+     +'Work with the numerators over $16$. Each line gives one merge and the new list, with the new sum in bold.<br>'
+     +'Start: $6,4,4,1,1$.<br>'
+     +'Merge $1$: $1+1=2$, list $6,4,4,\\mathbf{2}$.<br>'
+     +'Merge $2$: $4+2=6$, list $\\mathbf{6},6,4$.<br>'
+     +'Merge $3$: $6+4=10$, list $\\mathbf{10},6$.<br>'
+     +'Merge $4$: $10+6=16$, list $\\mathbf{16}$.<br>'
+     +'In every merge the upper entry takes $0$ and the lower entry takes $1$. Reading the labels from the root back to each symbol gives the code.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c|c}'
+     +' y&P(Y=y)&\\text{codeword}&l\\\\\\hline'
+     +' 2&\\frac{6}{16}&\\mathtt{00}&2\\\\'
+     +' 1&\\frac{4}{16}&\\mathtt{01}&2\\\\'
+     +' 3&\\frac{4}{16}&\\mathtt{10}&2\\\\'
+     +' 0&\\frac{1}{16}&\\mathtt{110}&3\\\\'
+     +' 4&\\frac{1}{16}&\\mathtt{111}&3'
+     +'\\end{array}$$</div><br>'
+     +'<b>Solution — (c).</b> '
+     +'The average codeword length is'
+     +'$$\\begin{aligned}'
+     +'\\bar{L}&=\\sum_{y}P(Y=y)\\,l(y)\\\\'
+     +'&=\\frac{1}{16}\\bigl[6(2)+4(2)+4(2)+1(3)+1(3)\\bigr]\\\\'
+     +'&=\\frac{34}{16}\\\\'
+     +'&=\\frac{17}{8}\\\\'
+     +'&=2.1250\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$'
+     +'The coding efficiency is'
+     +'$$\\begin{aligned}'
+     +'\\eta&=\\frac{H(Y)}{\\bar{L}}\\\\'
+     +'&=\\frac{2.0306}{2.1250}\\\\'
+     +'&=0.9556'
+     +'\\end{aligned}$$'
+     +'In percent, $\\eta=95.56\\%$.<br>'
+     +'<b>Check.</b> '
+     +'The average length also equals the sum of the probabilities formed by the merges, the root included:'
+     +'$$\\bar{L}=\\frac{2+6+10+16}{16}=\\frac{34}{16}$$'
+     +'This matches part (c). The entropy follows by a second route, from the numerators $n_y=16\\,P(Y=y)$:'
+     +'$$\\begin{aligned}'
+     +' H(Y)&=\\log_2 16-\\frac{1}{16}\\sum_{y}n_y\\log_2 n_y\\\\'
+     +'&=4.0000-\\frac{1}{16}\\bigl(6\\log_2 6+2\\cdot4\\log_2 4\\bigr)\\\\'
+     +'&=4.0000-1.9694\\\\'
+     +'&=2.0306'
+     +'\\end{aligned}$$'
+     +'The Kraft sum is $3\\cdot 2^{-2}+2\\cdot 2^{-3}=1$, so the tree has no unused branch. The bound $2.0306\\le 2.1250<3.0306$ holds.'
+     +' The numerators $1,4,6,4,1$ are the binomial coefficients $\\binom{4}{y}$, the number of four-bit words with $y$ ones.',
+  err:'Treating $Y$ as uniform on $\\{0,\\ldots,4\\}$. Only one word has no ones, while six words have two ones.',
+  teach:'The pmf is binomial. The same count returns when bit errors in a block are counted.' },
 
-{ id:'D6-03', module:'M6', type:'entropy', src:'CH10 s.5',
-  stem:'A discrete memoryless source has probabilities $0.5,\\;0.25,\\;0.125,\\;0.125$.',
-  parts:['Give the entropy.',
-         'Compare it with the maximum an alphabet of this size allows.'],
-  sol:'<b>Given.</b> Four symbols with the probabilities listed.<br>'
-     +'<b>Find.</b> $H(S)$ and the ceiling.<br>'
-     +'<b>Method.</b> $H(S)=-\\sum p_k\\log_2 p_k$. Every probability here is a power of two, so every logarithm is a whole number.<br>'
-     +'<b>Solution — (a).</b> $H(S)=0.5(1)+0.25(2)+0.125(3)+0.125(3)=0.5+0.5+0.375+0.375=1.75$ bits a symbol.<br>'
-     +'<b>Solution — (b).</b> $\\log_2 4=2$ bits, so the source is $0.25$ bits below the ceiling.<br>'
-     +'<b>Check.</b> The answer came out exact because the probabilities are dyadic. That is not an accident of this question — it is the condition under which a code reaches the entropy exactly, and D6-15 builds that code.',
-  err:'Using $-\\log_2 0.5=0.5$. The logarithm of a half is $-1$, and the minus sign in front makes it $+1$.',
-  teach:'Worth doing this one entirely on paper. Four terms, all whole-number logarithms, and the total is exact. It is the one entropy in the course that needs no calculator, and it is a useful reference point for the ones that do.' },
+{ id:'D6-05', module:'M6', type:'fx', src:'Final Q4',
+  stem:'Let $X$ be a discrete memoryless source (DMS) which is modeled as a uniform random variable taking the integer values between $-5$ and $5$. Let $Y\\triangleq \\left\\lceil |X|/2\\right\\rceil$ be another DMS which is a function of $X$. Here $\\lceil u\\rceil$ is the smallest integer not less than $u$.',
+  parts:['[10 pts] Calculate the entropy of the source, $Y$.',
+         '[10 pts] Design a <em>binary</em> Huffman code for the source, $Y$.',
+         '[5 pts] Calculate the coding efficiency of the Huffman code designed in part (b).'],
+  figSol: () => figPmf({v:[0,1,2,3],n:[1,4,4,2],D:11,name:'Y'})+figHuff({n:[1,4,4,2],D:11,name:'Y',lab:['0','1','2','3'],codes:['011','1','00','010'],order:['01','0','']}),
+  sol:'<b>Given.</b> $X$ is uniform on the eleven integers $-5,\\ldots,5$, and $Y=\\lceil |X|/2\\rceil$.<br>'
+     +'<b>Find.</b> $H(Y)$, a binary Huffman code for $Y$, and its coding efficiency.<br>'
+     +'<b>Method.</b> List $Y$ for every value of $X$, then add the probabilities that give the same value of $Y$. The entropy is $H(Y)=\\sum_{y}P(Y=y)\\log_2\\frac{1}{P(Y=y)}$, in bits because the logarithm has base two. Huffman\'s procedure fits the code part, since no prefix code for single symbols has a smaller average length. Merge the two smallest, give $0$ to the upper and $1$ to the lower, and place each sum as high as possible among equals. The efficiency is $\\eta=H(Y)/\\bar{L}$.<br>'
+     +'<b>Solution — (a).</b> '
+     +'Each of the eleven values of $X$ has probability $\\tfrac{1}{11}$. The ceiling rounds up.'
+     +' For example $X=-3$ gives $\\lceil 3/2\\rceil=\\lceil 1.5\\rceil=2$, and $X=4$ gives $\\lceil 2\\rceil=2$.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c}'
+     +' y&x\\ \\text{values}&P(Y=y)\\\\\\hline'
+     +' 0&0&\\frac{1}{11}\\\\'
+     +' 1&-2,\\,-1,\\,1,\\,2&\\frac{4}{11}\\\\'
+     +' 2&-4,\\,-3,\\,3,\\,4&\\frac{4}{11}\\\\'
+     +' 3&-5,\\,5&\\frac{2}{11}'
+     +'\\end{array}$$</div>'
+     +'The probabilities add to $\\frac{11}{11}=1$. The entropy is'
+     +'$$\\begin{aligned}'
+     +' H(Y)&=\\sum_{y}P(Y=y)\\log_2\\frac{1}{P(Y=y)}\\\\'
+     +'&=2\\cdot\\frac{4}{11}\\log_2 \\frac{11}{4}+\\frac{2}{11}\\log_2 \\frac{11}{2}+\\frac{1}{11}\\log_2 11\\\\'
+     +'&=2(0.5307)+0.4472+0.3145\\\\'
+     +'&=1.8231\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$<br>'
+     +'<b>Solution — (b).</b> '
+     +'Work with the numerators over $11$. Each line gives one merge and the new list, with the new sum in bold.<br>'
+     +'Start: $4,4,2,1$.<br>'
+     +'Merge $1$: $2+1=3$, list $4,4,\\mathbf{3}$.<br>'
+     +'Merge $2$: $4+3=7$, list $\\mathbf{7},4$.<br>'
+     +'Merge $3$: $7+4=11$, list $\\mathbf{11}$.<br>'
+     +'In every merge the upper entry takes $0$ and the lower entry takes $1$. Reading the labels from the root back to each symbol gives the code.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c|c}'
+     +' y&P(Y=y)&\\text{codeword}&l\\\\\\hline'
+     +' 2&\\frac{4}{11}&\\mathtt{00}&2\\\\'
+     +' 3&\\frac{2}{11}&\\mathtt{010}&3\\\\'
+     +' 0&\\frac{1}{11}&\\mathtt{011}&3\\\\'
+     +' 1&\\frac{4}{11}&\\mathtt{1}&1'
+     +'\\end{array}$$</div><br>'
+     +'<b>Solution — (c).</b> '
+     +'The average codeword length is'
+     +'$$\\begin{aligned}'
+     +'\\bar{L}&=\\sum_{y}P(Y=y)\\,l(y)\\\\'
+     +'&=\\frac{1}{11}\\bigl[4(2)+2(3)+1(3)+4(1)\\bigr]\\\\'
+     +'&=\\frac{21}{11}\\\\'
+     +'&=1.9091\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$'
+     +'The coding efficiency is'
+     +'$$\\begin{aligned}'
+     +'\\eta&=\\frac{H(Y)}{\\bar{L}}\\\\'
+     +'&=\\frac{1.8231}{1.9091}\\\\'
+     +'&=0.9549'
+     +'\\end{aligned}$$'
+     +'In percent, $\\eta=95.49\\%$.<br>'
+     +'<b>Check.</b> '
+     +'The average length also equals the sum of the probabilities formed by the merges, the root included:'
+     +'$$\\bar{L}=\\frac{3+7+11}{11}=\\frac{21}{11}$$'
+     +'This matches part (c). The entropy follows by a second route, from the numerators $n_y=11\\,P(Y=y)$:'
+     +'$$\\begin{aligned}'
+     +' H(Y)&=\\log_2 11-\\frac{1}{11}\\sum_{y}n_y\\log_2 n_y\\\\'
+     +'&=3.4594-\\frac{1}{11}\\bigl(2\\cdot4\\log_2 4+2\\log_2 2\\bigr)\\\\'
+     +'&=3.4594-1.6364\\\\'
+     +'&=1.8231'
+     +'\\end{aligned}$$'
+     +'The Kraft sum is $2^{-1}+2^{-2}+2\\cdot 2^{-3}=1$, so the tree has no unused branch. The bound $1.8231\\le 1.9091<2.8231$ holds.',
+  err:'Rounding down instead of up, which sends $|X|=1$ to $0$. The ceiling is the smallest integer not below its argument, so $\\lceil 0.5\\rceil=1$.',
+  teach:'Four symbols, but not a fixed-length code. One symbol has probability $\\tfrac{1}{11}$, and the tree becomes a ladder of lengths $1,2,3,3$.' },
 
-{ id:'D6-04', module:'M6', type:'entropy', src:'CH10 s.6',
-  stem:'A source has probabilities $0.6,\\;0.3,\\;0.1$.',
-  parts:['Give the entropy.',
-         'Say how many bits a symbol would cost if the three symbols were simply numbered.'],
-  sol:'<b>Given.</b> Three symbols with the probabilities listed.<br>'
-     +'<b>Find.</b> $H(S)$, and the cost of plain numbering.<br>'
-     +'<b>Method.</b> One sum, then compare with $\\lceil\\log_2 3\\rceil$.<br>'
-     +'<b>Solution — (a).</b> $H(S)=-0.6\\log_2 0.6-0.3\\log_2 0.3-0.1\\log_2 0.1=0.4422+0.5211+0.3322=1.2955$ bits a symbol.<br>'
-     +'<b>Solution — (b).</b> Three symbols need $2$ bits each if they are numbered $00$, $01$, $10$.<br>'
-     +'<b>Check.</b> $1.2955$ is below $\\log_2 3=1.585$, as it must be for a source that is not uniform. Numbering costs $2$ bits, so it wastes $0.70$ bits a symbol — over half as much again as the source needs.',
-  err:'Comparing the entropy against $2$ and calling that the ceiling. The ceiling is $\\log_2 K=1.585$. The $2$ is what a fixed-length code costs, which is a different thing.',
-  teach:'Two numbers are being compared here and they are often confused. $\\log_2 K$ is the most a source of this size <em>could</em> carry. $\\lceil\\log_2 K\\rceil$ is what a fixed-length code <em>costs</em>. The gap between them is rounding, and the gap between $H(S)$ and $\\log_2 K$ is the source being uneven.' },
+{ id:'D6-06', module:'M6', type:'fx', src:'Final Q4',
+  stem:'Let $X$ be a discrete memoryless source (DMS) which is modeled as a uniform random variable taking the integer values between $-2$ and $9$. Let $Y\\triangleq |X|\\;(\\bmod 7)$ be another DMS which is a function of $X$. Here $a\\bmod m$ denotes the remainder of $a$ on division by $m$, taken in $\\{0,1,\\ldots,m-1\\}$.',
+  parts:['[10 pts] Calculate the entropy of the source, $Y$.',
+         '[10 pts] Design a <em>binary</em> Huffman code for the source, $Y$.',
+         '[5 pts] Calculate the coding efficiency of the Huffman code designed in part (b).'],
+  figSol: () => figPmf({v:[0,1,2,3,4,5,6],n:[2,3,3,1,1,1,1],D:12,name:'Y'})+figHuff({n:[2,3,3,1,1,1,1],D:12,name:'Y',lab:['0','1','2','3','4','5','6'],codes:['001','01','10','110','111','0000','0001'],order:['000','11','00','1','0','']}),
+  sol:'<b>Given.</b> $X$ is uniform on the twelve integers $-2,\\ldots,9$, and $Y=|X|\\bmod 7$.<br>'
+     +'<b>Find.</b> $H(Y)$, a binary Huffman code for $Y$, and its coding efficiency.<br>'
+     +'<b>Method.</b> List $Y$ for every value of $X$, then add the probabilities that give the same value of $Y$. The entropy is $H(Y)=\\sum_{y}P(Y=y)\\log_2\\frac{1}{P(Y=y)}$, in bits because the logarithm has base two. Huffman\'s procedure fits the code part, since no prefix code for single symbols has a smaller average length. Merge the two smallest, give $0$ to the upper and $1$ to the lower, and place each sum as high as possible among equals. The efficiency is $\\eta=H(Y)/\\bar{L}$.<br>'
+     +'<b>Solution — (a).</b> '
+     +'Each of the twelve values of $X$ has probability $\\tfrac{1}{12}$. The absolute value is taken first.'
+     +' For example $X=-2$ gives $|X|=2$ and $Y=2$, and $X=9$ gives $9\\bmod 7=2$.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c}'
+     +' y&x\\ \\text{values}&P(Y=y)\\\\\\hline'
+     +' 0&0,\\,7&\\frac{2}{12}\\\\'
+     +' 1&-1,\\,1,\\,8&\\frac{3}{12}\\\\'
+     +' 2&-2,\\,2,\\,9&\\frac{3}{12}\\\\'
+     +' 3&3&\\frac{1}{12}\\\\'
+     +' 4&4&\\frac{1}{12}\\\\'
+     +' 5&5&\\frac{1}{12}\\\\'
+     +' 6&6&\\frac{1}{12}'
+     +'\\end{array}$$</div>'
+     +'The probabilities add to $\\frac{12}{12}=1$. The entropy is'
+     +'$$\\begin{aligned}'
+     +' H(Y)&=\\sum_{y}P(Y=y)\\log_2\\frac{1}{P(Y=y)}\\\\'
+     +'&=2\\cdot\\frac{3}{12}\\log_2 4+\\frac{2}{12}\\log_2 6+4\\cdot\\frac{1}{12}\\log_2 12\\\\'
+     +'&=2(0.50000)+0.43083+4(0.29875)\\\\'
+     +'&=2.6258\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$<br>'
+     +'<b>Solution — (b).</b> '
+     +'Work with the numerators over $12$. Each line gives one merge and the new list, with the new sum in bold.<br>'
+     +'Start: $3,3,2,1,1,1,1$.<br>'
+     +'Merge $1$: $1+1=2$, list $3,3,\\mathbf{2},2,1,1$.<br>'
+     +'Merge $2$: $1+1=2$, list $3,3,\\mathbf{2},2,2$.<br>'
+     +'Merge $3$: $2+2=4$, list $\\mathbf{4},3,3,2$.<br>'
+     +'Merge $4$: $3+2=5$, list $\\mathbf{5},4,3$.<br>'
+     +'Merge $5$: $4+3=7$, list $\\mathbf{7},5$.<br>'
+     +'Merge $6$: $7+5=12$, list $\\mathbf{12}$.<br>'
+     +'In every merge the upper entry takes $0$ and the lower entry takes $1$. Reading the labels from the root back to each symbol gives the code.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c|c}'
+     +' y&P(Y=y)&\\text{codeword}&l\\\\\\hline'
+     +' 5&\\frac{1}{12}&\\mathtt{0000}&4\\\\'
+     +' 6&\\frac{1}{12}&\\mathtt{0001}&4\\\\'
+     +' 0&\\frac{2}{12}&\\mathtt{001}&3\\\\'
+     +' 1&\\frac{3}{12}&\\mathtt{01}&2\\\\'
+     +' 2&\\frac{3}{12}&\\mathtt{10}&2\\\\'
+     +' 3&\\frac{1}{12}&\\mathtt{110}&3\\\\'
+     +' 4&\\frac{1}{12}&\\mathtt{111}&3'
+     +'\\end{array}$$</div><br>'
+     +'<b>Solution — (c).</b> '
+     +'The average codeword length is'
+     +'$$\\begin{aligned}'
+     +'\\bar{L}&=\\sum_{y}P(Y=y)\\,l(y)\\\\'
+     +'&=\\frac{1}{12}\\bigl[1(4)+1(4)+2(3)+3(2)\\\\&\\qquad+3(2)+1(3)+1(3)\\bigr]\\\\'
+     +'&=\\frac{32}{12}\\\\'
+     +'&=\\frac{8}{3}\\\\'
+     +'&=2.6667\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$'
+     +'The coding efficiency is'
+     +'$$\\begin{aligned}'
+     +'\\eta&=\\frac{H(Y)}{\\bar{L}}\\\\'
+     +'&=\\frac{2.6258}{2.6667}\\\\'
+     +'&=0.9847'
+     +'\\end{aligned}$$'
+     +'In percent, $\\eta=98.47\\%$.<br>'
+     +'<b>Check.</b> '
+     +'The average length also equals the sum of the probabilities formed by the merges, the root included:'
+     +'$$\\bar{L}=\\frac{2+2+4+5+7+12}{12}=\\frac{32}{12}$$'
+     +'This matches part (c). The entropy follows by a second route, from the numerators $n_y=12\\,P(Y=y)$:'
+     +'$$\\begin{aligned}'
+     +' H(Y)&=\\log_2 12-\\frac{1}{12}\\sum_{y}n_y\\log_2 n_y\\\\'
+     +'&=3.5850-\\frac{1}{12}\\bigl(2\\cdot3\\log_2 3+2\\log_2 2\\bigr)\\\\'
+     +'&=3.5850-0.9591\\\\'
+     +'&=2.6258'
+     +'\\end{aligned}$$'
+     +'The Kraft sum is $2\\cdot 2^{-2}+3\\cdot 2^{-3}+2\\cdot 2^{-4}=1$, so the tree has no unused branch. The bound $2.6258\\le 2.6667<3.6258$ holds.',
+  err:'Dropping the absolute value, so $X=-2$ gives $-2\\bmod 7=5$. The absolute value is applied first, which gives $Y=2$.',
+  teach:'Seven output symbols give a tree four levels deep. The four symbols of probability $\\tfrac{1}{12}$ are merged in pairs before anything else.' },
 
-{ id:'D6-05', module:'M6', type:'entropy', src:'CH10 s.6',
-  stem:'A binary source emits $0$ with probability $0.9$ and $1$ with probability $0.1$.',
-  parts:['Give the entropy.',
-         'Say what the entropy would be at $p=0.5$, and comment on the shape of the curve.'],
-  sol:'<b>Given.</b> A binary source at $p=0.9$.<br>'
-     +'<b>Find.</b> $H(S)$, and the comparison with a fair source.<br>'
-     +'<b>Method.</b> Two terms.<br>'
-     +'<b>Solution — (a).</b> $H(S)=-0.9\\log_2 0.9-0.1\\log_2 0.1=0.1368+0.3322=0.4690$ bits a symbol.<br>'
-     +'<b>Solution — (b).</b> At $p=0.5$ it is exactly $1$ bit. So a $90\\!:\\!10$ source carries less than half what a fair one does.<br>'
-     +'<b>Check.</b> The binary entropy curve is flat near the top and steep near the ends. At $p=0.6$ it is still $0.971$ — almost a full bit — while at $p=0.9$ it has fallen to $0.469$. A slightly unfair coin is nearly as informative as a fair one. A heavily unfair one is not.',
-  err:'Assuming the entropy falls in proportion to how unfair the source is. It does not: the curve is flat at the top, and half the probability range costs almost nothing.',
-  teach:'This is the number behind every compression demonstration. A file of $90\\%$ zeros holds $0.469$ bits a symbol, so it can in principle be squeezed to under half its size — and no further.' },
+{ id:'D6-07', module:'M6', type:'fx', src:'Final Q4',
+  stem:'Let $X$ be a discrete memoryless source (DMS) which is modeled as a uniform random variable taking the integer values between $-6$ and $6$. Let $Y\\triangleq X^{2}\\;(\\bmod 11)$ be another DMS which is a function of $X$. Here $a\\bmod m$ denotes the remainder of $a$ on division by $m$, taken in $\\{0,1,\\ldots,m-1\\}$.',
+  parts:['[10 pts] Calculate the entropy of the source, $Y$.',
+         '[10 pts] Design a <em>binary</em> Huffman code for the source, $Y$.',
+         '[5 pts] Calculate the coding efficiency of the Huffman code designed in part (b).'],
+  figSol: () => figPmf({v:[0,1,3,4,5,9],n:[1,2,4,2,2,2],D:13,name:'Y'})+figHuff({n:[1,2,4,2,2,2],D:13,name:'Y',lab:['0','1','3','4','5','9'],codes:['101','11','01','000','001','100'],order:['10','00','1','0','']}),
+  sol:'<b>Given.</b> $X$ is uniform on the thirteen integers $-6,\\ldots,6$, and $Y=X^{2}\\bmod 11$.<br>'
+     +'<b>Find.</b> $H(Y)$, a binary Huffman code for $Y$, and its coding efficiency.<br>'
+     +'<b>Method.</b> List $Y$ for every value of $X$, then add the probabilities that give the same value of $Y$. The entropy is $H(Y)=\\sum_{y}P(Y=y)\\log_2\\frac{1}{P(Y=y)}$, in bits because the logarithm has base two. Huffman\'s procedure fits the code part, since no prefix code for single symbols has a smaller average length. Merge the two smallest, give $0$ to the upper and $1$ to the lower, and place each sum as high as possible among equals. The efficiency is $\\eta=H(Y)/\\bar{L}$.<br>'
+     +'<b>Solution — (a).</b> '
+     +'Each of the thirteen values of $X$ has probability $\\tfrac{1}{13}$. Since $(-x)^{2}=x^{2}$, the values $x$ and $-x$ give the same $Y$.'
+     +' For example $5^{2}=25=2(11)+3$ and $6^{2}=36=3(11)+3$, so both give $Y=3$.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c}'
+     +' y&x\\ \\text{values}&P(Y=y)\\\\\\hline'
+     +' 0&0&\\frac{1}{13}\\\\'
+     +' 1&-1,\\,1&\\frac{2}{13}\\\\'
+     +' 3&-6,\\,-5,\\,5,\\,6&\\frac{4}{13}\\\\'
+     +' 4&-2,\\,2&\\frac{2}{13}\\\\'
+     +' 5&-4,\\,4&\\frac{2}{13}\\\\'
+     +' 9&-3,\\,3&\\frac{2}{13}'
+     +'\\end{array}$$</div>'
+     +'The probabilities add to $\\frac{13}{13}=1$. The entropy is'
+     +'$$\\begin{aligned}'
+     +' H(Y)&=\\sum_{y}P(Y=y)\\log_2\\frac{1}{P(Y=y)}\\\\'
+     +'&=\\frac{4}{13}\\log_2 \\frac{13}{4}+4\\cdot\\frac{2}{13}\\log_2 \\frac{13}{2}+\\frac{1}{13}\\log_2 13\\\\'
+     +'&=0.52321+4(0.41545)+0.28465\\\\'
+     +'&=2.4697\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$<br>'
+     +'<b>Solution — (b).</b> '
+     +'Work with the numerators over $13$. Each line gives one merge and the new list, with the new sum in bold.<br>'
+     +'Start: $4,2,2,2,2,1$.<br>'
+     +'Merge $1$: $2+1=3$, list $4,\\mathbf{3},2,2,2$.<br>'
+     +'Merge $2$: $2+2=4$, list $\\mathbf{4},4,3,2$.<br>'
+     +'Merge $3$: $3+2=5$, list $\\mathbf{5},4,4$.<br>'
+     +'Merge $4$: $4+4=8$, list $\\mathbf{8},5$.<br>'
+     +'Merge $5$: $8+5=13$, list $\\mathbf{13}$.<br>'
+     +'In every merge the upper entry takes $0$ and the lower entry takes $1$. Reading the labels from the root back to each symbol gives the code.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c|c}'
+     +' y&P(Y=y)&\\text{codeword}&l\\\\\\hline'
+     +' 4&\\frac{2}{13}&\\mathtt{000}&3\\\\'
+     +' 5&\\frac{2}{13}&\\mathtt{001}&3\\\\'
+     +' 3&\\frac{4}{13}&\\mathtt{01}&2\\\\'
+     +' 9&\\frac{2}{13}&\\mathtt{100}&3\\\\'
+     +' 0&\\frac{1}{13}&\\mathtt{101}&3\\\\'
+     +' 1&\\frac{2}{13}&\\mathtt{11}&2'
+     +'\\end{array}$$</div><br>'
+     +'<b>Solution — (c).</b> '
+     +'The average codeword length is'
+     +'$$\\begin{aligned}'
+     +'\\bar{L}&=\\sum_{y}P(Y=y)\\,l(y)\\\\'
+     +'&=\\frac{1}{13}\\bigl[2(3)+2(3)+4(2)+2(3)\\\\&\\qquad+1(3)+2(2)\\bigr]\\\\'
+     +'&=\\frac{33}{13}\\\\'
+     +'&=2.5385\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$'
+     +'The coding efficiency is'
+     +'$$\\begin{aligned}'
+     +'\\eta&=\\frac{H(Y)}{\\bar{L}}\\\\'
+     +'&=\\frac{2.4697}{2.5385}\\\\'
+     +'&=0.9729'
+     +'\\end{aligned}$$'
+     +'In percent, $\\eta=97.29\\%$.<br>'
+     +'<b>Check.</b> '
+     +'The average length also equals the sum of the probabilities formed by the merges, the root included:'
+     +'$$\\bar{L}=\\frac{3+4+5+8+13}{13}=\\frac{33}{13}$$'
+     +'This matches part (c). The entropy follows by a second route, from the numerators $n_y=13\\,P(Y=y)$:'
+     +'$$\\begin{aligned}'
+     +' H(Y)&=\\log_2 13-\\frac{1}{13}\\sum_{y}n_y\\log_2 n_y\\\\'
+     +'&=3.7004-\\frac{1}{13}\\bigl(4\\log_2 4+4\\cdot2\\log_2 2\\bigr)\\\\'
+     +'&=3.7004-1.2308\\\\'
+     +'&=2.4697'
+     +'\\end{aligned}$$'
+     +'The Kraft sum is $2\\cdot 2^{-2}+4\\cdot 2^{-3}=1$, so the tree has no unused branch. The bound $2.4697\\le 2.5385<3.4697$ holds.'
+     +' Only $Y=0$ has an odd numerator, because $X=0$ is the only value without a partner $-X$.',
+  err:'Counting $X=5$ and $X=-5$ as different symbols of $Y$. They have the same square, so they give one symbol with twice the probability.',
+  teach:'The symbol $Y=3$ collects four values of $X$ from two different squares, so it is the most likely symbol.' },
 
-{ id:'D6-06', module:'M6', type:'entropy', src:'CH10 s.6',
-  stem:'A source has eight symbols.',
-  parts:['Give the largest entropy it can have, and the probabilities that achieve it.',
-         'If the measured entropy is $2.5$ bits a symbol, give the efficiency of a fixed-length code that numbers the eight symbols.'],
-  sol:'<b>Given.</b> $K=8$.<br>'
-     +'<b>Find.</b> The maximum entropy, and the efficiency of plain numbering at $H(S)=2.5$.<br>'
-     +'<b>Method.</b> The maximum is $\\log_2 K$, reached when all symbols are equally likely. A fixed-length code for eight symbols uses $3$ bits.<br>'
-     +'<b>Solution — (a).</b> $\\log_2 8=3$ bits a symbol, at $p_k=1/8$ for every $k$.<br>'
-     +'<b>Solution — (b).</b> $\\bar{L}=3$, so $\\eta=2.5/3=0.833$.<br>'
-     +'<b>Check.</b> The efficiency is less than one. The code wastes $0.5$ bit per symbol, which equals the gap between entropy and fixed length. A variable-length code can reduce this gap.',
-  err:'Giving the maximum entropy as $8$. The alphabet has eight symbols. The entropy is measured in bits, and eight equally likely symbols carry three.',
-  teach:'The fixed-length code is worth keeping as a baseline for every question in this module. It always costs $\\lceil\\log_2 K\\rceil$ bits, it never needs the probabilities, and everything cleverer is measured against it.' },
+{ id:'D6-08', module:'M6', type:'fx', src:'Final Q4',
+  stem:'Let $X$ be a discrete memoryless source (DMS) which is modeled as a uniform random variable taking the integer values between $-7$ and $7$. Let $Y\\triangleq \\max(X,0)$ be another DMS which is a function of $X$.',
+  parts:['[10 pts] Calculate the entropy of the source, $Y$.',
+         '[10 pts] Design a <em>binary</em> Huffman code for the source, $Y$.',
+         '[5 pts] Calculate the coding efficiency of the Huffman code designed in part (b).'],
+  figSol: () => figPmf({v:[0,1,2,3,4,5,6,7],n:[8,1,1,1,1,1,1,1],D:15,name:'Y'})+figHuff({n:[8,1,1,1,1,1,1,1],D:15,name:'Y',lab:['0','1','2','3','4','5','6','7'],codes:['0','111','1000','1001','1010','1011','1100','1101'],order:['110','101','100','11','10','1','']}),
+  sol:'<b>Given.</b> $X$ is uniform on the fifteen integers $-7,\\ldots,7$, and $Y=\\max(X,0)$.<br>'
+     +'<b>Find.</b> $H(Y)$, a binary Huffman code for $Y$, and its coding efficiency.<br>'
+     +'<b>Method.</b> List $Y$ for every value of $X$, then add the probabilities that give the same value of $Y$. The entropy is $H(Y)=\\sum_{y}P(Y=y)\\log_2\\frac{1}{P(Y=y)}$, in bits because the logarithm has base two. Huffman\'s procedure fits the code part, since no prefix code for single symbols has a smaller average length. Merge the two smallest, give $0$ to the upper and $1$ to the lower, and place each sum as high as possible among equals. The efficiency is $\\eta=H(Y)/\\bar{L}$.<br>'
+     +'<b>Solution — (a).</b> '
+     +'Each of the fifteen values of $X$ has probability $\\tfrac{1}{15}$. Every $X\\le 0$ gives $Y=0$, and each positive $X$ gives itself.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c}'
+     +' y&x\\ \\text{values}&P(Y=y)\\\\\\hline'
+     +' 0&-7,\\,-6,\\,-5,\\,-4,\\,-3,\\,-2,\\,-1,\\,0&\\frac{8}{15}\\\\'
+     +' 1&1&\\frac{1}{15}\\\\'
+     +' 2&2&\\frac{1}{15}\\\\'
+     +' 3&3&\\frac{1}{15}\\\\'
+     +' 4&4&\\frac{1}{15}\\\\'
+     +' 5&5&\\frac{1}{15}\\\\'
+     +' 6&6&\\frac{1}{15}\\\\'
+     +' 7&7&\\frac{1}{15}'
+     +'\\end{array}$$</div>'
+     +'The probabilities add to $\\frac{15}{15}=1$. The entropy is'
+     +'$$\\begin{aligned}'
+     +' H(Y)&=\\sum_{y}P(Y=y)\\log_2\\frac{1}{P(Y=y)}\\\\'
+     +'&=\\frac{8}{15}\\log_2 \\frac{15}{8}+7\\cdot\\frac{1}{15}\\log_2 15\\\\'
+     +'&=0.48367+7(0.26046)\\\\'
+     +'&=2.3069\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$<br>'
+     +'<b>Solution — (b).</b> '
+     +'Work with the numerators over $15$. Each line gives one merge and the new list, with the new sum in bold.<br>'
+     +'Start: $8,1,1,1,1,1,1,1$.<br>'
+     +'Merge $1$: $1+1=2$, list $8,\\mathbf{2},1,1,1,1,1$.<br>'
+     +'Merge $2$: $1+1=2$, list $8,\\mathbf{2},2,1,1,1$.<br>'
+     +'Merge $3$: $1+1=2$, list $8,\\mathbf{2},2,2,1$.<br>'
+     +'Merge $4$: $2+1=3$, list $8,\\mathbf{3},2,2$.<br>'
+     +'Merge $5$: $2+2=4$, list $8,\\mathbf{4},3$.<br>'
+     +'Merge $6$: $4+3=7$, list $8,\\mathbf{7}$.<br>'
+     +'Merge $7$: $8+7=15$, list $\\mathbf{15}$.<br>'
+     +'In every merge the upper entry takes $0$ and the lower entry takes $1$. Reading the labels from the root back to each symbol gives the code.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c|c}'
+     +' y&P(Y=y)&\\text{codeword}&l\\\\\\hline'
+     +' 0&\\frac{8}{15}&\\mathtt{0}&1\\\\'
+     +' 2&\\frac{1}{15}&\\mathtt{1000}&4\\\\'
+     +' 3&\\frac{1}{15}&\\mathtt{1001}&4\\\\'
+     +' 4&\\frac{1}{15}&\\mathtt{1010}&4\\\\'
+     +' 5&\\frac{1}{15}&\\mathtt{1011}&4\\\\'
+     +' 6&\\frac{1}{15}&\\mathtt{1100}&4\\\\'
+     +' 7&\\frac{1}{15}&\\mathtt{1101}&4\\\\'
+     +' 1&\\frac{1}{15}&\\mathtt{111}&3'
+     +'\\end{array}$$</div><br>'
+     +'<b>Solution — (c).</b> '
+     +'The average codeword length is'
+     +'$$\\begin{aligned}'
+     +'\\bar{L}&=\\sum_{y}P(Y=y)\\,l(y)\\\\'
+     +'&=\\frac{1}{15}\\bigl[8(1)+1(4)+1(4)+1(4)\\\\&\\qquad+1(4)+1(4)+1(4)+1(3)\\bigr]\\\\'
+     +'&=\\frac{35}{15}\\\\'
+     +'&=\\frac{7}{3}\\\\'
+     +'&=2.3333\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$'
+     +'The coding efficiency is'
+     +'$$\\begin{aligned}'
+     +'\\eta&=\\frac{H(Y)}{\\bar{L}}\\\\'
+     +'&=\\frac{2.3069}{2.3333}\\\\'
+     +'&=0.9887'
+     +'\\end{aligned}$$'
+     +'In percent, $\\eta=98.87\\%$.<br>'
+     +'<b>Check.</b> '
+     +'The average length also equals the sum of the probabilities formed by the merges, the root included:'
+     +'$$\\bar{L}=\\frac{2+2+2+3+4+7+15}{15}=\\frac{35}{15}$$'
+     +'This matches part (c). The entropy follows by a second route, from the numerators $n_y=15\\,P(Y=y)$:'
+     +'$$\\begin{aligned}'
+     +' H(Y)&=\\log_2 15-\\frac{1}{15}\\sum_{y}n_y\\log_2 n_y\\\\'
+     +'&=3.9069-\\frac{1}{15}\\bigl(8\\log_2 8\\bigr)\\\\'
+     +'&=3.9069-1.6000\\\\'
+     +'&=2.3069'
+     +'\\end{aligned}$$'
+     +'The Kraft sum is $2^{-1}+2^{-3}+6\\cdot 2^{-4}=1$, so the tree has no unused branch. The bound $2.3069\\le 2.3333<3.3069$ holds.',
+  err:'Giving $Y=0$ the probability $\\tfrac{7}{15}$ and forgetting $X=0$. Eight values of $X$ satisfy $X\\le 0$.',
+  teach:'Eight symbols and one dominant probability. The seven equal symbols are merged in pairs, so the placement rule decides almost every step.' },
 
-{ id:'D6-07', module:'M6', type:'extension', src:'CH10 s.7',
-  stem:'The source with probabilities $0.7,\\;0.2,\\;0.1$ is extended by three.',
-  parts:['Give the number of symbols in $S^3$.',
-         'Give the entropy of $S^3$.',
-         'Give the entropy per original symbol.'],
-  sol:'<b>Given.</b> $K=3$, $n=3$, and $H(S)=1.1568$ from the module.<br>'
-     +'<b>Find.</b> $K^3$, $H(S^3)$, and $H(S^3)/3$.<br>'
-     +'<b>Method.</b> $K^n$ symbols and $H(S^n)=nH(S)$, because the source is memoryless.<br>'
-     +'<b>Solution — (a).</b> $3^3=27$ symbols, one for each block of three.<br>'
-     +'<b>Solution — (b).</b> $H(S^3)=3\\times1.1568=3.4703$ bits a block.<br>'
-     +'<b>Solution — (c).</b> $3.4703/3=1.1568$ bits a symbol — unchanged.<br>'
-     +'<b>Check.</b> Part (c) had to come out unchanged. Grouping symbols does not create or destroy information. It only gives a coder a larger thing to round.',
-  err:'Multiplying the alphabet size by $n$ instead of raising it to the power $n$. Three blocks of three symbols give $27$ combinations, not $9$.',
-  teach:'The alphabet grows as $K^n$ while the benefit grows as $1/n$. Ask for $n=5$: $243$ symbols to save at most a fifth of a bit. That ratio is why nobody codes long blocks directly.' },
+{ id:'D6-09', module:'M6', type:'fxz', src:'Final Q4',
+  stem:'Let $X$ be a discrete memoryless source (DMS) which is modeled as a uniform random variable on the alphabet $\\{1,2,3\\}$. Let $Z$ be a random variable (independent of $X$) with the probability mass function $p_Z(z)=c\\left(\\frac{1}{3}\\right)^{z}$ for the integers $-1\\le z\\le 1$. It is zero otherwise, and $c$ is a constant. Finally, let $Y\\triangleq X\\times Z$ be another DMS which is a function of both $X$ and $Z$.',
+  parts:['[10 pts] Calculate the entropy of the source, $Y$.',
+         '[10 pts] Design a <em>binary</em> Huffman code for the source, $Y$.',
+         '[5 pts] Calculate the coding efficiency of the Huffman code designed in part (b).'],
+  figSol: () => figPmf({v:[-3,-2,-1,0,1,2,3],n:[9,9,9,9,1,1,1],D:39,name:'Y'})+figHuff({n:[9,9,9,9,1,1,1],D:39,name:'Y',lab:['-3','-2','-1','0','1','2','3'],codes:['01','10','11','000','0011','00100','00101'],order:['0010','001','00','1','0','']}),
+  sol:'<b>Given.</b> $X$ uniform on $\\{1,2,3\\}$, $p_Z(z)=c\\left(\\tfrac13\\right)^{z}$ for $z=-1,0,1$, independent, and $Y=XZ$.<br>'
+     +'<b>Find.</b> $c$, $H(Y)$, a binary Huffman code for $Y$, and its coding efficiency.<br>'
+     +'<b>Method.</b> Find $c$ from $\\sum_z p_Z(z)=1$ before anything else. List $Y$ for every pair $(x,z)$, then add the probabilities that give the same value of $Y$. The entropy is $H(Y)=\\sum_{y}P(Y=y)\\log_2\\frac{1}{P(Y=y)}$, in bits because the logarithm has base two. Huffman\'s procedure fits the code part, since no prefix code for single symbols has a smaller average length. Merge the two smallest, give $0$ to the upper and $1$ to the lower, and place each sum as high as possible among equals. The efficiency is $\\eta=H(Y)/\\bar{L}$.<br>'
+     +'<b>Solution — (a).</b> '
+     +'The constant comes first. The pmf of $Z$ must add to one:'
+     +'$$\\begin{aligned}'
+     +'\\sum_{z}p_Z(z)&=c\\left[\\left(\\tfrac13\\right)^{-1}+\\left(\\tfrac13\\right)^{0}+\\left(\\tfrac13\\right)^{1}\\right]\\\\'
+     +'&=c\\left(3+1+\\tfrac13\\right)\\\\'
+     +'&=\\tfrac{13}{3}\\,c\\\\'
+     +'&=1'
+     +'\\end{aligned}$$'
+     +'So $c=\\tfrac{3}{13}$, and $P(Z=-1)=\\tfrac{9}{13}$, $P(Z=0)=\\tfrac{3}{13}$, $P(Z=1)=\\tfrac{1}{13}$.'
+     +' With $P(X=x)=\\tfrac13$, the pair $(x,z)$ has probability $n_Z(z)/39$, where $n_Z=9,3,1$ for $z=-1,0,1$.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c}'
+     +' y&(x,z)\\ \\text{pairs}&P(Y=y)\\\\\\hline'
+     +'-3&(3,-1)&\\frac{9}{39}\\\\'
+     +'-2&(2,-1)&\\frac{9}{39}\\\\'
+     +'-1&(1,-1)&\\frac{9}{39}\\\\'
+     +' 0&(1,0),\\,(2,0),\\,(3,0)&\\frac{3+3+3}{39}=\\frac{9}{39}\\\\'
+     +' 1&(1,1)&\\frac{1}{39}\\\\'
+     +' 2&(2,1)&\\frac{1}{39}\\\\'
+     +' 3&(3,1)&\\frac{1}{39}'
+     +'\\end{array}$$</div>'
+     +'The probabilities add to $\\frac{39}{39}=1$. The entropy is'
+     +'$$\\begin{aligned}'
+     +' H(Y)&=\\sum_{y}P(Y=y)\\log_2\\frac{1}{P(Y=y)}\\\\'
+     +'&=4\\cdot\\frac{9}{39}\\log_2 \\frac{13}{3}+3\\cdot\\frac{1}{39}\\log_2 39\\\\'
+     +'&=4(0.4882)+3(0.1355)\\\\'
+     +'&=2.3593\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$<br>'
+     +'<b>Solution — (b).</b> '
+     +'Work with the numerators over $39$. Each line gives one merge and the new list, with the new sum in bold.<br>'
+     +'Start: $9,9,9,9,1,1,1$.<br>'
+     +'Merge $1$: $1+1=2$, list $9,9,9,9,\\mathbf{2},1$.<br>'
+     +'Merge $2$: $2+1=3$, list $9,9,9,9,\\mathbf{3}$.<br>'
+     +'Merge $3$: $9+3=12$, list $\\mathbf{12},9,9,9$.<br>'
+     +'Merge $4$: $9+9=18$, list $\\mathbf{18},12,9$.<br>'
+     +'Merge $5$: $12+9=21$, list $\\mathbf{21},18$.<br>'
+     +'Merge $6$: $21+18=39$, list $\\mathbf{39}$.<br>'
+     +'In every merge the upper entry takes $0$ and the lower entry takes $1$. Reading the labels from the root back to each symbol gives the code.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c|c}'
+     +' y&P(Y=y)&\\text{codeword}&l\\\\\\hline'
+     +' 0&\\frac{9}{39}&\\mathtt{000}&3\\\\'
+     +' 2&\\frac{1}{39}&\\mathtt{00100}&5\\\\'
+     +' 3&\\frac{1}{39}&\\mathtt{00101}&5\\\\'
+     +' 1&\\frac{1}{39}&\\mathtt{0011}&4\\\\'
+     +'-3&\\frac{9}{39}&\\mathtt{01}&2\\\\'
+     +'-2&\\frac{9}{39}&\\mathtt{10}&2\\\\'
+     +'-1&\\frac{9}{39}&\\mathtt{11}&2'
+     +'\\end{array}$$</div><br>'
+     +'<b>Solution — (c).</b> '
+     +'The average codeword length is'
+     +'$$\\begin{aligned}'
+     +'\\bar{L}&=\\sum_{y}P(Y=y)\\,l(y)\\\\'
+     +'&=\\frac{1}{39}\\bigl[9(3)+1(5)+1(5)+1(4)\\\\&\\qquad+9(2)+9(2)+9(2)\\bigr]\\\\'
+     +'&=\\frac{95}{39}\\\\'
+     +'&=2.4359\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$'
+     +'The coding efficiency is'
+     +'$$\\begin{aligned}'
+     +'\\eta&=\\frac{H(Y)}{\\bar{L}}\\\\'
+     +'&=\\frac{2.3593}{2.4359}\\\\'
+     +'&=0.9686'
+     +'\\end{aligned}$$'
+     +'In percent, $\\eta=96.86\\%$.<br>'
+     +'<b>Check.</b> '
+     +'The average length also equals the sum of the probabilities formed by the merges, the root included:'
+     +'$$\\bar{L}=\\frac{2+3+12+18+21+39}{39}=\\frac{95}{39}$$'
+     +'This matches part (c). The entropy follows by a second route, from the numerators $n_y=39\\,P(Y=y)$:'
+     +'$$\\begin{aligned}'
+     +' H(Y)&=\\log_2 39-\\frac{1}{39}\\sum_{y}n_y\\log_2 n_y\\\\'
+     +'&=5.2854-\\frac{1}{39}\\bigl(4\\cdot9\\log_2 9\\bigr)\\\\'
+     +'&=5.2854-2.9261\\\\'
+     +'&=2.3593'
+     +'\\end{aligned}$$'
+     +'The Kraft sum is $3\\cdot 2^{-2}+2^{-3}+2^{-4}+2\\cdot 2^{-5}=1$, so the tree has no unused branch. The bound $2.3593\\le 2.4359<3.3593$ holds.',
+  err:'Reading $\\left(\\tfrac13\\right)^{z}$ at $z=-1$ as $\\tfrac13$. A negative exponent inverts the base, so the term is $3$ and $c=\\tfrac{3}{13}$.',
+  teach:'The constant comes first, and a wrong $c$ travels into every later part. The negative products dominate because $z=-1$ is the most likely value.' },
 
-{ id:'D6-08', module:'M6', type:'extension', src:'CH10 s.7',
-  stem:'A source has four equally likely symbols and is extended by two.',
-  parts:['Give $H(S)$ and $H(S^2)$.',
-         'Give the probability of each symbol of $S^2$, and verify the entropy directly.'],
-  sol:'<b>Given.</b> $K=4$ with $p_k=0.25$, extended by two.<br>'
-     +'<b>Find.</b> Both entropies, checked two ways.<br>'
-     +'<b>Method.</b> Equally likely symbols give $H(S)=\\log_2 K$.<br>'
-     +'<b>Solution — (a).</b> $H(S)=\\log_2 4=2$ bits, so $H(S^2)=2\\times2=4$ bits a block.<br>'
-     +'<b>Solution — (b).</b> $S^2$ has $16$ symbols, each of probability $0.25\\times0.25=0.0625=1/16$. They are equally likely, so $H(S^2)=\\log_2 16=4$ bits. The two answers agree.<br>'
-     +'<b>Check.</b> A uniform source extended stays uniform, so the shortcut and the direct calculation must agree. When they do not, the arithmetic in one of them is wrong.',
-  err:'Expecting the extension to reduce the entropy per symbol. It cannot for a memoryless source. Only a source with memory gains from blocking, and this course does not study those.',
-  teach:'A uniform source has nothing to compress: $H(S)=\\log_2 K$ already, and the fixed-length code is optimal. Blocking it is pure work for no gain, which makes it the useful case for checking that a method does no harm.' },
+{ id:'D6-10', module:'M6', type:'fxz', src:'Final Q4',
+  stem:'Let $X$ be a discrete memoryless source (DMS) which is modeled as a uniform random variable on the alphabet $\\{-1,0,1\\}$. Let $Z$ be a random variable (independent of $X$) with the probability mass function $p_Z(z)=c/z$ for $z\\in\\{1,2,3\\}$. It is zero otherwise, and $c$ is a constant. The pmf is shown below. Finally, let $Y\\triangleq X\\times Z$ be another DMS which is a function of both $X$ and $Z$.',
+  figure: () => figGiven({v:[1,2,3],h:[1,0.5,0.3333],lab:['c','\\tfrac{c}{2}','\\tfrac{c}{3}'],name:'Z'}),
+  parts:['[5 pts] Find the constant $c$.',
+         '[8 pts] Calculate the entropy of the source, $Y$.',
+         '[8 pts] Design a <em>binary</em> Huffman code for the source, $Y$.',
+         '[4 pts] Calculate the coding efficiency of the Huffman code designed in part (c).'],
+  figSol: () => figPmf({v:[-3,-2,-1,0,1,2,3],n:[2,3,6,11,6,3,2],D:33,name:'Y'})+figHuff({n:[2,3,6,11,6,3,2],D:33,name:'Y',lab:['-3','-2','-1','0','1','2','3'],codes:['0110','100','11','00','010','101','0111'],order:['011','10','01','1','0','']}),
+  sol:'<b>Given.</b> $X$ uniform on $\\{-1,0,1\\}$, $p_Z(z)=c/z$ for $z=1,2,3$, independent, and $Y=XZ$.<br>'
+     +'<b>Find.</b> $c$, $H(Y)$, a binary Huffman code for $Y$, and its coding efficiency.<br>'
+     +'<b>Method.</b> Find $c$ from $\\sum_z p_Z(z)=1$ before anything else. List $Y$ for every pair $(x,z)$, then add the probabilities that give the same value of $Y$. The entropy is $H(Y)=\\sum_{y}P(Y=y)\\log_2\\frac{1}{P(Y=y)}$, in bits because the logarithm has base two. Huffman\'s procedure fits the code part, since no prefix code for single symbols has a smaller average length. Merge the two smallest, give $0$ to the upper and $1$ to the lower, and place each sum as high as possible among equals. The efficiency is $\\eta=H(Y)/\\bar{L}$.<br>'
+     +'<b>Solution — (a).</b> '
+     +'The constant comes first. The pmf of $Z$ must add to one:'
+     +'$$\\begin{aligned}'
+     +'\\sum_{z}p_Z(z)&=c\\left(1+\\tfrac12+\\tfrac13\\right)\\\\'
+     +'&=\\tfrac{11}{6}\\,c\\\\'
+     +'&=1'
+     +'\\end{aligned}$$'
+     +'So $c=\\tfrac{6}{11}$, and $P(Z=1)=\\tfrac{6}{11}$, $P(Z=2)=\\tfrac{3}{11}$, $P(Z=3)=\\tfrac{2}{11}$.<br>'
+     +'<b>Solution — (b).</b> '
+     +'With $P(X=x)=\\tfrac13$, the pair $(x,z)$ has probability $n_Z(z)/33$, where $n_Z=6,3,2$ for $z=1,2,3$.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c}'
+     +' y&(x,z)\\ \\text{pairs}&P(Y=y)\\\\\\hline'
+     +'-3&(-1,3)&\\frac{2}{33}\\\\'
+     +'-2&(-1,2)&\\frac{3}{33}\\\\'
+     +'-1&(-1,1)&\\frac{6}{33}\\\\'
+     +' 0&(0,1),\\,(0,2),\\,(0,3)&\\frac{6+3+2}{33}=\\frac{11}{33}\\\\'
+     +' 1&(1,1)&\\frac{6}{33}\\\\'
+     +' 2&(1,2)&\\frac{3}{33}\\\\'
+     +' 3&(1,3)&\\frac{2}{33}'
+     +'\\end{array}$$</div>'
+     +'The probabilities add to $\\frac{33}{33}=1$. The entropy is'
+     +'$$\\begin{aligned}'
+     +' H(Y)&=\\sum_{y}P(Y=y)\\log_2\\frac{1}{P(Y=y)}\\\\'
+     +'&=\\frac{11}{33}\\log_2 3+2\\cdot\\frac{6}{33}\\log_2 \\frac{11}{2}+2\\cdot\\frac{3}{33}\\log_2 11\\\\'
+     +'&\\quad+2\\cdot\\frac{2}{33}\\log_2 \\frac{33}{2}\\\\'
+     +'&=0.5283+2(0.4472)+2(0.3145)+2(0.2451)\\\\'
+     +'&=2.5419\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$<br>'
+     +'<b>Solution — (c).</b> '
+     +'Work with the numerators over $33$. Each line gives one merge and the new list, with the new sum in bold.<br>'
+     +'Start: $11,6,6,3,3,2,2$.<br>'
+     +'Merge $1$: $2+2=4$, list $11,6,6,\\mathbf{4},3,3$.<br>'
+     +'Merge $2$: $3+3=6$, list $11,\\mathbf{6},6,6,4$.<br>'
+     +'Merge $3$: $6+4=10$, list $11,\\mathbf{10},6,6$.<br>'
+     +'Merge $4$: $6+6=12$, list $\\mathbf{12},11,10$.<br>'
+     +'Merge $5$: $11+10=21$, list $\\mathbf{21},12$.<br>'
+     +'Merge $6$: $21+12=33$, list $\\mathbf{33}$.<br>'
+     +'In every merge the upper entry takes $0$ and the lower entry takes $1$. Reading the labels from the root back to each symbol gives the code.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c|c}'
+     +' y&P(Y=y)&\\text{codeword}&l\\\\\\hline'
+     +' 0&\\frac{11}{33}&\\mathtt{00}&2\\\\'
+     +' 1&\\frac{6}{33}&\\mathtt{010}&3\\\\'
+     +'-3&\\frac{2}{33}&\\mathtt{0110}&4\\\\'
+     +' 3&\\frac{2}{33}&\\mathtt{0111}&4\\\\'
+     +'-2&\\frac{3}{33}&\\mathtt{100}&3\\\\'
+     +' 2&\\frac{3}{33}&\\mathtt{101}&3\\\\'
+     +'-1&\\frac{6}{33}&\\mathtt{11}&2'
+     +'\\end{array}$$</div><br>'
+     +'<b>Solution — (d).</b> '
+     +'The average codeword length is'
+     +'$$\\begin{aligned}'
+     +'\\bar{L}&=\\sum_{y}P(Y=y)\\,l(y)\\\\'
+     +'&=\\frac{1}{33}\\bigl[11(2)+6(3)+2(4)+2(4)\\\\&\\qquad+3(3)+3(3)+6(2)\\bigr]\\\\'
+     +'&=\\frac{86}{33}\\\\'
+     +'&=2.6061\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$'
+     +'The coding efficiency is'
+     +'$$\\begin{aligned}'
+     +'\\eta&=\\frac{H(Y)}{\\bar{L}}\\\\'
+     +'&=\\frac{2.5419}{2.6061}\\\\'
+     +'&=0.9754'
+     +'\\end{aligned}$$'
+     +'In percent, $\\eta=97.54\\%$.<br>'
+     +'<b>Check.</b> '
+     +'The average length also equals the sum of the probabilities formed by the merges, the root included:'
+     +'$$\\bar{L}=\\frac{4+6+10+12+21+33}{33}=\\frac{86}{33}$$'
+     +'This matches part (d). The entropy follows by a second route, from the numerators $n_y=33\\,P(Y=y)$:'
+     +'$$\\begin{aligned}'
+     +' H(Y)&=\\log_2 33-\\frac{1}{33}\\sum_{y}n_y\\log_2 n_y\\\\'
+     +'&=5.0444-\\frac{1}{33}\\bigl(11\\log_2 11+2\\cdot6\\log_2 6+2\\cdot3\\log_2 3+2\\cdot2\\log_2 2\\bigr)\\\\'
+     +'&=5.0444-2.5025\\\\'
+     +'&=2.5419'
+     +'\\end{aligned}$$'
+     +'The Kraft sum is $2\\cdot 2^{-2}+3\\cdot 2^{-3}+2\\cdot 2^{-4}=1$, so the tree has no unused branch. The bound $2.5419\\le 2.6061<3.5419$ holds.',
+  err:'Splitting $Y=0$ into three small symbols. The event $X=0$ gives $Y=0$ for every $z$, so $P(Y=0)=P(X=0)=\\tfrac{11}{33}$.',
+  teach:'The pmf of $Y$ is symmetric about zero, so symbols pair up in the tree. The symbol $Y=0$ holds a third of the probability and still receives two bits.' },
 
-{ id:'D6-09', module:'M6', type:'code', src:'CH10 s.10',
-  stem:'A source with probabilities $0.5,\\;0.25,\\;0.125,\\;0.125$ is coded as $0$, $10$, $110$, $111$.',
-  parts:['Give the average codeword length.',
-         'Give the efficiency.',
-         'Say whether the code is a prefix code.'],
-  sol:'<b>Given.</b> Four probabilities and four codewords.<br>'
-     +'<b>Find.</b> $\\bar{L}$, $\\eta$, and the prefix test.<br>'
-     +'<b>Method.</b> $\\bar{L}=\\sum p_kl_k$; $H(S)=1.75$ from D6-03.<br>'
-     +'<b>Solution — (a).</b> Lengths are $1,2,3,3$, so $\\bar{L}=0.5(1)+0.25(2)+0.125(3)+0.125(3)=1.75$ bits a symbol.<br>'
-     +'<b>Solution — (b).</b> $\\eta=1.75/1.75=1$ — perfect.<br>'
-     +'<b>Solution — (c).</b> Yes. $0$ does not begin $10$, $110$ or $111$. $10$ does not begin the two three-bit words. Neither three-bit word begins the other.<br>'
-     +'<b>Check.</b> Efficiency exactly one is only possible when every probability is a power of two, and here every one is. The ideal length $-\\log_2 p_k$ is $1,2,3,3$ — precisely the lengths used, with nothing rounded.',
-  err:'Reporting an efficiency above one. That is impossible: $\\bar{L}$ can never be below $H(S)$, so the ratio can never exceed one. An answer above one means $H(S)$ or $\\bar{L}$ was computed wrongly.',
-  teach:'This is the only kind of source on which a code is perfect. Ask what would happen if the probabilities were $0.5,0.3,0.1,0.1$ instead. The same code still works. However, the efficiency drops. This occurs because the lengths no longer match the ideal ones.' },
+{ id:'D6-11', module:'M6', type:'fxz', src:'Final Q4',
+  stem:'Let $X$ be a discrete memoryless source (DMS) which is modeled as a uniform random variable on the alphabet $\\{0,1,2,3\\}$. Let $Z$ be a random variable (independent of $X$) with the probability mass function $p_Z(z)=c\\left(\\frac{1}{2}\\right)^{z}$ for the integers $0\\le z\\le 2$. It is zero otherwise, and $c$ is a constant. Finally, let $Y\\triangleq \\max(X,Z)$ be another DMS which is a function of both $X$ and $Z$.',
+  parts:['[10 pts] Calculate the entropy of the source, $Y$.',
+         '[10 pts] Design a <em>binary</em> Huffman code for the source, $Y$.',
+         '[5 pts] Calculate the coding efficiency of the Huffman code designed in part (b).'],
+  figSol: () => figPmf({v:[0,1,2,3],n:[4,8,9,7],D:28,name:'Y'})+figHuff({n:[4,8,9,7],D:28,name:'Y',lab:['0','1','2','3'],codes:['11','01','00','10'],order:['1','0','']}),
+  sol:'<b>Given.</b> $X$ uniform on $\\{0,1,2,3\\}$, $p_Z(z)=c\\left(\\tfrac12\\right)^{z}$ for $z=0,1,2$, independent, and $Y=\\max(X,Z)$.<br>'
+     +'<b>Find.</b> $c$, $H(Y)$, a binary Huffman code for $Y$, and its coding efficiency.<br>'
+     +'<b>Method.</b> Find $c$ from $\\sum_z p_Z(z)=1$ before anything else. List $Y$ for every pair $(x,z)$, then add the probabilities that give the same value of $Y$. The entropy is $H(Y)=\\sum_{y}P(Y=y)\\log_2\\frac{1}{P(Y=y)}$, in bits because the logarithm has base two. Huffman\'s procedure fits the code part, since no prefix code for single symbols has a smaller average length. Merge the two smallest, give $0$ to the upper and $1$ to the lower, and place each sum as high as possible among equals. The efficiency is $\\eta=H(Y)/\\bar{L}$.<br>'
+     +'<b>Solution — (a).</b> '
+     +'The constant comes first. The pmf of $Z$ must add to one:'
+     +'$$\\begin{aligned}'
+     +'\\sum_{z}p_Z(z)&=c\\left(1+\\tfrac12+\\tfrac14\\right)\\\\'
+     +'&=\\tfrac{7}{4}\\,c\\\\'
+     +'&=1'
+     +'\\end{aligned}$$'
+     +'So $c=\\tfrac{4}{7}$, and $P(Z=0)=\\tfrac47$, $P(Z=1)=\\tfrac27$, $P(Z=2)=\\tfrac17$.'
+     +' With $P(X=x)=\\tfrac14$, the pair $(x,z)$ has probability $n_Z(z)/28$, where $n_Z=4,2,1$. For example $(x,z)=(1,2)$ gives $Y=2$.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c}'
+     +' y&(x,z)\\ \\text{pairs}&P(Y=y)\\\\\\hline'
+     +' 0&(0,0)&\\frac{4}{28}\\\\'
+     +' 1&(0,1),\\,(1,0),\\,(1,1)&\\frac{2+4+2}{28}=\\frac{8}{28}\\\\'
+     +' 2&(0,2),\\,(1,2),\\,(2,0),\\,(2,1),\\,(2,2)&\\frac{1+1+4+2+1}{28}=\\frac{9}{28}\\\\'
+     +' 3&(3,0),\\,(3,1),\\,(3,2)&\\frac{4+2+1}{28}=\\frac{7}{28}'
+     +'\\end{array}$$</div>'
+     +'The probabilities add to $\\frac{28}{28}=1$. The entropy is'
+     +'$$\\begin{aligned}'
+     +' H(Y)&=\\sum_{y}P(Y=y)\\log_2\\frac{1}{P(Y=y)}\\\\'
+     +'&=\\frac{9}{28}\\log_2 \\frac{28}{9}+\\frac{8}{28}\\log_2 \\frac{7}{2}+\\frac{7}{28}\\log_2 4\\\\'
+     +'&\\quad+\\frac{4}{28}\\log_2 7\\\\'
+     +'&=0.5263+0.5164+0.5000+0.4011\\\\'
+     +'&=1.9438\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$<br>'
+     +'<b>Solution — (b).</b> '
+     +'Work with the numerators over $28$. Each line gives one merge and the new list, with the new sum in bold.<br>'
+     +'Start: $9,8,7,4$.<br>'
+     +'Merge $1$: $7+4=11$, list $\\mathbf{11},9,8$.<br>'
+     +'Merge $2$: $9+8=17$, list $\\mathbf{17},11$.<br>'
+     +'Merge $3$: $17+11=28$, list $\\mathbf{28}$.<br>'
+     +'In every merge the upper entry takes $0$ and the lower entry takes $1$. Reading the labels from the root back to each symbol gives the code.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c|c}'
+     +' y&P(Y=y)&\\text{codeword}&l\\\\\\hline'
+     +' 2&\\frac{9}{28}&\\mathtt{00}&2\\\\'
+     +' 1&\\frac{8}{28}&\\mathtt{01}&2\\\\'
+     +' 3&\\frac{7}{28}&\\mathtt{10}&2\\\\'
+     +' 0&\\frac{4}{28}&\\mathtt{11}&2'
+     +'\\end{array}$$</div><br>'
+     +'<b>Solution — (c).</b> '
+     +'The average codeword length is'
+     +'$$\\begin{aligned}'
+     +'\\bar{L}&=\\sum_{y}P(Y=y)\\,l(y)\\\\'
+     +'&=\\frac{1}{28}\\bigl[9(2)+8(2)+7(2)+4(2)\\bigr]\\\\'
+     +'&=\\frac{56}{28}\\\\'
+     +'&=2\\\\'
+     +'&=2.0000\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$'
+     +'The coding efficiency is'
+     +'$$\\begin{aligned}'
+     +'\\eta&=\\frac{H(Y)}{\\bar{L}}\\\\'
+     +'&=\\frac{1.9438}{2.0000}\\\\'
+     +'&=0.9719'
+     +'\\end{aligned}$$'
+     +'In percent, $\\eta=97.19\\%$.<br>'
+     +'<b>Check.</b> '
+     +'The average length also equals the sum of the probabilities formed by the merges, the root included:'
+     +'$$\\bar{L}=\\frac{11+17+28}{28}=\\frac{56}{28}$$'
+     +'This matches part (c). The entropy follows by a second route, from the numerators $n_y=28\\,P(Y=y)$:'
+     +'$$\\begin{aligned}'
+     +' H(Y)&=\\log_2 28-\\frac{1}{28}\\sum_{y}n_y\\log_2 n_y\\\\'
+     +'&=4.8074-\\frac{1}{28}\\bigl(9\\log_2 9+8\\log_2 8+7\\log_2 7+4\\log_2 4\\bigr)\\\\'
+     +'&=4.8074-2.8636\\\\'
+     +'&=1.9438'
+     +'\\end{aligned}$$'
+     +'The Kraft sum is $4\\cdot 2^{-2}=1$, so the tree has no unused branch. The bound $1.9438\\le 2.0000<2.9438$ holds.'
+     +' The pmf also follows from $P(Y\\le y)=P(X\\le y)P(Z\\le y)$. For $y=1$ this gives $\\tfrac24\\cdot\\tfrac67=\\tfrac{12}{28}$, and $\\tfrac{4}{28}+\\tfrac{8}{28}=\\tfrac{12}{28}$.',
+  err:'Setting $Y=X$ and forgetting the pairs with $Z>X$. The pair $(0,1)$ gives $Y=1$, not $Y=0$.',
+  teach:'Four symbols with probabilities between $\\tfrac17$ and $\\tfrac{9}{28}$ give a fixed-length Huffman code. Ask why no one-bit codeword appears.' },
 
-{ id:'D6-10', module:'M6', type:'code', src:'CH10 s.12–14',
-  stem:'A four-symbol source is coded as $s_1\\!:0$, $s_2\\!:10$, $s_3\\!:110$, $s_4\\!:111$.',
-  parts:['Decode the string $01101110$.',
-         'Say why no backtracking was needed.'],
-  sol:'<b>Given.</b> A prefix code and an encoded string.<br>'
-     +'<b>Find.</b> The symbols, and why the decoding is straightforward.<br>'
-     +'<b>Method.</b> Read bits until they match a codeword, emit it, and start again.<br>'
-     +'<b>Solution — (a).</b> $0\\to s_1$. Then $110\\to s_3$. Then $111\\to s_4$. Then $0\\to s_1$. The string reads $s_1s_3s_4s_1$.<br>'
-     +'<b>Solution — (b).</b> No codeword is the beginning of another, so the moment the bits read so far match one, no longer codeword could also match. The decision is final as soon as it is made.<br>'
-     +'<b>Check.</b> The lengths used were $1+3+3+1=8$ bits, which is the length of the given string. If they had not added up, a symbol was missed.',
-  err:'Reading $011$ as $s_3$ because it looks close to $110$. Bits are read strictly left to right, and $0$ already matches $s_1$ before the next bit is even seen.',
-  teach:'Ask the same question with Code III of the module. $0$, $01$, $011$, $0111$. Where after reading $011$ the decoder still cannot tell $s_3$ from the start of $s_4$. That waiting is exactly what the prefix property removes.' },
+{ id:'D6-12', module:'M6', type:'fxz', src:'Final Q4',
+  stem:'Let $X$ be a discrete memoryless source (DMS) which is modeled as a uniform random variable on the alphabet $\\{0,1,2,3\\}$. Let $Z$ be a random variable (independent of $X$) with the probability mass function $p_Z(z)=c\\,2^{-|z|}$ for the integers $-1\\le z\\le 1$. It is zero otherwise, and $c$ is a constant. The pmf is shown below. Finally, let $Y\\triangleq X+Z$ be another DMS which is a function of both $X$ and $Z$.',
+  figure: () => figGiven({v:[-1,0,1],h:[0.5,1,0.5],lab:['\\tfrac{c}{2}','c','\\tfrac{c}{2}'],name:'Z'}),
+  parts:['[10 pts] Calculate the entropy of the source, $Y$.',
+         '[10 pts] Design a <em>binary</em> Huffman code for the source, $Y$.',
+         '[5 pts] Calculate the coding efficiency of the Huffman code designed in part (b).'],
+  figSol: () => figPmf({v:[-1,0,1,2,3,4],n:[1,3,4,4,3,1],D:16,name:'Y'})+figHuff({n:[1,3,4,4,3,1],D:16,name:'Y',lab:['-1','0','1','2','3','4'],codes:['0010','11','01','10','000','0011'],order:['001','00','1','0','']}),
+  sol:'<b>Given.</b> $X$ uniform on $\\{0,1,2,3\\}$, $p_Z(z)=c\\,2^{-|z|}$ for $z=-1,0,1$, independent, and $Y=X+Z$.<br>'
+     +'<b>Find.</b> $c$, $H(Y)$, a binary Huffman code for $Y$, and its coding efficiency.<br>'
+     +'<b>Method.</b> Find $c$ from $\\sum_z p_Z(z)=1$ before anything else. List $Y$ for every pair $(x,z)$, then add the probabilities that give the same value of $Y$. The entropy is $H(Y)=\\sum_{y}P(Y=y)\\log_2\\frac{1}{P(Y=y)}$, in bits because the logarithm has base two. Huffman\'s procedure fits the code part, since no prefix code for single symbols has a smaller average length. Merge the two smallest, give $0$ to the upper and $1$ to the lower, and place each sum as high as possible among equals. The efficiency is $\\eta=H(Y)/\\bar{L}$.<br>'
+     +'<b>Solution — (a).</b> '
+     +'The constant comes first. The pmf of $Z$ must add to one:'
+     +'$$\\begin{aligned}'
+     +'\\sum_{z}p_Z(z)&=c\\left(\\tfrac12+1+\\tfrac12\\right)\\\\'
+     +'&=2c\\\\'
+     +'&=1'
+     +'\\end{aligned}$$'
+     +'So $c=\\tfrac12$, and $P(Z=-1)=\\tfrac14$, $P(Z=0)=\\tfrac12$, $P(Z=1)=\\tfrac14$.'
+     +' With $P(X=x)=\\tfrac14$, the pair $(x,z)$ has probability $n_Z(z)/16$, where $n_Z=1,2,1$ for $z=-1,0,1$.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c}'
+     +' y&(x,z)\\ \\text{pairs}&P(Y=y)\\\\\\hline'
+     +'-1&(0,-1)&\\frac{1}{16}\\\\'
+     +' 0&(0,0),\\,(1,-1)&\\frac{2+1}{16}=\\frac{3}{16}\\\\'
+     +' 1&(0,1),\\,(1,0),\\,(2,-1)&\\frac{1+2+1}{16}=\\frac{4}{16}\\\\'
+     +' 2&(1,1),\\,(2,0),\\,(3,-1)&\\frac{1+2+1}{16}=\\frac{4}{16}\\\\'
+     +' 3&(2,1),\\,(3,0)&\\frac{1+2}{16}=\\frac{3}{16}\\\\'
+     +' 4&(3,1)&\\frac{1}{16}'
+     +'\\end{array}$$</div>'
+     +'The probabilities add to $\\frac{16}{16}=1$. The entropy is'
+     +'$$\\begin{aligned}'
+     +' H(Y)&=\\sum_{y}P(Y=y)\\log_2\\frac{1}{P(Y=y)}\\\\'
+     +'&=2\\cdot\\frac{4}{16}\\log_2 4+2\\cdot\\frac{3}{16}\\log_2 \\frac{16}{3}+2\\cdot\\frac{1}{16}\\log_2 16\\\\'
+     +'&=2(0.5000)+2(0.4528)+2(0.2500)\\\\'
+     +'&=2.4056\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$<br>'
+     +'<b>Solution — (b).</b> '
+     +'Work with the numerators over $16$. Each line gives one merge and the new list, with the new sum in bold.<br>'
+     +'Start: $4,4,3,3,1,1$.<br>'
+     +'Merge $1$: $1+1=2$, list $4,4,3,3,\\mathbf{2}$.<br>'
+     +'Merge $2$: $3+2=5$, list $\\mathbf{5},4,4,3$.<br>'
+     +'Merge $3$: $4+3=7$, list $\\mathbf{7},5,4$.<br>'
+     +'Merge $4$: $5+4=9$, list $\\mathbf{9},7$.<br>'
+     +'Merge $5$: $9+7=16$, list $\\mathbf{16}$.<br>'
+     +'In every merge the upper entry takes $0$ and the lower entry takes $1$. Reading the labels from the root back to each symbol gives the code.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c|c}'
+     +' y&P(Y=y)&\\text{codeword}&l\\\\\\hline'
+     +' 3&\\frac{3}{16}&\\mathtt{000}&3\\\\'
+     +'-1&\\frac{1}{16}&\\mathtt{0010}&4\\\\'
+     +' 4&\\frac{1}{16}&\\mathtt{0011}&4\\\\'
+     +' 1&\\frac{4}{16}&\\mathtt{01}&2\\\\'
+     +' 2&\\frac{4}{16}&\\mathtt{10}&2\\\\'
+     +' 0&\\frac{3}{16}&\\mathtt{11}&2'
+     +'\\end{array}$$</div><br>'
+     +'<b>Solution — (c).</b> '
+     +'The average codeword length is'
+     +'$$\\begin{aligned}'
+     +'\\bar{L}&=\\sum_{y}P(Y=y)\\,l(y)\\\\'
+     +'&=\\frac{1}{16}\\bigl[3(3)+1(4)+1(4)+4(2)\\\\&\\qquad+4(2)+3(2)\\bigr]\\\\'
+     +'&=\\frac{39}{16}\\\\'
+     +'&=2.4375\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$'
+     +'The coding efficiency is'
+     +'$$\\begin{aligned}'
+     +'\\eta&=\\frac{H(Y)}{\\bar{L}}\\\\'
+     +'&=\\frac{2.4056}{2.4375}\\\\'
+     +'&=0.9869'
+     +'\\end{aligned}$$'
+     +'In percent, $\\eta=98.69\\%$.<br>'
+     +'<b>Check.</b> '
+     +'The average length also equals the sum of the probabilities formed by the merges, the root included:'
+     +'$$\\bar{L}=\\frac{2+5+7+9+16}{16}=\\frac{39}{16}$$'
+     +'This matches part (c). The entropy follows by a second route, from the numerators $n_y=16\\,P(Y=y)$:'
+     +'$$\\begin{aligned}'
+     +' H(Y)&=\\log_2 16-\\frac{1}{16}\\sum_{y}n_y\\log_2 n_y\\\\'
+     +'&=4.0000-\\frac{1}{16}\\bigl(2\\cdot4\\log_2 4+2\\cdot3\\log_2 3\\bigr)\\\\'
+     +'&=4.0000-1.5944\\\\'
+     +'&=2.4056'
+     +'\\end{aligned}$$'
+     +'The Kraft sum is $3\\cdot 2^{-2}+2^{-3}+2\\cdot 2^{-4}=1$, so the tree has no unused branch. The bound $2.4056\\le 2.4375<3.4056$ holds.',
+  err:'Writing $2^{-|z|}$ as $2^{-z}$, which makes $z=-1$ four times as likely as $z=1$. The absolute value keeps the pmf symmetric.',
+  teach:'Adding a small symmetric $Z$ to a uniform $X$ spreads four symbols into six. The two edge values $-1$ and $4$ become the rare symbols.' },
 
-{ id:'D6-11', module:'M6', type:'kraft', src:'CH10 s.15–16',
-  stem:'Three sets of codeword lengths are proposed for a four-symbol source: $\\{1,2,3,3\\}$, $\\{2,2,2,2\\}$ and $\\{1,2,2,3\\}$.',
-  parts:['Apply the Kraft inequality to each.',
-         'Say which admit a prefix code.'],
-  sol:'<b>Given.</b> Three length sets.<br>'
-     +'<b>Find.</b> $\\sum 2^{-l_k}$ for each.<br>'
-     +'<b>Method.</b> One sum each.<br>'
-     +'<b>Solution — (a).</b> $\\{1,2,3,3\\}$: $0.5+0.25+0.125+0.125=1$. $\\{2,2,2,2\\}$: $4\\times0.25=1$. $\\{1,2,2,3\\}$: $0.5+0.25+0.25+0.125=1.125$.<br>'
-     +'<b>Solution — (b).</b> The first two, both at exactly $1$. The third exceeds one, so no prefix code has those lengths.<br>'
-     +'<b>Check.</b> The first two use the tree completely. Nothing is left over and no codeword could be made shorter. The third is asking for more tree than exists. The length-$1$ codeword alone takes half of it, and the two length-$2$ codewords take the other half, leaving nothing for the fourth.',
-  err:'Computing $\\sum 2^{l_k}$ without the minus sign. The exponent is negative because a longer codeword claims a <em>smaller</em> share of the tree.',
-  teach:'Draw the binary tree for the third case. One depth-one branch is occupied. Both depth-two branches below the other side are occupied. No branch remains for a fourth codeword.' },
+{ id:'D6-13', module:'M6', type:'fxz', src:'Final Q4',
+  stem:'Let $X$ be a discrete memoryless source (DMS) which is modeled as a uniform random variable on the integers $0,1,\\ldots,5$. Let $Z$ be a random variable (independent of $X$) with the probability mass function $p_Z(z)=c\\,z$ for $z\\in\\{1,3\\}$. It is zero otherwise, and $c$ is a constant. The pmf is shown below. Finally, let $Y\\triangleq \\left\\lfloor X/Z\\right\\rfloor$ be another DMS which is a function of both $X$ and $Z$. Here $\\lfloor u\\rfloor$ is the largest integer not greater than $u$.',
+  figure: () => figGiven({v:[1,3],h:[1,3],lab:['c','3c'],name:'Z'}),
+  parts:['[10 pts] Calculate the entropy of the source, $Y$.',
+         '[10 pts] Design a <em>binary</em> Huffman code for the source, $Y$.',
+         '[5 pts] Calculate the coding efficiency of the Huffman code designed in part (b).'],
+  figSol: () => figPmf({v:[0,1,2,3,4,5],n:[10,10,1,1,1,1],D:24,name:'Y'})+figHuff({n:[10,10,1,1,1,1],D:24,name:'Y',lab:['0','1','2','3','4','5'],codes:['1','00','0100','0101','0110','0111'],order:['011','010','01','0','']}),
+  sol:'<b>Given.</b> $X$ uniform on $\\{0,\\ldots,5\\}$, $p_Z(z)=cz$ for $z=1,3$, independent, and $Y=\\lfloor X/Z\\rfloor$.<br>'
+     +'<b>Find.</b> $c$, $H(Y)$, a binary Huffman code for $Y$, and its coding efficiency.<br>'
+     +'<b>Method.</b> Find $c$ from $\\sum_z p_Z(z)=1$ before anything else. List $Y$ for every pair $(x,z)$, then add the probabilities that give the same value of $Y$. The entropy is $H(Y)=\\sum_{y}P(Y=y)\\log_2\\frac{1}{P(Y=y)}$, in bits because the logarithm has base two. Huffman\'s procedure fits the code part, since no prefix code for single symbols has a smaller average length. Merge the two smallest, give $0$ to the upper and $1$ to the lower, and place each sum as high as possible among equals. The efficiency is $\\eta=H(Y)/\\bar{L}$.<br>'
+     +'<b>Solution — (a).</b> '
+     +'The constant comes first. The pmf of $Z$ must add to one:'
+     +'$$\\begin{aligned}'
+     +'\\sum_{z}p_Z(z)&=c(1)+c(3)\\\\'
+     +'&=4c\\\\'
+     +'&=1'
+     +'\\end{aligned}$$'
+     +'So $c=\\tfrac14$, and $P(Z=1)=\\tfrac14$, $P(Z=3)=\\tfrac34$.'
+     +' With $P(X=x)=\\tfrac16$, the pair $(x,z)$ has probability $n_Z(z)/24$, where $n_Z=1,3$ for $z=1,3$.'
+     +' For example $(x,z)=(5,3)$ gives $\\lfloor 5/3\\rfloor=1$, and $(5,1)$ gives $5$.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c}'
+     +' y&(x,z)\\ \\text{pairs}&P(Y=y)\\\\\\hline'
+     +' 0&(0,1),\\,(0,3),\\,(1,3),\\,(2,3)&\\frac{1+3+3+3}{24}=\\frac{10}{24}\\\\'
+     +' 1&(1,1),\\,(3,3),\\,(4,3),\\,(5,3)&\\frac{1+3+3+3}{24}=\\frac{10}{24}\\\\'
+     +' 2&(2,1)&\\frac{1}{24}\\\\'
+     +' 3&(3,1)&\\frac{1}{24}\\\\'
+     +' 4&(4,1)&\\frac{1}{24}\\\\'
+     +' 5&(5,1)&\\frac{1}{24}'
+     +'\\end{array}$$</div>'
+     +'The probabilities add to $\\frac{24}{24}=1$. The entropy is'
+     +'$$\\begin{aligned}'
+     +' H(Y)&=\\sum_{y}P(Y=y)\\log_2\\frac{1}{P(Y=y)}\\\\'
+     +'&=2\\cdot\\frac{10}{24}\\log_2 \\frac{12}{5}+4\\cdot\\frac{1}{24}\\log_2 24\\\\'
+     +'&=2(0.52626)+4(0.19104)\\\\'
+     +'&=1.8167\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$<br>'
+     +'<b>Solution — (b).</b> '
+     +'Work with the numerators over $24$. Each line gives one merge and the new list, with the new sum in bold.<br>'
+     +'Start: $10,10,1,1,1,1$.<br>'
+     +'Merge $1$: $1+1=2$, list $10,10,\\mathbf{2},1,1$.<br>'
+     +'Merge $2$: $1+1=2$, list $10,10,\\mathbf{2},2$.<br>'
+     +'Merge $3$: $2+2=4$, list $10,10,\\mathbf{4}$.<br>'
+     +'Merge $4$: $10+4=14$, list $\\mathbf{14},10$.<br>'
+     +'Merge $5$: $14+10=24$, list $\\mathbf{24}$.<br>'
+     +'In every merge the upper entry takes $0$ and the lower entry takes $1$. Reading the labels from the root back to each symbol gives the code.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c|c}'
+     +' y&P(Y=y)&\\text{codeword}&l\\\\\\hline'
+     +' 1&\\frac{10}{24}&\\mathtt{00}&2\\\\'
+     +' 2&\\frac{1}{24}&\\mathtt{0100}&4\\\\'
+     +' 3&\\frac{1}{24}&\\mathtt{0101}&4\\\\'
+     +' 4&\\frac{1}{24}&\\mathtt{0110}&4\\\\'
+     +' 5&\\frac{1}{24}&\\mathtt{0111}&4\\\\'
+     +' 0&\\frac{10}{24}&\\mathtt{1}&1'
+     +'\\end{array}$$</div><br>'
+     +'<b>Solution — (c).</b> '
+     +'The average codeword length is'
+     +'$$\\begin{aligned}'
+     +'\\bar{L}&=\\sum_{y}P(Y=y)\\,l(y)\\\\'
+     +'&=\\frac{1}{24}\\bigl[10(2)+1(4)+1(4)+1(4)\\\\&\\qquad+1(4)+10(1)\\bigr]\\\\'
+     +'&=\\frac{46}{24}\\\\'
+     +'&=\\frac{23}{12}\\\\'
+     +'&=1.9167\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$'
+     +'The coding efficiency is'
+     +'$$\\begin{aligned}'
+     +'\\eta&=\\frac{H(Y)}{\\bar{L}}\\\\'
+     +'&=\\frac{1.8167}{1.9167}\\\\'
+     +'&=0.9478'
+     +'\\end{aligned}$$'
+     +'In percent, $\\eta=94.78\\%$.<br>'
+     +'<b>Check.</b> '
+     +'The average length also equals the sum of the probabilities formed by the merges, the root included:'
+     +'$$\\bar{L}=\\frac{2+2+4+14+24}{24}=\\frac{46}{24}$$'
+     +'This matches part (c). The entropy follows by a second route, from the numerators $n_y=24\\,P(Y=y)$:'
+     +'$$\\begin{aligned}'
+     +' H(Y)&=\\log_2 24-\\frac{1}{24}\\sum_{y}n_y\\log_2 n_y\\\\'
+     +'&=4.5850-\\frac{1}{24}\\bigl(2\\cdot10\\log_2 10\\bigr)\\\\'
+     +'&=4.5850-2.7683\\\\'
+     +'&=1.8167'
+     +'\\end{aligned}$$'
+     +'The Kraft sum is $2^{-1}+2^{-2}+4\\cdot 2^{-4}=1$, so the tree has no unused branch. The bound $1.8167\\le 1.9167<2.8167$ holds.',
+  err:'Rounding $5/3$ to $2$. The floor keeps the integer part, so $\\lfloor 5/3\\rfloor=1$.',
+  teach:'Two symbols share $\\tfrac{20}{24}$ of the probability. The four rare symbols sit together at depth four.' },
 
-{ id:'D6-12', module:'M6', type:'kraft', src:'CH10 s.15',
-  stem:'A prefix code for five symbols must have $l_1=1$, $l_2=2$ and $l_3=3$.',
-  parts:['Give the Kraft budget already spent.',
-         'Give the shortest possible equal lengths for $l_4$ and $l_5$.'],
-  sol:'<b>Given.</b> Three lengths fixed, two free and equal.<br>'
-     +'<b>Find.</b> What remains, and the shortest lengths that fit.<br>'
-     +'<b>Method.</b> Spend the budget, then divide what is left.<br>'
-     +'<b>Solution — (a).</b> $2^{-1}+2^{-2}+2^{-3}=0.5+0.25+0.125=0.875$, so $0.125$ of the tree remains.<br>'
-     +'<b>Solution — (b).</b> Two equal codewords must satisfy $2\\times2^{-l}\\le0.125$, so $2^{-l}\\le0.0625$ and $l\\ge4$. The shortest is $l_4=l_5=4$.<br>'
-     +'<b>Check.</b> The total is then $0.875+2(0.0625)=1$ exactly, so the tree is used completely and neither codeword could be shortened. A code with these lengths is $0$, $10$, $110$, $1110$, $1111$.<br>',
-  err:'Solving $2^{-l}\\le0.125$ and answering $l=3$. There are two codewords to place, so each may have only half the remaining budget.',
-  teach:'This is how a codebook is designed backwards. Fix the lengths the important symbols need, spend the budget, and see what is left for the rest. The inequality answers the question before any codeword is written down.' },
+{ id:'D6-14', module:'M6', type:'fxz', src:'Final Q4',
+  stem:'Let $X$ be a discrete memoryless source (DMS) which is modeled as a uniform random variable on the alphabet $\\{-2,-1,1,2\\}$. Let $Z$ be a random variable (independent of $X$) with the probability mass function $p_Z(z)=c\\,(z+1)$ for $z\\in\\{0,1,2\\}$. It is zero otherwise, and $c$ is a constant. The pmf is shown below. Finally, let $Y\\triangleq X\\times Z$ be another DMS which is a function of both $X$ and $Z$.',
+  figure: () => figGiven({v:[0,1,2],h:[1,2,3],lab:['c','2c','3c'],name:'Z'}),
+  parts:['[5 pts] Find the constant $c$.',
+         '[8 pts] Calculate the entropy of the source, $Y$.',
+         '[8 pts] Design a <em>binary</em> Huffman code for the source, $Y$.',
+         '[4 pts] Calculate the coding efficiency of the Huffman code designed in part (c).'],
+  figSol: () => figPmf({v:[-4,-2,-1,0,1,2,4],n:[3,5,2,4,2,5,3],D:24,name:'Y'})+figHuff({n:[3,5,2,4,2,5,3],D:24,name:'Y',lab:['-4','-2','-1','0','1','2','4'],codes:['010','10','0000','001','0001','11','011'],order:['000','01','00','1','0','']}),
+  sol:'<b>Given.</b> $X$ uniform on $\\{-2,-1,1,2\\}$, $p_Z(z)=c(z+1)$ for $z=0,1,2$, independent, and $Y=XZ$.<br>'
+     +'<b>Find.</b> $c$, $H(Y)$, a binary Huffman code for $Y$, and its coding efficiency.<br>'
+     +'<b>Method.</b> Find $c$ from $\\sum_z p_Z(z)=1$ before anything else. List $Y$ for every pair $(x,z)$, then add the probabilities that give the same value of $Y$. The entropy is $H(Y)=\\sum_{y}P(Y=y)\\log_2\\frac{1}{P(Y=y)}$, in bits because the logarithm has base two. Huffman\'s procedure fits the code part, since no prefix code for single symbols has a smaller average length. Merge the two smallest, give $0$ to the upper and $1$ to the lower, and place each sum as high as possible among equals. The efficiency is $\\eta=H(Y)/\\bar{L}$.<br>'
+     +'<b>Solution — (a).</b> '
+     +'The constant comes first. The pmf of $Z$ must add to one:'
+     +'$$\\begin{aligned}'
+     +'\\sum_{z}p_Z(z)&=c(1)+c(2)+c(3)\\\\'
+     +'&=6c\\\\'
+     +'&=1'
+     +'\\end{aligned}$$'
+     +'So $c=\\tfrac16$, and $P(Z=0)=\\tfrac16$, $P(Z=1)=\\tfrac26$, $P(Z=2)=\\tfrac36$.<br>'
+     +'<b>Solution — (b).</b> '
+     +'With $P(X=x)=\\tfrac14$, the pair $(x,z)$ has probability $n_Z(z)/24$, where $n_Z=1,2,3$ for $z=0,1,2$.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c}'
+     +' y&(x,z)\\ \\text{pairs}&P(Y=y)\\\\\\hline'
+     +'-4&(-2,2)&\\frac{3}{24}\\\\'
+     +'-2&(-2,1),\\,(-1,2)&\\frac{2+3}{24}=\\frac{5}{24}\\\\'
+     +'-1&(-1,1)&\\frac{2}{24}\\\\'
+     +' 0&(-2,0),\\,(-1,0),\\,(1,0),\\,(2,0)&\\frac{4}{24}\\\\'
+     +' 1&(1,1)&\\frac{2}{24}\\\\'
+     +' 2&(1,2),\\,(2,1)&\\frac{3+2}{24}=\\frac{5}{24}\\\\'
+     +' 4&(2,2)&\\frac{3}{24}'
+     +'\\end{array}$$</div>'
+     +'The probabilities add to $\\frac{24}{24}=1$. The entropy is'
+     +'$$\\begin{aligned}'
+     +' H(Y)&=\\sum_{y}P(Y=y)\\log_2\\frac{1}{P(Y=y)}\\\\'
+     +'&=2\\cdot\\frac{5}{24}\\log_2 \\frac{24}{5}+\\frac{4}{24}\\log_2 6+2\\cdot\\frac{3}{24}\\log_2 8\\\\'
+     +'&\\quad+2\\cdot\\frac{2}{24}\\log_2 12\\\\'
+     +'&=2(0.47147)+0.43083+2(0.37500)+2(0.29875)\\\\'
+     +'&=2.7213\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$<br>'
+     +'<b>Solution — (c).</b> '
+     +'Work with the numerators over $24$. Each line gives one merge and the new list, with the new sum in bold.<br>'
+     +'Start: $5,5,4,3,3,2,2$.<br>'
+     +'Merge $1$: $2+2=4$, list $5,5,\\mathbf{4},4,3,3$.<br>'
+     +'Merge $2$: $3+3=6$, list $\\mathbf{6},5,5,4,4$.<br>'
+     +'Merge $3$: $4+4=8$, list $\\mathbf{8},6,5,5$.<br>'
+     +'Merge $4$: $5+5=10$, list $\\mathbf{10},8,6$.<br>'
+     +'Merge $5$: $8+6=14$, list $\\mathbf{14},10$.<br>'
+     +'Merge $6$: $14+10=24$, list $\\mathbf{24}$.<br>'
+     +'In every merge the upper entry takes $0$ and the lower entry takes $1$. Reading the labels from the root back to each symbol gives the code.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c|c}'
+     +' y&P(Y=y)&\\text{codeword}&l\\\\\\hline'
+     +'-1&\\frac{2}{24}&\\mathtt{0000}&4\\\\'
+     +' 1&\\frac{2}{24}&\\mathtt{0001}&4\\\\'
+     +' 0&\\frac{4}{24}&\\mathtt{001}&3\\\\'
+     +'-4&\\frac{3}{24}&\\mathtt{010}&3\\\\'
+     +' 4&\\frac{3}{24}&\\mathtt{011}&3\\\\'
+     +'-2&\\frac{5}{24}&\\mathtt{10}&2\\\\'
+     +' 2&\\frac{5}{24}&\\mathtt{11}&2'
+     +'\\end{array}$$</div><br>'
+     +'<b>Solution — (d).</b> '
+     +'The average codeword length is'
+     +'$$\\begin{aligned}'
+     +'\\bar{L}&=\\sum_{y}P(Y=y)\\,l(y)\\\\'
+     +'&=\\frac{1}{24}\\bigl[2(4)+2(4)+4(3)+3(3)\\\\&\\qquad+3(3)+5(2)+5(2)\\bigr]\\\\'
+     +'&=\\frac{66}{24}\\\\'
+     +'&=\\frac{11}{4}\\\\'
+     +'&=2.7500\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$'
+     +'The coding efficiency is'
+     +'$$\\begin{aligned}'
+     +'\\eta&=\\frac{H(Y)}{\\bar{L}}\\\\'
+     +'&=\\frac{2.7213}{2.7500}\\\\'
+     +'&=0.9895'
+     +'\\end{aligned}$$'
+     +'In percent, $\\eta=98.95\\%$.<br>'
+     +'<b>Check.</b> '
+     +'The average length also equals the sum of the probabilities formed by the merges, the root included:'
+     +'$$\\bar{L}=\\frac{4+6+8+10+14+24}{24}=\\frac{66}{24}$$'
+     +'This matches part (d). The entropy follows by a second route, from the numerators $n_y=24\\,P(Y=y)$:'
+     +'$$\\begin{aligned}'
+     +' H(Y)&=\\log_2 24-\\frac{1}{24}\\sum_{y}n_y\\log_2 n_y\\\\'
+     +'&=4.5850-\\frac{1}{24}\\bigl(2\\cdot5\\log_2 5+4\\log_2 4+2\\cdot3\\log_2 3+2\\cdot2\\log_2 2\\bigr)\\\\'
+     +'&=4.5850-1.8637\\\\'
+     +'&=2.7213'
+     +'\\end{aligned}$$'
+     +'The Kraft sum is $2\\cdot 2^{-2}+3\\cdot 2^{-3}+2\\cdot 2^{-4}=1$, so the tree has no unused branch. The bound $2.7213\\le 2.7500<3.7213$ holds.',
+  err:'Letting $Y=0$ keep only one pair. Every $x$ paired with $z=0$ gives $Y=0$, so $P(Y=0)=4\\cdot\\tfrac{1}{24}$.',
+  teach:'The value $Y=2$ has two routes, $(1,2)$ and $(2,1)$. A student who misses one gets a pmf that does not add to one.' },
 
-{ id:'D6-13', module:'M6', type:'code', src:'CH10 s.17',
-  stem:'A source has entropy $H(S)=2.35$ bits a symbol. Three codes are claimed for it, with average lengths $2.20$, $2.35$ and $3.40$ bits.',
-  parts:['Say which claims are possible.',
-         'Say which of the possible ones a prefix code could have produced.'],
-  sol:'<b>Given.</b> $H(S)=2.35$ and three claimed averages.<br>'
-     +'<b>Find.</b> Which survive the two bounds.<br>'
-     +'<b>Method.</b> Any lossless code obeys $\\bar{L}\\ge H(S)$. A prefix code also obeys $\\bar{L}<H(S)+1$.<br>'
-     +'<b>Solution — (a).</b> $2.20$ is below the entropy, so it is impossible for any lossless code. $2.35$ and $3.40$ are both at least $2.35$, so both are possible.<br>'
-     +'<b>Solution — (b).</b> The upper bound is $H(S)+1=3.35$. So $2.35$ could come from a prefix code. $3.40$ is above $3.35$ and could not — it is a legal code, just a wasteful one.<br>'
-     +'<b>Check.</b> The two bounds do different jobs. The lower one is a law of nature: no code beats the entropy. The upper one is a promise about a construction: a prefix code always gets within a bit. A code can be worse than the promise without breaking any law.',
-  err:'Treating $H(S)\\le\\bar{L}<H(S)+1$ as though a code must lie in that range. Only a code built well does. The band is what is achievable, not what is compulsory.',
-  teach:'Worth asking what a code with $\\bar{L}=3.40$ looks like. It is one whose lengths ignore the probabilities — long codewords on common symbols. Nothing forbids it. Huffman simply never produces it.' },
+{ id:'D6-15', module:'M6', type:'fxz', src:'Final Q4',
+  stem:'Let $X$ be a discrete memoryless source (DMS) which is modeled as a uniform random variable on the alphabet $\\{0,1,2,3\\}$. Let $Z$ be a random variable (independent of $X$) with the probability mass function $p_Z(z)=c\\left(\\frac{1}{2}\\right)^{z}$ for the integers $0\\le z\\le 3$. It is zero otherwise, and $c$ is a constant. Finally, let $Y\\triangleq \\min(X,Z)$ be another DMS which is a function of both $X$ and $Z$.',
+  parts:['[10 pts] Calculate the entropy of the source, $Y$.',
+         '[10 pts] Design a <em>binary</em> Huffman code for the source, $Y$.',
+         '[5 pts] Calculate the coding efficiency of the Huffman code designed in part (b).'],
+  figSol: () => figPmf({v:[0,1,2,3],n:[39,15,5,1],D:60,name:'Y'})+figHuff({n:[39,15,5,1],D:60,name:'Y',lab:['0','1','2','3'],codes:['0','10','110','111'],order:['11','1','']}),
+  sol:'<b>Given.</b> $X$ uniform on $\\{0,1,2,3\\}$, $p_Z(z)=c\\left(\\tfrac12\\right)^{z}$ for $z=0,\\ldots,3$, independent, and $Y=\\min(X,Z)$.<br>'
+     +'<b>Find.</b> $c$, $H(Y)$, a binary Huffman code for $Y$, and its coding efficiency.<br>'
+     +'<b>Method.</b> Find $c$ from $\\sum_z p_Z(z)=1$ before anything else. List $Y$ for every pair $(x,z)$, then add the probabilities that give the same value of $Y$. The entropy is $H(Y)=\\sum_{y}P(Y=y)\\log_2\\frac{1}{P(Y=y)}$, in bits because the logarithm has base two. Huffman\'s procedure fits the code part, since no prefix code for single symbols has a smaller average length. Merge the two smallest, give $0$ to the upper and $1$ to the lower, and place each sum as high as possible among equals. The efficiency is $\\eta=H(Y)/\\bar{L}$.<br>'
+     +'<b>Solution — (a).</b> '
+     +'The constant comes first. The pmf of $Z$ must add to one:'
+     +'$$\\begin{aligned}'
+     +'\\sum_{z}p_Z(z)&=c\\left(1+\\tfrac12+\\tfrac14+\\tfrac18\\right)\\\\'
+     +'&=\\tfrac{15}{8}\\,c\\\\'
+     +'&=1'
+     +'\\end{aligned}$$'
+     +'So $c=\\tfrac{8}{15}$, and $P(Z=z)=\\tfrac{8}{15},\\tfrac{4}{15},\\tfrac{2}{15},\\tfrac{1}{15}$ for $z=0,1,2,3$.'
+     +' With $P(X=x)=\\tfrac14$, the pair $(x,z)$ has probability $n_Z(z)/60$, where $n_Z=8,4,2,1$ for $z=0,1,2,3$.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c}'
+     +' y&(x,z)\\ \\text{pairs}&P(Y=y)\\\\\\hline'
+     +' 0&(0,0),\\,(0,1),\\,(0,2),\\,(0,3),\\,(1,0),\\,(2,0),\\,(3,0)&\\frac{8+4+2+1+8+8+8}{60}=\\frac{39}{60}\\\\'
+     +' 1&(1,1),\\,(1,2),\\,(1,3),\\,(2,1),\\,(3,1)&\\frac{4+2+1+4+4}{60}=\\frac{15}{60}\\\\'
+     +' 2&(2,2),\\,(2,3),\\,(3,2)&\\frac{2+1+2}{60}=\\frac{5}{60}\\\\'
+     +' 3&(3,3)&\\frac{1}{60}'
+     +'\\end{array}$$</div>'
+     +'The probabilities add to $\\frac{60}{60}=1$. The entropy is'
+     +'$$\\begin{aligned}'
+     +' H(Y)&=\\sum_{y}P(Y=y)\\log_2\\frac{1}{P(Y=y)}\\\\'
+     +'&=\\frac{39}{60}\\log_2 \\frac{20}{13}+\\frac{15}{60}\\log_2 4+\\frac{5}{60}\\log_2 12\\\\'
+     +'&\\quad+\\frac{1}{60}\\log_2 60\\\\'
+     +'&=0.40397+0.50000+0.29875+0.09845\\\\'
+     +'&=1.3012\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$<br>'
+     +'<b>Solution — (b).</b> '
+     +'Work with the numerators over $60$. Each line gives one merge and the new list, with the new sum in bold.<br>'
+     +'Start: $39,15,5,1$.<br>'
+     +'Merge $1$: $5+1=6$, list $39,15,\\mathbf{6}$.<br>'
+     +'Merge $2$: $15+6=21$, list $39,\\mathbf{21}$.<br>'
+     +'Merge $3$: $39+21=60$, list $\\mathbf{60}$.<br>'
+     +'In every merge the upper entry takes $0$ and the lower entry takes $1$. Reading the labels from the root back to each symbol gives the code.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c|c}'
+     +' y&P(Y=y)&\\text{codeword}&l\\\\\\hline'
+     +' 0&\\frac{39}{60}&\\mathtt{0}&1\\\\'
+     +' 1&\\frac{15}{60}&\\mathtt{10}&2\\\\'
+     +' 2&\\frac{5}{60}&\\mathtt{110}&3\\\\'
+     +' 3&\\frac{1}{60}&\\mathtt{111}&3'
+     +'\\end{array}$$</div><br>'
+     +'<b>Solution — (c).</b> '
+     +'The average codeword length is'
+     +'$$\\begin{aligned}'
+     +'\\bar{L}&=\\sum_{y}P(Y=y)\\,l(y)\\\\'
+     +'&=\\frac{1}{60}\\bigl[39(1)+15(2)+5(3)+1(3)\\bigr]\\\\'
+     +'&=\\frac{87}{60}\\\\'
+     +'&=\\frac{29}{20}\\\\'
+     +'&=1.4500\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$'
+     +'The coding efficiency is'
+     +'$$\\begin{aligned}'
+     +'\\eta&=\\frac{H(Y)}{\\bar{L}}\\\\'
+     +'&=\\frac{1.3012}{1.4500}\\\\'
+     +'&=0.8974'
+     +'\\end{aligned}$$'
+     +'In percent, $\\eta=89.74\\%$.<br>'
+     +'<b>Check.</b> '
+     +'The average length also equals the sum of the probabilities formed by the merges, the root included:'
+     +'$$\\bar{L}=\\frac{6+21+60}{60}=\\frac{87}{60}$$'
+     +'This matches part (c). The entropy follows by a second route, from the numerators $n_y=60\\,P(Y=y)$:'
+     +'$$\\begin{aligned}'
+     +' H(Y)&=\\log_2 60-\\frac{1}{60}\\sum_{y}n_y\\log_2 n_y\\\\'
+     +'&=5.9069-\\frac{1}{60}\\bigl(39\\log_2 39+15\\log_2 15+5\\log_2 5\\bigr)\\\\'
+     +'&=5.9069-4.6057\\\\'
+     +'&=1.3012'
+     +'\\end{aligned}$$'
+     +'The Kraft sum is $2^{-1}+2^{-2}+2\\cdot 2^{-3}=1$, so the tree has no unused branch. The bound $1.3012\\le 1.4500<2.3012$ holds.'
+     +' The tail also follows from $P(Y\\ge y)=P(X\\ge y)P(Z\\ge y)$. For $y=3$ it gives $\\tfrac14\\cdot\\tfrac{1}{15}=\\tfrac{1}{60}$, the value in the table.',
+  err:'Using the rule for a maximum, $P(Y\\le y)=P(X\\le y)P(Z\\le y)$, for a minimum. For a minimum the product rule holds for $P(Y\\ge y)$.',
+  teach:'The symbol $Y=0$ holds $\\tfrac{39}{60}$ of the probability. A single-symbol code cannot go below one bit, so the efficiency stays under $0.9$.' },
 
-{ id:'D6-14', module:'M6', type:'extension', src:'CH10 s.18',
-  stem:'A coder must reach within $0.05$ bits a symbol of the entropy by coding blocks.',
-  parts:['Give the smallest block length that guarantees it.',
-         'Give the size of the codebook if the source has three symbols.'],
-  sol:'<b>Given.</b> A target gap of $0.05$ bits a symbol.<br>'
-     +'<b>Find.</b> The block length and what it costs.<br>'
-     +'<b>Method.</b> The bound over the $n$-th extension is $H(S)\\le L_n/n<H(S)+1/n$, so the guaranteed gap is $1/n$.<br>'
-     +'<b>Solution — (a).</b> $1/n\\le0.05$ gives $n\\ge20$, so blocks of twenty symbols.<br>'
-     +'<b>Solution — (b).</b> $3^{20}=3.49\\times10^{9}$ symbols in the extended alphabet, each needing its own codeword.<br>'
-     +'<b>Check.</b> The bound improves as $1/n$ while the work grows as $K^n$. Three and a half billion codewords to save a twentieth of a bit is not a trade anyone makes, and it is why practical compressors. Lempel-Ziv and the rest. Do something entirely different.',
-  err:'Reading $1/n$ as the actual gap rather than the guaranteed one. The real gap is usually far smaller. $1/n$ is only what can be promised without knowing the probabilities.',
-  teach:'The two halves of this answer are the point. The theory says the entropy is reachable. The arithmetic says not this way. Both are true, and knowing the second is what separates the result from an algorithm.' },
+{ id:'D6-16', module:'M6', type:'sum', src:'Final Q4',
+  stem:'Consider two <em>independent</em> discrete memoryless sources, $X$ and $Y$. The source $X$ is described by the alphabet $\\mathcal{X}=\\{0,1,2\\}$, where $P(X=0)=2P(X=1)=4P(X=2)$. Similarly, the source $Y$ is described by the alphabet $\\mathcal{Y}=\\{0,1,2,3\\}$, where each symbol is generated with equal probability. Let $Z\\triangleq X+Y$ be another discrete memoryless source.',
+  parts:['[10 pts] Calculate the entropy of the source, $Z$.',
+         '[10 pts] Design a <em>binary</em> Huffman code for the source, $Z$.',
+         '[5 pts] Calculate the coding efficiency of the Huffman code designed in part (b).'],
+  figSol: () => figPmf({v:[0,1,2,3,4,5],n:[4,6,7,7,3,1],D:28,name:'Z'})+figHuff({n:[4,6,7,7,3,1],D:28,name:'Z',lab:['0','1','2','3','4','5'],codes:['001','11','01','10','0000','0001'],order:['000','00','1','0','']}),
+  sol:'<b>Given.</b> $P(X=0)=2P(X=1)=4P(X=2)$ on $\\{0,1,2\\}$, $Y$ uniform on $\\{0,1,2,3\\}$, independent, and $Z=X+Y$.<br>'
+     +'<b>Find.</b> $H(Z)$, a binary Huffman code for $Z$, and its coding efficiency.<br>'
+     +'<b>Method.</b> Turn the ratio statement into probabilities first. List $Z$ for every pair $(x,y)$, then add the probabilities that give the same value of $Z$. The entropy is $H(Z)=\\sum_{z}P(Z=z)\\log_2\\frac{1}{P(Z=z)}$, in bits because the logarithm has base two. Huffman\'s procedure fits the code part, since no prefix code for single symbols has a smaller average length. Merge the two smallest, give $0$ to the upper and $1$ to the lower, and place each sum as high as possible among equals. The efficiency is $\\eta=H(Z)/\\bar{L}$.<br>'
+     +'<b>Solution — (a).</b> '
+     +'Write $P(X=2)=q$. Then $P(X=1)=2q$ and $P(X=0)=4q$, and $7q=1$ gives $q=\\tfrac17$.'
+     +' So the pair $(x,y)$ has probability $n_X(x)/28$, where $n_X=4,2,1$ for $x=0,1,2$.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c}'
+     +' z&(x,y)\\ \\text{pairs}&P(Z=z)\\\\\\hline'
+     +' 0&(0,0)&\\frac{4}{28}\\\\'
+     +' 1&(0,1),\\,(1,0)&\\frac{4+2}{28}=\\frac{6}{28}\\\\'
+     +' 2&(0,2),\\,(1,1),\\,(2,0)&\\frac{4+2+1}{28}=\\frac{7}{28}\\\\'
+     +' 3&(0,3),\\,(1,2),\\,(2,1)&\\frac{4+2+1}{28}=\\frac{7}{28}\\\\'
+     +' 4&(1,3),\\,(2,2)&\\frac{2+1}{28}=\\frac{3}{28}\\\\'
+     +' 5&(2,3)&\\frac{1}{28}'
+     +'\\end{array}$$</div>'
+     +'The probabilities add to $\\frac{28}{28}=1$. The entropy is'
+     +'$$\\begin{aligned}'
+     +' H(Z)&=\\sum_{z}P(Z=z)\\log_2\\frac{1}{P(Z=z)}\\\\'
+     +'&=2\\cdot\\frac{7}{28}\\log_2 4+\\frac{6}{28}\\log_2 \\frac{14}{3}+\\frac{4}{28}\\log_2 7\\\\'
+     +'&\\quad+\\frac{3}{28}\\log_2 \\frac{28}{3}+\\frac{1}{28}\\log_2 28\\\\'
+     +'&=2(0.50000)+0.47623+0.40105+0.34526\\\\'
+     +'&\\quad+0.17169\\\\'
+     +'&=2.3942\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$<br>'
+     +'<b>Solution — (b).</b> '
+     +'Work with the numerators over $28$. Each line gives one merge and the new list, with the new sum in bold.<br>'
+     +'Start: $7,7,6,4,3,1$.<br>'
+     +'Merge $1$: $3+1=4$, list $7,7,6,\\mathbf{4},4$.<br>'
+     +'Merge $2$: $4+4=8$, list $\\mathbf{8},7,7,6$.<br>'
+     +'Merge $3$: $7+6=13$, list $\\mathbf{13},8,7$.<br>'
+     +'Merge $4$: $8+7=15$, list $\\mathbf{15},13$.<br>'
+     +'Merge $5$: $15+13=28$, list $\\mathbf{28}$.<br>'
+     +'In every merge the upper entry takes $0$ and the lower entry takes $1$. Reading the labels from the root back to each symbol gives the code.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c|c}'
+     +' z&P(Z=z)&\\text{codeword}&l\\\\\\hline'
+     +' 4&\\frac{3}{28}&\\mathtt{0000}&4\\\\'
+     +' 5&\\frac{1}{28}&\\mathtt{0001}&4\\\\'
+     +' 0&\\frac{4}{28}&\\mathtt{001}&3\\\\'
+     +' 2&\\frac{7}{28}&\\mathtt{01}&2\\\\'
+     +' 3&\\frac{7}{28}&\\mathtt{10}&2\\\\'
+     +' 1&\\frac{6}{28}&\\mathtt{11}&2'
+     +'\\end{array}$$</div><br>'
+     +'<b>Solution — (c).</b> '
+     +'The average codeword length is'
+     +'$$\\begin{aligned}'
+     +'\\bar{L}&=\\sum_{z}P(Z=z)\\,l(z)\\\\'
+     +'&=\\frac{1}{28}\\bigl[3(4)+1(4)+4(3)+7(2)\\\\&\\qquad+7(2)+6(2)\\bigr]\\\\'
+     +'&=\\frac{68}{28}\\\\'
+     +'&=\\frac{17}{7}\\\\'
+     +'&=2.4286\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$'
+     +'The coding efficiency is'
+     +'$$\\begin{aligned}'
+     +'\\eta&=\\frac{H(Z)}{\\bar{L}}\\\\'
+     +'&=\\frac{2.3942}{2.4286}\\\\'
+     +'&=0.9859'
+     +'\\end{aligned}$$'
+     +'In percent, $\\eta=98.59\\%$.<br>'
+     +'<b>Check.</b> '
+     +'The average length also equals the sum of the probabilities formed by the merges, the root included:'
+     +'$$\\bar{L}=\\frac{4+8+13+15+28}{28}=\\frac{68}{28}$$'
+     +'This matches part (c). The entropy follows by a second route, from the numerators $n_z=28\\,P(Z=z)$:'
+     +'$$\\begin{aligned}'
+     +' H(Z)&=\\log_2 28-\\frac{1}{28}\\sum_{z}n_z\\log_2 n_z\\\\'
+     +'&=4.8074-\\frac{1}{28}\\bigl(2\\cdot7\\log_2 7+6\\log_2 6+4\\log_2 4+3\\log_2 3\\bigr)\\\\'
+     +'&=4.8074-2.4131\\\\'
+     +'&=2.3942'
+     +'\\end{aligned}$$'
+     +'The Kraft sum is $3\\cdot 2^{-2}+2^{-3}+2\\cdot 2^{-4}=1$, so the tree has no unused branch. The bound $2.3942\\le 2.4286<3.3942$ holds.',
+  err:'Reading $P(X=0)=2P(X=1)=4P(X=2)$ as $P(X=0)=\\tfrac27$. The chain makes $X=0$ the most likely, with four parts out of seven.',
+  teach:'The closest shape to the examination\'s sum of two sources. Students misread the ratio statement, so ask for the three probabilities before anything else.' },
 
-{ id:'D6-15', module:'M6', type:'huffman', src:'CH10 s.19',
-  stem:'Build a Huffman code for a source with probabilities $0.5,\\;0.25,\\;0.125,\\;0.125$.',
-  parts:['Give the merges.',
-         'Give the codeword lengths and the average length.',
-         'Give the efficiency.'],
-  sol:'<b>Given.</b> Four probabilities, already in decreasing order.<br>'
-     +'<b>Find.</b> The code and how good it is.<br>'
-     +'<b>Method.</b> Merge the two least likely, put the sum back, repeat.<br>'
-     +'<b>Solution — (a).</b> $0.125+0.125=0.25$. Then the two smallest are $0.25$ and $0.25$, giving $0.5$. Then $0.5$ and $0.5$ finish it.<br>'
-     +'<b>Solution — (b).</b> Lengths $1,2,3,3$. For instance $0$, $10$, $110$, $111$. $\\bar{L}=0.5(1)+0.25(2)+0.125(3)+0.125(3)=1.75$ bits.<br>'
-     +'<b>Solution — (c).</b> $H(S)=1.75$ from D6-03, so $\\eta=1.75/1.75=1$.<br>'
-     +'<b>Check.</b> Every ideal length $-\\log_2 p_k$ is a whole number here — $1,2,3,3$ — and Huffman found exactly those. Nothing was rounded, so nothing was wasted.',
-  err:'Merging the two <em>most</em> likely symbols. The algorithm works from the bottom: the least likely pair goes deepest in the tree and gets the longest codewords.',
-  teach:'This is the case where the theory closes completely: the bound says $\\bar{L}\\ge H(S)$, the source is dyadic so equality is possible, and Huffman reaches it. Every other source in this module leaves a gap.' },
+{ id:'D6-17', module:'M6', type:'sum', src:'Final Q4',
+  stem:'Consider two <em>independent</em> discrete memoryless sources, $X$ and $Y$. The source $X$ is described by the alphabet $\\mathcal{X}=\\{1,2,3\\}$, where each symbol is generated with equal probability. Similarly, the source $Y$ is described by the alphabet $\\mathcal{Y}=\\{1,2,3\\}$, where $P(Y=1)=2P(Y=2)=2P(Y=3)$. Let $Z\\triangleq X\\times Y$ be another discrete memoryless source.',
+  parts:['[10 pts] Calculate the entropy of the source, $Z$.',
+         '[10 pts] Design a <em>binary</em> Huffman code for the source, $Z$.',
+         '[5 pts] Calculate the coding efficiency of the Huffman code designed in part (b).'],
+  figSol: () => figPmf({v:[1,2,3,4,6,9],n:[2,3,3,1,2,1],D:12,name:'Z'})+figHuff({n:[2,3,3,1,2,1],D:12,name:'Z',lab:['1','2','3','4','6','9'],codes:['000','01','10','110','001','111'],order:['11','00','1','0','']}),
+  sol:'<b>Given.</b> $X$ uniform on $\\{1,2,3\\}$, $P(Y=1)=2P(Y=2)=2P(Y=3)$, independent, and $Z=XY$.<br>'
+     +'<b>Find.</b> $H(Z)$, a binary Huffman code for $Z$, and its coding efficiency.<br>'
+     +'<b>Method.</b> Turn the ratio statement into probabilities first. List $Z$ for every pair $(x,y)$, then add the probabilities that give the same value of $Z$. The entropy is $H(Z)=\\sum_{z}P(Z=z)\\log_2\\frac{1}{P(Z=z)}$, in bits because the logarithm has base two. Huffman\'s procedure fits the code part, since no prefix code for single symbols has a smaller average length. Merge the two smallest, give $0$ to the upper and $1$ to the lower, and place each sum as high as possible among equals. The efficiency is $\\eta=H(Z)/\\bar{L}$.<br>'
+     +'<b>Solution — (a).</b> '
+     +'With $P(Y=2)=P(Y=3)=q$ and $P(Y=1)=2q$, the sum $4q=1$ gives $q=\\tfrac14$.'
+     +' So the pair $(x,y)$ has probability $n_Y(y)/12$, where $n_Y=2,1,1$ for $y=1,2,3$.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c}'
+     +' z&(x,y)\\ \\text{pairs}&P(Z=z)\\\\\\hline'
+     +' 1&(1,1)&\\frac{2}{12}\\\\'
+     +' 2&(1,2),\\,(2,1)&\\frac{1+2}{12}=\\frac{3}{12}\\\\'
+     +' 3&(1,3),\\,(3,1)&\\frac{1+2}{12}=\\frac{3}{12}\\\\'
+     +' 4&(2,2)&\\frac{1}{12}\\\\'
+     +' 6&(2,3),\\,(3,2)&\\frac{2}{12}\\\\'
+     +' 9&(3,3)&\\frac{1}{12}'
+     +'\\end{array}$$</div>'
+     +'The probabilities add to $\\frac{12}{12}=1$. The entropy is'
+     +'$$\\begin{aligned}'
+     +' H(Z)&=\\sum_{z}P(Z=z)\\log_2\\frac{1}{P(Z=z)}\\\\'
+     +'&=2\\cdot\\frac{3}{12}\\log_2 4+2\\cdot\\frac{2}{12}\\log_2 6+2\\cdot\\frac{1}{12}\\log_2 12\\\\'
+     +'&=2(0.50000)+2(0.43083)+2(0.29875)\\\\'
+     +'&=2.4591\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$<br>'
+     +'<b>Solution — (b).</b> '
+     +'Work with the numerators over $12$. Each line gives one merge and the new list, with the new sum in bold.<br>'
+     +'Start: $3,3,2,2,1,1$.<br>'
+     +'Merge $1$: $1+1=2$, list $3,3,\\mathbf{2},2,2$.<br>'
+     +'Merge $2$: $2+2=4$, list $\\mathbf{4},3,3,2$.<br>'
+     +'Merge $3$: $3+2=5$, list $\\mathbf{5},4,3$.<br>'
+     +'Merge $4$: $4+3=7$, list $\\mathbf{7},5$.<br>'
+     +'Merge $5$: $7+5=12$, list $\\mathbf{12}$.<br>'
+     +'In every merge the upper entry takes $0$ and the lower entry takes $1$. Reading the labels from the root back to each symbol gives the code.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c|c}'
+     +' z&P(Z=z)&\\text{codeword}&l\\\\\\hline'
+     +' 1&\\frac{2}{12}&\\mathtt{000}&3\\\\'
+     +' 6&\\frac{2}{12}&\\mathtt{001}&3\\\\'
+     +' 2&\\frac{3}{12}&\\mathtt{01}&2\\\\'
+     +' 3&\\frac{3}{12}&\\mathtt{10}&2\\\\'
+     +' 4&\\frac{1}{12}&\\mathtt{110}&3\\\\'
+     +' 9&\\frac{1}{12}&\\mathtt{111}&3'
+     +'\\end{array}$$</div><br>'
+     +'<b>Solution — (c).</b> '
+     +'The average codeword length is'
+     +'$$\\begin{aligned}'
+     +'\\bar{L}&=\\sum_{z}P(Z=z)\\,l(z)\\\\'
+     +'&=\\frac{1}{12}\\bigl[2(3)+2(3)+3(2)+3(2)\\\\&\\qquad+1(3)+1(3)\\bigr]\\\\'
+     +'&=\\frac{30}{12}\\\\'
+     +'&=\\frac{5}{2}\\\\'
+     +'&=2.5000\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$'
+     +'The coding efficiency is'
+     +'$$\\begin{aligned}'
+     +'\\eta&=\\frac{H(Z)}{\\bar{L}}\\\\'
+     +'&=\\frac{2.4591}{2.5000}\\\\'
+     +'&=0.9837'
+     +'\\end{aligned}$$'
+     +'In percent, $\\eta=98.37\\%$.<br>'
+     +'<b>Check.</b> '
+     +'The average length also equals the sum of the probabilities formed by the merges, the root included:'
+     +'$$\\bar{L}=\\frac{2+4+5+7+12}{12}=\\frac{30}{12}$$'
+     +'This matches part (c). The entropy follows by a second route, from the numerators $n_z=12\\,P(Z=z)$:'
+     +'$$\\begin{aligned}'
+     +' H(Z)&=\\log_2 12-\\frac{1}{12}\\sum_{z}n_z\\log_2 n_z\\\\'
+     +'&=3.5850-\\frac{1}{12}\\bigl(2\\cdot3\\log_2 3+2\\cdot2\\log_2 2\\bigr)\\\\'
+     +'&=3.5850-1.1258\\\\'
+     +'&=2.4591'
+     +'\\end{aligned}$$'
+     +'The Kraft sum is $2\\cdot 2^{-2}+4\\cdot 2^{-3}=1$, so the tree has no unused branch. The bound $2.4591\\le 2.5000<3.4591$ holds.',
+  err:'Listing $Z=2$ from the pair $(2,1)$ only. The pair $(1,2)$ also gives $Z=2$, so a product with two factorisations collects two terms.',
+  teach:'The nine pairs give six different products. The collisions at $2$, $3$ and $6$ are where students lose probability.' },
 
-{ id:'D6-16', module:'M6', type:'huffman', src:'CH10 s.19',
-  stem:'Build a Huffman code for a source with probabilities $0.4,\\;0.3,\\;0.2,\\;0.1$.',
-  parts:['Give the merges and the codeword lengths.',
-         'Give the average length and the entropy.',
-         'Give the efficiency.'],
-  sol:'<b>Given.</b> Four probabilities in decreasing order.<br>'
-     +'<b>Find.</b> The code, $\\bar{L}$, $H(S)$ and $\\eta$.<br>'
-     +'<b>Method.</b> The algorithm, then the two sums.<br>'
-     +'<b>Solution — (a).</b> $0.2+0.1=0.3$. The list is now $0.4,0.3,0.3$. The two smallest give $0.6$. Then $0.6$ and $0.4$ finish. Lengths $1,2,3,3$.<br>'
-     +'<b>Solution — (b).</b> $\\bar{L}=0.4(1)+0.3(2)+0.2(3)+0.1(3)=0.4+0.6+0.6+0.3=1.9$ bits. $H(S)=-0.4\\log_2 0.4-0.3\\log_2 0.3-0.2\\log_2 0.2-0.1\\log_2 0.1=1.8464$ bits.<br>'
-     +'<b>Solution — (c).</b> $\\eta=1.8464/1.9=0.9718$.<br>'
-     +'<b>Check.</b> $1.8464\\le1.9<2.8464$. Therefore, the two-sided bound holds with room to spare. A fixed-length code would have cost $2$ bits. Therefore, Huffman saved a tenth of a bit a symbol. Modest. This occurs because this source is not very uneven.',
-  err:'Stopping after three merges and reading off lengths from an unfinished tree. The algorithm ends when one symbol is left, which for $K$ symbols is $K-1$ merges.',
-  teach:'Compare with D6-15, which had the same lengths $1,2,3,3$ and reached $\\eta=1$. Same code shape, different probabilities, and the efficiency falls to $0.97$. It is the match between lengths and probabilities that matters, not the lengths alone.' },
+{ id:'D6-18', module:'M6', type:'sum', src:'Final Q4',
+  stem:'Consider two <em>independent</em> discrete memoryless sources, $X$ and $Y$. The source $X$ is described by the alphabet $\\mathcal{X}=\\{0,1,2,3\\}$, where each symbol is generated with equal probability. Similarly, the source $Y$ is described by the alphabet $\\mathcal{Y}=\\{0,1,\\ldots,5\\}$, where each symbol is generated with equal probability. Let $Z\\triangleq |X-Y|$ be another discrete memoryless source.',
+  parts:['[10 pts] Calculate the entropy of the source, $Z$.',
+         '[10 pts] Design a <em>binary</em> Huffman code for the source, $Z$.',
+         '[5 pts] Calculate the coding efficiency of the Huffman code designed in part (b).'],
+  figSol: () => figPmf({v:[0,1,2,3,4,5],n:[4,7,6,4,2,1],D:24,name:'Z'})+figHuff({n:[4,7,6,4,2,1],D:24,name:'Z',lab:['0','1','2','3','4','5'],codes:['11','01','10','000','0010','0011'],order:['001','00','1','0','']}),
+  sol:'<b>Given.</b> $X$ uniform on $\\{0,\\ldots,3\\}$, $Y$ uniform on $\\{0,\\ldots,5\\}$, independent, and $Z=|X-Y|$.<br>'
+     +'<b>Find.</b> $H(Z)$, a binary Huffman code for $Z$, and its coding efficiency.<br>'
+     +'<b>Method.</b> List $Z$ for every pair $(x,y)$, then add the probabilities that give the same value of $Z$. The entropy is $H(Z)=\\sum_{z}P(Z=z)\\log_2\\frac{1}{P(Z=z)}$, in bits because the logarithm has base two. Huffman\'s procedure fits the code part, since no prefix code for single symbols has a smaller average length. Merge the two smallest, give $0$ to the upper and $1$ to the lower, and place each sum as high as possible among equals. The efficiency is $\\eta=H(Z)/\\bar{L}$.<br>'
+     +'<b>Solution — (a).</b> '
+     +'Each of the $24$ pairs has probability $\\tfrac{1}{24}$. So $P(Z=z)$ is the number of pairs with $|x-y|=z$, divided by $24$.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c}'
+     +' z&(x,y)\\ \\text{pairs}&P(Z=z)\\\\\\hline'
+     +' 0&(0,0),\\,(1,1),\\,(2,2),\\,(3,3)&\\frac{4}{24}\\\\'
+     +' 1&(0,1),\\,(1,0),\\,(1,2),\\,(2,1),\\,(2,3),\\,(3,2),\\,(3,4)&\\frac{7}{24}\\\\'
+     +' 2&(0,2),\\,(1,3),\\,(2,0),\\,(2,4),\\,(3,1),\\,(3,5)&\\frac{6}{24}\\\\'
+     +' 3&(0,3),\\,(1,4),\\,(2,5),\\,(3,0)&\\frac{4}{24}\\\\'
+     +' 4&(0,4),\\,(1,5)&\\frac{2}{24}\\\\'
+     +' 5&(0,5)&\\frac{1}{24}'
+     +'\\end{array}$$</div>'
+     +'The probabilities add to $\\frac{24}{24}=1$. The entropy is'
+     +'$$\\begin{aligned}'
+     +' H(Z)&=\\sum_{z}P(Z=z)\\log_2\\frac{1}{P(Z=z)}\\\\'
+     +'&=\\frac{7}{24}\\log_2 \\frac{24}{7}+\\frac{6}{24}\\log_2 4+2\\cdot\\frac{4}{24}\\log_2 6\\\\'
+     +'&\\quad+\\frac{2}{24}\\log_2 12+\\frac{1}{24}\\log_2 24\\\\'
+     +'&=0.51847+0.50000+2(0.43083)+0.29875\\\\'
+     +'&\\quad+0.19104\\\\'
+     +'&=2.3699\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$<br>'
+     +'<b>Solution — (b).</b> '
+     +'Work with the numerators over $24$. Each line gives one merge and the new list, with the new sum in bold.<br>'
+     +'Start: $7,6,4,4,2,1$.<br>'
+     +'Merge $1$: $2+1=3$, list $7,6,4,4,\\mathbf{3}$.<br>'
+     +'Merge $2$: $4+3=7$, list $\\mathbf{7},7,6,4$.<br>'
+     +'Merge $3$: $6+4=10$, list $\\mathbf{10},7,7$.<br>'
+     +'Merge $4$: $7+7=14$, list $\\mathbf{14},10$.<br>'
+     +'Merge $5$: $14+10=24$, list $\\mathbf{24}$.<br>'
+     +'In every merge the upper entry takes $0$ and the lower entry takes $1$. Reading the labels from the root back to each symbol gives the code.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c|c}'
+     +' z&P(Z=z)&\\text{codeword}&l\\\\\\hline'
+     +' 3&\\frac{4}{24}&\\mathtt{000}&3\\\\'
+     +' 4&\\frac{2}{24}&\\mathtt{0010}&4\\\\'
+     +' 5&\\frac{1}{24}&\\mathtt{0011}&4\\\\'
+     +' 1&\\frac{7}{24}&\\mathtt{01}&2\\\\'
+     +' 2&\\frac{6}{24}&\\mathtt{10}&2\\\\'
+     +' 0&\\frac{4}{24}&\\mathtt{11}&2'
+     +'\\end{array}$$</div><br>'
+     +'<b>Solution — (c).</b> '
+     +'The average codeword length is'
+     +'$$\\begin{aligned}'
+     +'\\bar{L}&=\\sum_{z}P(Z=z)\\,l(z)\\\\'
+     +'&=\\frac{1}{24}\\bigl[4(3)+2(4)+1(4)+7(2)\\\\&\\qquad+6(2)+4(2)\\bigr]\\\\'
+     +'&=\\frac{58}{24}\\\\'
+     +'&=\\frac{29}{12}\\\\'
+     +'&=2.4167\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$'
+     +'The coding efficiency is'
+     +'$$\\begin{aligned}'
+     +'\\eta&=\\frac{H(Z)}{\\bar{L}}\\\\'
+     +'&=\\frac{2.3699}{2.4167}\\\\'
+     +'&=0.9807'
+     +'\\end{aligned}$$'
+     +'In percent, $\\eta=98.07\\%$.<br>'
+     +'<b>Check.</b> '
+     +'The average length also equals the sum of the probabilities formed by the merges, the root included:'
+     +'$$\\bar{L}=\\frac{3+7+10+14+24}{24}=\\frac{58}{24}$$'
+     +'This matches part (c). The entropy follows by a second route, from the numerators $n_z=24\\,P(Z=z)$:'
+     +'$$\\begin{aligned}'
+     +' H(Z)&=\\log_2 24-\\frac{1}{24}\\sum_{z}n_z\\log_2 n_z\\\\'
+     +'&=4.5850-\\frac{1}{24}\\bigl(7\\log_2 7+6\\log_2 6+2\\cdot4\\log_2 4+2\\log_2 2\\bigr)\\\\'
+     +'&=4.5850-2.2151\\\\'
+     +'&=2.3699'
+     +'\\end{aligned}$$'
+     +'The Kraft sum is $3\\cdot 2^{-2}+2^{-3}+2\\cdot 2^{-4}=1$, so the tree has no unused branch. The bound $2.3699\\le 2.4167<3.3699$ holds.',
+  err:'Dropping the absolute value, so $Z$ runs from $-5$ to $3$. The distance $|x-y|$ folds each negative difference onto the positive one.',
+  teach:'A folded variable. Ask for the alphabet first: $\\{0,\\ldots,5\\}$, which the larger range sets.' },
 
-{ id:'D6-17', module:'M6', type:'huffman', src:'CH10 s.22',
-  stem:'Two Huffman codes for the same source both have $\\bar{L}=2.2$ bits. The first has lengths $2,2,2,3,3$ with probabilities $0.4,0.2,0.2,0.1,0.1$. The second has lengths $1,2,3,4,4$ for the same probabilities in the same order.',
-  parts:['Give the variance of each.',
-         'Say which is preferred and why.'],
-  sol:'<b>Given.</b> Two optimal codes for one source.<br>'
-     +'<b>Find.</b> $\\sigma^{2}$ for each.<br>'
-     +'<b>Method.</b> $\\sigma^{2}=\\sum p_k(l_k-\\bar{L})^{2}$ with $\\bar{L}=2.2$ in both cases.<br>'
-     +'<b>Solution — (a).</b> First: $0.4(0.04)+0.2(0.04)+0.2(0.04)+0.1(0.64)+0.1(0.64)=0.016+0.008+0.008+0.064+0.064=0.16$. Second: $0.4(1.44)+0.2(0.04)+0.2(0.64)+0.1(3.24)+0.1(3.24)=0.576+0.008+0.128+0.324+0.324=1.36$.<br>'
-     +'<b>Solution (b).</b> The first. Both cost the same on average. However, its codeword lengths are close together. Therefore, the buffer between the encoder and a fixed-rate channel sees a steadier flow.<br>'
-     +'<b>Check.</b> Both averages are $2.2$, which they must be: Huffman produces a minimum-length code and the minimum is unique even when the code is not.',
-  err:'Recomputing $\\bar{L}$ for the second code and expecting a different answer. The two codes differ in how the lengths are distributed, never in their average.',
-  teach:'The rule that produces the first code is one line: on a tie, place the merged symbol as high as possible in the list. Ask the reader to run the algorithm both ways on paper and watch the tie at $0.2$ decide everything.' },
+{ id:'D6-19', module:'M6', type:'sum', src:'Final Q4',
+  stem:'Consider two <em>independent</em> discrete memoryless sources, $X$ and $Y$. The source $X$ is described by the alphabet $\\mathcal{X}=\\{1,2,3,4,5\\}$, where each symbol is generated with equal probability. Similarly, the source $Y$ is described by the same alphabet, where each symbol is generated with equal probability. Let $Z\\triangleq \\min(X,Y)$ be another discrete memoryless source.',
+  parts:['[10 pts] Calculate the entropy of the source, $Z$.',
+         '[10 pts] Design a <em>binary</em> Huffman code for the source, $Z$.',
+         '[5 pts] Calculate the coding efficiency of the Huffman code designed in part (b).'],
+  figSol: () => figPmf({v:[1,2,3,4,5],n:[9,7,5,3,1],D:25,name:'Z'})+figHuff({n:[9,7,5,3,1],D:25,name:'Z',lab:['1','2','3','4','5'],codes:['00','01','10','110','111'],order:['11','1','0','']}),
+  sol:'<b>Given.</b> $X$ and $Y$ independent and uniform on $\\{1,\\ldots,5\\}$, and $Z=\\min(X,Y)$.<br>'
+     +'<b>Find.</b> $H(Z)$, a binary Huffman code for $Z$, and its coding efficiency.<br>'
+     +'<b>Method.</b> List $Z$ for every pair $(x,y)$, then add the probabilities that give the same value of $Z$. The entropy is $H(Z)=\\sum_{z}P(Z=z)\\log_2\\frac{1}{P(Z=z)}$, in bits because the logarithm has base two. Huffman\'s procedure fits the code part, since no prefix code for single symbols has a smaller average length. Merge the two smallest, give $0$ to the upper and $1$ to the lower, and place each sum as high as possible among equals. The efficiency is $\\eta=H(Z)/\\bar{L}$.<br>'
+     +'<b>Solution — (a).</b> '
+     +'Each of the $25$ pairs has probability $\\tfrac{1}{25}$.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c}'
+     +' z&(x,y)\\ \\text{pairs}&P(Z=z)\\\\\\hline'
+     +' 1&(1,1),\\,(1,2),\\,(1,3),\\,(1,4),\\,(1,5),\\,(2,1),\\,(3,1),\\,(4,1),\\,(5,1)&\\frac{9}{25}\\\\'
+     +' 2&(2,2),\\,(2,3),\\,(2,4),\\,(2,5),\\,(3,2),\\,(4,2),\\,(5,2)&\\frac{7}{25}\\\\'
+     +' 3&(3,3),\\,(3,4),\\,(3,5),\\,(4,3),\\,(5,3)&\\frac{5}{25}\\\\'
+     +' 4&(4,4),\\,(4,5),\\,(5,4)&\\frac{3}{25}\\\\'
+     +' 5&(5,5)&\\frac{1}{25}'
+     +'\\end{array}$$</div>'
+     +'The probabilities add to $\\frac{25}{25}=1$. The entropy is'
+     +'$$\\begin{aligned}'
+     +' H(Z)&=\\sum_{z}P(Z=z)\\log_2\\frac{1}{P(Z=z)}\\\\'
+     +'&=\\frac{9}{25}\\log_2 \\frac{25}{9}+\\frac{7}{25}\\log_2 \\frac{25}{7}+\\frac{5}{25}\\log_2 5\\\\'
+     +'&\\quad+\\frac{3}{25}\\log_2 \\frac{25}{3}+\\frac{1}{25}\\log_2 25\\\\'
+     +'&=0.53062+0.51422+0.46439+0.36707\\\\'
+     +'&\\quad+0.18575\\\\'
+     +'&=2.0620\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$<br>'
+     +'<b>Solution — (b).</b> '
+     +'Work with the numerators over $25$. Each line gives one merge and the new list, with the new sum in bold.<br>'
+     +'Start: $9,7,5,3,1$.<br>'
+     +'Merge $1$: $3+1=4$, list $9,7,5,\\mathbf{4}$.<br>'
+     +'Merge $2$: $5+4=9$, list $\\mathbf{9},9,7$.<br>'
+     +'Merge $3$: $9+7=16$, list $\\mathbf{16},9$.<br>'
+     +'Merge $4$: $16+9=25$, list $\\mathbf{25}$.<br>'
+     +'In every merge the upper entry takes $0$ and the lower entry takes $1$. Reading the labels from the root back to each symbol gives the code.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c|c}'
+     +' z&P(Z=z)&\\text{codeword}&l\\\\\\hline'
+     +' 1&\\frac{9}{25}&\\mathtt{00}&2\\\\'
+     +' 2&\\frac{7}{25}&\\mathtt{01}&2\\\\'
+     +' 3&\\frac{5}{25}&\\mathtt{10}&2\\\\'
+     +' 4&\\frac{3}{25}&\\mathtt{110}&3\\\\'
+     +' 5&\\frac{1}{25}&\\mathtt{111}&3'
+     +'\\end{array}$$</div><br>'
+     +'<b>Solution — (c).</b> '
+     +'The average codeword length is'
+     +'$$\\begin{aligned}'
+     +'\\bar{L}&=\\sum_{z}P(Z=z)\\,l(z)\\\\'
+     +'&=\\frac{1}{25}\\bigl[9(2)+7(2)+5(2)+3(3)+1(3)\\bigr]\\\\'
+     +'&=\\frac{54}{25}\\\\'
+     +'&=2.1600\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$'
+     +'The coding efficiency is'
+     +'$$\\begin{aligned}'
+     +'\\eta&=\\frac{H(Z)}{\\bar{L}}\\\\'
+     +'&=\\frac{2.0620}{2.1600}\\\\'
+     +'&=0.9546'
+     +'\\end{aligned}$$'
+     +'In percent, $\\eta=95.46\\%$.<br>'
+     +'<b>Check.</b> '
+     +'The average length also equals the sum of the probabilities formed by the merges, the root included:'
+     +'$$\\bar{L}=\\frac{4+9+16+25}{25}=\\frac{54}{25}$$'
+     +'This matches part (c). The entropy follows by a second route, from the numerators $n_z=25\\,P(Z=z)$:'
+     +'$$\\begin{aligned}'
+     +' H(Z)&=\\log_2 25-\\frac{1}{25}\\sum_{z}n_z\\log_2 n_z\\\\'
+     +'&=4.6439-\\frac{1}{25}\\bigl(9\\log_2 9+7\\log_2 7+5\\log_2 5+3\\log_2 3\\bigr)\\\\'
+     +'&=4.6439-2.5818\\\\'
+     +'&=2.0620'
+     +'\\end{aligned}$$'
+     +'The Kraft sum is $3\\cdot 2^{-2}+2\\cdot 2^{-3}=1$, so the tree has no unused branch. The bound $2.0620\\le 2.1600<3.0620$ holds.'
+     +' The count for $Z=z$ is $(6-z)^{2}-(5-z)^{2}=11-2z$. This gives $9,7,5,3,1$, as in the table.',
+  err:'Counting the pair $(z,z)$ twice when listing the pairs with minimum $z$. There are $2(5-z)+1$ such pairs, not $2(5-z)+2$.',
+  teach:'The odd numerators $9,7,5,3,1$ fall in equal steps. The Huffman code still uses only two lengths.' },
 
-/* ---- full-length ----------------------------------------------------- */
+{ id:'D6-20', module:'M6', type:'sum', src:'Final Q4',
+  stem:'Consider two <em>independent</em> discrete memoryless sources, $X$ and $Y$. The source $X$ is described by the alphabet $\\mathcal{X}=\\{0,1,2\\}$, where $P(X=1)=2P(X=0)=2P(X=2)$. Similarly, the source $Y$ is described by the alphabet $\\mathcal{Y}=\\{0,1,2\\}$, where $P(Y=0)=2P(Y=1)=4P(Y=2)$. Let $Z\\triangleq X-Y$ be another discrete memoryless source.',
+  parts:['[10 pts] Calculate the entropy of the source, $Z$.',
+         '[10 pts] Design a <em>binary</em> Huffman code for the source, $Z$.',
+         '[5 pts] Calculate the coding efficiency of the Huffman code designed in part (b).'],
+  figSol: () => figPmf({v:[-2,-1,0,1,2],n:[1,4,9,10,4],D:28,name:'Z'})+figHuff({n:[1,4,9,10,4],D:28,name:'Z',lab:['-2','-1','0','1','2'],codes:['0001','001','01','1','0000'],order:['000','00','0','']}),
+  sol:'<b>Given.</b> $P(X=1)=2P(X=0)=2P(X=2)$, $P(Y=0)=2P(Y=1)=4P(Y=2)$, both on $\\{0,1,2\\}$, independent, and $Z=X-Y$.<br>'
+     +'<b>Find.</b> $H(Z)$, a binary Huffman code for $Z$, and its coding efficiency.<br>'
+     +'<b>Method.</b> Turn both ratio statements into probabilities first. List $Z$ for every pair $(x,y)$, then add the probabilities that give the same value of $Z$. The entropy is $H(Z)=\\sum_{z}P(Z=z)\\log_2\\frac{1}{P(Z=z)}$, in bits because the logarithm has base two. Huffman\'s procedure fits the code part, since no prefix code for single symbols has a smaller average length. Merge the two smallest, give $0$ to the upper and $1$ to the lower, and place each sum as high as possible among equals. The efficiency is $\\eta=H(Z)/\\bar{L}$.<br>'
+     +'<b>Solution — (a).</b> '
+     +'For $X$, $P(X=0)=P(X=2)=q$ and $P(X=1)=2q$, so $q=\\tfrac14$.'
+     +' For $Y$, $P(Y=2)=r$, $P(Y=1)=2r$ and $P(Y=0)=4r$, so $r=\\tfrac17$.'
+     +' The pair $(x,y)$ has probability $n_X(x)\\,n_Y(y)/28$, with $n_X=1,2,1$ and $n_Y=4,2,1$.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c}'
+     +' z&(x,y)\\ \\text{pairs}&P(Z=z)\\\\\\hline'
+     +'-2&(0,2)&\\frac{1}{28}\\\\'
+     +'-1&(0,1),\\,(1,2)&\\frac{2+2}{28}=\\frac{4}{28}\\\\'
+     +' 0&(0,0),\\,(1,1),\\,(2,2)&\\frac{4+2\\cdot2+1}{28}=\\frac{9}{28}\\\\'
+     +' 1&(1,0),\\,(2,1)&\\frac{2\\cdot4+2}{28}=\\frac{10}{28}\\\\'
+     +' 2&(2,0)&\\frac{4}{28}'
+     +'\\end{array}$$</div>'
+     +'The probabilities add to $\\frac{28}{28}=1$. The entropy is'
+     +'$$\\begin{aligned}'
+     +' H(Z)&=\\sum_{z}P(Z=z)\\log_2\\frac{1}{P(Z=z)}\\\\'
+     +'&=\\frac{10}{28}\\log_2 \\frac{14}{5}+\\frac{9}{28}\\log_2 \\frac{28}{9}+2\\cdot\\frac{4}{28}\\log_2 7\\\\'
+     +'&\\quad+\\frac{1}{28}\\log_2 28\\\\'
+     +'&=0.53051+0.52632+2(0.40105)+0.17169\\\\'
+     +'&=2.0306\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$<br>'
+     +'<b>Solution — (b).</b> '
+     +'Work with the numerators over $28$. Each line gives one merge and the new list, with the new sum in bold.<br>'
+     +'Start: $10,9,4,4,1$.<br>'
+     +'Merge $1$: $4+1=5$, list $10,9,\\mathbf{5},4$.<br>'
+     +'Merge $2$: $5+4=9$, list $10,\\mathbf{9},9$.<br>'
+     +'Merge $3$: $9+9=18$, list $\\mathbf{18},10$.<br>'
+     +'Merge $4$: $18+10=28$, list $\\mathbf{28}$.<br>'
+     +'In every merge the upper entry takes $0$ and the lower entry takes $1$. Reading the labels from the root back to each symbol gives the code.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c|c}'
+     +' z&P(Z=z)&\\text{codeword}&l\\\\\\hline'
+     +' 2&\\frac{4}{28}&\\mathtt{0000}&4\\\\'
+     +'-2&\\frac{1}{28}&\\mathtt{0001}&4\\\\'
+     +'-1&\\frac{4}{28}&\\mathtt{001}&3\\\\'
+     +' 0&\\frac{9}{28}&\\mathtt{01}&2\\\\'
+     +' 1&\\frac{10}{28}&\\mathtt{1}&1'
+     +'\\end{array}$$</div><br>'
+     +'<b>Solution — (c).</b> '
+     +'The average codeword length is'
+     +'$$\\begin{aligned}'
+     +'\\bar{L}&=\\sum_{z}P(Z=z)\\,l(z)\\\\'
+     +'&=\\frac{1}{28}\\bigl[4(4)+1(4)+4(3)+9(2)+10(1)\\bigr]\\\\'
+     +'&=\\frac{60}{28}\\\\'
+     +'&=\\frac{15}{7}\\\\'
+     +'&=2.1429\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$'
+     +'The coding efficiency is'
+     +'$$\\begin{aligned}'
+     +'\\eta&=\\frac{H(Z)}{\\bar{L}}\\\\'
+     +'&=\\frac{2.0306}{2.1429}\\\\'
+     +'&=0.9476'
+     +'\\end{aligned}$$'
+     +'In percent, $\\eta=94.76\\%$.<br>'
+     +'<b>Check.</b> '
+     +'The average length also equals the sum of the probabilities formed by the merges, the root included:'
+     +'$$\\bar{L}=\\frac{5+9+18+28}{28}=\\frac{60}{28}$$'
+     +'This matches part (c). The entropy follows by a second route, from the numerators $n_z=28\\,P(Z=z)$:'
+     +'$$\\begin{aligned}'
+     +' H(Z)&=\\log_2 28-\\frac{1}{28}\\sum_{z}n_z\\log_2 n_z\\\\'
+     +'&=4.8074-\\frac{1}{28}\\bigl(10\\log_2 10+9\\log_2 9+2\\cdot4\\log_2 4\\bigr)\\\\'
+     +'&=4.8074-2.7767\\\\'
+     +'&=2.0306'
+     +'\\end{aligned}$$'
+     +'The Kraft sum is $2^{-1}+2^{-2}+2^{-3}+2\\cdot 2^{-4}=1$, so the tree has no unused branch. The bound $2.0306\\le 2.1429<3.0306$ holds.',
+  err:'Computing $Y-X$ in place of $X-Y$. The pmf is then reflected about zero, and every symbol gets the probability of its negative.',
+  teach:'Both sources are given by ratios, so two constants are found. The difference piles up at $0$ and $1$, which gives a ladder-shaped tree.' },
 
-{ id:'D6-18', module:'M6', type:'huffman', src:'CH10 s.20–22',
-  stem:'A discrete memoryless source has probabilities $0.4,\\;0.2,\\;0.2,\\;0.1,\\;0.1$.',
-  parts:['Give the entropy.',
-         'Build the minimum-variance Huffman code and give the lengths.',
-         'Give the average length and the efficiency.',
-         'Give the variance, and compare with a fixed-length code.'],
-  sol:'<b>Given.</b> Five symbols with the probabilities listed.<br>'
-     +'<b>Find.</b> $H(S)$, the code, $\\bar{L}$, $\\eta$, $\\sigma^{2}$.<br>'
-     +'<b>Method.</b> Entropy first, then the algorithm with merged symbols placed high.<br>'
-     +'<b>Solution — (a).</b> $H(S)=-0.4\\log_2 0.4-2(0.2\\log_2 0.2)-2(0.1\\log_2 0.1)=0.5288+0.9288+0.6644=2.1219$ bits.<br>'
-     +'<b>Solution — (b).</b> $0.1+0.1=0.2$, placed above the two existing $0.2$s. Then those two $0.2$s merge to $0.4$, placed above the original $0.4$. Then $0.4$ and $0.2$ give $0.6$, and $0.6$ with $0.4$ finishes. Lengths $2,2,2,3,3$.<br>'
-     +'<b>Solution — (c).</b> $\\bar{L}=0.4(2)+0.2(2)+0.2(2)+0.1(3)+0.1(3)=2.2$ bits, so $\\eta=2.1219/2.2=0.9645$.<br>'
-     +'<b>Solution — (d).</b> $\\sigma^{2}=0.16$. A fixed-length code needs $\\lceil\\log_2 5\\rceil=3$ bits with zero variance, so Huffman saves $0.8$ bits a symbol at the cost of unequal lengths.<br>'
-     +'<b>Check.</b> $2.1219\\le2.2<3.1219$: the bound holds. $\\bar{L}$ exceeds $H(S)$ by $3.68\\%$, which is the rounding the module said would cost less than one bit.',
-  err:'Placing the first merged $0.2$ below the existing ones. That is a legal Huffman code with the same $\\bar{L}=2.2$. However, its variance is $1.36$. A question asking for the minimum-variance code wants the other one.',
-  teach:'This one question exercises the whole module: entropy, the algorithm, the tie rule, the average, the efficiency, the variance and the bound. Worth working end to end on paper before any of the shorter questions are attempted a second time.' },
+{ id:'D6-21', module:'M6', type:'sum', src:'Final Q4',
+  stem:'Consider two <em>independent</em> discrete memoryless sources, $X$ and $Y$. The source $X$ is described by the alphabet $\\mathcal{X}=\\{1,2,3,4\\}$, where $P(X=k)=k\\,P(X=1)$. Similarly, the source $Y$ is described by the alphabet $\\mathcal{Y}=\\{0,2,4\\}$, where each symbol is generated with equal probability. Let $Z\\triangleq X+Y$ be another discrete memoryless source.',
+  parts:['[10 pts] Calculate the entropy of the source, $Z$.',
+         '[10 pts] Design a <em>binary</em> Huffman code for the source, $Z$.',
+         '[5 pts] Calculate the coding efficiency of the Huffman code designed in part (b).'],
+  figSol: () => figPmf({v:[1,2,3,4,5,6,7,8],n:[1,2,4,6,4,6,3,4],D:30,name:'Z'})+figHuff({n:[1,2,4,6,4,6,3,4],D:30,name:'Z',lab:['1','2','3','4','5','6','7','8'],codes:['1001','1000','001','11','010','000','101','011'],order:['100','10','01','00','1','0','']}),
+  sol:'<b>Given.</b> $P(X=k)=kP(X=1)$ on $\\{1,2,3,4\\}$, $Y$ uniform on $\\{0,2,4\\}$, independent, and $Z=X+Y$.<br>'
+     +'<b>Find.</b> $H(Z)$, a binary Huffman code for $Z$, and its coding efficiency.<br>'
+     +'<b>Method.</b> Turn the ratio statement into probabilities first. List $Z$ for every pair $(x,y)$, then add the probabilities that give the same value of $Z$. The entropy is $H(Z)=\\sum_{z}P(Z=z)\\log_2\\frac{1}{P(Z=z)}$, in bits because the logarithm has base two. Huffman\'s procedure fits the code part, since no prefix code for single symbols has a smaller average length. Merge the two smallest, give $0$ to the upper and $1$ to the lower, and place each sum as high as possible among equals. The efficiency is $\\eta=H(Z)/\\bar{L}$.<br>'
+     +'<b>Solution — (a).</b> '
+     +'The ratio gives $P(X=k)=kq$, and $q(1+2+3+4)=10q=1$, so $q=\\tfrac{1}{10}$.'
+     +' The pair $(x,y)$ has probability $n_X(x)/30$, where $n_X(x)=x$.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c}'
+     +' z&(x,y)\\ \\text{pairs}&P(Z=z)\\\\\\hline'
+     +' 1&(1,0)&\\frac{1}{30}\\\\'
+     +' 2&(2,0)&\\frac{2}{30}\\\\'
+     +' 3&(1,2),\\,(3,0)&\\frac{1+3}{30}=\\frac{4}{30}\\\\'
+     +' 4&(2,2),\\,(4,0)&\\frac{2+4}{30}=\\frac{6}{30}\\\\'
+     +' 5&(1,4),\\,(3,2)&\\frac{1+3}{30}=\\frac{4}{30}\\\\'
+     +' 6&(2,4),\\,(4,2)&\\frac{2+4}{30}=\\frac{6}{30}\\\\'
+     +' 7&(3,4)&\\frac{3}{30}\\\\'
+     +' 8&(4,4)&\\frac{4}{30}'
+     +'\\end{array}$$</div>'
+     +'The probabilities add to $\\frac{30}{30}=1$. The entropy is'
+     +'$$\\begin{aligned}'
+     +' H(Z)&=\\sum_{z}P(Z=z)\\log_2\\frac{1}{P(Z=z)}\\\\'
+     +'&=2\\cdot\\frac{6}{30}\\log_2 5+3\\cdot\\frac{4}{30}\\log_2 \\frac{15}{2}+\\frac{3}{30}\\log_2 10\\\\'
+     +'&\\quad+\\frac{2}{30}\\log_2 15+\\frac{1}{30}\\log_2 30\\\\'
+     +'&=2(0.46439)+3(0.38759)+0.33219+0.26046\\\\'
+     +'&\\quad+0.16356\\\\'
+     +'&=2.8477\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$<br>'
+     +'<b>Solution — (b).</b> '
+     +'Work with the numerators over $30$. Each line gives one merge and the new list, with the new sum in bold.<br>'
+     +'Start: $6,6,4,4,4,3,2,1$.<br>'
+     +'Merge $1$: $2+1=3$, list $6,6,4,4,4,\\mathbf{3},3$.<br>'
+     +'Merge $2$: $3+3=6$, list $\\mathbf{6},6,6,4,4,4$.<br>'
+     +'Merge $3$: $4+4=8$, list $\\mathbf{8},6,6,6,4$.<br>'
+     +'Merge $4$: $6+4=10$, list $\\mathbf{10},8,6,6$.<br>'
+     +'Merge $5$: $6+6=12$, list $\\mathbf{12},10,8$.<br>'
+     +'Merge $6$: $10+8=18$, list $\\mathbf{18},12$.<br>'
+     +'Merge $7$: $18+12=30$, list $\\mathbf{30}$.<br>'
+     +'In every merge the upper entry takes $0$ and the lower entry takes $1$. Reading the labels from the root back to each symbol gives the code.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c|c}'
+     +' z&P(Z=z)&\\text{codeword}&l\\\\\\hline'
+     +' 6&\\frac{6}{30}&\\mathtt{000}&3\\\\'
+     +' 3&\\frac{4}{30}&\\mathtt{001}&3\\\\'
+     +' 5&\\frac{4}{30}&\\mathtt{010}&3\\\\'
+     +' 8&\\frac{4}{30}&\\mathtt{011}&3\\\\'
+     +' 2&\\frac{2}{30}&\\mathtt{1000}&4\\\\'
+     +' 1&\\frac{1}{30}&\\mathtt{1001}&4\\\\'
+     +' 7&\\frac{3}{30}&\\mathtt{101}&3\\\\'
+     +' 4&\\frac{6}{30}&\\mathtt{11}&2'
+     +'\\end{array}$$</div><br>'
+     +'<b>Solution — (c).</b> '
+     +'The average codeword length is'
+     +'$$\\begin{aligned}'
+     +'\\bar{L}&=\\sum_{z}P(Z=z)\\,l(z)\\\\'
+     +'&=\\frac{1}{30}\\bigl[6(3)+4(3)+4(3)+4(3)\\\\&\\qquad+2(4)+1(4)+3(3)+6(2)\\bigr]\\\\'
+     +'&=\\frac{87}{30}\\\\'
+     +'&=\\frac{29}{10}\\\\'
+     +'&=2.9000\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$'
+     +'The coding efficiency is'
+     +'$$\\begin{aligned}'
+     +'\\eta&=\\frac{H(Z)}{\\bar{L}}\\\\'
+     +'&=\\frac{2.8477}{2.9000}\\\\'
+     +'&=0.9820'
+     +'\\end{aligned}$$'
+     +'In percent, $\\eta=98.20\\%$.<br>'
+     +'<b>Check.</b> '
+     +'The average length also equals the sum of the probabilities formed by the merges, the root included:'
+     +'$$\\bar{L}=\\frac{3+6+8+10+12+18+30}{30}=\\frac{87}{30}$$'
+     +'This matches part (c). The entropy follows by a second route, from the numerators $n_z=30\\,P(Z=z)$:'
+     +'$$\\begin{aligned}'
+     +' H(Z)&=\\log_2 30-\\frac{1}{30}\\sum_{z}n_z\\log_2 n_z\\\\'
+     +'&=4.9069-\\frac{1}{30}\\bigl(2\\cdot6\\log_2 6+3\\cdot4\\log_2 4+3\\log_2 3+2\\log_2 2\\bigr)\\\\'
+     +'&=4.9069-2.0591\\\\'
+     +'&=2.8477'
+     +'\\end{aligned}$$'
+     +'The Kraft sum is $2^{-2}+5\\cdot 2^{-3}+2\\cdot 2^{-4}=1$, so the tree has no unused branch. The bound $2.8477\\le 2.9000<3.8477$ holds.',
+  err:'Taking $P(X=k)=\\tfrac{k}{4}$, which adds to $\\tfrac{10}{4}$. The constant must make the four probabilities add to one.',
+  teach:'Eight output symbols, the largest alphabet in the set. The sums overlap only in the middle, where $3,4,5,6$ each have two routes.' },
 
-{ id:'D6-19', module:'M6', type:'huffman', src:'CH10 s.20',
-  stem:'A source has six symbols with probabilities $0.3,\\;0.25,\\;0.2,\\;0.12,\\;0.08,\\;0.05$.',
-  parts:['Give the entropy.',
-         'Build a Huffman code and give the lengths.',
-         'Give the average length, the efficiency and the variance.',
-         'Compare with a fixed-length code.'],
-  sol:'<b>Given.</b> Six probabilities in decreasing order.<br>'
-     +'<b>Find.</b> The full set of numbers.<br>'
-     +'<b>Method.</b> Five merges, then the three sums.<br>'
-     +'<b>Solution — (a).</b> $H(S)=2.3601$ bits a symbol.<br>'
-     +'<b>Solution — (b).</b> $0.08+0.05=0.13$; then $0.13+0.12=0.25$; then $0.2+0.25=0.45$; then $0.25+0.3=0.55$; then $0.45+0.55=1$. Lengths $2,2,2,3,4,4$.<br>'
-     +'<b>Solution — (c).</b> $\\bar{L}=0.3(2)+0.25(2)+0.2(2)+0.12(3)+0.08(4)+0.05(4)=0.6+0.5+0.4+0.36+0.32+0.2=2.38$ bits. $\\eta=2.3601/2.38=0.9917$. $\\sigma^{2}=0.4956$.<br>'
-     +'<b>Solution — (d).</b> A fixed-length code needs $\\lceil\\log_2 6\\rceil=3$ bits, so Huffman saves $0.62$ bits a symbol, or a fifth of the cost.<br>'
-     +'<b>Check.</b> $\\eta=0.9917$ is high because these probabilities sit close to powers of two, so little rounding was needed. Compare D6-18 at $0.9645$: more even probabilities there, and more waste.',
-  err:'Losing track of which entries are merged symbols after the third merge. Writing the list out fresh after every merge takes seconds and prevents it.',
-  teach:'Ask for a prediction of the efficiency before computing it. The probabilities $0.3, 0.25, 0.2$ are all near $0.25$, and $0.12, 0.08, 0.05$ are near $0.125$ and $0.0625$. So the ideal lengths are near whole numbers and the efficiency should be high. It is $0.99$.' },
+{ id:'D6-22', module:'M6', type:'sum', src:'Final Q4',
+  stem:'Consider two <em>independent</em> discrete memoryless sources, $X$ and $Y$. The source $X$ is described by the alphabet $\\mathcal{X}=\\{0,1,2,3\\}$, where $P(X=0)=P(X=3)=\\frac{1}{2}P(X=1)=\\frac{1}{2}P(X=2)$. Similarly, the source $Y$ is described by the alphabet $\\mathcal{Y}=\\{0,1,2\\}$, where each symbol is generated with equal probability. Let $Z\\triangleq X+Y$ be another discrete memoryless source.',
+  parts:['[10 pts] Calculate the entropy of the source, $Z$.',
+         '[10 pts] Design a <em>binary</em> Huffman code for the source, $Z$.',
+         '[5 pts] Calculate the coding efficiency of the Huffman code designed in part (b).'],
+  figSol: () => figPmf({v:[0,1,2,3,4,5],n:[1,3,5,5,3,1],D:18,name:'Z'})+figHuff({n:[1,3,5,5,3,1],D:18,name:'Z',lab:['0','1','2','3','4','5'],codes:['0010','11','01','10','000','0011'],order:['001','00','1','0','']}),
+  sol:'<b>Given.</b> $P(X=0)=P(X=3)=\\tfrac12P(X=1)=\\tfrac12P(X=2)$, $Y$ uniform on $\\{0,1,2\\}$, independent, and $Z=X+Y$.<br>'
+     +'<b>Find.</b> $H(Z)$, a binary Huffman code for $Z$, and its coding efficiency.<br>'
+     +'<b>Method.</b> Turn the ratio statement into probabilities first. List $Z$ for every pair $(x,y)$, then add the probabilities that give the same value of $Z$. The entropy is $H(Z)=\\sum_{z}P(Z=z)\\log_2\\frac{1}{P(Z=z)}$, in bits because the logarithm has base two. Huffman\'s procedure fits the code part, since no prefix code for single symbols has a smaller average length. Merge the two smallest, give $0$ to the upper and $1$ to the lower, and place each sum as high as possible among equals. The efficiency is $\\eta=H(Z)/\\bar{L}$.<br>'
+     +'<b>Solution — (a).</b> '
+     +'With $P(X=0)=P(X=3)=q$ and $P(X=1)=P(X=2)=2q$, the sum $6q=1$ gives $q=\\tfrac16$.'
+     +' The pair $(x,y)$ has probability $n_X(x)/18$, where $n_X=1,2,2,1$.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c}'
+     +' z&(x,y)\\ \\text{pairs}&P(Z=z)\\\\\\hline'
+     +' 0&(0,0)&\\frac{1}{18}\\\\'
+     +' 1&(0,1),\\,(1,0)&\\frac{1+2}{18}=\\frac{3}{18}\\\\'
+     +' 2&(0,2),\\,(1,1),\\,(2,0)&\\frac{1+2+2}{18}=\\frac{5}{18}\\\\'
+     +' 3&(1,2),\\,(2,1),\\,(3,0)&\\frac{2+2+1}{18}=\\frac{5}{18}\\\\'
+     +' 4&(2,2),\\,(3,1)&\\frac{2+1}{18}=\\frac{3}{18}\\\\'
+     +' 5&(3,2)&\\frac{1}{18}'
+     +'\\end{array}$$</div>'
+     +'The probabilities add to $\\frac{18}{18}=1$. The entropy is'
+     +'$$\\begin{aligned}'
+     +' H(Z)&=\\sum_{z}P(Z=z)\\log_2\\frac{1}{P(Z=z)}\\\\'
+     +'&=2\\cdot\\frac{5}{18}\\log_2 \\frac{18}{5}+2\\cdot\\frac{3}{18}\\log_2 6+2\\cdot\\frac{1}{18}\\log_2 18\\\\'
+     +'&=2(0.5133)+2(0.4308)+2(0.2317)\\\\'
+     +'&=2.3516\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$<br>'
+     +'<b>Solution — (b).</b> '
+     +'Work with the numerators over $18$. Each line gives one merge and the new list, with the new sum in bold.<br>'
+     +'Start: $5,5,3,3,1,1$.<br>'
+     +'Merge $1$: $1+1=2$, list $5,5,3,3,\\mathbf{2}$.<br>'
+     +'Merge $2$: $3+2=5$, list $\\mathbf{5},5,5,3$.<br>'
+     +'Merge $3$: $5+3=8$, list $\\mathbf{8},5,5$.<br>'
+     +'Merge $4$: $5+5=10$, list $\\mathbf{10},8$.<br>'
+     +'Merge $5$: $10+8=18$, list $\\mathbf{18}$.<br>'
+     +'In every merge the upper entry takes $0$ and the lower entry takes $1$. Reading the labels from the root back to each symbol gives the code.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c|c}'
+     +' z&P(Z=z)&\\text{codeword}&l\\\\\\hline'
+     +' 4&\\frac{3}{18}&\\mathtt{000}&3\\\\'
+     +' 0&\\frac{1}{18}&\\mathtt{0010}&4\\\\'
+     +' 5&\\frac{1}{18}&\\mathtt{0011}&4\\\\'
+     +' 2&\\frac{5}{18}&\\mathtt{01}&2\\\\'
+     +' 3&\\frac{5}{18}&\\mathtt{10}&2\\\\'
+     +' 1&\\frac{3}{18}&\\mathtt{11}&2'
+     +'\\end{array}$$</div><br>'
+     +'<b>Solution — (c).</b> '
+     +'The average codeword length is'
+     +'$$\\begin{aligned}'
+     +'\\bar{L}&=\\sum_{z}P(Z=z)\\,l(z)\\\\'
+     +'&=\\frac{1}{18}\\bigl[3(3)+1(4)+1(4)+5(2)\\\\&\\qquad+5(2)+3(2)\\bigr]\\\\'
+     +'&=\\frac{43}{18}\\\\'
+     +'&=2.3889\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$'
+     +'The coding efficiency is'
+     +'$$\\begin{aligned}'
+     +'\\eta&=\\frac{H(Z)}{\\bar{L}}\\\\'
+     +'&=\\frac{2.3516}{2.3889}\\\\'
+     +'&=0.9844'
+     +'\\end{aligned}$$'
+     +'In percent, $\\eta=98.44\\%$.<br>'
+     +'<b>Check.</b> '
+     +'The average length also equals the sum of the probabilities formed by the merges, the root included:'
+     +'$$\\bar{L}=\\frac{2+5+8+10+18}{18}=\\frac{43}{18}$$'
+     +'This matches part (c). The entropy follows by a second route, from the numerators $n_z=18\\,P(Z=z)$:'
+     +'$$\\begin{aligned}'
+     +' H(Z)&=\\log_2 18-\\frac{1}{18}\\sum_{z}n_z\\log_2 n_z\\\\'
+     +'&=4.1699-\\frac{1}{18}\\bigl(2\\cdot5\\log_2 5+2\\cdot3\\log_2 3\\bigr)\\\\'
+     +'&=4.1699-1.8183\\\\'
+     +'&=2.3516'
+     +'\\end{aligned}$$'
+     +'The Kraft sum is $3\\cdot 2^{-2}+2^{-3}+2\\cdot 2^{-4}=1$, so the tree has no unused branch. The bound $2.3516\\le 2.3889<3.3516$ holds.'
+     +' The pmf is symmetric about $z=2.5$. This must hold, since $X$ is symmetric about $1.5$ and $Y$ about $1$.',
+  err:'Using $q=\\tfrac14$ because $X$ has four symbols. The ratio gives two parts to each middle symbol, so there are six parts.',
+  teach:'The examination\'s sum of two sources with new alphabets. The ties among $\\tfrac{3}{18}$ and $\\tfrac{5}{18}$ make the placement rule matter.' },
 
-{ id:'D6-20', module:'M6', type:'huffman', src:'CH10 s.18–20',
-  stem:'A binary source emits $0$ with probability $0.8$ and $1$ with probability $0.2$.',
-  parts:['Give the entropy.',
-         'Give the average length and efficiency of a Huffman code on single symbols.',
-         'Extend the source by two and give the average length per original symbol of a Huffman code on the pairs.',
-         'Say what the extension bought.'],
-  sol:'<b>Given.</b> A binary source at $0.8/0.2$.<br>'
-     +'<b>Find.</b> The cost of coding it one symbol at a time, and two at a time.<br>'
-     +'<b>Method.</b> Entropy, then Huffman on $S$, then Huffman on $S^2$.<br>'
-     +'<b>Solution — (a).</b> $H(S)=-0.8\\log_2 0.8-0.2\\log_2 0.2=0.2575+0.4644=0.7219$ bits a symbol.<br>'
-     +'<b>Solution — (b).</b> With two symbols there is only one code: $0$ and $1$, so $\\bar{L}=1$ bit and $\\eta=0.7219/1=0.7219$. Nearly $28\\%$ of every bit is wasted, and no code on single symbols can do better — a codeword cannot be shorter than one bit.<br>'
-     +'<b>Solution — (c).</b> $S^2$ has probabilities $0.64,\\,0.16,\\,0.16,\\,0.04$. Huffman gives lengths $1,2,3,3$ and $L_2=0.64(1)+0.16(2)+0.16(3)+0.04(3)=1.56$ bits a pair, which is $0.78$ bits an original symbol.<br>'
-     +'<b>Solution — (d).</b> The efficiency rose from $0.7219$ to $0.7219/0.78=0.9255$. Coding two at a time recovered most of the waste, and the reason is that the one-bit floor now covers two symbols instead of one.<br>'
-     +'<b>Check.</b> $0.78$ is between $H(S)=0.7219$ and $H(S)+1/2=1.2219$, as the bound over the second extension requires.',
-  err:'Comparing $L_2=1.56$ with $H(S)=0.7219$ directly. $L_2$ is bits a <em>pair</em>. It has to be divided by two before it can be compared with anything per symbol.',
-  teach:'This is the clearest case in the module of why blocking matters. A very lopsided binary source wants to spend a fraction of a bit on its common symbol, and no single-symbol code can. Blocking is the only way to spend fractions of a bit, and D6-14 says how far that idea can be pushed.' },
+{ id:'D6-23', module:'M6', type:'judge', src:'Final Q4 (variant)',
+  stem:'Let $X$ be a discrete memoryless source (DMS) which is modeled as a uniform random variable taking the integer values between $1$ and $16$. Let $Y\\triangleq \\left\\lfloor \\log_2 X\\right\\rfloor$ be another DMS which is a function of $X$. Here $\\lfloor u\\rfloor$ is the largest integer not greater than $u$.',
+  parts:['[8 pts] Calculate the entropy of the source, $Y$.',
+         '[8 pts] Design a <em>binary</em> Huffman code for the source, $Y$.',
+         '[5 pts] A fixed-length binary code is proposed for $Y$ instead. Give its codeword length and its coding efficiency.',
+         '[4 pts] Calculate the coding efficiency of the Huffman code of part (b), and explain the value.'],
+  figSol: () => figPmf({v:[0,1,2,3,4],n:[1,2,4,8,1],D:16,name:'Y'})+figHuff({n:[1,2,4,8,1],D:16,name:'Y',lab:['0','1','2','3','4'],codes:['0000','001','01','1','0001'],order:['000','00','0','']}),
+  sol:'<b>Given.</b> $X$ uniform on $1,\\ldots,16$, and $Y=\\lfloor\\log_2 X\\rfloor$.<br>'
+     +'<b>Find.</b> $H(Y)$, a Huffman code, the fixed-length alternative, and both efficiencies.<br>'
+     +'<b>Method.</b> List $Y$ for every value of $X$, then add the probabilities that give the same value of $Y$. The entropy is $H(Y)=\\sum_{y}P(Y=y)\\log_2\\frac{1}{P(Y=y)}$, in bits because the logarithm has base two. Huffman\'s procedure fits the code part, since no prefix code for single symbols has a smaller average length. Merge the two smallest, give $0$ to the upper and $1$ to the lower, and place each sum as high as possible among equals. The efficiency is $\\eta=H(Y)/\\bar{L}$. A fixed-length code for $K$ symbols needs $\\lceil\\log_2 K\\rceil$ bits for each.<br>'
+     +'<b>Solution — (a).</b> '
+     +'Each of the sixteen values has probability $\\tfrac{1}{16}$. $Y=k$ when $2^{k}\\le X<2^{k+1}$.'
+     +' For example $X=6$ lies between $4$ and $8$, so $Y=\\lfloor\\log_2 6\\rfloor=2$.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c}'
+     +' y&x\\ \\text{values}&P(Y=y)\\\\\\hline'
+     +' 0&1&\\frac{1}{16}\\\\'
+     +' 1&2,\\,3&\\frac{2}{16}\\\\'
+     +' 2&4,\\,5,\\,6,\\,7&\\frac{4}{16}\\\\'
+     +' 3&8,\\,9,\\,10,\\,11,\\,12,\\,13,\\,14,\\,15&\\frac{8}{16}\\\\'
+     +' 4&16&\\frac{1}{16}'
+     +'\\end{array}$$</div>'
+     +'The probabilities add to $\\frac{16}{16}=1$. The entropy is'
+     +'$$\\begin{aligned}'
+     +' H(Y)&=\\sum_{y}P(Y=y)\\log_2\\frac{1}{P(Y=y)}\\\\'
+     +'&=\\frac{8}{16}\\log_2 2+\\frac{4}{16}\\log_2 4+\\frac{2}{16}\\log_2 8\\\\'
+     +'&\\quad+2\\cdot\\frac{1}{16}\\log_2 16\\\\'
+     +'&=0.5000+0.5000+0.3750+2(0.2500)\\\\'
+     +'&=1.8750\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$<br>'
+     +'<b>Solution — (b).</b> '
+     +'Work with the numerators over $16$. Each line gives one merge and the new list, with the new sum in bold.<br>'
+     +'Start: $8,4,2,1,1$.<br>'
+     +'Merge $1$: $1+1=2$, list $8,4,\\mathbf{2},2$.<br>'
+     +'Merge $2$: $2+2=4$, list $8,\\mathbf{4},4$.<br>'
+     +'Merge $3$: $4+4=8$, list $\\mathbf{8},8$.<br>'
+     +'Merge $4$: $8+8=16$, list $\\mathbf{16}$.<br>'
+     +'In every merge the upper entry takes $0$ and the lower entry takes $1$. Reading the labels from the root back to each symbol gives the code.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c|c}'
+     +' y&P(Y=y)&\\text{codeword}&l\\\\\\hline'
+     +' 0&\\frac{1}{16}&\\mathtt{0000}&4\\\\'
+     +' 4&\\frac{1}{16}&\\mathtt{0001}&4\\\\'
+     +' 1&\\frac{2}{16}&\\mathtt{001}&3\\\\'
+     +' 2&\\frac{4}{16}&\\mathtt{01}&2\\\\'
+     +' 3&\\frac{8}{16}&\\mathtt{1}&1'
+     +'\\end{array}$$</div><br>'
+     +'<b>Solution — (c).</b> '
+     +'$Y$ takes $5$ values. A fixed-length binary code needs $\\lceil\\log_2 5\\rceil=\\lceil 2.3219\\rceil=3$ bits for every symbol, so $\\bar{L}_{\\text{fixed}}=3$.'
+     +' Its efficiency is'
+     +'$$\\begin{aligned}'
+     +'\\eta_{\\text{fixed}}&=\\frac{H(Y)}{3}\\\\'
+     +'&=\\frac{1.8750}{3}\\\\'
+     +'&=0.6250'
+     +'\\end{aligned}$$<br>'
+     +'<b>Solution — (d).</b> '
+     +'The average codeword length is'
+     +'$$\\begin{aligned}'
+     +'\\bar{L}&=\\sum_{y}P(Y=y)\\,l(y)\\\\'
+     +'&=\\frac{1}{16}\\bigl[1(4)+1(4)+2(3)+4(2)+8(1)\\bigr]\\\\'
+     +'&=\\frac{30}{16}\\\\'
+     +'&=\\frac{15}{8}\\\\'
+     +'&=1.8750\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$'
+     +'The coding efficiency is'
+     +'$$\\begin{aligned}'
+     +'\\eta&=\\frac{H(Y)}{\\bar{L}}\\\\'
+     +'&=\\frac{1.8750}{1.8750}\\\\'
+     +'&=1.0000'
+     +'\\end{aligned}$$'
+     +'In percent, $\\eta=100.00\\%$.'
+     +' Every probability is a power of two, from $2^{-1}$ to $2^{-4}$. Each ideal length $\\log_2\\frac{1}{P(Y=y)}$ is then a whole number.'
+     +' The Huffman lengths equal those ideal lengths, so $\\bar{L}=H(Y)$ exactly.<br>'
+     +'<b>Check.</b> '
+     +'The average length also equals the sum of the probabilities formed by the merges, the root included:'
+     +'$$\\bar{L}=\\frac{2+4+8+16}{16}=\\frac{30}{16}$$'
+     +'This matches part (d). The entropy follows by a second route, from the numerators $n_y=16\\,P(Y=y)$:'
+     +'$$\\begin{aligned}'
+     +' H(Y)&=\\log_2 16-\\frac{1}{16}\\sum_{y}n_y\\log_2 n_y\\\\'
+     +'&=4.0000-\\frac{1}{16}\\bigl(8\\log_2 8+4\\log_2 4+2\\log_2 2\\bigr)\\\\'
+     +'&=4.0000-2.1250\\\\'
+     +'&=1.8750'
+     +'\\end{aligned}$$'
+     +'The Kraft sum is $2^{-1}+2^{-2}+2^{-3}+2\\cdot 2^{-4}=1$, so the tree has no unused branch. The bound $1.8750\\le 1.8750<2.8750$ holds.',
+  err:'Choosing the fixed-length code because five symbols seem few. It spends $3$ bits where $1.875$ are enough, which is $60\\%$ more than needed.',
+  teach:'A dyadic source, so the Huffman code reaches the entropy exactly. Part (c) shows what a fixed-length code wastes on the same source.' },
 
-{ id:'D6-21', module:'M6', type:'universal', src:'CH10 w.12',
-  stem:'A Lempel–Ziv encoder begins with $0$ at position $1$ and $1$ at position $2$ in its dictionary. Parsing a stream produces, in order, the new pieces $00$, $01$, $011$ and $10$. Pointers are sent in three bits.',
-  parts:['Give the dictionary position of each new piece.',
-         'Give the pointer and the innovation bit for each.',
-         'Write the four transmitted blocks.',
-         'Decode the block $0111$ and say what position the result takes.'],
-  sol:'<b>Given.</b> Four parsed pieces, a dictionary holding $0$ and $1$, and three-bit pointers.<br>'
-     +'<b>Find.</b> The positions, the pointers, the blocks, and one decoded block.<br>'
-     +'<b>Method.</b> A new piece is the shortest run not yet stored, so everything but its last bit is already in the dictionary. That earlier entry is the pointer. The last bit is the innovation.<br>'
-     +'<b>Solution — (a).</b> Pieces are stored in the order they are parsed, after the two already held: $00$ takes position $3$, $01$ position $4$, $011$ position $5$, and $10$ position $6$.<br>'
-     +'<b>Solution — (b).</b> $00$ starts with $0$, at position $1$, and its new bit is $0$. $01$ starts with $0$, position $1$, new bit $1$. $011$ starts with $01$, which is position $4$, new bit $1$. $10$ starts with $1$, position $2$, new bit $0$.<br>'
-     +'<b>Solution — (c).</b> Writing each position in three bits and appending the innovation: $0010$, $0011$, $1001$, $0100$.<br>'
-     +'<b>Solution — (d).</b> Split the last bit off first: the innovation is $1$. The remaining $011$ is $3$, and entry $3$ is $00$, so the piece is $001$. It is new, so it takes position $7$.<br>'
-     +'<b>Check.</b> Every piece\'s own start must already be stored, and each one is: $0$ at $1$, $0$ at $1$, $01$ at $4$, $1$ at $2$. A parse that produces a piece whose start is missing is a wrong parse, and this is the check that catches it.',
-  err:'Sending the whole piece and then the pointer as well. The pointer <em>replaces</em> everything but the last bit — that is the entire saving, and repeating the piece throws it away.',
-  teach:'The four blocks use $16$ coded bits for $8$ source bits. Short streams therefore expand. Compression begins only after the dictionary contains longer sequences. Lempel–Ziv is used for files, not isolated symbols.' },
+{ id:'D6-24', module:'M6', type:'judge', src:'Final Q4 (variant)',
+  stem:'Consider two <em>independent</em> discrete memoryless sources, $X$ and $Y$. The source $X$ is described by the alphabet $\\mathcal{X}=\\{0,1,2,3\\}$, where each symbol is generated with equal probability. Similarly, the source $Y$ is described by the same alphabet, where each symbol is generated with equal probability. Let $Z\\triangleq |X-Y|$ be another discrete memoryless source.',
+  parts:['[7 pts] Calculate the entropy of the source, $Z$.',
+         '[8 pts] Design a <em>binary</em> Huffman code for $Z$, placing each merged probability as high as possible in the list.',
+         '[6 pts] Design a second binary Huffman code, placing each merged probability as low as possible. Show that both codes have the same average length.',
+         '[4 pts] Calculate the coding efficiency and the variance of the codeword lengths of both codes. Which code suits a transmitter with a finite buffer?'],
+  figSol: () => figPmf({v:[0,1,2,3],n:[4,6,4,2],D:16,name:'Z'})+figHuff({n:[4,6,4,2],D:16,name:'Z',lab:['0','1','2','3'],codes:['01','00','10','11'],order:['1','0',''],head:'\\text{high placement}'})+figHuff({n:[4,6,4,2],D:16,name:'Z',lab:['0','1','2','3'],codes:['01','1','000','001'],order:['00','0',''],head:'\\text{low placement}'}),
+  sol:'<b>Given.</b> $X$ and $Y$ independent and uniform on $\\{0,1,2,3\\}$, and $Z=|X-Y|$.<br>'
+     +'<b>Find.</b> $H(Z)$, two Huffman codes, their average lengths, efficiencies and length variances.<br>'
+     +'<b>Method.</b> List $Z$ for every pair $(x,y)$, then add the probabilities that give the same value of $Z$. The entropy is $H(Z)=\\sum_{z}P(Z=z)\\log_2\\frac{1}{P(Z=z)}$, in bits because the logarithm has base two. Huffman\'s procedure fits the code part, since no prefix code for single symbols has a smaller average length. Merge the two smallest, give $0$ to the upper and $1$ to the lower, and place each sum as high as possible among equals. The efficiency is $\\eta=H(Z)/\\bar{L}$. The variance of the lengths is $\\sigma^{2}=\\sum_z P(Z=z)\\bigl(l(z)-\\bar{L}\\bigr)^{2}$.<br>'
+     +'<b>Solution — (a).</b> '
+     +'Each of the $16$ pairs has probability $\\tfrac{1}{16}$.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c}'
+     +' z&(x,y)\\ \\text{pairs}&P(Z=z)\\\\\\hline'
+     +' 0&(0,0),\\,(1,1),\\,(2,2),\\,(3,3)&\\frac{4}{16}\\\\'
+     +' 1&(0,1),\\,(1,0),\\,(1,2),\\,(2,1),\\,(2,3),\\,(3,2)&\\frac{6}{16}\\\\'
+     +' 2&(0,2),\\,(1,3),\\,(2,0),\\,(3,1)&\\frac{4}{16}\\\\'
+     +' 3&(0,3),\\,(3,0)&\\frac{2}{16}'
+     +'\\end{array}$$</div>'
+     +'The probabilities add to $\\frac{16}{16}=1$. The entropy is'
+     +'$$\\begin{aligned}'
+     +' H(Z)&=\\sum_{z}P(Z=z)\\log_2\\frac{1}{P(Z=z)}\\\\'
+     +'&=\\frac{6}{16}\\log_2 \\frac{8}{3}+2\\cdot\\frac{4}{16}\\log_2 4+\\frac{2}{16}\\log_2 8\\\\'
+     +'&=0.5306+2(0.5000)+0.3750\\\\'
+     +'&=1.9056\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$<br>'
+     +'<b>Solution — (b).</b> '
+     +'Work with the numerators over $16$. Each line gives one merge and the new list, with the new sum in bold.<br>'
+     +'Start: $6,4,4,2$.<br>'
+     +'Merge $1$: $4+2=6$, list $\\mathbf{6},6,4$.<br>'
+     +'Merge $2$: $6+4=10$, list $\\mathbf{10},6$.<br>'
+     +'Merge $3$: $10+6=16$, list $\\mathbf{16}$.<br>'
+     +'In every merge the upper entry takes $0$ and the lower entry takes $1$. Reading the labels from the root back to each symbol gives the code.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c|c}'
+     +' z&P(Z=z)&\\text{codeword}&l\\\\\\hline'
+     +' 1&\\frac{6}{16}&\\mathtt{00}&2\\\\'
+     +' 0&\\frac{4}{16}&\\mathtt{01}&2\\\\'
+     +' 2&\\frac{4}{16}&\\mathtt{10}&2\\\\'
+     +' 3&\\frac{2}{16}&\\mathtt{11}&2'
+     +'\\end{array}$$</div><br>'
+     +'<b>Solution — (c).</b> '
+     +'Now each sum is placed as low as possible among equal values. With numerators over $16$:<br>'
+     +'Start: $6,4,4,2$.<br>'
+     +'Merge $1$: $4+2=6$, list $6,\\mathbf{6},4$.<br>'
+     +'Merge $2$: $6+4=10$, list $\\mathbf{10},6$.<br>'
+     +'Merge $3$: $10+6=16$, list $\\mathbf{16}$.<br>'
+     +'Reading the labels from the root back to each symbol gives the second code.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c|c}'
+     +' z&P(Z=z)&\\text{codeword}&l\\\\\\hline'
+     +' 2&\\frac{4}{16}&\\mathtt{000}&3\\\\'
+     +' 3&\\frac{2}{16}&\\mathtt{001}&3\\\\'
+     +' 0&\\frac{4}{16}&\\mathtt{01}&2\\\\'
+     +' 1&\\frac{6}{16}&\\mathtt{1}&1'
+     +'\\end{array}$$</div>'
+     +'Every codeword of the first code has two bits, so $\\bar{L}_1=2$. For the second code,'
+     +'$$\\begin{aligned}'
+     +'\\bar{L}&=\\sum_{z}P(Z=z)\\,l(z)\\\\'
+     +'&=\\frac{1}{16}\\bigl[4(3)+2(3)+4(2)+6(1)\\bigr]\\\\'
+     +'&=\\frac{32}{16}\\\\'
+     +'&=2\\\\'
+     +'&=2.0000\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$'
+     +'Both codes reach the same optimal average length.<br>'
+     +'<b>Solution — (d).</b> '
+     +'Both codes have the same efficiency,'
+     +'$$\\begin{aligned}'
+     +'\\eta&=\\frac{H(Z)}{\\bar{L}}\\\\'
+     +'&=\\frac{1.9056}{2}\\\\'
+     +'&=0.9528'
+     +'\\end{aligned}$$'
+     +'The first code has every length equal to $\\bar{L}$, so $\\sigma_1^{2}=0$. For the second code,'
+     +'$$\\begin{aligned}'
+     +'\\sigma_2^{2}&=\\sum_z P(Z=z)\\bigl(l(z)-\\bar{L}\\bigr)^{2}\\\\'
+     +'&=\\frac{1}{16}\\bigl[4(3-2)^{2}+2(3-2)^{2}+4(2-2)^{2}+6(1-2)^{2}\\bigr]\\\\'
+     +'&=\\frac{12}{16}\\\\'
+     +'&=0.7500'
+     +'\\end{aligned}$$'
+     +'The first code is preferable. Its bit rate is constant, so a finite buffer neither fills nor empties.<br>'
+     +'<b>Check.</b> '
+     +'The average length also equals the sum of the probabilities formed by the merges, the root included:'
+     +'$$\\bar{L}=\\frac{6+10+16}{16}=\\frac{32}{16}$$'
+     +'This matches part (c). The entropy follows by a second route, from the numerators $n_z=16\\,P(Z=z)$:'
+     +'$$\\begin{aligned}'
+     +' H(Z)&=\\log_2 16-\\frac{1}{16}\\sum_{z}n_z\\log_2 n_z\\\\'
+     +'&=4.0000-\\frac{1}{16}\\bigl(6\\log_2 6+2\\cdot4\\log_2 4+2\\log_2 2\\bigr)\\\\'
+     +'&=4.0000-2.0944\\\\'
+     +'&=1.9056'
+     +'\\end{aligned}$$'
+     +'The Kraft sum is $4\\cdot 2^{-2}=1$, so the tree has no unused branch. The bound $1.9056\\le 2.0000<2.9056$ holds.'
+     +' The second code also passes, since $2^{-1}+2^{-2}+2\\cdot 2^{-3}=1$.',
+  err:'Calling the second code worse because its longest codeword is longer. Both codes have $\\bar{L}=2$. They differ only in how the lengths spread about that average.',
+  teach:'The minimum-variance rule in its simplest form. The high placement returns the plain two-bit code, with zero variance.' },
 
-{ id:'D6-22', module:'M6', type:'channel', src:'CH10 w.13',
-  stem:'A binary channel has $p(y_0\\mid x_0)=0.9$ and $p(y_0\\mid x_1)=0.2$. The transmitter sends $x_0$ with probability $0.6$.',
-  parts:['Write the channel matrix and check it.',
-         'Give the four joint probabilities.',
-         'Give the output distribution.',
-         'Give $H(Y\\mid X)$, and say whether it would change if the transmitter changed.'],
-  sol:'<b>Given.</b> An asymmetric binary channel and an input distribution $0.6/0.4$.<br>'
-     +'<b>Find.</b> The matrix, the joint and output distributions, and $H(Y\\mid X)$.<br>'
-     +'<b>Method.</b> Each row of the matrix is the output distribution for one input, so each row is completed by subtraction from one.<br>'
-     +'<b>Solution — (a).</b> $\\mathbf{P}=\\begin{bmatrix}0.9&0.1\\\\0.2&0.8\\end{bmatrix}$. Both rows sum to one, as every channel matrix must.<br>'
-     +'<b>Solution — (b).</b> $p(x_0,y_0)=0.9(0.6)=0.54$, $p(x_0,y_1)=0.1(0.6)=0.06$, $p(x_1,y_0)=0.2(0.4)=0.08$, $p(x_1,y_1)=0.8(0.4)=0.32$.<br>'
-     +'<b>Solution — (c).</b> $p(y_0)=0.54+0.08=0.62$ and $p(y_1)=0.06+0.32=0.38$.<br>'
-     +'<b>Solution — (d).</b> $H(Y\\mid X)=0.6\\,H(0.1)+0.4\\,H(0.2)=0.6(0.4690)+0.4(0.7219)=0.5702$ bits. It <em>would</em> change: it is an average of the row entropies weighted by how often each input is sent.<br>'
-     +'<b>Check.</b> The four joint probabilities add to $1.00$, and the output probabilities add to $1$. Part (d) is the one worth pausing on. For the binary <em>symmetric</em> channel the two rows have the same entropy. Therefore, the weights do not matter and $H(Y\\mid X)=H(p)$ whatever the transmitter does. That is a property of symmetry, not a general rule.',
-  err:'Checking that the columns sum to one. They do not here — $0.9+0.2=1.1$ — and there is no reason they should. Only the rows are distributions.',
-  teach:'Part (d) separates the two facts students merge. $H(Y\\mid X)$ is a property of the channel only when the channel is symmetric. The general statement is that it is an average over the input distribution, and this channel is asymmetric enough to show the difference.' },
+{ id:'D6-25', module:'M6', type:'block', src:'Final Q4 (variant)',
+  stem:'Let $X$ be a DMS which is modeled as a uniform random variable on $\\{0,1,2,3\\}$. Let $Z$ be independent of $X$ and uniform on $\\{0,1\\}$. Let $Y\\triangleq (X\\times Z)\\;(\\bmod 2)$ be another DMS, the parity of the product.',
+  parts:['[6 pts] Calculate the probabilities and the entropy of the source, $Y$.',
+         '[5 pts] Design a <em>binary</em> Huffman code for $Y$ and calculate its coding efficiency.',
+         '[9 pts] Design a binary Huffman code for the second-order extension of $Y$, whose symbols are pairs $Y_1Y_2$ of successive outputs.',
+         '[5 pts] Calculate the average number of bits per symbol of $Y$ and the coding efficiency for the code of part (c). Compare with part (b).'],
+  figSol: () => figPmf({v:[0,1],n:[3,1],D:4,name:'Y'})+figHuff({n:[9,3,3,1],D:16,name:'W',lab:['\\mathtt{00}','\\mathtt{01}','\\mathtt{10}','\\mathtt{11}'],codes:['0','11','100','101'],order:['10','1','']}),
+  sol:'<b>Given.</b> $X$ uniform on $\\{0,1,2,3\\}$, $Z$ uniform on $\\{0,1\\}$, independent, and $Y=XZ\\bmod 2$.<br>'
+     +'<b>Find.</b> $H(Y)$, a code for $Y$, a code for its second-order extension, and both efficiencies.<br>'
+     +'<b>Method.</b> Find $P(Y=1)$ by counting the pairs $(x,z)$ with an odd product. A two-symbol source cannot be coded below one bit a symbol. The second-order extension has $2^{2}=4$ symbols, with probabilities that are products because the source is memoryless. Build its Huffman code as usual: merge the two smallest, $0$ to the upper and $1$ to the lower, each sum as high as possible. Divide the pair length by two to compare with the single-symbol code.<br>'
+     +'<b>Solution — (a).</b> '
+     +'Each of the $8$ pairs has probability $\\tfrac18$. The product $xz$ is odd only when $x$ is odd and $z=1$.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c}'
+     +' y&(x,z)\\ \\text{pairs}&P(Y=y)\\\\\\hline'
+     +' 0&(0,0),\\,(0,1),\\,(1,0),\\,(2,0),\\,(2,1),\\,(3,0)&\\frac{6}{8}=\\frac{3}{4}\\\\'
+     +' 1&(1,1),\\,(3,1)&\\frac{2}{8}=\\frac{1}{4}'
+     +'\\end{array}$$</div>'
+     +'The probabilities add to $\\frac{4}{4}=1$. The entropy is'
+     +'$$\\begin{aligned}'
+     +' H(Y)&=\\sum_{y}P(Y=y)\\log_2\\frac{1}{P(Y=y)}\\\\'
+     +'&=\\frac{3}{4}\\log_2 \\frac{4}{3}+\\frac{1}{4}\\log_2 4\\\\'
+     +'&=0.3113+0.5000\\\\'
+     +'&=0.8113\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$<br>'
+     +'<b>Solution — (b).</b> '
+     +'With two symbols each codeword has one bit, $\\mathtt{0}$ for $Y=0$ and $\\mathtt{1}$ for $Y=1$.'
+     +' So $\\bar{L}=1$ bit/symbol and $\\eta=H(Y)/1=0.8113$.<br>'
+     +'<b>Solution — (c).</b> '
+     +'The source is memoryless, so a pair $W=Y_1Y_2$ has the product of the two probabilities:'
+     +'$$\\begin{aligned}'
+     +' P(W=00)&=\\tfrac34\\cdot\\tfrac34=\\tfrac{9}{16}\\\\'
+     +' P(W=01)&=P(W=10)=\\tfrac34\\cdot\\tfrac14=\\tfrac{3}{16}\\\\'
+     +' P(W=11)&=\\tfrac14\\cdot\\tfrac14=\\tfrac{1}{16}'
+     +'\\end{aligned}$$'
+     +'Work with the numerators over $16$. Each line gives one merge and the new list, with the new sum in bold.<br>'
+     +'Start: $9,3,3,1$.<br>'
+     +'Merge $1$: $3+1=4$, list $9,\\mathbf{4},3$.<br>'
+     +'Merge $2$: $4+3=7$, list $9,\\mathbf{7}$.<br>'
+     +'Merge $3$: $9+7=16$, list $\\mathbf{16}$.<br>'
+     +'In every merge the upper entry takes $0$ and the lower entry takes $1$. Reading the labels from the root back to each symbol gives the code.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c|c}'
+     +' w&P(W=w)&\\text{codeword}&l\\\\\\hline'
+     +' 00&\\frac{9}{16}&\\mathtt{0}&1\\\\'
+     +' 10&\\frac{3}{16}&\\mathtt{100}&3\\\\'
+     +' 11&\\frac{1}{16}&\\mathtt{101}&3\\\\'
+     +' 01&\\frac{3}{16}&\\mathtt{11}&2'
+     +'\\end{array}$$</div><br>'
+     +'<b>Solution — (d).</b> '
+     +'The pair code has average length'
+     +'$$\\begin{aligned}'
+     +'\\bar{L}_2&=\\frac{1}{16}\\bigl[9(1)+3(3)+1(3)+3(2)\\bigr]\\\\'
+     +'&=\\frac{27}{16}\\\\'
+     +'&=1.6875\\ \\text{bits/pair}'
+     +'\\end{aligned}$$'
+     +'Each pair carries two symbols of $Y$, so the cost per symbol and the efficiency are'
+     +'$$\\begin{aligned}'
+     +'\\frac{\\bar{L}_2}{2}&=\\frac{27}{32}=0.8438\\ \\text{bits/symbol}\\\\'
+     +'\\eta_2&=\\frac{H(Y)}{\\bar{L}_2/2}=\\frac{0.8113}{0.8438}=0.9615'
+     +'\\end{aligned}$$'
+     +'Coding pairs raises the efficiency from $0.8113$ to $0.9615$.<br>'
+     +'<b>Check.</b> '
+     +'The pair code\'s average length equals the sum of its merge probabilities:'
+     +'$$\\bar{L}_2=\\frac{4+7+16}{16}=\\frac{27}{16}$$'
+     +'For a memoryless source $H(W)=2H(Y)=1.6226$ bits, and $1.6226\\le 1.6875<2.6226$ holds as the bound requires.'
+     +' The entropy of $Y$ also follows as $\\log_2 4-\\tfrac34\\log_2 3=2-1.1887=0.8113$.',
+  err:'Dividing the pair length by one instead of two. The code of part (c) spends $\\tfrac{27}{16}$ bits on two symbols, so each symbol costs $\\tfrac{27}{32}$ bits.',
+  teach:'A binary source cannot be compressed symbol by symbol. Coding pairs recovers most of the gap, which is the reason the module extends a source.' },
 
-{ id:'D6-23', module:'M6', type:'channel', src:'CH10 w.13',
-  stem:'A binary symmetric channel has crossover probability $p=0.2$ and equally likely inputs.',
-  parts:['Give $H(X)$ and $H(Y\\mid X)$.',
-         'Give $H(Y)$.',
-         'Give the mutual information.',
-         'Say what fraction of each transmitted bit the channel destroys.'],
-  sol:'<b>Given.</b> A BSC at $p=0.2$, inputs equally likely.<br>'
-     +'<b>Find.</b> The three entropies, $I(X;Y)$, and the fraction lost.<br>'
-     +'<b>Method.</b> Use $I(X;Y)=H(Y)-H(Y\\mid X)$. The other form would need Bayes\' rule first.<br>'
-     +'<b>Solution — (a).</b> $H(X)=1$ bit. Whichever symbol is sent, the output distribution is $(0.8,0.2)$ in some order, so $H(Y\\mid X)=H(0.2)=-0.2\\log_2 0.2-0.8\\log_2 0.8=0.4644+0.2575=0.7219$ bits.<br>'
-     +'<b>Solution — (b).</b> $p(y_0)=0.8(0.5)+0.2(0.5)=0.5$, so the output is equally likely and $H(Y)=1$ bit.<br>'
-     +'<b>Solution — (c).</b> $I(X;Y)=1-0.7219=0.2781$ bits per channel use.<br>'
-     +'<b>Solution — (d).</b> $0.7219$ of every bit offered, which is $72.2\\%$.<br>'
-     +'<b>Check.</b> Equal input probabilities achieve capacity for this symmetric channel. Thus, $C=1-H(0.2)=0.2781$ bit per use. A crossover probability of $0.2$ leaves less than one third of the error-free rate.',
-  err:'Reading a balanced output as evidence that the channel is working. The output of a BSC with equally likely inputs is balanced for every $p$, including $p=\\tfrac12$ where nothing at all gets through.',
-  teach:'Worth asking before any arithmetic: "one bit in five is flipped, so what fraction survives?" Almost everyone guesses about four fifths. The answer is a little over a quarter, and the gap between the guess and the answer is what entropy is for.' },
+{ id:'D6-26', module:'M6', type:'info', src:'Final Q4 (variant)',
+  stem:'Let $X$ be a discrete memoryless source (DMS) which is modeled as a uniform random variable taking the integer values between $-2$ and $5$. Let $Y\\triangleq |X-1|$ be another DMS which is a function of $X$.',
+  parts:['[6 pts] Calculate the entropies $H(X)$ and $H(Y)$.',
+         '[7 pts] Calculate the mutual information $I(X;Y)$, the conditional entropy $H(X\\mid Y)$ and the joint entropy $H(X,Y)$.',
+         '[8 pts] Design a <em>binary</em> Huffman code for the source, $Y$.',
+         '[4 pts] Calculate the coding efficiency of the Huffman code designed in part (c).'],
+  figSol: () => figPmf({v:[0,1,2,3,4],n:[1,2,2,2,1],D:8,name:'Y'})+figHuff({n:[1,2,2,2,1],D:8,name:'Y',lab:['0','1','2','3','4'],codes:['000','01','10','11','001'],order:['00','1','0','']}),
+  sol:'<b>Given.</b> $X$ uniform on the eight integers $-2,\\ldots,5$, and $Y=|X-1|$.<br>'
+     +'<b>Find.</b> $H(X)$, $H(Y)$, $I(X;Y)$, $H(X\\mid Y)$, $H(X,Y)$, a Huffman code for $Y$ and its efficiency.<br>'
+     +'<b>Method.</b> List $Y$ for every value of $X$, then add the probabilities that give the same value of $Y$. The entropy is $H(Y)=\\sum_{y}P(Y=y)\\log_2\\frac{1}{P(Y=y)}$, in bits because the logarithm has base two. Huffman\'s procedure fits the code part, since no prefix code for single symbols has a smaller average length. Merge the two smallest, give $0$ to the upper and $1$ to the lower, and place each sum as high as possible among equals. The efficiency is $\\eta=H(Y)/\\bar{L}$. Since $Y$ is a function of $X$, $H(Y\\mid X)=0$. Then $I(X;Y)=H(Y)-H(Y\\mid X)$ and $H(X,Y)=H(X)+H(Y)-I(X;Y)$.<br>'
+     +'<b>Solution — (a).</b> '
+     +'Each of the eight values of $X$ has probability $\\tfrac18$, so $H(X)=\\log_2 8=3$ bits.<br>'
+     +'For $Y$, for example $X=-2$ gives $|-2-1|=3$, and $X=4$ gives $|4-1|=3$.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c}'
+     +' y&x\\ \\text{values}&P(Y=y)\\\\\\hline'
+     +' 0&1&\\frac{1}{8}\\\\'
+     +' 1&0,\\,2&\\frac{2}{8}\\\\'
+     +' 2&-1,\\,3&\\frac{2}{8}\\\\'
+     +' 3&-2,\\,4&\\frac{2}{8}\\\\'
+     +' 4&5&\\frac{1}{8}'
+     +'\\end{array}$$</div>'
+     +'The probabilities add to $\\frac{8}{8}=1$. The entropy is'
+     +'$$\\begin{aligned}'
+     +' H(Y)&=\\sum_{y}P(Y=y)\\log_2\\frac{1}{P(Y=y)}\\\\'
+     +'&=3\\cdot\\frac{2}{8}\\log_2 4+2\\cdot\\frac{1}{8}\\log_2 8\\\\'
+     +'&=3(0.5000)+2(0.3750)\\\\'
+     +'&=2.2500\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$<br>'
+     +'<b>Solution — (b).</b> '
+     +'Given $X$, the value of $Y$ is fixed, so $H(Y\\mid X)=0$. The mutual information is then'
+     +'$$\\begin{aligned}'
+     +' I(X;Y)&=H(Y)-H(Y\\mid X)\\\\'
+     +'&=2.2500-0\\\\'
+     +'&=2.2500\\ \\text{bits}'
+     +'\\end{aligned}$$'
+     +'The conditional entropy follows from $I(X;Y)=H(X)-H(X\\mid Y)$:'
+     +'$$\\begin{aligned}'
+     +' H(X\\mid Y)&=H(X)-I(X;Y)\\\\'
+     +'&=3-2.2500\\\\'
+     +'&=0.7500\\ \\text{bits}'
+     +'\\end{aligned}$$'
+     +'The joint entropy is'
+     +'$$\\begin{aligned}'
+     +' H(X,Y)&=H(X)+H(Y)-I(X;Y)\\\\'
+     +'&=3+2.2500-2.2500\\\\'
+     +'&=3\\ \\text{bits}'
+     +'\\end{aligned}$$'
+     +'The pair holds no more information than $X$ alone, because $Y$ is computed from $X$.<br>'
+     +'<b>Solution — (c).</b> '
+     +'Work with the numerators over $8$. Each line gives one merge and the new list, with the new sum in bold.<br>'
+     +'Start: $2,2,2,1,1$.<br>'
+     +'Merge $1$: $1+1=2$, list $\\mathbf{2},2,2,2$.<br>'
+     +'Merge $2$: $2+2=4$, list $\\mathbf{4},2,2$.<br>'
+     +'Merge $3$: $2+2=4$, list $\\mathbf{4},4$.<br>'
+     +'Merge $4$: $4+4=8$, list $\\mathbf{8}$.<br>'
+     +'In every merge the upper entry takes $0$ and the lower entry takes $1$. Reading the labels from the root back to each symbol gives the code.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c|c}'
+     +' y&P(Y=y)&\\text{codeword}&l\\\\\\hline'
+     +' 0&\\frac{1}{8}&\\mathtt{000}&3\\\\'
+     +' 4&\\frac{1}{8}&\\mathtt{001}&3\\\\'
+     +' 1&\\frac{2}{8}&\\mathtt{01}&2\\\\'
+     +' 2&\\frac{2}{8}&\\mathtt{10}&2\\\\'
+     +' 3&\\frac{2}{8}&\\mathtt{11}&2'
+     +'\\end{array}$$</div><br>'
+     +'<b>Solution — (d).</b> '
+     +'The average codeword length is'
+     +'$$\\begin{aligned}'
+     +'\\bar{L}&=\\sum_{y}P(Y=y)\\,l(y)\\\\'
+     +'&=\\frac{1}{8}\\bigl[1(3)+1(3)+2(2)+2(2)+2(2)\\bigr]\\\\'
+     +'&=\\frac{18}{8}\\\\'
+     +'&=\\frac{9}{4}\\\\'
+     +'&=2.2500\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$'
+     +'The coding efficiency is'
+     +'$$\\begin{aligned}'
+     +'\\eta&=\\frac{H(Y)}{\\bar{L}}\\\\'
+     +'&=\\frac{2.2500}{2.2500}\\\\'
+     +'&=1.0000'
+     +'\\end{aligned}$$'
+     +'In percent, $\\eta=100.00\\%$.<br>'
+     +'<b>Check.</b> '
+     +'The average length also equals the sum of the probabilities formed by the merges, the root included:'
+     +'$$\\bar{L}=\\frac{2+4+4+8}{8}=\\frac{18}{8}$$'
+     +'This matches part (d). The entropy follows by a second route, from the numerators $n_y=8\\,P(Y=y)$:'
+     +'$$\\begin{aligned}'
+     +' H(Y)&=\\log_2 8-\\frac{1}{8}\\sum_{y}n_y\\log_2 n_y\\\\'
+     +'&=3.0000-\\frac{1}{8}\\bigl(3\\cdot2\\log_2 2\\bigr)\\\\'
+     +'&=3.0000-0.7500\\\\'
+     +'&=2.2500'
+     +'\\end{aligned}$$'
+     +'The Kraft sum is $3\\cdot 2^{-2}+2\\cdot 2^{-3}=1$, so the tree has no unused branch. The bound $2.2500\\le 2.2500<3.2500$ holds.'
+     +' Directly, $H(X\\mid Y)=\\sum_y P(Y=y)H(X\\mid Y=y)$. For $y=1,2,3$ two equally likely values of $X$ remain, which is $1$ bit.'
+     +' For $y=0$ and $y=4$ one value remains. Hence $H(X\\mid Y)=\\tfrac{6}{8}(1)=0.75$ bits.',
+  err:'Taking $H(X,Y)=H(X)+H(Y)$ as if $X$ and $Y$ were independent. $Y$ is a function of $X$, so $H(X,Y)=H(X)=3$ bits.',
+  teach:'A function can only lose information, so $H(Y)\\le H(X)$. The lost part is $H(X\\mid Y)$, the sign of $X-1$ that the absolute value removes.' },
 
-{ id:'D6-24', module:'M6', type:'capacity', src:'CH10 w.14',
-  stem:'A binary symmetric channel with crossover probability $0.05$ is used $10^{6}$ times a second.',
-  parts:['Give the capacity in bits per channel use.',
-         'Give it in bits per second.',
-         'Say whether $800$ kbit/s can be sent with an arbitrarily small error probability.',
-         'Give the largest crossover probability for which $800$ kbit/s would be possible.'],
-  sol:'<b>Given.</b> A BSC at $p=0.05$, used $10^{6}$ times a second.<br>'
-     +'<b>Find.</b> The capacity in both units, and what rate it permits.<br>'
-     +'<b>Method.</b> $C=1-H(p)$ per use. Multiply by the number of uses a second for a rate. The coding theorem then decides the question in part (c).<br>'
-     +'<b>Solution — (a).</b> $H(0.05)=-0.05\\log_2 0.05-0.95\\log_2 0.95=0.2161+0.0703=0.2864$, so $C=0.7136$ bits per use.<br>'
-     +'<b>Solution — (b).</b> $0.7136\\times10^{6}=713.6$ kbit/s.<br>'
-     +'<b>Solution — (c).</b> No. $800>713.6$, so $R_b>C$ and the coding theorem says no scheme of any kind keeps the error probability small.<br>'
-     +'<b>Solution — (d).</b> Reliable transmission needs $C\\ge0.8$, so $H(p)\\le0.2$, which gives $p\\le0.0311$.<br>'
-     +'<b>Check.</b> The required crossover, $0.0311$, is not far below the one on offer, $0.05$ — yet one permits the rate and the other forbids it entirely. That is what a sharp limit looks like, and it is why part (c) has a one-word answer rather than a "nearly".',
-  err:'Answering (c) with "yes, with a good enough code". Above capacity there is no good enough code. The theorem is not a statement about the codes known today.',
-  teach:'Part (d) is worth doing by trial. Evaluate $H(p)$ at $0.03$ and at $0.04$ and close in. Students who solve it that way notice how flat $H$ is near zero. This is the same flatness that makes the first few errors on a good channel almost free.' },
+{ id:'D6-27', module:'M6', type:'info', src:'Final Q4 (variant)',
+  stem:'Consider two <em>independent</em> discrete memoryless sources, $X$ and $Y$. The source $X$ is described by the alphabet $\\mathcal{X}=\\{0,1,2\\}$, where $P(X=0)=2P(X=1)=2P(X=2)$. Similarly, the source $Y$ is described by the alphabet $\\mathcal{Y}=\\{0,1,2,3\\}$, where each symbol is generated with equal probability. Let $Z\\triangleq X+Y$ be another discrete memoryless source.',
+  parts:['[8 pts] Calculate the entropy of the source, $Z$.',
+         '[6 pts] Calculate the conditional entropy $H(Z\\mid X)$ and the mutual information $I(X;Z)$.',
+         '[7 pts] Design a <em>binary</em> Huffman code for the source, $Z$.',
+         '[4 pts] Calculate the coding efficiency of the Huffman code designed in part (c).'],
+  figSol: () => figPmf({v:[0,1,2,3,4,5],n:[2,3,4,4,2,1],D:16,name:'Z'})+figHuff({n:[2,3,4,4,2,1],D:16,name:'Z',lab:['0','1','2','3','4','5'],codes:['001','000','01','10','110','111'],order:['11','00','1','0','']}),
+  sol:'<b>Given.</b> $P(X=0)=2P(X=1)=2P(X=2)$ on $\\{0,1,2\\}$, $Y$ uniform on $\\{0,1,2,3\\}$, independent, and $Z=X+Y$.<br>'
+     +'<b>Find.</b> $H(Z)$, $H(Z\\mid X)$, $I(X;Z)$, a Huffman code for $Z$ and its efficiency.<br>'
+     +'<b>Method.</b> Turn the ratio statement into probabilities first. List $Z$ for every pair $(x,y)$, then add the probabilities that give the same value of $Z$. The entropy is $H(Z)=\\sum_{z}P(Z=z)\\log_2\\frac{1}{P(Z=z)}$, in bits because the logarithm has base two. Huffman\'s procedure fits the code part, since no prefix code for single symbols has a smaller average length. Merge the two smallest, give $0$ to the upper and $1$ to the lower, and place each sum as high as possible among equals. The efficiency is $\\eta=H(Z)/\\bar{L}$. For the information part, $H(Z\\mid X)=\\sum_x P(X=x)H(Z\\mid X=x)$ and $I(X;Z)=H(Z)-H(Z\\mid X)$.<br>'
+     +'<b>Solution — (a).</b> '
+     +'Write $P(X=1)=P(X=2)=q$. Then $P(X=0)=2q$, and $4q=1$ gives $q=\\tfrac14$.'
+     +' The pair $(x,y)$ has probability $n_X(x)/16$, where $n_X=2,1,1$ for $x=0,1,2$.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c}'
+     +' z&(x,y)\\ \\text{pairs}&P(Z=z)\\\\\\hline'
+     +' 0&(0,0)&\\frac{2}{16}\\\\'
+     +' 1&(0,1),\\,(1,0)&\\frac{2+1}{16}=\\frac{3}{16}\\\\'
+     +' 2&(0,2),\\,(1,1),\\,(2,0)&\\frac{2+1+1}{16}=\\frac{4}{16}\\\\'
+     +' 3&(0,3),\\,(1,2),\\,(2,1)&\\frac{2+1+1}{16}=\\frac{4}{16}\\\\'
+     +' 4&(1,3),\\,(2,2)&\\frac{2}{16}\\\\'
+     +' 5&(2,3)&\\frac{1}{16}'
+     +'\\end{array}$$</div>'
+     +'The probabilities add to $\\frac{16}{16}=1$. The entropy is'
+     +'$$\\begin{aligned}'
+     +' H(Z)&=\\sum_{z}P(Z=z)\\log_2\\frac{1}{P(Z=z)}\\\\'
+     +'&=2\\cdot\\frac{4}{16}\\log_2 4+\\frac{3}{16}\\log_2 \\frac{16}{3}+2\\cdot\\frac{2}{16}\\log_2 8\\\\'
+     +'&\\quad+\\frac{1}{16}\\log_2 16\\\\'
+     +'&=2(0.5000)+0.4528+2(0.3750)+0.2500\\\\'
+     +'&=2.4528\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$<br>'
+     +'<b>Solution — (b).</b> '
+     +'Given $X=x$, the output $Z=x+Y$ takes the four values $x,\\ldots,x+3$, each with probability $\\tfrac14$.'
+     +' So $H(Z\\mid X=x)=\\log_2 4=2$ bits for every $x$, and'
+     +'$$\\begin{aligned}'
+     +' H(Z\\mid X)&=\\sum_x P(X=x)\\,H(Z\\mid X=x)\\\\'
+     +'&=\\left(\\tfrac12+\\tfrac14+\\tfrac14\\right)(2)\\\\'
+     +'&=2\\ \\text{bits}'
+     +'\\end{aligned}$$'
+     +'The mutual information is'
+     +'$$\\begin{aligned}'
+     +' I(X;Z)&=H(Z)-H(Z\\mid X)\\\\'
+     +'&=2.4528-2\\\\'
+     +'&=0.4528\\ \\text{bits}'
+     +'\\end{aligned}$$<br>'
+     +'<b>Solution — (c).</b> '
+     +'Work with the numerators over $16$. Each line gives one merge and the new list, with the new sum in bold.<br>'
+     +'Start: $4,4,3,2,2,1$.<br>'
+     +'Merge $1$: $2+1=3$, list $4,4,\\mathbf{3},3,2$.<br>'
+     +'Merge $2$: $3+2=5$, list $\\mathbf{5},4,4,3$.<br>'
+     +'Merge $3$: $4+3=7$, list $\\mathbf{7},5,4$.<br>'
+     +'Merge $4$: $5+4=9$, list $\\mathbf{9},7$.<br>'
+     +'Merge $5$: $9+7=16$, list $\\mathbf{16}$.<br>'
+     +'In every merge the upper entry takes $0$ and the lower entry takes $1$. Reading the labels from the root back to each symbol gives the code.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c|c}'
+     +' z&P(Z=z)&\\text{codeword}&l\\\\\\hline'
+     +' 1&\\frac{3}{16}&\\mathtt{000}&3\\\\'
+     +' 0&\\frac{2}{16}&\\mathtt{001}&3\\\\'
+     +' 2&\\frac{4}{16}&\\mathtt{01}&2\\\\'
+     +' 3&\\frac{4}{16}&\\mathtt{10}&2\\\\'
+     +' 4&\\frac{2}{16}&\\mathtt{110}&3\\\\'
+     +' 5&\\frac{1}{16}&\\mathtt{111}&3'
+     +'\\end{array}$$</div><br>'
+     +'<b>Solution — (d).</b> '
+     +'The average codeword length is'
+     +'$$\\begin{aligned}'
+     +'\\bar{L}&=\\sum_{z}P(Z=z)\\,l(z)\\\\'
+     +'&=\\frac{1}{16}\\bigl[3(3)+2(3)+4(2)+4(2)\\\\&\\qquad+2(3)+1(3)\\bigr]\\\\'
+     +'&=\\frac{40}{16}\\\\'
+     +'&=\\frac{5}{2}\\\\'
+     +'&=2.5000\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$'
+     +'The coding efficiency is'
+     +'$$\\begin{aligned}'
+     +'\\eta&=\\frac{H(Z)}{\\bar{L}}\\\\'
+     +'&=\\frac{2.4528}{2.5000}\\\\'
+     +'&=0.9811'
+     +'\\end{aligned}$$'
+     +'In percent, $\\eta=98.11\\%$.<br>'
+     +'<b>Check.</b> '
+     +'The average length also equals the sum of the probabilities formed by the merges, the root included:'
+     +'$$\\bar{L}=\\frac{3+5+7+9+16}{16}=\\frac{40}{16}$$'
+     +'This matches part (d). The entropy follows by a second route, from the numerators $n_z=16\\,P(Z=z)$:'
+     +'$$\\begin{aligned}'
+     +' H(Z)&=\\log_2 16-\\frac{1}{16}\\sum_{z}n_z\\log_2 n_z\\\\'
+     +'&=4.0000-\\frac{1}{16}\\bigl(2\\cdot4\\log_2 4+3\\log_2 3+2\\cdot2\\log_2 2\\bigr)\\\\'
+     +'&=4.0000-1.5472\\\\'
+     +'&=2.4528'
+     +'\\end{aligned}$$'
+     +'The Kraft sum is $2\\cdot 2^{-2}+4\\cdot 2^{-3}=1$, so the tree has no unused branch. The bound $2.4528\\le 2.5000<3.4528$ holds.'
+     +' Also $I(X;Z)\\le H(X)=1.5$ bits, as it must be. $Z$ cannot reveal more about $X$ than $X$ holds.',
+  err:'Setting $H(Z\\mid X)=H(X)$. Once $X$ is known, the only uncertainty left in $Z$ is $Y$, so $H(Z\\mid X)=H(Y)=2$ bits.',
+  teach:'Read $Z=X+Y$ as a channel with input $X$ and an additive disturbance $Y$. This links the source question to the channel half of the module.' },
 
-{ id:'D6-25', module:'M6', type:'capacity', src:'CH10 w.14',
-  stem:'A coherent binary PSK link runs at $E_b/N_0=6$ dB. The receiver makes a hard decision on every bit and hands the result to a decoder.',
-  parts:['Give the crossover probability of the binary symmetric channel the decoder sees.',
-         'Give the capacity of that channel in bits per channel use.',
-         'The link carries $1$ Mbit/s of channel bits. Give the largest information rate that can be sent reliably.',
-         'Say what the hard decision has thrown away.'],
-  sol:'<b>Given.</b> Coherent BPSK at $E_b/N_0=6$ dB, hard decisions, $10^{6}$ channel bits a second.<br>'
-     +'<b>Find.</b> $p$, the capacity, the largest reliable information rate, and what the hard decision costs.<br>'
-     +'<b>Method.</b> The error probability of coherent BPSK is the Module 5 result. Feeding it into $C=1-H(p)$ joins the two halves of the course.<br>'
-     +'<b>Solution — (a).</b> $E_b/N_0=10^{0.6}=3.981$, so $p=Q\\!\\left(\\sqrt{2E_b/N_0}\\right)=Q(2.822)=2.39\\times10^{-3}$.<br>'
-     +'<b>Solution — (b).</b> $H(p)=0.0242$, so $C=0.9758$ bits per channel use.<br>'
-     +'<b>Solution — (c).</b> $0.9758\\times10^{6}=976$ kbit/s. Anything below that is reachable with a long enough code. Anything above it is not.<br>'
-     +'<b>Solution (d).</b> The demodulator produced a real-valued statistic. A hard decision kept only its sign and removed its confidence information. A soft decoder uses the original statistics and can perform better. This course does not quantify that gain.<br>'
-     +'<b>Check.</b> The capacity is close to one bit per use. This fits the error probability. About one bit in $420$ is wrong. Therefore, a code with a little over $2\\%$ of redundancy should be enough. It is the same statement read two ways.',
-  err:'Reporting the capacity as $976$ kbit/s of <em>channel</em> bits. The channel bits are already $1$ Mbit/s. The $976$ kbit/s is the <em>information</em> carried inside them, and the difference is the redundancy the code spends.',
-  teach:'This is the question that shows the two halves of the course are one system. Modules 2 to 5 produce a number, $P_e$. Module 6 consumes exactly that number and returns what the link can carry. Nothing about the waveform survives the join — only $p$ crosses it.' },
+{ id:'D6-28', module:'M6', type:'judge', src:'Final Q4 (variant)',
+  stem:'Let $X$ be a discrete memoryless source (DMS) which is modeled as a uniform random variable taking the integer values between $1$ and $9$. Let $Y\\triangleq X\\;(\\bmod 4)$ be another DMS which is a function of $X$. Here $a\\bmod m$ denotes the remainder of $a$ on division by $m$, taken in $\\{0,1,\\ldots,m-1\\}$. A designer proposes the code $Y=1\\to\\mathtt{0}$, $Y=0\\to\\mathtt{1}$, $Y=2\\to\\mathtt{01}$, $Y=3\\to\\mathtt{10}$.',
+  parts:['[7 pts] Calculate the entropy of the source, $Y$.',
+         '[6 pts] Use the Kraft inequality to decide whether a prefix code with the lengths of the proposed code exists. Give a bit string that the proposed code cannot decode uniquely.',
+         '[8 pts] Design a <em>binary</em> Huffman code for the source, $Y$.',
+         '[4 pts] Calculate the coding efficiency of the Huffman code, and compare it with a fixed-length code for $Y$.'],
+  figSol: () => figPmf({v:[0,1,2,3],n:[2,3,2,2],D:9,name:'Y'})+figHuff({n:[2,3,2,2],D:9,name:'Y',lab:['0','1','2','3'],codes:['01','00','10','11'],order:['1','0','']}),
+  sol:'<b>Given.</b> $X$ uniform on $1,\\ldots,9$, $Y=X\\bmod 4$, and a proposed code with lengths $1,1,2,2$.<br>'
+     +'<b>Find.</b> $H(Y)$, the Kraft test of the proposal, a Huffman code and its efficiency.<br>'
+     +'<b>Method.</b> List $Y$ for every value of $X$, then add the probabilities that give the same value of $Y$. The entropy is $H(Y)=\\sum_{y}P(Y=y)\\log_2\\frac{1}{P(Y=y)}$, in bits because the logarithm has base two. Huffman\'s procedure fits the code part, since no prefix code for single symbols has a smaller average length. Merge the two smallest, give $0$ to the upper and $1$ to the lower, and place each sum as high as possible among equals. The efficiency is $\\eta=H(Y)/\\bar{L}$. The Kraft sum $\\sum 2^{-l}$ must not exceed one for a prefix code to exist.<br>'
+     +'<b>Solution — (a).</b> '
+     +'Each of the nine values of $X$ has probability $\\tfrac19$. For example $X=6$ gives $6\\bmod 4=2$.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c}'
+     +' y&x\\ \\text{values}&P(Y=y)\\\\\\hline'
+     +' 0&4,\\,8&\\frac{2}{9}\\\\'
+     +' 1&1,\\,5,\\,9&\\frac{3}{9}\\\\'
+     +' 2&2,\\,6&\\frac{2}{9}\\\\'
+     +' 3&3,\\,7&\\frac{2}{9}'
+     +'\\end{array}$$</div>'
+     +'The probabilities add to $\\frac{9}{9}=1$. The entropy is'
+     +'$$\\begin{aligned}'
+     +' H(Y)&=\\sum_{y}P(Y=y)\\log_2\\frac{1}{P(Y=y)}\\\\'
+     +'&=\\frac{3}{9}\\log_2 3+3\\cdot\\frac{2}{9}\\log_2 \\frac{9}{2}\\\\'
+     +'&=0.5283+3(0.4822)\\\\'
+     +'&=1.9749\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$<br>'
+     +'<b>Solution — (b).</b> '
+     +'The proposed code assigns $Y=1\\to\\mathtt{0}$, $Y=0\\to\\mathtt{1}$, $Y=2\\to\\mathtt{01}$ and $Y=3\\to\\mathtt{10}$. Its lengths are $1,1,2,2$, and'
+     +'$$2^{-1}+2^{-1}+2^{-2}+2^{-2}=1.5>1$$'
+     +'The Kraft sum exceeds one, so no prefix code has these lengths.'
+     +' The string $\\mathtt{01}$ shows the failure. It is the codeword of $Y=2$, and also $Y=1$ followed by $Y=0$.'
+     +' The proposed code would average'
+     +'$$\\begin{aligned}'
+     +'\\bar{L}_{\\text{prop}}&=\\frac{3(1)+2(1)+2(2)+2(2)}{9}\\\\'
+     +'&=\\frac{13}{9}\\\\'
+     +'&=1.4444\\ \\text{bits}'
+     +'\\end{aligned}$$'
+     +'This is below $H(Y)$, which no uniquely decodable code can reach.<br>'
+     +'<b>Solution — (c).</b> '
+     +'Work with the numerators over $9$. Each line gives one merge and the new list, with the new sum in bold.<br>'
+     +'Start: $3,2,2,2$.<br>'
+     +'Merge $1$: $2+2=4$, list $\\mathbf{4},3,2$.<br>'
+     +'Merge $2$: $3+2=5$, list $\\mathbf{5},4$.<br>'
+     +'Merge $3$: $5+4=9$, list $\\mathbf{9}$.<br>'
+     +'In every merge the upper entry takes $0$ and the lower entry takes $1$. Reading the labels from the root back to each symbol gives the code.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c|c}'
+     +' y&P(Y=y)&\\text{codeword}&l\\\\\\hline'
+     +' 1&\\frac{3}{9}&\\mathtt{00}&2\\\\'
+     +' 0&\\frac{2}{9}&\\mathtt{01}&2\\\\'
+     +' 2&\\frac{2}{9}&\\mathtt{10}&2\\\\'
+     +' 3&\\frac{2}{9}&\\mathtt{11}&2'
+     +'\\end{array}$$</div><br>'
+     +'<b>Solution — (d).</b> '
+     +'The average codeword length is'
+     +'$$\\begin{aligned}'
+     +'\\bar{L}&=\\sum_{y}P(Y=y)\\,l(y)\\\\'
+     +'&=\\frac{1}{9}\\bigl[3(2)+2(2)+2(2)+2(2)\\bigr]\\\\'
+     +'&=\\frac{18}{9}\\\\'
+     +'&=2\\\\'
+     +'&=2.0000\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$'
+     +'The coding efficiency is'
+     +'$$\\begin{aligned}'
+     +'\\eta&=\\frac{H(Y)}{\\bar{L}}\\\\'
+     +'&=\\frac{1.9749}{2.0000}\\\\'
+     +'&=0.9875'
+     +'\\end{aligned}$$'
+     +'In percent, $\\eta=98.75\\%$.'
+     +' The Huffman code is the plain two-bit code. The probabilities $\\tfrac29$ to $\\tfrac39$ are too close for unequal lengths to pay.<br>'
+     +'<b>Check.</b> '
+     +'The average length also equals the sum of the probabilities formed by the merges, the root included:'
+     +'$$\\bar{L}=\\frac{4+5+9}{9}=\\frac{18}{9}$$'
+     +'This matches part (d). The entropy follows by a second route, from the numerators $n_y=9\\,P(Y=y)$:'
+     +'$$\\begin{aligned}'
+     +' H(Y)&=\\log_2 9-\\frac{1}{9}\\sum_{y}n_y\\log_2 n_y\\\\'
+     +'&=3.1699-\\frac{1}{9}\\bigl(3\\log_2 3+3\\cdot2\\log_2 2\\bigr)\\\\'
+     +'&=3.1699-1.1950\\\\'
+     +'&=1.9749'
+     +'\\end{aligned}$$'
+     +'The Kraft sum is $4\\cdot 2^{-2}=1$, so the tree has no unused branch. The bound $1.9749\\le 2.0000<2.9749$ holds.',
+  err:'Accepting the proposed code because its average length is small. An average length below the entropy is the mark of a code that cannot be decoded.',
+  teach:'The Kraft test does real work here. The Huffman code then turns out to be the plain two-bit code.' },
 
-{ id:'D6-26', module:'M6', type:'capacity', src:'CH10 w.14',
-  stem:'A channel has bandwidth $3.4$ kHz and a signal-to-noise ratio of $30$ dB.',
-  parts:['Give its capacity.',
-         'Give the capacity if the transmitted power is doubled, and the gain as a percentage.',
-         'Give the capacity if the bandwidth is doubled instead, at the same noise density, and the gain as a percentage.',
-         'Say which is the better buy, and why the two answers differ so much.'],
-  sol:'<b>Given.</b> $B=3.4$ kHz and $P/N_0B=10^{3}=1000$.<br>'
-     +'<b>Find.</b> The capacity, and what doubling each of power and bandwidth buys.<br>'
-     +'<b>Method.</b> $C=B\\log_2(1+P/N_0B)$. Doubling the bandwidth at fixed noise density doubles the noise power in the band. Therefore, the ratio halves. That is the step the question is built around.<br>'
-     +'<b>Solution — (a).</b> $C=3400\\log_2(1001)=3400(9.967)=33.9$ kbit/s.<br>'
-     +'<b>Solution — (b).</b> The ratio becomes $2000$, so $C=3400\\log_2(2001)=3400(10.967)=37.3$ kbit/s — a gain of $10.0\\%$.<br>'
-     +'<b>Solution — (c).</b> The bandwidth becomes $6800$ Hz and the noise power doubles with it, so the ratio falls to $500$: $C=6800\\log_2(501)=6800(8.969)=61.0$ kbit/s — a gain of $80.0\\%$.<br>'
-     +'<b>Solution (d).</b> Bandwidth, by a long way. Capacity is <b>linear</b> in bandwidth and only <b>logarithmic</b> in the ratio. Therefore, doubling the bandwidth nearly doubles the rate while doubling the power adds one bit per second per hertz at most. Much less than that when the ratio is already $1000$.<br>'
-     +'<b>Check.</b> Doubling the power added $3400$ bits a second, which is one bit per second per hertz — exactly the extra $\\log_2 2$ the formula promises. The bandwidth answer is not the same shape at all: it added $27$ kbit/s. Reading those two numbers side by side is the whole content of the law.',
-  err:'Doubling the bandwidth and leaving the signal-to-noise ratio at $1000$. The noise power in the band doubles with the band, so the ratio halves. Forgetting that turns an $80\\%$ gain into a $100\\%$ one and hides the trade the question is about.',
-  teach:'This question is why bandwidth is regulated and power mostly is not. The scarce resource is the one that pays linearly. It also explains a system decision students meet everywhere. When a link runs out of rate, the first thing tried is more bandwidth, and more power is the fallback.' }
+{ id:'D6-29', module:'M6', type:'judge', src:'Final Q4 (variant)',
+  stem:'Let $X$ be a discrete memoryless source (DMS) which is modeled as a uniform random variable taking the integer values between $1$ and $12$. Let $Y\\triangleq X\\;(\\bmod 5)$ be another DMS which is a function of $X$. Here $a\\bmod m$ denotes the remainder of $a$ on division by $m$, taken in $\\{0,1,\\ldots,m-1\\}$.',
+  parts:['[7 pts] Calculate the entropy of the source, $Y$.',
+         '[6 pts] Give each symbol the length $l(y)=\\left\\lceil\\log_2\\frac{1}{P(Y=y)}\\right\\rceil$. Check the Kraft inequality for these lengths and calculate their average length.',
+         '[8 pts] Design a <em>binary</em> Huffman code for the source, $Y$.',
+         '[4 pts] Calculate the coding efficiency of both codes. Which one is optimal?'],
+  figSol: () => figPmf({v:[0,1,2,3,4],n:[2,3,3,2,2],D:12,name:'Y'})+figHuff({n:[2,3,3,2,2],D:12,name:'Y',lab:['0','1','2','3','4'],codes:['11','01','10','000','001'],order:['00','1','0','']}),
+  sol:'<b>Given.</b> $X$ uniform on $1,\\ldots,12$, and $Y=X\\bmod 5$.<br>'
+     +'<b>Find.</b> $H(Y)$, the rounded-up lengths and their average, a Huffman code, and both efficiencies.<br>'
+     +'<b>Method.</b> List $Y$ for every value of $X$, then add the probabilities that give the same value of $Y$. The entropy is $H(Y)=\\sum_{y}P(Y=y)\\log_2\\frac{1}{P(Y=y)}$, in bits because the logarithm has base two. Huffman\'s procedure fits the code part, since no prefix code for single symbols has a smaller average length. Merge the two smallest, give $0$ to the upper and $1$ to the lower, and place each sum as high as possible among equals. The efficiency is $\\eta=H(Y)/\\bar{L}$. Rounding $\\log_2\\frac{1}{P(Y=y)}$ up always passes the Kraft test, but it need not be optimal.<br>'
+     +'<b>Solution — (a).</b> '
+     +'Each of the twelve values has probability $\\tfrac{1}{12}$. For example $X=12$ gives $12\\bmod 5=2$.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c}'
+     +' y&x\\ \\text{values}&P(Y=y)\\\\\\hline'
+     +' 0&5,\\,10&\\frac{2}{12}\\\\'
+     +' 1&1,\\,6,\\,11&\\frac{3}{12}\\\\'
+     +' 2&2,\\,7,\\,12&\\frac{3}{12}\\\\'
+     +' 3&3,\\,8&\\frac{2}{12}\\\\'
+     +' 4&4,\\,9&\\frac{2}{12}'
+     +'\\end{array}$$</div>'
+     +'The probabilities add to $\\frac{12}{12}=1$. The entropy is'
+     +'$$\\begin{aligned}'
+     +' H(Y)&=\\sum_{y}P(Y=y)\\log_2\\frac{1}{P(Y=y)}\\\\'
+     +'&=2\\cdot\\frac{3}{12}\\log_2 4+3\\cdot\\frac{2}{12}\\log_2 6\\\\'
+     +'&=2(0.50000)+3(0.43083)\\\\'
+     +'&=2.2925\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$<br>'
+     +'<b>Solution — (b).</b> '
+     +'The lengths are $\\lceil\\log_2 4\\rceil=2$ for the two symbols of probability $\\tfrac{3}{12}$.'
+     +' The three symbols of probability $\\tfrac{2}{12}$ get $\\lceil\\log_2 6\\rceil=\\lceil 2.585\\rceil=3$. The Kraft sum is'
+     +'$$2\\cdot2^{-2}+3\\cdot2^{-3}=0.875\\le 1$$'
+     +'So a prefix code with these lengths exists. Its average length is'
+     +'$$\\begin{aligned}'
+     +'\\bar{L}_S&=\\frac{1}{12}\\bigl[2(3)+3(2)+3(2)+2(3)+2(3)\\bigr]\\\\'
+     +'&=\\frac{30}{12}\\\\'
+     +'&=2.5000\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$<br>'
+     +'<b>Solution — (c).</b> '
+     +'Work with the numerators over $12$. Each line gives one merge and the new list, with the new sum in bold.<br>'
+     +'Start: $3,3,2,2,2$.<br>'
+     +'Merge $1$: $2+2=4$, list $\\mathbf{4},3,3,2$.<br>'
+     +'Merge $2$: $3+2=5$, list $\\mathbf{5},4,3$.<br>'
+     +'Merge $3$: $4+3=7$, list $\\mathbf{7},5$.<br>'
+     +'Merge $4$: $7+5=12$, list $\\mathbf{12}$.<br>'
+     +'In every merge the upper entry takes $0$ and the lower entry takes $1$. Reading the labels from the root back to each symbol gives the code.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c|c}'
+     +' y&P(Y=y)&\\text{codeword}&l\\\\\\hline'
+     +' 3&\\frac{2}{12}&\\mathtt{000}&3\\\\'
+     +' 4&\\frac{2}{12}&\\mathtt{001}&3\\\\'
+     +' 1&\\frac{3}{12}&\\mathtt{01}&2\\\\'
+     +' 2&\\frac{3}{12}&\\mathtt{10}&2\\\\'
+     +' 0&\\frac{2}{12}&\\mathtt{11}&2'
+     +'\\end{array}$$</div><br>'
+     +'<b>Solution — (d).</b> '
+     +'The average codeword length is'
+     +'$$\\begin{aligned}'
+     +'\\bar{L}&=\\sum_{y}P(Y=y)\\,l(y)\\\\'
+     +'&=\\frac{1}{12}\\bigl[2(3)+2(3)+3(2)+3(2)+2(2)\\bigr]\\\\'
+     +'&=\\frac{28}{12}\\\\'
+     +'&=\\frac{7}{3}\\\\'
+     +'&=2.3333\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$'
+     +'The coding efficiency is'
+     +'$$\\begin{aligned}'
+     +'\\eta&=\\frac{H(Y)}{\\bar{L}}\\\\'
+     +'&=\\frac{2.2925}{2.3333}\\\\'
+     +'&=0.9825'
+     +'\\end{aligned}$$'
+     +'In percent, $\\eta=98.25\\%$.'
+     +' For the rounded-up lengths,'
+     +'$$\\begin{aligned}'
+     +'\\eta_S&=\\frac{2.2925}{2.5000}\\\\'
+     +'&=0.9170'
+     +'\\end{aligned}$$'
+     +'The Huffman code is optimal. The rounded lengths leave $1-0.875=0.125$ of the code tree unused.<br>'
+     +'<b>Check.</b> '
+     +'The average length also equals the sum of the probabilities formed by the merges, the root included:'
+     +'$$\\bar{L}=\\frac{4+5+7+12}{12}=\\frac{28}{12}$$'
+     +'This matches part (d). The entropy follows by a second route, from the numerators $n_y=12\\,P(Y=y)$:'
+     +'$$\\begin{aligned}'
+     +' H(Y)&=\\log_2 12-\\frac{1}{12}\\sum_{y}n_y\\log_2 n_y\\\\'
+     +'&=3.5850-\\frac{1}{12}\\bigl(2\\cdot3\\log_2 3+3\\cdot2\\log_2 2\\bigr)\\\\'
+     +'&=3.5850-1.2925\\\\'
+     +'&=2.2925'
+     +'\\end{aligned}$$'
+     +'The Kraft sum is $3\\cdot 2^{-2}+2\\cdot 2^{-3}=1$, so the tree has no unused branch. The bound $2.2925\\le 2.3333<3.2925$ holds.',
+  err:'Rounding $\\log_2 6=2.585$ down to $2$. With five lengths of $2$ bits the Kraft sum is $\\tfrac54>1$, and no prefix code exists.',
+  teach:'The rounded-up lengths meet the bound $\\bar{L}<H(Y)+1$ but waste part of the tree. The Huffman code uses the whole tree.' },
 
+{ id:'D6-30', module:'M6', type:'fxz', src:'Final Q4 (variant)',
+  stem:'Let $X$ be a discrete memoryless source (DMS) which is modeled as a uniform random variable on the alphabet $\\{0,1,2,3\\}$. Let $Z$ be a random variable (independent of $X$) with the probability mass function $p_Z(z)=c\\,a^{z}$ for $z\\in\\{0,1,2\\}$. It is zero otherwise, and $c$ and $0<a<1$ are constants. Finally, let $Y\\triangleq X\\times Z$ be another DMS which is a function of both $X$ and $Z$. It is known that $P(Y=0)=\\frac{10}{13}$.',
+  parts:['[7 pts] Find the constants $c$ and $a$.',
+         '[7 pts] Calculate the entropy of the source, $Y$.',
+         '[7 pts] Design a <em>binary</em> Huffman code for the source, $Y$.',
+         '[4 pts] Calculate the coding efficiency of the Huffman code designed in part (c).'],
+  figSol: () => figPmf({v:[0,1,2,3,4,6],n:[40,3,4,3,1,1],D:52,name:'Y'})+figHuff({n:[40,3,4,3,1,1],D:52,name:'Y',lab:['0','1','2','3','4','6'],codes:['0','101','100','110','1110','1111'],order:['111','11','10','1','']}),
+  sol:'<b>Given.</b> $X$ uniform on $\\{0,1,2,3\\}$, $p_Z(z)=ca^{z}$ for $z=0,1,2$, independent, $Y=XZ$, and $P(Y=0)=\\tfrac{10}{13}$.<br>'
+     +'<b>Find.</b> $c$, $a$, $H(Y)$, a binary Huffman code for $Y$, and its coding efficiency.<br>'
+     +'<b>Method.</b> Write $P(Y=0)$ in terms of $c$ and solve for it. Then $\\sum_z p_Z(z)=1$ gives a quadratic in $a$. List $Y$ for every pair $(x,z)$, then add the probabilities that give the same value of $Y$. The entropy is $H(Y)=\\sum_{y}P(Y=y)\\log_2\\frac{1}{P(Y=y)}$, in bits because the logarithm has base two. Huffman\'s procedure fits the code part, since no prefix code for single symbols has a smaller average length. Merge the two smallest, give $0$ to the upper and $1$ to the lower, and place each sum as high as possible among equals. The efficiency is $\\eta=H(Y)/\\bar{L}$.<br>'
+     +'<b>Solution — (a).</b> '
+     +'$Y=0$ when $Z=0$, or when $Z\\neq 0$ and $X=0$. With $P(Z=0)=c$ and $P(X=0)=\\tfrac14$,'
+     +'$$\\begin{aligned}'
+     +' P(Y=0)&=c+\\tfrac14(1-c)\\\\'
+     +'&=\\frac{1+3c}{4}\\\\'
+     +'&=\\frac{10}{13}'
+     +'\\end{aligned}$$'
+     +'So $1+3c=\\tfrac{40}{13}$, which gives $3c=\\tfrac{27}{13}$ and $c=\\tfrac{9}{13}$. Normalisation then fixes $a$:'
+     +'$$\\begin{aligned}'
+     +' c\\,(1+a+a^{2})&=1\\\\'
+     +' 1+a+a^{2}&=\\tfrac{13}{9}\\\\'
+     +' 9a^{2}+9a-4&=0\\\\'
+     +' a&=\\frac{-9\\pm\\sqrt{81+144}}{18}\\\\'
+     +'&=\\frac{-9\\pm 15}{18}'
+     +'\\end{aligned}$$'
+     +'The root $-\\tfrac43$ is negative and is rejected, so $a=\\tfrac13$. Then $P(Z=z)=\\tfrac{9}{13},\\tfrac{3}{13},\\tfrac{1}{13}$ for $z=0,1,2$.<br>'
+     +'<b>Solution — (b).</b> '
+     +'The pair $(x,z)$ has probability $n_Z(z)/52$, where $n_Z=9,3,1$ for $z=0,1,2$.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c}'
+     +' y&(x,z)\\ \\text{pairs}&P(Y=y)\\\\\\hline'
+     +' 0&(0,0),\\,(0,1),\\,(0,2),\\,(1,0),\\,(2,0),\\,(3,0)&\\frac{9+3+1+9+9+9}{52}=\\frac{40}{52}\\\\'
+     +' 1&(1,1)&\\frac{3}{52}\\\\'
+     +' 2&(1,2),\\,(2,1)&\\frac{1+3}{52}=\\frac{4}{52}\\\\'
+     +' 3&(3,1)&\\frac{3}{52}\\\\'
+     +' 4&(2,2)&\\frac{1}{52}\\\\'
+     +' 6&(3,2)&\\frac{1}{52}'
+     +'\\end{array}$$</div>'
+     +'The probabilities add to $\\frac{52}{52}=1$. The entropy is'
+     +'$$\\begin{aligned}'
+     +' H(Y)&=\\sum_{y}P(Y=y)\\log_2\\frac{1}{P(Y=y)}\\\\'
+     +'&=\\frac{40}{52}\\log_2 \\frac{13}{10}+\\frac{4}{52}\\log_2 13+2\\cdot\\frac{3}{52}\\log_2 \\frac{52}{3}\\\\'
+     +'&\\quad+2\\cdot\\frac{1}{52}\\log_2 52\\\\'
+     +'&=0.29116+0.28465+2(0.23743)+2(0.10962)\\\\'
+     +'&=1.2699\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$<br>'
+     +'<b>Solution — (c).</b> '
+     +'Work with the numerators over $52$. Each line gives one merge and the new list, with the new sum in bold.<br>'
+     +'Start: $40,4,3,3,1,1$.<br>'
+     +'Merge $1$: $1+1=2$, list $40,4,3,3,\\mathbf{2}$.<br>'
+     +'Merge $2$: $3+2=5$, list $40,\\mathbf{5},4,3$.<br>'
+     +'Merge $3$: $4+3=7$, list $40,\\mathbf{7},5$.<br>'
+     +'Merge $4$: $7+5=12$, list $40,\\mathbf{12}$.<br>'
+     +'Merge $5$: $40+12=52$, list $\\mathbf{52}$.<br>'
+     +'In every merge the upper entry takes $0$ and the lower entry takes $1$. Reading the labels from the root back to each symbol gives the code.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c|c}'
+     +' y&P(Y=y)&\\text{codeword}&l\\\\\\hline'
+     +' 0&\\frac{40}{52}&\\mathtt{0}&1\\\\'
+     +' 2&\\frac{4}{52}&\\mathtt{100}&3\\\\'
+     +' 1&\\frac{3}{52}&\\mathtt{101}&3\\\\'
+     +' 3&\\frac{3}{52}&\\mathtt{110}&3\\\\'
+     +' 4&\\frac{1}{52}&\\mathtt{1110}&4\\\\'
+     +' 6&\\frac{1}{52}&\\mathtt{1111}&4'
+     +'\\end{array}$$</div><br>'
+     +'<b>Solution — (d).</b> '
+     +'The average codeword length is'
+     +'$$\\begin{aligned}'
+     +'\\bar{L}&=\\sum_{y}P(Y=y)\\,l(y)\\\\'
+     +'&=\\frac{1}{52}\\bigl[40(1)+4(3)+3(3)+3(3)\\\\&\\qquad+1(4)+1(4)\\bigr]\\\\'
+     +'&=\\frac{78}{52}\\\\'
+     +'&=\\frac{3}{2}\\\\'
+     +'&=1.5000\\ \\text{bits/symbol}'
+     +'\\end{aligned}$$'
+     +'The coding efficiency is'
+     +'$$\\begin{aligned}'
+     +'\\eta&=\\frac{H(Y)}{\\bar{L}}\\\\'
+     +'&=\\frac{1.2699}{1.5000}\\\\'
+     +'&=0.8466'
+     +'\\end{aligned}$$'
+     +'In percent, $\\eta=84.66\\%$.<br>'
+     +'<b>Check.</b> '
+     +'The average length also equals the sum of the probabilities formed by the merges, the root included:'
+     +'$$\\bar{L}=\\frac{2+5+7+12+52}{52}=\\frac{78}{52}$$'
+     +'This matches part (d). The entropy follows by a second route, from the numerators $n_y=52\\,P(Y=y)$:'
+     +'$$\\begin{aligned}'
+     +' H(Y)&=\\log_2 52-\\frac{1}{52}\\sum_{y}n_y\\log_2 n_y\\\\'
+     +'&=5.7004-\\frac{1}{52}\\bigl(40\\log_2 40+4\\log_2 4+2\\cdot3\\log_2 3\\bigr)\\\\'
+     +'&=5.7004-4.4305\\\\'
+     +'&=1.2699'
+     +'\\end{aligned}$$'
+     +'The Kraft sum is $2^{-1}+3\\cdot 2^{-3}+2\\cdot 2^{-4}=1$, so the tree has no unused branch. The bound $1.2699\\le 1.5000<2.2699$ holds.'
+     +' With these constants the table gives $P(Y=0)=\\tfrac{40}{52}=\\tfrac{10}{13}$, the value in the question.',
+  err:'Setting $P(Y=0)=P(Z=0)$. The pairs with $X=0$ and $Z\\neq0$ also give $Y=0$, and they add $\\tfrac14(1-c)$.',
+  teach:'A reversed question: a probability of the output is given and the pmf of $Z$ is recovered. The quadratic has one root in $(0,1)$.' }
 ]);
 
 window.DRILL_M6 = [
 
 { id:'m6-drill', module:'M6', nav:'Module 6 · practice questions',
   title:'Module 6 — practice questions',
-  objective:'Twenty-six open-ended questions with worked solutions.',
-  keywords:'practice questions module 6 entropy self information extension prefix kraft huffman efficiency variance lempel ziv channel mutual information capacity shannon',
+  objective:'Thirty open-ended questions with worked solutions, in the form they are asked in.',
+  keywords:'practice questions module 6 entropy derived source function mod floor maximum minimum sum product huffman code efficiency kraft variance extension mutual information',
   steps:0, blocks:[
-  {t:'eyebrow', text:'Module 6 · Practice D6-01 … D6-26'},
+  {t:'eyebrow', text:'Module 6 · Practice D6-01 … D6-30'},
   {t:'title', text:'Practice questions'},
-  {t:'small', html:'Work each question before opening its solution. Use these checks:<ul><li>$H(S)\\le\\log_2 K$.</li><li>Coding efficiency is at most one.</li><li>A prefix code satisfies $H(S)\\le\\bar{L}<H(S)+1$ and Kraft sum at most one.</li><li>Huffman tie-breaking does not change average length.</li><li>Each channel-matrix row sums to one.</li><li>Mutual information cannot exceed capacity.</li></ul>'},
+  {t:'small', html:'Work each question before opening its solution. Use these checks:<ul><li>The pmf of the derived source adds to one.</li><li>$H\\le\\log_2 K$ for a source with $K$ symbols.</li><li>A Huffman code has $H\\le\\bar{L}<H+1$ and a Kraft sum of one.</li><li>$\\bar{L}$ equals the sum of the probabilities formed by the merges.</li><li>The coding efficiency is at most one.</li></ul>'},
   {t:'rule', short:true},
   {t:'drill', module:'M6'}
 ]}
