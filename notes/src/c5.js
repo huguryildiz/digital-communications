@@ -215,7 +215,7 @@ window.C5 = [
   return a.svg(); },
  cap:'Spectra of offset QPSK (dashed) and MSK (solid). The MSK main lobe reaches $0.75/T_b$ against $0.5/T_b$, and its side lobes fall faster.'},
 {t:'p', text:'A scheme is chosen by what the link is short of. The bandwidth efficiency $r=R_b/W$ places each family on a plane against the $E_b/N_0$ it needs.'},
-{t:'table', head:['Family','$E_b/N_0$ at $P_e=10^{-5}$, $M=16$','$r=R_b/W$','Region'], rows:[
+{t:'table', cap:'Each family on the bandwidth–power plane at $M=16$ and $P_e=10^{-5}$.', head:['Family','$E_b/N_0$ at $P_e=10^{-5}$, $M=16$','$r=R_b/W$','Region'], rows:[
  ['PAM (SSB)','$23.1$ dB','$8$','bandwidth-limited'],
  ['PSK','$18.1$ dB','$4$','bandwidth-limited'],
  ['QAM','$14.0$ dB','$4$','bandwidth-limited'],
@@ -223,7 +223,7 @@ window.C5 = [
 ]},
 {t:'p', text:'PAM, PSK and QAM have $r>1$ and pay energy for each extra bit, QAM the least. Orthogonal signals have $r<1$ and pay in band. No scheme can sit left of the curve $E_b/N_0=(2^{r}-1)/r$, which Chapter 6 derives.'},
 {t:'p', text:'Adaptive modulation uses this trade in real time. The receiver measures $E_s/N_0$, and the transmitter picks the largest set whose bit error meets the target.'},
-{t:'table', head:['Set','Bits a symbol','$E_s/N_0$ for $P_b=10^{-5}$'], rows:[
+{t:'table', cap:'The signal-to-noise ratio each set of an adaptive link needs for $P_b=10^{-5}$.', head:['Set','Bits a symbol','$E_s/N_0$ for $P_b=10^{-5}$'], rows:[
  ['BPSK','$1$','$9.6$ dB'],
  ['QPSK','$2$','$12.6$ dB'],
  ['16-QAM','$4$','$19.5$ dB'],
@@ -233,15 +233,15 @@ window.C5 = [
 {t:'p', text:'At $E_s/N_0=22$ dB the link chooses 16-QAM. Each step of two bits costs about $6$ dB.'},
 
 {t:'h2', num:'5.6', text:'Summary'},
-{t:'table', head:['Scheme','$d_{\\min}^{2}$','$\\bar N_{\\min}$','Error probability','Anchor'], rows:[
- ['BPSK, QPSK','$4E_b$','$1$','$P_b=Q\\bigl(\\sqrt{2E_b/N_0}\\bigr)$','PS CH8.6.1, 8.6.3'],
- ['BFSK, BASK','$2E_b$','$1$','$P_b=Q\\bigl(\\sqrt{E_b/N_0}\\bigr)$','PS CH8.3.3, 9.5'],
- ['Binary DPSK','none','none','$P_b=\\tfrac12e^{-E_b/N_0}$','PS CH8.6.5'],
- ['M-PSK','$4E_s\\sin^{2}(\\pi/M)$','$2$','$P_e\\approx2Q\\bigl(\\sqrt{2E_s/N_0}\\sin(\\pi/M)\\bigr)$','PS CH8.6.3'],
- ['M-ASK','$12E_s/(M^{2}-1)$','$2(M-1)/M$','$\\tfrac{2(M-1)}{M}Q\\bigl(\\sqrt{6E_s/((M^{2}-1)N_0)}\\bigr)$','PS CH8.5.3'],
- ['Square M-QAM','$6E_s/(M-1)$','$4(1-1/\\sqrt M)$','$4(1-\\tfrac1{\\sqrt M})Q\\bigl(\\sqrt{3E_s/((M-1)N_0)}\\bigr)$','PS CH8.7.3'],
- ['M orthogonal','$2E_s$','$M-1$','$P_e\\le(M-1)Q\\bigl(\\sqrt{E_s/N_0}\\bigr)$','PS CH9.1.2'],
- ['Noncoherent BFSK','none','none','$P_b=\\tfrac12e^{-E_b/2N_0}$','PS CH9.5.3']
+{t:'table', cap:'Summary of Chapter 5: digital modulation methods.', head:['Scheme','${d_{\\min}^{2}}$','${\\bar N_{\\min}}$','Error probability','Anchor'], rows:[
+ ['BPSK, QPSK','${4E_b}$','${1}$','${P_b=Q\\bigl(\\sqrt{2E_b/N_0}\\bigr)}$','PS CH8.6.1, 8.6.3'],
+ ['BFSK, BASK','${2E_b}$','${1}$','${P_b=Q\\bigl(\\sqrt{E_b/N_0}\\bigr)}$','PS CH8.3.3, 9.5'],
+ ['Binary DPSK','none','none','${P_b=\\tfrac12e^{-E_b/N_0}}$','PS CH8.6.5'],
+ ['M-PSK','${4E_s\\sin^{2}(\\pi/M)}$','${2}$','${P_e\\approx2Q\\bigl(\\sqrt{2E_s/N_0}\\sin(\\pi/M)\\bigr)}$','PS CH8.6.3'],
+ ['M-ASK','${12E_s/(M^{2}-1)}$','${2(M-1)/M}$','${\\tfrac{2(M-1)}{M}Q\\bigl(\\sqrt{6E_s/((M^{2}-1)N_0)}\\bigr)}$','PS CH8.5.3'],
+ ['Square M-QAM','${6E_s/(M-1)}$','${4(1-1/\\sqrt M)}$','${4(1-\\tfrac1{\\sqrt M})Q\\bigl(\\sqrt{3E_s/((M-1)N_0)}\\bigr)}$','PS CH8.7.3'],
+ ['M orthogonal','${2E_s}$','${M-1}$','${P_e\\le(M-1)Q\\bigl(\\sqrt{E_s/N_0}\\bigr)}$','PS CH9.1.2'],
+ ['Noncoherent BFSK','none','none','${P_b=\\tfrac12e^{-E_b/2N_0}}$','PS CH9.5.3']
 ]},
 {t:'p', text:'Every scheme of this chapter is a set of points read by the receiver of Chapter 4. Its error rate follows from $d_{\\min}$ and $\\bar N_{\\min}$ at the chosen energy, and its band from the bits a symbol. Chapter 6 asks how many bits a second any scheme can carry in a given band and power.'}
 

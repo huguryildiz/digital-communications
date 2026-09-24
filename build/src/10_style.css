@@ -713,6 +713,9 @@ body:not([data-theme=dark]) .legend i{ color:var(--graphite); }
 body:not([data-theme=dark]) .legend i::before{ background:var(--lg-c, currentColor); }
 /* a dashed trace gets a dashed swatch */
 body .legend i.lg-dash::before{ background:repeating-linear-gradient(90deg, var(--lg-c, currentColor) 0 7px, transparent 7px 11px); }
+/* a dotted and a dash-dot trace, for curves of one colour told apart by dash alone */
+body .legend i.lg-dots::before{ background:repeating-linear-gradient(90deg, var(--lg-c, currentColor) 0 3px, transparent 3px 7px); }
+body .legend i.lg-dashdot::before{ background:repeating-linear-gradient(90deg, var(--lg-c, currentColor) 0 10px, transparent 10px 13px, var(--lg-c, currentColor) 13px 16px, transparent 16px 19px); }
 /* a set of plotted points gets a dot, centred in the swatch width */
 .legend i.lg-dot::before{ width:10px; height:10px; border-radius:50%; margin:0 8px; }
 

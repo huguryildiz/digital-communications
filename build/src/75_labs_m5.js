@@ -37,7 +37,7 @@ Object.assign(LABS, (function(){
   const PHONE = () => APP.state.layout === 'phone';
   const REDUCED = () => APP.state.motion === 'reduced';
   const legendRow = (...items) => `<div class="legend">${items.join('')}</div>`;
-  const L = (c,l,dash)=>`<i class="lg-${c}${dash?' lg-dash':''}">${T(l,false)}</i>`;
+  const L = (c,l,dash)=>`<i class="lg-${c}${dash?' lg-'+(dash===true?'dash':dash):''}">${T(l,false)}</i>`;
   const LD = (c,l)=>`<i class="lg-${c} lg-dot">${T(l,false)}</i>`;
   const RO = n => `style="grid-template-columns:repeat(${n},minmax(0,1fr))"`;
   function phoneTidy(root){
@@ -1096,8 +1096,11 @@ Object.assign(LABS, (function(){
      error rate meets the target at the signal-to-noise ratio of the slot.
      ======================================================================= */
   const BW = (() => {
-    const FAM = { pam:{label:'PAM', col:'mid', Ms:[2,4,8,16]}, psk:{label:'PSK', col:'in', Ms:[2,4,8,16,32]},
-                  qam:{label:'QAM', col:'out', Ms:[4,16,64,256]}, fsk:{label:'FSK', col:'h', Ms:[2,4,8,16,32,64]} };
+    /* Every family is a set of transmitted signals, so all four take the
+       transmitted-signal colour and are told apart by their dash, the same
+       four dashes as the slide m5-plane. */
+    const FAM = { pam:{label:'PAM', dash:'2 4', lg:'dots', Ms:[2,4,8,16]}, psk:{label:'PSK', dash:null, lg:false, Ms:[2,4,8,16,32]},
+                  qam:{label:'QAM', dash:'7 5', lg:true, Ms:[4,16,64,256]}, fsk:{label:'FSK', dash:'12 5 3 5', lg:'dashdot', Ms:[2,4,8,16,32,64]} };
     const TG = [-3,-3.5,-4,-4.5,-5,-5.5,-6,-6.5,-7];
     const AD = [{name:'BPSK',k:1,M:2},{name:'QPSK',k:2,M:4},{name:'16-QAM',k:4,M:16},{name:'64-QAM',k:6,M:64},{name:'256-QAM',k:8,M:256}];
     const SLOTS = 48;
@@ -1151,22 +1154,24 @@ Object.assign(LABS, (function(){
         pad:{l:ph?44:56,r:ph?12:22,t:30,b:46}, xtarget:ph?4:7});
       const ly = r => Math.log10(r) - 2;
       a.under(`<rect x="${a.x0}" y="${a.y1}" width="${a.x1-a.x0}" height="${(a.sy(-2)-a.y1).toFixed(2)}" fill="${tint(P.COL.slate,0.05)}"/>`);
-      a.under(`<rect x="${a.x0}" y="${a.sy(-2).toFixed(2)}" width="${a.x1-a.x0}" height="${(a.y0-a.sy(-2)).toFixed(2)}" fill="${tint(P.COL.h,0.06)}"/>`);
+      a.under(`<rect x="${a.x0}" y="${a.sy(-2).toFixed(2)}" width="${a.x1-a.x0}" height="${(a.y0-a.sy(-2)).toFixed(2)}" fill="${tint(P.COL.muted,0.06)}"/>`);
       a.hline(-2,{color:P.COL.muted,dash:'2 4',opacity:0.9});
       a.note(26.6+XOFF, ly(1.45), 'bandwidth-limited', {fs:14.5, color:P.COL.slate, anchor:'end'});
       a.note(26.6+XOFF, ly(0.62), 'power-limited', {fs:14.5, color:P.COL.slate, anchor:'end', dy:8});
       /* the Shannon limit, faint: a result of Module 6 */
       const sh = []; for(let i=0;i<=80;i++){ const r = Math.pow(10, -1.2 + 2.3*i/80); sh.push([dB(shannon(r))+XOFF, ly(r)]); }
       a.poly(sh.filter(p=>p[0] >= -3+XOFF && p[0] <= 27+XOFF),{color:P.COL.muted,width:1.5,dash:'4 5'});
-      a.note(dB(shannon(9))+XOFF, ly(9), '\\text{limit (Module 6)}', {tex:true, fs:14, color:P.COL.muted, anchor:'end', dx:-10, dy:-8});
+      /* named low down, right of the curve, where no family reaches and the frame
+         is far away at any label scale */
+      a.note(dB(shannon(0.3))+XOFF, ly(0.3), '\\text{limit (Module 6)}', {tex:true, fs:14, color:P.COL.muted, anchor:'start', dx:12});
       Object.keys(FAM).forEach(f=>{
         if(!st.fam[f]) return;
-        const F = FAM[f], col = P.COL[F.col];
+        const F = FAM[f], col = P.COL.in;
         const pts = F.Ms.map(Mn=>[dB(need(f, Mn, pe))+XOFF, ly(rw(f, Mn)), Mn]);
-        a.poly(pts,{color:col,width:2});
+        a.poly(pts,{color:col,width:2,dash:F.dash});
         pts.forEach(p=>a.point(p[0], p[1], p[2] === Mh ? {color:col, r:8.5, ring:P.COL.coral, ringw:2.4} : {color:col, r:5, ring:P.COL.plate, ringw:1.4}));
       });
-      const lg = Object.keys(FAM).filter(f=>st.fam[f]).map(f=>L(FAM[f].col, `\\text{${FAM[f].label}}`)).join('') + L('slate','\\text{limit}',true);
+      const lg = Object.keys(FAM).filter(f=>st.fam[f]).map(f=>L('in', `\\text{${FAM[f].label}}`, FAM[f].lg)).join('') + L('slate','\\text{limit}',true);
       root.querySelector('.plots').innerHTML = ph
         ? `<div class="plot-wrap">${a.svg()}</div>${legendRow(lg)}`
         : `<div class="plot-wrap">${a.svg()}<div class="legend in-plot">${lg}</div></div>`;
@@ -1182,7 +1187,7 @@ Object.assign(LABS, (function(){
           return `<div style="${row};opacity:${on ? 1 : 0.4}"><dt style="margin:0">${FAM[f].label}</dt>`
             + `<dd>${ok ? N(dB(need(f, Mh, pe)),1) + ' dB' : 'none'}</dd>`
             + `<dd style="display:flex;align-items:center;gap:10px"><span style="flex:0 0 3.3em">${ok ? N(wv,3) : '…'}</span>`
-            + `<i style="display:block;height:calc(11px * var(--ts));border-radius:2px;background:var(--sig-${FAM[f].col});width:calc((100% - 3.3em) * ${Math.min(1, wv/6).toFixed(4)})"></i></dd></div>`;
+            + `<i style="display:block;height:calc(11px * var(--ts));border-radius:2px;background:var(--sig-in);width:calc((100% - 3.3em) * ${Math.min(1, wv/6).toFixed(4)})"></i></dd></div>`;
         }).join(''));
       const d5 = dB(need('qam', 16, 1e-5)), dT = dB(need('qam', 16, pe));
       root.querySelector('.derive').innerHTML = M(Math.abs(shown + 5) > 0.01

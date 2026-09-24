@@ -369,18 +369,24 @@ const FCT = 2;
 const IQ_I = t => QPSK[Math.min(3, Math.max(0, Math.floor(t)))][0];
 const IQ_Q = t => QPSK[Math.min(3, Math.max(0, Math.floor(t)))][1];
 const iqBurst = t => IQ_I(t)*Math.cos(2*Math.PI*FCT*t) - IQ_Q(t)*Math.sin(2*Math.PI*FCT*t);
-const QOFF = [[0.42,0.2,'start'],[-0.42,0.2,'end'],[-0.42,-0.45,'end'],[0.42,-0.45,'start']];
+const QOFF = [[0.52,0.2,'start'],[-0.52,0.2,'end'],[-0.52,-0.45,'end'],[0.52,-0.45,'start']];
 function figIQ(v){
-  const big = P.labelScale() > 1, H = takeH(440), hA = Math.round((big ? 0.4 : 0.36)*H), hB = Math.round((big ? 0.17 : 0.22)*H), f = Math.min(4, frameOf(v, 4));
+  /* Projected, the labels are 1.36 times larger and their margins took most of
+     the plane's panel. The figure is then drawn on a wider box of the same
+     shape, so its height on the page is unchanged and the margins give back
+     room to the plane; each axis name sits just under its axis, since the
+     plane has no tick row and the time axis carries its own under the data. */
+  const big = P.labelScale() > 1, W = big ? 630 : 560, H = takeH(big ? 495 : 440), hA = Math.round((big ? 0.42 : 0.36)*H), hB = Math.round((big ? 0.25 : 0.22)*H), f = Math.min(4, frameOf(v, 4));
+  const drop = big ? {xnameDrop:0} : {};
   const cur = Math.min(3, Math.max(0, Math.ceil(f-1e-9)-1));
-  const a = plane({h:hA, need:[[-2.3,2.3],[-1.75,1.8]], xlabel:'I', ylabel:'Q', xticksOverride:[], yticksOverride:[], pad:{l:56,r:26,t:24,b:36}});
+  const a = plane(Object.assign({w:W, h:hA, need:[[-2.3,2.3],[-1.75,1.8]], xlabel:'I', ylabel:'Q', xticksOverride:[], yticksOverride:[], pad:{l:56,r:26,t:24,b:36}}, drop));
   QPSK.forEach((p,k)=>{ const seen = k < f - 1e-9;
     dot(a, p[0], p[1], {color:C.in, r:6.5, opacity:seen ? 1 : 0.35});
     lbl(a, p[0]+QOFF[k][0], p[1]+QOFF[k][1], QLAB[k], C.in, QOFF[k][2]); });
   if(f > 0.02){ const [x,y] = QPSK[cur], o = clamp01(f-cur);
     seg(a, [[x,0],[x,y],[0,y]], {color:C.mid, width:1.4, dash:'4 5', opacity:o});
     ring(a, x, y, {color:C.in, r:10, opacity:o}); }
-  const b = TAx({w:560, h:hB, xr:[-0.05,4.05], yr:[-1.6,2.15], xlabel:'', ylabel:'I(t),\\;Q(t)',
+  const b = TAx({w:W, h:hB, xr:[-0.05,4.05], yr:[-1.6,2.15], xlabel:'', ylabel:'I(t),\\;Q(t)',
     pad:{l:56,r:26,t:20,b:8}, yticksOverride:[-1,1]});
   for(let n=1;n<4;n++) b.vline(n, {color:C.muted, dash:'2 4', width:1});
   if(f > 0.01){
@@ -389,11 +395,11 @@ function figIQ(v){
     seg(b, stair(1), {color:C.mid, width:2.4, dash:'7 5'});
   }
   for(let n=0;n<4;n++){ const o = clamp01(f-n); if(o > 0.5) lbl(b, n+0.5, 1.72, QLAB[n], C.ink, 'middle', 16); }
-  const c = TAx({w:560, h:H-hA-hB, xr:[-0.05,4.05], yr:[-1.9,1.9], xlabel:'t/T', ylabel:'s(t)',
-    pad:{l:56,r:26,t:20,b:36}, xt:[0,1,2,3], yticksOverride:[-1,1]});
+  const c = TAx(Object.assign({w:W, h:H-hA-hB, xr:[-0.05,4.05], yr:[-1.9,1.9], xlabel:'t/T', ylabel:'s(t)',
+    pad:{l:56,r:26,t:20,b:36}, xt:[0,1,2,3], yticksOverride:[-1,1]}, drop));
   [Math.SQRT2, -Math.SQRT2].forEach(y=>seg(c, [[0,y],[4,y]], {color:C.muted, width:1.1, dash:'4 5'}));
   if(f > 0.01) trace(c, iqBurst, 0, f, {color:C.in, width:2.2, n:Math.max(20, Math.round(500*f))});
-  return stack(560, [[a.svg(),hA],[b.svg(),hB],[c.svg(),H-hA-hB]]);
+  return stack(W, [[a.svg(),hA],[b.svg(),hB],[c.svg(),H-hA-hB]]);
 }
 
 /* BPSK for the bits 1 1 0 1, two carrier cycles a bit. The reader draws the
@@ -404,7 +410,7 @@ function figBPSK(){
   const a = TAx(SZ({xr:[-0.05,4.05], yr:[-1.6,2.05], xlabel:'t/T_b', ylabel:'s(t)', xt:[0,1,2,3], yticksOverride:[-1,0,1]}));
   a.raw(`<rect class="sk-area" x="${a.x0}" y="${a.y1}" width="${a.x1-a.x0}" height="${a.y0-a.y1}" fill="none"/>`);
   for(let n=1;n<4;n++) a.vline(n, {color:C.muted, dash:'2 4', width:1});
-  trace(a, t=>Math.cos(2*Math.PI*FCT*t), 0, 4, {color:C.h, width:1.4, dash:'4 5', opacity:0.6, n:800});
+  trace(a, t=>Math.cos(2*Math.PI*FCT*t), 0, 4, {color:C.muted, width:1.4, dash:'4 5', opacity:0.6, n:800});
   BP_BITS.forEach((b,n)=>lbl(a, n+0.5, 1.6, String(b), C.ink, 'middle', 17));
   a.raw('<g class="sk-key">');
   trace(a, t=>(BP_BITS[Math.min(3,Math.floor(t))] ? 1 : -1)*Math.cos(2*Math.PI*FCT*t), 0, 4, {color:C.in, width:2.6, n:900});
@@ -633,7 +639,9 @@ function figGray(v){
     seg(a, [pts[i], pts[j]], {color:c > 1 ? C.err : C.mid, width:2.4, opacity:oC});
     if(oC > 0.5){ const u = (2*i+1)*Math.PI/8; lbl(a, 0.7*Math.cos(u), 0.7*Math.sin(u)-0.07, String(c), c > 1 ? C.err : C.mid, 'middle', 15); } }
   if(op(3) > 0.02){ const g = grayCount(); cloudPts(a, g.cl, {opacity:op(3)});
-    if(op(3) > 0.5) lbl(a, a.o.xr[0]+0.06, a.o.yr[1]-0.18, '\\text{symbol errors }'+g.k+',\\ \\text{bit errors }'+g.b, C.err); }
+    /* two short lines in the top-left wedge, clear of the boundary at 112.5 degrees */
+    if(op(3) > 0.5){ lbl(a, a.o.xr[0]+0.06, a.o.yr[1]-0.18, '\\text{symbol errors }'+g.k, C.err);
+      a.note(a.o.xr[0]+0.06, a.o.yr[1]-0.18, '\\text{bit errors }'+g.b, {tex:true, fs:15, color:C.err, anchor:'start', dy:24*P.labelScale()}); } }
   pts.forEach((p,i)=>{ a.point(p[0], p[1], {color:C.in, r:6});
     const u = 2*Math.PI*i/8, onX = i%4===0, onY = i%4===2;
     const x = onY ? 0.1 : 1.3*Math.cos(u), y = onX ? 0.12 : 1.3*Math.sin(u)-0.06;
@@ -655,7 +663,7 @@ function figExPSK(v){
   if(op(2) > 0.02) [1,7].forEach(j=>{ const q = pts[j];
     fillPoly(a, clipHalf(full, 1-q[0], -q[1], 0), rgba(C.err, 0.14), op(2));
     seg(a, [pts[0], q], {color:C.mid, width:2.6, opacity:op(2)}); });
-  if(op(2) > 0.5) lbl(a, 1.12, 0.52, 'd_{\\min}', C.mid);
+  if(op(2) > 0.5) lbl(a, 0.74, 0.47, 'd_{\\min}', C.mid, 'end');   /* inside the chord, clear of the wedge edge */
   pts.forEach(p=>a.point(p[0], p[1], {color:C.in, r:6}));
   lbl(a, 1.14, -0.1, '\\mathbf{s}_0', C.in);
   return a.svg();
@@ -693,7 +701,7 @@ function figDPSK(){
   a.raw(`<rect class="sk-area" x="${a.x0}" y="${a.y1}" width="${a.x1-a.x0}" height="${a.y0-a.y1}" fill="none"/>`);
   DP_BITS.forEach((b,i)=>lbl(a, i+1, 1.5, 'b_'+(i+1)+'='+b, C.ink, 'middle', 16));
   a.stem([[0,0]], {color:C.in, showZero:true});
-  lbl(a, -0.45, -0.22, '\\theta_0=0', C.in, 'start', 14);
+  lbl(a, 0.12, 0.1, '\\theta_0=0', C.in, 'start', 14);
   a.raw('<g class="sk-key">');
   a.stem(DP_TH.slice(1).map((y,i)=>[i+1, y]), {color:C.in, showZero:true});
   a.raw('</g>');
@@ -770,8 +778,10 @@ function figMask(v){
   const th = pts.slice(1).map((p,i)=>(p+pts[i])/2), edges = [-2, ...th, 2];
   pts.forEach((p,i)=>a.rect(edges[i], -1, edges[i+1], 1, {fill:i%2 ? C.dec.mid : C.dec.in}));
   th.forEach(t=>seg(a, [[t,-1],[t,1]], {color:C.ink, width:1.3, dash:'6 4'}));
-  const i0 = M/2-1;
-  a.span(pts[i0], pts[i0+1], -0.45, 'd_{\\min}', {tex:true, color:C.err, fs:15});
+  /* the bracket on the outer pair, its name beyond the last point: a name
+     centred on the bracket would sit on a threshold or on the axis */
+  a.span(pts[M-2], pts[M-1], -0.45, '', {color:C.err});
+  lbl(a, pts[M-1]+0.07, -0.45, 'd_{\\min}', C.err, 'start');
   pts.forEach(p=>dot(a, p, 0, {color:C.in, r:M > 8 ? 5 : 7}));
   lbl(a, -1.95, 1.28, 'M='+M+':\\ d_{\\min}='+num(2*A,3)+'\\sqrt{E_s}', C.err);
   return a.svg();
@@ -789,7 +799,7 @@ function figExASK4(v){
     if(cur > 0.02){ if(k > 0) hump(A4[k-1], x, cur); if(k < 3) hump(x, A4[k+1], cur); }
     if(o > 0.5) lbl(a, x, 1.25, String(NB4[k]), C.mid, 'middle', 17); });
   A4.forEach((x,k)=>{ dot(a, x, 0, {color:C.in, r:7}); lbl(a, x, -0.72, '\\mathbf{s}_'+(k+1), C.in, 'middle'); });
-  if(f > 4.5) lbl(a, 0, 2.2, '\\bar N_{\\min}=\\tfrac{1+2+2+1}{4}=1.5', C.ink, 'middle', 17);
+  if(f > 4.5) lbl(a, 0.3, 2.2, '\\bar N_{\\min}=\\tfrac{1+2+2+1}{4}=1.5', C.ink, 'start', 17);   /* right of the axis */
   return a.svg();
 }
 
@@ -810,7 +820,7 @@ function figQAM(v){
   if(oG > 0.02) QAM16.forEach(p=>{ dot(a, p[0], p[1], {color:C.in, r:6.5, opacity:oG});
     if(oG > 0.5 && oN < 0.5) lbl(a, p[0], p[1]+0.45, '\\mathtt{'+G4[LV4.indexOf(p[0])]+G4[LV4.indexOf(p[1])]+'}', C.in, 'middle', 13);
     if(oN >= 0.5) lbl(a, p[0]+0.3, p[1]+0.3, String(nb16(p)), C.mid, 'start', 15); });
-  if(oN >= 0.5) lbl(a, 0, -4.3, '\\bar N_{\\min}=\\tfrac{4(2)+8(3)+4(4)}{16}=3', C.ink, 'middle', 16);
+  if(oN >= 0.5) lbl(a, 0.35, -4.3, '\\bar N_{\\min}=\\tfrac{4(2)+8(3)+4(4)}{16}=3', C.ink, 'start', 16);   /* right of the axis */
   return a.svg();
 }
 
@@ -885,8 +895,10 @@ function figQAMvsPSK(v){
   seg(a, [ps[0], ps[1]], {color:C.err, width:2.6, dash:'5 3'});
   seg(a, [q[0], q[1]], {color:C.err, width:2.6});
   const x0 = a.o.xr[0]+0.06, y0 = a.o.yr[1]-0.2;
-  lbl(a, x0, y0, 'M='+M+':\\ d_{\\text{QAM}}='+num(dq,3)+',\\ \\ d_{\\text{PSK}}='+num(dp,3), C.err);
-  lbl(a, x0, y0-0.3, '10\\log_{10}\\bigl(d_{\\text{QAM}}^{2}/d_{\\text{PSK}}^{2}\\bigr)='+num(advQ(M),2)+'\\text{ dB}', C.ink);
+  /* three short lines, all left of the vertical axis */
+  lbl(a, x0, y0, 'M='+M+':\\ d_{\\text{QAM}}='+num(dq,3), C.err);
+  lbl(a, x0, y0-0.3, 'd_{\\text{PSK}}='+num(dp,3), C.err);
+  lbl(a, x0, y0-0.6, '10\\log_{10}\\bigl(d_{\\text{QAM}}^{2}/d_{\\text{PSK}}^{2}\\bigr)='+num(advQ(M),2)+'\\text{ dB}', C.ink);
   return a.svg();
 }
 
@@ -944,7 +956,8 @@ function figMFSK(v){
     seg(a, [r, p1], {color:C.mid, width:1.4, dash:'4 4', opacity:o2});
     dot(a, r[0], r[1], {color:C.out, r:6.5, opacity:o2});
     const s1 = iso(E[0]); ring(a, s1[0], s1[1], {opacity:o2});
-    if(o2 > 0.5) lbl(a, a.o.xr[0]+0.06, a.o.yr[1]-0.2, 'r_1='+RX3[0]+'>r_2='+RX3[1]+'>r_3='+RX3[2], C.out); }
+    /* under the triangle, between the names of the two lower axes */
+    if(o2 > 0.5) lbl(a, 0, a.o.yr[0]+0.08, 'r_1='+RX3[0]+'>r_2='+RX3[1]+'>r_3='+RX3[2], C.out, 'middle'); }
   return a.svg();
 }
 
@@ -1047,14 +1060,16 @@ const REAL_FSK = realGallery({ id:'m5-real-fsk', nav:'Frequency keying around us
 /* At a fixed bit rate, k bits a symbol make the symbol k times longer: the
    sinc^2 main lobe of PSK and QAM is 2 R_b/k wide. Below, the band of each
    family at this k. */
-const bwOf = k => { const M = 1 << k; return [['\\text{PAM (SSB)}', 1/(2*k), C.mid], ['\\text{PSK, QAM}', 1/k, C.in], ['\\text{orthogonal}', M/(2*k), C.h]]; };
+const bwOf = k => { const M = 1 << k; return [['\\text{PAM (SSB)}', 1/(2*k), C.in], ['\\text{PSK, QAM}', 1/k, C.in], ['\\text{orthogonal}', M/(2*k), C.in]]; };
 function figSpectrum(v){
   const k = v ? v.k : 2, M = 1 << k, H = takeH(430), hA = Math.round(0.56*H);
   const a = P.Axes({w:560, h:hA, xr:[-2.2,2.2], yr:[0,6.6], xlabel:'f/R_b', ylabel:'S(f)',
     pad:{l:56,r:26,t:24,b:40}, xticksOverride:[-2,-1,0,1,2], yticksOverride:[]});
   a.curve(x=>Math.pow(sincF(x), 2), {color:C.muted, width:1.4, dash:'5 4', n:800});
   a.curve(x=>k*Math.pow(sincF(k*x), 2), {color:C.in, width:2.6, n:1200});
-  a.span(-1/k, 1/k, k+0.75, k===1 ? '2R_b' : '2R_b/'+k+'='+num(2/k,2)+'R_b', {tex:true, color:C.mid, fs:15});
+  /* the bracket is centred on the vertical axis, so its name sits beside it */
+  a.span(-1/k, 1/k, k+0.75, '', {color:C.mid});
+  lbl(a, 1/k+0.08, k+0.75, k===1 ? '2R_b' : '2R_b/'+k+'='+num(2/k,2)+'R_b', C.mid, 'start');
   lbl(a, 2.15, 5.9, 'M='+M+'\\ (k='+k+')', C.in, 'end');
   const b = P.Axes({w:560, h:H-hA, xr:[0,3.6], yr:[0,3.2], xlabel:'W/R_b', ylabel:'',
     pad:{l:56,r:26,t:18,b:40}, xticksOverride:[0,1,2,3], yticksOverride:[], grid:false});
@@ -1116,14 +1131,18 @@ const FAM = [
 const needAt = (fam, M, tgt) => reach(d=>fam.pe(M, dB(d)), tgt, -5, 60);
 function figPlane(v){
   const e = v ? v.e : -5, tgt = Math.pow(10, e);
-  const a = TAx(SZ({xr:[-4,36], yr:[-3,4.4], xlabel:'E_b/N_0\\;(\\text{dB})', ylabel:'R_b/W', xt:[0,10,20],
+  /* Projected, the family names grow 1.36 times and would touch their curves;
+     the plane is then drawn on a wider box of the same shape, so it takes the
+     same room on the page and the names give back that part of the growth. */
+  const big = P.labelScale() > 1;
+  const a = TAx(SZ({w:big ? 640 : 560, h:big ? 434 : 380, xr:[-4,36], yr:[-3,4.4], xlabel:'E_b/N_0\\;(\\text{dB})', ylabel:'R_b/W', xt:[0,10,20],
     yticksOverride:[], grid:false, zeroAxes:false}));
   leftTicks(a, [-3,-2,-1,0,1,2,3,4], u=>u >= 0 ? String(Math.pow(2,u)) : '1/'+Math.pow(2,-u));
   a.hline(0, {color:C.muted, width:1, dash:'2 4'});
   const lim = []; for(let u=-3;u<=4.001;u+=0.05){ const r = Math.pow(2,u); lim.push([todB((Math.pow(2,r)-1)/r), u]); }
   seg(a, lim, {color:C.muted, width:1.6, dash:'3 4'});
   lbl(a, -3.6, 3.55, '\\text{limit, Module 6}', C.muted, 'start', 13);
-  const LB = {PAM:[-0.2,-0.5,'end'], PSK:[0.6,-0.12,'start'], QAM:[-0.8,0.2,'end'], orthogonal:[0.6,-0.12,'start']};
+  const LB = {PAM:big ? [0.4,-0.62,'end'] : [-0.2,-0.5,'end'], PSK:[0.6,-0.12,'start'], QAM:big ? [-0.9,0.05,'end'] : [-0.8,0.2,'end'], orthogonal:[0.6,-0.12,'start']};
   FAM.forEach(fm=>{ const pts = fm.Ms.map(M=>[needAt(fm, M, tgt), L2(fm.r(M))]), p = pts[fm.n==='QAM' ? 0 : pts.length-1], L = LB[fm.n];
     seg(a, pts, {color:C.in, width:2.2, dash:fm.dash});
     pts.forEach(q=>dot(a, q[0], q[1], {color:C.in, r:5}));
@@ -1213,24 +1232,29 @@ const CH = (()=>{ const t = [], s = [], r = [], c1 = [0], c2 = [0], dt = 1/CH_N;
   for(let i=0;i<CH_N;i++){ c1.push(c1[i]+r[i]*psi1(t[i])*dt); c2.push(c2[i]+r[i]*psi2(t[i])*dt); }
   return {t, s, r, c1, c2, rv:[c1[CH_N], c2[CH_N]]}; })();
 function figChain(v){
-  const big = P.labelScale() > 1, H = takeH(440), ha = Math.round((big ? 0.4 : 0.37)*H), hb = Math.round((big ? 0.17 : 0.21)*H), f = frameOf(v, 5), op = k => clamp01(f-k+1);
-  const a = plane({h:ha, need:[[-2.1,2.1],[-1.8,1.7]], xticksOverride:[], yticksOverride:[], pad:{l:56,r:26,t:24,b:36}});
+  const big = P.labelScale() > 1, W = big ? 630 : 560, H = takeH(big ? 495 : 440), ha = Math.round((big ? 0.42 : 0.37)*H), hb = Math.round((big ? 0.25 : 0.26)*H), f = frameOf(v, 5), op = k => clamp01(f-k+1);
+  const drop = big ? {xnameDrop:0} : {};   /* as in figIQ */
+  /* Projected, the labels grow while the plane keeps its height, so the bit
+     labels step further from their points and the two readouts move out past
+     them. */
+  const ox = big ? 2 : 1, bx = big ? 4.2 : 2.5;
+  const a = plane(Object.assign({w:W, h:ha, need:[[-2.1,2.1],[-1.8,1.7]], xticksOverride:[], yticksOverride:[], pad:{l:56,r:26,t:24,b:36}}, drop));
   if(op(5) > 0.02) drawCells(a, QPSK, {opacity:op(5)});
   QPSK.forEach((p,k)=>{ dot(a, p[0], p[1], {color:C.in, r:6.5, opacity:k===3 || op(1) < 0.5 ? 1 : 0.4});
-    lbl(a, p[0]+QOFF[k][0], p[1]+QOFF[k][1], '\\mathtt{'+QLAB[k]+'}', C.in, QOFF[k][2]); });
-  lbl(a, -2.3, 0.9, '\\text{bits }\\mathtt{10}', C.ink, 'end');
+    lbl(a, p[0]+ox*QOFF[k][0], p[1]+QOFF[k][1], '\\mathtt{'+QLAB[k]+'}', C.in, QOFF[k][2]); });
+  lbl(a, -bx, 0.9, '\\text{bits }\\mathtt{10}', C.ink, 'end');
   if(op(1) > 0.02) ring(a, 1, -1, {color:C.in, r:10, opacity:op(1)*(1-op(5))});
   if(op(5) > 0.02){ const [x,y] = CH.rv; dot(a, x, y, {color:C.out, r:6.5, opacity:op(5)}); ring(a, 1, -1, {r:10, opacity:op(5)});
-    if(op(5) > 0.5) lbl(a, 2.3, 0.9, '\\mathbf r=('+num(x)+','+num(y)+')', C.out, 'start'); }
-  const b = TAx({w:560, h:hb, xr:[0,1], yr:[-3.6,3.6], xlabel:'', ylabel:'s(t),\\;r(t)', pad:{l:56,r:26,t:20,b:10}, yticksOverride:[-2,0,2]});
+    if(op(5) > 0.5) lbl(a, bx, 0.9, '\\mathbf r=('+num(x)+','+num(y)+')', C.out, 'start'); }
+  const b = TAx({w:W, h:hb, xr:[0,1], yr:[-3.6,3.6], xlabel:'', ylabel:'s(t),\\;r(t)', pad:{l:56,r:26,t:20,b:10}, yticksOverride:[-2,0,2]});
   if(op(2) > 0.02) seg(b, CH.t.map((x,i)=>[x, CH.s[i]]), {color:C.in, width:2.2, opacity:op(2)*(1-0.6*op(3))});
   if(op(3) > 0.02) seg(b, CH.t.map((x,i)=>[x, CH.r[i]]), {color:C.out, width:1.3, opacity:op(3)});
-  const c = TAx({w:560, h:H-ha-hb, xr:[0,1.12], yr:[-1.6,1.3], xlabel:'t/T', ylabel:'c_1,\\;c_2', pad:{l:56,r:26,t:20,b:36}, xt:[0,0.5,1], yticksOverride:[-1,1]});
+  const c = TAx(Object.assign({w:W, h:H-ha-hb, xr:[0,1.12], yr:[-1.6,1.3], xlabel:'t/T', ylabel:'c_1,\\;c_2', pad:{l:56,r:26,t:20,b:36}, xt:[0,0.5,1], yticksOverride:[-1,1]}, drop));
   const m = Math.round(CH_N*op(4));
   if(m > 1){ seg(c, CH.t.slice(0,m).map((x,i)=>[x, CH.c1[i+1]]), {color:C.mid, width:2.4});
     seg(c, CH.t.slice(0,m).map((x,i)=>[x, CH.c2[i+1]]), {color:C.mid, width:2.4, dash:'7 5'}); }
   if(op(4) > 0.95){ lbl(c, 1.02, CH.rv[0]-0.1, 'r_1', C.mid); lbl(c, 1.02, CH.rv[1]-0.1, 'r_2', C.mid); }
-  return stack(560, [[a.svg(),ha],[b.svg(),hb],[c.svg(),H-ha-hb]]);
+  return stack(W, [[a.svg(),ha],[b.svg(),hb],[c.svg(),H-ha-hb]]);
 }
 
 /* Small sketches for the summary and project cards, in the dark-page tints. */
@@ -1244,7 +1268,7 @@ const G = (()=>{
   const quad = ln('M8 22 H84 M46 2 V42',AX,1);
   const ringPts = (n, r, cx, cy, off) => Array.from({length:n},(_,k)=>dt((cx+r*Math.cos(2*Math.PI*k/n+(off||0))).toFixed(1),(cy-r*Math.sin(2*Math.PI*k/n+(off||0))).toFixed(1),CY,2.8)).join('');
   return {
-    carrier: sv(ln(wave(6, 14, 6, 86, 22),AM,1.8)),
+    carrier: sv(ln(wave(6, 14, 6, 86, 22),CY,1.8)),
     iq:      sv(quad+ln('M46 22 L68 8',VI,2)+ln('M68 8 V22 M68 8 H46',AX,1.2,'3 3')+dt(68,8,CY)),
     binary:  sv(axes+ln('M10 8 C30 10 50 26 86 38',RD,2)+ln('M10 8 C36 10 58 22 86 30',RD,2,'4 3')),
     psk:     sv(ln('M62 22 A16 16 0 1 1 61.9 21.9',AX,1.2)+ringPts(8,16,46,22)),
@@ -1257,7 +1281,7 @@ const G = (()=>{
     noncoh:  sv(ln('M62 22 A16 16 0 1 1 61.9 21.9',AX,1.2)+ln('M46 22 L57 10',GR,2)+ln('M46 22 L57 22',VI,2.4)+dt(57,10,GR,3)),
     spectrum:sv(axes+ln('M10 40 C20 40 26 40 30 36 C38 4 54 4 62 36 C66 40 72 40 88 40',CY,2)),
     msk:     sv(ln('M62 22 A16 16 0 1 1 61.9 21.9',CY,2)+ln('M20 36 L72 8',AX,1.2,'3 3')),
-    plane:   sv(axes+dt(30,34,AM,3)+dt(44,24,CY,3)+dt(62,16,GR,3)+dt(80,8,GR,3)+ln('M14 38 C24 30 40 20 86 6',AX,1.2,'3 3')),
+    plane:   sv(axes+dt(30,34,CY,3)+dt(44,24,CY,3)+dt(62,16,CY,3)+dt(80,8,CY,3)+ln('M14 38 C24 30 40 20 86 6',AX,1.2,'3 3')),
     adaptive:sv(axes+ln('M10 38 H26 V30 H42 V22 H58 V14 H74 V6 H86',CY,2)),
     chain:   sv(dt(12,22,CY)+ln('M18 22 H30',AX,1.2)+ln(wave(3, 8, 32, 58, 22),AM,1.6)+ln('M60 22 H72',AX,1.2)+dt(80,22,GR))
   };
@@ -1480,9 +1504,9 @@ const SC = [
 REAL_BINARY,
 
 labScene('m5-lab-iq', 'X', 'The IQ modulator', 'Putting bits on a carrier',
-  'Build carrier waveforms from I and Q and watch the constellation and the spectrum respond.',
-  'laboratory iq modulator in-phase quadrature carrier waveform constellation spectrum bits interactive',
-  'Choose a scheme and send bits. Watch $I$ and $Q$ set each point, the carrier follow them, and the spectrum sit at $f_c$.'),
+  'Build carrier waveforms from I and Q and watch the constellation point and the envelope respond.',
+  'laboratory iq modulator in-phase quadrature carrier waveform constellation envelope bits interactive',
+  'Choose a scheme and send bits. Watch $I$ and $Q$ set each point and the carrier follow them.'),
 
 codeScene('m5-code-binary', 'Binary keying', 'Binary keying in code',
   'Simulate BPSK, BFSK and BASK over noise and compare their bit errors with the formulas.',
