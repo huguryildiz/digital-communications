@@ -105,5 +105,13 @@ const LABS = (() => {
     chrome();
   }
 
-  return { KIT:{ T, M, F, el, gcd, transport, runbar } };
+  /* A laboratory's plots take the height its figure column has left over
+     (DESIGN.md, A laboratory on a slide). The stage decides that height, not
+     the laboratory: fitScene() measures the column, writes the factor to
+     `root.dataset.grow` and calls `root.redraw()`. A laboratory opts in by
+     setting `root.redraw` in mount() and by passing every desktop plot height
+     through `GH(root)`, which is the identity until a factor is written. */
+  const GH = root => { const g = +(root && root.dataset.grow) || 1; return v => Math.round(v*g); };
+
+  return { KIT:{ T, M, F, el, gcd, transport, runbar, GH } };
 })();

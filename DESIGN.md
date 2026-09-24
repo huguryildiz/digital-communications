@@ -337,6 +337,17 @@ A laboratory uses the full remaining stage height. Its main columns stretch to t
 scene, and stacked controls, readouts and explanations distribute through that height. Do not leave a
 laboratory compressed against the title with an unused lower half.
 
+The figure column fills that height too. A laboratory's plots are drawn at the height the column has
+left over, not at the height their viewBox was authored with; a plot pair sitting at the top of the
+column with an empty lower half is the same fault as a compressed laboratory. This is done at render
+time, in every display mode, by `growLabs()` in `build/src/90_app.js`: after the fit factor is
+settled it measures the spare height of the first column, scales every plot in `.plots` by one factor
+(capped at 2.2) and redraws. Growth never changes the fit factor, because it only uses height the
+column already has. A laboratory takes part by setting `root.redraw = () => draw(root)` in `mount()`
+and passing each desktop plot height through `LABS.KIT.GH(root)` (`h: ph ? 230 : gh(185)`); every
+laboratory in a converted module does both. The authored heights stay the minimum the laboratory is
+designed at, and the phone heights are not scaled.
+
 A dense scene is split, one example or one idea a slide. Splitting is a renumbering: it is an edit to
 `build/src/89_sections.js` and nothing else carries an address.
 

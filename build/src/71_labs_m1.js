@@ -22,7 +22,7 @@
    imported; the artifact is one file.
    ========================================================================== */
 Object.assign(LABS, (function(){
-  const T = LABS.KIT.T, M = LABS.KIT.M, fmt = LABS.KIT.F, el = LABS.KIT.el;
+  const T = LABS.KIT.T, M = LABS.KIT.M, fmt = LABS.KIT.F, el = LABS.KIT.el, GH = LABS.KIT.GH;
   const P = PLOT;
   const N = (v,d=3) => fmt(v,d);
 
@@ -105,9 +105,9 @@ Object.assign(LABS, (function(){
       const Ts = 1/fs;
       const tmax = Math.min(4, Math.max(1.2, 6/f0));
 
-      const ph = PHONE();
+      const ph = PHONE(), gh = GH(root);
       /* panel 1: time domain */
-      const a1 = P.Axes({w:ph?300:680,h:ph?230:185,xr:[0,tmax],yr:[-1.35,1.35],
+      const a1 = P.Axes({w:ph?300:680,h:ph?230:gh(185),xr:[0,tmax],yr:[-1.35,1.35],
         xlabel:'t\\;(\\text{ms})',ylabel:'g(t)',pad:{l:ph?42:54,r:ph?16:24,t:24,b:40},
         xtarget:ph?4:6,ytarget:3});
       a1.curve(g,{color:P.COL.in});
@@ -117,7 +117,7 @@ Object.assign(LABS, (function(){
 
       /* panel 2: spectrum lines, replicas at f0 + k*fs, band |f| < fs/2 marked */
       const span = Math.max(fs*1.9, f0*1.3, 4);
-      const a2 = P.Axes({w:ph?300:680,h:ph?230:155,xr:[-span,span],yr:[-0.15,1.25],
+      const a2 = P.Axes({w:ph?300:680,h:ph?230:gh(155),xr:[-span,span],yr:[-0.15,1.25],
         xlabel:'f\\;(\\text{kHz})',ylabel:'\\text{amplitude}',pad:{l:ph?42:54,r:ph?16:24,t:22,b:40},
         xtarget:ph?4:7,ytarget:2,ytickfmt:()=>''});
       a2.rect(-fold, -0.15, fold, 1.25, {fill: P.COL.dec.out, stroke:'none'});
@@ -181,6 +181,7 @@ Object.assign(LABS, (function(){
       root.addEventListener('input', e=>{ const k=e.target.dataset.v; if(!k) return;
         st[k]=parseFloat(e.target.value); draw(root); });
       draw(root);
+      root.redraw = () => draw(root);
     }};
   })();
 
@@ -215,14 +216,14 @@ Object.assign(LABS, (function(){
 
       const pts = []; for(let n=nMin;n<=nMax;n++){ const t=n*Ts; if(t>=-0.2 && t<=tmax+0.2) pts.push([t,samp(t)]); }
 
-      const ph = PHONE();
-      const a1 = P.Axes({w:ph?300:680,h:ph?230:185,xr:[0,tmax],yr:[-1.25,1.25],
+      const ph = PHONE(), gh = GH(root);
+      const a1 = P.Axes({w:ph?300:680,h:ph?230:gh(185),xr:[0,tmax],yr:[-1.25,1.25],
         xlabel:'t\\;(\\text{ms})',ylabel:'g(t),\\;g_r(t)',pad:{l:ph?42:54,r:ph?16:24,t:24,b:40},xtarget:ph?4:6,ytarget:3});
       a1.curve(g,{color:P.COL.in});
       a1.stem(pts,{color:P.COL.mid,r:4});
       a1.curve(gr,{color:P.COL.out,width:2.2});
 
-      const a2 = P.Axes({w:ph?300:680,h:ph?200:160,xr:[0,tmax],yr:[-0.55,0.55],
+      const a2 = P.Axes({w:ph?300:680,h:ph?200:gh(160),xr:[0,tmax],yr:[-0.55,0.55],
         xlabel:'t\\;(\\text{ms})',ylabel:'g(t)-g_r(t)',pad:{l:ph?42:54,r:ph?16:24,t:22,b:40},xtarget:ph?4:6,ytarget:3});
       a2.curve(err,{color:P.COL.err,width:1.8});
 
@@ -286,6 +287,7 @@ Object.assign(LABS, (function(){
       root.addEventListener('click', e=>{ const b=e.target.closest('[data-seg=method]'); if(!b) return;
         st.method = b.dataset.val; draw(root); });
       draw(root);
+      root.redraw = () => draw(root);
     }};
   })();
 
@@ -320,8 +322,8 @@ Object.assign(LABS, (function(){
       const overload = Math.abs(mClamped) > mmax;
       const err = mClamped - v;
 
-      const ph = PHONE();
-      const a = P.Axes({w:ph?300:680,h:ph?330:290,xr:[-mmax*1.3,mmax*1.3],yr:[-mmax*1.15,mmax*1.15],
+      const ph = PHONE(), gh = GH(root);
+      const a = P.Axes({w:ph?300:680,h:ph?330:gh(290),xr:[-mmax*1.3,mmax*1.3],yr:[-mmax*1.15,mmax*1.15],
         xlabel:'m',ylabel:'v=\\mathbb{Q}(m)',pad:{l:ph?40:56,r:ph?16:26,t:24,b:40},xtarget:ph?4:6,ytarget:5});
       a.poly([[-mmax*1.3,-mmax*1.3],[mmax*1.3,mmax*1.3]],{color:P.COL.muted,dash:'4 5'});
       if(!overload) a.rect(reg.lo, -mmax*1.15, reg.hi, mmax*1.15, {fill:P.COL.dec.mid, stroke:'none'});
@@ -377,6 +379,7 @@ Object.assign(LABS, (function(){
       root.addEventListener('click', e=>{ const b=e.target.closest('[data-seg=kind]'); if(!b) return;
         st.kind = b.dataset.val; draw(root); });
       draw(root);
+      root.redraw = () => draw(root);
     }};
   })();
 
@@ -415,8 +418,8 @@ Object.assign(LABS, (function(){
     function draw(root){
       const mu = st.mu, bits = st.bits, level = st.level;
 
-      const ph = PHONE();
-      const a1 = P.Axes({w:ph?300:680,h:ph?260:175,xr:[-1,1],yr:[-1,1],
+      const ph = PHONE(), gh = GH(root);
+      const a1 = P.Axes({w:ph?300:680,h:ph?260:gh(175),xr:[-1,1],yr:[-1,1],
         xlabel:'x',ylabel:'y',pad:{l:ph?40:52,r:ph?16:24,t:22,b:40},xtarget:ph?4:4,ytarget:4});
       a1.poly([[-1,-1],[1,1]],{color:P.COL.muted,dash:'4 5'});
       const pts=[]; for(let i=0;i<=400;i++){ const x=-1+2*i/400; pts.push([x, mu>0?mulaw(x,mu):x]); }
@@ -426,7 +429,7 @@ Object.assign(LABS, (function(){
       const sqU = levels.map(lv => sqnrAt(lv, bits, 0));
       const sqM = levels.map(lv => sqnrAt(lv, bits, mu));
       const lo = Math.min(...sqU, ...sqM), hi = Math.max(...sqU, ...sqM);
-      const a2 = P.Axes({w:ph?300:680,h:ph?230:185,xr:[-50,0],yr:[Math.max(-5,lo-4),hi+4],
+      const a2 = P.Axes({w:ph?300:680,h:ph?230:gh(185),xr:[-50,0],yr:[Math.max(-5,lo-4),hi+4],
         xlabel: ph ? '\\text{level (dB)}' : '\\text{input level (dB below full scale)}',
         ylabel:'\\mathrm{SQNR}\\;(\\mathrm{dB})',
         pad:{l:ph?44:56,r:ph?16:26,t:22,b:44},xtarget:ph?4:6,ytarget:4});
@@ -484,6 +487,7 @@ Object.assign(LABS, (function(){
       root.addEventListener('input', e=>{ const k=e.target.dataset.v; if(!k) return;
         st[k] = parseFloat(e.target.value); draw(root); });
       draw(root);
+      root.redraw = () => draw(root);
     }};
   })();
 
@@ -518,16 +522,16 @@ Object.assign(LABS, (function(){
       const sqnrForm = alpha + 6.0206*st.bits;
       const overload = e.filter(q=>Math.abs(q) > d/2 + 1e-12).length;
 
-      const ph = PHONE();
+      const ph = PHONE(), gh = GH(root);
       const win = Math.min(NA, st.wave==='gauss' ? 220 : NA);
-      const ax = P.Axes({w:ph?300:820,h:ph?230:300,xr:[0,win],yr:[-1.35*MMAX,1.35*MMAX],
+      const ax = P.Axes({w:ph?300:820,h:ph?230:gh(300),xr:[0,win],yr:[-1.35*MMAX,1.35*MMAX],
         xlabel:'n',ylabel:'m[n],\\;\\mathbb{Q}(m[n])',pad:{l:ph?42:56,r:ph?16:26,t:24,b:38},
         xtarget:ph?4:6,ytarget:4});
       for(let k=0;k<Lv;k++) ax.hline(-MMAX+(k+0.5)*d,{color:P.COL.rule,dash:'2 5'});
       ax.poly(x.slice(0,win).map((s,i)=>[i,s]),{color:P.COL.in});
       ax.poly(v.slice(0,win).map((s,i)=>[i,s]),{color:P.COL.mid,width:1.8});
 
-      const bx = P.Axes({w:ph?300:820,h:ph?200:240,xr:[0,win],yr:[-1.9*d,1.9*d],
+      const bx = P.Axes({w:ph?300:820,h:ph?200:gh(240),xr:[0,win],yr:[-1.9*d,1.9*d],
         xlabel:'n',ylabel:'q[n]',pad:{l:ph?42:56,r:ph?16:26,t:22,b:38},xtarget:ph?4:6,ytarget:3});
       bx.hline(d/2,{color:P.COL.err,dash:'4 4'}); bx.hline(-d/2,{color:P.COL.err,dash:'4 4'});
       bx.poly(e.slice(0,win).map((s,i)=>[i,s]),{color:P.COL.err,width:1.5});
@@ -593,6 +597,7 @@ Object.assign(LABS, (function(){
       root.addEventListener('click', e=>{ const b=e.target.closest('[data-seg=wave]'); if(!b) return;
         st.wave = b.dataset.val; draw(root); });
       draw(root);
+      root.redraw = () => draw(root);
     }};
   })();
 
@@ -688,13 +693,13 @@ Object.assign(LABS, (function(){
          coder. */
       const shown = rec.slice(0, 4*st.phase);
 
-      const ph = PHONE();
-      const ax = P.Axes({w:ph?300:820,h:ph?230:300,xr:[0,NB],yr:[-1.35,1.35],
+      const ph = PHONE(), gh = GH(root);
+      const ax = P.Axes({w:ph?300:820,h:ph?230:gh(300),xr:[0,NB],yr:[-1.35,1.35],
         xlabel:'n',ylabel:'m[n],\\;\\hat{m}[n]',pad:{l:ph?42:56,r:ph?16:26,t:24,b:38},xtarget:ph?4:6,ytarget:4});
       ax.poly(src.map((s,i)=>[i,s]),{color:P.COL.in});
       ax.poly(shown.map((s,i)=>[i,s]),{color:P.COL.out,width:1.8});
 
-      const bx = P.Axes({w:ph?300:820,h:ph?190:240,xr:[0,NB],yr:[-0.42,0.42],
+      const bx = P.Axes({w:ph?300:820,h:ph?190:gh(240),xr:[0,NB],yr:[-0.42,0.42],
         xlabel:'n',ylabel:'m[n]-\\hat{m}[n]',pad:{l:ph?42:56,r:ph?16:26,t:22,b:38},xtarget:ph?4:6,ytarget:3});
       bx.poly(err.slice(0, 4*st.phase).map((s,i)=>[i,s]),{color:P.COL.err,width:1.5});
 
@@ -745,6 +750,7 @@ Object.assign(LABS, (function(){
       root.addEventListener('click', e=>{ const b=e.target.closest('[data-seg=method]'); if(!b) return;
         st.method = b.dataset.val; draw(root); });
       draw(root);
+      root.redraw = () => draw(root);
       LABS.KIT.transport(root, { key:'phase', max:64, ms:55,
         get:()=>st.phase, set:v=>{ st.phase=v; }, redraw:()=>draw(root) });
     }};

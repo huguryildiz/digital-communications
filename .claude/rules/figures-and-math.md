@@ -64,6 +64,12 @@ Record the projector fit factor and confirm it is at least 0.90 without clipped 
 causes a poor fit, reflow the controls or readouts, or split the scene; do not shrink the type back
 down or apply an unverified font override to every laboratory.
 
+**Laboratory figure-height rule.** A laboratory's plots fill their column (`DESIGN.md`, A slide).
+Every laboratory in a converted module sets `root.redraw` in `mount()` and draws each desktop plot at
+`gh(h)` from `LABS.KIT.GH(root)`; never hard-code a larger viewBox height to fill the column, because
+the spare height differs between normal display and lecture mode. Check it in a screenshot of both
+modes: the last plot ends within a few pixels of the foot of the control column.
+
 Keep the KaTeX macro lists in `60_plot.js`, `90_app.js`, and `notes/src/render.js` in step. `PLOT` and
 `APP` are top-level `const`, not `window` properties; use their bare identifiers in Playwright
 `page.evaluate`, and remember a probe reading `window.LABS` finds nothing even when `LABS` exists.

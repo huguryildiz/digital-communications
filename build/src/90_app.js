@@ -878,6 +878,10 @@ def _ss_figs():
     figs.forEach(s => s.style.maxHeight = '');
     delete host.dataset.capped;
     delete host.dataset.grown;
+    /* a laboratory grown on the last pass is drawn at its authored height again
+       before anything is measured, so the scale factor never counts the growth */
+    inner.querySelectorAll('[data-lab][data-grow]').forEach(lab => {
+      delete lab.dataset.grow; if(lab.redraw) lab.redraw(); });
     /* A phone has no fixed page to fit a scene into: the scene is as tall as it
        needs to be and the reader scrolls it. Nothing is scaled, so every inline
        size this function may have written on a wider screen is cleared, and the
@@ -897,16 +901,19 @@ def _ss_figs():
     /* Every equation block sets its mathematics at one size. One too wide for its
        column is the exception: it is set smaller until it fits, rather than
        running into the figure beside it. */
-    inner.querySelectorAll('.eq .katex-display > .katex').forEach(m => m.style.fontSize = '');
-    inner.querySelectorAll('.eq').forEach(eq => {
-      const ms = eq.querySelectorAll('.katex-display > .katex');
-      for(let pass=0; pass<4 && ms.length && eq.scrollWidth > eq.clientWidth + 1; pass++){
-        const em = parseFloat(ms[0].style.fontSize) || 1.30;
-        const next = Math.max(0.75, em * eq.clientWidth / eq.scrollWidth * 0.96);
-        ms.forEach(m => m.style.fontSize = next.toFixed(3) + 'em');
-        if(next === 0.75) break;
-      }
-    });
+    const fitEqs = () => {
+      inner.querySelectorAll('.eq .katex-display > .katex').forEach(m => m.style.fontSize = '');
+      inner.querySelectorAll('.eq').forEach(eq => {
+        const ms = eq.querySelectorAll('.katex-display > .katex');
+        for(let pass=0; pass<4 && ms.length && eq.scrollWidth > eq.clientWidth + 1; pass++){
+          const em = parseFloat(ms[0].style.fontSize) || 1.30;
+          const next = Math.max(0.75, em * eq.clientWidth / eq.scrollWidth * 0.96);
+          ms.forEach(m => m.style.fontSize = next.toFixed(3) + 'em');
+          if(next === 0.75) break;
+        }
+      });
+    };
+    fitEqs();
     /* The scene box carries the page margin as padding, so clientHeight is the
        padded box while the inner column lives in the content box. Measuring
        against the padded box hides a scene that has run into the bottom margin:
@@ -970,6 +977,13 @@ def _ss_figs():
        a capped scene has no spare height to give away. */
     if(k === 1 && !host.dataset.capped && host.classList.contains('slide'))
       growFigures(host, inner, TARGET);
+    /* A laboratory's plots fill only the height its figure column already has,
+       so growing them cannot change the factor; a scaled laboratory is filled
+       too, in the column as the factor has widened it. */
+    /* The redraw writes the laboratory's equations afresh, so they are fitted
+       to their width again. */
+    if(!host.dataset.capped && host.classList.contains('slide') && growLabs(inner, TARGET / k))
+      fitEqs();
     if(k < 1){
       inner.style.height = (100 / k) + '%';
       inner.style.width  = (100 / k) + '%';
@@ -1084,6 +1098,42 @@ def _ss_figs():
       host.dataset.grown = (h1 / h0).toFixed(3);
     });
     inner.style.height = hWas;
+  }
+
+  /* A laboratory's figure column is as tall as its control column, and plots
+     drawn at their authored height leave its lower part empty. The plots are
+     drawn again, all by one factor, so that the column is filled: the factor
+     is the spare height over the plots' height, because an svg at full column
+     width is as tall as its viewBox in proportion. Only a laboratory that sets
+     `root.redraw` takes part (LABS.KIT.GH). A redraw that overflows the column
+     is measured again once, and dropped if it still does not fit. */
+  function growLabs(inner, TARGET){
+    const MIN_FREE = 24, CAP = 2.2;
+    const hWas = inner.style.height;
+    let drew = false;
+    inner.style.height = TARGET + 'px';
+    inner.querySelectorAll('[data-lab]').forEach(lab => {
+      const col = lab.redraw && lab.querySelector(':scope > .cols > .col');
+      const plots = col && col.querySelector('.plots');
+      if(!plots) return;
+      const stack = () => Array.from(col.children).reduce((a,el) => {
+        const m = getComputedStyle(el);
+        return a + el.offsetHeight + parseFloat(m.marginTop||0) + parseFloat(m.marginBottom||0);
+      }, 0);
+      const drawn = () => Array.from(plots.querySelectorAll('.plot-wrap > svg'))
+        .reduce((a,s) => a + s.clientHeight, 0);
+      let g = 1;
+      for(let pass=0; pass<2; pass++){
+        const free = col.clientHeight - stack(), P = drawn();
+        if(!P || (pass === 0 && free < MIN_FREE) || (pass === 1 && free >= 0)) break;
+        g = Math.min(CAP, g * (1 + free / P));
+        lab.dataset.grow = g.toFixed(4);
+        lab.redraw(); drew = true;
+      }
+      if(stack() > col.clientHeight + 1){ delete lab.dataset.grow; lab.redraw(); }
+    });
+    inner.style.height = hWas;
+    return drew;
   }
 
   /* Toolbar icons: 24-unit strokes in the button's own colour. A toggle shows
