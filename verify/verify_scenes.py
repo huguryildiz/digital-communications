@@ -363,7 +363,7 @@ def _m2_schwarz_ratio(b):
     """(int G H)^2 / (int G^2 int H^2) for two Gaussian spectra of widths 1 and b."""
     f = np.linspace(-12, 12, 200_001)
     G, H = np.exp(-f ** 2), np.exp(-f ** 2 / b ** 2)
-    return float(np.trapz(G * H, f) ** 2 / (np.trapz(G ** 2, f) * np.trapz(H ** 2, f)))
+    return float(np.trapezoid(G * H, f) ** 2 / (np.trapezoid(G ** 2, f) * np.trapezoid(H ** 2, f)))
 
 
 def _m2_mf_output(s, t):
@@ -397,7 +397,7 @@ def _m2_density(y, m, s):
 def _m2_tail(m, s, x):
     """P(Y > x) for Y ~ N(m, s^2), by quadrature of the density."""
     y = np.linspace(x, m + 40 * s, 400_001)
-    return float(np.trapz(np.exp(-(y - m) ** 2 / (2 * s * s)) / (s * math.sqrt(2 * math.pi)), y))
+    return float(np.trapezoid(np.exp(-(y - m) ** 2 / (2 * s * s)) / (s * math.sqrt(2 * math.pi)), y))
 
 
 def _m2_argmin_pe(eb, n0, p0):

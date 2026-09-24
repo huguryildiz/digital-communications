@@ -23,8 +23,11 @@ const sinc = x => Math.abs(x) < 1e-12 ? 1 : Math.sin(Math.PI*x)/(Math.PI*x);
    it takes the palette in force. A legend is a card inside the plot it keys
    (DESIGN.md, Figures); a panel is positioned so that its legend sits in
    its own corner when a solution stacks two panels. */
+/* The printed editions load this file without the app, so RENDER is absent
+   there and the notes renderer's renderInline() typesets the legend instead. */
+const mdL = l => (typeof RENDER !== 'undefined' ? RENDER.md : window.renderInline)(l);
 const legend = (items, at) => `<div class="legend in-plot lg-at-${at||'tr'}">${items.map(([c,l,d])=>
-  `<i class="lg-${c}${d==='dot'?' lg-dot':d?' lg-dash':''}">${RENDER.md(l)}</i>`).join('')}</div>`;
+  `<i class="lg-${c}${d==='dot'?' lg-dot':d?' lg-dash':''}">${mdL(l)}</i>`).join('')}</div>`;
 const panel = (svg, lg) => `<div style="position:relative">${svg}${lg||''}</div>`;
 
 /* The largest quantization error of an R-bit quantizer as a share of the

@@ -20,7 +20,7 @@ change.
 import importlib
 import sys
 
-MODULES = [f"drills_m{n}" for n in (1, 2, 3, 5, 6)]   # TEMP until M4 merges
+MODULES = [f"drills_m{n}" for n in range(1, 7)]
 
 
 def main() -> int:

@@ -83,12 +83,17 @@ decides for. See `figures-and-math.md` and `DESIGN.md` for where these tokens li
 
 ## Standing content decisions
 
-- Twenty questions a module (Module 0 has none), twelve single-skill and eight full-length, no answer
-  options (`labtest.js` asserts `options=0`). A question may keep the shape of a source paper question
-  and no number from it; preserve the answer's character (periodic stays periodic, unstable stays
-  unstable). `src` names the paper question and renders only in the instructor edition. Where a module
-  carries a different count for a recorded reason, state the reason in `TODO.md` or
-  `.claude/reference/history.md`, not silently.
+- Since 2026-09-24, thirty questions a module (Module 0 has none), every one written in the form of a
+  midterm or final examination question: one statement in the examination's wording, three or four
+  lettered parts carrying point weights that sum to 25 (`[8 pts]`), each part usually resting on the
+  one before, and no answer options (`labtest.js` asserts `options=0`). Every worked solution carries
+  at least one figure (`figSol`) that shows the answer: the matched filter, the conditional densities
+  with the threshold and the error areas, the constellation with its decision regions, the quantizer
+  over the density, the spectrum against the sampling rate, the Huffman tree. A question keeps the
+  shape of a source paper question and no number from it; preserve the answer's character (periodic
+  stays periodic, unstable stays unstable). `src` names the paper question and renders only in the
+  instructor edition. Where a module carries a different count for a recorded reason, state the reason
+  in `TODO.md` or `.claude/reference/history.md`, not silently.
 - A slide may ask for a prediction with `note.ask` choices (one per teaching slide, in the card headed
   **Given**), and a module closes before its summary with one quick-check slide of six short
   predictions in a 3×2 grid. A prediction needs no paper calculation, gives its reason in one sentence,
