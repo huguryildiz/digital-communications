@@ -1097,7 +1097,9 @@ body[data-motion=reduced] .tsig-flow{ animation:none; }
 .scene.slide .lab figcaption{ font-size:calc(18px * var(--ts)); }
 .scene.slide .lab .readout dd{ font-size:calc(21px * var(--ts)); line-height:1.35; }
 .scene.slide .lab .lab-eq{ font-size:calc(22px * var(--ts)); }
-.scene.slide .lab > .cols{ height:100%; align-items:stretch; }
+/* Every laboratory, converted or not, is as tall as the stage leaves it, so its
+   plots can grow into the figure column (growLabs in 90_app.js). */
+.lab > .cols{ height:100%; align-items:stretch; }
 .scene.slide .lab > .cols > .col.stack{ justify-content:space-between; }
 .ctrls{
   display:grid; gap:18px 28px; grid-template-columns:repeat(2,minmax(0,1fr));
@@ -1591,7 +1593,7 @@ body[data-layout=phone] .scene.slide .cols{ grid-template-columns:minmax(0,1fr);
    rather than push the card past the edge of the screen. */
 body[data-layout=phone] .scene.slide .note > .note-h{ white-space:normal; max-width:calc(100% + 6px); text-align:left; }
 body[data-layout=phone] .scene.slide .cols.fill > .col{ justify-content:flex-start; }
-body[data-layout=phone] .scene.slide .lab > .cols{ height:auto; }
+body[data-layout=phone] .lab > .cols{ height:auto; }
 body[data-layout=phone] .scene.slide .lab > .cols > .col.stack{ justify-content:flex-start; }
 body[data-layout=phone] .scene.slide .cmp{ grid-template-columns:minmax(0,1fr); }
 body[data-layout=phone] .scene.slide .eq.side{ grid-template-columns:minmax(0,1fr); }

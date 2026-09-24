@@ -12,7 +12,7 @@
    point is nearest. Nothing is shared between them but the constellation.
    ========================================================================== */
 Object.assign(LABS, (function(){
-  const T = LABS.KIT.T, fmt = LABS.KIT.F;
+  const T = LABS.KIT.T, fmt = LABS.KIT.F, GH = LABS.KIT.GH;
   const P = PLOT;
 
   function rng(seed){ let a=seed>>>0; return function(){
@@ -108,11 +108,12 @@ Object.assign(LABS, (function(){
     const MARKS = [0,2,4,6,8,10,12,14,16,18,20];
 
     function draw(root){
+      const gh = GH(root);
       const g = geometry(st.set);
       const nTrial = [400, 1500, 5000, 20000][st.trials - 1] || 5000;
       const cl = v => Math.log10(Math.max(1e-12, v));
 
-      const a = P.Axes({w:600,h:420,xr:[0,20],yr:[-5.4,-0.02],
+      const a = P.Axes({w:600,h:gh(420),xr:[0,20],yr:[-5.4,-0.02],
         xlabel:'E_s/N_0\\;(\\mathrm{dB})', ylabel:'P_s', ytickfmt:P.decade, yticksOverride:P.decades(-5,-1), zeroAxes:false,
         pad:{l:60,r:26,t:26,b:46}, xtarget:5, ytarget:6});
       a.curve(d=>cl(closed(g, d)), {color:P.COL.in, width:2.2});
@@ -207,6 +208,7 @@ Object.assign(LABS, (function(){
       root.addEventListener('click', e=>{ const b=e.target.closest('[data-seg=set]'); if(!b) return;
         st.set=b.dataset.val; draw(root); });
       draw(root);
+      root.redraw = () => draw(root);
       LABS.KIT.transport(root, { key:'phase', max:25, ms:140,
         get:()=>st.phase, set:v=>{ st.phase=v; }, redraw:()=>draw(root) });
     }};

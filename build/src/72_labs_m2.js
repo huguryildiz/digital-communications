@@ -9,7 +9,7 @@
        three different ways.
    ========================================================================== */
 Object.assign(LABS, (function(){
-  const T = LABS.KIT.T, M = LABS.KIT.M, fmt = LABS.KIT.F;
+  const T = LABS.KIT.T, M = LABS.KIT.M, fmt = LABS.KIT.F, GH = LABS.KIT.GH;
   const P = PLOT;
 
   function rng(seed){ let a=seed>>>0; return function(){
@@ -88,6 +88,7 @@ Object.assign(LABS, (function(){
     }
 
     function draw(root){
+      const gh = GH(root);
       const { out, E } = correlation();
       const N0 = Math.pow(10, -st.noise/10);
 
@@ -105,7 +106,7 @@ Object.assign(LABS, (function(){
       const snrHere = snrMax*Math.pow(peak/out[N], 2);
       const lossDb = 10*Math.log10(Math.max(1e-12, snrHere/snrMax));
 
-      const ax = P.Axes({w:780,h:220,xr:[-0.15,1.15],yr:[-0.4,2.1],
+      const ax = P.Axes({w:780,h:gh(220),xr:[-0.15,1.15],yr:[-0.4,2.1],
         xlabel:'t/T',ylabel:'s(t),\\;h_{\\mathrm{opt}}(t)',pad:{l:58,r:26,t:26,b:40},
         xtarget:5,ytarget:4});
       ax.curve(t=>pulse(t*TB),{color:P.COL.in,width:2.2,n:600});
@@ -120,7 +121,7 @@ Object.assign(LABS, (function(){
         ax.area(t=>Math.min(pulse(t*TB), pulse((tau-t)*TB)), 0, 1, {color:P.COL.dec.h});
       }
 
-      const bx = P.Axes({w:780,h:220,xr:[0,1],yr:[-0.15*out[N],1.25*out[N]],
+      const bx = P.Axes({w:780,h:gh(220),xr:[0,1],yr:[-0.15*out[N],1.25*out[N]],
         xlabel:'\\text{sampling instant},\\;t/T',ylabel:'\\text{filter output}',
         pad:{l:60,r:26,t:26,b:44},xtarget:5,ytarget:4});
       /* The curve is the running integral of that shaded overlap, so during
@@ -182,6 +183,7 @@ Object.assign(LABS, (function(){
       root.addEventListener('click', e=>{ const b=e.target.closest('[data-seg=shape]'); if(!b) return;
         st.shape=b.dataset.val; draw(root); });
       draw(root);
+      root.redraw = () => draw(root);
       LABS.KIT.transport(root, { key:'phase', max:40, ms:90,
         get:()=>st.phase, set:v=>{ st.phase=v; scan(root); }, redraw:()=>draw(root) });
     }};
@@ -194,6 +196,7 @@ Object.assign(LABS, (function(){
     let st = { lam:0, prior:50, ebn0:6 };
 
     function draw(root){
+      const gh = GH(root);
       const p0 = st.prior/100, p1 = 1-p0;
       const ebn0 = Math.pow(10, st.ebn0/10);
       const Eb = 1, N0 = Eb/ebn0, sig = Math.sqrt(N0/2), A = Math.sqrt(Eb);
@@ -207,7 +210,7 @@ Object.assign(LABS, (function(){
 
       const g=(y,m)=>Math.exp(-(y-m)*(y-m)/(2*sig*sig))/(sig*Math.sqrt(2*Math.PI));
       const top = Math.max(p0,p1)/(sig*Math.sqrt(2*Math.PI));
-      const ax = P.Axes({w:800,h:300,xr:[-3*A,3*A],yr:[-0.05*top,1.25*top],
+      const ax = P.Axes({w:800,h:gh(300),xr:[-3*A,3*A],yr:[-0.05*top,1.25*top],
         xlabel:'y',ylabel:'P(s_m)\\,f_Y(y\\mid s_m)',pad:{l:60,r:26,t:26,b:44},
         xtarget:6,ytarget:4});
       ax.rect(-3*A,0,lam,1.2*top,{fill:P.COL.dec.err});
@@ -220,7 +223,7 @@ Object.assign(LABS, (function(){
       /* The range floats with the operating point, so the decades are taken
          from the range rather than written down. */
       const bLo = Math.log10(Math.max(1e-12,peOpt)) - 0.6, bHi = bLo + 2.2;
-      const bx = P.Axes({w:800,h:200,xr:[-1,1],yr:[bLo,bHi],
+      const bx = P.Axes({w:800,h:gh(200),xr:[-1,1],yr:[bLo,bHi],
         xlabel:'\\lambda/(2\\sqrt{E_b})',ylabel:'P_e',
         ytickfmt:P.decade, yticksOverride:P.decades(bLo,bHi), zeroAxes:false,
         pad:{l:60,r:26,t:26,b:44}, xtarget:5, ytarget:4});
@@ -275,6 +278,7 @@ Object.assign(LABS, (function(){
       root.addEventListener('input', e=>{ const k=e.target.dataset.v; if(!k) return;
         st[k]=parseInt(e.target.value,10); draw(root); });
       draw(root);
+      root.redraw = () => draw(root);
     }};
   })();
 
@@ -285,13 +289,14 @@ Object.assign(LABS, (function(){
     let st = { alpha:50, offset:0, noise:5 };
 
     function draw(root){
+      const gh = GH(root);
       const al = st.alpha/100, off = st.offset/100, nz = st.noise/100;
       const p = t => { const den = 1-4*al*al*t*t;
         if(Math.abs(den) < 1e-6) return sinc(t)*Math.PI/4;
         return sinc(t)*Math.cos(Math.PI*al*t)/den; };
 
       const noise = gauss(20260802, 4096, nz);
-      const ax = P.Axes({w:640,h:320,xr:[-1,1],yr:[-2.1,2.1],
+      const ax = P.Axes({w:640,h:gh(320),xr:[-1,1],yr:[-2.1,2.1],
         xlabel:'t/T_b',ylabel:'y(t)',pad:{l:54,r:26,t:26,b:44},xtarget:4,ytarget:4});
       let ni = 0;
       for(let pat=0;pat<64;pat++){
@@ -366,6 +371,7 @@ Object.assign(LABS, (function(){
       root.addEventListener('input', e=>{ const k=e.target.dataset.v; if(!k) return;
         st[k]=parseInt(e.target.value,10); draw(root); });
       draw(root);
+      root.redraw = () => draw(root);
     }};
   })();
 

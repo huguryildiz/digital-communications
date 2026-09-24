@@ -342,10 +342,11 @@ left over, not at the height their viewBox was authored with; a plot pair sittin
 column with an empty lower half is the same fault as a compressed laboratory. This is done at render
 time, in every display mode, by `growLabs()` in `build/src/90_app.js`: after the fit factor is
 settled it measures the spare height of the first column, scales every plot in `.plots` by one factor
-(capped at 2.2) and redraws. Growth never changes the fit factor, because it only uses height the
+(capped at 2.2) and redraws. Plots set side by side in a row count once in that measure. This holds
+for every laboratory, including those of a module not yet converted to slides. Growth never changes the fit factor, because it only uses height the
 column already has. A laboratory takes part by setting `root.redraw = () => draw(root)` in `mount()`
 and passing each desktop plot height through `LABS.KIT.GH(root)` (`h: ph ? 230 : gh(185)`); every
-laboratory in a converted module does both. The authored heights stay the minimum the laboratory is
+laboratory in the course does both. The authored heights stay the minimum the laboratory is
 designed at, and the phone heights are not scaled.
 
 A dense scene is split, one example or one idea a slide. Splitting is a renumbering: it is an edit to

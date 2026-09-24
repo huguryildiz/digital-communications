@@ -14,7 +14,7 @@
    from the probabilities on screen at the moment they are asked for.
    ========================================================================== */
 Object.assign(LABS, (function(){
-  const T = LABS.KIT.T, fmt = LABS.KIT.F;
+  const T = LABS.KIT.T, fmt = LABS.KIT.F, GH = LABS.KIT.GH;
   const P = PLOT, C = PLOT.COL;
 
   const lg = x => Math.log(x)/Math.LN2;
@@ -26,12 +26,13 @@ Object.assign(LABS, (function(){
     let st = { w1:40, w2:30, w3:20, w4:10 };
 
     function draw(root){
+      const gh = GH(root);
       const ps = norm([st.w1, st.w2, st.w3, st.w4]);
       const K = ps.length;
       const H = ent(ps), ceil = lg(K);
 
       const top = Math.max(...ps.map(p => p>0 ? -lg(p) : 0), ceil) * 1.18;
-      const a = P.Axes({w:600,h:380,xr:[0,K+0.8],yr:[-top*0.16,top],
+      const a = P.Axes({w:600,h:gh(380),xr:[0,K+0.8],yr:[-top*0.16,top],
         ylabel:'\\text{bits}', pad:{l:62,r:26,t:26,b:40},
         xticksOverride:[], zeroAxes:false,
         yticksOverride:[0,1,2,3,4,5,6,7,8].filter(v=>v<=top && (top<=5 || v%2===0))});
@@ -44,8 +45,12 @@ Object.assign(LABS, (function(){
       });
       a.hline(H,    {color:C.err, dash:'5 3'});
       a.hline(ceil, {color:C.h,   dash:'2 4'});
-      a.note(K+0.76, H + top*0.05, 'H(S)', {tex:true, fs:13, color:C.err, anchor:'end'});
-      a.note(0.06, ceil + top*0.05, '\\log_2 K', {tex:true, fs:13, color:C.h});
+      /* A label sits a fixed distance from its line however tall the plot is
+         drawn. H(S) never exceeds the ceiling, so its label goes under its line
+         and cannot land on the dotted one. */
+      const lift = top*0.05*380/gh(380);
+      a.note(K+0.76, H - 1.7*lift, 'H(S)', {tex:true, fs:13, color:C.err, anchor:'end'});
+      a.note(0.06, ceil + lift, '\\log_2 K', {tex:true, fs:13, color:C.h});
 
       root.querySelector('.plots').innerHTML = a.svg();
       root.querySelector('.ro').innerHTML = ps.map((p,i)=>
@@ -101,6 +106,7 @@ Object.assign(LABS, (function(){
       root.addEventListener('input', e=>{ const k=e.target.dataset.v; if(!k) return;
         st[k]=parseInt(e.target.value,10); draw(root); });
       draw(root);
+      root.redraw = () => draw(root);
     }};
   })();
 
@@ -152,6 +158,7 @@ Object.assign(LABS, (function(){
     }
 
     function draw(root){
+      const gh = GH(root);
       const ps = norm([st.w1, st.w2, st.w3, st.w4, st.w5]);
       const K = ps.length;
       const B = build(ps, st.high === 1);
@@ -160,7 +167,7 @@ Object.assign(LABS, (function(){
 
       const depth = Math.max(...B.code.map(c=>c.length));
       const span = Math.max(1, leaves-1);
-      const a = P.Axes({w:620,h:250,xr:[-0.4,depth+1.1],yr:[-0.6,span+0.6],
+      const a = P.Axes({w:620,h:gh(250),xr:[-0.4,depth+1.1],yr:[-0.6,span+0.6],
         pad:{l:16,r:16,t:16,b:16}, xticksOverride:[], yticksOverride:[],
         grid:false, zeroAxes:false, arrows:false});
       const Y = n => span - pos.get(n);
@@ -267,6 +274,7 @@ Object.assign(LABS, (function(){
       root.addEventListener('click', e=>{ const b=e.target.closest('[data-seg=high]'); if(!b) return;
         st.high=parseInt(b.dataset.val,10); draw(root); });
       draw(root);
+      root.redraw = () => draw(root);
       LABS.KIT.transport(root, { key:'phase', max:4, ms:700,
         get:()=>st.phase, set:v=>{ st.phase=v; }, redraw:()=>draw(root) });
     }};
@@ -300,12 +308,13 @@ Object.assign(LABS, (function(){
     };
 
     function draw(root){
+      const gh = GH(root);
       const p = st.p/100, q = st.q/100;
       const Pyx = matrix(st.ch, p);
       const now = use(Pyx, q), C = cap(Pyx);
 
       const top = Math.max(0.2, C.I*1.28);
-      const a = P.Axes({w:600,h:340,xr:[0,1],yr:[0,top],
+      const a = P.Axes({w:600,h:gh(340),xr:[0,1],yr:[0,top],
         xlabel:'P(X=x_0)', ylabel:'I(X;Y)\\;\\text{bits}',
         pad:{l:64,r:26,t:26,b:46}, xtarget:5, ytarget:5});
       a.curve(t => use(Pyx, t).I, {color:C.I > 0 ? PLOT.COL.in : PLOT.COL.noise, width:2.3});
@@ -389,6 +398,7 @@ Object.assign(LABS, (function(){
       root.addEventListener('click', e=>{ const b=e.target.closest('[data-seg=ch]'); if(!b) return;
         st.ch=parseInt(b.dataset.val,10); draw(root); });
       draw(root);
+      root.redraw = () => draw(root);
     }};
   })();
 

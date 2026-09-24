@@ -65,7 +65,7 @@ causes a poor fit, reflow the controls or readouts, or split the scene; do not s
 down or apply an unverified font override to every laboratory.
 
 **Laboratory figure-height rule.** A laboratory's plots fill their column (`DESIGN.md`, A slide).
-Every laboratory in a converted module sets `root.redraw` in `mount()` and draws each desktop plot at
+Every laboratory, in a converted module or not, sets `root.redraw` in `mount()` and draws each desktop plot at
 `gh(h)` from `LABS.KIT.GH(root)`; never hard-code a larger viewBox height to fill the column, because
 the spare height differs between normal display and lecture mode. Check it in a screenshot of both
 modes: the last plot ends within a few pixels of the foot of the control column.

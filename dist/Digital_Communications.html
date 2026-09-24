@@ -1110,7 +1110,9 @@ body[data-motion=reduced] .tsig-flow{ animation:none; }
 .scene.slide .lab figcaption{ font-size:calc(18px * var(--ts)); }
 .scene.slide .lab .readout dd{ font-size:calc(21px * var(--ts)); line-height:1.35; }
 .scene.slide .lab .lab-eq{ font-size:calc(22px * var(--ts)); }
-.scene.slide .lab > .cols{ height:100%; align-items:stretch; }
+/* Every laboratory, converted or not, is as tall as the stage leaves it, so its
+   plots can grow into the figure column (growLabs in 90_app.js). */
+.lab > .cols{ height:100%; align-items:stretch; }
 .scene.slide .lab > .cols > .col.stack{ justify-content:space-between; }
 .ctrls{
   display:grid; gap:18px 28px; grid-template-columns:repeat(2,minmax(0,1fr));
@@ -1274,9 +1276,9 @@ body[data-edition=instructor] .instr-inline{ display:inline; }
 #chrome button:hover{ color:var(--ink); background:var(--paper-3); }
 #chrome button[aria-pressed=true]{ color:var(--coral); }
 #chrome .navarrow{ font-size:16px; line-height:1; padding:4px 10px; letter-spacing:0; }
-#pagebox{ font:inherit; color:var(--ink); text-align:right; min-width:3ch;
+#pagebox{ font:inherit; color:var(--ink); text-align:center; min-width:3ch; box-sizing:content-box;
   background:transparent; border:1px solid var(--rule); border-radius:var(--radius);
-  padding:3px 4px; }
+  padding:3px 8px; }
 #pagebox:hover{ border-color:var(--muted); }
 #pagebox:focus{ outline:none; border-color:var(--coral); background:var(--paper-3); }
 
@@ -1604,7 +1606,7 @@ body[data-layout=phone] .scene.slide .cols{ grid-template-columns:minmax(0,1fr);
    rather than push the card past the edge of the screen. */
 body[data-layout=phone] .scene.slide .note > .note-h{ white-space:normal; max-width:calc(100% + 6px); text-align:left; }
 body[data-layout=phone] .scene.slide .cols.fill > .col{ justify-content:flex-start; }
-body[data-layout=phone] .scene.slide .lab > .cols{ height:auto; }
+body[data-layout=phone] .lab > .cols{ height:auto; }
 body[data-layout=phone] .scene.slide .lab > .cols > .col.stack{ justify-content:flex-start; }
 body[data-layout=phone] .scene.slide .cmp{ grid-template-columns:minmax(0,1fr); }
 body[data-layout=phone] .scene.slide .eq.side{ grid-template-columns:minmax(0,1fr); }
@@ -4527,7 +4529,7 @@ def _ss_figs():
        too, in the column as the factor has widened it. */
     /* The redraw writes the laboratory's equations afresh, so they are fitted
        to their width again. */
-    if(!host.dataset.capped && host.classList.contains('slide') && growLabs(inner, TARGET / k))
+    if(!host.dataset.capped && growLabs(inner, TARGET / k))
       fitEqs();
     if(k < 1){
       inner.style.height = (100 / k) + '%';
@@ -4661,21 +4663,33 @@ def _ss_figs():
       const col = lab.redraw && lab.querySelector(':scope > .cols > .col');
       const plots = col && col.querySelector('.plots');
       if(!plots) return;
+      /* the row the column is stretched to: a column that overflows grows with
+         its content, so its own height would hide the overflow */
+      const room = () => col.parentElement.clientHeight;
+      const gap = parseFloat(getComputedStyle(col).rowGap) || 0;
       const stack = () => Array.from(col.children).reduce((a,el) => {
         const m = getComputedStyle(el);
         return a + el.offsetHeight + parseFloat(m.marginTop||0) + parseFloat(m.marginBottom||0);
-      }, 0);
-      const drawn = () => Array.from(plots.querySelectorAll('.plot-wrap > svg'))
-        .reduce((a,s) => a + s.clientHeight, 0);
+      }, gap * (col.children.length - 1));
+      /* plots set side by side in a row count once, at the row's tallest */
+      const drawn = () => {
+        const rows = new Map();
+        plots.querySelectorAll('svg').forEach(s => {
+          if(s.parentElement.closest('svg, .katex, .legend')) return;
+          const top = Math.round(s.getBoundingClientRect().top);
+          rows.set(top, Math.max(rows.get(top) || 0, s.clientHeight));
+        });
+        return Array.from(rows.values()).reduce((a,h) => a + h, 0);
+      };
       let g = 1;
       for(let pass=0; pass<2; pass++){
-        const free = col.clientHeight - stack(), P = drawn();
+        const free = room() - stack(), P = drawn();
         if(!P || (pass === 0 && free < MIN_FREE) || (pass === 1 && free >= 0)) break;
         g = Math.min(CAP, g * (1 + free / P));
         lab.dataset.grow = g.toFixed(4);
         lab.redraw(); drew = true;
       }
-      if(stack() > col.clientHeight + 1){ delete lab.dataset.grow; lab.redraw(); }
+      if(stack() > room() + 1){ delete lab.dataset.grow; lab.redraw(); }
     });
     inner.style.height = hWas;
     return drew;
@@ -4724,7 +4738,7 @@ def _ss_figs():
     document.getElementById('crumb').textContent = (sc.sec||sc.module||'') + (sc.nav?' · '+sc.nav:'');
     const pb = document.getElementById('pagebox');
     if(document.activeElement!==pb) pb.value = S.i+1;
-    pb.style.width = String(n).length+1+'ch';
+    pb.style.width = String(n).length+1.5+'ch';
     document.getElementById('pagetotal').textContent = ' / '+n
       + (sc.steps?('  ·  step '+S.step+'/'+sc.steps):'');
     document.getElementById('srcref').textContent =
@@ -5534,7 +5548,7 @@ Object.assign(LABS, (function(){
        three different ways.
    ========================================================================== */
 Object.assign(LABS, (function(){
-  const T = LABS.KIT.T, M = LABS.KIT.M, fmt = LABS.KIT.F;
+  const T = LABS.KIT.T, M = LABS.KIT.M, fmt = LABS.KIT.F, GH = LABS.KIT.GH;
   const P = PLOT;
 
   function rng(seed){ let a=seed>>>0; return function(){
@@ -5613,6 +5627,7 @@ Object.assign(LABS, (function(){
     }
 
     function draw(root){
+      const gh = GH(root);
       const { out, E } = correlation();
       const N0 = Math.pow(10, -st.noise/10);
 
@@ -5630,7 +5645,7 @@ Object.assign(LABS, (function(){
       const snrHere = snrMax*Math.pow(peak/out[N], 2);
       const lossDb = 10*Math.log10(Math.max(1e-12, snrHere/snrMax));
 
-      const ax = P.Axes({w:780,h:220,xr:[-0.15,1.15],yr:[-0.4,2.1],
+      const ax = P.Axes({w:780,h:gh(220),xr:[-0.15,1.15],yr:[-0.4,2.1],
         xlabel:'t/T',ylabel:'s(t),\\;h_{\\mathrm{opt}}(t)',pad:{l:58,r:26,t:26,b:40},
         xtarget:5,ytarget:4});
       ax.curve(t=>pulse(t*TB),{color:P.COL.in,width:2.2,n:600});
@@ -5645,7 +5660,7 @@ Object.assign(LABS, (function(){
         ax.area(t=>Math.min(pulse(t*TB), pulse((tau-t)*TB)), 0, 1, {color:P.COL.dec.h});
       }
 
-      const bx = P.Axes({w:780,h:220,xr:[0,1],yr:[-0.15*out[N],1.25*out[N]],
+      const bx = P.Axes({w:780,h:gh(220),xr:[0,1],yr:[-0.15*out[N],1.25*out[N]],
         xlabel:'\\text{sampling instant},\\;t/T',ylabel:'\\text{filter output}',
         pad:{l:60,r:26,t:26,b:44},xtarget:5,ytarget:4});
       /* The curve is the running integral of that shaded overlap, so during
@@ -5707,6 +5722,7 @@ Object.assign(LABS, (function(){
       root.addEventListener('click', e=>{ const b=e.target.closest('[data-seg=shape]'); if(!b) return;
         st.shape=b.dataset.val; draw(root); });
       draw(root);
+      root.redraw = () => draw(root);
       LABS.KIT.transport(root, { key:'phase', max:40, ms:90,
         get:()=>st.phase, set:v=>{ st.phase=v; scan(root); }, redraw:()=>draw(root) });
     }};
@@ -5719,6 +5735,7 @@ Object.assign(LABS, (function(){
     let st = { lam:0, prior:50, ebn0:6 };
 
     function draw(root){
+      const gh = GH(root);
       const p0 = st.prior/100, p1 = 1-p0;
       const ebn0 = Math.pow(10, st.ebn0/10);
       const Eb = 1, N0 = Eb/ebn0, sig = Math.sqrt(N0/2), A = Math.sqrt(Eb);
@@ -5732,7 +5749,7 @@ Object.assign(LABS, (function(){
 
       const g=(y,m)=>Math.exp(-(y-m)*(y-m)/(2*sig*sig))/(sig*Math.sqrt(2*Math.PI));
       const top = Math.max(p0,p1)/(sig*Math.sqrt(2*Math.PI));
-      const ax = P.Axes({w:800,h:300,xr:[-3*A,3*A],yr:[-0.05*top,1.25*top],
+      const ax = P.Axes({w:800,h:gh(300),xr:[-3*A,3*A],yr:[-0.05*top,1.25*top],
         xlabel:'y',ylabel:'P(s_m)\\,f_Y(y\\mid s_m)',pad:{l:60,r:26,t:26,b:44},
         xtarget:6,ytarget:4});
       ax.rect(-3*A,0,lam,1.2*top,{fill:P.COL.dec.err});
@@ -5745,7 +5762,7 @@ Object.assign(LABS, (function(){
       /* The range floats with the operating point, so the decades are taken
          from the range rather than written down. */
       const bLo = Math.log10(Math.max(1e-12,peOpt)) - 0.6, bHi = bLo + 2.2;
-      const bx = P.Axes({w:800,h:200,xr:[-1,1],yr:[bLo,bHi],
+      const bx = P.Axes({w:800,h:gh(200),xr:[-1,1],yr:[bLo,bHi],
         xlabel:'\\lambda/(2\\sqrt{E_b})',ylabel:'P_e',
         ytickfmt:P.decade, yticksOverride:P.decades(bLo,bHi), zeroAxes:false,
         pad:{l:60,r:26,t:26,b:44}, xtarget:5, ytarget:4});
@@ -5800,6 +5817,7 @@ Object.assign(LABS, (function(){
       root.addEventListener('input', e=>{ const k=e.target.dataset.v; if(!k) return;
         st[k]=parseInt(e.target.value,10); draw(root); });
       draw(root);
+      root.redraw = () => draw(root);
     }};
   })();
 
@@ -5810,13 +5828,14 @@ Object.assign(LABS, (function(){
     let st = { alpha:50, offset:0, noise:5 };
 
     function draw(root){
+      const gh = GH(root);
       const al = st.alpha/100, off = st.offset/100, nz = st.noise/100;
       const p = t => { const den = 1-4*al*al*t*t;
         if(Math.abs(den) < 1e-6) return sinc(t)*Math.PI/4;
         return sinc(t)*Math.cos(Math.PI*al*t)/den; };
 
       const noise = gauss(20260802, 4096, nz);
-      const ax = P.Axes({w:640,h:320,xr:[-1,1],yr:[-2.1,2.1],
+      const ax = P.Axes({w:640,h:gh(320),xr:[-1,1],yr:[-2.1,2.1],
         xlabel:'t/T_b',ylabel:'y(t)',pad:{l:54,r:26,t:26,b:44},xtarget:4,ytarget:4});
       let ni = 0;
       for(let pat=0;pat<64;pat++){
@@ -5891,6 +5910,7 @@ Object.assign(LABS, (function(){
       root.addEventListener('input', e=>{ const k=e.target.dataset.v; if(!k) return;
         st[k]=parseInt(e.target.value,10); draw(root); });
       draw(root);
+      root.redraw = () => draw(root);
     }};
   })();
 
@@ -5912,7 +5932,7 @@ Object.assign(LABS, (function(){
    7.1, which is the sampling theorem, where the procedure is 8.1.
    ========================================================================== */
 Object.assign(LABS, (function(){
-  const T = LABS.KIT.T, M = LABS.KIT.M, fmt = LABS.KIT.F;
+  const T = LABS.KIT.T, M = LABS.KIT.M, fmt = LABS.KIT.F, GH = LABS.KIT.GH;
   const P = PLOT;
 
   const F = (() => {
@@ -5974,13 +5994,14 @@ Object.assign(LABS, (function(){
     }
 
     function draw(root){
+      const gh = GH(root);
       const set = SETS[st.set];
       const idx = [[0,1,2],[1,2,0],[2,0,1]][st.order % 3];
       const sigs = idx.map(i=>sample(set.fs[i]));
       const { basis, coords } = gramSchmidt(sigs);
 
       const wave = (arr, name, colour) => {
-        const a = P.Axes({w:250,h:150,xr:[0,TMAX],yr:[-1.8,1.8],
+        const a = P.Axes({w:250,h:gh(150),xr:[0,TMAX],yr:[-1.8,1.8],
           xlabel:'t',ylabel:name,pad:{l:44,r:16,t:22,b:34},xtarget:3,ytarget:3});
         a.poly(arr.map((v,i)=>[(i+0.5)*dt, v]),{color:colour,width:2});
         return a.svg();
@@ -5993,7 +6014,7 @@ Object.assign(LABS, (function(){
          picture; in three the third is named in the readout instead. */
       const xs = coords.map(c=>c[0]||0), ys = coords.map(c=>c[1]||0);
       const lim = Math.max(1, ...xs.map(Math.abs), ...ys.map(Math.abs))*1.35;
-      const cx = P.Axes({w:420,h:300,xr:[-lim,lim],yr:[-lim,lim],
+      const cx = P.Axes({w:420,h:gh(300),xr:[-lim,lim],yr:[-lim,lim],
         xlabel:'\\psi_1',ylabel:'\\psi_2',pad:{l:52,r:24,t:26,b:42},xtarget:4,ytarget:4});
       /* The points are not labelled in the figure. Each takes the colour of the
          waveform it came from, and the coordinates are listed in order in the
@@ -6005,9 +6026,10 @@ Object.assign(LABS, (function(){
          stylesheet every scene in the course reads. */
       /* An svg with a viewBox and no width fills whatever box it is put in, so
          each one is given a box of its own. Without this the three signals are
-         drawn a column wide each and the laboratory is three screens tall. */
+         drawn a column wide each and the laboratory is three screens tall. A
+         box is a third of the column, so a row of three spans it. */
       const row = 'display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start';
-      const cell = h => `<div style="flex:0 0 240px;max-width:240px">${h}</div>`;
+      const cell = h => `<div style="flex:0 0 calc((100% - 28px)/3);min-width:0">${h}</div>`;
       root.querySelector('.plots').innerHTML =
         `<div style="${row}">${sigs.map((s,k)=>cell(wave(s,'s_'+(k+1)+'(t)',cols[k]))).join('')}</div>` +
         `<div style="${row}">${basis.map((b,k)=>cell(wave(b,'\\psi_'+(k+1)+'(t)',P.COL.h))).join('')}</div>` +
@@ -6073,6 +6095,7 @@ Object.assign(LABS, (function(){
       root.addEventListener('click', e=>{ const b=e.target.closest('[data-seg=set]'); if(!b) return;
         st.set=b.dataset.val; draw(root); });
       draw(root);
+      root.redraw = () => draw(root);
     }};
   })();
 
@@ -6095,7 +6118,7 @@ Object.assign(LABS, (function(){
    simulation that agreed with the bound by construction would prove nothing.
    ========================================================================== */
 Object.assign(LABS, (function(){
-  const T = LABS.KIT.T, fmt = LABS.KIT.F;
+  const T = LABS.KIT.T, fmt = LABS.KIT.F, GH = LABS.KIT.GH;
   const P = PLOT;
 
   function rng(seed){ let a=seed>>>0; return function(){
@@ -6131,6 +6154,7 @@ Object.assign(LABS, (function(){
     }
 
     function draw(root){
+      const gh = GH(root);
       const pts = points();
       const M = pts.length;
       const esn0 = Math.pow(10, st.esn0/10);
@@ -6169,7 +6193,7 @@ Object.assign(LABS, (function(){
       const measured = wrong/nTrial;
 
       const lim = Math.max(...pts.map(p=>Math.max(Math.abs(p[0]),Math.abs(p[1]))))*1.9 + 0.4;
-      const a = P.Axes({w:600,h:420,xr:[-lim,lim],yr:[-lim,lim],
+      const a = P.Axes({w:600,h:gh(420),xr:[-lim,lim],yr:[-lim,lim],
         xlabel:'\\psi_1',ylabel:'\\psi_2',pad:{l:56,r:26,t:28,b:44},xtarget:4,ytarget:4});
       const REG = [P.COL.dec.in,P.COL.dec.out,P.COL.dec.mid,P.COL.dec.h,P.COL.dec.err];
       const n = 92, step = 2*lim/n;
@@ -6246,6 +6270,7 @@ Object.assign(LABS, (function(){
       root.addEventListener('click', e=>{ const b=e.target.closest('[data-seg=set]'); if(!b) return;
         st.set=b.dataset.val; draw(root); });
       draw(root);
+      root.redraw = () => draw(root);
     }};
   })();
 
@@ -6269,7 +6294,7 @@ Object.assign(LABS, (function(){
    point is nearest. Nothing is shared between them but the constellation.
    ========================================================================== */
 Object.assign(LABS, (function(){
-  const T = LABS.KIT.T, fmt = LABS.KIT.F;
+  const T = LABS.KIT.T, fmt = LABS.KIT.F, GH = LABS.KIT.GH;
   const P = PLOT;
 
   function rng(seed){ let a=seed>>>0; return function(){
@@ -6365,11 +6390,12 @@ Object.assign(LABS, (function(){
     const MARKS = [0,2,4,6,8,10,12,14,16,18,20];
 
     function draw(root){
+      const gh = GH(root);
       const g = geometry(st.set);
       const nTrial = [400, 1500, 5000, 20000][st.trials - 1] || 5000;
       const cl = v => Math.log10(Math.max(1e-12, v));
 
-      const a = P.Axes({w:600,h:420,xr:[0,20],yr:[-5.4,-0.02],
+      const a = P.Axes({w:600,h:gh(420),xr:[0,20],yr:[-5.4,-0.02],
         xlabel:'E_s/N_0\\;(\\mathrm{dB})', ylabel:'P_s', ytickfmt:P.decade, yticksOverride:P.decades(-5,-1), zeroAxes:false,
         pad:{l:60,r:26,t:26,b:46}, xtarget:5, ytarget:6});
       a.curve(d=>cl(closed(g, d)), {color:P.COL.in, width:2.2});
@@ -6464,6 +6490,7 @@ Object.assign(LABS, (function(){
       root.addEventListener('click', e=>{ const b=e.target.closest('[data-seg=set]'); if(!b) return;
         st.set=b.dataset.val; draw(root); });
       draw(root);
+      root.redraw = () => draw(root);
       LABS.KIT.transport(root, { key:'phase', max:25, ms:140,
         get:()=>st.phase, set:v=>{ st.phase=v; }, redraw:()=>draw(root) });
     }};
@@ -7365,7 +7392,7 @@ plt.show()`}
    from the probabilities on screen at the moment they are asked for.
    ========================================================================== */
 Object.assign(LABS, (function(){
-  const T = LABS.KIT.T, fmt = LABS.KIT.F;
+  const T = LABS.KIT.T, fmt = LABS.KIT.F, GH = LABS.KIT.GH;
   const P = PLOT, C = PLOT.COL;
 
   const lg = x => Math.log(x)/Math.LN2;
@@ -7377,12 +7404,13 @@ Object.assign(LABS, (function(){
     let st = { w1:40, w2:30, w3:20, w4:10 };
 
     function draw(root){
+      const gh = GH(root);
       const ps = norm([st.w1, st.w2, st.w3, st.w4]);
       const K = ps.length;
       const H = ent(ps), ceil = lg(K);
 
       const top = Math.max(...ps.map(p => p>0 ? -lg(p) : 0), ceil) * 1.18;
-      const a = P.Axes({w:600,h:380,xr:[0,K+0.8],yr:[-top*0.16,top],
+      const a = P.Axes({w:600,h:gh(380),xr:[0,K+0.8],yr:[-top*0.16,top],
         ylabel:'\\text{bits}', pad:{l:62,r:26,t:26,b:40},
         xticksOverride:[], zeroAxes:false,
         yticksOverride:[0,1,2,3,4,5,6,7,8].filter(v=>v<=top && (top<=5 || v%2===0))});
@@ -7395,8 +7423,12 @@ Object.assign(LABS, (function(){
       });
       a.hline(H,    {color:C.err, dash:'5 3'});
       a.hline(ceil, {color:C.h,   dash:'2 4'});
-      a.note(K+0.76, H + top*0.05, 'H(S)', {tex:true, fs:13, color:C.err, anchor:'end'});
-      a.note(0.06, ceil + top*0.05, '\\log_2 K', {tex:true, fs:13, color:C.h});
+      /* A label sits a fixed distance from its line however tall the plot is
+         drawn. H(S) never exceeds the ceiling, so its label goes under its line
+         and cannot land on the dotted one. */
+      const lift = top*0.05*380/gh(380);
+      a.note(K+0.76, H - 1.7*lift, 'H(S)', {tex:true, fs:13, color:C.err, anchor:'end'});
+      a.note(0.06, ceil + lift, '\\log_2 K', {tex:true, fs:13, color:C.h});
 
       root.querySelector('.plots').innerHTML = a.svg();
       root.querySelector('.ro').innerHTML = ps.map((p,i)=>
@@ -7452,6 +7484,7 @@ Object.assign(LABS, (function(){
       root.addEventListener('input', e=>{ const k=e.target.dataset.v; if(!k) return;
         st[k]=parseInt(e.target.value,10); draw(root); });
       draw(root);
+      root.redraw = () => draw(root);
     }};
   })();
 
@@ -7503,6 +7536,7 @@ Object.assign(LABS, (function(){
     }
 
     function draw(root){
+      const gh = GH(root);
       const ps = norm([st.w1, st.w2, st.w3, st.w4, st.w5]);
       const K = ps.length;
       const B = build(ps, st.high === 1);
@@ -7511,7 +7545,7 @@ Object.assign(LABS, (function(){
 
       const depth = Math.max(...B.code.map(c=>c.length));
       const span = Math.max(1, leaves-1);
-      const a = P.Axes({w:620,h:250,xr:[-0.4,depth+1.1],yr:[-0.6,span+0.6],
+      const a = P.Axes({w:620,h:gh(250),xr:[-0.4,depth+1.1],yr:[-0.6,span+0.6],
         pad:{l:16,r:16,t:16,b:16}, xticksOverride:[], yticksOverride:[],
         grid:false, zeroAxes:false, arrows:false});
       const Y = n => span - pos.get(n);
@@ -7618,6 +7652,7 @@ Object.assign(LABS, (function(){
       root.addEventListener('click', e=>{ const b=e.target.closest('[data-seg=high]'); if(!b) return;
         st.high=parseInt(b.dataset.val,10); draw(root); });
       draw(root);
+      root.redraw = () => draw(root);
       LABS.KIT.transport(root, { key:'phase', max:4, ms:700,
         get:()=>st.phase, set:v=>{ st.phase=v; }, redraw:()=>draw(root) });
     }};
@@ -7651,12 +7686,13 @@ Object.assign(LABS, (function(){
     };
 
     function draw(root){
+      const gh = GH(root);
       const p = st.p/100, q = st.q/100;
       const Pyx = matrix(st.ch, p);
       const now = use(Pyx, q), C = cap(Pyx);
 
       const top = Math.max(0.2, C.I*1.28);
-      const a = P.Axes({w:600,h:340,xr:[0,1],yr:[0,top],
+      const a = P.Axes({w:600,h:gh(340),xr:[0,1],yr:[0,top],
         xlabel:'P(X=x_0)', ylabel:'I(X;Y)\\;\\text{bits}',
         pad:{l:64,r:26,t:26,b:46}, xtarget:5, ytarget:5});
       a.curve(t => use(Pyx, t).I, {color:C.I > 0 ? PLOT.COL.in : PLOT.COL.noise, width:2.3});
@@ -7740,6 +7776,7 @@ Object.assign(LABS, (function(){
       root.addEventListener('click', e=>{ const b=e.target.closest('[data-seg=ch]'); if(!b) return;
         st.ch=parseInt(b.dataset.val,10); draw(root); });
       draw(root);
+      root.redraw = () => draw(root);
     }};
   })();
 

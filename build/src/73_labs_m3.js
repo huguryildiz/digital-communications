@@ -10,7 +10,7 @@
    7.1, which is the sampling theorem, where the procedure is 8.1.
    ========================================================================== */
 Object.assign(LABS, (function(){
-  const T = LABS.KIT.T, M = LABS.KIT.M, fmt = LABS.KIT.F;
+  const T = LABS.KIT.T, M = LABS.KIT.M, fmt = LABS.KIT.F, GH = LABS.KIT.GH;
   const P = PLOT;
 
   const F = (() => {
@@ -72,13 +72,14 @@ Object.assign(LABS, (function(){
     }
 
     function draw(root){
+      const gh = GH(root);
       const set = SETS[st.set];
       const idx = [[0,1,2],[1,2,0],[2,0,1]][st.order % 3];
       const sigs = idx.map(i=>sample(set.fs[i]));
       const { basis, coords } = gramSchmidt(sigs);
 
       const wave = (arr, name, colour) => {
-        const a = P.Axes({w:250,h:150,xr:[0,TMAX],yr:[-1.8,1.8],
+        const a = P.Axes({w:250,h:gh(150),xr:[0,TMAX],yr:[-1.8,1.8],
           xlabel:'t',ylabel:name,pad:{l:44,r:16,t:22,b:34},xtarget:3,ytarget:3});
         a.poly(arr.map((v,i)=>[(i+0.5)*dt, v]),{color:colour,width:2});
         return a.svg();
@@ -91,7 +92,7 @@ Object.assign(LABS, (function(){
          picture; in three the third is named in the readout instead. */
       const xs = coords.map(c=>c[0]||0), ys = coords.map(c=>c[1]||0);
       const lim = Math.max(1, ...xs.map(Math.abs), ...ys.map(Math.abs))*1.35;
-      const cx = P.Axes({w:420,h:300,xr:[-lim,lim],yr:[-lim,lim],
+      const cx = P.Axes({w:420,h:gh(300),xr:[-lim,lim],yr:[-lim,lim],
         xlabel:'\\psi_1',ylabel:'\\psi_2',pad:{l:52,r:24,t:26,b:42},xtarget:4,ytarget:4});
       /* The points are not labelled in the figure. Each takes the colour of the
          waveform it came from, and the coordinates are listed in order in the
@@ -103,9 +104,10 @@ Object.assign(LABS, (function(){
          stylesheet every scene in the course reads. */
       /* An svg with a viewBox and no width fills whatever box it is put in, so
          each one is given a box of its own. Without this the three signals are
-         drawn a column wide each and the laboratory is three screens tall. */
+         drawn a column wide each and the laboratory is three screens tall. A
+         box is a third of the column, so a row of three spans it. */
       const row = 'display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start';
-      const cell = h => `<div style="flex:0 0 240px;max-width:240px">${h}</div>`;
+      const cell = h => `<div style="flex:0 0 calc((100% - 28px)/3);min-width:0">${h}</div>`;
       root.querySelector('.plots').innerHTML =
         `<div style="${row}">${sigs.map((s,k)=>cell(wave(s,'s_'+(k+1)+'(t)',cols[k]))).join('')}</div>` +
         `<div style="${row}">${basis.map((b,k)=>cell(wave(b,'\\psi_'+(k+1)+'(t)',P.COL.h))).join('')}</div>` +
@@ -171,6 +173,7 @@ Object.assign(LABS, (function(){
       root.addEventListener('click', e=>{ const b=e.target.closest('[data-seg=set]'); if(!b) return;
         st.set=b.dataset.val; draw(root); });
       draw(root);
+      root.redraw = () => draw(root);
     }};
   })();
 

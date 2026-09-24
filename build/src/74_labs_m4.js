@@ -11,7 +11,7 @@
    simulation that agreed with the bound by construction would prove nothing.
    ========================================================================== */
 Object.assign(LABS, (function(){
-  const T = LABS.KIT.T, fmt = LABS.KIT.F;
+  const T = LABS.KIT.T, fmt = LABS.KIT.F, GH = LABS.KIT.GH;
   const P = PLOT;
 
   function rng(seed){ let a=seed>>>0; return function(){
@@ -47,6 +47,7 @@ Object.assign(LABS, (function(){
     }
 
     function draw(root){
+      const gh = GH(root);
       const pts = points();
       const M = pts.length;
       const esn0 = Math.pow(10, st.esn0/10);
@@ -85,7 +86,7 @@ Object.assign(LABS, (function(){
       const measured = wrong/nTrial;
 
       const lim = Math.max(...pts.map(p=>Math.max(Math.abs(p[0]),Math.abs(p[1]))))*1.9 + 0.4;
-      const a = P.Axes({w:600,h:420,xr:[-lim,lim],yr:[-lim,lim],
+      const a = P.Axes({w:600,h:gh(420),xr:[-lim,lim],yr:[-lim,lim],
         xlabel:'\\psi_1',ylabel:'\\psi_2',pad:{l:56,r:26,t:28,b:44},xtarget:4,ytarget:4});
       const REG = [P.COL.dec.in,P.COL.dec.out,P.COL.dec.mid,P.COL.dec.h,P.COL.dec.err];
       const n = 92, step = 2*lim/n;
@@ -162,6 +163,7 @@ Object.assign(LABS, (function(){
       root.addEventListener('click', e=>{ const b=e.target.closest('[data-seg=set]'); if(!b) return;
         st.set=b.dataset.val; draw(root); });
       draw(root);
+      root.redraw = () => draw(root);
     }};
   })();
 

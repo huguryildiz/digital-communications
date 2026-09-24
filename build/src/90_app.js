@@ -982,7 +982,7 @@ def _ss_figs():
        too, in the column as the factor has widened it. */
     /* The redraw writes the laboratory's equations afresh, so they are fitted
        to their width again. */
-    if(!host.dataset.capped && host.classList.contains('slide') && growLabs(inner, TARGET / k))
+    if(!host.dataset.capped && growLabs(inner, TARGET / k))
       fitEqs();
     if(k < 1){
       inner.style.height = (100 / k) + '%';
@@ -1116,21 +1116,33 @@ def _ss_figs():
       const col = lab.redraw && lab.querySelector(':scope > .cols > .col');
       const plots = col && col.querySelector('.plots');
       if(!plots) return;
+      /* the row the column is stretched to: a column that overflows grows with
+         its content, so its own height would hide the overflow */
+      const room = () => col.parentElement.clientHeight;
+      const gap = parseFloat(getComputedStyle(col).rowGap) || 0;
       const stack = () => Array.from(col.children).reduce((a,el) => {
         const m = getComputedStyle(el);
         return a + el.offsetHeight + parseFloat(m.marginTop||0) + parseFloat(m.marginBottom||0);
-      }, 0);
-      const drawn = () => Array.from(plots.querySelectorAll('.plot-wrap > svg'))
-        .reduce((a,s) => a + s.clientHeight, 0);
+      }, gap * (col.children.length - 1));
+      /* plots set side by side in a row count once, at the row's tallest */
+      const drawn = () => {
+        const rows = new Map();
+        plots.querySelectorAll('svg').forEach(s => {
+          if(s.parentElement.closest('svg, .katex, .legend')) return;
+          const top = Math.round(s.getBoundingClientRect().top);
+          rows.set(top, Math.max(rows.get(top) || 0, s.clientHeight));
+        });
+        return Array.from(rows.values()).reduce((a,h) => a + h, 0);
+      };
       let g = 1;
       for(let pass=0; pass<2; pass++){
-        const free = col.clientHeight - stack(), P = drawn();
+        const free = room() - stack(), P = drawn();
         if(!P || (pass === 0 && free < MIN_FREE) || (pass === 1 && free >= 0)) break;
         g = Math.min(CAP, g * (1 + free / P));
         lab.dataset.grow = g.toFixed(4);
         lab.redraw(); drew = true;
       }
-      if(stack() > col.clientHeight + 1){ delete lab.dataset.grow; lab.redraw(); }
+      if(stack() > room() + 1){ delete lab.dataset.grow; lab.redraw(); }
     });
     inner.style.height = hWas;
     return drew;
