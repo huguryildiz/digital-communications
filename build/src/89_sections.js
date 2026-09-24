@@ -102,11 +102,11 @@ CONTENT.SECTIONS = {
 
   M4: [
     { n:'4.0', title:'Opening',                        ids:['m4-open'] },
-    { n:'4.1', title:'The observation',                ids:['m4-observe','m4-noise'] },
-    { n:'4.2', title:'The decision rule',              ids:['m4-map','m4-mindist','m4-metric'] },
+    { n:'4.1', title:'The observation',                ids:['m4-observe','m4-noise','m4-lab-u'] },
+    { n:'4.2', title:'The decision rule',              ids:['m4-map','m4-mindist','m4-metric','m4-lab-v'] },
     { n:'4.3', title:'Decision regions',               ids:['m4-regions','m4-binary','m4-lab-g'] },
     { n:'4.4', title:'The union bound',                ids:[
-        'm4-pe','m4-union','m4-dmin','m4-intel','m4-ex-union','m4-ex-union-b'] },
+        'm4-pe','m4-union','m4-dmin','m4-intel','m4-ex-union','m4-ex-union-b','m4-lab-w'] },
     { n:'4.5', title:'Summary',                        ids:['m4-synth'] }
   ],
 
@@ -232,11 +232,11 @@ CONTENT.BOOK = {
   /* Module 4 is section 8.4 of the book, "M-ary Digital Modulation": 8.4.1 is
      the optimum receiver for M-ary signals in AWGN and 8.4.2 is the union
      bound. Both were read there. */
-  'm4-open':'8.4', 'm4-observe':'8.4.1', 'm4-noise':'8.4.1',
-  'm4-map':'8.4.1', 'm4-mindist':'8.4.1', 'm4-metric':'8.4.1',
+  'm4-open':'8.4', 'm4-observe':'8.4.1', 'm4-noise':'8.4.1', 'm4-lab-u':'8.4.1',
+  'm4-map':'8.4.1', 'm4-mindist':'8.4.1', 'm4-metric':'8.4.1', 'm4-lab-v':'8.4.1',
   'm4-regions':'8.4.1', 'm4-binary':'8.3.3', 'm4-lab-g':'8.4.1',
   'm4-pe':'8.4.1', 'm4-union':'8.4.2', 'm4-dmin':'8.4.2', 'm4-intel':'8.4.2',
-  'm4-ex-union':'8.4.2', 'm4-ex-union-b':'8.4.2',
+  'm4-ex-union':'8.4.2', 'm4-ex-union-b':'8.4.2', 'm4-lab-w':'8.4.2',
   'm4-synth':'8.4',
 
   /* Module 5 spans four sections of the book, each read there: 8.5 for M-ary

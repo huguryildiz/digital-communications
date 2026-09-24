@@ -385,14 +385,44 @@ const SC = [
   ]}
 ]},
 
-{ id:'m4-lab-g', module:'M4', nav:'Laboratory G', title:'Laboratory G · Constellations and decision regions',
+{ id:'m4-lab-g', module:'M4', nav:'Laboratory {lab} · Constellations and decision regions', title:'Laboratory {lab} · Constellations and decision regions',
   objective:'Let the reader move points and watch the regions and the error follow.',
-  keywords:'laboratory constellation decision regions noise error probability minimum distance',
-  steps:0, blocks:[
+  keywords:'laboratory constellation decision regions noise error probability minimum distance union bound drag',
+  slide:true, steps:0, blocks:[
   {t:'eyebrow', text:'Module 4 · Decision regions'},
-  {t:'title', text:'Laboratory G · Constellations and decision regions'},
-  {t:'body', html:'Choose a constellation and a noise level. The laboratory draws the decision regions from the rule and scatters the observations the receiver would actually see. It counts how many land in the wrong region, and compares that count with the union bound. Move the points closer and both numbers rise together.'},
+  {t:'title', text:'Laboratory {lab} · Constellations and decision regions'},
+  {t:'lede', text:'Choose a constellation, drag its points and set the noise. Compare the errors counted with the union bound.'},
   {t:'lab', id:'G'}
+]},
+
+/* TEMPORARY stubs — this worktree only, for testing Laboratories U, V and W.
+   The Module 4 scene rewrite on the scenes branch will replace this file. */
+{ id:'m4-lab-u', module:'M4', nav:'Laboratory {lab} · From waveform to point', title:'Laboratory {lab} · From waveform to point',
+  objective:'Let the reader send one symbol through noise and watch the correlators turn the waveform into a point.',
+  keywords:'laboratory correlator waveform noise signal space point observation vector send cloud interactive',
+  slide:true, steps:0, blocks:[
+  {t:'eyebrow', text:'Module 4 · The observation'},
+  {t:'title', text:'Laboratory {lab} · From waveform to point'},
+  {t:'lede', text:'Send a symbol and watch the two correlators integrate the noisy waveform into one point.'},
+  {t:'lab', id:'U'}
+]},
+{ id:'m4-lab-v', module:'M4', nav:'Laboratory {lab} · The MAP detector', title:'Laboratory {lab} · The MAP detector',
+  objective:'Let the reader move the prior and the threshold and see which threshold gives the smallest error.',
+  keywords:'laboratory map ml threshold prior weighted likelihood error area binary antipodal stream interactive',
+  slide:true, steps:0, blocks:[
+  {t:'eyebrow', text:'Module 4 · The decision rule'},
+  {t:'title', text:'Laboratory {lab} · The MAP detector'},
+  {t:'lede', text:'Set the prior and the noise. Compare the ML, the MAP and your own threshold by the red area they leave.'},
+  {t:'lab', id:'V'}
+]},
+{ id:'m4-lab-w', module:'M4', nav:'Laboratory {lab} · Error bounds against simulation', title:'Laboratory {lab} · Error bounds against simulation',
+  objective:'Let the reader compare the five error bounds with a Monte Carlo run on the same constellation.',
+  keywords:'laboratory union bound intelligent nearest neighbour minimum distance exponential bound monte carlo simulation interactive',
+  slide:true, steps:0, blocks:[
+  {t:'eyebrow', text:'Module 4 · The union bound'},
+  {t:'title', text:'Laboratory {lab} · Error bounds against simulation'},
+  {t:'lede', text:'Run the simulation and see which bound stays close to the measured points, and where.'},
+  {t:'lab', id:'W'}
 ]},
 
 /* ---------------------------------------------------------------- 4.4 ---- */
