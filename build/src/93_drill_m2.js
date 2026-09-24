@@ -10,6 +10,13 @@
    that fixes the noise level or the prior, and a detection question that
    carries a raised-cosine bandwidth or interference from the previous bit.
 
+   Three questions take their shape from textbook problems already in
+   examination form (content-writing.md, 2026-09-25): a filter that is not
+   matched or a sample at the wrong time (D2-11), a binary decision on a
+   Poisson count (D2-21), and a Nyquist pulse with a trapezoidal spectrum
+   (D2-26). Each replaced a "(variant)" that repeated a shape kept elsewhere,
+   under the same id, so the set stays at thirty.
+
    Every number is new. Each Q-function argument is a two-decimal value a
    table covers, and every stated number has an independent check in
    verify/drills_m2.py.
@@ -133,6 +140,80 @@ function noiseQ(f, xr, yr, o){
   if(o.yt) o.yt.forEach(v => a.hline(v, {color:C.muted}));
   return a.svg();
 }
+/* A receiver with one filter h(t) and one sample at t = t0. */
+function filtDiag(){
+  return P.blocks({w:760,h:150,items:[
+    {t:'text',x:14,y:58,label:'s(t)',tex:true,anchor:'start',fs:16,color:C.in},
+    {t:'arrow',x1:74,y1:62,x2:150,y2:62,color:C.in},
+    {t:'sum',x:164,y:62},
+    {t:'arrow',x1:164,y1:134,x2:164,y2:78,color:C.muted},
+    {t:'text',x:180,y:134,label:'w(t)',tex:true,anchor:'start',fs:15},
+    {t:'arrow',x1:178,y1:62,x2:300,y2:62,label:'x(t)',tex:true,color:C.out},
+    {t:'box',x:300,y:30,w:160,h:64,label:'h(t)',tex:true,color:C.h},
+    {t:'text',x:380,y:122,label:'Receive filter',fs:14},
+    {t:'arrow',x1:460,y1:62,x2:556,y2:62,label:'y(t)',tex:true,color:C.mid},
+    {t:'line',d:'M556,62 h22'},{t:'line',d:'M578,62 l22,-15'},
+    {t:'text',x:592,y:24,label:'\\text{sample at }t=t_0',tex:true,fs:13},
+    {t:'arrow',x1:606,y1:62,x2:748,y2:62,label:'Y=y(t_0)',tex:true,color:C.mid}
+  ]});
+}
+/* A signal-part output drawn against time, with the sampling instants marked:
+   pts is the polyline, marks [t, v, label, anchor, bad]. A sample taken at a
+   wrong instant is a fault and is drawn red. */
+function outT(pts, yr, yl, ys, marks){
+  const a = P.Axes({w:760, h:250, xr:[-0.5,6.8], yr, xlabel:'t\\;(\\mathrm{s})', ylabel:yl,
+    pad:{l:58,r:28,t:22,b:40}, xstep:1, ystep:ys});
+  a.poly(pts, {color:C.mid, width:2.4});
+  marks.forEach(([t, v, lab, anc, bad]) => { const col = bad ? C.err : C.mid;
+    a.vline(t, {color:C.muted}); a.point(t, v, {color:col, r:5});
+    a.note(t, v, lab, {tex:true, fs:15, color:col, anchor:anc, dx:anc==='end' ? -10 : 10, dy:-6}); });
+  return a.svg();
+}
+/* Poisson probabilities P(Z=k) for mean m, by the product m/1 * m/2 * ... */
+const pois = (m, k) => { let p = Math.exp(-m); for(let i=1;i<=k;i++) p *= m/i; return p; };
+/* The two conditional probability mass functions of a count as stems, with
+   the threshold. A dashed stem is message "0" and a solid one message "1".
+   A stem on the wrong side of the threshold is an error mass and is drawn
+   red. The count is drawn shifted by one, so the vertical axis sits at the
+   left edge and never runs through the stems at k = 0. */
+function pmfFig(m0, m1, lam, lamTex, K){
+  const top = Math.max(pois(m0, Math.floor(m0)), pois(m1, Math.floor(m1))), off = 1;
+  const xt = []; for(let k=0;k<=K;k++) xt.push(k + off);
+  const a = P.Axes({w:760, h:260, xr:[0, K + off + 0.8], yr:[-0.04*top, 1.42*top], xlabel:'k',
+    ylabel:'P(Z=k\\mid m)', pad:{l:66,r:28,t:24,b:42}, ytarget:3,
+    xticksOverride:xt, xtickfmt: u => String(Math.round(u - off))});
+  const stems = (m, dx, dash, bad) => { for(let k=0;k<=K;k++){ const v = pois(m, k);
+    const col = bad(k) ? C.err : C.mid, X = a.sx(k + off + dx), Y0 = a.sy(0), Y = a.sy(v);
+    a.raw(`<line x1="${X.toFixed(2)}" y1="${Y0.toFixed(2)}" x2="${X.toFixed(2)}" y2="${Y.toFixed(2)}" stroke="${col}" stroke-width="2"${dash ? ` stroke-dasharray="${dash}"` : ''}/>`);
+    a.raw(P.stemTip(X, Y, 3.6, v, col)); } };
+  stems(m0, -0.17, '4 3', k => k > lam);
+  stems(m1, 0.17, null, k => k < lam);
+  a.vline(lam + off, {color:C.ink, dash:'6 4', width:1.6, opacity:1});
+  a.note(lam + off, 1.3*top, lamTex, {tex:true, fs:15, anchor:'start', dx:7, color:C.ink});
+  a.note(m0 + off - 2.3, 1.2*top, 'P(Z=k\\mid 0)', {tex:true, fs:15, anchor:'start', color:C.mid});
+  a.note(m1 + off + 1.3, pois(m1, Math.floor(m1)) + 0.1*top, 'P(Z=k\\mid 1)', {tex:true, fs:15, anchor:'start', color:C.mid});
+  return a.svg();
+}
+/* The trapezoid S(f) of sinc(at)sinc(bt) and its copies at multiples of R,
+   all in kHz and ms. The sum of the copies is drawn in the colour sumCol. */
+function nyqFold(A, Bw, R, sumCol, tag){
+  const S = f => { const u = Math.abs(f);
+    return u <= (A-Bw)/2 ? 1/A : u <= (A+Bw)/2 ? ((A+Bw)/2 - u)/(A*Bw) : 0; };
+  /* drawn in u = f - lo, so the vertical axis sits at the left edge and does
+     not run through the spectrum or its tick labels */
+  const lo = -7.6, hi = 7.6, xt = [];
+  for(let v = -7; v <= 7; v++) xt.push(v - lo);
+  const on = (n) => u => { const f = u + lo; return Math.abs(f - n*R) <= (A+Bw)/2 ? S(f - n*R) : NaN; };
+  const a = P.Axes({w:760, h:250, xr:[0, hi - lo], yr:[-0.03,0.4], xlabel:'f\\;(\\mathrm{kHz})',
+    ylabel:'S(f-nR_b)\\;(\\mathrm{ms})', pad:{l:66,r:28,t:24,b:42},
+    xticksOverride:xt, xtickfmt: u => String(Math.round(u + lo)),
+    yticksOverride:[0.125,0.25], ytickfmt: v => P.fmt(v, 3)});
+  [-2,-1,1,2].forEach(n => a.curve(on(n), {color:C.mid, width:1.8, dash:'6 4', n:1600}));
+  a.curve(u => { let s = 0; for(let n=-3;n<=3;n++) s += S(u + lo - n*R); return s; }, {color:sumCol, width:2.8, n:1600});
+  a.curve(on(0), {color:C.in, width:2.4, n:1600});
+  a.note(0.4, 0.35, tag, {tex:true, fs:15, anchor:'start', color:C.ink});
+  return a.svg();
+}
 const tri = (a) => n => Math.abs(n) <= a ? (1 - Math.abs(n)/a)/a : 0;
 const lap = (b) => n => Math.exp(-Math.abs(n)/b)/(2*b);
 const expo = (mu) => y => y >= 0 ? Math.exp(-y/mu)/mu : 0;
@@ -148,11 +229,25 @@ CONTENT.DRILLTYPES.M2 = [
             'With equal priors the threshold is midway between the coordinates, and $P_b=Q\\bigl(d/(2\\sigma)\\bigr)$ for coordinates a distance $d$ apart. With unequal priors, set the weighted densities equal.'],
     go:'m2-demod' },
 
+  { k:'mismatch', name:'A filter that is not matched, or a sample at the wrong time',
+    asks:'A pulse passes through its matched filter sampled early or late, or through a simpler filter. Find the output SNR at each instant, the best instant and the loss in dB.',
+    method:['The signal part of the output is $y_s(t)=\\int s(\\tau)h(t-\\tau)\\,d\\tau$. Compute it as an overlap, one piece at a time.',
+            'The noise variance $E[n^{2}(t_0)]=(N_0/2)\\int h^{2}(t)\\,dt$ is the same at every instant. Only the signal part changes with $t_0$.',
+            'The SNR is $\\eta=y_s^{2}(t_0)/E[n^{2}(t_0)]$. The loss in dB is $10\\log_{10}$ of the bound $2E/N_0$ divided by $\\eta$.'],
+    go:'m2-props' },
+
   { k:'nongauss', name:'Binary decision in noise that is not Gaussian',
     asks:'The sample is the noise, or the noise plus a constant. The noise density is triangular or Laplacian, or the sample is exponential. Find any constant, the error of a given rule, the optimal threshold and its error.',
     method:['Find the constant from $\\int f_N(n)\\,dn=1$ before anything else.',
             'For a rule $Y>t$, integrate each conditional density over the region where its message is decided wrongly. Do not use $Q$, because the noise is not Gaussian.',
             'The optimal threshold solves $p_0\\,f_Y(\\lambda\\mid 0)=p_1\\,f_Y(\\lambda\\mid 1)$. Compare the two densities region by region, because their expressions change at every corner.'],
+    go:'m2-threshold' },
+
+  { k:'count', name:'Binary decision on a count',
+    asks:'The sample is a whole number, such as a photon count, with a given probability for each value under each message. Find the rule and its error probabilities, first for equal priors and then for unequal ones.',
+    method:['Decide each value $k$ on its own. Choose “1” where $p_1P(Z=k\\mid 1)>p_0P(Z=k\\mid 0)$.',
+            'Divide the two probabilities and take logarithms. When the ratio grows with $k$, the rule is a threshold on the count. The first whole number above the threshold is decided as “1”.',
+            'Each conditional error is a finite sum of probabilities. Where the error region is infinite, use one minus the sum over the other region.'],
     go:'m2-threshold' },
 
   { k:'pam', name:'Binary PAM with priors, unequal variances or folded outputs',
@@ -174,7 +269,14 @@ CONTENT.DRILLTYPES.M2 = [
     method:['For raised-cosine pulses, $W=R_b/2$, $f_1=W(1-\\alpha)$ and $B_T=W(1+\\alpha)$.',
             'The energy per bit is $E_b=P/R_b$. A higher bit rate at the same received power gives a smaller $E_b$.',
             'Interference makes each conditional density a mixture of Gaussians. Average the conditional error over the values of the previous bit.'],
-    go:'m2-ex-rc' }
+    go:'m2-ex-rc' },
+
+  { k:'nyquist', name:'A Nyquist pulse that is not a raised cosine',
+    asks:'A pulse is given in time. Find its spectrum, choose its parameters for a bit rate and a channel bandwidth, and test whether it has zero interference at other rates.',
+    method:['A product in time is a convolution in frequency. Two rectangles convolve to a trapezoid.',
+            'Zero interference at $R_b$ needs $\\sum_nP(f-nR_b)=T_b$. Check the regions where neighbouring copies overlap.',
+            'Test a rate with the samples $p(kT_b)$ as well. One nonzero sample at some $k\\neq 0$ is enough to fail.'],
+    go:'m2-nyquist' }
 ];
 
 /* Wording shared by the matched-filter questions. */
@@ -417,33 +519,50 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   err:'Common error: writing $h(t)=(3-t)/3$ on $[0,3]$, a reversal about $t=3$ instead of about $T=4$. That filter peaks at the wrong time, and its output at $t=4$ is not the coordinate.',
   teach:'Compare with the waveforms of the rising-ramp question. The ramp that stops early moves the filter to the right.' },
 
-{ id:'D2-11', module:'M2', type:'mf', src:'MT Q3 (variant)',
-  stem: MF_STEM('6.25', 4),
-  figure: () => mfQ(4, [[0,4,-1]], [[0,4,3]], {yr:[-1.6,0.8], ys:1}, {yr:[-0.8,3.8], ys:1}),
-  parts:['<b>[5 pts]</b> Plot the impulse response of the matched filter, $h(t)=\\psi(T-t)$.',
-         '<b>[6 pts]</b> Without noise, find and plot the filter output $y(t)$ when $s_1(t)$ is sent. Give its value at $t=T$.',
-         '<b>[7 pts]</b> Determine the conditional PDFs, $f_Y(y\\mid 1)$ and $f_Y(y\\mid 0)$.',
-         '<b>[7 pts]</b> Find the optimal decision threshold ($\\lambda$) and calculate $P_b$.'],
-  sol:'<b>Given.</b> Equal priors, $N_0/2=6.25$ W/Hz and $T=4$ s. $s_1(t)=3$ and $s_0(t)=-1$ on $[0,4]$.<br>'
-     +'<b>Find.</b> $h(t)$, the noise-free output $y(t)$, the conditional PDFs, $\\lambda$ and $P_b$.<br>'
-     +'<b>Method.</b> The output of a linear filter is the convolution of its input with $h$. At $t=T$ it equals the correlation with $\\psi$, which is the coordinate.<br>'
-     +'<b>Solution — (a).</b> $E_1=\\int_0^49\\,dt=36$, so $\\psi(t)=3/6=1/2$ on $[0,4]$. A constant pulse is its own reversal: $h(t)=1/2$ on $[0,4]$.<br>'
-     +'<b>Solution — (b).</b> Write the convolution. The product $s_1(\\tau)h(t-\\tau)$ is $3\\cdot\\tfrac12=1.5$ where the two pulses overlap. $$y(t)=\\int_{-\\infty}^{\\infty}s_1(\\tau)h(t-\\tau)\\,d\\tau=1.5\\times(\\text{overlap length})$$ '
-     +'For $t\\in[0,4]$ the overlap is $[0,t]$, of length $t$. For $t\\in[4,8]$ it is $[t-4,4]$, of length $8-t$. $$y(t)=\\begin{cases}1.5t,&t\\in[0,4]\\\\1.5(8-t),&t\\in[4,8]\\\\0,&\\text{otherwise}\\end{cases}$$ The peak is $y(4)=6$, at the sampling instant.<br>'
-     +'<b>Solution — (c).</b> The coordinates are $s_1=6$ and $s_0=-2$. The variance is $\\sigma^{2}=6.25$, so $\\sigma=2.5$. $$f_Y(y\\mid 1)=0.1596\\,e^{-(y-6)^{2}/12.5},\\qquad f_Y(y\\mid 0)=0.1596\\,e^{-(y+2)^{2}/12.5}$$<br>'
-     +'<b>Solution — (d).</b> The threshold is midway: $\\lambda=(6-2)/2=2$. Each coordinate is $4$ from it. $$P_b=Q\\!\\left(\\frac{4}{2.5}\\right)=Q(1.60)=0.05480$$<br>'
-     +'<b>Check.</b> The correlator gives the same sample: $\\int_0^4s_1(t)\\psi(t)\\,dt=\\int_0^4\\tfrac32\\,dt=6$. This equals $y(4)$ from part (b).',
-  figSol: () => { const a = P.Axes({w:760,h:250,xr:[-0.5,8.8],yr:[-0.6,7.4],xlabel:'t\\;(\\mathrm{s})',ylabel:'y(t)',
-      pad:{l:58,r:28,t:22,b:40},xstep:1,ystep:2});
-    a.poly([[-0.5,0],[0,0],[4,6],[8,0],[8.8,0]], {color:C.mid, width:2.4});
-    a.vline(4, {color:C.muted}); a.point(4, 6, {color:C.mid, r:5});
-    a.note(4.25, 6.3, 'y(T)=6', {tex:true, fs:15, color:C.mid});
-    return stack(760, [
-      [psiH(4, [[0,4,0.5]], [[0,4,0.5]], {yr:[-0.3,0.8], yt:[0.5], yf:frac(2)}), 220],
-      [a.svg(), 250],
-      [gdens(-2, 6, 6.25, 0.5, 2, [-10,14]), 300]]); },
-  err:'Common error: reading the peak of $y(t)$ as the amplitude $3$ of $s_1$. The matched-filter output at $T$ is the coordinate $\\sqrt{E_1}=6$, a different quantity with different units.',
-  teach:'The triangle in part (b) is worth drawing on the board. Only its value at $t=T$ reaches the decision.' },
+{ id:'D2-11', module:'M2', type:'mismatch', src:'Madhow P6.1 / P6.15',
+  stem:'The pulse $s(t)$ below is received in additive white Gaussian noise $w(t)$ of two-sided power spectral density $N_0/2=0.5$ W/Hz, with $T=3$ s. '
+     +'The received signal passes through a filter $h(t)$, and the output is sampled once, at $t=t_0$. '
+     +'Write $y_s(t)$ for the signal part of the filter output and $n(t)$ for its noise part. '
+     +'The output SNR at the sampling instant is $\\eta=y_s^{2}(t_0)/E[n^{2}(t_0)]$. According to the information given above,',
+  figure: () => stack(760, [
+    [row([[waveAx([[0,2,2],[2,3,-1]], 3, {yl:'s(t)', yr:[-1.6,2.6], ys:1}), 380],
+          [waveAx([[0,2,1]], 3, {yl:'h_2(t)', yr:[-0.4,1.4], ys:1, col:C.h}), 380]], 220), 220],
+    [filtDiag(), 150]]),
+  parts:['<b>[6 pts]</b> The filter is matched, $h(t)=s(T-t)$, and the output is sampled at $t_0=T$. Find $y_s(T)$, $E[n^{2}(T)]$ and $\\eta$.',
+         '<b>[6 pts]</b> The clock of the same receiver runs early and samples at $t_0=2.5$ s. Find $y_s(2.5)$ and $\\eta$.',
+         '<b>[8 pts]</b> The matched filter is replaced by $h_2(t)=1$ on $[0,2]$, shown above. Find and plot the signal part $z_s(t)$ of its output. Give the best sampling instant and $\\eta$ there.',
+         '<b>[5 pts]</b> Give the loss of part (b) and the loss of part (c) against part (a) in dB. Which fault costs more?'],
+  sol:'<b>Given.</b> $s(t)=2$ on $[0,2)$, $-1$ on $[2,3)$ and $0$ elsewhere. $T=3$ s and $N_0/2=0.5$ W/Hz, so $N_0=1$ W/Hz.<br>'
+     +'<b>Find.</b> $\\eta$ of the matched filter at $t_0=3$ and at $t_0=2.5$. The output $z_s(t)$ of $h_2$, its best instant and its $\\eta$. The two losses in dB.<br>'
+     +'<b>Method.</b> The signal part is a convolution, $y_s(t)=\\int s(\\tau)h(t-\\tau)\\,d\\tau$. The noise variance at the output is $E[n^{2}(t_0)]=(N_0/2)\\int h^{2}(t)\\,dt$. '
+     +'It does not depend on $t_0$, so only the signal part changes when the sample moves.<br>'
+     +'<b>Solution — (a).</b> Find the energy of the pulse, one piece at a time. $$\\begin{aligned}E&=\\int_0^2 2^{2}\\,dt+\\int_2^3(-1)^{2}\\,dt\\\\&=8+1=9\\end{aligned}$$ '
+     +'The argument $3-t$ lies in $[2,3)$ when $t\\in(0,1]$. So $h(t)=s(3-t)$ is $-1$ on $[0,1)$ and $2$ on $[1,3]$. '
+     +'At $t=3$ the filter is $h(3-\\tau)=s(\\tau)$, so the output is the energy of the pulse. $$y_s(3)=\\int_{-\\infty}^{\\infty}s(\\tau)h(3-\\tau)\\,d\\tau=\\int_0^3 s^{2}(\\tau)\\,d\\tau=9$$ '
+     +'The filter has the same energy as the pulse, $\\int h^{2}\\,dt=9$. $$\\begin{aligned}E[n^{2}(3)]&=\\frac{N_0}{2}\\int h^{2}(t)\\,dt=0.5(9)=4.5\\\\\\eta&=\\frac{9^{2}}{4.5}=\\frac{81}{4.5}=18\\end{aligned}$$ '
+     +'This is the bound $2E/N_0=2(9)/1=18$, that is $12.55$ dB.<br>'
+     +'<b>Solution — (b).</b> Put $t=2.5$ in the convolution. Since $h(t)=s(3-t)$, the filter is $h(2.5-\\tau)=s(\\tau+0.5)$. $$y_s(2.5)=\\int_0^3 s(\\tau)\\,s(\\tau+0.5)\\,d\\tau$$ '
+     +'The shifted pulse $s(\\tau+0.5)$ is $2$ for $\\tau<1.5$, $-1$ for $1.5\\le\\tau<2.5$ and $0$ after that. Multiply the two pulses on each piece. '
+     +'$$\\begin{aligned}y_s(2.5)&=\\int_0^{1.5}(2)(2)\\,d\\tau+\\int_{1.5}^{2}(2)(-1)\\,d\\tau\\\\&\\quad+\\int_2^{2.5}(-1)(-1)\\,d\\tau+\\int_{2.5}^{3}(-1)(0)\\,d\\tau\\\\&=6-1+0.5+0=5.5\\end{aligned}$$ '
+     +'The noise variance is still $4.5$. $$\\eta=\\frac{5.5^{2}}{4.5}=\\frac{30.25}{4.5}=6.722$$<br>'
+     +'<b>Solution — (c).</b> The filter $h_2(t-\\tau)$ is $1$ when $0\\le t-\\tau\\le2$, that is when $t-2\\le\\tau\\le t$. So the output is the area of $s$ over the last $2$ s. $$z_s(t)=\\int_{t-2}^{t}s(\\tau)\\,d\\tau$$ '
+     +'Work out this area for each position of the window. On $[2,3]$, for example, the window holds $2$ over $[t-2,2]$ and $-1$ over $[2,t]$. '
+     +'$$\\begin{aligned}0\\le t\\le2:&\\quad z_s(t)=\\int_0^t2\\,d\\tau=2t\\\\2\\le t\\le3:&\\quad z_s(t)=2(4-t)-(t-2)=10-3t\\\\3\\le t\\le4:&\\quad z_s(t)=2(4-t)-1=7-2t\\\\4\\le t\\le5:&\\quad z_s(t)=-\\bigl(3-(t-2)\\bigr)=t-5\\end{aligned}$$ '
+     +'Outside $[0,5]$ the output is zero. The largest size is $|z_s(2)|=4$, at the end of the rising piece. The other pieces stay between $-1$ and $4$. So the best instant is $t_0=2$ s, not $T=3$ s. '
+     +'The noise variance is $E[n^{2}]=0.5\\int_0^21^{2}\\,dt=0.5(2)=1$. $$\\eta=\\frac{4^{2}}{1}=16$$<br>'
+     +'<b>Solution — (d).</b> Divide the bound by each SNR and take $10\\log_{10}$. $$\\begin{aligned}L_b&=10\\log_{10}\\frac{18}{6.722}=10\\log_{10}2.678=4.28\\ \\text{dB}\\\\L_c&=10\\log_{10}\\frac{18}{16}=10\\log_{10}1.125=0.51\\ \\text{dB}\\end{aligned}$$ '
+     +'The early sample costs $4.28$ dB. The simpler filter, sampled at its own best instant, costs only $0.51$ dB. The timing fault costs more.<br>'
+     +'<b>Check.</b> The matched-filter output is a straight line between whole seconds, because every piece of $s$ starts and ends on a whole second. One second early, $$y_s(2)=\\int_0^3s(\\tau)s(\\tau+1)\\,d\\tau=\\int_0^1(2)(2)\\,d\\tau+\\int_1^2(2)(-1)\\,d\\tau=4-2=2.$$ '
+     +'Halfway between $y_s(2)=2$ and $y_s(3)=9$ is $5.5$, as in part (b). Both $6.722$ and $16$ stay below the bound $18$, as Schwarz\'s inequality requires.',
+  figSol: () => stack(760, [
+    [row([[waveAx([[0,2,2],[2,3,-1]], 3, {yl:'s(t)', yr:[-1.6,2.6], ys:1}), 380],
+          [waveAx([[0,1,-1],[1,3,2]], 3, {yl:'h(t)=s(3-t)', yr:[-1.6,2.6], ys:1, col:C.h}), 380]], 220), 220],
+    [outT([[-0.5,0],[0,0],[1,-2],[2,2],[3,9],[4,2],[5,-2],[6,0],[6.8,0]], [-3.5,12], 'y_s(t)', 3,
+      [[3,9,'y_s(3)=9','start'],[2.5,5.5,'y_s(2.5)=5.5','end',true]]), 250],
+    [outT([[-0.5,0],[0,0],[2,4],[3,1],[4,-1],[5,0],[6.8,0]], [-2,5.5], 'z_s(t)', 1,
+      [[2,4,'z_s(2)=4','end'],[3,1,'z_s(3)=1','start',true]]), 250]]),
+  err:'Common error: sampling the filter $h_2$ at $t=T=3$ s out of habit. There $z_s(3)=1$ and $\\eta=1$, a loss of $12.55$ dB. A filter that is not matched has its own best instant, read from its output.',
+  teach:'Parts (b) and (c) separate two faults. A timing error of one sixth of the pulse costs more than a simpler filter shape. This holds as long as that filter is sampled at its own peak.' },
 
 { id:'D2-12', module:'M2', type:'mf', src:'MT Q3 (variant)',
   stem:'Consider an additive white Gaussian noise channel with two-sided noise power spectral density $N_0/2=1$ W/Hz. '
@@ -658,26 +777,45 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   err:'Common error: comparing the unweighted densities and getting $\\lambda=2$. The priors multiply the densities before they are compared.',
   teach:'The error given “1” grows while the error given “0” shrinks. Ask why the weighted sum still falls.' },
 
-{ id:'D2-21', module:'M2', type:'nongauss', src:'MT Q4 (variant)',
-  stem:'In a binary digital communication system, the received sample is denoted by $Y$. '
-     +'If “0” is sent, $Y$ is exponentially distributed with mean $1$. If “1” is sent, $Y$ is exponentially distributed with mean $3$. '
-     +'The bit “0” is sent with probability $0.4$ and “1” with probability $0.6$.',
-  parts:['<b>[9 pts]</b> Calculate $P_b$ for the decision rule $Y\\underset{0}{\\overset{1}{\\gtrless}}2$.',
-         '<b>[8 pts]</b> Determine the optimal decision threshold ($\\lambda$) for these priors.',
-         '<b>[8 pts]</b> Calculate $P_b$ for the $\\lambda$ value obtained in part (b).'],
-  sol:'<b>Given.</b> $f_Y(y\\mid 0)=e^{-y}$ and $f_Y(y\\mid 1)=\\tfrac13e^{-y/3}$ for $y\\ge 0$. $p_0=0.4$ and $p_1=0.6$.<br>'
-     +'<b>Find.</b> $P_b$ for the rule $Y>2$, the optimal $\\lambda$, and $P_b$ at $\\lambda$.<br>'
-     +'<b>Method.</b> Integrate each exponential over its error region and weight by the priors. The threshold solves $p_0f_Y(\\lambda\\mid 0)=p_1f_Y(\\lambda\\mid 1)$.<br>'
-     +'<b>Solution — (a).</b> $$P(e\\mid 0)=\\int_2^{\\infty}e^{-y}\\,dy=e^{-2}=0.1353,\\qquad P(e\\mid 1)=\\int_0^2\\tfrac13e^{-y/3}\\,dy=1-e^{-2/3}=0.4866$$ '
-     +'$$P_b=0.4(0.1353)+0.6(0.4866)=0.05413+0.2919=0.3461$$<br>'
-     +'<b>Solution — (b).</b> $$\\begin{aligned}0.4\\,e^{-\\lambda}&=0.6\\cdot\\tfrac13e^{-\\lambda/3}=0.2\\,e^{-\\lambda/3}\\\\\\ln2&=\\lambda-\\frac{\\lambda}{3}=\\frac{2\\lambda}{3}\\\\\\lambda&=1.5\\ln2=1.040\\end{aligned}$$ Decide “1” when $Y>1.040$.<br>'
-     +'<b>Solution — (c).</b> Here $e^{-\\lambda}=2^{-1.5}$ and $e^{-\\lambda/3}=2^{-0.5}$. $$P(e\\mid 0)=2^{-1.5}=0.3536,\\qquad P(e\\mid 1)=1-2^{-0.5}=0.2929$$ '
-     +'$$P_b=0.4(0.3536)+0.6(0.2929)=0.1414+0.1757=0.3172$$<br>'
-     +'<b>Check.</b> The derivative of $P_b(t)=0.4e^{-t}+0.6\\left(1-e^{-t/3}\\right)$ is $-0.4e^{-t}+0.2e^{-t/3}$. At $t=1.040$ it is $-0.4(0.3536)+0.2(0.7071)=-0.1414+0.1414=0$.',
-  figSol: () => dens({xr:[-0.5,10], top:0.4, f0: y=>0.4*expo(1)(y), f1: y=>0.6*expo(3)(y), lams:[1.5*Math.log(2)], dec1: y=>y>1.5*Math.log(2), xs:1,
-    notes:[[1.5,0.62,'0.4\\,f_Y(y\\mid 0)','start'],[5,0.3,'0.6\\,f_Y(y\\mid 1)','start'],[1.5*Math.log(2),1.3,'\\lambda=1.040','middle','k']]}),
-  err:'Common error: forgetting the factor $\\tfrac13$ in $f_Y(y\\mid 1)$ when the priors are applied. The equation then gives $\\lambda=1.5\\ln(2/3)<0$, a threshold outside the range of $Y$.',
-  teach:'The more likely “1” pulls the threshold down from $1.648$ to $1.040$. Ask what prior would put the threshold at zero.' },
+/* ---- binary decision on a count ---------------------------------------- */
+
+{ id:'D2-21', module:'M2', type:'count', src:'Madhow P6.10',
+  stem:'An on-off optical link sends a light pulse for “1” and no pulse for “0”. The receiver counts the photons that arrive in one bit interval. '
+     +'Background light gives a few counts even when no pulse is sent. '
+     +'The count $Z$ is a Poisson random variable with mean $m_0=2$ if “0” is sent and $m_1=8$ if “1” is sent: $$P(Z=k\\mid m)=\\frac{e^{-m}m^{k}}{k!},\\qquad k=0,1,2,\\ldots$$ '
+     +'The count takes whole values only. According to this information,',
+  parts:['<b>[7 pts]</b> Assume equal priors. Show that the optimal rule compares $Z$ with a threshold, and find the smallest count that is decided as “1”.',
+         '<b>[6 pts]</b> Calculate the conditional error probabilities $P(e\\mid 0)$ and $P(e\\mid 1)$ of this rule.',
+         '<b>[6 pts]</b> The bit “1” is now sent with probability $0.2$. Find the optimal rule for these priors.',
+         '<b>[6 pts]</b> Calculate $P_b$ for the rule of part (c). Compare it with $P_b$ of the rule of part (a) at the same priors.'],
+  sol:'<b>Given.</b> $P(Z=k\\mid 0)=e^{-2}2^{k}/k!$ and $P(Z=k\\mid 1)=e^{-8}8^{k}/k!$ for $k=0,1,2,\\ldots$ The priors are equal in parts (a) and (b). In parts (c) and (d), $p_0=0.8$ and $p_1=0.2$.<br>'
+     +'<b>Find.</b> The rule and its threshold, $P(e\\mid 0)$, $P(e\\mid 1)$, the rule for the new priors, and $P_b$ of both rules.<br>'
+     +'<b>Method.</b> The count is a whole number, so each value $k$ is decided on its own. $P_b$ collects $p_0P(Z=k\\mid 0)$ for every $k$ decided as “1” and $p_1P(Z=k\\mid 1)$ for every $k$ decided as “0”. '
+     +'Each term is smallest when $k$ goes to the message with the larger weighted probability. This is the discrete form of $p_0f_Y(\\lambda\\mid 0)=p_1f_Y(\\lambda\\mid 1)$.<br>'
+     +'<b>Solution — (a).</b> With equal priors, decide “1” where $P(Z=k\\mid 1)>P(Z=k\\mid 0)$. Divide the two probabilities. The factor $k!$ cancels. '
+     +'$$\\begin{aligned}\\frac{P(Z=k\\mid 1)}{P(Z=k\\mid 0)}&=\\frac{e^{-8}8^{k}}{e^{-2}2^{k}}\\\\&=e^{-6}\\,4^{k}\\end{aligned}$$ '
+     +'Decide “1” when this ratio exceeds $1$. Take the natural logarithm of both sides. $$\\begin{aligned}-6+k\\ln4&>0\\\\k&>\\frac{6}{\\ln4}=\\frac{6}{1.3863}=4.328\\end{aligned}$$ '
+     +'Dividing by $\\ln4>0$ keeps the direction of the inequality. The ratio grows with $k$, so the rule is a threshold on the count. '
+     +'The first whole number above $4.328$ is $5$. Decide “1” when $Z\\ge5$ and “0” when $Z\\le4$.<br>'
+     +'<b>Solution — (b).</b> A “0” is decided wrongly when $Z\\ge5$. That region is infinite, so use one minus the probability of $Z\\le4$. '
+     +'$$\\begin{aligned}P(Z\\le4\\mid 0)&=e^{-2}\\left(1+2+\\frac{2^{2}}{2}+\\frac{2^{3}}{6}+\\frac{2^{4}}{24}\\right)\\\\&=e^{-2}(1+2+2+1.3333+0.6667)\\\\&=7e^{-2}=7(0.13534)=0.94735\\end{aligned}$$ '
+     +'So $P(e\\mid 0)=1-0.94735=0.05265$. A “1” is decided wrongly when $Z\\le4$, a sum of five terms. '
+     +'$$\\begin{aligned}P(e\\mid 1)&=e^{-8}\\left(1+8+\\frac{8^{2}}{2}+\\frac{8^{3}}{6}+\\frac{8^{4}}{24}\\right)\\\\&=e^{-8}(1+8+32+85.333+170.667)\\\\&=297e^{-8}=297(3.3546\\times10^{-4})=0.09963\\end{aligned}$$<br>'
+     +'<b>Solution — (c).</b> Now decide “1” where $0.2P(Z=k\\mid 1)>0.8P(Z=k\\mid 0)$. Divide both sides by $0.2P(Z=k\\mid 0)$ and use the ratio of part (a). '
+     +'$$\\begin{aligned}e^{-6}\\,4^{k}&>\\frac{0.8}{0.2}=4\\\\-6+k\\ln4&>\\ln4\\\\k&>\\frac{6}{\\ln4}+1=5.328\\end{aligned}$$ '
+     +'The first whole number above $5.328$ is $6$. Decide “1” when $Z\\ge6$ and “0” when $Z\\le5$. The threshold moved up by one count, away from the more likely “0”.<br>'
+     +'<b>Solution — (d).</b> The new rule moves the count $k=5$ from “1” to “0”. Find its two probabilities. '
+     +'$$\\begin{aligned}P(Z=5\\mid 0)&=e^{-2}\\,\\frac{2^{5}}{120}=0.13534(0.26667)=0.03609\\\\P(Z=5\\mid 1)&=e^{-8}\\,\\frac{8^{5}}{120}=3.3546\\times10^{-4}(273.07)=0.09160\\end{aligned}$$ '
+     +'A “0” is now wrong only when $Z\\ge6$, and a “1” is wrong when $Z\\le5$. $$\\begin{aligned}P(e\\mid 0)&=0.05265-0.03609=0.01656\\\\P(e\\mid 1)&=0.09963+0.09160=0.19124\\end{aligned}$$ '
+     +'Weight each error by its prior. $$\\begin{aligned}P_b&=0.8(0.01656)+0.2(0.19124)\\\\&=0.01325+0.03825=0.05150\\end{aligned}$$ '
+     +'The rule of part (a) at these priors gives $0.8(0.05265)+0.2(0.09963)=0.04212+0.01993=0.06205$. The new rule is $17\\%$ lower.<br>'
+     +'<b>Check.</b> Test the two counts beside the new threshold with the weighted probabilities. At $k=5$, $0.8(0.03609)=0.02887$ and $0.2(0.09160)=0.01832$, so “0” wins. '
+     +'At $k=6$, $P(Z=6\\mid 0)=0.03609(2/6)=0.01203$ and $P(Z=6\\mid 1)=0.09160(8/6)=0.12214$. Then $0.8(0.01203)=0.00962$ and $0.2(0.12214)=0.02443$, so “1” wins.',
+  figSol: () => stack(760, [
+    [pmfFig(2, 8, 6/Math.log(4), '\\lambda=4.33\\ (\\text{equal priors})', 14), 260],
+    [pmfFig(2, 8, 6/Math.log(4) + 1, '\\lambda=5.33\\ (p_1=0.2)', 14), 260]]),
+  err:'Common error: rounding $k>4.328$ down and deciding “1” from $Z\\ge4$. The count $Z=4$ lies below the threshold. The first whole number above $4.328$ is $5$.',
+  teach:'The priors move the threshold by exactly one count here, because $p_0/p_1=m_1/m_0=4$. Ask which prior $p_1$ moves it by two counts.' },
 
 /* ---- binary PAM: priors, unequal variances, folded outputs ------------- */
 
@@ -775,28 +913,48 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   err:'Common error: taking $p_1=3$ and $p_0=1$ straight from “three times as often”. Priors must add to one, so $p_0=0.25$ and $p_1=0.75$.',
   teach:'Part (d) puts a number on what the prior is worth. It is a modest gain when the signals are well separated.' },
 
-{ id:'D2-26', module:'M2', type:'pam', src:'Final Q2 (variant)',
-  stem:'In a binary pulse amplitude modulation (PAM) communication system, the matched-filter output is $Y=|N_0|$ when “0” is transmitted and $Y=|N_1|$ when “1” is transmitted. '
-     +'$N_0$ and $N_1$ are independent Gaussian random variables with $N_0\\sim\\mathcal{N}(\\mu=0,\\sigma^{2}=1)$ and $N_1\\sim\\mathcal{N}(\\mu=0,\\sigma^{2}=9)$. '
-     +'The bit “0” is sent with probability $0.6$ and “1” with probability $0.4$.',
-  parts:['<b>[8 pts]</b> Determine the conditional PDFs, $f_Y(y\\mid 1)$ and $f_Y(y\\mid 0)$.',
-         '<b>[9 pts]</b> Find the optimal decision threshold ($\\lambda$) for these priors.',
-         '<b>[8 pts]</b> Calculate $P_b$ as a numerical value, using a table of the $Q$ function.'],
-  sol:'<b>Given.</b> $Y=|N_0|$ or $|N_1|$ with variances $1$ and $9$. $p_0=0.6$ and $p_1=0.4$.<br>'
-     +'<b>Find.</b> The two conditional PDFs, $\\lambda$ and $P_b$.<br>'
-     +'<b>Method.</b> A folded Gaussian has density $2f_N(y)$ on $y\\ge0$. Set the weighted densities equal and solve for $\\lambda^{2}$.<br>'
-     +'<b>Solution — (a).</b> $$f_Y(y\\mid 0)=\\frac{2}{\\sqrt{2\\pi}}e^{-y^{2}/2}=0.7979\\,e^{-y^{2}/2},\\qquad f_Y(y\\mid 1)=\\frac{2}{3\\sqrt{2\\pi}}e^{-y^{2}/18}=0.2660\\,e^{-y^{2}/18}$$ for $y\\ge 0$, and both are zero for $y<0$.<br>'
-     +'<b>Solution — (b).</b> Cancel $2/\\sqrt{2\\pi}$ from both sides and take logarithms. '
-     +'$$\\begin{aligned}0.6\\,e^{-\\lambda^{2}/2}&=\\frac{0.4}{3}e^{-\\lambda^{2}/18}\\\\\\ln\\frac{0.6(3)}{0.4}&=\\frac{\\lambda^{2}}{2}-\\frac{\\lambda^{2}}{18}=\\frac{4\\lambda^{2}}{9}\\\\\\lambda^{2}&=\\frac{9\\ln4.5}{4}=3.384\\\\\\lambda&=1.840\\end{aligned}$$ Decide “1” when $Y>1.840$.<br>'
-     +'<b>Solution — (c).</b> $$P(e\\mid 0)=P(|N_0|>1.840)=2Q(1.84)=2(0.03288)=0.06576$$ '
-     +'$$P(e\\mid 1)=P(|N_1|<1.840)=1-2Q\\!\\left(\\frac{1.840}{3}\\right)=1-2Q(0.61)=1-2(0.2709)=0.4582$$ '
-     +'$$P_b=0.6(0.06576)+0.4(0.4582)=0.03946+0.1833=0.2227$$<br>'
-     +'<b>Check.</b> At $\\lambda=1.840$ the weighted densities are $0.6(0.7979)e^{-1.692}=0.0882$ and $0.4(0.2660)e^{-0.1880}=0.0882$. They are equal.',
-  figSol: () => dens({xr:[-0.4,9], top:0.4787, f0: y=>y>=0 ? 0.6*2*gpdf(y,0,1) : 0, f1: y=>y>=0 ? 0.4*2*gpdf(y,0,9) : 0,
-    lams:[1.8396], dec1: y=>y>1.8396, xs:1,
-    notes:[[0.12,1.08,'0.6\\,f_Y(y\\mid 0)','start'],[3.6,0.3,'0.4\\,f_Y(y\\mid 1)','start'],[1.8396,1.3,'\\lambda=1.840','middle','k']]}),
-  err:'Common error: dropping the factor $1/3$ that comes from $\\sigma_1=3$ in the density of $N_1$. The equation then reads $\\ln1.5=4\\lambda^{2}/9$, and the threshold falls to $0.955$.',
-  teach:'Compare with the equal-prior folded question. The more likely “0” pushes the threshold out, and the error given “1” becomes large.' },
+/* ---- a Nyquist pulse that is not a raised cosine ----------------------- */
+
+{ id:'D2-26', module:'M2', type:'nyquist', src:'Madhow P4.3',
+  stem:'A binary baseband link uses the pulse $$s(t)=\\operatorname{sinc}(at)\\,\\operatorname{sinc}(bt),\\qquad a\\ge b>0,$$ where $\\operatorname{sinc}(x)=\\sin(\\pi x)/(\\pi x)$. '
+     +'The channel is an ideal lowpass channel that passes the band $|f|\\le B=2.5$ kHz. '
+     +'Use the transform pair $\\operatorname{sinc}(at)\\leftrightarrow\\frac1a\\Pi(f/a)$, where $\\Pi(f/a)=1$ for $|f|<a/2$ and $0$ otherwise. According to this information,',
+  parts:['<b>[7 pts]</b> Find the spectrum $S(f)$ and sketch it. Give $S(0)$, the frequency where its flat top ends and the frequency where it reaches zero.',
+         '<b>[6 pts]</b> Choose $a$ and $b$ so that the pulse has zero intersymbol interference at $R_b=4$ kb/s and exactly fills the channel.',
+         '<b>[7 pts]</b> With these $a$ and $b$, is the pulse free of intersymbol interference at $R_b=2$ kb/s? At $R_b=5$ kb/s? Give a reason for each.',
+         '<b>[5 pts]</b> Find the roll-off factor $\\alpha=(B-W)/W$ at $R_b=4$ kb/s, where $W=R_b/2$. Then redesign $a$ and $b$ for $R_b=4.5$ kb/s in the same channel, and give the new $\\alpha$.'],
+  sol:'<b>Given.</b> $s(t)=\\operatorname{sinc}(at)\\operatorname{sinc}(bt)$ with $a\\ge b>0$ and $\\operatorname{sinc}(x)=\\sin(\\pi x)/(\\pi x)$. The channel passes $|f|\\le2.5$ kHz.<br>'
+     +'<b>Find.</b> $S(f)$, and the values of $a$ and $b$ for $4$ kb/s. A test at $2$ and at $5$ kb/s, and $\\alpha$ at $4$ and at $4.5$ kb/s.<br>'
+     +'<b>Method.</b> A product in time is a convolution in frequency, so $S(f)$ is the convolution of two rectangles. Nyquist\'s criterion asks for $\\sum_nS(f-nR_b)=T_b$. '
+     +'Test each rate with the copies, then confirm it with the samples $s(kT_b)$.<br>'
+     +'<b>Solution — (a).</b> Take the transform of each factor and convolve. '
+     +'$$\\begin{aligned}S(f)&=\\frac1a\\Pi\\!\\left(\\frac fa\\right)*\\frac1b\\Pi\\!\\left(\\frac fb\\right)\\\\&=\\frac{1}{ab}\\int_{-\\infty}^{\\infty}\\Pi\\!\\left(\\frac{\\nu}{a}\\right)\\Pi\\!\\left(\\frac{f-\\nu}{b}\\right)d\\nu\\end{aligned}$$ '
+     +'The integrand is $1$ where $\\nu$ lies in both $(-a/2,a/2)$ and $(f-b/2,f+b/2)$, and $0$ elsewhere. So the integral is the length of the overlap of the two intervals. $S(f)$ is even, so take $f\\ge0$. '
+     +'For $0\\le f\\le(a-b)/2$, the short interval lies inside the long one. The overlap is $b$, so $S(f)=b/(ab)=1/a$. '
+     +'For $(a-b)/2\\le f\\le(a+b)/2$, the overlap runs from $f-b/2$ to $a/2$. Its length is $(a+b)/2-f$. Beyond $(a+b)/2$ the intervals do not overlap. '
+     +'$$S(f)=\\begin{cases}\\dfrac1a,&|f|\\le\\dfrac{a-b}{2}\\\\[6pt]\\dfrac{(a+b)/2-|f|}{ab},&\\dfrac{a-b}{2}\\le|f|\\le\\dfrac{a+b}{2}\\\\[6pt]0,&|f|\\ge\\dfrac{a+b}{2}\\end{cases}$$ '
+     +'The spectrum is a trapezoid. $S(0)=1/a$, the flat top ends at $(a-b)/2$, and $S(f)$ reaches zero at $(a+b)/2$. The slope passes half height, $1/(2a)$, at $f=a/2$.<br>'
+     +'<b>Solution — (b).</b> Neighbouring copies overlap on their slopes. Take $a=R_b$, so the copy $S(f-a)$ has its slope in the same band $(a-b)/2\\le f\\le(a+b)/2$. There $|f-a|=a-f$, because $f\\le a$. Add the two slopes. '
+     +'$$\\begin{aligned}S(f)+S(f-a)&=\\frac{(a+b)/2-f}{ab}+\\frac{(a+b)/2-(a-f)}{ab}\\\\&=\\frac{(a+b)/2-(a-b)/2}{ab}\\\\&=\\frac{b}{ab}=\\frac1a\\end{aligned}$$ '
+     +'On the flat top only one copy is nonzero, and its value is also $1/a$. So the copies add to $1/a=1/R_b=T_b$, and the criterion holds. '
+     +'The band edge must meet the channel edge, $(a+b)/2=B$. $$\\begin{aligned}a&=R_b=4000\\ \\text{s}^{-1}\\\\b&=2B-a=5000-4000=1000\\ \\text{s}^{-1}\\end{aligned}$$ '
+     +'So $s(t)=\\operatorname{sinc}(4000t)\\operatorname{sinc}(1000t)$. Its spectrum has height $1/a=0.25$ ms, a flat top to $1.5$ kHz and an edge at $2.5$ kHz.<br>'
+     +'<b>Solution — (c).</b> At $R_b=2$ kb/s, $T_b=0.5$ ms and the copies sit at multiples of $2$ kHz. The copies with even $n$ are $4$ kHz apart, so they add to $1/a$ as in part (b). '
+     +'The copies with odd $n$ are the same set moved by $2$ kHz, and they add to $1/a$ too. $$\\sum_nS(f-nR_b)=\\frac1a+\\frac1a=\\frac{2}{4000}=0.5\\ \\text{ms}=T_b$$ '
+     +'The criterion holds, so there is no interference at $2$ kb/s. The samples agree: $s(kT_b)=\\operatorname{sinc}(2k)\\operatorname{sinc}(0.5k)=0$ for $k\\neq0$, because $\\operatorname{sinc}(2k)=0$. '
+     +'At $R_b=5$ kb/s, $T_b=0.2$ ms and the copies sit at multiples of $5$ kHz. $S(f)$ is zero for $|f|\\ge2.5$ kHz, so these copies do not overlap. '
+     +'At $f=0$ the sum is $S(0)=0.25$ ms. At $f=2.5$ kHz it is $S(2.5)+S(-2.5)=0$. The sum is not constant, so the pulse has interference at $5$ kb/s. The first sample confirms it. '
+     +'$$\\begin{aligned}s(T_b)&=\\operatorname{sinc}(0.8)\\operatorname{sinc}(0.2)\\\\&=\\frac{\\sin(0.8\\pi)}{0.8\\pi}\\cdot\\frac{\\sin(0.2\\pi)}{0.2\\pi}\\\\&=\\frac{0.5878}{2.5133}\\cdot\\frac{0.5878}{0.6283}\\\\&=0.2339(0.9355)=0.2188\\end{aligned}$$<br>'
+     +'<b>Solution — (d).</b> At $R_b=4$ kb/s, $W=2$ kHz. $$\\alpha=\\frac{B-W}{W}=\\frac{2.5-2}{2}=0.25$$ This equals $b/a=1000/4000$. '
+     +'At $R_b=4.5$ kb/s the design of part (b) gives $a=4500\\ \\text{s}^{-1}$ and $b=2(2500)-4500=500\\ \\text{s}^{-1}$. Now $W=2.25$ kHz. $$\\alpha=\\frac{2.5-2.25}{2.25}=0.111$$ '
+     +'A faster rate in the same channel leaves a smaller roll-off.<br>'
+     +'<b>Check.</b> The area under $S(f)$ is $s(0)=1$. The trapezoid has height $1/a$ and parallel sides of widths $a-b$ and $a+b$. $$\\text{area}=\\frac1a\\cdot\\frac{(a-b)+(a+b)}{2}=\\frac1a\\cdot a=1$$ '
+     +'With the numbers of part (b), the area is $0.25\\times10^{-3}\\ \\text{s}\\times\\frac{3000+5000}{2}\\ \\text{Hz}=0.25\\times10^{-3}\\times4000=1$.',
+  figSol: () => stack(760, [
+    [nyqFold(4, 1, 4, C.mid, 'R_b=4\\ \\text{kb/s}:\\ \\textstyle\\sum_n S(f-nR_b)=T_b=0.25\\ \\text{ms}'), 250],
+    [nyqFold(4, 1, 5, C.err, 'R_b=5\\ \\text{kb/s}:\\ \\text{the sum is not constant}'), 250]]),
+  err:'Common error: taking $B\\ge R_b/2$ as enough for zero interference. At $R_b=5$ kb/s the band is exactly $R_b/2$, yet $s(T_b)=0.219$. At the minimum bandwidth only the rectangular spectrum works.',
+  teach:'The trapezoid is a Nyquist spectrum that is not a raised cosine. Its tails fall as $1/t^{2}$, faster than the sinc and slower than the raised cosine.' },
 
 /* ---- working back from a target -------------------------------------- */
 
@@ -914,7 +1072,7 @@ window.DRILL_M2 = [
 { id:'m2-drill', module:'M2', nav:'Module 2 · practice questions',
   title:'Module 2 — practice questions',
   objective:'Thirty open-ended questions with worked solutions, in the form they are asked in.',
-  keywords:'practice questions module 2 matched filter demodulator conditional density threshold priors error probability laplacian triangular exponential folded gaussian raised cosine interference',
+  keywords:'practice questions module 2 matched filter demodulator conditional density threshold priors error probability laplacian triangular exponential folded gaussian raised cosine interference sampling instant poisson count nyquist trapezoid',
   steps:0, blocks:[
   {t:'eyebrow', text:'Module 2 · Practice D2-01 … D2-30'},
   {t:'title', text:'Practice questions'},

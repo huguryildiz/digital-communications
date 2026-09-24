@@ -19,7 +19,7 @@ import math
 import sys
 
 import numpy as np
-from scipy import integrate, optimize
+from scipy import integrate, optimize, special, stats
 
 DEFAULT_TOL = 5e-3
 
@@ -155,7 +155,6 @@ W07 = (_pw([(0, 2, -2), (2, 3, 1)]), _pw([(0, 2, 2), (2, 3, -1)]), 3)
 W08 = (_pw([(0, 2, -3), (2, 4, 3)]), _pw([(0, 2, 1), (2, 4, -1)]), 4)
 W09 = (_pw([(0, 1, 0), (1, 3, -4), (3, 4, -2)]), _pw([(0, 1, 0), (1, 3, 2), (3, 4, 1)]), 4)
 W10 = (_pw([(0, 4, 0)]), _pw([(0, 3, lambda t: 2 * t), (3, 4, 0)]), 4)
-W11 = (_pw([(0, 4, -1)]), _pw([(0, 4, 3)]), 4)
 W12 = (_pw([(0, 3, lambda t: t - 1.5)]), _pw([(0, 3, lambda t: 3 * t - 4.5)]), 3)
 W28 = (_pw([(0, 2, -2), (2, 3, -1), (3, 4, 0)]), _pw([(0, 2, 2), (2, 3, 1), (3, 4, 0)]), 4)
 
@@ -168,15 +167,6 @@ def _coords(W):
 def _mf_pb(W, v, p0=0.5):
     c0, c1 = _coords(W)
     return _gauss_case(c0, c1, v, p0)
-
-
-def _conv_peak(W):
-    """Noise-free matched-filter output at t = T, by discrete convolution."""
-    s0, s1, T = W
-    t, psi, c0, c1 = _gs(s0, s1, T)
-    h = psi[::-1]
-    y = np.convolve(s1(t), h) * DT
-    return float(y[len(t) - 1])
 
 
 # ── the checks ─────────────────────────────────────────────────────────────
@@ -274,12 +264,6 @@ CHECKS = [
     {"name": "D2-10(a) h(2.5)=(4-2.5)/3", "stated": 0.5, "derive": lambda: _h_at(*W10, 2.5), "tol": 1e-3},
     {"name": "D2-10(b) Gaussian factor", "stated": 0.1662, "derive": lambda: _gpdf(0, 0, 5.76), "tol": 1e-3},
     {"name": "D2-10(c) P_b = Q(1.25)", "stated": 0.1056, "derive": lambda: _mf_pb(W10, 5.76)[3], "tol": 1e-3},
-    # D2-11
-    {"name": "D2-11(a) psi = 1/2", "stated": 0.5, "derive": lambda: _h_at(*W11, 2.0)},
-    {"name": "D2-11(b) y(T) by convolution", "stated": 6, "derive": lambda: _conv_peak(W11), "tol": 1e-3},
-    {"name": "D2-11(c) coordinate of s0", "stated": -2, "derive": lambda: _coords(W11)[0]},
-    {"name": "D2-11(d) threshold", "stated": 2, "derive": lambda: _mf_pb(W11, 6.25)[0]},
-    {"name": "D2-11(d) P_b = Q(1.60)", "stated": 0.05480, "derive": lambda: _mf_pb(W11, 6.25)[3], "tol": 1e-3},
     # D2-12
     {"name": "D2-12(a) energy of t-1.5", "stated": 2.25, "derive": lambda: _energy(W12[0], 3)},
     {"name": "D2-12(a) h(0)=1", "stated": 1, "derive": lambda: _h_at(*W12, 0.0005), "tol": 2e-3},
@@ -338,7 +322,6 @@ L17 = _lap_case(5, 0, 8, 0.5, 3)
 L19 = _lap_case(1, -3, 3, 0.8, 0)
 E15 = _exp_case(2, 6, 0.5, 4)
 E18 = _exp_case(3, 12, 0.5, 6)
-E21 = _exp_case(1, 3, 0.4, 2)
 
 CHECKS += [
     # D2-13
@@ -402,16 +385,6 @@ CHECKS += [
     {"name": "D2-20(c) P(e|0)", "stated": 0.1152, "derive": lambda: T20[2][1], "tol": 1e-3},
     {"name": "D2-20(c) P(e|1)", "stated": 0.2592, "derive": lambda: T20[2][2], "tol": 1e-3},
     {"name": "D2-20(c) P_b", "stated": 0.1728, "derive": lambda: T20[2][0], "tol": 1e-3},
-    # D2-21
-    {"name": "D2-21(a) P_b for Y>2", "stated": 0.3461, "derive": lambda: E21[0][0], "tol": 1e-3},
-    {"name": "D2-21(b) threshold", "stated": 1.040, "derive": lambda: E21[1], "tol": 1e-3},
-    {"name": "D2-21(c) P(e|0)", "stated": 0.3536, "derive": lambda: E21[2][1], "tol": 1e-3},
-    {"name": "D2-21(c) P(e|1)", "stated": 0.2929, "derive": lambda: E21[2][2], "tol": 1e-3},
-    {"name": "D2-21(c) P_b", "stated": 0.3172, "derive": lambda: E21[2][0], "tol": 1e-3},
-    {"name": "D2-21 teach: equal-prior threshold", "stated": 1.648,
-     "derive": lambda: _exp_case(1, 3, 0.5, 2)[1], "tol": 1e-3},
-    {"name": "D2-21 err: threshold without the factor 1/3 is negative", "stated": -0.6082,
-     "derive": lambda: _root(lambda y: 0.4 * math.exp(-y) - 0.6 * math.exp(-y / 3), -5, 5), "tol": 1e-3},
 ]
 
 
@@ -447,7 +420,6 @@ def _two_root_pb(m0, v0, m1, v1, p0):
 
 
 F22 = _folded(1, 4, 0.5)
-F26 = _folded(1, 9, 0.6)
 G24 = _gauss_case(0, 5, 4, 0.7)
 G25 = _gauss_case(-2, 2, 1, 0.25)
 
@@ -502,15 +474,6 @@ CHECKS += [
      "derive": lambda: 100 * (1 - G25[3] / _Qtab(2)), "tol": 3e-2},
     {"name": "D2-25 check: weighted density at lambda", "stated": 0.0225,
      "derive": lambda: 0.25 * _gpdf(G25[0], -2, 1), "tol": 2e-3},
-    # D2-26
-    {"name": "D2-26(b) threshold", "stated": 1.840, "derive": lambda: F26[0], "tol": 1e-3},
-    {"name": "D2-26(c) P(e|0)", "stated": 0.06576, "derive": lambda: F26[1], "tol": 3e-3},
-    {"name": "D2-26(c) P(e|1) (table rounding covered)", "stated": 0.4582, "derive": lambda: F26[2], "tol": 1e-2},
-    {"name": "D2-26(c) P_b (table rounding covered)", "stated": 0.2227, "derive": lambda: F26[3], "tol": 1e-2},
-    {"name": "D2-26(c) P_b by Monte Carlo (4e6 trials, seed 26)", "stated": 0.2227,
-     "derive": lambda: _mc_folded(26, 1, 9, 0.6, 1.8396), "tol": 8e-3},
-    {"name": "D2-26 err: threshold without the factor 1/3", "stated": 0.955,
-     "derive": lambda: _root(lambda y: 0.6 * _gpdf(y, 0, 1) - 0.4 * 3 * _gpdf(y, 0, 9), 0.01, 5), "tol": 1e-3},
     # D2-27
     {"name": "D2-27(a) P_b for equal priors", "stated": 0.06681, "derive": lambda: _gauss_case(0, 3, 1, 0.5)[3], "tol": 1e-3},
     {"name": "D2-27(b) prior that puts the threshold at 2", "stated": 0.8176, "derive": lambda: _prior_for(2.0), "tol": 1e-3},
@@ -571,7 +534,6 @@ CHECKS += [
     {"name": "D2-23(b) half-distance of the roots", "stated": 2.632,
      "derive": lambda: 0.5 * (_two_roots(0, 1, 3, 4, 0.6)[1] - _two_roots(0, 1, 3, 4, 0.6)[0]), "tol": 1e-3},
     {"name": "D2-24(b) 10 lambda", "stated": 31.78, "derive": lambda: 10 * G24[0], "tol": 1e-3},
-    {"name": "D2-26(b) lambda squared", "stated": 3.384, "derive": lambda: F26[0] ** 2, "tol": 1e-3},
     {"name": "D2-27(b) ratio p0/p1", "stated": 4.482,
      "derive": lambda: _prior_for(2.0) / (1 - _prior_for(2.0)), "tol": 1e-3},
     {"name": "D2-19 each weighted error at the optimum", "stated": 0.009957,
@@ -588,11 +550,200 @@ CHECKS += [
      "derive": lambda: integrate.quad(lambda y: min(0.6 * _tri(5)(y), 0.4 * _tri(5)(y - 4)), -1, 2.6, points=[0])[0], "tol": 1e-3},
 ]
 
+# ── the three textbook-shaped questions ────────────────────────────────────
+
+# D2-11: a filter that is not matched, or a sample at the wrong time. The
+# filter outputs are numerical convolution integrals on a fine grid, and the
+# best instant is found by scanning the output, not from its pieces.
+
+S11 = _pw([(0, 2, 2), (2, 3, -1)])
+H11 = _pw([(0, 1, -1), (1, 3, 2)])                    # s(3 - t), as the solution states
+H11b = _pw([(0, 2, 1)])
+N0H_11 = 0.5
+TAU = (np.arange(int(round(10 / DT))) + 0.5) * DT - 2.0   # midpoints on [-2, 8]
+
+
+def _out(s, h, t0):
+    """Signal part of the filter output at t0: the convolution integral."""
+    return float(np.sum(s(TAU) * h(t0 - TAU)) * DT)
+
+
+def _nvar(h):
+    return N0H_11 * float(np.sum(h(TAU) ** 2) * DT)
+
+
+def _best11():
+    ts = np.arange(0, 6, 0.01)
+    z = np.array([_out(S11, H11b, t) for t in ts])
+    k = int(np.argmax(np.abs(z)))
+    return ts[k], z[k]
+
+
+def _eta(s, h, t0):
+    return _out(s, h, t0) ** 2 / _nvar(h)
+
+
+def _db(x):
+    return 10 * math.log10(x)
+
+
+# D2-21: a binary decision on a Poisson count. The rules are found by testing
+# every count against the weighted probabilities; the errors come from the
+# Poisson distribution functions of scipy and a seeded Monte Carlo run.
+
+M0_21, M1_21 = 2, 8
+
+
+def _logpmf(m, k):
+    return -m + k * math.log(m) - special.gammaln(k + 1)
+
+
+def _first_one(p1):
+    """Smallest count decided as 1 when 1 has prior p1."""
+    return next(k for k in range(60) if p1 * stats.poisson.pmf(k, M1_21) > (1 - p1) * stats.poisson.pmf(k, M0_21))
+
+
+def _cross21(p1):
+    """The real crossing point of the weighted log-probabilities, k as a real number."""
+    return _root(lambda k: math.log(p1) + _logpmf(M1_21, k) - math.log(1 - p1) - _logpmf(M0_21, k), 0.5, 20)
+
+
+def _rule_pb(kmin, p1):
+    e0 = stats.poisson.sf(kmin - 1, M0_21)
+    e1 = stats.poisson.cdf(kmin - 1, M1_21)
+    return (1 - p1) * e0 + p1 * e1, e0, e1
+
+
+def _mc21(seed, kmin, p1, n=4_000_000):
+    rng = np.random.default_rng(seed)
+    bits = rng.random(n) < p1
+    z = rng.poisson(np.where(bits, M1_21, M0_21))
+    return float(np.mean((z >= kmin) != bits))
+
+
+# D2-26: sinc(at)sinc(bt). The spectrum is a numerical Fourier integral of the
+# pulse itself; the design is found by driving the samples s(kT_b) to zero.
+
+TT = (np.arange(-500_000, 500_000) + 0.5) * 1e-6        # t on [-0.5, 0.5] s
+
+
+def _sinc2(a, b, t):
+    return np.sinc(a * t) * np.sinc(b * t)          # numpy's sinc is sin(pi x)/(pi x)
+
+
+def _S26(f, a=4000, b=1000):
+    """S(f) in seconds, as the cosine integral of the even pulse."""
+    return float(np.sum(_sinc2(a, b, TT) * np.cos(2 * np.pi * f * TT)) * 1e-6)
+
+
+def _fold26(f, R):
+    return sum(_S26(f - n * R) for n in range(-3, 4))
+
+
+def _design26(R, B=2500):
+    """a that zeroes s(kT_b) for k = 1..20 with the band edge (a+b)/2 = B."""
+    k = np.arange(1, 21)
+    cost = lambda a: float(np.sum(_sinc2(a, 2 * B - a, k / R) ** 2))
+    return optimize.minimize_scalar(cost, bounds=(B, 2 * B - 1), method="bounded",
+                                    options={"xatol": 1e-6}).x
+
+
+def _trap_area(a=4000, b=1000, df=1.0):
+    """Area of S(f) from a numerical convolution of the two rectangles."""
+    fa = np.arange(-a / 2, a / 2, df) + df / 2
+    fb = np.arange(-b / 2, b / 2, df) + df / 2
+    S = np.convolve(np.ones(len(fa)) / a, np.ones(len(fb)) / b) * df
+    return float(np.sum(S) * df), float(S.max())
+
+
+CHECKS += [
+    # D2-11
+    {"name": "D2-11(a) energy of s", "stated": 9, "derive": lambda: _energy(S11, 3)},
+    {"name": "D2-11(a) h(t)=s(3-t) is -1 at t=0.5", "stated": -1, "derive": lambda: float(S11(np.array([2.5]))[0])},
+    {"name": "D2-11(a) h(t)=s(3-t) is 2 at t=2", "stated": 2, "derive": lambda: float(S11(np.array([1.0]))[0])},
+    {"name": "D2-11(a) y_s(3) by convolution", "stated": 9, "derive": lambda: _out(S11, H11, 3.0), "tol": 1e-3},
+    {"name": "D2-11(a) noise variance", "stated": 4.5, "derive": lambda: _nvar(H11), "tol": 1e-3},
+    {"name": "D2-11(a) eta at T", "stated": 18, "derive": lambda: _eta(S11, H11, 3.0), "tol": 1e-3},
+    {"name": "D2-11(a) bound 2E/N0 in dB", "stated": 12.55, "derive": lambda: _db(2 * _energy(S11, 3) / 1.0), "tol": 1e-3},
+    {"name": "D2-11(b) y_s(2.5) by convolution", "stated": 5.5, "derive": lambda: _out(S11, H11, 2.5), "tol": 1e-3},
+    {"name": "D2-11(b) eta at 2.5 s", "stated": 6.722, "derive": lambda: _eta(S11, H11, 2.5), "tol": 1e-3},
+    {"name": "D2-11(c) best instant of h2 by scanning |z_s|", "stated": 2, "derive": lambda: _best11()[0], "tol": 1e-3},
+    {"name": "D2-11(c) z_s at the best instant", "stated": 4, "derive": lambda: _best11()[1], "tol": 1e-3},
+    {"name": "D2-11(c) z_s(2.5) on the piece 10-3t", "stated": 2.5, "derive": lambda: _out(S11, H11b, 2.5), "tol": 1e-3},
+    {"name": "D2-11(c) z_s(3.5) on the piece 7-2t", "stated": 0, "derive": lambda: _out(S11, H11b, 3.5), "tol": 1e-3},
+    {"name": "D2-11(c) z_s(4) on the piece t-5", "stated": -1, "derive": lambda: _out(S11, H11b, 4.0), "tol": 1e-3},
+    {"name": "D2-11(c) noise variance of h2", "stated": 1, "derive": lambda: _nvar(H11b), "tol": 1e-3},
+    {"name": "D2-11(c) eta of h2 at 2 s", "stated": 16, "derive": lambda: _eta(S11, H11b, 2.0), "tol": 1e-3},
+    {"name": "D2-11(d) ratio 18/6.722", "stated": 2.678, "derive": lambda: _eta(S11, H11, 3.0) / _eta(S11, H11, 2.5), "tol": 1e-3},
+    {"name": "D2-11(d) loss of the early sample, dB", "stated": 4.28,
+     "derive": lambda: _db(_eta(S11, H11, 3.0) / _eta(S11, H11, 2.5)), "tol": 2e-3},
+    {"name": "D2-11(d) loss of h2 at its best instant, dB", "stated": 0.51,
+     "derive": lambda: _db(_eta(S11, H11, 3.0) / _eta(S11, H11b, 2.0)), "tol": 1e-2},
+    {"name": "D2-11 check: y_s(2)", "stated": 2, "derive": lambda: _out(S11, H11, 2.0), "tol": 1e-3},
+    {"name": "D2-11 err: z_s(3)", "stated": 1, "derive": lambda: _out(S11, H11b, 3.0), "tol": 1e-3},
+    {"name": "D2-11 err: eta of h2 sampled at T", "stated": 1, "derive": lambda: _eta(S11, H11b, 3.0), "tol": 1e-3},
+    {"name": "D2-11 err: loss of h2 sampled at T, dB", "stated": 12.55,
+     "derive": lambda: _db(_eta(S11, H11, 3.0) / _eta(S11, H11b, 3.0)), "tol": 1e-3},
+    # D2-21
+    {"name": "D2-21(a) crossing point for equal priors", "stated": 4.328, "derive": lambda: _cross21(0.5), "tol": 1e-3},
+    {"name": "D2-21(a) ln 4", "stated": 1.3863, "derive": lambda: math.log(M1_21 / M0_21), "tol": 1e-4},
+    {"name": "D2-21(a) smallest count decided as 1", "stated": 5, "derive": lambda: _first_one(0.5), "tol": 1e-9},
+    {"name": "D2-21(b) P(Z<=4 | 0)", "stated": 0.94735, "derive": lambda: stats.poisson.cdf(4, M0_21), "tol": 1e-4},
+    {"name": "D2-21(b) P(e|0)", "stated": 0.05265, "derive": lambda: _rule_pb(5, 0.5)[1], "tol": 1e-3},
+    {"name": "D2-21(b) P(Z<=4 | 1) / e^-8", "stated": 297, "derive": lambda: stats.poisson.cdf(4, M1_21) / math.exp(-8), "tol": 1e-6},
+    {"name": "D2-21(b) P(e|1)", "stated": 0.09963, "derive": lambda: _rule_pb(5, 0.5)[2], "tol": 1e-3},
+    {"name": "D2-21(c) crossing point for p1=0.2", "stated": 5.328, "derive": lambda: _cross21(0.2), "tol": 1e-3},
+    {"name": "D2-21(c) smallest count decided as 1", "stated": 6, "derive": lambda: _first_one(0.2), "tol": 1e-9},
+    {"name": "D2-21(d) 2^5/120", "stated": 0.26667, "derive": lambda: stats.poisson.pmf(5, 2) / math.exp(-2), "tol": 1e-4},
+    {"name": "D2-21(d) 8^5/120", "stated": 273.07, "derive": lambda: stats.poisson.pmf(5, 8) / math.exp(-8), "tol": 1e-4},
+    {"name": "D2-21(d) P(Z=5|0)", "stated": 0.03609, "derive": lambda: stats.poisson.pmf(5, 2), "tol": 1e-3},
+    {"name": "D2-21(d) P(Z=5|1)", "stated": 0.09160, "derive": lambda: stats.poisson.pmf(5, 8), "tol": 1e-3},
+    {"name": "D2-21(d) P(e|0)", "stated": 0.01656, "derive": lambda: _rule_pb(6, 0.2)[1], "tol": 1e-3},
+    {"name": "D2-21(d) P(e|1)", "stated": 0.19124, "derive": lambda: _rule_pb(6, 0.2)[2], "tol": 1e-3},
+    {"name": "D2-21(d) P_b of the rule for p1=0.2", "stated": 0.05150, "derive": lambda: _rule_pb(6, 0.2)[0], "tol": 1e-3},
+    {"name": "D2-21(d) P_b of the rule for p1=0.2, Monte Carlo (4e6 trials, seed 21)", "stated": 0.05150,
+     "derive": lambda: _mc21(21, 6, 0.2), "tol": 1e-2},
+    {"name": "D2-21(d) P_b of the equal-prior rule at p1=0.2", "stated": 0.06205, "derive": lambda: _rule_pb(5, 0.2)[0], "tol": 1e-3},
+    {"name": "D2-21(d) reduction, per cent", "stated": 17,
+     "derive": lambda: 100 * (1 - _rule_pb(6, 0.2)[0] / _rule_pb(5, 0.2)[0]), "tol": 2e-2},
+    {"name": "D2-21 check: 0.8 P(Z=5|0)", "stated": 0.02887, "derive": lambda: 0.8 * stats.poisson.pmf(5, 2), "tol": 1e-3},
+    {"name": "D2-21 check: 0.2 P(Z=5|1)", "stated": 0.01832, "derive": lambda: 0.2 * stats.poisson.pmf(5, 8), "tol": 1e-3},
+    {"name": "D2-21 check: P(Z=6|0)", "stated": 0.01203, "derive": lambda: stats.poisson.pmf(6, 2), "tol": 1e-3},
+    {"name": "D2-21 check: P(Z=6|1)", "stated": 0.12214, "derive": lambda: stats.poisson.pmf(6, 8), "tol": 1e-3},
+    {"name": "D2-21 check: 0.8 P(Z=6|0)", "stated": 0.00962, "derive": lambda: 0.8 * stats.poisson.pmf(6, 2), "tol": 1e-3},
+    {"name": "D2-21 check: 0.2 P(Z=6|1)", "stated": 0.02443, "derive": lambda: 0.2 * stats.poisson.pmf(6, 8), "tol": 1e-3},
+    # D2-26
+    {"name": "D2-26(a) S(0) = 1/a, ms", "stated": 0.25, "derive": lambda: 1e3 * _S26(0), "tol": 2e-3},
+    {"name": "D2-26(a) flat top still at full height at 1.4 kHz, ms", "stated": 0.25, "derive": lambda: 1e3 * _S26(1400), "tol": 2e-3},
+    {"name": "D2-26(a) half height 1/(2a) at f=a/2=2 kHz, ms", "stated": 0.125, "derive": lambda: 1e3 * _S26(2000), "tol": 4e-3},
+    {"name": "D2-26(a) zero at the band edge 2.5 kHz (absolute, ms)", "stated": 0,
+     "derive": lambda: 1e3 * _S26(2600), "tol": 2e-3},
+    {"name": "D2-26(b) a from zeroing s(kT_b) at 4 kb/s", "stated": 4000, "derive": lambda: _design26(4000), "tol": 1e-4},
+    {"name": "D2-26(b) b = 2B - a", "stated": 1000, "derive": lambda: 5000 - _design26(4000), "tol": 1e-3},
+    {"name": "D2-26(b) copies add to T_b at 4 kb/s, f=1.8 kHz, ms", "stated": 0.25, "derive": lambda: 1e3 * _fold26(1800, 4000), "tol": 3e-3},
+    {"name": "D2-26(c) copies add to T_b at 2 kb/s, f=0.7 kHz, ms", "stated": 0.5, "derive": lambda: 1e3 * _fold26(700, 2000), "tol": 3e-3},
+    {"name": "D2-26(c) largest |s(kT_b)| at 2 kb/s, k=1..40", "stated": 0,
+     "derive": lambda: float(np.max(np.abs(_sinc2(4000, 1000, np.arange(1, 41) / 2000)))), "tol": 1e-12},
+    {"name": "D2-26(c) sum of copies at 5 kb/s, f=0, ms", "stated": 0.25, "derive": lambda: 1e3 * _fold26(0, 5000), "tol": 2e-3},
+    {"name": "D2-26(c) sum of copies at 5 kb/s, f=2.5 kHz (absolute, ms)", "stated": 0,
+     "derive": lambda: 1e3 * _fold26(2500, 5000), "tol": 3e-3},
+    {"name": "D2-26(c) sinc(0.8)", "stated": 0.2339, "derive": lambda: float(np.sinc(0.8)), "tol": 1e-3},
+    {"name": "D2-26(c) sinc(0.2)", "stated": 0.9355, "derive": lambda: float(np.sinc(0.2)), "tol": 1e-3},
+    {"name": "D2-26(c) s(T_b) at 5 kb/s", "stated": 0.2188, "derive": lambda: float(_sinc2(4000, 1000, 1 / 5000)), "tol": 1e-3},
+    {"name": "D2-26(d) alpha at 4 kb/s", "stated": 0.25, "derive": lambda: (2500 - 2000) / 2000},
+    {"name": "D2-26(d) a at 4.5 kb/s", "stated": 4500, "derive": lambda: _design26(4500), "tol": 1e-4},
+    {"name": "D2-26(d) b at 4.5 kb/s", "stated": 500, "derive": lambda: 5000 - _design26(4500), "tol": 2e-3},
+    {"name": "D2-26(d) alpha at 4.5 kb/s", "stated": 0.111, "derive": lambda: (2500 - 4500 / 2) / (4500 / 2), "tol": 2e-3},
+    {"name": "D2-26 check: area under S(f) = s(0)", "stated": 1, "derive": lambda: _trap_area()[0], "tol": 1e-4},
+    {"name": "D2-26 check: height of the numerical trapezoid, ms", "stated": 0.25, "derive": lambda: 1e3 * _trap_area()[1], "tol": 1e-3},
+]
+
+
 # Every Q value a solution reads from the table, integrated from the density.
 for _x, _q in [(3.00, 1.350e-3), (2.25, 0.01222), (1.50, 0.06681), (2.00, 0.02275), (2.40, 8.198e-3),
-               (1.75, 0.04006), (2.50, 6.210e-3), (1.80, 0.03593), (1.25, 0.1056), (1.60, 0.05480),
+               (1.75, 0.04006), (2.50, 6.210e-3), (1.80, 0.03593), (1.25, 0.1056),
                (1.36, 0.08691), (0.68, 0.2483), (1.63, 0.05155), (3.63, 1.42e-4), (3.32, 4.50e-4),
-               (1.84, 0.03288), (0.61, 0.2709), (1.00, 0.1587), (3.46, 2.701e-4), (3.16, 7.889e-4),
+               (1.00, 0.1587), (3.46, 2.701e-4), (3.16, 7.889e-4),
                (4.00, 3.167e-5)]:
     CHECKS.append({"name": f"table value Q({_x:.2f})", "stated": _q,
                    "derive": (lambda x=_x: _Qtab(x)), "tol": 5e-4 if _q > 1e-3 else 4e-3})
