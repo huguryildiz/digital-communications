@@ -1179,7 +1179,7 @@ def _ss_figs():
     document.getElementById('crumb').textContent = (sc.sec||sc.module||'') + (sc.nav?' · '+sc.nav:'');
     const pb = document.getElementById('pagebox');
     if(document.activeElement!==pb) pb.value = S.i+1;
-    pb.style.width = String(n).length+1+'ch';
+    pb.style.width = String(n).length+1.5+'ch';
     document.getElementById('pagetotal').textContent = ' / '+n
       + (sc.steps?('  ·  step '+S.step+'/'+sc.steps):'');
     document.getElementById('srcref').textContent =
