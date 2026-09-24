@@ -112,11 +112,21 @@ CONTENT.SECTIONS = {
 
   M5: [
     { n:'5.0', title:'Opening',                        ids:['m5-open'] },
-    { n:'5.1', title:'The binary schemes',             ids:['m5-bpsk','m5-bfsk','m5-bask'] },
-    { n:'5.2', title:'Phase-shift keying',             ids:['m5-mpsk','m5-mpsk-pe'] },
-    { n:'5.3', title:'Amplitude and quadrature',       ids:['m5-mask','m5-qam','m5-lab-h'] },
-    { n:'5.4', title:'Frequency-shift keying',         ids:['m5-mfsk','m5-compare'] },
-    { n:'5.5', title:'Summary',                        ids:['m5-synth'] }
+    { n:'5.1', title:'Putting bits on a carrier',      ids:[
+        'm5-carrier','m5-iq','m5-bpsk','m5-bfsk','m5-bask','m5-binary-pe','m5-ex-binary',
+        'm5-real-binary','m5-lab-iq','m5-code-binary'] },
+    { n:'5.2', title:'Phase-shift keying',             ids:[
+        'm5-mpsk','m5-qpsk','m5-psk-detect','m5-mpsk-pe','m5-gray','m5-ex-psk','m5-phase-offset',
+        'm5-dpsk','m5-dpsk-pe','m5-real-psk','m5-lab-gray','m5-code-psk'] },
+    { n:'5.3', title:'Amplitude and quadrature',       ids:[
+        'm5-mask','m5-ex-ask4','m5-qam','m5-qam-pe','m5-qam-shapes','m5-ex-qam16','m5-qam-vs-psk',
+        'm5-real-qam','m5-lab-h','m5-code-qam'] },
+    { n:'5.4', title:'Frequency-shift keying and orthogonal signals', ids:[
+        'm5-mfsk','m5-orth-m','m5-noncoh','m5-real-fsk','m5-lab-fsk','m5-code-fsk'] },
+    { n:'5.5', title:'Bandwidth and the choice of scheme', ids:[
+        'm5-spectrum','m5-msk','m5-plane','m5-compare','m5-adaptive','m5-real-choice',
+        'm5-lab-plane','m5-code-compare'] },
+    { n:'5.6', title:'Summary',                        ids:['m5-chain','m5-quick','m5-synth','m5-projects'] }
   ],
 
   M6: [
@@ -239,14 +249,27 @@ CONTENT.BOOK = {
   'm4-ex-union':'8.4.2', 'm4-ex-union-b':'8.4.2',
   'm4-synth':'8.4',
 
-  /* Module 5 spans four sections of the book, each read there: 8.5 for M-ary
-     PAM, 8.6 for phase-shift keying, 8.7 for quadrature amplitude modulation,
-     and 9.5 for frequency-shift keying. The last is in a different chapter
-     because the book groups FSK with the other multidimensional signal sets. */
-  'm5-open':'8.5', 'm5-bpsk':'8.6.1', 'm5-bfsk':'9.5', 'm5-bask':'8.5.1',
-  'm5-mpsk':'8.6.1', 'm5-mpsk-pe':'8.6.3',
-  'm5-mask':'8.5.3', 'm5-qam':'8.7.1', 'm5-lab-h':'8.6.3, 8.7.1',
-  'm5-mfsk':'9.5', 'm5-compare':'9.7', 'm5-synth':'8.5, 8.6, 8.7',
+  /* Module 5 spans three chapters of the book: 8.5 for M-ary PAM, 8.6 for
+     phase-shift keying, 8.7 for quadrature amplitude modulation, 8.3.3 for the
+     binary comparison, 9.1 and 9.5 to 9.7 for orthogonal signals, FSK, MSK and
+     the bandwidth-efficiency plane, and 10.2 for the spectrum of a carrier
+     modulated signal. Adaptive modulation and the code pages carry no anchor. */
+  'm5-open':'8.5', 'm5-carrier':'8.5.1', 'm5-iq':'8.6, 8.7', 'm5-bpsk':'8.6.1',
+  'm5-bfsk':'9.5', 'm5-bask':'8.5.1', 'm5-binary-pe':'8.3.3', 'm5-ex-binary':'8.3.3',
+  'm5-real-binary':'8.5.1, 8.6.1', 'm5-lab-iq':'8.6, 8.7',
+  'm5-mpsk':'8.6.1', 'm5-qpsk':'8.6.3', 'm5-psk-detect':'8.6.2', 'm5-mpsk-pe':'8.6.3',
+  'm5-gray':'8.6.1, 8.6.3', 'm5-ex-psk':'8.6.3', 'm5-phase-offset':'8.6.4',
+  'm5-dpsk':'8.6.4', 'm5-dpsk-pe':'8.6.5', 'm5-real-psk':'8.6.1, 8.6.4',
+  'm5-lab-gray':'8.6.1, 8.6.3',
+  'm5-mask':'8.5.3', 'm5-ex-ask4':'8.5.3', 'm5-qam':'8.7.1', 'm5-qam-pe':'8.7.3',
+  'm5-qam-shapes':'8.7.1, 8.7.3', 'm5-ex-qam16':'8.7.3', 'm5-qam-vs-psk':'8.7.3',
+  'm5-real-qam':'8.7.1', 'm5-lab-h':'8.5.3, 8.6.3, 8.7.3',
+  'm5-mfsk':'9.5, 9.1.2', 'm5-orth-m':'9.1.1, 9.1.2', 'm5-noncoh':'9.5.2, 9.5.3',
+  'm5-real-fsk':'9.5, 9.6.1', 'm5-lab-fsk':'9.1, 9.5',
+  'm5-spectrum':'10.2, 9.7', 'm5-msk':'9.6.1, 9.6.2', 'm5-plane':'9.7', 'm5-compare':'9.7',
+  'm5-real-choice':'9.7', 'm5-lab-plane':'9.7',
+  'm5-chain':'8.6, 8.7', 'm5-quick':'8.5, 8.6, 8.7, 9.7',
+  'm5-synth':'8.5, 8.6, 8.7, 9.1, 9.5, 9.7', 'm5-projects':'8.6, 9.7',
 
   'm6-open':'12.1', 'm6-selfinfo':'12.1.1', 'm6-entropy':'12.1.1',
   'm6-extension':'12.1.1', 'm6-lab-i':'12.1.1',
