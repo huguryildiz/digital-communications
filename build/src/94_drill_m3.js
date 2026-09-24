@@ -190,7 +190,7 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
      +'Its energy is $1+2+1=4$, so $d_{01}=2$. The integral $\\int_1^3(2)(1)\\,dt=4$ also matches the inner product of the vectors.',
   figSol: () => ROW([wave([[1,3,1/R2]],{T:4,name:'\\psi_1(t)',color:C.mid,yt:[0],lab:['\\frac{1}{\\sqrt2}']}),
                      wave([[0,1,1/R2],[1,3,0],[3,4,1/R2]],{T:4,name:'\\psi_2(t)',color:C.mid,yt:[0],lab:['\\frac{1}{\\sqrt2}',null,'\\frac{1}{\\sqrt2}']})])
-     + cons([[2*R2,0,'\\mathbf{s}_0','n'],[R2,R2,'\\mathbf{s}_1','n']],
+     + cons([[2*R2,0,'\\mathbf{s}_0','ne'],[R2,R2,'\\mathbf{s}_1','n']],
             {xr:[-0.6,3.6],yr:[-0.6,2.1],d:[[0,1]],dl:[2.25,0.95,'d_{01}=2']}),
   err:'Normalising with $E_0$ instead of $\\sqrt{E_0}$, so that $\\psi_1=s_0/8$. That function has energy $1/8$, not $1$, and every coordinate comes out $\\sqrt8$ times too small.',
   teach:'This is the examination shape with the matched-filter half replaced by the geometry. Ask for the check by waveform every time: it catches a wrong normalisation at once.' },
@@ -226,7 +226,7 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
      +'Its energy is $1(2)+4(1)=6$, which is $d_{01}^2$.',
   figSol: () => ROW([wave([[0,2,1/R2]],{T:3,name:'\\psi_1(t)',color:C.mid,yt:[0],lab:['\\frac{1}{\\sqrt2}']}),
                      wave([[0,2,0],[2,3,-1]],{T:3,name:'\\psi_2(t)',color:C.mid,yt:[-1,0]})])
-     + cons([[2*R2,0,'\\mathbf{s}_0','n'],[R2,2,'\\mathbf{s}_1','n']],
+     + cons([[2*R2,0,'\\mathbf{s}_0','ne'],[R2,2,'\\mathbf{s}_1','n']],
             {xr:[-0.6,3.6],yr:[-0.6,2.7],d:[[0,1]],dl:[2.25,1.2,'d_{01}=\\sqrt6']}),
   err:'Choosing $\\psi_2=+1$ on $[2,3]$ but keeping $s_{12}=+2$. A basis function and its coordinate change sign together. With $\\psi_2=+1$ the coordinate is $-2$, and every distance is unchanged.',
   teach:'The negative basis function is deliberate. Students who flip it for neatness must flip the coordinate too, and the check by waveform shows whether they did.' },
@@ -442,7 +442,7 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   figSol: () => ROW([wave([[0,2,1/R2],[2,3,0]],{T:3,name:'\\psi_1(t)',color:C.mid,yt:[0],lab:['\\frac{1}{\\sqrt2}',null]}),
                      wave([[0,1,1/R6],[1,2,-1/R6],[2,3,2/R6]],{T:3,name:'\\psi_2(t)',color:C.mid,yt:[0],lab:['\\frac{1}{\\sqrt6}','-\\frac{1}{\\sqrt6}','\\frac{2}{\\sqrt6}']}),
                      wave([[0,1,-1/R3],[1,3,1/R3]],{T:3,name:'\\psi_3(t)',color:C.mid,yt:[0],lab:['-\\frac{1}{\\sqrt3}','\\frac{1}{\\sqrt3}']})])
-     + cons3([[R2,0,0,'\\mathbf{s}_1','n'],[1/R2,Math.sqrt(1.5),0,'\\mathbf{s}_2','n'],[1/R2,1/R6,2/R3,'\\mathbf{s}_3','sw']],
+     + cons3([[R2,0,0,'\\mathbf{s}_1','ne'],[1/R2,Math.sqrt(1.5),0,'\\mathbf{s}_2','n'],[1/R2,1/R6,2/R3,'\\mathbf{s}_3','sw']],
              {d:[[0,1],[0,2],[1,2]],dl:[1.35,0.75,'d=\\sqrt2']}),
   err:'Stopping after two axes because "three signals in a small space" seem dependent. The remainder $g_3$ has energy $\\tfrac43$, so a third axis is needed.',
   teach:'A three-dimensional answer, drawn in oblique view. The equal distances follow from the waveforms at once, which makes a good check.' },
@@ -495,7 +495,7 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
      +'<b>Check.</b> The waveform $s_1-s_2$ is $0$ on $[0,2)$ and $2$ on $[2,4]$. Its energy is $4(2)=8$, so $d_{12}=2\\sqrt2$. The waveform $s_1-s_3=2s_1$ has energy $16$, so opposite points are $4$ apart.',
   figSol: () => ROW([wave([[0,4,0.5]],{T:4,name:'\\psi_1(t)',color:C.mid,yt:[0,0.5]}),
                      wave([[0,2,0.5],[2,4,-0.5]],{T:4,name:'\\psi_2(t)',color:C.mid,yt:[-0.5,0,0.5]})])
-     + cons([[2,0,'\\mathbf{s}_1','n'],[0,2,'\\mathbf{s}_2','e'],[-2,0,'\\mathbf{s}_3','n'],[0,-2,'\\mathbf{s}_4','e']],
+     + cons([[2,0,'\\mathbf{s}_1','n'],[0,2,'\\mathbf{s}_2','ne'],[-2,0,'\\mathbf{s}_3','n'],[0,-2,'\\mathbf{s}_4','se']],
             {xr:[-3,3],yr:[-3,3],xt:[-3,-1,1,3],yt:[-3,-1,1,3],d:[[0,1],[1,2],[2,3],[3,0]],dl:[1.15,1.25,'d_{\\min}=2\\sqrt2']}),
   err:'Giving each symbol three nearest neighbours because the other three are "nearby". The opposite point is $4$ away, not $2\\sqrt2$, so only two sit at $d_{\\min}$.',
   teach:'The four waveforms are a baseband version of QPSK. The nearest-neighbour count prepares the union-bound work of the next modules without asking for it.' },
@@ -528,7 +528,7 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
      +'Also $\\int_0^{1.5}(2)(1)\\,dt=3$, the inner product.',
   figSol: () => ROW([wave([[0,1.5,Math.sqrt(2/3)],[1.5,3,0]],{T:3,name:'\\psi_1(t)',color:C.mid,xt:[0,1.5,3],yt:[0],lab:['\\sqrt{2/3}',null]}),
                      wave([[0,1.5,0],[1.5,3,Math.sqrt(2/3)]],{T:3,name:'\\psi_2(t)',color:C.mid,xt:[0,1.5,3],yt:[0],lab:[null,'\\sqrt{2/3}']})])
-     + cons([[R6,0,'\\mathbf{s}_0','n'],[Math.sqrt(1.5),Math.sqrt(1.5),'\\mathbf{s}_1','n']],
+     + cons([[R6,0,'\\mathbf{s}_0','ne'],[Math.sqrt(1.5),Math.sqrt(1.5),'\\mathbf{s}_1','n']],
             {xr:[-0.6,3.2],yr:[-0.6,2],d:[[0,1]],dl:[1.95,0.75,'d_{01}=\\sqrt3']}),
   err:'Taking the interval width as $1$ out of habit. The pieces here are $1.5$ s long, and every energy then comes out too small by a factor $1.5$.',
   teach:'The break at $1.5$ s tests whether students integrate or count boxes. The two basis functions turn out to be the two halves of the interval.' },
