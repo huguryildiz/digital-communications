@@ -361,6 +361,8 @@ const RENDER = (() => {
     if(typeof CODE_BANKS_M3!=='undefined') Object.assign(CODE_BANKS, CODE_BANKS_M3);
     if(typeof CODE_M5!=='undefined') Object.assign(CODE_LIB, CODE_M5);
     if(typeof CODE_BANKS_M5!=='undefined') Object.assign(CODE_BANKS, CODE_BANKS_M5);
+    if(typeof CODE_M6!=='undefined') Object.assign(CODE_LIB, CODE_M6);
+    if(typeof CODE_BANKS_M6!=='undefined') Object.assign(CODE_BANKS, CODE_BANKS_M6);
   }
   const CODE_LANGS = [['m','MATLAB'],['py','Python']];
   let codeLang = (()=>{ try{ return localStorage.getItem('ss-code-lang')==='py'?'py':'m'; }catch(e){ return 'm'; } })();
