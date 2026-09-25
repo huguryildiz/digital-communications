@@ -732,7 +732,7 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   teach:'Four-phase keying written with a phase offset of $45^\\circ$. The largest distance ties back to the antipodal pair.' },
 
 { id:'D3-18', module:'M3', type:'band', src:'Final Q3',
-  stem: BAND('$$s_{m,n}(t)=\\sqrt2\\,\\big[(2m-5)\\cos(4000\\pi t)-(2n-5)\\sin(4000\\pi t)\\big],\\qquad m,n\\in\\{1,2,3,4\\},\\quad 0\\le t\\le 1.$$'),
+  stem: BAND('$$\\begin{gathered}s_{m,n}(t)=\\sqrt2\\,\\big[(2m-5)\\cos(4000\\pi t)-(2n-5)\\sin(4000\\pi t)\\big],\\\\ m,n\\in\\{1,2,3,4\\},\\quad 0\\le t\\le 1.\\end{gathered}$$'),
   parts:['[8 pts] Find an orthonormal basis for the signal set and show that it is orthonormal.',
          '[6 pts] Find the signal vector of $s_{m,n}$ and draw the signal constellation.',
          '[6 pts] Calculate the symbol energies that occur and $E_{s,av}$.',
@@ -877,7 +877,7 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   teach:'Four carrier waveforms built from two baseband pulses. The inner products fall into three kinds of pair, and part (d) shows which condition each kind needs. Detection with an unknown carrier phase is not asked.' },
 
 { id:'D3-23', module:'M3', type:'band', src:'Final Q3',
-  stem: BAND('$$s_{m,n}(t)=\\sqrt2\\,\\big[(2m-5)\\cos(2000\\pi t)-(2n-3)\\sin(2000\\pi t)\\big],\\qquad m\\in\\{1,2,3,4\\},\\ n\\in\\{1,2\\},\\quad 0\\le t\\le 1.$$'),
+  stem: BAND('$$\\begin{gathered}s_{m,n}(t)=\\sqrt2\\,\\big[(2m-5)\\cos(2000\\pi t)-(2n-3)\\sin(2000\\pi t)\\big],\\\\ m\\in\\{1,2,3,4\\},\\ n\\in\\{1,2\\},\\quad 0\\le t\\le 1.\\end{gathered}$$'),
   parts:['[8 pts] Find an orthonormal basis for the signal set and show that it is orthonormal.',
          '[6 pts] Find the signal vectors and draw the signal constellation.',
          '[5 pts] Calculate the symbol energies and $E_{s,av}$.',
