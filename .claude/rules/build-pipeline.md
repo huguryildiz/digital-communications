@@ -74,14 +74,18 @@ cd build && node pw.js shot.js                                                  
 ## The phone layout — a separate sweep
 
 `body[data-layout]` chooses between the fixed 1920×1080 stage and a fluid phone/tablet column; see
-`DESIGN.md` for the mechanism. None of the gates above reads the phone layout. When anything in
-`10_style.css`, `40_core.js`, or `90_app.js` is touched, also run:
+`DESIGN.md` for the mechanism. Phones and tablets held upright get the column; a tablet on its side
+gets the wide stage, the same as a desktop. None of the gates above reads the phone layout. When
+anything in `10_style.css`, `40_core.js`, `90_app.js`, a scene or a laboratory is touched, also run:
 
 ```bash
 cd build && node pw.js mcheck.js              # PAGE SCROLLS SIDEWAYS / SPILLED / TARGETS: none
 cd build && node pw.js mcheck.js --w=320 --h=568
 cd build && node pw.js mcheck.js --w=844 --h=390     # a phone on its side
 cd build && node pw.js mcheck.js --w=820 --h=1180    # a tablet upright
+cd build && node pw.js mcheck.js --w=768 --h=1024    # a small tablet upright
+cd build && node pw.js mcheck.js --w=1180 --h=820    # a tablet on its side: LAYOUT wide, no sideways
+                                                     # scroll or spill; TARGETS is a phone check, skip it
 cd build && node pw.js mshot.js               # then look — scenes and the drawer, search, notation, map
 ```
 

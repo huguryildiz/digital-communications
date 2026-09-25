@@ -70,6 +70,14 @@ Every laboratory, in a converted module or not, sets `root.redraw` in `mount()` 
 the spare height differs between normal display and lecture mode. Check it in a screenshot of both
 modes: the last plot ends within a few pixels of the foot of the control column.
 
+**Phone and tablet rule.** Every scene, laboratory, code page and practice page works on a phone
+held upright and on a tablet held upright; both get the one-column phone layout (`body[data-layout=phone]`,
+`DESIGN.md`, The two layouts). A tablet on its side is a desktop: it gets the wide 1920×1080 stage,
+unchanged. A style written for the wide stage (an inline `flex:0 0 auto`, a fixed width, a `1fr` track)
+must not push anything past the edge of a 320 px screen; loosen it under `body[data-layout=phone]`,
+never in scene data. After any change to a scene, laboratory or style, the phone sweeps in
+`build-pipeline.md` report none on every line.
+
 Keep the KaTeX macro lists in `60_plot.js`, `90_app.js`, and `notes/src/render.js` in step. `PLOT` and
 `APP` are top-level `const`, not `window` properties; use their bare identifiers in Playwright
 `page.evaluate`, and remember a probe reading `window.LABS` finds nothing even when `LABS` exists.

@@ -1676,6 +1676,9 @@ body[data-layout=phone] .ctrl label .seg{ display:flex; flex:1 1 100%; margin-to
 body[data-layout=phone] .ctrl label .seg button{ flex:1 1 0; min-width:0; padding:11px 6px; }
 body[data-layout=phone] .ctrl-run{ flex-wrap:wrap; }
 body[data-layout=phone] .ctrl-run input[type=range]{ flex:1 1 100%; }
+/* a run label is pinned `flex:0 0 auto` inline for the wide stage; on a 320 px
+   screen its one line is wider than the column, so here it may shrink and wrap */
+body[data-layout=phone] .ctrl-run > label{ flex-shrink:1 !important; min-width:0; }
 body[data-layout=phone] .readout div{ padding:10px 12px; }
 body[data-layout=phone] .readout dd{ font-size:calc(17px * var(--ts)); }
 
