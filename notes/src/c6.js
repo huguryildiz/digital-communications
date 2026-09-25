@@ -1189,7 +1189,7 @@ window.C6 = [
  'Braille sets each letter in a cell of six dots, raised or flat: $2^6=64$ patterns, $6$ bits a letter whatever its frequency.'
 ]},
 {t:'box', kind:'ok', hd:'Prefix codes', html:'UTF-8 and the country codes need no separators. A reader knows where each codeword ends.'},
-{t:'box', kind:'warn', hd:'Fixed length', html:'Braille spends $6$ bits a letter. The letters of the speech in Section 6.1 carry $4.04$ bits each.'},
+{t:'box', kind:'warn', hd:'Fixed length', html:'Braille spends $6$ bits a letter. Without its spaces, the speech in Section 6.1 carries $4.04$ bits a letter.'},
 
 /* ================= 6.3 ================= */
 {t:'h2', num:'6.3', text:'Huffman and Lempel–Ziv coding'},
@@ -1304,7 +1304,7 @@ window.C6 = [
 {t:'p', text:'The matched-filter receiver of Chapter 4, deciding each BPSK bit of Chapter 5, hands on a BSC. Its crossover is the BPSK bit error. Here $Q(x)=\\tfrac12\\operatorname{erfc}(x/\\sqrt2)$ is the Gaussian tail.'},
 {t:'eqbox', cap:'BSC from hard-decision BPSK', tex:['p=Q\\Bigl(\\sqrt{2E_b/N_0}\\Bigr)', '\\begin{aligned}E_b/N_0&=4\\ \\text{dB}=10^{0.4}=2.512\\\\p&=Q\\bigl(\\sqrt{2\\times2.512}\\bigr)=Q(2.241)=0.0125\\end{aligned}']},
 {t:'fig', svg:fig(figBSC, {g:4}), cap:'Top: the binary symmetric channel. Bottom: its crossover when BPSK is decided bit by bit, shown at $E_b/N_0=4$ dB, where $p=0.0125$.'},
-{t:'box', kind:'warn', hd:'Hard decisions', html:'Deciding each bit throws away how sure the receiver was. Later sections count what that costs.'},
+{t:'box', kind:'warn', hd:'Hard decisions', html:'Deciding each bit throws away how sure the receiver was. The gallery at the end of Section 6.5 plots the capacity left after that decision.'},
 
 {t:'h3', text:'Joint entropy and the chain rule'},
 {t:'p', text:'The <b>joint entropy</b> of two variables is the entropy of the pair, treated as one symbol.'},
@@ -1565,7 +1565,7 @@ window.C6 = [
  ['What is the capacity of a bandlimited channel?','$C=W\\log_2(1+P/N_0W)$ b/s, which levels off at $1.44\\,P/N_0$ as $W$ grows.','PS CH12.5.1'],
  ['What is the Shannon limit?','$E_b/N_0>\\ln2=-1.59$ dB. Uncoded BPSK sits $11.2$ dB above it.','PS CH12.6']
 ]},
-{t:'p', text:'Compress the source to its entropy, then code it for the channel below capacity. Chapter 7 builds those channel codes.'},
+{t:'p', text:'Compress the source to its entropy, then code it for the channel below capacity. The Hamming code of Section 6.5 is a first such channel code.'},
 
 {t:'h3', text:'Projects to try'},
 {t:'p', text:'Four optional projects use the chapter on real text and simulated channels. Each gives an aim, what it practises, a few steps and what to look for.'},
