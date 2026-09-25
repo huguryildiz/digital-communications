@@ -24225,6 +24225,13 @@ window.DRILL_M1 = [
    that fixes the noise level or the prior, and a detection question that
    carries a raised-cosine bandwidth or interference from the previous bit.
 
+   Three questions take their shape from textbook problems already in
+   examination form (content-writing.md, 2026-09-25): a filter that is not
+   matched or a sample at the wrong time (D2-11), a binary decision on a
+   Poisson count (D2-21), and a Nyquist pulse with a trapezoidal spectrum
+   (D2-26). Each replaced a "(variant)" that repeated a shape kept elsewhere,
+   under the same id, so the set stays at thirty.
+
    Every number is new. Each Q-function argument is a two-decimal value a
    table covers, and every stated number has an independent check in
    verify/drills_m2.py.
@@ -24348,6 +24355,81 @@ function noiseQ(f, xr, yr, o){
   if(o.yt) o.yt.forEach(v => a.hline(v, {color:C.muted}));
   return a.svg();
 }
+/* A receiver with one filter h(t) and one sample at t = t0. */
+function filtDiag(){
+  return P.blocks({w:760,h:150,items:[
+    {t:'text',x:14,y:58,label:'s(t)',tex:true,anchor:'start',fs:16,color:C.in},
+    {t:'arrow',x1:74,y1:62,x2:150,y2:62,color:C.in},
+    {t:'sum',x:164,y:62},
+    {t:'arrow',x1:164,y1:134,x2:164,y2:78,color:C.muted},
+    {t:'text',x:180,y:134,label:'w(t)',tex:true,anchor:'start',fs:15},
+    {t:'arrow',x1:178,y1:62,x2:300,y2:62,label:'x(t)',tex:true,color:C.out},
+    {t:'box',x:300,y:30,w:160,h:64,label:'h(t)',tex:true,color:C.h},
+    {t:'text',x:380,y:122,label:'Receive filter',fs:14},
+    {t:'arrow',x1:460,y1:62,x2:556,y2:62,label:'y(t)',tex:true,color:C.mid},
+    {t:'line',d:'M556,62 h22'},{t:'line',d:'M578,62 l22,-15'},
+    {t:'text',x:592,y:24,label:'\\text{sample at }t=t_0',tex:true,fs:13},
+    {t:'arrow',x1:606,y1:62,x2:748,y2:62,label:'Y=y(t_0)',tex:true,color:C.mid}
+  ]});
+}
+/* A signal-part output drawn against time, with the sampling instants marked:
+   pts is the polyline, marks [t, v, label, anchor, bad]. A sample taken at a
+   wrong instant is a fault and is drawn red. */
+function outT(pts, yr, yl, ys, marks){
+  const a = P.Axes({w:760, h:250, xr:[-0.5,6.8], yr, xlabel:'t\\;(\\mathrm{s})', ylabel:yl,
+    pad:{l:58,r:28,t:22,b:40}, xstep:1, ystep:ys});
+  a.poly(pts, {color:C.mid, width:2.4});
+  marks.forEach(([t, v, lab, anc, bad]) => { const col = bad ? C.err : C.mid;
+    a.vline(t, {color:C.muted}); a.point(t, v, {color:col, r:5});
+    a.note(t, v, lab, {tex:true, fs:15, color:col, anchor:anc, dx:anc==='end' ? -10 : 10, dy:-6}); });
+  return a.svg();
+}
+/* Poisson probabilities P(Z=k) for mean m, by the product m/1 * m/2 * ... */
+const pois = (m, k) => { let p = Math.exp(-m); for(let i=1;i<=k;i++) p *= m/i; return p; };
+/* The two conditional probability mass functions of a count as stems, with
+   the threshold, each with a round head as a pmf is drawn in this course.
+   A dashed stem is message "0" and a solid one message "1".
+   A stem on the wrong side of the threshold is an error mass and is drawn
+   red. The count is drawn shifted by one, so the vertical axis sits at the
+   left edge and never runs through the stems at k = 0. */
+function pmfFig(m0, m1, lam, lamTex, K){
+  const top = Math.max(pois(m0, Math.floor(m0)), pois(m1, Math.floor(m1))), off = 1;
+  const xt = []; for(let k=0;k<=K;k++) xt.push(k + off);
+  const a = P.Axes({w:760, h:260, xr:[0, K + off + 0.8], yr:[-0.04*top, 1.42*top], xlabel:'k',
+    ylabel:'P(Z=k\\mid m)', pad:{l:66,r:28,t:24,b:42}, ytarget:3,
+    xticksOverride:xt, xtickfmt: u => String(Math.round(u - off))});
+  const stems = (m, dx, dash, bad) => { for(let k=0;k<=K;k++){ const v = pois(m, k);
+    const col = bad(k) ? C.err : C.mid, X = a.sx(k + off + dx), Y0 = a.sy(0), Y = a.sy(v);
+    a.raw(`<line x1="${X.toFixed(2)}" y1="${Y0.toFixed(2)}" x2="${X.toFixed(2)}" y2="${Y.toFixed(2)}" stroke="${col}" stroke-width="2"${dash ? ` stroke-dasharray="${dash}"` : ''}/>`);
+    a.point(k + off + dx, v, {color:col, r:4}); } };
+  stems(m0, -0.17, '4 3', k => k > lam);
+  stems(m1, 0.17, null, k => k < lam);
+  a.vline(lam + off, {color:C.ink, dash:'6 4', width:1.6, opacity:1});
+  a.note(lam + off, 1.3*top, lamTex, {tex:true, fs:15, anchor:'start', dx:7, color:C.ink});
+  a.note(m0 + off - 2.3, 1.2*top, 'P(Z=k\\mid 0)', {tex:true, fs:15, anchor:'start', color:C.mid});
+  a.note(m1 + off + 1.3, pois(m1, Math.floor(m1)) + 0.1*top, 'P(Z=k\\mid 1)', {tex:true, fs:15, anchor:'start', color:C.mid});
+  return a.svg();
+}
+/* The trapezoid S(f) of sinc(at)sinc(bt) and its copies at multiples of R,
+   all in kHz and ms. The sum of the copies is drawn in the colour sumCol. */
+function nyqFold(A, Bw, R, sumCol, tag){
+  const S = f => { const u = Math.abs(f);
+    return u <= (A-Bw)/2 ? 1/A : u <= (A+Bw)/2 ? ((A+Bw)/2 - u)/(A*Bw) : 0; };
+  /* drawn in u = f - lo, so the vertical axis sits at the left edge and does
+     not run through the spectrum or its tick labels */
+  const lo = -7.6, hi = 7.6, xt = [];
+  for(let v = -7; v <= 7; v++) xt.push(v - lo);
+  const on = (n) => u => { const f = u + lo; return Math.abs(f - n*R) <= (A+Bw)/2 ? S(f - n*R) : NaN; };
+  const a = P.Axes({w:760, h:250, xr:[0, hi - lo], yr:[-0.03,0.4], xlabel:'f\\;(\\mathrm{kHz})',
+    ylabel:'S(f-nR_b)\\;(\\mathrm{ms})', pad:{l:66,r:28,t:24,b:42},
+    xticksOverride:xt, xtickfmt: u => String(Math.round(u + lo)),
+    yticksOverride:[0.125,0.25], ytickfmt: v => P.fmt(v, 3)});
+  [-2,-1,1,2].forEach(n => a.curve(on(n), {color:C.mid, width:1.8, dash:'6 4', n:1600}));
+  a.curve(u => { let s = 0; for(let n=-3;n<=3;n++) s += S(u + lo - n*R); return s; }, {color:sumCol, width:2.8, n:1600});
+  a.curve(on(0), {color:C.in, width:2.4, n:1600});
+  a.note(0.4, 0.35, tag, {tex:true, fs:15, anchor:'start', color:C.ink});
+  return a.svg();
+}
 const tri = (a) => n => Math.abs(n) <= a ? (1 - Math.abs(n)/a)/a : 0;
 const lap = (b) => n => Math.exp(-Math.abs(n)/b)/(2*b);
 const expo = (mu) => y => y >= 0 ? Math.exp(-y/mu)/mu : 0;
@@ -24363,11 +24445,25 @@ CONTENT.DRILLTYPES.M2 = [
             'With equal priors the threshold is midway between the coordinates, and $P_b=Q\\bigl(d/(2\\sigma)\\bigr)$ for coordinates a distance $d$ apart. With unequal priors, set the weighted densities equal.'],
     go:'m2-demod' },
 
+  { k:'mismatch', name:'A filter that is not matched, or a sample at the wrong time',
+    asks:'A pulse passes through its matched filter sampled early or late, or through a simpler filter. Find the output SNR at each instant, the best instant and the loss in dB.',
+    method:['The signal part of the output is $y_s(t)=\\int s(\\tau)h(t-\\tau)\\,d\\tau$. Compute it as an overlap, one piece at a time.',
+            'The noise variance $E[n^{2}(t_0)]=(N_0/2)\\int h^{2}(t)\\,dt$ is the same at every instant. Only the signal part changes with $t_0$.',
+            'The SNR is $\\eta=y_s^{2}(t_0)/E[n^{2}(t_0)]$. The loss in dB is $10\\log_{10}$ of the bound $2E/N_0$ divided by $\\eta$.'],
+    go:'m2-props' },
+
   { k:'nongauss', name:'Binary decision in noise that is not Gaussian',
     asks:'The sample is the noise, or the noise plus a constant. The noise density is triangular or Laplacian, or the sample is exponential. Find any constant, the error of a given rule, the optimal threshold and its error.',
     method:['Find the constant from $\\int f_N(n)\\,dn=1$ before anything else.',
             'For a rule $Y>t$, integrate each conditional density over the region where its message is decided wrongly. Do not use $Q$, because the noise is not Gaussian.',
             'The optimal threshold solves $p_0\\,f_Y(\\lambda\\mid 0)=p_1\\,f_Y(\\lambda\\mid 1)$. Compare the two densities region by region, because their expressions change at every corner.'],
+    go:'m2-threshold' },
+
+  { k:'count', name:'Binary decision on a count',
+    asks:'The sample is a whole number, such as a photon count, with a given probability for each value under each message. Find the rule and its error probabilities, first for equal priors and then for unequal ones.',
+    method:['Decide each value $k$ on its own. Choose “1” where $p_1P(Z=k\\mid 1)>p_0P(Z=k\\mid 0)$.',
+            'Divide the two probabilities and take logarithms. When the ratio grows with $k$, the rule is a threshold on the count. The first whole number above the threshold is decided as “1”.',
+            'Each conditional error is a finite sum of probabilities. Where the error region is infinite, use one minus the sum over the other region.'],
     go:'m2-threshold' },
 
   { k:'pam', name:'Binary PAM with priors, unequal variances or folded outputs',
@@ -24389,7 +24485,14 @@ CONTENT.DRILLTYPES.M2 = [
     method:['For raised-cosine pulses, $W=R_b/2$, $f_1=W(1-\\alpha)$ and $B_T=W(1+\\alpha)$.',
             'The energy per bit is $E_b=P/R_b$. A higher bit rate at the same received power gives a smaller $E_b$.',
             'Interference makes each conditional density a mixture of Gaussians. Average the conditional error over the values of the previous bit.'],
-    go:'m2-ex-rc' }
+    go:'m2-ex-rc' },
+
+  { k:'nyquist', name:'A Nyquist pulse that is not a raised cosine',
+    asks:'A pulse is given in time. Find its spectrum, choose its parameters for a bit rate and a channel bandwidth, and test whether it has zero interference at other rates.',
+    method:['A product in time is a convolution in frequency. Two rectangles convolve to a trapezoid.',
+            'Zero interference at $R_b$ needs $\\sum_nP(f-nR_b)=T_b$. Check the regions where neighbouring copies overlap.',
+            'Test a rate with the samples $p(kT_b)$ as well. One nonzero sample at some $k\\neq 0$ is enough to fail.'],
+    go:'m2-nyquist' }
 ];
 
 /* Wording shared by the matched-filter questions. */
@@ -24632,33 +24735,50 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   err:'Common error: writing $h(t)=(3-t)/3$ on $[0,3]$, a reversal about $t=3$ instead of about $T=4$. That filter peaks at the wrong time, and its output at $t=4$ is not the coordinate.',
   teach:'Compare with the waveforms of the rising-ramp question. The ramp that stops early moves the filter to the right.' },
 
-{ id:'D2-11', module:'M2', type:'mf', src:'MT Q3 (variant)',
-  stem: MF_STEM('6.25', 4),
-  figure: () => mfQ(4, [[0,4,-1]], [[0,4,3]], {yr:[-1.6,0.8], ys:1}, {yr:[-0.8,3.8], ys:1}),
-  parts:['<b>[5 pts]</b> Plot the impulse response of the matched filter, $h(t)=\\psi(T-t)$.',
-         '<b>[6 pts]</b> Without noise, find and plot the filter output $y(t)$ when $s_1(t)$ is sent. Give its value at $t=T$.',
-         '<b>[7 pts]</b> Determine the conditional PDFs, $f_Y(y\\mid 1)$ and $f_Y(y\\mid 0)$.',
-         '<b>[7 pts]</b> Find the optimal decision threshold ($\\lambda$) and calculate $P_b$.'],
-  sol:'<b>Given.</b> Equal priors, $N_0/2=6.25$ W/Hz and $T=4$ s. $s_1(t)=3$ and $s_0(t)=-1$ on $[0,4]$.<br>'
-     +'<b>Find.</b> $h(t)$, the noise-free output $y(t)$, the conditional PDFs, $\\lambda$ and $P_b$.<br>'
-     +'<b>Method.</b> The output of a linear filter is the convolution of its input with $h$. At $t=T$ it equals the correlation with $\\psi$, which is the coordinate.<br>'
-     +'<b>Solution — (a).</b> $E_1=\\int_0^49\\,dt=36$, so $\\psi(t)=3/6=1/2$ on $[0,4]$. A constant pulse is its own reversal: $h(t)=1/2$ on $[0,4]$.<br>'
-     +'<b>Solution — (b).</b> Write the convolution. The product $s_1(\\tau)h(t-\\tau)$ is $3\\cdot\\tfrac12=1.5$ where the two pulses overlap. $$y(t)=\\int_{-\\infty}^{\\infty}s_1(\\tau)h(t-\\tau)\\,d\\tau=1.5\\times(\\text{overlap length})$$ '
-     +'For $t\\in[0,4]$ the overlap is $[0,t]$, of length $t$. For $t\\in[4,8]$ it is $[t-4,4]$, of length $8-t$. $$y(t)=\\begin{cases}1.5t,&t\\in[0,4]\\\\1.5(8-t),&t\\in[4,8]\\\\0,&\\text{otherwise}\\end{cases}$$ The peak is $y(4)=6$, at the sampling instant.<br>'
-     +'<b>Solution — (c).</b> The coordinates are $s_1=6$ and $s_0=-2$. The variance is $\\sigma^{2}=6.25$, so $\\sigma=2.5$. $$f_Y(y\\mid 1)=0.1596\\,e^{-(y-6)^{2}/12.5},\\qquad f_Y(y\\mid 0)=0.1596\\,e^{-(y+2)^{2}/12.5}$$<br>'
-     +'<b>Solution — (d).</b> The threshold is midway: $\\lambda=(6-2)/2=2$. Each coordinate is $4$ from it. $$P_b=Q\\!\\left(\\frac{4}{2.5}\\right)=Q(1.60)=0.05480$$<br>'
-     +'<b>Check.</b> The correlator gives the same sample: $\\int_0^4s_1(t)\\psi(t)\\,dt=\\int_0^4\\tfrac32\\,dt=6$. This equals $y(4)$ from part (b).',
-  figSol: () => { const a = P.Axes({w:760,h:250,xr:[-0.5,8.8],yr:[-0.6,7.4],xlabel:'t\\;(\\mathrm{s})',ylabel:'y(t)',
-      pad:{l:58,r:28,t:22,b:40},xstep:1,ystep:2});
-    a.poly([[-0.5,0],[0,0],[4,6],[8,0],[8.8,0]], {color:C.mid, width:2.4});
-    a.vline(4, {color:C.muted}); a.point(4, 6, {color:C.mid, r:5});
-    a.note(4.25, 6.3, 'y(T)=6', {tex:true, fs:15, color:C.mid});
-    return stack(760, [
-      [psiH(4, [[0,4,0.5]], [[0,4,0.5]], {yr:[-0.3,0.8], yt:[0.5], yf:frac(2)}), 220],
-      [a.svg(), 250],
-      [gdens(-2, 6, 6.25, 0.5, 2, [-10,14]), 300]]); },
-  err:'Common error: reading the peak of $y(t)$ as the amplitude $3$ of $s_1$. The matched-filter output at $T$ is the coordinate $\\sqrt{E_1}=6$, a different quantity with different units.',
-  teach:'The triangle in part (b) is worth drawing on the board. Only its value at $t=T$ reaches the decision.' },
+{ id:'D2-11', module:'M2', type:'mismatch', src:'Madhow P6.1 / P6.15',
+  stem:'The pulse $s(t)$ below is received in additive white Gaussian noise $w(t)$ of two-sided power spectral density $N_0/2=0.5$ W/Hz, with $T=3$ s. '
+     +'The received signal passes through a filter $h(t)$, and the output is sampled once, at $t=t_0$. '
+     +'Write $y_s(t)$ for the signal part of the filter output and $n(t)$ for its noise part. '
+     +'The output SNR at the sampling instant is $\\eta=y_s^{2}(t_0)/E[n^{2}(t_0)]$. According to the information given above,',
+  figure: () => stack(760, [
+    [row([[waveAx([[0,2,2],[2,3,-1]], 3, {yl:'s(t)', yr:[-1.6,2.6], ys:1}), 380],
+          [waveAx([[0,2,1]], 3, {yl:'h_2(t)', yr:[-0.4,1.4], ys:1, col:C.h}), 380]], 220), 220],
+    [filtDiag(), 150]]),
+  parts:['<b>[6 pts]</b> The filter is matched, $h(t)=s(T-t)$, and the output is sampled at $t_0=T$. Find $y_s(T)$, $E[n^{2}(T)]$ and $\\eta$.',
+         '<b>[6 pts]</b> The clock of the same receiver runs early and samples at $t_0=2.5$ s. Find $y_s(2.5)$ and $\\eta$.',
+         '<b>[8 pts]</b> The matched filter is replaced by $h_2(t)=1$ on $[0,2]$, shown above. Find and plot the signal part $z_s(t)$ of its output. Give the best sampling instant and $\\eta$ there.',
+         '<b>[5 pts]</b> Give the loss of part (b) and the loss of part (c) against part (a) in dB. Which fault costs more?'],
+  sol:'<b>Given.</b> $s(t)=2$ on $[0,2)$, $-1$ on $[2,3)$ and $0$ elsewhere. $T=3$ s and $N_0/2=0.5$ W/Hz, so $N_0=1$ W/Hz.<br>'
+     +'<b>Find.</b> $\\eta$ of the matched filter at $t_0=3$ and at $t_0=2.5$. The output $z_s(t)$ of $h_2$, its best instant and its $\\eta$. The two losses in dB.<br>'
+     +'<b>Method.</b> The signal part is a convolution, $y_s(t)=\\int s(\\tau)h(t-\\tau)\\,d\\tau$. The noise variance at the output is $E[n^{2}(t_0)]=(N_0/2)\\int h^{2}(t)\\,dt$. '
+     +'It does not depend on $t_0$, so only the signal part changes when the sample moves.<br>'
+     +'<b>Solution — (a).</b> Find the energy of the pulse, one piece at a time. $$\\begin{aligned}E&=\\int_0^2 2^{2}\\,dt+\\int_2^3(-1)^{2}\\,dt\\\\&=8+1=9\\end{aligned}$$ '
+     +'The argument $3-t$ lies in $[2,3)$ when $t\\in(0,1]$. So $h(t)=s(3-t)$ is $-1$ on $[0,1)$ and $2$ on $[1,3]$. '
+     +'At $t=3$ the filter is $h(3-\\tau)=s(\\tau)$, so the output is the energy of the pulse. $$y_s(3)=\\int_{-\\infty}^{\\infty}s(\\tau)h(3-\\tau)\\,d\\tau=\\int_0^3 s^{2}(\\tau)\\,d\\tau=9$$ '
+     +'The filter has the same energy as the pulse, $\\int h^{2}\\,dt=9$. $$\\begin{aligned}E[n^{2}(3)]&=\\frac{N_0}{2}\\int h^{2}(t)\\,dt=0.5(9)=4.5\\\\\\eta&=\\frac{9^{2}}{4.5}=\\frac{81}{4.5}=18\\end{aligned}$$ '
+     +'This is the bound $2E/N_0=2(9)/1=18$, that is $12.55$ dB.<br>'
+     +'<b>Solution — (b).</b> Put $t=2.5$ in the convolution. Since $h(t)=s(3-t)$, the filter is $h(2.5-\\tau)=s(\\tau+0.5)$. $$y_s(2.5)=\\int_0^3 s(\\tau)\\,s(\\tau+0.5)\\,d\\tau$$ '
+     +'The shifted pulse $s(\\tau+0.5)$ is $2$ for $\\tau<1.5$, $-1$ for $1.5\\le\\tau<2.5$ and $0$ after that. Multiply the two pulses on each piece. '
+     +'$$\\begin{aligned}y_s(2.5)&=\\int_0^{1.5}(2)(2)\\,d\\tau+\\int_{1.5}^{2}(2)(-1)\\,d\\tau\\\\&\\quad+\\int_2^{2.5}(-1)(-1)\\,d\\tau+\\int_{2.5}^{3}(-1)(0)\\,d\\tau\\\\&=6-1+0.5+0=5.5\\end{aligned}$$ '
+     +'The noise variance is still $4.5$. $$\\eta=\\frac{5.5^{2}}{4.5}=\\frac{30.25}{4.5}=6.722$$<br>'
+     +'<b>Solution — (c).</b> The filter $h_2(t-\\tau)$ is $1$ when $0\\le t-\\tau\\le2$, that is when $t-2\\le\\tau\\le t$. So the output is the area of $s$ over the last $2$ s. $$z_s(t)=\\int_{t-2}^{t}s(\\tau)\\,d\\tau$$ '
+     +'Work out this area for each position of the window. On $[2,3]$, for example, the window holds $2$ over $[t-2,2]$ and $-1$ over $[2,t]$. '
+     +'$$\\begin{aligned}0\\le t\\le2:&\\quad z_s(t)=\\int_0^t2\\,d\\tau=2t\\\\2\\le t\\le3:&\\quad z_s(t)=2(4-t)-(t-2)=10-3t\\\\3\\le t\\le4:&\\quad z_s(t)=2(4-t)-1=7-2t\\\\4\\le t\\le5:&\\quad z_s(t)=-\\bigl(3-(t-2)\\bigr)=t-5\\end{aligned}$$ '
+     +'Outside $[0,5]$ the output is zero. The largest size is $|z_s(2)|=4$, at the end of the rising piece. The other pieces stay between $-1$ and $4$. So the best instant is $t_0=2$ s, not $T=3$ s. '
+     +'The noise variance is $E[n^{2}]=0.5\\int_0^21^{2}\\,dt=0.5(2)=1$. $$\\eta=\\frac{4^{2}}{1}=16$$<br>'
+     +'<b>Solution — (d).</b> Divide the bound by each SNR and take $10\\log_{10}$. $$\\begin{aligned}L_b&=10\\log_{10}\\frac{18}{6.722}=10\\log_{10}2.678=4.28\\ \\text{dB}\\\\L_c&=10\\log_{10}\\frac{18}{16}=10\\log_{10}1.125=0.51\\ \\text{dB}\\end{aligned}$$ '
+     +'The early sample costs $4.28$ dB. The simpler filter, sampled at its own best instant, costs only $0.51$ dB. The timing fault costs more.<br>'
+     +'<b>Check.</b> The matched-filter output is a straight line between whole seconds, because every piece of $s$ starts and ends on a whole second. One second early, $$y_s(2)=\\int_0^3s(\\tau)s(\\tau+1)\\,d\\tau=\\int_0^1(2)(2)\\,d\\tau+\\int_1^2(2)(-1)\\,d\\tau=4-2=2.$$ '
+     +'Halfway between $y_s(2)=2$ and $y_s(3)=9$ is $5.5$, as in part (b). Both $6.722$ and $16$ stay below the bound $18$, as Schwarz\'s inequality requires.',
+  figSol: () => stack(760, [
+    [row([[waveAx([[0,2,2],[2,3,-1]], 3, {yl:'s(t)', yr:[-1.6,2.6], ys:1}), 380],
+          [waveAx([[0,1,-1],[1,3,2]], 3, {yl:'h(t)=s(3-t)', yr:[-1.6,2.6], ys:1, col:C.h}), 380]], 220), 220],
+    [outT([[-0.5,0],[0,0],[1,-2],[2,2],[3,9],[4,2],[5,-2],[6,0],[6.8,0]], [-3.5,12], 'y_s(t)', 3,
+      [[3,9,'y_s(3)=9','start'],[2.5,5.5,'y_s(2.5)=5.5','end',true]]), 250],
+    [outT([[-0.5,0],[0,0],[2,4],[3,1],[4,-1],[5,0],[6.8,0]], [-2,5.5], 'z_s(t)', 1,
+      [[2,4,'z_s(2)=4','end'],[3,1,'z_s(3)=1','start',true]]), 250]]),
+  err:'Common error: sampling the filter $h_2$ at $t=T=3$ s out of habit. There $z_s(3)=1$ and $\\eta=1$, a loss of $12.55$ dB. A filter that is not matched has its own best instant, read from its output.',
+  teach:'Parts (b) and (c) separate two faults. A timing error of one sixth of the pulse costs more than a simpler filter shape. This holds as long as that filter is sampled at its own peak.' },
 
 { id:'D2-12', module:'M2', type:'mf', src:'MT Q3 (variant)',
   stem:'Consider an additive white Gaussian noise channel with two-sided noise power spectral density $N_0/2=1$ W/Hz. '
@@ -24873,26 +24993,45 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   err:'Common error: comparing the unweighted densities and getting $\\lambda=2$. The priors multiply the densities before they are compared.',
   teach:'The error given “1” grows while the error given “0” shrinks. Ask why the weighted sum still falls.' },
 
-{ id:'D2-21', module:'M2', type:'nongauss', src:'MT Q4 (variant)',
-  stem:'In a binary digital communication system, the received sample is denoted by $Y$. '
-     +'If “0” is sent, $Y$ is exponentially distributed with mean $1$. If “1” is sent, $Y$ is exponentially distributed with mean $3$. '
-     +'The bit “0” is sent with probability $0.4$ and “1” with probability $0.6$.',
-  parts:['<b>[9 pts]</b> Calculate $P_b$ for the decision rule $Y\\underset{0}{\\overset{1}{\\gtrless}}2$.',
-         '<b>[8 pts]</b> Determine the optimal decision threshold ($\\lambda$) for these priors.',
-         '<b>[8 pts]</b> Calculate $P_b$ for the $\\lambda$ value obtained in part (b).'],
-  sol:'<b>Given.</b> $f_Y(y\\mid 0)=e^{-y}$ and $f_Y(y\\mid 1)=\\tfrac13e^{-y/3}$ for $y\\ge 0$. $p_0=0.4$ and $p_1=0.6$.<br>'
-     +'<b>Find.</b> $P_b$ for the rule $Y>2$, the optimal $\\lambda$, and $P_b$ at $\\lambda$.<br>'
-     +'<b>Method.</b> Integrate each exponential over its error region and weight by the priors. The threshold solves $p_0f_Y(\\lambda\\mid 0)=p_1f_Y(\\lambda\\mid 1)$.<br>'
-     +'<b>Solution — (a).</b> $$P(e\\mid 0)=\\int_2^{\\infty}e^{-y}\\,dy=e^{-2}=0.1353,\\qquad P(e\\mid 1)=\\int_0^2\\tfrac13e^{-y/3}\\,dy=1-e^{-2/3}=0.4866$$ '
-     +'$$P_b=0.4(0.1353)+0.6(0.4866)=0.05413+0.2919=0.3461$$<br>'
-     +'<b>Solution — (b).</b> $$\\begin{aligned}0.4\\,e^{-\\lambda}&=0.6\\cdot\\tfrac13e^{-\\lambda/3}=0.2\\,e^{-\\lambda/3}\\\\\\ln2&=\\lambda-\\frac{\\lambda}{3}=\\frac{2\\lambda}{3}\\\\\\lambda&=1.5\\ln2=1.040\\end{aligned}$$ Decide “1” when $Y>1.040$.<br>'
-     +'<b>Solution — (c).</b> Here $e^{-\\lambda}=2^{-1.5}$ and $e^{-\\lambda/3}=2^{-0.5}$. $$P(e\\mid 0)=2^{-1.5}=0.3536,\\qquad P(e\\mid 1)=1-2^{-0.5}=0.2929$$ '
-     +'$$P_b=0.4(0.3536)+0.6(0.2929)=0.1414+0.1757=0.3172$$<br>'
-     +'<b>Check.</b> The derivative of $P_b(t)=0.4e^{-t}+0.6\\left(1-e^{-t/3}\\right)$ is $-0.4e^{-t}+0.2e^{-t/3}$. At $t=1.040$ it is $-0.4(0.3536)+0.2(0.7071)=-0.1414+0.1414=0$.',
-  figSol: () => dens({xr:[-0.5,10], top:0.4, f0: y=>0.4*expo(1)(y), f1: y=>0.6*expo(3)(y), lams:[1.5*Math.log(2)], dec1: y=>y>1.5*Math.log(2), xs:1,
-    notes:[[1.5,0.62,'0.4\\,f_Y(y\\mid 0)','start'],[5,0.3,'0.6\\,f_Y(y\\mid 1)','start'],[1.5*Math.log(2),1.3,'\\lambda=1.040','middle','k']]}),
-  err:'Common error: forgetting the factor $\\tfrac13$ in $f_Y(y\\mid 1)$ when the priors are applied. The equation then gives $\\lambda=1.5\\ln(2/3)<0$, a threshold outside the range of $Y$.',
-  teach:'The more likely “1” pulls the threshold down from $1.648$ to $1.040$. Ask what prior would put the threshold at zero.' },
+/* ---- binary decision on a count ---------------------------------------- */
+
+{ id:'D2-21', module:'M2', type:'count', src:'Madhow P6.10',
+  stem:'An on-off optical link sends a light pulse for “1” and no pulse for “0”. The receiver counts the photons that arrive in one bit interval. '
+     +'Background light gives a few counts even when no pulse is sent. '
+     +'The count $Z$ is a Poisson random variable with mean $m_0=2$ if “0” is sent and $m_1=8$ if “1” is sent: $$P(Z=k\\mid m)=\\frac{e^{-m}m^{k}}{k!},\\qquad k=0,1,2,\\ldots$$ '
+     +'The count takes whole values only. According to this information,',
+  parts:['<b>[7 pts]</b> Assume equal priors. Show that the optimal rule compares $Z$ with a threshold, and find the smallest count that is decided as “1”.',
+         '<b>[6 pts]</b> Calculate the conditional error probabilities $P(e\\mid 0)$ and $P(e\\mid 1)$ of this rule.',
+         '<b>[6 pts]</b> The bit “1” is now sent with probability $0.2$. Find the optimal rule for these priors.',
+         '<b>[6 pts]</b> Calculate $P_b$ for the rule of part (c). Compare it with $P_b$ of the rule of part (a) at the same priors.'],
+  sol:'<b>Given.</b> $P(Z=k\\mid 0)=e^{-2}2^{k}/k!$ and $P(Z=k\\mid 1)=e^{-8}8^{k}/k!$ for $k=0,1,2,\\ldots$ The priors are equal in parts (a) and (b). In parts (c) and (d), $p_0=0.8$ and $p_1=0.2$.<br>'
+     +'<b>Find.</b> The rule and its threshold, $P(e\\mid 0)$, $P(e\\mid 1)$, the rule for the new priors, and $P_b$ of both rules.<br>'
+     +'<b>Method.</b> The count is a whole number, so each value $k$ is decided on its own. $P_b$ collects $p_0P(Z=k\\mid 0)$ for every $k$ decided as “1” and $p_1P(Z=k\\mid 1)$ for every $k$ decided as “0”. '
+     +'Each term is smallest when $k$ goes to the message with the larger weighted probability. This is the discrete form of $p_0f_Y(\\lambda\\mid 0)=p_1f_Y(\\lambda\\mid 1)$.<br>'
+     +'<b>Solution — (a).</b> With equal priors, decide “1” where $P(Z=k\\mid 1)>P(Z=k\\mid 0)$. Divide the two probabilities. The factor $k!$ cancels. '
+     +'$$\\begin{aligned}\\frac{P(Z=k\\mid 1)}{P(Z=k\\mid 0)}&=\\frac{e^{-8}8^{k}}{e^{-2}2^{k}}\\\\&=e^{-6}\\,4^{k}\\end{aligned}$$ '
+     +'Decide “1” when this ratio exceeds $1$. Take the natural logarithm of both sides. $$\\begin{aligned}-6+k\\ln4&>0\\\\k&>\\frac{6}{\\ln4}=\\frac{6}{1.3863}=4.328\\end{aligned}$$ '
+     +'Dividing by $\\ln4>0$ keeps the direction of the inequality. The ratio grows with $k$, so the rule is a threshold on the count. '
+     +'The first whole number above $4.328$ is $5$. Decide “1” when $Z\\ge5$ and “0” when $Z\\le4$.<br>'
+     +'<b>Solution — (b).</b> A “0” is decided wrongly when $Z\\ge5$. That region is infinite, so use one minus the probability of $Z\\le4$. '
+     +'$$\\begin{aligned}P(Z\\le4\\mid 0)&=e^{-2}\\left(1+2+\\frac{2^{2}}{2}+\\frac{2^{3}}{6}+\\frac{2^{4}}{24}\\right)\\\\&=e^{-2}(1+2+2+1.3333+0.6667)\\\\&=7e^{-2}=7(0.13534)=0.94735\\end{aligned}$$ '
+     +'So $P(e\\mid 0)=1-0.94735=0.05265$. A “1” is decided wrongly when $Z\\le4$, a sum of five terms. '
+     +'$$\\begin{aligned}P(e\\mid 1)&=e^{-8}\\left(1+8+\\frac{8^{2}}{2}+\\frac{8^{3}}{6}+\\frac{8^{4}}{24}\\right)\\\\&=e^{-8}(1+8+32+85.333+170.667)\\\\&=297e^{-8}=297(3.3546\\times10^{-4})=0.09963\\end{aligned}$$<br>'
+     +'<b>Solution — (c).</b> Now decide “1” where $0.2P(Z=k\\mid 1)>0.8P(Z=k\\mid 0)$. Divide both sides by $0.2P(Z=k\\mid 0)$ and use the ratio of part (a). '
+     +'$$\\begin{aligned}e^{-6}\\,4^{k}&>\\frac{0.8}{0.2}=4\\\\-6+k\\ln4&>\\ln4\\\\k&>\\frac{6}{\\ln4}+1=5.328\\end{aligned}$$ '
+     +'The first whole number above $5.328$ is $6$. Decide “1” when $Z\\ge6$ and “0” when $Z\\le5$. The threshold moved up by one count, away from the more likely “0”.<br>'
+     +'<b>Solution — (d).</b> The new rule moves the count $k=5$ from “1” to “0”. Find its two probabilities. '
+     +'$$\\begin{aligned}P(Z=5\\mid 0)&=e^{-2}\\,\\frac{2^{5}}{120}=0.13534(0.26667)=0.03609\\\\P(Z=5\\mid 1)&=e^{-8}\\,\\frac{8^{5}}{120}=3.3546\\times10^{-4}(273.07)=0.09160\\end{aligned}$$ '
+     +'A “0” is now wrong only when $Z\\ge6$, and a “1” is wrong when $Z\\le5$. $$\\begin{aligned}P(e\\mid 0)&=0.05265-0.03609=0.01656\\\\P(e\\mid 1)&=0.09963+0.09160=0.19124\\end{aligned}$$ '
+     +'Weight each error by its prior. $$\\begin{aligned}P_b&=0.8(0.01656)+0.2(0.19124)\\\\&=0.01325+0.03825=0.05150\\end{aligned}$$ '
+     +'The rule of part (a) at these priors gives $0.8(0.05265)+0.2(0.09963)=0.04212+0.01993=0.06205$. The new rule is $17\\%$ lower.<br>'
+     +'<b>Check.</b> Test the two counts beside the new threshold with the weighted probabilities. At $k=5$, $0.8(0.03609)=0.02887$ and $0.2(0.09160)=0.01832$, so “0” wins. '
+     +'At $k=6$, $P(Z=6\\mid 0)=0.03609(2/6)=0.01203$ and $P(Z=6\\mid 1)=0.09160(8/6)=0.12214$. Then $0.8(0.01203)=0.00962$ and $0.2(0.12214)=0.02443$, so “1” wins.',
+  figSol: () => stack(760, [
+    [pmfFig(2, 8, 6/Math.log(4), '\\lambda=4.33\\ (\\text{equal priors})', 14), 260],
+    [pmfFig(2, 8, 6/Math.log(4) + 1, '\\lambda=5.33\\ (p_1=0.2)', 14), 260]]),
+  err:'Common error: rounding $k>4.328$ down and deciding “1” from $Z\\ge4$. The count $Z=4$ lies below the threshold. The first whole number above $4.328$ is $5$.',
+  teach:'The priors move the threshold by exactly one count here, because $p_0/p_1=m_1/m_0=4$. Ask which prior $p_1$ moves it by two counts.' },
 
 /* ---- binary PAM: priors, unequal variances, folded outputs ------------- */
 
@@ -24990,28 +25129,48 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   err:'Common error: taking $p_1=3$ and $p_0=1$ straight from “three times as often”. Priors must add to one, so $p_0=0.25$ and $p_1=0.75$.',
   teach:'Part (d) puts a number on what the prior is worth. It is a modest gain when the signals are well separated.' },
 
-{ id:'D2-26', module:'M2', type:'pam', src:'Final Q2 (variant)',
-  stem:'In a binary pulse amplitude modulation (PAM) communication system, the matched-filter output is $Y=|N_0|$ when “0” is transmitted and $Y=|N_1|$ when “1” is transmitted. '
-     +'$N_0$ and $N_1$ are independent Gaussian random variables with $N_0\\sim\\mathcal{N}(\\mu=0,\\sigma^{2}=1)$ and $N_1\\sim\\mathcal{N}(\\mu=0,\\sigma^{2}=9)$. '
-     +'The bit “0” is sent with probability $0.6$ and “1” with probability $0.4$.',
-  parts:['<b>[8 pts]</b> Determine the conditional PDFs, $f_Y(y\\mid 1)$ and $f_Y(y\\mid 0)$.',
-         '<b>[9 pts]</b> Find the optimal decision threshold ($\\lambda$) for these priors.',
-         '<b>[8 pts]</b> Calculate $P_b$ as a numerical value, using a table of the $Q$ function.'],
-  sol:'<b>Given.</b> $Y=|N_0|$ or $|N_1|$ with variances $1$ and $9$. $p_0=0.6$ and $p_1=0.4$.<br>'
-     +'<b>Find.</b> The two conditional PDFs, $\\lambda$ and $P_b$.<br>'
-     +'<b>Method.</b> A folded Gaussian has density $2f_N(y)$ on $y\\ge0$. Set the weighted densities equal and solve for $\\lambda^{2}$.<br>'
-     +'<b>Solution — (a).</b> $$f_Y(y\\mid 0)=\\frac{2}{\\sqrt{2\\pi}}e^{-y^{2}/2}=0.7979\\,e^{-y^{2}/2},\\qquad f_Y(y\\mid 1)=\\frac{2}{3\\sqrt{2\\pi}}e^{-y^{2}/18}=0.2660\\,e^{-y^{2}/18}$$ for $y\\ge 0$, and both are zero for $y<0$.<br>'
-     +'<b>Solution — (b).</b> Cancel $2/\\sqrt{2\\pi}$ from both sides and take logarithms. '
-     +'$$\\begin{aligned}0.6\\,e^{-\\lambda^{2}/2}&=\\frac{0.4}{3}e^{-\\lambda^{2}/18}\\\\\\ln\\frac{0.6(3)}{0.4}&=\\frac{\\lambda^{2}}{2}-\\frac{\\lambda^{2}}{18}=\\frac{4\\lambda^{2}}{9}\\\\\\lambda^{2}&=\\frac{9\\ln4.5}{4}=3.384\\\\\\lambda&=1.840\\end{aligned}$$ Decide “1” when $Y>1.840$.<br>'
-     +'<b>Solution — (c).</b> $$P(e\\mid 0)=P(|N_0|>1.840)=2Q(1.84)=2(0.03288)=0.06576$$ '
-     +'$$P(e\\mid 1)=P(|N_1|<1.840)=1-2Q\\!\\left(\\frac{1.840}{3}\\right)=1-2Q(0.61)=1-2(0.2709)=0.4582$$ '
-     +'$$P_b=0.6(0.06576)+0.4(0.4582)=0.03946+0.1833=0.2227$$<br>'
-     +'<b>Check.</b> At $\\lambda=1.840$ the weighted densities are $0.6(0.7979)e^{-1.692}=0.0882$ and $0.4(0.2660)e^{-0.1880}=0.0882$. They are equal.',
-  figSol: () => dens({xr:[-0.4,9], top:0.4787, f0: y=>y>=0 ? 0.6*2*gpdf(y,0,1) : 0, f1: y=>y>=0 ? 0.4*2*gpdf(y,0,9) : 0,
-    lams:[1.8396], dec1: y=>y>1.8396, xs:1,
-    notes:[[0.12,1.08,'0.6\\,f_Y(y\\mid 0)','start'],[3.6,0.3,'0.4\\,f_Y(y\\mid 1)','start'],[1.8396,1.3,'\\lambda=1.840','middle','k']]}),
-  err:'Common error: dropping the factor $1/3$ that comes from $\\sigma_1=3$ in the density of $N_1$. The equation then reads $\\ln1.5=4\\lambda^{2}/9$, and the threshold falls to $0.955$.',
-  teach:'Compare with the equal-prior folded question. The more likely “0” pushes the threshold out, and the error given “1” becomes large.' },
+/* ---- a Nyquist pulse that is not a raised cosine ----------------------- */
+
+{ id:'D2-26', module:'M2', type:'nyquist', src:'Madhow P4.3',
+  stem:'A binary baseband link uses the pulse $$s(t)=\\operatorname{sinc}(at)\\,\\operatorname{sinc}(bt),\\qquad a\\ge b>0,$$ where $\\operatorname{sinc}(x)=\\sin(\\pi x)/(\\pi x)$. '
+     +'The channel is an ideal lowpass channel that passes the band $|f|\\le B=2.5$ kHz. '
+     +'Use the transform pair $\\operatorname{sinc}(at)\\leftrightarrow\\frac1a\\Pi(f/a)$, where $\\Pi(f/a)=1$ for $|f|<a/2$ and $0$ otherwise. According to this information,',
+  parts:['<b>[7 pts]</b> Find the spectrum $S(f)$ and sketch it. Give $S(0)$, the frequency where its flat top ends and the frequency where it reaches zero.',
+         '<b>[6 pts]</b> Choose $a$ and $b$ so that the pulse has zero intersymbol interference at $R_b=4$ kb/s and exactly fills the channel.',
+         '<b>[7 pts]</b> With these $a$ and $b$, is the pulse free of intersymbol interference at $R_b=2$ kb/s? At $R_b=5$ kb/s? Give a reason for each.',
+         '<b>[5 pts]</b> Find the roll-off factor $\\alpha=(B-W)/W$ at $R_b=4$ kb/s, where $W=R_b/2$. Then redesign $a$ and $b$ for $R_b=4.5$ kb/s in the same channel, and give the new $\\alpha$.'],
+  sol:'<b>Given.</b> $s(t)=\\operatorname{sinc}(at)\\operatorname{sinc}(bt)$ with $a\\ge b>0$ and $\\operatorname{sinc}(x)=\\sin(\\pi x)/(\\pi x)$. The channel passes $|f|\\le2.5$ kHz.<br>'
+     +'<b>Find.</b> $S(f)$, and the values of $a$ and $b$ for $4$ kb/s. A test at $2$ and at $5$ kb/s, and $\\alpha$ at $4$ and at $4.5$ kb/s.<br>'
+     +'<b>Method.</b> A product in time is a convolution in frequency, so $S(f)$ is the convolution of two rectangles. Nyquist\'s criterion asks for $\\sum_nS(f-nR_b)=T_b$. '
+     +'Test each rate with the copies, then confirm it with the samples $s(kT_b)$.<br>'
+     +'<b>Solution — (a).</b> Take the transform of each factor and convolve. '
+     +'$$\\begin{aligned}S(f)&=\\frac1a\\Pi\\!\\left(\\frac fa\\right)*\\frac1b\\Pi\\!\\left(\\frac fb\\right)\\\\&=\\frac{1}{ab}\\int_{-\\infty}^{\\infty}\\Pi\\!\\left(\\frac{\\nu}{a}\\right)\\Pi\\!\\left(\\frac{f-\\nu}{b}\\right)d\\nu\\end{aligned}$$ '
+     +'The integrand is $1$ where $\\nu$ lies in both $(-a/2,a/2)$ and $(f-b/2,f+b/2)$, and $0$ elsewhere. So the integral is the length of the overlap of the two intervals. $S(f)$ is even, so take $f\\ge0$. '
+     +'For $0\\le f\\le(a-b)/2$, the short interval lies inside the long one. The overlap is $b$, so $S(f)=b/(ab)=1/a$. '
+     +'For $(a-b)/2\\le f\\le(a+b)/2$, the overlap runs from $f-b/2$ to $a/2$. Its length is $(a+b)/2-f$. Beyond $(a+b)/2$ the intervals do not overlap. '
+     +'$$S(f)=\\begin{cases}\\dfrac1a,&|f|\\le\\dfrac{a-b}{2}\\\\[6pt]\\dfrac{(a+b)/2-|f|}{ab},&\\dfrac{a-b}{2}\\le|f|\\le\\dfrac{a+b}{2}\\\\[6pt]0,&|f|\\ge\\dfrac{a+b}{2}\\end{cases}$$ '
+     +'The spectrum is a trapezoid. $S(0)=1/a$, the flat top ends at $(a-b)/2$, and $S(f)$ reaches zero at $(a+b)/2$. The slope passes half height, $1/(2a)$, at $f=a/2$.<br>'
+     +'<b>Solution — (b).</b> Neighbouring copies overlap on their slopes. Take $a=R_b$, so the copy $S(f-a)$ has its slope in the same band $(a-b)/2\\le f\\le(a+b)/2$. There $|f-a|=a-f$, because $f\\le a$. Add the two slopes. '
+     +'$$\\begin{aligned}S(f)+S(f-a)&=\\frac{(a+b)/2-f}{ab}+\\frac{(a+b)/2-(a-f)}{ab}\\\\&=\\frac{(a+b)/2-(a-b)/2}{ab}\\\\&=\\frac{b}{ab}=\\frac1a\\end{aligned}$$ '
+     +'On the flat top only one copy is nonzero, and its value is also $1/a$. So the copies add to $1/a=1/R_b=T_b$, and the criterion holds. '
+     +'The band edge must meet the channel edge, $(a+b)/2=B$. $$\\begin{aligned}a&=R_b=4000\\ \\text{s}^{-1}\\\\b&=2B-a=5000-4000=1000\\ \\text{s}^{-1}\\end{aligned}$$ '
+     +'So $s(t)=\\operatorname{sinc}(4000t)\\operatorname{sinc}(1000t)$. Its spectrum has height $1/a=0.25$ ms, a flat top to $1.5$ kHz and an edge at $2.5$ kHz.<br>'
+     +'<b>Solution — (c).</b> At $R_b=2$ kb/s, $T_b=0.5$ ms and the copies sit at multiples of $2$ kHz. The copies with even $n$ are $4$ kHz apart, so they add to $1/a$ as in part (b). '
+     +'The copies with odd $n$ are the same set moved by $2$ kHz, and they add to $1/a$ too. $$\\sum_nS(f-nR_b)=\\frac1a+\\frac1a=\\frac{2}{4000}=0.5\\ \\text{ms}=T_b$$ '
+     +'The criterion holds, so there is no interference at $2$ kb/s. The samples agree: $s(kT_b)=\\operatorname{sinc}(2k)\\operatorname{sinc}(0.5k)=0$ for $k\\neq0$, because $\\operatorname{sinc}(2k)=0$. '
+     +'At $R_b=5$ kb/s, $T_b=0.2$ ms and the copies sit at multiples of $5$ kHz. $S(f)$ is zero for $|f|\\ge2.5$ kHz, so these copies do not overlap. '
+     +'At $f=0$ the sum is $S(0)=0.25$ ms. At $f=2.5$ kHz it is $S(2.5)+S(-2.5)=0$. The sum is not constant, so the pulse has interference at $5$ kb/s. The first sample confirms it. '
+     +'$$\\begin{aligned}s(T_b)&=\\operatorname{sinc}(0.8)\\operatorname{sinc}(0.2)\\\\&=\\frac{\\sin(0.8\\pi)}{0.8\\pi}\\cdot\\frac{\\sin(0.2\\pi)}{0.2\\pi}\\\\&=\\frac{0.5878}{2.5133}\\cdot\\frac{0.5878}{0.6283}\\\\&=0.2339(0.9355)=0.2188\\end{aligned}$$<br>'
+     +'<b>Solution — (d).</b> At $R_b=4$ kb/s, $W=2$ kHz. $$\\alpha=\\frac{B-W}{W}=\\frac{2.5-2}{2}=0.25$$ This equals $b/a=1000/4000$. '
+     +'At $R_b=4.5$ kb/s the design of part (b) gives $a=4500\\ \\text{s}^{-1}$ and $b=2(2500)-4500=500\\ \\text{s}^{-1}$. Now $W=2.25$ kHz. $$\\alpha=\\frac{2.5-2.25}{2.25}=0.111$$ '
+     +'A faster rate in the same channel leaves a smaller roll-off.<br>'
+     +'<b>Check.</b> The area under $S(f)$ is $s(0)=1$. The trapezoid has height $1/a$ and parallel sides of widths $a-b$ and $a+b$. $$\\text{area}=\\frac1a\\cdot\\frac{(a-b)+(a+b)}{2}=\\frac1a\\cdot a=1$$ '
+     +'With the numbers of part (b), the area is $0.25\\times10^{-3}\\ \\text{s}\\times\\frac{3000+5000}{2}\\ \\text{Hz}=0.25\\times10^{-3}\\times4000=1$.',
+  figSol: () => stack(760, [
+    [nyqFold(4, 1, 4, C.mid, 'R_b=4\\ \\text{kb/s}:\\ \\textstyle\\sum_n S(f-nR_b)=T_b=0.25\\ \\text{ms}'), 250],
+    [nyqFold(4, 1, 5, C.err, 'R_b=5\\ \\text{kb/s}:\\ \\text{the sum is not constant}'), 250]]),
+  err:'Common error: taking $B\\ge R_b/2$ as enough for zero interference. At $R_b=5$ kb/s the band is exactly $R_b/2$, yet $s(T_b)=0.219$. At the minimum bandwidth only the rectangular spectrum works.',
+  teach:'The trapezoid is a Nyquist spectrum that is not a raised cosine. Its tails fall as $1/t^{2}$, faster than the sinc and slower than the raised cosine.' },
 
 /* ---- working back from a target -------------------------------------- */
 
@@ -25129,7 +25288,7 @@ window.DRILL_M2 = [
 { id:'m2-drill', module:'M2', nav:'Module 2 · practice questions',
   title:'Module 2 — practice questions',
   objective:'Thirty open-ended questions with worked solutions, in the form they are asked in.',
-  keywords:'practice questions module 2 matched filter demodulator conditional density threshold priors error probability laplacian triangular exponential folded gaussian raised cosine interference',
+  keywords:'practice questions module 2 matched filter demodulator conditional density threshold priors error probability laplacian triangular exponential folded gaussian raised cosine interference sampling instant poisson count nyquist trapezoid',
   steps:0, blocks:[
   {t:'eyebrow', text:'Module 2 · Practice D2-01 … D2-30'},
   {t:'title', text:'Practice questions'},
@@ -25160,6 +25319,12 @@ window.DRILL_M2 = [
    D3-01 … D3-12   drawn waveforms and Gram-Schmidt (midterm shape)
    D3-13 … D3-24   carrier waveform families (final shape)
    D3-25 … D3-30   reversed and comparison questions in the same format
+
+   Three questions take their shape from textbook problems instead (src names
+   the problem): D3-04, the simplex set built from an orthogonal set; D3-10,
+   two four-point sets of shifted pulses compared per bit; D3-22, which carrier
+   waveforms built from two baseband pulses are orthogonal. Each replaced the
+   closest duplicate of a midterm or final shape that stays in the set.
 
    Every number a solution states has a check in verify/drills_m3.py that
    reaches it by sampling the waveforms and running the procedure numerically.
@@ -25201,7 +25366,21 @@ CONTENT.DRILLTYPES.M3 = [
     method:['A different order in Gram–Schmidt gives different axes and different coordinates.',
             'Energies, distances and inner products do not depend on the basis. Compute them in each basis to see it.',
             'Compare designs by $d_{\\min}^2/E_{s,av}$. A factor of two is $3.01$ dB.'],
-    go:'m3-remarks' }
+    go:'m3-remarks' },
+
+  { k:'simplex', name:'Removing the average point',
+    asks:'An orthogonal set of $M$ equal-energy waveforms is given. Subtract the average waveform from each one, and find the new energies, correlations and distances, and the energy saved.',
+    method:['Subtract the average interval by interval, or subtract the average vector from every point.',
+            'The same vector is taken from every point, so every difference $\\mathbf{s}_j-\\mathbf{s}_k$ and every distance stays the same.',
+            'Expand $\\|\\mathbf{s}_k-\\bar{\\mathbf{s}}\\|^2$ with $\\|\\bar{\\mathbf{s}}\\|^2=E_s/M$ and $\\langle\\mathbf{s}_k,\\bar{\\mathbf{s}}\\rangle=E_s/M$.'],
+    go:'m3-energy' },
+
+  { k:'passband', name:'Carrier waveforms built from two pulses',
+    asks:'Four waveforms $a(t)\\cos(2\\pi f_ct)\\pm b(t)\\sin(2\\pi f_ct)$ and $b(t)\\cos(2\\pi f_ct)\\pm a(t)\\sin(2\\pi f_ct)$ are given. Find their inner products, the orthogonal pairs, a basis and the vectors.',
+    method:['With whole carrier cycles on each interval, $\\cos^2$ and $\\sin^2$ average to $\\tfrac12$ and $\\cos\\sin$ to $0$.',
+            'Multiply out a pair and keep the $\\cos^2$ and $\\sin^2$ terms. Each becomes half a baseband inner product.',
+            'Some pairs are orthogonal for any pulses. Others need $\\langle a,b\\rangle=0$ or $E_a=E_b$.'],
+    go:'m3-passband' }
 ];
 
 /* ---------- figures ----------
@@ -25278,6 +25457,37 @@ function cons3(pts, o){
     a.note(q[0],q[1],p[3],Object.assign({tex:true,fs:15,color:C.in},OFF[p[4]||'n'])); });
   if(o.dl) a.note(o.dl[0],o.dl[1],o.dl[2],{tex:true,fs:14,color:C.err,anchor:o.dl[3]||'start'});
   return BOX(a.svg(), 560);
+}
+
+/* The simplex construction in the same oblique view. S holds the orthogonal
+   points, m their average, and each simplex point is S[i]-m. Coordinates are
+   multiplied by k to fit the drawing. The violet lines are the shift by -m,
+   and the red edges show one distance before and after it. */
+function simplex3(S, m, o){
+  const k = o.k, pr = (x,y,z) => [k*(x-0.3*z), k*(y-0.6*z)];
+  const Uv = S.map(s=>s.map((v,j)=>v-m[j]));
+  const a = P.Axes({w:600,h:470,xr:o.xr,yr:o.yr,pad:{l:20,r:20,t:20,b:20},
+    grid:false,zeroAxes:false,arrows:false,xticksOverride:[],yticksOverride:[]});
+  const L = o.len;
+  [[pr(L[0],0,0),'\\psi_1','e'],[pr(0,L[1],0),'\\psi_2','n'],[pr(0,0,L[2]),'\\psi_3','s']].forEach(([q,l,w])=>{
+    a.poly([[0,0],q],{color:C.axis,width:1.5});
+    a.note(q[0],q[1],l,Object.assign({tex:true,fs:15,color:C.ink},OFF[w])); });
+  const tri = P3 => [0,1,2,0].map(i=>pr(...P3[i]));
+  a.poly(tri(S),{color:C.rule,width:1.2,dash:'4 5'});
+  a.poly(tri(Uv),{color:C.rule,width:1.2});
+  S.forEach((s,i)=>a.poly([pr(...s),pr(...Uv[i])],{color:C.mid,width:1.6,dash:'5 4'}));
+  a.poly([pr(...m),[0,0]],{color:C.mid,width:1.6,dash:'5 4'});
+  a.poly([pr(...S[0]),pr(...S[1])],{color:C.err,width:2.2});
+  a.poly([pr(...Uv[0]),pr(...Uv[1])],{color:C.err,width:2.2});
+  a.point(0,0,{color:C.ink,r:3});
+  const pm = pr(...m); a.point(pm[0],pm[1],{color:C.mid,r:5.5});
+  a.note(pm[0],pm[1],'\\bar{\\mathbf{s}}',Object.assign({tex:true,fs:15,color:C.mid},OFF[o.mw||'e']));
+  S.forEach((s,i)=>{ const q = pr(...s); a.point(q[0],q[1],{color:C.in,r:6});
+    a.note(q[0],q[1],'\\mathbf{s}_'+(i+1),Object.assign({tex:true,fs:15,color:C.in},OFF[o.sw[i]])); });
+  Uv.forEach((u,i)=>{ const q = pr(...u); a.point(q[0],q[1],{color:C.in,r:6});
+    a.note(q[0],q[1],'\\mathbf{u}_'+(i+1),Object.assign({tex:true,fs:15,color:C.in},OFF[o.uw[i]])); });
+  if(o.dl) a.note(o.dl[0],o.dl[1],o.dl[2],{tex:true,fs:14,color:C.err,anchor:o.dl[3]||'start'});
+  return BOX(a.svg(), 600);
 }
 
 /* a chain of equalities, one to a line, aligned at the equals sign */
@@ -25405,35 +25615,54 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   err:'Adding a second axis because the two waveforms "look different". A negative multiple of a waveform points along the same axis. The remainder is zero, and that settles it.',
   teach:'This set has the same shape as the midterm pair: one waveform a negative multiple of the other. It is a one-dimensional set with unequal energies, not an antipodal pair.' },
 
-{ id:'D3-04', module:'M3', type:'gs', src:'MT Q3',
-  stem:'Two equiprobable messages are transmitted by the waveforms $s_0(t)$ and $s_1(t)$ shown below, with $T=4$ s. According to the information given above,',
-  figure: () => ROW([wave(U([1,1,1,1]),{T:4,name:'s_0(t)',color:C.in}), wave(U([3,3,-1,-1]),{T:4,name:'s_1(t)',color:C.out})]),
-  parts:['[8 pts] Find an orthonormal basis for the two signals by the Gram–Schmidt procedure, starting with $s_0(t)$. Plot the basis functions.',
-         '[7 pts] Find $\\mathbf{s}_0$ and $\\mathbf{s}_1$, and compute each energy both from the vector and from the waveform.',
-         '[5 pts] Calculate $d_{01}$ and $\\rho_{01}=\\langle s_0,s_1\\rangle/\\sqrt{E_0E_1}$.',
-         '[5 pts] Draw the signal constellation and give $E_{s,av}$.'],
-  sol:'<b>Given.</b> $s_0(t)=1$ on $[0,4]$. $s_1(t)=3$ on $[0,2)$ and $-1$ on $[2,4]$.<br>'
-     +'<b>Find.</b> The basis, both vectors, both energies, $d_{01}$, $\\rho_{01}$ and $E_{s,av}$.<br>'
-     +'<b>Method.</b> Gram–Schmidt, then squared lengths and distances of the vectors.<br>'
-     +'<b>Solution — (a).</b> $E_0=\\int_0^4 1\\,dt=t\\,\\big|_0^4=4$, so $\\psi_1(t)=s_0(t)/2=\\tfrac12$ on $[0,4]$. The projection of $s_1$ is'
-     + AL('s_{11}&=\\int_0^2 (3)\\big(\\tfrac12\\big)dt+\\int_2^4 (-1)\\big(\\tfrac12\\big)dt','&=\\tfrac32 t\\,\\Big|_0^2-\\tfrac12 t\\,\\Big|_2^4','&=3-1','&=2.')
-     +'The remainder $g(t)=s_1(t)-2\\psi_1(t)=s_1(t)-1$ is $2$ on $[0,2)$ and $-2$ on $[2,4]$. Its energy is'
-     + AL('E_g&=\\int_0^2 4\\,dt+\\int_2^4 4\\,dt','&=8+8','&=16.')
-     +'So $\\psi_2(t)=g(t)/4$, which is $\\tfrac12$ on $[0,2)$ and $-\\tfrac12$ on $[2,4]$.<br>'
-     +'<b>Solution — (b).</b> $\\mathbf{s}_0=(2,\\,0)$. The second coordinate of $s_1$ is'
-     + AL('s_{12}&=\\int_0^2 (3)\\big(\\tfrac12\\big)dt+\\int_2^4 (-1)\\big(-\\tfrac12\\big)dt','&=3+1','&=4.')
-     +'So $\\mathbf{s}_1=(2,\\,4)$. From the vectors, $E_0=4$ and $E_1=2^2+4^2=20$. From the waveforms, $E_0=1^2(4)=4$ and $E_1=3^2(2)+(-1)^2(2)=18+2=20$.<br>'
-     +'<b>Solution — (c).</b> $\\mathbf{s}_1-\\mathbf{s}_0=(0,\\,4)$, so $d_{01}=4$. The inner product is $(2)(2)+(0)(4)=4$, so'
-     + AL('\\rho_{01}&=\\frac{4}{\\sqrt{(4)(20)}}','&=\\frac{4}{\\sqrt{80}}','&=0.4472.')
-     +'<b>Solution — (d).</b> $\\mathbf{s}_0$ lies on the $\\psi_1$ axis at $2$. $\\mathbf{s}_1$ lies straight above it at $(2,4)$. With equal priors, $E_{s,av}=\\tfrac12(4+20)=12$.<br>'
-     +'<b>Check.</b> The difference $s_1(t)-s_0(t)$ is $2$ on $[0,2)$ and $-2$ on $[2,4]$. Its energy is $4(2)+4(2)=16$, so the distance is $4$. '
-     +'It is the remainder $g(t)$ itself, because $s_{11}$ equals the only coordinate of $s_0$.',
-  figSol: () => ROW([wave([[0,4,0.5]],{T:4,name:'\\psi_1(t)',color:C.mid,yt:[0,0.5]}),
-                     wave([[0,2,0.5],[2,4,-0.5]],{T:4,name:'\\psi_2(t)',color:C.mid,yt:[-0.5,0,0.5]})])
-     + cons([[2,0,'\\mathbf{s}_0','ne'],[2,4,'\\mathbf{s}_1','e']],
-            {xr:[-0.8,4],yr:[-0.8,4.8],d:[[0,1]],dl:[1.85,2,'d_{01}=4','end']}),
-  err:'Taking $\\psi_2$ proportional to $s_1(t)$ itself. The second axis must be built from the remainder after the $\\psi_1$ part is removed. Otherwise the two axes are not orthogonal.',
-  teach:'The two points share their first coordinate, so the distance is the remainder energy. That is a quick route to part (c) worth pointing out.' },
+{ id:'D3-04', module:'M3', type:'simplex', src:'Madhow P6.30',
+  stem:'Three equiprobable messages are sent with the waveforms $s_1(t)$, $s_2(t)$ and $s_3(t)$ shown below, with $T=3$ s. '
+      +'A new set is built by subtracting their average waveform from each of them:'
+      +'$$\\bar s(t)=\\tfrac13\\big[s_1(t)+s_2(t)+s_3(t)\\big],\\qquad u_k(t)=s_k(t)-\\bar s(t),\\quad k=1,2,3.$$'
+      +'The set $\\{u_1,u_2,u_3\\}$ is called a simplex set. According to the information given above,',
+  figure: () => ROW([wave(U([3,6,6]),{T:3,name:'s_1(t)',color:C.in}), wave(U([6,3,-6]),{T:3,name:'s_2(t)',color:C.out}), wave(U([6,-6,3]),{T:3,name:'s_3(t)',color:C.mid})]),
+  parts:['[7 pts] Show that $s_1$, $s_2$ and $s_3$ are orthogonal and have one common energy $E_s$. Give an orthonormal basis and the three signal vectors.',
+         '[6 pts] Find and sketch $\\bar s(t)$ and the three simplex waveforms $u_k(t)$. Give their signal vectors in the same basis.',
+         '[6 pts] Calculate the energy $E_u$ of each $u_k$, the inner products $\\langle u_j,u_k\\rangle$ and the correlation coefficient $\\rho=\\langle u_j,u_k\\rangle/E_u$. Compare the distances in the two sets.',
+         '[6 pts] Now start from $M$ orthogonal waveforms of energy $E_s$. Show that $E_u=(1-1/M)E_s$ and $\\rho=-1/(M-1)$. Give the energy saving $10\\log_{10}(E_s/E_u)$ in dB for $M=2,3,4,8,16$.'],
+  sol:'<b>Given.</b> On the three unit intervals of $[0,3]$, $s_1$ takes $3,6,6$, $s_2$ takes $6,3,-6$ and $s_3$ takes $6,-6,3$.<br>'
+     +'<b>Find.</b> $E_s$, a basis, the vectors, $\\bar s$, the $u_k$, $E_u$, $\\rho$, the distances and the saving in dB.<br>'
+     +'<b>Method.</b> Every waveform is constant on unit intervals, so an inner product is a sum of three products of heights. The average is subtracted interval by interval, or vector by vector.<br>'
+     +'<b>Solution — (a).</b> Interval by interval, the three inner products are'
+     + AL('\\langle s_1,s_2\\rangle&=(3)(6)+(6)(3)+(6)(-6)=18+18-36=0,','\\langle s_1,s_3\\rangle&=(3)(6)+(6)(-6)+(6)(3)=18-36+18=0,','\\langle s_2,s_3\\rangle&=(6)(6)+(3)(-6)+(-6)(3)=36-18-18=0.')
+     +'The energies are'
+     + AL('E_1&=3^2+6^2+6^2=81,','E_2&=6^2+3^2+(-6)^2=81,','E_3&=6^2+(-6)^2+3^2=81.')
+     +'So $E_s=81$. In the Gram–Schmidt procedure every projection on an earlier axis is zero, so nothing is removed. '
+     +'Each basis function is $\\psi_k(t)=s_k(t)/\\sqrt{81}=s_k(t)/9$. The vectors are $\\mathbf{s}_1=(9,0,0)$, $\\mathbf{s}_2=(0,9,0)$ and $\\mathbf{s}_3=(0,0,9)$.<br>'
+     +'<b>Solution — (b).</b> Average the heights on each interval:'
+     + AL('\\bar s&=\\tfrac13\\big(3+6+6,\\;6+3-6,\\;6-6+3\\big)','&=\\tfrac13(15,\\,3,\\,3)','&=(5,\\,1,\\,1),')
+     +'listed by interval. Subtract it from each waveform:'
+     + AL('u_1&=(3-5,\\;6-1,\\;6-1)=(-2,\\,5,\\,5),','u_2&=(6-5,\\;3-1,\\;-6-1)=(1,\\,2,\\,-7),','u_3&=(6-5,\\;-6-1,\\;3-1)=(1,\\,-7,\\,2).')
+     +'In vector form the average is $\\bar{\\mathbf{s}}=\\tfrac13(9,9,9)=(3,3,3)$. So'
+     + AL('\\mathbf{u}_1&=(9,0,0)-(3,3,3)=(6,\\,-3,\\,-3),','\\mathbf{u}_2&=(0,9,0)-(3,3,3)=(-3,\\,6,\\,-3),','\\mathbf{u}_3&=(0,0,9)-(3,3,3)=(-3,\\,-3,\\,6).')
+     +'<b>Solution — (c).</b> The energy of each simplex symbol is'
+     + AL('E_u&=6^2+(-3)^2+(-3)^2','&=36+9+9','&=54.')
+     +'The three inner products are'
+     + AL('\\langle\\mathbf{u}_1,\\mathbf{u}_2\\rangle&=(6)(-3)+(-3)(6)+(-3)(-3)=-27,','\\langle\\mathbf{u}_1,\\mathbf{u}_3\\rangle&=(6)(-3)+(-3)(-3)+(-3)(6)=-27,','\\langle\\mathbf{u}_2,\\mathbf{u}_3\\rangle&=(-3)(-3)+(6)(-3)+(-3)(6)=-27.')
+     +'So $\\rho=-27/54=-0.5$. For the distances, $\\mathbf{u}_j-\\mathbf{u}_k=\\mathbf{s}_j-\\mathbf{s}_k$, because the same vector $(3,3,3)$ is taken from both. For example,'
+     + AL('d_{12}^2&=\\|\\mathbf{s}_1-\\mathbf{s}_2\\|^2','&=9^2+(-9)^2+0^2','&=162,')
+     +'so $d_{12}=9\\sqrt2=12.73$ in both sets. Every pair is at this distance. The simplex set keeps the distances with energy $54$ instead of $81$.<br>'
+     +'<b>Solution — (d).</b> Take $\\mathbf{s}_k=\\sqrt{E_s}\\,\\mathbf{e}_k$, where $\\mathbf{e}_k$ is the unit vector on axis $k$. The average is $\\bar{\\mathbf{s}}=\\tfrac{\\sqrt{E_s}}{M}(1,1,\\ldots,1)$. Two numbers are needed:'
+     + AL('\\|\\bar{\\mathbf{s}}\\|^2&=M\\cdot\\frac{E_s}{M^2}=\\frac{E_s}{M},','\\langle\\mathbf{s}_k,\\bar{\\mathbf{s}}\\rangle&=\\sqrt{E_s}\\cdot\\frac{\\sqrt{E_s}}{M}=\\frac{E_s}{M}.')
+     +'Expand the squared length of $\\mathbf{u}_k=\\mathbf{s}_k-\\bar{\\mathbf{s}}$:'
+     + AL('E_u&=\\|\\mathbf{s}_k\\|^2-2\\langle\\mathbf{s}_k,\\bar{\\mathbf{s}}\\rangle+\\|\\bar{\\mathbf{s}}\\|^2','&=E_s-\\frac{2E_s}{M}+\\frac{E_s}{M}','&=\\Big(1-\\frac1M\\Big)E_s.')
+     +'For $j\\ne k$ the product $\\langle\\mathbf{s}_j,\\mathbf{s}_k\\rangle$ is zero, so'
+     + AL('\\langle\\mathbf{u}_j,\\mathbf{u}_k\\rangle&=0-\\frac{E_s}{M}-\\frac{E_s}{M}+\\frac{E_s}{M}=-\\frac{E_s}{M},','\\rho&=\\frac{-E_s/M}{(M-1)E_s/M}=-\\frac{1}{M-1}.')
+     +'The distances do not change, so the saving is $10\\log_{10}\\frac{M}{M-1}$ dB:'
+     +'$$\\begin{array}{c|ccccc}M&2&3&4&8&16\\\\\\hline E_s/E_u&2&1.5&1.333&1.143&1.067\\\\ \\text{saving (dB)}&3.010&1.761&1.249&0.580&0.280\\end{array}$$'
+     +'For $M=2$ the simplex set is the antipodal pair, with $\\rho=-1$. As $M$ grows, the saving falls towards $0$ dB.<br>'
+     +'<b>Check.</b> With $M=3$ the formulas give $E_u=\\tfrac23(81)=54$ and $\\rho=-\\tfrac12$, as in part (c). From the waveform, $E_u=(-2)^2+5^2+5^2=4+25+25=54$. '
+     +'The three $u_k$ add to zero on every interval: $-2+1+1=0$, $5+2-7=0$ and $5-7+2=0$. So the simplex points lie in a plane through the origin, and the set needs only two dimensions.',
+  figSol: () => ROW([wave(U([-2,5,5]),{T:3,name:'u_1(t)',color:C.in}), wave(U([1,2,-7]),{T:3,name:'u_2(t)',color:C.in,yt:[-7,0,2]}), wave(U([1,-7,2]),{T:3,name:'u_3(t)',color:C.in,yt:[-7,0,2]})])
+     + simplex3([[9,0,0],[0,9,0],[0,0,9]],[3,3,3],
+                {k:1/6,len:[12,11,16],xr:[-1.3,2.4],yr:[-1.9,2.0],sw:['ne','ne','e'],uw:['se','w','w'],mw:'e',dl:[0.95,0.95,'d=9\\sqrt2']}),
+  err:'Scaling the distances down with the energy. The same vector $\\bar{\\mathbf{s}}$ is taken from every point, so each difference $\\mathbf{u}_j-\\mathbf{u}_k=\\mathbf{s}_j-\\mathbf{s}_k$ is unchanged.',
+  teach:'Orthogonal signalling spends energy on the average point, which every symbol shares. The simplex set removes it and keeps every distance. Part (d) turns the three-signal case into the general rule.' },
 
 { id:'D3-05', module:'M3', type:'gs', src:'MT Q3',
   stem:'Three equiprobable messages are transmitted by the waveforms $s_1(t)$, $s_2(t)$ and $s_3(t)$ shown below, with $T=3$ s. According to the information given above,',
@@ -25593,32 +25822,45 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   err:'Stopping after two axes because "three signals in a small space" seem dependent. The remainder $g_3$ has energy $\\tfrac43$, so a third axis is needed.',
   teach:'A three-dimensional answer, drawn in oblique view. The equal distances follow from the waveforms at once, which makes a good check.' },
 
-{ id:'D3-10', module:'M3', type:'gs', src:'MT Q3',
-  stem:'Three equiprobable messages are transmitted by the waveforms shown below, with $T=4$ s. According to the information given above,',
-  figure: () => ROW([wave(U([1,1,-1,-1]),{T:4,name:'s_1(t)',color:C.in}), wave(U([1,1,1,1]),{T:4,name:'s_2(t)',color:C.out}), wave(U([0,0,2,2]),{T:4,name:'s_3(t)',color:C.mid})]),
-  parts:['[8 pts] Find an orthonormal basis by the Gram–Schmidt procedure in the order $s_1,s_2,s_3$. Plot the basis functions.',
-         '[6 pts] Find the signal vectors and the energies.',
-         '[6 pts] Calculate $\\rho_{12}$ and $\\rho_{23}$, where $\\rho_{ij}=\\langle s_i,s_j\\rangle/\\sqrt{E_iE_j}$, and all three distances.',
-         '[5 pts] Draw the signal constellation, give $d_{\\min}$, and write $s_3(t)$ in terms of $s_1(t)$ and $s_2(t)$.'],
-  sol:'<b>Given.</b> $s_1$ takes $1,1,-1,-1$, $s_2$ takes $1,1,1,1$ and $s_3$ takes $0,0,2,2$ on the unit intervals of $[0,4]$.<br>'
-     +'<b>Find.</b> The basis, the vectors, the energies, $\\rho_{12}$, $\\rho_{23}$, the distances, $d_{\\min}$ and the relation.<br>'
-     +'<b>Method.</b> Gram–Schmidt with interval sums. Correlations and distances from the vectors.<br>'
-     +'<b>Solution — (a).</b> $E_1=4$, so $\\psi_1=s_1/2$ takes $\\tfrac12,\\tfrac12,-\\tfrac12,-\\tfrac12$. The projection of $s_2$ is $s_{21}=\\tfrac12+\\tfrac12-\\tfrac12-\\tfrac12=0$. '
-     +'So $g_2=s_2$, with energy $4$, and $\\psi_2=s_2/2=\\tfrac12$ on $[0,4]$.<br>'
-     +'For $s_3$, $s_{31}=\\int_2^4(2)(-\\tfrac12)\\,dt=-2$ and $s_{32}=\\int_2^4(2)(\\tfrac12)\\,dt=2$. The remainder $g_3=s_3+2\\psi_1-2\\psi_2=s_3+s_1-s_2$ takes $0+1-1$, $0+1-1$, $2-1-1$ and $2-1-1$. It is zero, so there is no third axis.<br>'
-     +'<b>Solution — (b).</b> $\\mathbf{s}_1=(2,\\,0)$, $\\mathbf{s}_2=(0,\\,2)$ and $\\mathbf{s}_3=(-2,\\,2)$. The energies are $4$, $4$ and $8$.<br>'
-     +'<b>Solution — (c).</b> $\\langle\\mathbf{s}_1,\\mathbf{s}_2\\rangle=0$, so $\\rho_{12}=0$. Also $\\langle\\mathbf{s}_2,\\mathbf{s}_3\\rangle=(0)(-2)+(2)(2)=4$, so'
-     + AL('\\rho_{23}&=\\frac{4}{\\sqrt{(4)(8)}}','&=\\frac{1}{\\sqrt2}','&=0.7071.')
-     +'The distances are'
-     + AL('d_{12}&=\\sqrt{2^2+2^2}=2\\sqrt2=2.828,','d_{13}&=\\sqrt{4^2+2^2}=\\sqrt{20}=4.472,','d_{23}&=\\sqrt{2^2+0^2}=2.')
-     +'<b>Solution — (d).</b> The points are $(2,0)$, $(0,2)$ and $(-2,2)$. So $d_{\\min}=2$, between $s_2$ and $s_3$. From part (a), $s_3=s_2-s_1$.<br>'
-     +'<b>Check.</b> On the waveforms, $s_2-s_1$ takes $0,0,2,2$, which is $s_3$. The difference $s_3-s_2$ takes $-1,-1,1,1$, with energy $4$. So $d_{23}=2$.',
-  figSol: () => ROW([wave([[0,2,0.5],[2,4,-0.5]],{T:4,name:'\\psi_1(t)',color:C.mid,yt:[-0.5,0,0.5]}),
-                     wave([[0,4,0.5]],{T:4,name:'\\psi_2(t)',color:C.mid,yt:[0,0.5]})])
-     + cons([[2,0,'\\mathbf{s}_1','n'],[0,2,'\\mathbf{s}_2','e'],[-2,2,'\\mathbf{s}_3','n']],
-            {xr:[-3,3],yr:[-0.8,3],yt:[1,3],d:[[1,2]],dl:[-1,1.55,'d_{\\min}=2','middle']}),
-  err:'Writing $\\rho_{23}=\\langle s_2,s_3\\rangle$ without dividing by $\\sqrt{E_2E_3}$. The correlation coefficient must lie between $-1$ and $1$, and $4$ does not.',
-  teach:'The first two waveforms are orthogonal, so the Gram–Schmidt work is light. The effort goes into the correlation and the relation $s_3=s_2-s_1$.' },
+{ id:'D3-10', module:'M3', type:'compare', src:'Madhow P6.17',
+  stem:'Let $p(t)$ be the rectangular pulse of height $2$ on $0\\le t<1$ s, zero elsewhere. Two sets of four equiprobable waveforms on $0\\le t\\le 4$ s are built from its shifts:'
+      +'$$\\begin{aligned}&\\text{Set A:}\\quad a_i(t)=p(t-i),\\quad i=0,1,2,3,\\\\&\\text{Set B:}\\quad b_0(t)=p(t)+p(t-1),\\quad b_1(t)=p(t-2)+p(t-3),\\\\&\\phantom{\\text{Set B:}}\\quad b_2(t)=p(t)+p(t-2),\\quad b_3(t)=p(t-1)+p(t-3).\\end{aligned}$$'
+      +'Each symbol carries $\\log_2 4=2$ bits, so the energy per bit is $E_b=E_{s,av}/2$. According to the information given above,',
+  figure: () => ROW([wave([[0,1,2]],{T:4,name:'p(t)',color:C.in})]),
+  parts:['[7 pts] Show that $\\psi_i(t)=\\tfrac12p(t-i)$, $i=0,1,2,3$, is an orthonormal basis for both sets. Find the signal vectors of set A and of set B.',
+         '[5 pts] Calculate $E_{s,av}$ and $E_b$ for each set.',
+         '[8 pts] Calculate the six distances within set B. Give $d_{\\min}$ and the number of nearest neighbours of each symbol, for both sets.',
+         '[5 pts] Compare the sets by $d_{\\min}^2/E_b$. Which set is better, and by how many dB? Where does the other set spend its extra energy?'],
+  sol:'<b>Given.</b> $p(t)=2$ on $[0,1)$. A symbol of set A holds one shifted pulse, and a symbol of set B holds two. The symbols are equiprobable, with $2$ bits each.<br>'
+     +'<b>Find.</b> The basis, the vectors, $E_{s,av}$, $E_b$, the distances, $d_{\\min}$, the nearest neighbours and the comparison.<br>'
+     +'<b>Method.</b> The four shifts never overlap, so they are orthogonal. Each coordinate is then the number of pulses on that interval times the height $2$. '
+     +'Two designs are compared fairly at equal energy per bit, so the measure is $d_{\\min}^2/E_b$.<br>'
+     +'<b>Solution — (a).</b> On $[i,i+1)$ the function $\\psi_i$ equals $\\tfrac12(2)=1$, and it is zero elsewhere. Its energy is'
+     + AL('\\int_0^4\\psi_i^2\\,dt&=\\int_i^{i+1}1^2\\,dt','&=t\\,\\Big|_i^{i+1}','&=1.')
+     +'For $i\\ne j$ the two pulses sit on different intervals. So $\\psi_i(t)\\psi_j(t)=0$ at every $t$, and $\\langle\\psi_i,\\psi_j\\rangle=0$. '
+     +'Every waveform of either set is a sum of shifted pulses, so this basis carries both sets. Since $p(t-i)=2\\psi_i(t)$, the vectors are'
+     + AL('\\mathbf{a}_0&=(2,0,0,0),\\quad \\mathbf{a}_1=(0,2,0,0),','\\mathbf{a}_2&=(0,0,2,0),\\quad \\mathbf{a}_3=(0,0,0,2),','\\mathbf{b}_0&=(2,2,0,0),\\quad \\mathbf{b}_1=(0,0,2,2),','\\mathbf{b}_2&=(2,0,2,0),\\quad \\mathbf{b}_3=(0,2,0,2).')
+     +'<b>Solution — (b).</b> Every symbol of set A has energy $2^2=4$. So $E_{s,av}=4$ and $E_b=4/2=2$. '
+     +'Every symbol of set B has energy $2^2+2^2=8$. So $E_{s,av}=8$ and $E_b=8/2=4$.<br>'
+     +'<b>Solution — (c).</b> In set A, $\\mathbf{a}_i-\\mathbf{a}_j$ has one entry $2$ and one entry $-2$. So every pair is $\\sqrt{4+4}=2\\sqrt2$ apart, and each symbol has <b>three</b> nearest neighbours. In set B the six differences give'
+     + AL('d_{01}&=\\|(2,2,-2,-2)\\|=\\sqrt{16}=4,','d_{02}&=\\|(0,2,-2,0)\\|=\\sqrt8=2.828,','d_{03}&=\\|(2,0,0,-2)\\|=\\sqrt8=2.828,','d_{12}&=\\|(-2,0,0,2)\\|=\\sqrt8=2.828,','d_{13}&=\\|(0,-2,2,0)\\|=\\sqrt8=2.828,','d_{23}&=\\|(2,-2,2,-2)\\|=\\sqrt{16}=4.')
+     +'So both sets have $d_{\\min}=2\\sqrt2=2.828$. Each symbol of set B has <b>two</b> nearest neighbours.<br>'
+     +'<b>Solution — (d).</b> The two ratios are'
+     + AL('\\text{A:}\\quad\\frac{d_{\\min}^2}{E_b}&=\\frac{8}{2}=4,','\\text{B:}\\quad\\frac{d_{\\min}^2}{E_b}&=\\frac{8}{4}=2.')
+     +'Set A is better. It reaches the same $d_{\\min}$ with half the energy per bit, a gain of'
+     + AL('10\\log_{10}\\frac{4}{2}&=10(0.30103)','&=3.01\\ \\text{dB}.')
+     +'Set B spends the extra energy on a common part. The average of its four vectors is $\\bar{\\mathbf{b}}=(1,1,1,1)$, with energy $4$. Every symbol contains it, so it carries no information. What is left is'
+     + AL('\\mathbf{b}_0-\\bar{\\mathbf{b}}&=(1,1,-1,-1),\\quad \\mathbf{b}_1-\\bar{\\mathbf{b}}=(-1,-1,1,1),','\\mathbf{b}_2-\\bar{\\mathbf{b}}&=(1,-1,1,-1),\\quad \\mathbf{b}_3-\\bar{\\mathbf{b}}=(-1,1,-1,1).')
+     +'Each remainder has energy $4$ and is orthogonal to $\\bar{\\mathbf{b}}$, for example $(1,1,1,1)\\cdot(1,1,-1,-1)=0$. So each symbol energy splits as $4+4=8$, and half of it is the common part. '
+     +'Along the unit vectors $\\boldsymbol{\\phi}_a=\\tfrac12(1,1,-1,-1)$ and $\\boldsymbol{\\phi}_b=\\tfrac12(1,-1,1,-1)$, the four remainders sit at $\\pm2$ and form a square.<br>'
+     +'<b>Check.</b> From the waveforms, $b_0-b_2$ is $2$ on $[1,2)$, $-2$ on $[2,3)$ and zero elsewhere. Its energy is $4(1)+4(1)=8$, so $d_{02}=2\\sqrt2$. '
+     +'The waveform $a_0-a_1$ has the same energy $8$. Also $\\mathbf{b}_0+\\mathbf{b}_1=\\mathbf{b}_2+\\mathbf{b}_3=(2,2,2,2)$, so set B needs only three of the four axes.',
+  figSol: () => ROW([wave(U([2,2,0,0]),{T:4,name:'b_0(t)',color:C.in}), wave(U([0,0,2,2]),{T:4,name:'b_1(t)',color:C.in}),
+                     wave(U([2,0,2,0]),{T:4,name:'b_2(t)',color:C.in}), wave(U([0,2,0,2]),{T:4,name:'b_3(t)',color:C.in})], 2)
+     + cons([[2,0,'\\mathbf{b}_0-\\bar{\\mathbf{b}}','s'],[-2,0,'\\mathbf{b}_1-\\bar{\\mathbf{b}}','n'],[0,2,'\\mathbf{b}_2-\\bar{\\mathbf{b}}','w'],[0,-2,'\\mathbf{b}_3-\\bar{\\mathbf{b}}','e']],
+            {xr:[-3.2,3.2],yr:[-3,3],xt:[-3,-1,1,3],yt:[-3,-1,1,3],xl:'\\phi_a',yl:'\\phi_b',d:[[0,2]],dl:[1.15,1.25,'d_{\\min}=2\\sqrt2'],w:480,h:440}),
+  err:'Comparing the two sets by $d_{\\min}$ alone. Both have $d_{\\min}=2\\sqrt2$, but set B uses twice the energy per bit to reach it.',
+  teach:'Two four-point sets with the same minimum distance. Set B is a square carried on a constant offset, the waste the simplex construction removes. Error probabilities for both sets belong to Module 4.' },
 
 { id:'D3-11', module:'M3', type:'gs', src:'MT Q3',
   stem:'Four equiprobable symbols are transmitted by the waveforms $s_1(t)$ and $s_2(t)$ shown below and by their negatives, $s_3(t)=-s_1(t)$ and $s_4(t)=-s_2(t)$, with $T=4$ s. According to the information given above,',
@@ -25888,27 +26130,56 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   err:'Using the in-phase and quadrature basis at one frequency. These symbols use two frequencies, so each frequency needs its own axis.',
   teach:'A creative turn on the family: the second axis is a second frequency. The geometry is the same square as four-phase keying, rotated by $45^\\circ$.' },
 
-{ id:'D3-22', module:'M3', type:'band', src:'Final Q3',
-  stem: BAND('$$s_k(t)=(3k-6)\\sqrt2\\cos(2500\\pi t),\\qquad k\\in\\{0,1,2,3,4\\},\\quad 0\\le t\\le 1.$$'),
-  parts:['[8 pts] Find a basis for the signal set, show that it has unit energy, and state the number of dimensions.',
-         '[7 pts] Find the signal coordinates and draw the signal constellation.',
-         '[5 pts] Calculate the symbol energies and $E_{s,av}$.',
-         '[5 pts] Determine $d_{\\min}$, the number of nearest neighbours of each symbol, and $d_{\\min}^2/E_{s,av}$.'],
-  sol:'<b>Given.</b> Five multiples of $\\sqrt2\\cos(2500\\pi t)$ with factors $3k-6=-6,-3,0,3,6$, so $f_c=1250$ Hz.<br>'
-     +'<b>Find.</b> The basis, the coordinates, the energies, $E_{s,av}$, $d_{\\min}$, the nearest neighbours and $d_{\\min}^2/E_{s,av}$.<br>'
-     +'<b>Method.</b> All symbols are multiples of one waveform, so the set is one-dimensional.<br>'
-     +'<b>Solution — (a).</b> Take $\\psi(t)=\\sqrt2\\cos(2500\\pi t)$. Its energy is'
-     + AL('\\int_0^1\\psi^2\\,dt&=\\int_0^1\\big[1+\\cos(5000\\pi t)\\big]\\,dt','&=\\Big[t+\\frac{\\sin(5000\\pi t)}{5000\\pi}\\Big]_0^1','&=1,')
-     +'because $\\sin(5000\\pi)=0$. Every symbol is $(3k-6)\\psi(t)$, so the set needs <b>one</b> dimension.<br>'
-     +'<b>Solution — (b).</b> The coordinates are $-6,-3,0,3,6$. The constellation is five equally spaced points on the $\\psi$ axis, one of them at the origin.<br>'
-     +'<b>Solution — (c).</b> The energies are $36,9,0,9,36$. So'
-     + AL('E_{s,av}&=\\tfrac15(36+9+0+9+36)','&=\\tfrac{90}{5}','&=18.')
-     +'<b>Solution — (d).</b> Neighbours are $3$ apart, so $d_{\\min}=3$. The two outer symbols have one nearest neighbour, the three inner symbols two. The ratio is $d_{\\min}^2/E_{s,av}=9/18=0.5$.<br>'
-     +'<b>Check.</b> The waveform $s_1-s_0=3\\sqrt2\\cos(2500\\pi t)$ has energy $(3\\sqrt2)^2/2=9$, so $d_{01}=3$. From the waveform, $E_4=(6\\sqrt2)^2/2=36$.',
-  figSol: () => cons([[-6,0,'\\mathbf{s}_0','n'],[-3,0,'\\mathbf{s}_1','n'],[0,0,'\\mathbf{s}_2','n'],[3,0,'\\mathbf{s}_3','n'],[6,0,'\\mathbf{s}_4','n']],
-                     {xr:[-7.5,7.5],yr:[-0.6,1.3],oneD:true,xl:'\\psi',xs:3,d:[[3,4]],dl:[4.5,0.9,'d_{\\min}=3','middle'],w:560,h:200}),
-  err:'Leaving the zero symbol out of $E_{s,av}$ and dividing $90$ by $4$. The zero symbol is sent as often as any other, so the sum is divided by $5$.',
-  teach:'The examination set with three levels, extended to five. The zero symbol stays in the average energy, which is the usual slip.' },
+{ id:'D3-22', module:'M3', type:'passband', src:'Madhow P4.20',
+  stem:'The baseband pulses $a(t)$ and $b(t)$ below, on $0\\le t\\le 2$ s, build four carrier waveforms at $f_c=1000$ Hz:'
+      +'$$\\begin{aligned}s_1(t)&=a(t)\\cos(2\\pi f_ct)-b(t)\\sin(2\\pi f_ct),\\\\ s_2(t)&=b(t)\\cos(2\\pi f_ct)-a(t)\\sin(2\\pi f_ct),\\\\ s_3(t)&=b(t)\\cos(2\\pi f_ct)+a(t)\\sin(2\\pi f_ct),\\\\ s_4(t)&=a(t)\\cos(2\\pi f_ct)+b(t)\\sin(2\\pi f_ct),\\end{aligned}\\qquad 0\\le t\\le 2.$$'
+      +'Each unit interval holds a whole number of carrier cycles. According to the information given above,',
+  figure: () => ROW([wave(U([3,1]),{T:2,name:'a(t)',color:C.in}), wave(U([1,-3]),{T:2,name:'b(t)',color:C.out})]),
+  parts:['[6 pts] Find the energies $E_a$, $E_b$ and the inner product $\\langle a,b\\rangle$. Show that on any unit interval $[k,k+1)$ the integrals of $\\cos^2(2\\pi f_ct)$ and $\\sin^2(2\\pi f_ct)$ are $\\tfrac12$, and the integral of $\\cos(2\\pi f_ct)\\sin(2\\pi f_ct)$ is $0$.',
+         '[8 pts] Write the energy of each $s_k(t)$ and the six inner products $\\langle s_j,s_k\\rangle$ in terms of $E_a$, $E_b$ and $\\langle a,b\\rangle$, and evaluate them. Can the set serve for 4-ary orthogonal signalling with coherent detection?',
+         '[6 pts] Find an orthonormal basis of four functions and the four signal vectors. Give the distance between two symbols and $d_{\\min}^2/E_{s,av}$.',
+         '[5 pts] The pulse $b(t)$ is replaced by $2b(t)$. Which pairs stay orthogonal? Give the inner product and the correlation coefficient of each other pair.'],
+  sol:'<b>Given.</b> $a(t)$ is $3$ on $[0,1)$ and $1$ on $[1,2]$. $b(t)$ is $1$ on $[0,1)$ and $-3$ on $[1,2]$. The carrier is at $f_c=1000$ Hz, so each unit interval holds $1000$ whole cycles.<br>'
+     +'<b>Find.</b> $E_a$, $E_b$, $\\langle a,b\\rangle$, the energies and inner products of the $s_k$, a basis, the vectors, the distance, and the effect of replacing $b$ by $2b$.<br>'
+     +'<b>Method.</b> Write $C=\\cos(2\\pi f_ct)$ and $S=\\sin(2\\pi f_ct)$. The product of two symbols splits into terms in $C^2$, $S^2$ and $CS$, each multiplied by two pulses. '
+     +'The pulses are constant on each unit interval, so the carrier integrals of part (a) turn every term into a baseband inner product.<br>'
+     +'<b>Solution — (a).</b> The pulses are constant on unit intervals, so'
+     + AL('E_a&=3^2(1)+1^2(1)=10,','E_b&=1^2(1)+(-3)^2(1)=10,','\\langle a,b\\rangle&=(3)(1)(1)+(1)(-3)(1)=0.')
+     +'On $[k,k+1)$, use $\\cos^2x=\\tfrac12(1+\\cos2x)$:'
+     + AL('\\int_k^{k+1}\\cos^2(2\\pi f_ct)\\,dt&=\\int_k^{k+1}\\tfrac12\\big[1+\\cos(4\\pi f_ct)\\big]\\,dt','&=\\Big[\\frac t2+\\frac{\\sin(4\\pi f_ct)}{8\\pi f_c}\\Big]_k^{k+1}','&=\\frac12+\\frac{\\sin\\big(4000\\pi(k+1)\\big)-\\sin(4000\\pi k)}{8000\\pi}','&=\\frac12.')
+     +'Both sines are zero, because $4000\\pi k$ is a whole multiple of $\\pi$. In the same way, $\\sin^2x=\\tfrac12(1-\\cos2x)$ gives $\\tfrac12$ for the sine. With $\\cos x\\sin x=\\tfrac12\\sin2x$,'
+     + AL('\\int_k^{k+1}\\cos(2\\pi f_ct)\\sin(2\\pi f_ct)\\,dt&=\\int_k^{k+1}\\tfrac12\\sin(4\\pi f_ct)\\,dt','&=\\Big[-\\frac{\\cos(4\\pi f_ct)}{8\\pi f_c}\\Big]_k^{k+1}','&=\\frac{\\cos(4000\\pi k)-\\cos\\big(4000\\pi(k+1)\\big)}{8000\\pi}','&=0,')
+     +'because both cosines equal $1$.<br>'
+     +'<b>Solution — (b).</b> Let $x(t)$ and $y(t)$ be two of the pulses, with constant values $x_k$ and $y_k$ on $[k,k+1)$. Part (a) gives'
+     + AL('\\int_0^2 x\\,y\\,C^2\\,dt&=\\sum_k x_ky_k\\cdot\\tfrac12=\\tfrac12\\langle x,y\\rangle,','\\int_0^2 x\\,y\\,S^2\\,dt&=\\tfrac12\\langle x,y\\rangle,','\\int_0^2 x\\,y\\,C\\,S\\,dt&=0.')
+     +'Multiply out each pair and keep only the $C^2$ and $S^2$ terms. The energy of $s_1$ is'
+     + AL('E_1&=\\int_0^2\\big(a^2C^2-2abCS+b^2S^2\\big)\\,dt','&=\\tfrac12E_a+\\tfrac12E_b','&=5+5=10.')
+     +'The same steps give $E_2=E_3=E_4=\\tfrac12(E_a+E_b)=10$. For the six pairs,'
+     + AL('\\langle s_1,s_2\\rangle&=\\tfrac12\\langle a,b\\rangle+\\tfrac12\\langle a,b\\rangle=\\langle a,b\\rangle=0,','\\langle s_1,s_3\\rangle&=\\tfrac12\\langle a,b\\rangle-\\tfrac12\\langle a,b\\rangle=0,','\\langle s_1,s_4\\rangle&=\\tfrac12E_a-\\tfrac12E_b=5-5=0,','\\langle s_2,s_3\\rangle&=\\tfrac12E_b-\\tfrac12E_a=5-5=0,','\\langle s_2,s_4\\rangle&=\\tfrac12\\langle a,b\\rangle-\\tfrac12\\langle a,b\\rangle=0,','\\langle s_3,s_4\\rangle&=\\tfrac12\\langle a,b\\rangle+\\tfrac12\\langle a,b\\rangle=\\langle a,b\\rangle=0.')
+     +'All six inner products are zero and all four energies are $10$. So the answer is <b>yes</b>: the set is a 4-ary orthogonal set for coherent detection.<br>'
+     +'<b>Solution — (c).</b> The four products $aC$, $aS$, $bC$ and $bS$ are orthogonal. A $CS$ term integrates to zero, and $\\langle a,b\\rangle=0$ removes the $C^2$ and $S^2$ terms between $a$ and $b$. '
+     +'Each product has energy $\\tfrac12(10)=5$. So take'
+     + AL('\\phi_1(t)&=\\frac{a(t)\\,C}{\\sqrt5},\\qquad \\phi_2(t)=-\\frac{a(t)\\,S}{\\sqrt5},','\\phi_3(t)&=\\frac{b(t)\\,C}{\\sqrt5},\\qquad \\phi_4(t)=-\\frac{b(t)\\,S}{\\sqrt5}.')
+     +'Then $aC=\\sqrt5\\,\\phi_1$, $-aS=\\sqrt5\\,\\phi_2$, $bC=\\sqrt5\\,\\phi_3$ and $-bS=\\sqrt5\\,\\phi_4$. Reading off each waveform,'
+     + AL('\\mathbf{s}_1&=(\\sqrt5,\\,0,\\,0,\\,\\sqrt5),','\\mathbf{s}_2&=(0,\\,\\sqrt5,\\,\\sqrt5,\\,0),','\\mathbf{s}_3&=(0,\\,-\\sqrt5,\\,\\sqrt5,\\,0),','\\mathbf{s}_4&=(\\sqrt5,\\,0,\\,0,\\,-\\sqrt5).')
+     +'$\\mathbf{s}_1$ and $\\mathbf{s}_4$ use only $\\phi_1$ and $\\phi_4$. $\\mathbf{s}_2$ and $\\mathbf{s}_3$ use only $\\phi_2$ and $\\phi_3$. Two orthogonal symbols of energy $E_s=10$ are'
+     + AL('d&=\\sqrt{E_s+E_s}','&=\\sqrt{20}','&=4.472')
+     +'apart, for every pair. So $d_{\\min}=2\\sqrt5$ and $d_{\\min}^2/E_{s,av}=20/10=2$.<br>'
+     +'<b>Solution — (d).</b> Now the second pulse has energy $4E_b=40$, and $\\langle a,2b\\rangle=2(0)=0$. The pairs $(s_1,s_2)$ and $(s_3,s_4)$ need only $\\langle a,b\\rangle=0$, so they stay orthogonal. '
+     +'The pairs $(s_1,s_3)$ and $(s_2,s_4)$ are orthogonal for any pulses. The other two pairs change:'
+     + AL('\\langle s_1,s_4\\rangle&=\\tfrac12(10-40)=-15,','\\langle s_2,s_3\\rangle&=\\tfrac12(40-10)=15.')
+     +'Every energy is now $\\tfrac12(10+40)=25$. So'
+     + AL('\\rho_{14}&=\\frac{-15}{25}=-0.6,','\\rho_{23}&=\\frac{15}{25}=0.6.')
+     +'Four orthogonal carrier waveforms of this form need both $\\langle a,b\\rangle=0$ and $E_a=E_b$.<br>'
+     +'<b>Check.</b> Compute $\\langle s_1,s_4\\rangle$ interval by interval for the given pulses. On $[0,1)$ the $C^2$ and $S^2$ terms give $\\tfrac12(3^2)-\\tfrac12(1^2)=4$. '
+     +'On $[1,2]$ they give $\\tfrac12(1^2)-\\tfrac12\\big((-3)^2\\big)=-4$. The sum is $0$, as in part (b).',
+  figSol: () => { const r = Math.sqrt(5);
+    return ROW([cons([[r,r,'\\mathbf{s}_1','ne'],[r,-r,'\\mathbf{s}_4','se']],
+                     {xr:[-3.2,3.2],yr:[-3.2,3.2],xt:[-3,-1,1,3],yt:[-3,-1,1,3],xl:'\\phi_1',yl:'\\phi_4',d:[[0,1]],dl:[2.45,0.7,'d=2\\sqrt5'],w:400,h:400}),
+                cons([[r,r,'\\mathbf{s}_2','ne'],[-r,r,'\\mathbf{s}_3','nw']],
+                     {xr:[-3.2,3.2],yr:[-3.2,3.2],xt:[-3,-1,1,3],yt:[-3,-1,1,3],xl:'\\phi_2',yl:'\\phi_3',d:[[0,1]],dl:[1.2,2.65,'d=2\\sqrt5','middle'],w:400,h:400})]); },
+  err:'Declaring $s_1$ and $s_4$ orthogonal because $\\langle a,b\\rangle=0$. Their inner product is $\\tfrac12(E_a-E_b)$, which is zero only because the two pulses have equal energy.',
+  teach:'Four carrier waveforms built from two baseband pulses. The inner products fall into three kinds of pair, and part (d) shows which condition each kind needs. Detection with an unknown carrier phase is not asked.' },
 
 { id:'D3-23', module:'M3', type:'band', src:'Final Q3',
   stem: BAND('$$s_{m,n}(t)=\\sqrt2\\,\\big[(2m-5)\\cos(2000\\pi t)-(2n-3)\\sin(2000\\pi t)\\big],\\qquad m\\in\\{1,2,3,4\\},\\ n\\in\\{1,2\\},\\quad 0\\le t\\le 1.$$'),
@@ -26158,8 +26429,10 @@ window.DRILL_M3 = [
 /* ==========================================================================
    Practice questions — Module 4.
 
-   Thirty questions in the form of the midterm and final examinations. Four
-   shapes, one per type below:
+   Thirty questions in the form of the midterm and final examinations. Six
+   shapes, one per type below. Three questions take their shape from a
+   textbook problem (src 'Madhow P6.xx') and keep the id of the question they
+   replaced: D4-04 (bound), D4-05 (mismatch) and D4-26 (erasure).
 
      binary  — two drawn waveforms in white Gaussian noise, the correlator or
                matched-filter demodulator, the conditional densities of its
@@ -26170,7 +26443,11 @@ window.DRILL_M3 = [
                decision regions, and the nearest-neighbour approximation of
                the symbol error probability as a function of E_s,avg/N0;
      bound   — the union bound against the nearest-neighbour form, and two
-               constellations compared at equal average energy.
+               constellations compared at equal average energy;
+     erasure — a receiver with a third outcome, an erasure zone along the
+               boundaries: error and erasure probabilities, bound and exact;
+     mismatch— a gain error moves the samples against fixed thresholds: the
+               conditional errors, the average error and the loss in dB.
 
    Every Q value is quoted as a table would give it: the argument rounded to
    two decimals. verify/drills_m4.py re-derives every stated number by a
@@ -26279,6 +26556,7 @@ function dens(o){
   });
   const items = o.comps.map(c=>[c.col, c.tex]);
   items.push([C.dec.err, '\\text{error area}', 'fill']);
+  (o.moreLegend||[]).forEach(it=>items.push(it));
   legend(a, items, o.legend||'tr');
   if(o.over) o.over(a);
   return a.svg();
@@ -26295,7 +26573,7 @@ const PTCOL  = () => [C.in, C.out, C.mid, C.h];
 function cons(o){
   const xr = o.xr, yr = o.yr, n = o.n || 72;
   const a = P.Axes({w:o.w||560, h:o.h||420, xr:xr, yr:yr,
-    xlabel:'\\psi_1', ylabel: o.oneD ? '' : '\\psi_2', pad:{l:52,r:24,t:26,b:42},
+    xlabel:o.xlabel||'\\psi_1', ylabel: o.oneD ? '' : (o.ylabel||'\\psi_2'), pad:o.pad||{l:52,r:24,t:26,b:42},
     xstep:o.xstep, ystep:o.ystep, xtarget:6, ytarget:5,
     yticksOverride: o.oneD ? [] : null,
     xtickfmt: v=>(o.hideX||[]).some(h=>Math.abs(h-v)<1e-9) ? '' : P.fmt(v,3),
@@ -26361,6 +26639,36 @@ function hPair(o){
   return row([A.svg(), B.svg()], 18);
 }
 
+/* ---- the Gaussian tail for drawn curves only (Borjesson-Sundberg form,
+   relative error below 0.3%); every stated number comes from a Q table ---- */
+function Qfn(x){
+  if(x < 0) return 1 - Qfn(-x);
+  return Math.exp(-x*x/2)/((0.661*x + 0.339*Math.sqrt(x*x + 5.51))*Math.sqrt(2*Math.PI));
+}
+
+/* ---- four quadrant regions with a cross-shaped erasure zone ----
+   The zone |y1|<b or |y2|<b decides for no symbol, so it keeps the page
+   colour under a light hatch; its edges are the decision boundaries. */
+function erasureFig(o){
+  const L = o.lim, b = o.b;
+  const a = P.Axes({w:o.w||540, h:o.h||500, xr:[-L,L], yr:[-L,L], xlabel:'y_1', ylabel:'y_2',
+    pad:{l:52,r:24,t:26,b:42}, xstep:1, ystep:1, xtarget:7, ytarget:7});
+  const rc = REGCOL(), pc = PTCOL();
+  o.pts.forEach((p,k)=>{ const sx = Math.sign(p.x), sy = Math.sign(p.y);
+    a.rect(sx*b, sy*b, sx*L, sy*L, {fill:rc[k % rc.length]}); });
+  for(let v=-L; v<=L-2*b+1e-9; v+=0.3){
+    a.poly([[-b,v],[b,v+2*b]], {color:C.ruleStrong, width:1});
+    a.poly([[v,-b],[v+2*b,b]], {color:C.ruleStrong, width:1});
+  }
+  [-b,b].forEach(e=>{ a.poly([[e,-L],[e,L]], {color:C.ink, width:1.5});
+                      a.poly([[-L,e],[L,e]], {color:C.ink, width:1.5}); });
+  o.pts.forEach((p,k)=>a.point(p.x, p.y, {color:pc[k % pc.length], r:6}));
+  o.pts.forEach((p,k)=>a.note(p.x, p.y, p.tex, {tex:true, fs:14, color:pc[k % pc.length],
+    dx:p.x>0?10:-10, dy:-12, anchor:p.x>0?'start':'end'}));
+  if(o.over) o.over(a);
+  return a.svg();
+}
+
 /* ======================================================================
    The taxonomy: the examination question types this module answers.
    ====================================================================== */
@@ -26391,7 +26699,21 @@ CONTENT.DRILLTYPES.M4 = [
     method:['List every pairwise distance $d_{kj}$. The union bound adds one $Q\\!\\left(\\sqrt{d_{kj}^{2}/2N_0}\\right)$ for every other point, averaged over the transmitted point.',
             'The nearest-neighbour form keeps only the terms at $d_{\\min}$. It is an approximation and can fall below the true value.',
             'To compare two constellations, express both $d_{\\min}^{2}$ in terms of the same $E_{s,\\text{avg}}$ first. The larger $d_{\\min}^{2}$ wins, and $N_{\\min}$ only scales the answer.'],
-    go:'m4-union' }
+    go:'m4-union' },
+
+  { k:'erasure', name:'A decision with an erasure zone',
+    asks:'The receiver puts out an erasure when the observation lies near a boundary. Find the regions, the error and erasure probabilities by the intelligent union bound, and their exact values.',
+    method:['Draw the regions with the zone cut out. From a signal point, measure the distance to the near edge of the zone and to its far edge.',
+            'An error must cross a far edge, and an erasure only a near edge. The intelligent union bound adds one $Q$ term for each face of that kind.',
+            'When the zone is made of strips along the axes, the two coordinates are independent. The exact probabilities are then products of one-coordinate probabilities.'],
+    go:'m4-intel' },
+
+  { k:'mismatch', name:'A receiver with misplaced thresholds',
+    asks:'A wrong gain scales the samples while the thresholds stay at their nominal places. Find the conditional errors, the average error and the loss in decibels.',
+    method:['Scale the samples and keep the thresholds. List the distance from each sample to each threshold beside it.',
+            'In one dimension the error of a symbol is one $Q$ term for each threshold beside it. The terms add exactly, because the error events cannot happen together.',
+            'At high signal-to-noise ratio the smallest distance decides. The loss in decibels is $20\\log_{10}$ of the correct distance over that smallest distance.'],
+    go:'m4-regions' }
 ];
 
 CONTENT.DRILL = CONTENT.DRILL.concat([
@@ -26470,54 +26792,71 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   err:'Dropping $-E_i/2$ from the correlation metric. With $E_1=16$ and $E_0=0$ the receiver then decides "1" for every $Y>0$, and $P(e\\mid 0)$ becomes one half.',
   teach:'Part (d) ties the examination shape to the correlation metric of the module. An on-off pair is the case where the energy term cannot be left out.' },
 
-{ id:'D4-04', module:'M4', type:'binary', src:'MT Q3 (variant)',
-  stem:'Two equiprobable messages, "0" and "1", are sent over an additive white Gaussian noise channel with $N_0/2=0.5$ W/Hz. The waveforms are $s_0(t)=3$ for $0\\le t<1$ and $s_1(t)=3$ for $1\\le t<2$, each zero elsewhere in $[0,2]$. The two waveforms are not multiples of one pulse. The receiver therefore uses two correlators, with basis functions $\\psi_1(t)$ and $\\psi_2(t)$, sampled at $T=2$ s. Their outputs form $\\mathbf{Y}=(Y_1,Y_2)$. According to the information given above,',
-  figure: () => waves(
-    {name:'s_0(t)', xr:[0,2.4], yr:[-1,4], pts:[[0,0],[0,3],[1,3],[1,0],[2.4,0]], xstep:0.5, ystep:1},
-    {name:'s_1(t)', xr:[0,2.4], yr:[-1,4], pts:[[0,0],[1,0],[1,3],[2,3],[2,0],[2.4,0]], xstep:0.5, ystep:1}),
-  parts:['[6 pts] Find an orthonormal basis $\\psi_1(t)$, $\\psi_2(t)$ and the signal vectors $\\mathbf{s}_0$ and $\\mathbf{s}_1$.',
-         '[6 pts] Write the conditional joint PDFs $f_{\\mathbf{Y}}(y_1,y_2\\mid 0)$ and $f_{\\mathbf{Y}}(y_1,y_2\\mid 1)$.',
-         '[6 pts] Find the ML decision rule and draw the two decision regions.',
-         '[7 pts] Calculate the average probability of bit error $P_b$.'],
-  sol:'<b>Given.</b> Two rectangular pulses of height $3$ on disjoint unit intervals. Equal priors, $N_0/2=0.5$ W/Hz.<br>'
-     +'<b>Find.</b> The basis, the vectors, the joint densities, the ML regions and $P_b$.<br>'
-     +'<b>Method.</b> The pulses do not overlap, so they are orthogonal and each gives one basis function. Each coordinate carries independent noise of variance $N_0/2$. The ML rule is minimum distance, and $P_b$ depends only on $d=\\|\\mathbf{s}_0-\\mathbf{s}_1\\|$.<br>'
-     +'<b>Solution — (a).</b> $E_0=\\int_0^1 3^{2}\\,dt=9$, so $\\psi_1(t)=s_0(t)/3=1$ for $0\\le t<1$. The inner product is $\\int_0^2 s_0(t)s_1(t)\\,dt=0$, because the pulses never overlap. So Gram–Schmidt leaves $s_1$ unchanged and $\\psi_2(t)=s_1(t)/3=1$ for $1\\le t<2$. The vectors are $$\\mathbf{s}_0=(3,\\,0),\\qquad \\mathbf{s}_1=(0,\\,3).$$<br>'
-     +'<b>Solution — (b).</b> $Y_1$ and $Y_2$ are independent, each with variance $\\sigma^{2}=0.5$. So $2\\sigma^{2}=1$ and $1/(2\\pi\\sigma^{2})=1/\\pi$: $$f_{\\mathbf{Y}}(y_1,y_2\\mid 0)=\\frac1\\pi\\exp\\!\\left(-(y_1-3)^{2}-y_2^{2}\\right)$$ $$f_{\\mathbf{Y}}(y_1,y_2\\mid 1)=\\frac1\\pi\\exp\\!\\left(-y_1^{2}-(y_2-3)^{2}\\right)$$<br>'
-     +'<b>Solution — (c).</b> Decide "0" when $\\mathbf{y}$ is closer to $\\mathbf{s}_0$: $$\\begin{aligned}(y_1-3)^{2}+y_2^{2}&<y_1^{2}+(y_2-3)^{2}\\\\-6y_1+9&<-6y_2+9\\\\y_1&>y_2\\end{aligned}$$ The boundary is the line $y_2=y_1$, the perpendicular bisector of the two points. The region of "0" lies below it and the region of "1" above it.<br>'
-     +'<b>Solution — (d).</b> The distance is $$d=\\sqrt{(3-0)^{2}+(0-3)^{2}}=3\\sqrt2=4.243.$$ The boundary is $d/2$ from each point, and the noise along the line joining them has standard deviation $\\sigma=\\sqrt{0.5}=0.7071$. So $$P_b=Q\\!\\left(\\frac{d/2}{\\sigma}\\right)=Q\\!\\left(\\frac{2.121}{0.7071}\\right)=Q(3.00)=1.350\\times10^{-3}.$$<br>'
-     +'<b>Check.</b> Use the rule of part (c) directly. Let $Z=Y_1-Y_2$. Given "0", $Z=3+N_1-N_2$, with variance $0.5+0.5=1$. An error is $Z<0$, so $P(e\\mid0)=Q(3/1)=Q(3.00)$, the same value.',
-  figSol: () => cons({xr:[-1.5,4.5], yr:[-1.5,4.5], w:520, h:440, xstep:1, ystep:1,
-    pts:[{x:3,y:0,tex:'\\mathbf{s}_0'},{x:0,y:3,tex:'\\mathbf{s}_1'}],
-    dmin:[0,1], dminAt:[2.2,1.2], dminAnchor:'start', hideX:[3], hideY:[3],
-    over:a=>{ a.note(3.2,3.9,'y_2=y_1',{tex:true,fs:14,color:C.ink,anchor:'end'}); }}),
-  err:'Using only $Y_1$ with the threshold $1.5$. That throws away $Y_2$, which also carries the signal. The error rises to $Q(1.5/0.7071)=Q(2.12)$, about twelve times larger.',
-  teach:'A variant of the examination shape: the two waveforms need two basis functions. The check with $Z=Y_1-Y_2$ shows that only the component along $\\mathbf{s}_0-\\mathbf{s}_1$ matters.' },
+{ id:'D4-04', module:'M4', type:'bound', src:'Madhow P6.17',
+  stem:'A symbol of length $T=2$ s has four slots of $0.5$ s. The pulse in slot $i$ is $p_i(t)=2$ for $0.5(i-1)\\le t<0.5i$, and zero elsewhere, with $i=1,\\ldots,4$. Two sets of four equally likely signals are built from these pulses. Set A puts one pulse in one slot, $s_i(t)=p_i(t)$. Set B puts pulses in two slots: $$s_1=p_1+p_2,\\quad s_2=p_3+p_4,\\quad s_3=p_1+p_3,\\quad s_4=p_2+p_4.$$ The channel adds white Gaussian noise with power spectral density $N_0/2$. Let $E_p$ be the energy of one pulse. The receiver uses the basis $\\psi_i(t)=p_i(t)/\\sqrt{E_p}$ and forms $r_i=\\int_0^T r(t)\\psi_i(t)\\,dt$. According to the information given above,',
+  parts:['[6 pts] Find $E_p$, the four signal vectors of each set, and the energy per bit $E_b$ of each set.',
+         '[7 pts] Find every pairwise distance in each set in terms of its $E_b$. Write the union bound on the symbol error probability $P_e$ of each set as a function of $E_b/N_0$.',
+         '[6 pts] Find the penalty of set B in decibels at high $E_b/N_0$. Evaluate both union bounds at $E_b/N_0=4$.',
+         '[6 pts] Show that the ML receiver for set B needs only the signs of $Z_1=r_1-r_4$ and $Z_2=r_2-r_3$. Find the exact $P_e$ of set B and evaluate it at $E_b/N_0=4$.'],
+  sol:'<b>Given.</b> Four pulses of height $2$ and width $0.5$ s in disjoint slots. Set A uses one slot, set B two. Equal priors, noise power spectral density $N_0/2$.<br>'
+     +'<b>Find.</b> $E_p$, the vectors, $E_b$ of each set, the distances, the two union bounds, the penalty of set B, and the exact $P_e$ of set B.<br>'
+     +'<b>Method.</b> The pulses do not overlap, so they are orthogonal, and each one gives one basis direction. A vector then lists which slots carry a pulse. The union bound needs only the pairwise distances. For set B all energies are equal, so the ML rule becomes a largest-correlation rule, and that splits into two independent sign tests.<br>'
+     +'<b>Solution — (a).</b> The energy of one pulse is $$E_p=\\int_0^{0.5}2^{2}\\,dt=4\\Big[\\,t\\,\\Big]_0^{0.5}=2.$$ So $p_i(t)=\\sqrt2\\,\\psi_i(t)$, and every pulse adds $\\sqrt2$ to its own coordinate. For set A: $$\\begin{aligned}\\mathbf{s}_1&=(\\sqrt2,0,0,0)\\\\\\mathbf{s}_2&=(0,\\sqrt2,0,0)\\\\\\mathbf{s}_3&=(0,0,\\sqrt2,0)\\\\\\mathbf{s}_4&=(0,0,0,\\sqrt2)\\end{aligned}$$ For set B: $$\\begin{aligned}\\mathbf{s}_1&=(\\sqrt2,\\sqrt2,0,0)\\\\\\mathbf{s}_2&=(0,0,\\sqrt2,\\sqrt2)\\\\\\mathbf{s}_3&=(\\sqrt2,0,\\sqrt2,0)\\\\\\mathbf{s}_4&=(0,\\sqrt2,0,\\sqrt2)\\end{aligned}$$ Four symbols carry $\\log_2 4=2$ bits. In set A every signal has energy $E_s=2$, so $E_b=2/2=1$. In set B every signal has energy $E_s=2+2=4$, so $E_b=4/2=2$.<br>'
+     +'<b>Solution — (b).</b> In set A two signals differ in two coordinates, by $\\sqrt2$ in each. So every pair has $$d^{2}=(\\sqrt2)^{2}+(\\sqrt2)^{2}=4=4E_b.$$ In set B, start from $\\mathbf{s}_1$ and square the coordinate differences: $$\\begin{aligned}\\|\\mathbf{s}_1-\\mathbf{s}_2\\|^{2}&=2+2+2+2=8=4E_b\\\\\\|\\mathbf{s}_1-\\mathbf{s}_3\\|^{2}&=0+2+2+0=4=2E_b\\\\\\|\\mathbf{s}_1-\\mathbf{s}_4\\|^{2}&=2+0+0+2=4=2E_b\\end{aligned}$$ Every point of set B has the same pattern: two others at $d^{2}=2E_b$ and one at $d^{2}=4E_b$. The union bound adds $Q\\!\\left(\\sqrt{d^{2}/2N_0}\\right)$ over the other three points. The sum is the same for every transmitted point, so it is also the average: $$P_e^{A}\\le3\\,Q\\!\\left(\\sqrt{\\frac{2E_b}{N_0}}\\right)$$ $$P_e^{B}\\le2\\,Q\\!\\left(\\sqrt{\\frac{E_b}{N_0}}\\right)+Q\\!\\left(\\sqrt{\\frac{2E_b}{N_0}}\\right)$$<br>'
+     +'<b>Solution — (c).</b> At high $E_b/N_0$ the term with the smallest distance dominates. Set A has $d_{\\min}^{2}=4E_b$ and set B has $d_{\\min}^{2}=2E_b$. Set B needs twice the $E_b$ to reach the same $Q$ argument. Its penalty is $$10\\log_{10}\\frac{4}{2}=3.01\\ \\text{dB}.$$ At $E_b/N_0=4$ the arguments are $\\sqrt{2(4)}=\\sqrt8=2.828\\approx2.83$ and $\\sqrt4=2.00$: $$\\begin{aligned}P_e^{A}&\\le3\\,Q(2.83)\\\\&=3(0.002327)=0.006981\\end{aligned}$$ $$\\begin{aligned}P_e^{B}&\\le2\\,Q(2.00)+Q(2.83)\\\\&=0.04550+0.002327=0.04783\\end{aligned}$$<br>'
+     +'<b>Solution — (d).</b> Expand the squared distance: $\\|\\mathbf{r}-\\mathbf{s}_i\\|^{2}=\\|\\mathbf{r}\\|^{2}-2\\langle\\mathbf{r},\\mathbf{s}_i\\rangle+E_i$. All four $E_i$ equal $4$, so only the correlation changes with $i$. ML picks the largest correlation. Divided by $\\sqrt2$, the four correlations are $r_1+r_2$, $r_3+r_4$, $r_1+r_3$ and $r_2+r_4$. Decide $s_1$ when $r_1+r_2$ beats each of the others: $$\\begin{aligned}(r_1+r_2)-(r_1+r_3)&=r_2-r_3=Z_2>0\\\\(r_1+r_2)-(r_2+r_4)&=r_1-r_4=Z_1>0\\\\(r_1+r_2)-(r_3+r_4)&=Z_1+Z_2>0\\end{aligned}$$ The third line holds whenever the first two do. So decide $s_1$ when $Z_1>0$ and $Z_2>0$. The same steps decide $s_2$ for $Z_1<0,\\ Z_2<0$, $s_3$ for $Z_1>0,\\ Z_2<0$ and $s_4$ for $Z_1<0,\\ Z_2>0$.<br>'
+     +'<b>Solution — (d), exact error.</b> Given $s_1$, $$Z_1=\\sqrt2+n_1-n_4,\\qquad Z_2=\\sqrt2+n_2-n_3.$$ Each $n_i$ has variance $N_0/2$, so each $Z$ has variance $N_0$. The two use different noise terms, so they are independent. One sign is wrong with probability $$Q\\!\\left(\\frac{\\sqrt2}{\\sqrt{N_0}}\\right)=Q\\!\\left(\\sqrt{\\frac{E_p}{N_0}}\\right)=Q\\!\\left(\\sqrt{\\frac{E_b}{N_0}}\\right),$$ because $E_b=E_p=2$ for set B. The decision is right only when both signs are right: $$P_e^{B}=1-\\left[1-Q\\!\\left(\\sqrt{\\frac{E_b}{N_0}}\\right)\\right]^{2}.$$ At $E_b/N_0=4$: $$\\begin{aligned}P_e^{B}&=1-(1-0.02275)^{2}\\\\&=1-0.95502\\\\&=0.04498\\end{aligned}$$<br>'
+     +'<b>Check.</b> The exact value lies below the bound, $0.04498<0.04783$. Expand the exact form: $1-(1-Q)^{2}=2Q-Q^{2}$. So the gap is the far term plus the overlap term: $$\\begin{aligned}Q(2.83)+Q(2.00)^{2}&=0.002327+0.000518\\\\&=0.002845\\end{aligned}$$ This equals $0.04783-0.04498=0.00285$.',
+  figSol: () => {
+    const B = cons({xr:[-2.2,2.2], yr:[-2.2,2.2], w:470, h:450, xstep:1, ystep:1,
+      xlabel:'(r_1-r_4)/\\sqrt2', ylabel:'(r_2-r_3)/\\sqrt2', pad:{l:56,r:24,t:30,b:48},
+      pts:[{x:1,y:1,c:0,tex:'\\mathbf{s}_1'},{x:-1,y:-1,c:2,tex:'\\mathbf{s}_2',dx:-8,dy:20,anchor:'end'},
+           {x:1,y:-1,c:1,tex:'\\mathbf{s}_3',dy:20},{x:-1,y:1,c:3,tex:'\\mathbf{s}_4',dx:-8,anchor:'end'}],
+      lines:[{pts:[[1,1],[-1,-1]], dash:'4 4'}],
+      dmin:[0,2], dminAt:[1.12,0.28], dminAnchor:'start', hideX:[-1,1], hideY:[-1,1],
+      over:a=>a.note(-0.2,0.34,'d^{2}=4E_b',{tex:true,fs:13,color:C.muted,anchor:'end'})});
+    const g = P.Axes({w:560, h:450, xr:[0,14], yr:[-6,-0.02], xlabel:'E_b/N_0\\;(\\mathrm{dB})', ylabel:'P_e',
+      ytickfmt:P.decade, yticksOverride:P.decades(-6,-1), zeroAxes:false,
+      pad:{l:62,r:24,t:30,b:48}, xstep:2, xtarget:7, ytarget:7});
+    const lin = x => Math.pow(10, x/10), cl = v => Math.log10(Math.max(1e-12, v));
+    const bA = x => 3*Qfn(Math.sqrt(2*lin(x)));
+    const bB = x => 2*Qfn(Math.sqrt(lin(x))) + Qfn(Math.sqrt(2*lin(x)));
+    const eB = x => { const q = Qfn(Math.sqrt(lin(x))); return 2*q - q*q; };
+    g.curve(x=>cl(bA(x)), {color:C.in, width:2.4});
+    g.curve(x=>cl(bB(x)), {color:C.mid, width:2.4});
+    g.curve(x=>cl(eB(x)), {color:C.mid, width:2, dash:'6 4'});
+    const at = (f, v) => { let lo = 0, hi = 20; for(let k=0;k<60;k++){ const m=(lo+hi)/2; if(f(m) > v) lo = m; else hi = m; } return lo; };
+    g.span(at(bA,1e-5), at(bB,1e-5), -5, '\\approx3\\ \\text{dB}', {tex:true, color:C.ink, fs:13});
+    g.vline(10*Math.log10(4), {color:C.muted, dash:'2 4', width:1.2});
+    legend(g, [[C.in,'\\text{A, union bound}'],[C.mid,'\\text{B, union bound}'],[C.mid,'\\text{B, exact}','6 4']], 'bl');
+    return row([B, g.svg()], 18); },
+  err:'Comparing the two sets at the same pulse height instead of the same $E_b$. Set B spends two pulses on every symbol, so its $E_b$ is twice that of set A at equal height.',
+  teach:'Two four-ary sets from the same pulses, compared by distance per unit of energy. Part (d) is a rare case where the exact error is easy. Set B is a square constellation lying in a plane of the four-dimensional space.' },
 
-{ id:'D4-05', module:'M4', type:'binary', src:'MT Q3 (variant)',
-  stem:'Two messages are sent over an additive white Gaussian noise channel with $N_0/2=1$ W/Hz. Message "0" is sent with probability $0.3$ and message "1" with probability $0.7$. The waveforms $s_0(t)$ and $s_1(t)$ are drawn below, with $T=4$ s. The received signal passes through the following correlator-type demodulator. According to the information given above,',
-  figure: () => waves(
-    {name:'s_0(t)', xr:[0,4.5], yr:[-2,2], pts:[[0,0],[0,-1],[4,-1],[4,0],[4.5,0]], ystep:1},
-    {name:'s_1(t)', xr:[0,4.5], yr:[-2,2], pts:[[0,0],[0,1],[4,1],[4,0],[4.5,0]], ystep:1})
-    + receiver('corr'),
-  parts:['[5 pts] Find $\\psi(t)$ and the coordinates $s_0$ and $s_1$.',
-         '[6 pts] Determine the conditional PDFs $f_Y(y\\mid 1)$ and $f_Y(y\\mid 0)$.',
-         '[7 pts] Find the optimal (MAP) decision threshold $\\lambda$.',
-         '[7 pts] Calculate $P_b$ for this threshold, and compare it with the receiver that uses the ML threshold.'],
-  sol:'<b>Given.</b> $s_0(t)=-1$ and $s_1(t)=1$ for $0\\le t<4$. $P_0=0.3$, $P_1=0.7$, $N_0/2=1$ W/Hz.<br>'
-     +'<b>Find.</b> $\\psi(t)$, $s_0$, $s_1$, the densities, the MAP threshold, and $P_b$ for the MAP and ML thresholds.<br>'
-     +'<b>Method.</b> The MAP rule compares $P_i\\,f_Y(y\\mid i)$, not $f_Y(y\\mid i)$ alone. Take logarithms and solve the resulting linear inequality for $y$.<br>'
-     +'<b>Solution — (a).</b> $E=\\int_0^4 1^{2}\\,dt=4$, so $\\psi(t)=1/\\sqrt4=1/2$ for $0\\le t<4$. Then $$s_1=\\int_0^4 (1)\\tfrac12\\,dt=2,\\qquad s_0=\\int_0^4(-1)\\tfrac12\\,dt=-2.$$<br>'
-     +'<b>Solution — (b).</b> With $\\sigma^{2}=1$: $$f_Y(y\\mid 1)=\\frac{1}{\\sqrt{2\\pi}}e^{-(y-2)^{2}/2},\\qquad f_Y(y\\mid 0)=\\frac{1}{\\sqrt{2\\pi}}e^{-(y+2)^{2}/2}.$$<br>'
-     +'<b>Solution — (c).</b> Decide "1" when $0.7\\,f_Y(y\\mid1)>0.3\\,f_Y(y\\mid0)$. Take the natural logarithm of both sides: $$\\ln0.7-\\frac{(y-2)^{2}}{2}>\\ln0.3-\\frac{(y+2)^{2}}{2}.$$ Move the squares to one side: $$\\frac{(y+2)^{2}-(y-2)^{2}}{2}>\\ln\\frac{0.3}{0.7}.$$ The numerator is $8y$, so $4y>\\ln(0.3/0.7)=-0.8473$. Divide by $4$, which is positive: $$y>\\lambda=-0.2118.$$<br>'
-     +'<b>Solution — (d).</b> Given "0", an error is $Y>\\lambda$. Given "1", it is $Y<\\lambda$: $$\\begin{aligned}P(e\\mid0)&=Q\\!\\left(\\frac{-0.2118+2}{1}\\right)\\approx Q(1.79)=0.03673\\\\P(e\\mid1)&=Q\\!\\left(\\frac{2+0.2118}{1}\\right)\\approx Q(2.21)=0.01355\\end{aligned}$$ Weight by the priors: $$\\begin{aligned}P_b&=0.3(0.03673)+0.7(0.01355)\\\\&=0.01102+0.00949\\\\&=0.02050\\end{aligned}$$ The ML threshold $\\lambda=0$ gives $P_b=Q(2.00)=0.02275$. The MAP threshold is about $10\\%$ better.<br>'
-     +'<b>Check.</b> At the MAP threshold the two weighted densities must be equal. With $\\phi(x)=e^{-x^{2}/2}/\\sqrt{2\\pi}$: $0.3\\,\\phi(1.788)=0.3(0.08067)=0.02420$ and $0.7\\,\\phi(2.212)=0.7(0.03457)=0.02420$. They agree.',
-  figSol: () => dens({xr:[-5.5,5.5], xstep:1, cuts:[-0.2118], ml:[0], weighted:true,
-    comps:[{m:-2, s:1, p:0.3, col:C.in, tex:'0.3\\,f_Y(y\\mid 0)'},
-           {m:2, s:1, p:0.7, col:C.out, tex:'0.7\\,f_Y(y\\mid 1)'}],
-    cutTex:['\\lambda=-0.212'], cutAnchor:['end'], legend:'tl', head:1.8}),
-  err:'Moving $\\lambda$ towards $s_1=2$ because "1" is more likely. The more likely symbol gets the larger region, so $\\lambda$ moves towards $s_0$ and is negative.',
-  teach:'The drawing is the midterm shape and the priors come from the final. The check at the threshold is a quick test that the sign of the shift is right.' },
+{ id:'D4-05', module:'M4', type:'mismatch', src:'Madhow P6.28',
+  stem:'A 4-PAM receiver expects the noiseless samples $-6$, $-2$, $2$ and $6$. It decides with the fixed thresholds $-4$, $0$ and $4$. The four symbols are equally likely. The noise on the sample is Gaussian with mean $0$ and variance $1$. A faulty gain stage scales the noiseless samples by a factor $g$, so they arrive at $\\pm2g$ and $\\pm6g$. The thresholds and the noise variance do not change. The gain stage divides its input by $\\sqrt{\\hat P}$, where $\\hat P$ is its estimate of the received power $P$. According to the information given above,',
+  parts:['[5 pts] For $g=0.85$, sketch the thresholds and the four noiseless samples. Give the distance from each sample to each threshold beside it.',
+         '[7 pts] For $g=0.85$, find the conditional error probability of an inner and of an outer symbol, and the average symbol error probability $P_e$.',
+         '[7 pts] Repeat part (b) for $g=1.15$.',
+         '[6 pts] For each $g$, give the loss in decibels at high signal-to-noise ratio against thresholds at the midpoints of the scaled samples. Say which gain is worse, and whether $\\hat P$ is too large or too small.'],
+  sol:'<b>Given.</b> Nominal samples $\\pm2$ and $\\pm6$, thresholds $-4$, $0$, $4$, noise standard deviation $\\sigma=1$, equal priors. First $g=0.85$, then $g=1.15$.<br>'
+     +'<b>Find.</b> The distances to the thresholds, the conditional errors and $P_e$ for both gains, the loss of each in decibels, and the power error.<br>'
+     +'<b>Method.</b> The thresholds stay and only the samples move. So each symbol has its own distance to each threshold beside it. In one dimension an error past one threshold is one Gaussian tail. The negative samples mirror the positive ones, so work with the two positive samples.<br>'
+     +'<b>Solution — (a).</b> With $g=0.85$ the samples are $\\pm2(0.85)=\\pm1.7$ and $\\pm6(0.85)=\\pm5.1$. The inner sample $1.7$ lies between the thresholds $0$ and $4$. Its distances are $$1.7-0=1.7,\\qquad 4-1.7=2.3.$$ The outer sample $5.1$ has one threshold beside it, at distance $5.1-4=1.1$. With the correct gain every distance would be $2$. The shrink moves the outer sample towards threshold $4$ and the inner sample towards $0$.<br>'
+     +'<b>Solution — (b).</b> Given $1.7$, an error is $Y<0$ or $Y>4$. The two events cannot happen together, so the intelligent union bound is exact here: $$\\begin{aligned}P(e\\mid1.7)&=Q\\!\\left(\\frac{1.7}{1}\\right)+Q\\!\\left(\\frac{2.3}{1}\\right)\\\\&=Q(1.70)+Q(2.30)\\\\&=0.04457+0.01072\\\\&=0.05529\\end{aligned}$$ Given $5.1$, an error is $Y<4$: $$P(e\\mid5.1)=Q\\!\\left(\\frac{1.1}{1}\\right)=Q(1.10)=0.1357.$$ Two of the four symbols are inner and two are outer, each with probability $\\tfrac14$: $$\\begin{aligned}P_e&=\\tfrac12(0.05529)+\\tfrac12(0.1357)\\\\&=0.02765+0.06785\\\\&=0.09550\\end{aligned}$$<br>'
+     +'<b>Solution — (c).</b> With $g=1.15$ the samples are $\\pm2.3$ and $\\pm6.9$. The inner sample is $2.3$ from threshold $0$ and $4-2.3=1.7$ from threshold $4$. The outer sample is $6.9-4=2.9$ from threshold $4$. Then $$\\begin{aligned}P(e\\mid2.3)&=Q(2.30)+Q(1.70)\\\\&=0.01072+0.04457\\\\&=0.05529\\end{aligned}$$ $$P(e\\mid6.9)=Q(2.90)=0.001866.$$ Average over the four symbols: $$\\begin{aligned}P_e&=\\tfrac12(0.05529)+\\tfrac12(0.001866)\\\\&=0.02765+0.000933\\\\&=0.02858\\end{aligned}$$<br>'
+     +'<b>Solution — (d).</b> Thresholds at the midpoints of the scaled samples would keep every distance at half the spacing, $2g$. At high signal-to-noise ratio the smallest distance decides $P_e$, because its $Q$ term is far larger than the others. To bring that distance back to $2g$, the amplitude must grow by their ratio, and the energy by the ratio squared. So the loss is $20\\log_{10}$ of the ratio: $$g=0.85:\\quad 20\\log_{10}\\frac{1.7}{1.1}=3.78\\ \\text{dB}$$ $$g=1.15:\\quad 20\\log_{10}\\frac{2.3}{1.7}=2.63\\ \\text{dB}$$ The low gain is worse. It pushes the outer samples towards the only threshold they have.<br>'
+     +'<b>Solution — (d), power estimate.</b> The stage should divide by $\\sqrt P$. It divides by $\\sqrt{\\hat P}$, so the samples are scaled by $g=\\sqrt{P/\\hat P}$. Square both sides and solve: $\\hat P=P/g^{2}$. For $g=0.85$, $\\hat P=1.384\\,P$, too large by $10\\log_{10}1.384=1.41$ dB. For $g=1.15$, $\\hat P=0.756\\,P$, too small by $1.21$ dB. A gain below one means the stage overestimated the power.<br>'
+     +'<b>Check.</b> Put $g=1$ back. Every distance is $2$, so $P(e\\mid2)=2Q(2.00)$ and $P(e\\mid6)=Q(2.00)$. Then $P_e=\\tfrac12(2)(0.02275)+\\tfrac12(0.02275)=1.5(0.02275)=0.03413$. This is the ordinary 4-PAM value $N_{\\min}Q(d_{\\min}/2\\sigma)$ with $N_{\\min}=1.5$.',
+  figSol: () => {
+    const comps = g => [-6,-2,2,6].map((m,k)=>({m:m*g, s:1, p:0.25, col:[C.in,C.out,C.mid,C.h][k],
+      tex:'f_Y(y\\mid '+(m<0?'{-}':'')+Math.abs(m)+')'}));
+    const panel = (g, name) => dens({xr:[-9.5,9.5], xstep:2, cuts:[-4,0,4], ml:[-6,-2,2,6], w:720, h:380,
+      comps:comps(g), cutTex:['-4','0','4'], cutAnchor:['end','start','start'], legend:'tr', head:3.0, moreLegend:[[C.muted,'\\text{nominal sample}','2 4']],
+      over:a=>a.note(-9.3, 0.4*3.0*0.84, name, {tex:true, fs:14, color:C.ink})});
+    return panel(0.85, 'g=0.85') + panel(1.15, 'g=1.15'); },
+  err:'Moving the thresholds with the samples. The thresholds stay at $-4$, $0$ and $4$. Only the samples move, so an inner sample has two different distances, and an outer sample at $g=0.85$ is only $1.1$ from its threshold.',
+  teach:'A receiver that is slightly wrong. Ask first which sample moved towards a threshold, then compute. The dotted lines in the solution figure mark the nominal samples. The sign of the power error in part (d) is a two-line argument that students often reverse.' },
 
 { id:'D4-06', module:'M4', type:'binary', src:'MT Q3',
   stem:'Two equiprobable messages, "0" and "1", are sent over an additive white Gaussian noise channel with $N_0/2=0.36$ W/Hz. The waveforms are $s_0(t)=\\sin(\\pi t)$ and $s_1(t)=3\\sin(\\pi t)$ for $0\\le t\\le2$ s, drawn below. The received signal passes through a correlator-type demodulator with $T=2$ s. According to the information given above,',
@@ -26957,24 +27296,29 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   err:'Taking $N_{\\min}=4$, as in a large square grid. In a $4\\times2$ grid no point has four neighbours, and the average is $2.5$.',
   teach:'A rectangular eight-point set in the examination shape. The neighbour count by pairs in the check is the fast way to get $N_{\\min}$.' },
 
-{ id:'D4-26', module:'M4', type:'mary', src:'Final Q3 (variant)',
-  stem:'Consider an $M$-ary modulation scheme where the equally probable symbols have the waveforms $s_1(t)=0$ and $$s_k(t)=2\\sqrt2\\cos\\!\\left(2000\\pi t+\\frac{(k-2)\\pi}{2}\\right),\\qquad k\\in\\{2,3,4,5\\},\\ 0\\le t\\le1.$$ These signals are planned to be transmitted over a standard AWGN channel with $\\mathcal{N}(0,N_0/2)$. According to the information given above,',
-  parts:['[8 pts] Find the five signal points and $E_{s,\\text{avg}}$.',
-         '[8 pts] Draw the signal constellation and the optimal decision regions.',
-         '[9 pts] Determine the nearest-neighbour approximation of the average symbol error probability as a function of $E_{s,\\text{avg}}/N_0$.'],
-  sol:'<b>Given.</b> One zero signal and four carrier pulses of amplitude $2\\sqrt2$ at phases $0,\\pi/2,\\pi,3\\pi/2$. $T=1$ s, equal priors.<br>'
-     +'<b>Find.</b> The points, $E_{s,\\text{avg}}$, the regions and $P_e$.<br>'
-     +'<b>Method.</b> The phase-$\\theta$ pulse has the point $2(\\cos\\theta,\\sin\\theta)$. The centre point has neighbours on all sides, the outer points only one.<br>'
-     +'<b>Solution — (a).</b> $\\mathbf{s}_1=(0,0)$, $\\mathbf{s}_2=(2,0)$, $\\mathbf{s}_3=(0,2)$, $\\mathbf{s}_4=(-2,0)$ and $\\mathbf{s}_5=(0,-2)$. $$E_{s,\\text{avg}}=\\frac{0+4(4)}{5}=3.2.$$<br>'
-     +'<b>Solution — (b).</b> The bisector of $\\mathbf{s}_1$ and $\\mathbf{s}_2$ is $r_1=1$. With the other three it gives the square $|r_1|<1$, $|r_2|<1$, the region of the centre point. The bisector of $\\mathbf{s}_2$ and $\\mathbf{s}_3$ is $r_2=r_1$. So the region of $\\mathbf{s}_2$ is $r_1>1$ with $|r_2|<r_1$, and the others follow by rotation.<br>'
-     +'<b>Solution — (c).</b> The centre is $2$ from each outer point. Two outer points are $2\\sqrt2$ apart. So $d_{\\min}=2$. The centre has $4$ neighbours at $d_{\\min}$ and each outer point has $1$: $$N_{\\min}=\\frac{4+4(1)}{5}=1.6.$$ With $d_{\\min}^{2}=4=\\frac{5}{4}E_{s,\\text{avg}}$: $$P_e\\approx1.6\\,Q\\!\\left(\\sqrt{\\frac{5E_{s,\\text{avg}}}{8N_0}}\\right).$$<br>'
-     +'<b>Check.</b> Count pairs at distance $2$: the centre with each outer point, $4$ pairs. Each pair counts twice: $2(4)/5=1.6$.',
-  figSol: () => cons({xr:[-3.2,3.2], yr:[-3,3], w:520, h:480, xstep:1, ystep:1,
-    pts:[{x:0,y:0,c:3,tex:'\\mathbf{s}_1',dx:8,dy:-10},{x:2,y:0,c:0,tex:'\\mathbf{s}_2'},{x:0,y:2,c:1,tex:'\\mathbf{s}_3'},{x:-2,y:0,c:0,tex:'\\mathbf{s}_4',dx:-8,anchor:'end'},{x:0,y:-2,c:1,tex:'\\mathbf{s}_5',dy:18}],
-    dmin:[0,1], dminAt:[1.25,-0.4], dminAnchor:'start', hideX:[-2,-1,1,2], hideY:[-2,-1,1,2],
-    nn:[[0,2],[0,3],[0,4]]}),
-  err:'Taking $d_{\\min}=2\\sqrt2$, the spacing of the outer ring. The centre point is closer to every outer point, so $d_{\\min}=2$.',
-  teach:'A variant in the examination format: a point in the middle of a ring. It shows that the centre point dominates the error count.' },
+{ id:'D4-26', module:'M4', type:'erasure', src:'Madhow P6.24',
+  stem:'A QPSK receiver works on the two correlator outputs $\\mathbf{y}=(y_1,y_2)$. The four equally likely signal points are $\\mathbf{s}_1=(2,2)$, $\\mathbf{s}_2=(-2,2)$, $\\mathbf{s}_3=(-2,-2)$ and $\\mathbf{s}_4=(2,-2)$. Each coordinate carries independent Gaussian noise with mean $0$ and variance $N_0/2=0.64$. The receiver does not decide when the observation lies close to a boundary. If $|y_1|<0.4$ or $|y_2|<0.4$, it puts out an erasure, a mark that means "no decision". Otherwise it decides the point in the quadrant of $\\mathbf{y}$. Let $d$ be the distance between neighbouring points, $d_1$ the width of each erasure strip, and $\\alpha=d_1/d$. The energy per bit is $E_b=E_{s,\\text{avg}}/2$. According to the information given above,',
+  parts:['[6 pts] Find $d$, $d_1$, $\\alpha$, $E_b$ and $E_b/N_0$. Draw the decision regions and the erasure zone.',
+         '[7 pts] Use the intelligent union bound to approximate the symbol error probability $p$ and the erasure probability $q$. Write each as a function of $E_b/N_0$ and $\\alpha$, then evaluate it.',
+         '[7 pts] Find $p$ and $q$ exactly, as products of probabilities of the two coordinates, and evaluate them.',
+         '[5 pts] Find the symbol error probability of the ordinary QPSK receiver, which has no erasure zone. State what the zone gains and what it costs.'],
+  sol:'<b>Given.</b> Points $(\\pm2,\\pm2)$ with equal priors. Noise variance $\\sigma^{2}=N_0/2=0.64$ on each coordinate, so $\\sigma=0.8$ and $N_0=1.28$. Erasure strips $|y_1|<0.4$ and $|y_2|<0.4$.<br>'
+     +'<b>Find.</b> $d$, $d_1$, $\\alpha$, $E_b$, $E_b/N_0$, the regions, $p$ and $q$ by the bound and exactly, and $P_e$ without the zone.<br>'
+     +'<b>Method.</b> By symmetry all four points have the same $p$ and $q$, so take $\\mathbf{s}_1=(2,2)$. Each coordinate has three outcomes: the right side, the strip, or the wrong side. The noise on the two coordinates is independent, so their probabilities multiply.<br>'
+     +'<b>Solution — (a).</b> Neighbouring points such as $(2,2)$ and $(-2,2)$ are $d=4$ apart. Each strip runs from $-0.4$ to $0.4$, so $d_1=0.8$ and $$\\alpha=\\frac{d_1}{d}=\\frac{0.8}{4}=0.2.$$ Every point has energy $2^{2}+2^{2}=8$, so $E_{s,\\text{avg}}=8$ and $E_b=4$. Then $$\\frac{E_b}{N_0}=\\frac{4}{1.28}=3.125.$$ The region of $\\mathbf{s}_1$ is $y_1>0.4$ and $y_2>0.4$: the first quadrant with the strips cut away. The other three regions follow by symmetry. The cross where $|y_1|<0.4$ or $|y_2|<0.4$ is the erasure zone.<br>'
+     +'<b>Solution — (b).</b> Take $\\mathbf{s}_1$ sent. The near edge of each strip is $2-0.4=1.6$ from the point, which is $\\tfrac d2(1-\\alpha)$. The far edge is $2+0.4=2.4$, which is $\\tfrac d2(1+\\alpha)$. An error needs $y_1<-0.4$ or $y_2<-0.4$, a crossing of one of two far edges. An erasure needs a crossing of one of two near edges. The intelligent union bound adds one term for each of these faces. Write the scale in terms of $E_b$ first. Here $d^{2}=16=4E_b$, so $$\\frac{d/2}{\\sigma}=\\sqrt{\\frac{d^{2}}{2N_0}}=\\sqrt{\\frac{2E_b}{N_0}}.$$ Hence $$p\\approx2\\,Q\\!\\left((1+\\alpha)\\sqrt{\\frac{2E_b}{N_0}}\\right),\\qquad q\\approx2\\,Q\\!\\left((1-\\alpha)\\sqrt{\\frac{2E_b}{N_0}}\\right).$$ With $\\sqrt{2(3.125)}=\\sqrt{6.25}=2.5$: $$\\begin{aligned}p&\\approx2\\,Q\\bigl(1.2(2.5)\\bigr)=2\\,Q(3.00)=2.700\\times10^{-3}\\\\q&\\approx2\\,Q\\bigl(0.8(2.5)\\bigr)=2\\,Q(2.00)=0.04550\\end{aligned}$$<br>'
+     +'<b>Solution — (c).</b> On one coordinate $y_i=2+n_i$. Let $c$ be the probability that it lands on the right side, and $w$ that it lands on the wrong side: $$\\begin{aligned}c&=1-Q\\!\\left((1-\\alpha)\\sqrt{2E_b/N_0}\\right)\\\\&=1-Q\\!\\left(\\tfrac{1.6}{0.8}\\right)=1-Q(2.00)=0.97725\\end{aligned}$$ $$\\begin{aligned}w&=Q\\!\\left((1+\\alpha)\\sqrt{2E_b/N_0}\\right)\\\\&=Q\\!\\left(\\tfrac{2.4}{0.8}\\right)=Q(3.00)=0.00135\\end{aligned}$$ A correct decision needs both coordinates on the right side, with probability $c^{2}$. A decision of any kind needs both outside the strips, with probability $(c+w)^{2}$. So $$\\begin{aligned}q&=1-(c+w)^{2}\\\\&=1-(0.97860)^{2}\\\\&=1-0.95766=0.04234\\end{aligned}$$ $$\\begin{aligned}p&=(c+w)^{2}-c^{2}\\\\&=0.95766-0.95502\\\\&=2.640\\times10^{-3}\\end{aligned}$$ Both values of part (b) lie above these, $2.700\\times10^{-3}>2.640\\times10^{-3}$ and $0.04550>0.04234$, as a union bound must.<br>'
+     +'<b>Solution — (d).</b> Without the zone the boundaries are the axes, $2$ from the point. Each coordinate is wrong with probability $Q(2/0.8)=Q(2.50)=0.006210$. The symbol is right only when both are right: $$\\begin{aligned}P_e&=1-(1-0.006210)^{2}\\\\&=1-0.98762\\\\&=0.01238\\end{aligned}$$ The zone cuts wrong decisions from $0.01238$ to $0.00264$, about $4.7$ times fewer. It pays with $4.23\\%$ of the symbols erased. An erasure is flagged, so a later decoder knows which symbols to distrust. A wrong decision carries no flag.<br>'
+     +'<b>Check.</b> The three outcomes must add to one: $$\\begin{aligned}c^{2}+p+q&=0.95502+0.00264+0.04234\\\\&=1.00000\\end{aligned}$$ Also $p=w(2c+w)=0.00135(1.95585)=2.640\\times10^{-3}$, the value of part (c).',
+  figSol: () => erasureFig({lim:3.4, b:0.4,
+    pts:[{x:2,y:2,tex:'\\mathbf{s}_1'},{x:-2,y:2,tex:'\\mathbf{s}_2'},{x:-2,y:-2,tex:'\\mathbf{s}_3'},{x:2,y:-2,tex:'\\mathbf{s}_4'}],
+    over:a=>{ a.poly([[2,2],[0.4,2]], {color:C.muted, width:1.4, dash:'3 3'});
+      a.poly([[2,1.4],[-0.4,1.4]], {color:C.err, width:2});
+      a.note(1.2, 2, '1.6', {tex:true, fs:13, color:C.muted, anchor:'middle', dy:-10});
+      a.note(0.8, 1.4, '2.4', {tex:true, fs:13, color:C.err, anchor:'middle', dy:18});
+      a.note(-2.45, 0.2, '\\text{erasure}', {tex:true, fs:13, color:C.ink, anchor:'middle', dy:4}); }}),
+  err:'Measuring the error distance to the axis, $2/0.8=2.5$, as in ordinary QPSK. With the zone an error must pass the far edge of a strip, $2.4$ from the point, so the argument is $3.00$.',
+  teach:'A decision with three outcomes. The intelligent union bound works face by face, once for the error faces and once for the erasure faces. Part (d) shows the trade: fewer wrong decisions for a few flagged ones.' },
 
 { id:'D4-27', module:'M4', type:'mary', src:'Final Q3',
   stem:'Consider an $M$-ary modulation scheme where the equally probable symbols have the waveforms $$s_k(t)=2\\cos\\!\\left(2000\\pi t+\\frac{2\\pi k}{3}+\\frac\\pi2\\right),\\qquad k\\in\\{0,1,2\\},\\ 0\\le t\\le1.$$ These signals are planned to be transmitted over a standard AWGN channel with $\\mathcal{N}(0,N_0/2)$. According to the information given above,',
@@ -28140,15 +28484,25 @@ window.DRILL_M5 = [
 /* ==========================================================================
    Practice questions — Module 6.
 
-   Thirty questions in the form of the final examination's source-coding
-   question: a source derived from one or two others by a mapping, then its
-   entropy, a binary Huffman code and the efficiency of that code. The close
-   variants change the range, the mapping and the input pmfs so that the
-   alphabets run from four to eight symbols and the trees differ. The last
-   eight keep the examination format and add one twist each: a fixed-length
-   comparison, two tie-breaking rules, a second-order extension, the entropy
-   of the function against its input, a Kraft test, rounded-up lengths, and a
-   reversed question.
+   Thirty questions. Twenty-six are in the form of the final examination's
+   source-coding question: a source derived from one or two others by a
+   mapping, then its entropy, a binary Huffman code and the efficiency of that
+   code. The close variants change the range, the mapping and the input pmfs
+   so that the alphabets run from four to eight symbols and the trees differ.
+   The last eight keep the examination format and add one twist each: a
+   fixed-length comparison, two tie-breaking rules, a second-order extension,
+   the entropy of the function against its input, a Kraft test, rounded-up
+   lengths, and a reversed question.
+
+   Four questions take the channel side. Each has the shape of a textbook
+   problem already in examination form and keeps the id of the source-coding
+   question it replaced, the closest duplicate of one that stays: two of the
+   remainder questions, one product and one sum. D6-06 is a repetition code
+   over a BSC against its capacity. D6-07 tests a claimed link against the
+   Shannon limit. D6-14 measures how far uncoded constellations sit from that
+   limit. D6-22 places coded constellations in one band. They use the
+   capacity of the BSC and of the bandlimited channel, and any modulation
+   error formula they need is given in the statement.
 
    Every solution works with numerators over a common denominator, so ties are
    exact. The Huffman lists place a merged sum as high as possible among equal
@@ -28237,9 +28591,90 @@ function figHuff(o){
   return a.svg();
 }
 
+/* The four channel-side questions draw on three more frames.
+
+   figLimit is the plane of m6-shannon and m6-limit: spectral efficiency r
+   against E_b/N_0 in dB, with the capacity boundary E_b/N_0=(2^r-1)/r. The
+   region to its left, where no system works reliably, is shaded as an error,
+   and the -1.59 dB floor is the red dashed line. An operating point is a dot
+   with its name. A gap is a bar at one r, from the boundary to the point,
+   labelled with its length in dB (at `pos` when the middle of the bar is
+   crowded); the boundary end is a small cyan dot. */
+const limDB = r => 10*Math.log10((Math.pow(2,r)-1)/r);
+function figLimit(o){
+  const [xa,xb] = o.xr, rt = o.yr[1];
+  const a = P.Axes({w:720, h:o.h||300, xr:o.xr, yr:[0,rt],
+    xlabel:'E_b/N_0\\;(\\mathrm{dB})', ylabel:'r\\;(\\mathrm{bit/s/Hz})',
+    pad:{l:58,r:30,t:40,b:46}, xstep:2, ystep:1});
+  const pts = [];
+  for(let r=0.002; r<=rt+1e-9; r+=0.002){ const d = limDB(r); if(d>=xa && d<=xb) pts.push([d,r]); }
+  const last = pts[pts.length-1];
+  const reg = [[xa,0],[pts[0][0],0]].concat(pts, last[1] < rt-1e-6 ? [[xb,last[1]],[xb,rt]] : [], [[xa,rt]]);
+  a.under('<path d="M'+reg.map(p=>a.sx(p[0]).toFixed(2)+','+a.sy(p[1]).toFixed(2)).join('L')+'Z" fill="'+C.dec.err+'"/>');
+  a.vline(10*Math.log10(Math.log(2)), {color:C.err, width:1.6, dash:'5 4'});
+  a.poly(pts, {color:C.in, width:2.3});
+  if(o.imp) a.note(o.imp[0], o.imp[1], '\\text{no reliable system}', {tex:true, fs:13, color:C.err, anchor:'middle'});
+  if(o.floor) a.note(10*Math.log10(Math.log(2))-0.2, o.floor, '-1.59\\ \\mathrm{dB}', {tex:true, fs:12, color:C.err, anchor:'end'});
+  (o.gaps||[]).forEach(g=>{ const x0 = limDB(g.r);
+    a.poly([[x0,g.r],[g.x,g.r]], {color:g.c, width:2, dash:'6 4'});
+    a.point(x0, g.r, {color:C.in, r:3.4});
+    if(g.pos) a.note(g.pos[0], g.pos[1], g.lab, {tex:true, fs:12, color:g.c, anchor:g.pos[2]});
+    else a.note((x0+g.x)/2 + (g.dx||0), g.r + (g.dy==null ? 0.24 : g.dy), g.lab, {tex:true, fs:12, color:g.c, anchor:'middle'}); });
+  (o.pts||[]).forEach(p=>{
+    a.point(p.x, p.r, {color:p.c, r:5});
+    a.note(p.x + (p.dx==null ? 0.25 : p.dx), p.r + (p.dy||0), p.lab, {tex:true, fs:13, color:p.c, anchor:p.anchor||'start'}); });
+  return a.svg();
+}
+
+/* figRange is the bit rate an adaptive link offers against distance: a
+   staircase that steps down where each constellation runs out of range, with
+   each range marked by a dashed drop to the axis. The dot is the user's
+   distance on the scheme chosen there. */
+function figRange(o){
+  const a = P.Axes({w:720, h:260, xr:[0,o.dmax], yr:[0,o.Rmax],
+    xlabel:'d\\;(\\mathrm{km})', ylabel:'R_b\\;(\\mathrm{Mbit/s})',
+    pad:{l:58,r:30,t:24,b:46}, xstep:0.5, ystep:6});
+  let d0 = 0;
+  o.steps.forEach(s=>{
+    a.poly([[d0,s.R],[s.d,s.R]], {color:C.out, width:2.6});
+    a.poly([[s.d,s.R],[s.d,0]], {color:C.muted, width:1.2, dash:'3 4'});
+    a.note((d0+s.d)/2, s.R-3.4, s.lab, {tex:true, fs:13, color:C.out, anchor:'middle'});
+    a.note(s.d+0.03, 1.2, s.dlab, {tex:true, fs:12, color:C.muted});
+    d0 = s.d; });
+  a.point(o.at, o.pick, {color:C.out, r:5.5});
+  a.note(o.at, o.pick+2.2, 'd='+o.at+'\\ \\mathrm{km}', {tex:true, fs:12, color:C.out, anchor:'middle'});
+  return a.svg();
+}
+
+/* figFlips is the pmf of the number K of flipped copies of one bit sent n
+   times over a binary symmetric channel. The probabilities span several
+   decades, so the stems are drawn on a logarithmic scale, each tip labelled
+   with its value; the vertical axis carries no numbers. The values of K for
+   which the majority vote fails sit on a red band, and their stems are red. */
+function figFlips(o){
+  const n = o.n, p = o.p, t = (n+1)/2;
+  const comb = (m,k) => { let c = 1; for(let i=1;i<=k;i++) c = c*(m-k+i)/i; return c; };
+  const pk = k => comb(n,k)*Math.pow(p,k)*Math.pow(1-p,n-k);
+  const lo = Math.floor(Math.log10(pk(n))) - 0.6;
+  const y = k => Math.log10(pk(k)) - lo, top = -lo + 2.0;
+  const a = P.Axes({w:720, h:o.h||240, xr:[0.3, n+1.7], yr:[0, top],
+    xlabel:'k', ylabel:'P(K=k)\\;\\text{on a log scale}', pad:{l:24,r:30,t:24,b:44},
+    xticksOverride:Array.from({length:n+1},(_,k)=>k+1), xtickfmt:(v=>String(Math.round(v)-1)),
+    yticksOverride:[], grid:false});
+  a.rect(t+0.5, 0, n+1.7, top, {fill:C.dec.err});
+  for(let k=0;k<=n;k++){ const col = k>=t ? C.err : C.in;
+    a.poly([[k+1,0],[k+1,y(k)]], {color:col, width:2});
+    a.point(k+1, y(k), {color:col, r:4.5});
+    a.note(k+1, y(k), o.lab[k], {tex:true, fs:12, color:col, anchor:'middle', dy:-16}); }
+  const xm = (t+0.5+n+1.7)/2;
+  a.note(xm, top-1.0, 'n='+n+'\\text{: the vote fails}', {tex:true, fs:13, color:C.err, anchor:'middle'});
+  a.note(xm, top-1.0, o.fail, {tex:true, fs:13, color:C.err, anchor:'middle', dy:26});
+  return a.svg();
+}
+
 /* ======================================================================
-   The taxonomy: the three columns of the examination question, and three
-   shapes that add one judgement to it.
+   The taxonomy: the three columns of the examination question, three
+   shapes that add one judgement to it, and two shapes on the channel side.
    ====================================================================== */
 CONTENT.DRILLTYPES.M6 = [
   { k:'fx', name:'A function of one uniform source',
@@ -28282,7 +28717,21 @@ CONTENT.DRILLTYPES.M6 = [
     method:['A function of $X$ has $H(Y\\mid X)=0$, so $I(X;Y)=H(Y)$ and $H(X,Y)=H(X)$.',
             'For $Z=X+Y$ with independent inputs, fixing $X$ leaves only the uncertainty of $Y$, so $H(Z\\mid X)=H(Y)$.',
             'Check $H(Y)\\le H(X)$ for a function, and $I(X;Z)\\le\\min\\{H(X),H(Z)\\}$ for any pair.'],
-    go:'m6-condent' }
+    go:'m6-condent' },
+
+  { k:'coding', name:'Repetition coding over a binary symmetric channel',
+    asks:'A block of bits crosses a BSC without coding, then with a repetition code and a majority vote. Find the bit and block error probabilities, the rate each code costs, and compare with the capacity.',
+    method:['The number of flipped copies among $n$ is binomial, $P(K=j)=\\binom{n}{j}p^{j}(1-p)^{n-j}$. A majority vote over odd $n$ fails when $K\\ge(n+1)/2$.',
+            'A block of $k$ bits is correct only when every bit is, so $P_B=1-(1-P_b)^{k}$.',
+            'A repetition code has rate $1/n$. The BSC allows any rate below $C=1-H_b(p)$ with an error as small as required.'],
+    go:'m6-coding-thm' },
+
+  { k:'capacity', name:'The Shannon limit of the bandlimited channel',
+    asks:'A bit rate, a bandwidth and a received power are given, or a constellation and a target error probability. Find the spectral efficiency, the Shannon limit at that efficiency, and the gap in dB.',
+    method:['The spectral efficiency is $r=R_b/B$. A reliable link needs $E_b/N_0\\ge(2^{r}-1)/r$.',
+            'The energy per bit is $E_b=P/R_b$. A symbol that carries $r$ information bits has $E_s=r\\,E_b$.',
+            'A gap in dB is a difference of values in dB, which is $10\\log_{10}$ of a ratio of energies.'],
+    go:'m6-shannon' }
 ];
 
 /* ======================================================================
@@ -28658,160 +29107,189 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   err:'Rounding down instead of up, which sends $|X|=1$ to $0$. The ceiling is the smallest integer not below its argument, so $\\lceil 0.5\\rceil=1$.',
   teach:'Four symbols, but not a fixed-length code. One symbol has probability $\\tfrac{1}{11}$, and the tree becomes a ladder of lengths $1,2,3,3$.' },
 
-{ id:'D6-06', module:'M6', type:'fx', src:'Final Q4',
-  stem:'Let $X$ be a discrete memoryless source (DMS) which is modeled as a uniform random variable taking the integer values between $-2$ and $9$. Let $Y\\triangleq |X|\\;(\\bmod 7)$ be another DMS which is a function of $X$. Here $a\\bmod m$ denotes the remainder of $a$ on division by $m$, taken in $\\{0,1,\\ldots,m-1\\}$.',
-  parts:['[10 pts] Calculate the entropy of the source, $Y$.',
-         '[10 pts] Design a <em>binary</em> Huffman code for the source, $Y$.',
-         '[5 pts] Calculate the coding efficiency of the Huffman code designed in part (b).'],
-  figSol: () => figPmf({v:[0,1,2,3,4,5,6],n:[2,3,3,1,1,1,1],D:12,name:'Y'})+figHuff({n:[2,3,3,1,1,1,1],D:12,name:'Y',lab:['0','1','2','3','4','5','6'],codes:['001','01','10','110','111','0000','0001'],order:['000','11','00','1','0','']}),
-  sol:'<b>Given.</b> $X$ is uniform on the twelve integers $-2,\\ldots,9$, and $Y=|X|\\bmod 7$.<br>'
-     +'<b>Find.</b> $H(Y)$, a binary Huffman code for $Y$, and its coding efficiency.<br>'
-     +'<b>Method.</b> List $Y$ for every value of $X$, then add the probabilities that give the same value of $Y$. The entropy is $H(Y)=\\sum_{y}P(Y=y)\\log_2\\frac{1}{P(Y=y)}$, in bits because the logarithm has base two. Huffman\'s procedure fits the code part, since no prefix code for single symbols has a smaller average length. Merge the two smallest, give $0$ to the upper and $1$ to the lower, and place each sum as high as possible among equals. The efficiency is $\\eta=H(Y)/\\bar{L}$.<br>'
+{ id:'D6-06', module:'M6', type:'coding', src:'Madhow 7.1 and P7.12',
+  stem:'A binary symmetric channel (BSC) flips each transmitted bit with probability $p=0.05$, independently of the other bits. A message of $k=20$ information bits is sent over it. A block error occurs when at least one of the $20$ decoded bits is wrong. A repetition code of length $n$ sends each information bit $n$ times. The receiver then decides each bit by a majority vote over its $n$ received copies. Use $H_b(0.05)=0.2864$ bits, where $H_b(p)=-p\\log_2 p-(1-p)\\log_2(1-p)$.',
+  parts:['[6 pts] The $20$ bits are sent without coding. Calculate the probability of a block error.',
+         '[9 pts] Each bit is sent with a repetition code of length $n=3$, and then of length $n=5$. For each $n$, calculate the bit error probability after the majority vote and the block error probability.',
+         '[5 pts] Give the code rate of each repetition code, and the number of channel bits it uses for the $20$ information bits.',
+         '[5 pts] Calculate the capacity of the channel. Compare the rates of part (c) with it, and state what the channel coding theorem allows.'],
+  figSol: () => figFlips({n:3, p:0.05, h:220, lab:['0.857','0.135','7.13\\times10^{-3}','1.25\\times10^{-4}'],
+                          fail:'P_3=7.25\\times10^{-3}'})
+              + figFlips({n:5, p:0.05, h:240, lab:['0.774','0.204','0.0214','1.13\\times10^{-3}','2.97\\times10^{-5}','3.13\\times10^{-7}'],
+                          fail:'P_5=1.158\\times10^{-3}'}),
+  sol:'<b>Given.</b> A BSC with crossover probability $p=0.05$, a block of $k=20$ information bits, repetition codes of length $n=3$ and $n=5$ with a majority vote, and $H_b(0.05)=0.2864$.<br>'
+     +'<b>Find.</b> The block error probability without coding. The bit and block error probabilities for $n=3$ and $n=5$. The code rates and channel bits. The capacity and what it allows.<br>'
+     +'<b>Method.</b> The flips are independent, so the number $K$ of flipped copies among $n$ sent copies is binomial:'
+     +'$$P(K=j)=\\binom{n}{j}p^{j}(1-p)^{n-j}$$'
+     +'A majority vote over an odd number $n$ of copies fails when more than half of them are flipped, that is when $K\\ge (n+1)/2$.'
+     +' A block is correct only when all $20$ bits are correct. So a bit error probability $P_b$ gives the block error probability $P_B=1-(1-P_b)^{20}$.'
+     +' A repetition code of length $n$ has rate $R=1/n$ information bits a channel bit. The capacity of the BSC is $C=1-H_b(p)$ bits a channel use.<br>'
      +'<b>Solution — (a).</b> '
-     +'Each of the twelve values of $X$ has probability $\\tfrac{1}{12}$. The absolute value is taken first.'
-     +' For example $X=-2$ gives $|X|=2$ and $Y=2$, and $X=9$ gives $9\\bmod 7=2$.'
-     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c}'
-     +' y&x\\ \\text{values}&P(Y=y)\\\\\\hline'
-     +' 0&0,\\,7&\\frac{2}{12}\\\\'
-     +' 1&-1,\\,1,\\,8&\\frac{3}{12}\\\\'
-     +' 2&-2,\\,2,\\,9&\\frac{3}{12}\\\\'
-     +' 3&3&\\frac{1}{12}\\\\'
-     +' 4&4&\\frac{1}{12}\\\\'
-     +' 5&5&\\frac{1}{12}\\\\'
-     +' 6&6&\\frac{1}{12}'
-     +'\\end{array}$$</div>'
-     +'The probabilities add to $\\frac{12}{12}=1$. The entropy is'
+     +'Without coding each bit is decided alone, so $P_b=p=0.05$. Each bit arrives correctly with probability $1-p=0.95$. The $20$ bits are independent, so all of them arrive correctly with probability $(0.95)^{20}$.'
      +'$$\\begin{aligned}'
-     +' H(Y)&=\\sum_{y}P(Y=y)\\log_2\\frac{1}{P(Y=y)}\\\\'
-     +'&=2\\cdot\\frac{3}{12}\\log_2 4+\\frac{2}{12}\\log_2 6+4\\cdot\\frac{1}{12}\\log_2 12\\\\'
-     +'&=2(0.50000)+0.43083+4(0.29875)\\\\'
-     +'&=2.6258\\ \\text{bits/symbol}'
-     +'\\end{aligned}$$<br>'
+     +'P_B&=1-(1-p)^{20}\\\\'
+     +'&=1-(0.95)^{20}\\\\'
+     +'&=1-0.3585\\\\'
+     +'&=0.6415'
+     +'\\end{aligned}$$'
+     +'Almost two blocks in three contain an error.<br>'
      +'<b>Solution — (b).</b> '
-     +'Work with the numerators over $12$. Each line gives one merge and the new list, with the new sum in bold.<br>'
-     +'Start: $3,3,2,1,1,1,1$.<br>'
-     +'Merge $1$: $1+1=2$, list $3,3,\\mathbf{2},2,1,1$.<br>'
-     +'Merge $2$: $1+1=2$, list $3,3,\\mathbf{2},2,2$.<br>'
-     +'Merge $3$: $2+2=4$, list $\\mathbf{4},3,3,2$.<br>'
-     +'Merge $4$: $3+2=5$, list $\\mathbf{5},4,3$.<br>'
-     +'Merge $5$: $4+3=7$, list $\\mathbf{7},5$.<br>'
-     +'Merge $6$: $7+5=12$, list $\\mathbf{12}$.<br>'
-     +'In every merge the upper entry takes $0$ and the lower entry takes $1$. Reading the labels from the root back to each symbol gives the code.'
-     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c|c}'
-     +' y&P(Y=y)&\\text{codeword}&l\\\\\\hline'
-     +' 5&\\frac{1}{12}&\\mathtt{0000}&4\\\\'
-     +' 6&\\frac{1}{12}&\\mathtt{0001}&4\\\\'
-     +' 0&\\frac{2}{12}&\\mathtt{001}&3\\\\'
-     +' 1&\\frac{3}{12}&\\mathtt{01}&2\\\\'
-     +' 2&\\frac{3}{12}&\\mathtt{10}&2\\\\'
-     +' 3&\\frac{1}{12}&\\mathtt{110}&3\\\\'
-     +' 4&\\frac{1}{12}&\\mathtt{111}&3'
-     +'\\end{array}$$</div><br>'
+     +'For $n=3$ the vote fails when $K\\ge 2$, so two or three copies are flipped.'
+     +'$$\\begin{aligned}'
+     +'P_3&=P(K=2)+P(K=3)\\\\'
+     +'&=\\binom{3}{2}p^{2}(1-p)+\\binom{3}{3}p^{3}\\\\'
+     +'&=3(0.05)^{2}(0.95)+(0.05)^{3}\\\\'
+     +'&=0.007125+0.000125\\\\'
+     +'&=7.25\\times10^{-3}'
+     +'\\end{aligned}$$'
+     +'The block error probability for $n=3$ follows from $P_3$.'
+     +'$$\\begin{aligned}'
+     +'P_B&=1-(1-P_3)^{20}\\\\'
+     +'&=1-(0.99275)^{20}\\\\'
+     +'&=1-0.8646\\\\'
+     +'&=0.1354'
+     +'\\end{aligned}$$'
+     +'For $n=5$ the vote fails when $K\\ge 3$, so three, four or five copies are flipped.'
+     +'$$\\begin{aligned}'
+     +'P_5&=\\binom{5}{3}p^{3}(1-p)^{2}+\\binom{5}{4}p^{4}(1-p)+\\binom{5}{5}p^{5}\\\\'
+     +'&=10(0.05)^{3}(0.95)^{2}+5(0.05)^{4}(0.95)+(0.05)^{5}\\\\'
+     +'&=1.1281\\times10^{-3}+2.969\\times10^{-5}+3.125\\times10^{-7}\\\\'
+     +'&=1.158\\times10^{-3}'
+     +'\\end{aligned}$$'
+     +'The block error probability for $n=5$ follows from $P_5$.'
+     +'$$\\begin{aligned}'
+     +'P_B&=1-(1-P_5)^{20}\\\\'
+     +'&=1-(0.998842)^{20}\\\\'
+     +'&=1-0.97709\\\\'
+     +'&=0.02291'
+     +'\\end{aligned}$$<br>'
      +'<b>Solution — (c).</b> '
-     +'The average codeword length is'
+     +'A code of length $n$ sends $n$ channel bits for each information bit, so $R=1/n$ and it uses $20n$ channel bits.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c|c|c}'
+     +'\\text{scheme}&R&\\text{channel bits}&P_b&P_B\\\\\\hline'
+     +'\\text{no coding}&1&20&0.05&0.6415\\\\'
+     +'n=3&\\tfrac{1}{3}&60&7.25\\times10^{-3}&0.1354\\\\'
+     +'n=5&\\tfrac{1}{5}&100&1.158\\times10^{-3}&0.02291'
+     +'\\end{array}$$</div>'
+     +'Each longer code lowers the block error, but only by sending more channel bits for the same message.<br>'
+     +'<b>Solution — (d).</b> '
+     +'The capacity of the BSC is'
      +'$$\\begin{aligned}'
-     +'\\bar{L}&=\\sum_{y}P(Y=y)\\,l(y)\\\\'
-     +'&=\\frac{1}{12}\\bigl[1(4)+1(4)+2(3)+3(2)\\\\&\\qquad+3(2)+1(3)+1(3)\\bigr]\\\\'
-     +'&=\\frac{32}{12}\\\\'
-     +'&=\\frac{8}{3}\\\\'
-     +'&=2.6667\\ \\text{bits/symbol}'
+     +'C&=1-H_b(p)\\\\'
+     +'&=1-H_b(0.05)\\\\'
+     +'&=1-0.2864\\\\'
+     +'&=0.7136\\ \\text{bits per channel use}'
      +'\\end{aligned}$$'
-     +'The coding efficiency is'
-     +'$$\\begin{aligned}'
-     +'\\eta&=\\frac{H(Y)}{\\bar{L}}\\\\'
-     +'&=\\frac{2.6258}{2.6667}\\\\'
-     +'&=0.9847'
-     +'\\end{aligned}$$'
-     +'In percent, $\\eta=98.47\\%$.<br>'
+     +'Both repetition rates, $\\tfrac13=0.333$ and $\\tfrac15=0.200$, lie far below $C$. The channel coding theorem allows any rate $R<0.7136$ with a block error as small as required, if long enough codes are used.'
+     +' At a rate just below $C$, the $20$ information bits need only a little more than $20/C$ channel bits:'
+     +'$$\\frac{20}{C}=\\frac{20}{0.7136}=28.03$$'
+     +'The code of length $5$ spends $100$ channel bits and still loses $2.3\\%$ of the blocks. Repetition lowers the error only by pushing the rate toward zero, so it cannot approach capacity.<br>'
      +'<b>Check.</b> '
-     +'The average length also equals the sum of the probabilities formed by the merges, the root included:'
-     +'$$\\bar{L}=\\frac{2+2+4+5+7+12}{12}=\\frac{32}{12}$$'
-     +'This matches part (c). The entropy follows by a second route, from the numerators $n_y=12\\,P(Y=y)$:'
+     +'The six probabilities of $K$ for $n=5$ add to one:'
      +'$$\\begin{aligned}'
-     +' H(Y)&=\\log_2 12-\\frac{1}{12}\\sum_{y}n_y\\log_2 n_y\\\\'
-     +'&=3.5850-\\frac{1}{12}\\bigl(2\\cdot3\\log_2 3+2\\log_2 2\\bigr)\\\\'
-     +'&=3.5850-0.9591\\\\'
-     +'&=2.6258'
+     +'\\sum_{j=0}^{5}P(K=j)&=0.77378+0.20363+0.02143\\\\'
+     +'&\\quad+0.00113+0.00003+0.0000003\\\\'
+     +'&=1.00000'
      +'\\end{aligned}$$'
-     +'The Kraft sum is $2\\cdot 2^{-2}+3\\cdot 2^{-3}+2\\cdot 2^{-4}=1$, so the tree has no unused branch. The bound $2.6258\\le 2.6667<3.6258$ holds.',
-  err:'Dropping the absolute value, so $X=-2$ gives $-2\\bmod 7=5$. The absolute value is applied first, which gives $Y=2$.',
-  teach:'Seven output symbols give a tree four levels deep. The four symbols of probability $\\tfrac{1}{12}$ are merged in pairs before anything else.' },
+     +'For small $p$ the first failing term dominates. So $P_3\\approx 3p^{2}=0.0075$ and $P_5\\approx 10p^{3}=0.00125$, close to the exact $0.00725$ and $0.001158$.'
+     +' For a small $P_b$ the block error is close to $20P_b$, and $20(1.158\\times10^{-3})=0.0232$ agrees with $0.02291$. The order $P_5<P_3<p$ holds.',
+  err:'Taking the block error without coding as $20p=1.0$. The approximation $P_B\\approx 20P_b$ holds only when $20P_b$ is small. Here the exact value $1-(0.95)^{20}=0.6415$ must be used.',
+  teach:'The two extremes before the coding theorem. Sending bits bare loses most blocks, and repetition buys reliability only by spending rate. Capacity says a rate near $0.71$ is possible with long codes.' },
 
-{ id:'D6-07', module:'M6', type:'fx', src:'Final Q4',
-  stem:'Let $X$ be a discrete memoryless source (DMS) which is modeled as a uniform random variable taking the integer values between $-6$ and $6$. Let $Y\\triangleq X^{2}\\;(\\bmod 11)$ be another DMS which is a function of $X$. Here $a\\bmod m$ denotes the remainder of $a$ on division by $m$, taken in $\\{0,1,\\ldots,m-1\\}$.',
-  parts:['[10 pts] Calculate the entropy of the source, $Y$.',
-         '[10 pts] Design a <em>binary</em> Huffman code for the source, $Y$.',
-         '[5 pts] Calculate the coding efficiency of the Huffman code designed in part (b).'],
-  figSol: () => figPmf({v:[0,1,3,4,5,9],n:[1,2,4,2,2,2],D:13,name:'Y'})+figHuff({n:[1,2,4,2,2,2],D:13,name:'Y',lab:['0','1','3','4','5','9'],codes:['101','11','01','000','001','100'],order:['10','00','1','0','']}),
-  sol:'<b>Given.</b> $X$ is uniform on the thirteen integers $-6,\\ldots,6$, and $Y=X^{2}\\bmod 11$.<br>'
-     +'<b>Find.</b> $H(Y)$, a binary Huffman code for $Y$, and its coding efficiency.<br>'
-     +'<b>Method.</b> List $Y$ for every value of $X$, then add the probabilities that give the same value of $Y$. The entropy is $H(Y)=\\sum_{y}P(Y=y)\\log_2\\frac{1}{P(Y=y)}$, in bits because the logarithm has base two. Huffman\'s procedure fits the code part, since no prefix code for single symbols has a smaller average length. Merge the two smallest, give $0$ to the upper and $1$ to the lower, and place each sum as high as possible among equals. The efficiency is $\\eta=H(Y)/\\bar{L}$.<br>'
+{ id:'D6-07', module:'M6', type:'capacity', src:'Madhow Ex 7.3.1',
+  stem:'A company claims a modem that sends $R_b=60$ Mbit/s in a bandwidth of $B=10$ MHz. The received signal power is $P=1.8\\times10^{-11}$ W. The noise is white and Gaussian with two-sided power spectral density $N_0/2$, where $N_0=4.0\\times10^{-20}$ W/Hz. Treat the link as an ideal bandlimited channel with additive white Gaussian noise and no excess bandwidth.',
+  parts:['[6 pts] Find the spectral efficiency $r=R_b/B$ of the claimed link. Then find the Shannon limit at that efficiency, the smallest $E_b/N_0$ in dB at which any system with it works reliably.',
+         '[6 pts] Calculate the energy per bit at the receiver and the actual $E_b/N_0$ in dB.',
+         '[6 pts] Decide whether the claim can be true, and by how many dB it misses or clears the limit. Confirm the verdict with the capacity $C=B\\log_2\\!\\left(1+P/(N_0B)\\right)$.',
+         '[7 pts] The company then says the modem uses two separate channels at once, for example two pairs of antennas. Each has bandwidth $10$ MHz and the same $N_0$, and the power and the bits are split equally. Repeat the test for one channel and give the new verdict.'],
+  figSol: () => figLimit({xr:[-4,14], yr:[0,7], h:320, imp:[3.2,4.9], floor:0.45,
+    gaps:[{r:6, x:8.75, c:C.err, lab:'1.46\\ \\mathrm{dB}\\ \\text{short}', pos:[10.6, 5.5, 'start']},
+          {r:3, x:8.75, c:C.mid, lab:'5.07\\ \\mathrm{dB}\\ \\text{to spare}', dx:0.7}],
+    pts:[{x:8.75, r:6, c:C.err, lab:'\\text{one channel},\\ r=6', dx:-0.3, dy:-0.08, anchor:'end'},
+         {x:8.75, r:3, c:C.out, lab:'\\text{each of two channels},\\ r=3', dy:-0.42}]}),
+  sol:'<b>Given.</b> $R_b=60$ Mbit/s, $B=10$ MHz, $P=1.8\\times10^{-11}$ W and $N_0=4.0\\times10^{-20}$ W/Hz, on an ideal bandlimited channel with white Gaussian noise.<br>'
+     +'<b>Find.</b> The spectral efficiency and its Shannon limit, the actual $E_b/N_0$, the verdict with its margin, and the verdict for two parallel channels.<br>'
+     +'<b>Method.</b> The spectral efficiency is $r=R_b/B$ in bit/s/Hz. A reliable link at efficiency $r$ needs'
+     +'$$\\frac{E_b}{N_0}\\ge\\frac{2^{r}-1}{r}$$'
+     +'The energy per bit is the received power divided by the bit rate, $E_b=P/R_b$. A value $x$ in dB is $10\\log_{10}x$. The claim can be true only when the actual $E_b/N_0$ lies above the limit.<br>'
      +'<b>Solution — (a).</b> '
-     +'Each of the thirteen values of $X$ has probability $\\tfrac{1}{13}$. Since $(-x)^{2}=x^{2}$, the values $x$ and $-x$ give the same $Y$.'
-     +' For example $5^{2}=25=2(11)+3$ and $6^{2}=36=3(11)+3$, so both give $Y=3$.'
-     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c}'
-     +' y&x\\ \\text{values}&P(Y=y)\\\\\\hline'
-     +' 0&0&\\frac{1}{13}\\\\'
-     +' 1&-1,\\,1&\\frac{2}{13}\\\\'
-     +' 3&-6,\\,-5,\\,5,\\,6&\\frac{4}{13}\\\\'
-     +' 4&-2,\\,2&\\frac{2}{13}\\\\'
-     +' 5&-4,\\,4&\\frac{2}{13}\\\\'
-     +' 9&-3,\\,3&\\frac{2}{13}'
-     +'\\end{array}$$</div>'
-     +'The probabilities add to $\\frac{13}{13}=1$. The entropy is'
+     +'The spectral efficiency of the claimed link is'
      +'$$\\begin{aligned}'
-     +' H(Y)&=\\sum_{y}P(Y=y)\\log_2\\frac{1}{P(Y=y)}\\\\'
-     +'&=\\frac{4}{13}\\log_2 \\frac{13}{4}+4\\cdot\\frac{2}{13}\\log_2 \\frac{13}{2}+\\frac{1}{13}\\log_2 13\\\\'
-     +'&=0.52321+4(0.41545)+0.28465\\\\'
-     +'&=2.4697\\ \\text{bits/symbol}'
+     +'r&=\\frac{R_b}{B}\\\\'
+     +'&=\\frac{60\\times10^{6}}{10\\times10^{6}}\\\\'
+     +'&=6\\ \\text{bit/s/Hz}'
+     +'\\end{aligned}$$'
+     +'The Shannon limit at this efficiency is'
+     +'$$\\begin{aligned}'
+     +'\\frac{E_b}{N_0}\\bigg|_{\\min}&=\\frac{2^{6}-1}{6}\\\\'
+     +'&=\\frac{63}{6}\\\\'
+     +'&=10.5\\\\'
+     +'&=10\\log_{10}10.5\\ \\text{dB}\\\\'
+     +'&=10.21\\ \\text{dB}'
      +'\\end{aligned}$$<br>'
      +'<b>Solution — (b).</b> '
-     +'Work with the numerators over $13$. Each line gives one merge and the new list, with the new sum in bold.<br>'
-     +'Start: $4,2,2,2,2,1$.<br>'
-     +'Merge $1$: $2+1=3$, list $4,\\mathbf{3},2,2,2$.<br>'
-     +'Merge $2$: $2+2=4$, list $\\mathbf{4},4,3,2$.<br>'
-     +'Merge $3$: $3+2=5$, list $\\mathbf{5},4,4$.<br>'
-     +'Merge $4$: $4+4=8$, list $\\mathbf{8},5$.<br>'
-     +'Merge $5$: $8+5=13$, list $\\mathbf{13}$.<br>'
-     +'In every merge the upper entry takes $0$ and the lower entry takes $1$. Reading the labels from the root back to each symbol gives the code.'
-     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c|c}'
-     +' y&P(Y=y)&\\text{codeword}&l\\\\\\hline'
-     +' 4&\\frac{2}{13}&\\mathtt{000}&3\\\\'
-     +' 5&\\frac{2}{13}&\\mathtt{001}&3\\\\'
-     +' 3&\\frac{4}{13}&\\mathtt{01}&2\\\\'
-     +' 9&\\frac{2}{13}&\\mathtt{100}&3\\\\'
-     +' 0&\\frac{1}{13}&\\mathtt{101}&3\\\\'
-     +' 1&\\frac{2}{13}&\\mathtt{11}&2'
-     +'\\end{array}$$</div><br>'
+     +'The energy per bit at the receiver is'
+     +'$$\\begin{aligned}'
+     +'E_b&=\\frac{P}{R_b}\\\\'
+     +'&=\\frac{1.8\\times10^{-11}}{6.0\\times10^{7}}\\\\'
+     +'&=3.0\\times10^{-19}\\ \\text{J}'
+     +'\\end{aligned}$$'
+     +'Dividing by $N_0$ gives the actual ratio.'
+     +'$$\\begin{aligned}'
+     +'\\frac{E_b}{N_0}&=\\frac{3.0\\times10^{-19}}{4.0\\times10^{-20}}\\\\'
+     +'&=7.5\\\\'
+     +'&=10\\log_{10}7.5\\ \\text{dB}\\\\'
+     +'&=8.75\\ \\text{dB}'
+     +'\\end{aligned}$$<br>'
      +'<b>Solution — (c).</b> '
-     +'The average codeword length is'
+     +'The actual $8.75$ dB lies below the limit of $10.21$ dB, so the claim cannot be true. The shortfall is'
+     +'$$10.21-8.75=1.46\\ \\text{dB}$$'
+     +'No code, modulation or receiver closes that gap at $r=6$. The capacity gives the same verdict. The signal-to-noise ratio in the band is'
      +'$$\\begin{aligned}'
-     +'\\bar{L}&=\\sum_{y}P(Y=y)\\,l(y)\\\\'
-     +'&=\\frac{1}{13}\\bigl[2(3)+2(3)+4(2)+2(3)\\\\&\\qquad+1(3)+2(2)\\bigr]\\\\'
-     +'&=\\frac{33}{13}\\\\'
-     +'&=2.5385\\ \\text{bits/symbol}'
+     +'\\frac{P}{N_0B}&=\\frac{1.8\\times10^{-11}}{(4.0\\times10^{-20})(10\\times10^{6})}\\\\'
+     +'&=\\frac{1.8\\times10^{-11}}{4.0\\times10^{-13}}\\\\'
+     +'&=45'
      +'\\end{aligned}$$'
-     +'The coding efficiency is'
+     +'The capacity of the channel is then'
      +'$$\\begin{aligned}'
-     +'\\eta&=\\frac{H(Y)}{\\bar{L}}\\\\'
-     +'&=\\frac{2.4697}{2.5385}\\\\'
-     +'&=0.9729'
+     +'C&=B\\log_2\\!\\left(1+\\frac{P}{N_0B}\\right)\\\\'
+     +'&=10^{7}\\log_2 46\\\\'
+     +'&=10^{7}(5.5236)\\\\'
+     +'&=55.24\\ \\text{Mbit/s}'
      +'\\end{aligned}$$'
-     +'In percent, $\\eta=97.29\\%$.<br>'
+     +'The claimed $60$ Mbit/s is above $C$, so no system reaches it reliably.<br>'
+     +'<b>Solution — (d).</b> '
+     +'Each channel now carries half the bits in the same $10$ MHz, with half the power. Its bit rate is $R_b\'=30$ Mbit/s and its power is $P\'=0.9\\times10^{-11}$ W.'
+     +'$$\\begin{aligned}'
+     +'r\'&=\\frac{30\\times10^{6}}{10\\times10^{6}}\\\\'
+     +'&=3\\ \\text{bit/s/Hz}'
+     +'\\end{aligned}$$'
+     +'The Shannon limit at this efficiency is'
+     +'$$\\begin{aligned}'
+     +'\\frac{E_b}{N_0}\\bigg|_{\\min}&=\\frac{2^{3}-1}{3}\\\\'
+     +'&=\\frac{7}{3}\\\\'
+     +'&=2.333\\\\'
+     +'&=3.68\\ \\text{dB}'
+     +'\\end{aligned}$$'
+     +'Halving both the power and the bit rate leaves the energy per bit unchanged.'
+     +'$$\\begin{aligned}'
+     +'E_b&=\\frac{0.9\\times10^{-11}}{3.0\\times10^{7}}\\\\'
+     +'&=3.0\\times10^{-19}\\ \\text{J}'
+     +'\\end{aligned}$$'
+     +'So the actual $E_b/N_0$ is still $8.75$ dB. It now clears the limit by'
+     +'$$8.75-3.68=5.07\\ \\text{dB}$$'
+     +'The claim becomes possible. A good code that works within one or two dB of the limit would meet it.<br>'
      +'<b>Check.</b> '
-     +'The average length also equals the sum of the probabilities formed by the merges, the root included:'
-     +'$$\\bar{L}=\\frac{3+4+5+8+13}{13}=\\frac{33}{13}$$'
-     +'This matches part (c). The entropy follows by a second route, from the numerators $n_y=13\\,P(Y=y)$:'
+     +'The signal-to-noise ratio equals $r\\,E_b/N_0$, because $P/(N_0B)=(E_bR_b)/(N_0B)$. For one channel, $6(7.5)=45$ agrees with part (c).'
+     +' For each of the two channels, the ratio is $3(7.5)=22.5$, and the capacity of one channel is'
      +'$$\\begin{aligned}'
-     +' H(Y)&=\\log_2 13-\\frac{1}{13}\\sum_{y}n_y\\log_2 n_y\\\\'
-     +'&=3.7004-\\frac{1}{13}\\bigl(4\\log_2 4+4\\cdot2\\log_2 2\\bigr)\\\\'
-     +'&=3.7004-1.2308\\\\'
-     +'&=2.4697'
+     +'C\'&=10^{7}\\log_2 23.5\\\\'
+     +'&=10^{7}(4.5546)\\\\'
+     +'&=45.55\\ \\text{Mbit/s}'
      +'\\end{aligned}$$'
-     +'The Kraft sum is $2\\cdot 2^{-2}+4\\cdot 2^{-3}=1$, so the tree has no unused branch. The bound $2.4697\\le 2.5385<3.4697$ holds.'
-     +' Only $Y=0$ has an odd numerator, because $X=0$ is the only value without a partner $-X$.',
-  err:'Counting $X=5$ and $X=-5$ as different symbols of $Y$. They have the same square, so they give one symbol with twice the probability.',
-  teach:'The symbol $Y=3$ collects four values of $X$ from two different squares, so it is the most likely symbol.' },
+     +'This is above the $30$ Mbit/s each channel carries, as the margin of part (d) says.',
+  err:'Comparing $E_b/N_0$ with the $-1.59$ dB floor and accepting the claim. The floor holds only as $r\\to0$. At $r=6$ the limit is $10.21$ dB.',
+  teach:'Splitting the rate over two channels halves $r$. The limit falls from $10.21$ dB to $3.68$ dB while $E_b/N_0$ stays the same. The spectral efficiency makes the first claim impossible, not the power.' },
 
 { id:'D6-08', module:'M6', type:'fx', src:'Final Q4',
   stem:'Let $X$ be a discrete memoryless source (DMS) which is modeled as a uniform random variable taking the integer values between $-7$ and $7$. Let $Y\\triangleq \\max(X,0)$ be another DMS which is a function of $X$.',
@@ -29311,94 +29789,73 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   err:'Rounding $5/3$ to $2$. The floor keeps the integer part, so $\\lfloor 5/3\\rfloor=1$.',
   teach:'Two symbols share $\\tfrac{20}{24}$ of the probability. The four rare symbols sit together at depth four.' },
 
-{ id:'D6-14', module:'M6', type:'fxz', src:'Final Q4',
-  stem:'Let $X$ be a discrete memoryless source (DMS) which is modeled as a uniform random variable on the alphabet $\\{-2,-1,1,2\\}$. Let $Z$ be a random variable (independent of $X$) with the probability mass function $p_Z(z)=c\\,(z+1)$ for $z\\in\\{0,1,2\\}$. It is zero otherwise, and $c$ is a constant. The pmf is shown below. Finally, let $Y\\triangleq X\\times Z$ be another DMS which is a function of both $X$ and $Z$.',
-  figure: () => figGiven({v:[0,1,2],h:[1,2,3],lab:['c','2c','3c'],name:'Z'}),
-  parts:['[5 pts] Find the constant $c$.',
-         '[8 pts] Calculate the entropy of the source, $Y$.',
-         '[8 pts] Design a <em>binary</em> Huffman code for the source, $Y$.',
-         '[4 pts] Calculate the coding efficiency of the Huffman code designed in part (c).'],
-  figSol: () => figPmf({v:[-4,-2,-1,0,1,2,4],n:[3,5,2,4,2,5,3],D:24,name:'Y'})+figHuff({n:[3,5,2,4,2,5,3],D:24,name:'Y',lab:['-4','-2','-1','0','1','2','4'],codes:['010','10','0000','001','0001','11','011'],order:['000','01','00','1','0','']}),
-  sol:'<b>Given.</b> $X$ uniform on $\\{-2,-1,1,2\\}$, $p_Z(z)=c(z+1)$ for $z=0,1,2$, independent, and $Y=XZ$.<br>'
-     +'<b>Find.</b> $c$, $H(Y)$, a binary Huffman code for $Y$, and its coding efficiency.<br>'
-     +'<b>Method.</b> Find $c$ from $\\sum_z p_Z(z)=1$ before anything else. List $Y$ for every pair $(x,z)$, then add the probabilities that give the same value of $Y$. The entropy is $H(Y)=\\sum_{y}P(Y=y)\\log_2\\frac{1}{P(Y=y)}$, in bits because the logarithm has base two. Huffman\'s procedure fits the code part, since no prefix code for single symbols has a smaller average length. Merge the two smallest, give $0$ to the upper and $1$ to the lower, and place each sum as high as possible among equals. The efficiency is $\\eta=H(Y)/\\bar{L}$.<br>'
+{ id:'D6-14', module:'M6', type:'capacity', src:'Madhow P7.2',
+  stem:'Three uncoded constellations with Gray coding are used on a channel with additive white Gaussian noise: QPSK, 8-PSK and 16-QAM. Each must reach the bit error probability $P_b=10^{-4}$. With ideal Nyquist pulses and no excess bandwidth, an $M$-point constellation sends $\\log_2 M$ bits per second per hertz. The nearest-neighbour approximations of the bit error probability are $P_b=Q\\big(\\sqrt{2E_b/N_0}\\big)$ for QPSK, $P_b\\approx\\tfrac{2}{3}\\,Q\\big(\\sqrt{0.879\\,E_b/N_0}\\big)$ for 8-PSK and $P_b\\approx\\tfrac{3}{4}\\,Q\\big(\\sqrt{0.8\\,E_b/N_0}\\big)$ for 16-QAM. Here $Q(x)$ is the probability that a zero-mean, unit-variance Gaussian variable exceeds $x$. A table gives $Q(3.719)=1.00\\times10^{-4}$, $Q(3.646)=1.33\\times10^{-4}$ and $Q(3.615)=1.50\\times10^{-4}$.',
+  parts:['[10 pts] For each constellation, find the $E_b/N_0$ in dB that gives $P_b=10^{-4}$.',
+         '[8 pts] Give the spectral efficiency $r$ of each constellation. Then find the Shannon limit at that efficiency, the smallest $E_b/N_0$ in dB at which any system with it works reliably.',
+         '[7 pts] How far is each constellation from its Shannon limit, in dB? Name the constellation farthest from its limit, and give that gap as a ratio of energies per bit.'],
+  figSol: () => figLimit({xr:[-4,16], yr:[0,5], h:320, imp:[2.2,4.3], floor:0.35,
+    gaps:[{r:2, x:8.40, c:C.mid, lab:'6.64\\ \\mathrm{dB}'},
+          {r:3, x:11.72, c:C.mid, lab:'8.04\\ \\mathrm{dB}'},
+          {r:4, x:12.21, c:C.mid, lab:'6.47\\ \\mathrm{dB}'}],
+    pts:[{x:8.40, r:2, c:C.out, lab:'\\text{QPSK}'},
+         {x:11.72, r:3, c:C.out, lab:'8\\text{-PSK}'},
+         {x:12.21, r:4, c:C.out, lab:'16\\text{-QAM}'}]}),
+  sol:'<b>Given.</b> QPSK, 8-PSK and 16-QAM with Gray coding, the target $P_b=10^{-4}$, their nearest-neighbour approximations, $r=\\log_2 M$ bit/s/Hz, and three values of $Q$.<br>'
+     +'<b>Find.</b> The $E_b/N_0$ each constellation needs, its spectral efficiency and Shannon limit, and the gap between the two in dB.<br>'
+     +'<b>Method.</b> Each approximation has the form $P_b\\approx a\\,Q\\big(\\sqrt{b\\,E_b/N_0}\\big)$. Divide the target by $a$ to get the value of $Q$, read its argument $x$ from the table, and solve $b\\,E_b/N_0=x^{2}$.'
+     +' The Shannon limit at efficiency $r$ is the capacity boundary of the bandlimited channel:'
+     +'$$\\frac{E_b}{N_0}\\bigg|_{\\min}=\\frac{2^{r}-1}{r}$$'
+     +'A gap in dB is the difference of two values in dB, which is $10\\log_{10}$ of the ratio of the two energies per bit.<br>'
      +'<b>Solution — (a).</b> '
-     +'The constant comes first. The pmf of $Z$ must add to one:'
+     +'For QPSK, $a=1$, so $Q\\big(\\sqrt{2E_b/N_0}\\big)=1.00\\times10^{-4}$ and the table gives the argument $3.719$.'
      +'$$\\begin{aligned}'
-     +'\\sum_{z}p_Z(z)&=c(1)+c(2)+c(3)\\\\'
-     +'&=6c\\\\'
-     +'&=1'
+     +'\\frac{E_b}{N_0}&=\\frac{3.719^{2}}{2}\\\\'
+     +'&=\\frac{13.831}{2}\\\\'
+     +'&=6.915\\\\'
+     +'&=8.40\\ \\text{dB}'
      +'\\end{aligned}$$'
-     +'So $c=\\tfrac16$, and $P(Z=0)=\\tfrac16$, $P(Z=1)=\\tfrac26$, $P(Z=2)=\\tfrac36$.<br>'
-     +'<b>Solution — (b).</b> '
-     +'With $P(X=x)=\\tfrac14$, the pair $(x,z)$ has probability $n_Z(z)/24$, where $n_Z=1,2,3$ for $z=0,1,2$.'
-     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c}'
-     +' y&(x,z)\\ \\text{pairs}&P(Y=y)\\\\\\hline'
-     +'-4&(-2,2)&\\frac{3}{24}\\\\'
-     +'-2&(-2,1),\\,(-1,2)&\\frac{2+3}{24}=\\frac{5}{24}\\\\'
-     +'-1&(-1,1)&\\frac{2}{24}\\\\'
-     +' 0&(-2,0),\\,(-1,0),\\,(1,0),\\,(2,0)&\\frac{4}{24}\\\\'
-     +' 1&(1,1)&\\frac{2}{24}\\\\'
-     +' 2&(1,2),\\,(2,1)&\\frac{3+2}{24}=\\frac{5}{24}\\\\'
-     +' 4&(2,2)&\\frac{3}{24}'
-     +'\\end{array}$$</div>'
-     +'The probabilities add to $\\frac{24}{24}=1$. The entropy is'
+     +'For 8-PSK, the value of $Q$ is $10^{-4}/\\tfrac{2}{3}=1.50\\times10^{-4}$, so the argument is $3.615$.'
      +'$$\\begin{aligned}'
-     +' H(Y)&=\\sum_{y}P(Y=y)\\log_2\\frac{1}{P(Y=y)}\\\\'
-     +'&=2\\cdot\\frac{5}{24}\\log_2 \\frac{24}{5}+\\frac{4}{24}\\log_2 6+2\\cdot\\frac{3}{24}\\log_2 8\\\\'
-     +'&\\quad+2\\cdot\\frac{2}{24}\\log_2 12\\\\'
-     +'&=2(0.47147)+0.43083+2(0.37500)+2(0.29875)\\\\'
-     +'&=2.7213\\ \\text{bits/symbol}'
+     +'\\frac{E_b}{N_0}&=\\frac{3.615^{2}}{0.879}\\\\'
+     +'&=\\frac{13.068}{0.879}\\\\'
+     +'&=14.867\\\\'
+     +'&=11.72\\ \\text{dB}'
+     +'\\end{aligned}$$'
+     +'For 16-QAM, the value of $Q$ is $10^{-4}/\\tfrac{3}{4}=1.33\\times10^{-4}$, so the argument is $3.646$.'
+     +'$$\\begin{aligned}'
+     +'\\frac{E_b}{N_0}&=\\frac{3.646^{2}}{0.8}\\\\'
+     +'&=\\frac{13.293}{0.8}\\\\'
+     +'&=16.617\\\\'
+     +'&=12.21\\ \\text{dB}'
+     +'\\end{aligned}$$<br>'
+     +'<b>Solution — (b).</b> '
+     +'The spectral efficiencies are $r=\\log_2 4=2$, $\\log_2 8=3$ and $\\log_2 16=4$ bit/s/Hz. The limit at each one follows from the boundary.'
+     +'$$\\begin{aligned}'
+     +'r=2:\\quad\\frac{E_b}{N_0}\\bigg|_{\\min}&=\\frac{2^{2}-1}{2}=1.5=1.76\\ \\text{dB}\\\\'
+     +'r=3:\\quad\\frac{E_b}{N_0}\\bigg|_{\\min}&=\\frac{2^{3}-1}{3}=2.333=3.68\\ \\text{dB}\\\\'
+     +'r=4:\\quad\\frac{E_b}{N_0}\\bigg|_{\\min}&=\\frac{2^{4}-1}{4}=3.75=5.74\\ \\text{dB}'
      +'\\end{aligned}$$<br>'
      +'<b>Solution — (c).</b> '
-     +'Work with the numerators over $24$. Each line gives one merge and the new list, with the new sum in bold.<br>'
-     +'Start: $5,5,4,3,3,2,2$.<br>'
-     +'Merge $1$: $2+2=4$, list $5,5,\\mathbf{4},4,3,3$.<br>'
-     +'Merge $2$: $3+3=6$, list $\\mathbf{6},5,5,4,4$.<br>'
-     +'Merge $3$: $4+4=8$, list $\\mathbf{8},6,5,5$.<br>'
-     +'Merge $4$: $5+5=10$, list $\\mathbf{10},8,6$.<br>'
-     +'Merge $5$: $8+6=14$, list $\\mathbf{14},10$.<br>'
-     +'Merge $6$: $14+10=24$, list $\\mathbf{24}$.<br>'
-     +'In every merge the upper entry takes $0$ and the lower entry takes $1$. Reading the labels from the root back to each symbol gives the code.'
-     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c|c}'
-     +' y&P(Y=y)&\\text{codeword}&l\\\\\\hline'
-     +'-1&\\frac{2}{24}&\\mathtt{0000}&4\\\\'
-     +' 1&\\frac{2}{24}&\\mathtt{0001}&4\\\\'
-     +' 0&\\frac{4}{24}&\\mathtt{001}&3\\\\'
-     +'-4&\\frac{3}{24}&\\mathtt{010}&3\\\\'
-     +' 4&\\frac{3}{24}&\\mathtt{011}&3\\\\'
-     +'-2&\\frac{5}{24}&\\mathtt{10}&2\\\\'
-     +' 2&\\frac{5}{24}&\\mathtt{11}&2'
-     +'\\end{array}$$</div><br>'
-     +'<b>Solution — (d).</b> '
-     +'The average codeword length is'
+     +'Each gap is the required value of part (a) minus the limit of part (b).'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c|c|c}'
+     +'\\text{constellation}&r&E_b/N_0\\ \\text{needed}&\\text{limit}&\\text{gap}\\\\\\hline'
+     +'\\text{QPSK}&2&8.40\\ \\text{dB}&1.76\\ \\text{dB}&6.64\\ \\text{dB}\\\\'
+     +'8\\text{-PSK}&3&11.72\\ \\text{dB}&3.68\\ \\text{dB}&8.04\\ \\text{dB}\\\\'
+     +'16\\text{-QAM}&4&12.21\\ \\text{dB}&5.74\\ \\text{dB}&6.47\\ \\text{dB}'
+     +'\\end{array}$$</div>'
+     +'8-PSK is farthest from its limit. As a ratio of energies per bit, its gap is'
      +'$$\\begin{aligned}'
-     +'\\bar{L}&=\\sum_{y}P(Y=y)\\,l(y)\\\\'
-     +'&=\\frac{1}{24}\\bigl[2(4)+2(4)+4(3)+3(3)\\\\&\\qquad+3(3)+5(2)+5(2)\\bigr]\\\\'
-     +'&=\\frac{66}{24}\\\\'
-     +'&=\\frac{11}{4}\\\\'
-     +'&=2.7500\\ \\text{bits/symbol}'
+     +'\\frac{14.867}{2.333}&=6.37\\\\'
+     +'&=10\\log_{10}6.37\\ \\text{dB}\\\\'
+     +'&=8.04\\ \\text{dB}'
      +'\\end{aligned}$$'
-     +'The coding efficiency is'
-     +'$$\\begin{aligned}'
-     +'\\eta&=\\frac{H(Y)}{\\bar{L}}\\\\'
-     +'&=\\frac{2.7213}{2.7500}\\\\'
-     +'&=0.9895'
-     +'\\end{aligned}$$'
-     +'In percent, $\\eta=98.95\\%$.<br>'
+     +'A code with the same efficiency could at best cut the energy per bit of 8-PSK by a factor of $6.37$.<br>'
      +'<b>Check.</b> '
-     +'The average length also equals the sum of the probabilities formed by the merges, the root included:'
-     +'$$\\bar{L}=\\frac{4+6+8+10+14+24}{24}=\\frac{66}{24}$$'
-     +'This matches part (d). The entropy follows by a second route, from the numerators $n_y=24\\,P(Y=y)$:'
-     +'$$\\begin{aligned}'
-     +' H(Y)&=\\log_2 24-\\frac{1}{24}\\sum_{y}n_y\\log_2 n_y\\\\'
-     +'&=4.5850-\\frac{1}{24}\\bigl(2\\cdot5\\log_2 5+4\\log_2 4+2\\cdot3\\log_2 3+2\\cdot2\\log_2 2\\bigr)\\\\'
-     +'&=4.5850-1.8637\\\\'
-     +'&=2.7213'
-     +'\\end{aligned}$$'
-     +'The Kraft sum is $2\\cdot 2^{-2}+3\\cdot 2^{-3}+2\\cdot 2^{-4}=1$, so the tree has no unused branch. The bound $2.7213\\le 2.7500<3.7213$ holds.',
-  err:'Letting $Y=0$ keep only one pair. Every $x$ paired with $z=0$ gives $Y=0$, so $P(Y=0)=4\\cdot\\tfrac{1}{24}$.',
-  teach:'The value $Y=2$ has two routes, $(1,2)$ and $(2,1)$. A student who misses one gets a pmf that does not add to one.' },
+     +'Each gap also follows from the ratio of energies per bit. For QPSK, $6.915/1.5=4.610$, and $10\\log_{10}4.610=6.64$ dB. For 16-QAM, $16.617/3.75=4.431$, and $10\\log_{10}4.431=6.47$ dB.'
+     +' Every constellation needs more than its limit, as an uncoded system must. The limits rise with $r$, and none lies below the floor of $-1.59$ dB.',
+  err:'Setting $Q\\big(\\sqrt{b\\,E_b/N_0}\\big)=10^{-4}$ for 8-PSK and 16-QAM. The factor in front must be divided out first, so the values of $Q$ are $1.50\\times10^{-4}$ and $1.33\\times10^{-4}$.',
+  teach:'8-PSK sits farthest from its limit because its points share one circle, while 16-QAM uses the plane. Uncoded systems leave six to eight dB that coding can recover.' },
 
 { id:'D6-15', module:'M6', type:'fxz', src:'Final Q4',
   stem:'Let $X$ be a discrete memoryless source (DMS) which is modeled as a uniform random variable on the alphabet $\\{0,1,2,3\\}$. Let $Z$ be a random variable (independent of $X$) with the probability mass function $p_Z(z)=c\\left(\\frac{1}{2}\\right)^{z}$ for the integers $0\\le z\\le 3$. It is zero otherwise, and $c$ is a constant. Finally, let $Y\\triangleq \\min(X,Z)$ be another DMS which is a function of both $X$ and $Z$.',
@@ -29942,81 +30399,72 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   err:'Taking $P(X=k)=\\tfrac{k}{4}$, which adds to $\\tfrac{10}{4}$. The constant must make the four probabilities add to one.',
   teach:'Eight output symbols, the largest alphabet in the set. The sums overlap only in the middle, where $3,4,5,6$ each have two routes.' },
 
-{ id:'D6-22', module:'M6', type:'sum', src:'Final Q4',
-  stem:'Consider two <em>independent</em> discrete memoryless sources, $X$ and $Y$. The source $X$ is described by the alphabet $\\mathcal{X}=\\{0,1,2,3\\}$, where $P(X=0)=P(X=3)=\\frac{1}{2}P(X=1)=\\frac{1}{2}P(X=2)$. Similarly, the source $Y$ is described by the alphabet $\\mathcal{Y}=\\{0,1,2\\}$, where each symbol is generated with equal probability. Let $Z\\triangleq X+Y$ be another discrete memoryless source.',
-  parts:['[10 pts] Calculate the entropy of the source, $Z$.',
-         '[10 pts] Design a <em>binary</em> Huffman code for the source, $Z$.',
-         '[5 pts] Calculate the coding efficiency of the Huffman code designed in part (b).'],
-  figSol: () => figPmf({v:[0,1,2,3,4,5],n:[1,3,5,5,3,1],D:18,name:'Z'})+figHuff({n:[1,3,5,5,3,1],D:18,name:'Z',lab:['0','1','2','3','4','5'],codes:['0010','11','01','10','000','0011'],order:['001','00','1','0','']}),
-  sol:'<b>Given.</b> $P(X=0)=P(X=3)=\\tfrac12P(X=1)=\\tfrac12P(X=2)$, $Y$ uniform on $\\{0,1,2\\}$, independent, and $Z=X+Y$.<br>'
-     +'<b>Find.</b> $H(Z)$, a binary Huffman code for $Z$, and its coding efficiency.<br>'
-     +'<b>Method.</b> Turn the ratio statement into probabilities first. List $Z$ for every pair $(x,y)$, then add the probabilities that give the same value of $Z$. The entropy is $H(Z)=\\sum_{z}P(Z=z)\\log_2\\frac{1}{P(Z=z)}$, in bits because the logarithm has base two. Huffman\'s procedure fits the code part, since no prefix code for single symbols has a smaller average length. Merge the two smallest, give $0$ to the upper and $1$ to the lower, and place each sum as high as possible among equals. The efficiency is $\\eta=H(Z)/\\bar{L}$.<br>'
+{ id:'D6-22', module:'M6', type:'capacity', src:'Madhow P7.5',
+  stem:'An adaptive link uses a binary code of rate $\\tfrac12$ with one of three constellations: QPSK, 16-QAM or 64-QAM. The passband channel has bandwidth $B=6$ MHz. The symbols use ideal Nyquist pulses with no excess bandwidth, so the link sends $B$ symbols per second. Each coded scheme works $1.5$ dB above the Shannon limit for its spectral efficiency. The transmit power and the noise are fixed, and the received power falls as $1/d^{2}$ with the distance $d$.',
+  parts:['[6 pts] Calculate the information bit rate $R_b$ of each scheme and its spectral efficiency $r=R_b/B$.',
+         '[8 pts] Find the minimum $E_s/N_0$ in dB that each scheme needs, where $E_s$ is the energy per symbol.',
+         '[6 pts] QPSK reaches the largest range, $2.4$ km. Find the ranges of the other two schemes.',
+         '[5 pts] A user is at $d=1.2$ km. Which scheme gives the highest bit rate there, and with how many dB to spare?'],
+  figSol: () => figLimit({xr:[-4,8], yr:[0,4], h:300, imp:[0.2,3.3], floor:0.3,
+    gaps:[{r:1, x:1.50, c:C.mid, lab:'1.5\\ \\mathrm{dB}', dy:-0.32},
+          {r:2, x:3.26, c:C.mid, lab:'1.5\\ \\mathrm{dB}', dy:-0.32},
+          {r:3, x:5.18, c:C.mid, lab:'1.5\\ \\mathrm{dB}', dy:-0.32}],
+    pts:[{x:1.50, r:1, c:C.out, lab:'\\text{QPSK}', dy:-0.02},
+         {x:3.26, r:2, c:C.out, lab:'16\\text{-QAM}', dy:-0.02},
+         {x:5.18, r:3, c:C.out, lab:'64\\text{-QAM}', dy:-0.02}]})
+     + figRange({dmax:2.8, Rmax:22, at:1.2, pick:12,
+    steps:[{d:0.907, R:18, lab:'64\\text{-QAM}', dlab:'0.91\\ \\mathrm{km}'},
+           {d:1.386, R:12, lab:'16\\text{-QAM}', dlab:'1.39\\ \\mathrm{km}'},
+           {d:2.4, R:6, lab:'\\text{QPSK}', dlab:'2.4\\ \\mathrm{km}'}]}),
+  sol:'<b>Given.</b> A rate-$\\tfrac12$ code with QPSK, 16-QAM or 64-QAM, $B=6$ MHz and $B$ symbols per second. Each scheme works $1.5$ dB above its Shannon limit. The received power is proportional to $1/d^{2}$, and QPSK reaches $2.4$ km.<br>'
+     +'<b>Find.</b> The bit rates and spectral efficiencies, the minimum $E_s/N_0$ of each scheme, the other two ranges, and the best scheme at $1.2$ km.<br>'
+     +'<b>Method.</b> An $M$-point symbol carries $\\log_2 M$ coded bits. A code of rate $\\tfrac12$ makes half of them information bits.'
+     +' The Shannon limit at efficiency $r$ is'
+     +'$$\\frac{E_b}{N_0}\\bigg|_{\\min}=\\frac{2^{r}-1}{r}$$'
+     +'Each symbol carries $r$ information bits here, so $E_s=r\\,E_b$. At a fixed transmit power the received $E_s/N_0$ is proportional to $1/d^{2}$. So a scheme that needs $\\Delta$ dB more has its range scaled by $10^{-\\Delta/20}$.<br>'
      +'<b>Solution — (a).</b> '
-     +'With $P(X=0)=P(X=3)=q$ and $P(X=1)=P(X=2)=2q$, the sum $6q=1$ gives $q=\\tfrac16$.'
-     +' The pair $(x,y)$ has probability $n_X(x)/18$, where $n_X=1,2,2,1$.'
-     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c}'
-     +' z&(x,y)\\ \\text{pairs}&P(Z=z)\\\\\\hline'
-     +' 0&(0,0)&\\frac{1}{18}\\\\'
-     +' 1&(0,1),\\,(1,0)&\\frac{1+2}{18}=\\frac{3}{18}\\\\'
-     +' 2&(0,2),\\,(1,1),\\,(2,0)&\\frac{1+2+2}{18}=\\frac{5}{18}\\\\'
-     +' 3&(1,2),\\,(2,1),\\,(3,0)&\\frac{2+2+1}{18}=\\frac{5}{18}\\\\'
-     +' 4&(2,2),\\,(3,1)&\\frac{2+1}{18}=\\frac{3}{18}\\\\'
-     +' 5&(3,2)&\\frac{1}{18}'
-     +'\\end{array}$$</div>'
-     +'The probabilities add to $\\frac{18}{18}=1$. The entropy is'
+     +'The symbol rate is $6\\times10^{6}$ symbols per second. A symbol carries $\\tfrac12\\log_2 M$ information bits: $1$ for QPSK, $2$ for 16-QAM and $3$ for 64-QAM.'
      +'$$\\begin{aligned}'
-     +' H(Z)&=\\sum_{z}P(Z=z)\\log_2\\frac{1}{P(Z=z)}\\\\'
-     +'&=2\\cdot\\frac{5}{18}\\log_2 \\frac{18}{5}+2\\cdot\\frac{3}{18}\\log_2 6+2\\cdot\\frac{1}{18}\\log_2 18\\\\'
-     +'&=2(0.5133)+2(0.4308)+2(0.2317)\\\\'
-     +'&=2.3516\\ \\text{bits/symbol}'
+     +'\\text{QPSK:}\\quad R_b&=(6\\times10^{6})(1)=6\\ \\text{Mbit/s},\\quad r=1\\\\'
+     +'\\text{16-QAM:}\\quad R_b&=(6\\times10^{6})(2)=12\\ \\text{Mbit/s},\\quad r=2\\\\'
+     +'\\text{64-QAM:}\\quad R_b&=(6\\times10^{6})(3)=18\\ \\text{Mbit/s},\\quad r=3'
      +'\\end{aligned}$$<br>'
      +'<b>Solution — (b).</b> '
-     +'Work with the numerators over $18$. Each line gives one merge and the new list, with the new sum in bold.<br>'
-     +'Start: $5,5,3,3,1,1$.<br>'
-     +'Merge $1$: $1+1=2$, list $5,5,3,3,\\mathbf{2}$.<br>'
-     +'Merge $2$: $3+2=5$, list $\\mathbf{5},5,5,3$.<br>'
-     +'Merge $3$: $5+3=8$, list $\\mathbf{8},5,5$.<br>'
-     +'Merge $4$: $5+5=10$, list $\\mathbf{10},8$.<br>'
-     +'Merge $5$: $10+8=18$, list $\\mathbf{18}$.<br>'
-     +'In every merge the upper entry takes $0$ and the lower entry takes $1$. Reading the labels from the root back to each symbol gives the code.'
-     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c|c}'
-     +' z&P(Z=z)&\\text{codeword}&l\\\\\\hline'
-     +' 4&\\frac{3}{18}&\\mathtt{000}&3\\\\'
-     +' 0&\\frac{1}{18}&\\mathtt{0010}&4\\\\'
-     +' 5&\\frac{1}{18}&\\mathtt{0011}&4\\\\'
-     +' 2&\\frac{5}{18}&\\mathtt{01}&2\\\\'
-     +' 3&\\frac{5}{18}&\\mathtt{10}&2\\\\'
-     +' 1&\\frac{3}{18}&\\mathtt{11}&2'
-     +'\\end{array}$$</div><br>'
+     +'First the Shannon limit of each efficiency, in dB.'
+     +'$$\\begin{aligned}'
+     +'r=1:\\quad\\frac{E_b}{N_0}\\bigg|_{\\min}&=\\frac{2-1}{1}=1=0\\ \\text{dB}\\\\'
+     +'r=2:\\quad\\frac{E_b}{N_0}\\bigg|_{\\min}&=\\frac{4-1}{2}=1.5=1.76\\ \\text{dB}\\\\'
+     +'r=3:\\quad\\frac{E_b}{N_0}\\bigg|_{\\min}&=\\frac{8-1}{3}=2.333=3.68\\ \\text{dB}'
+     +'\\end{aligned}$$'
+     +'Each scheme works $1.5$ dB above its limit. Then $E_s/N_0$ in dB adds $10\\log_{10}r$, because $E_s=r\\,E_b$.'
+     +'$$\\begin{aligned}'
+     +'\\text{QPSK:}\\quad \\frac{E_s}{N_0}&=0+1.5+10\\log_{10}1=1.50\\ \\text{dB}\\\\'
+     +'\\text{16-QAM:}\\quad \\frac{E_s}{N_0}&=1.76+1.5+3.01=6.27\\ \\text{dB}\\\\'
+     +'\\text{64-QAM:}\\quad \\frac{E_s}{N_0}&=3.68+1.5+4.77=9.95\\ \\text{dB}'
+     +'\\end{aligned}$$<br>'
      +'<b>Solution — (c).</b> '
-     +'The average codeword length is'
+     +'16-QAM needs $6.27-1.50=4.77$ dB more than QPSK, and 64-QAM needs $9.95-1.50=8.45$ dB more. The received power falls as $1/d^{2}$. So a range shorter by a factor $k$ gives $20\\log_{10}k$ dB more power.'
      +'$$\\begin{aligned}'
-     +'\\bar{L}&=\\sum_{z}P(Z=z)\\,l(z)\\\\'
-     +'&=\\frac{1}{18}\\bigl[3(3)+1(4)+1(4)+5(2)\\\\&\\qquad+5(2)+3(2)\\bigr]\\\\'
-     +'&=\\frac{43}{18}\\\\'
-     +'&=2.3889\\ \\text{bits/symbol}'
-     +'\\end{aligned}$$'
-     +'The coding efficiency is'
+     +'d_{16}&=2.4\\times10^{-4.77/20}\\\\'
+     +'&=2.4\\,(0.5774)\\\\'
+     +'&=1.39\\ \\text{km}\\\\'
+     +'d_{64}&=2.4\\times10^{-8.45/20}\\\\'
+     +'&=2.4\\,(0.3780)\\\\'
+     +'&=0.91\\ \\text{km}'
+     +'\\end{aligned}$$<br>'
+     +'<b>Solution — (d).</b> '
+     +'At $2.4$ km the received $E_s/N_0$ is $1.50$ dB, just what QPSK needs. Halving the distance raises it by $20\\log_{10}2=6.02$ dB.'
      +'$$\\begin{aligned}'
-     +'\\eta&=\\frac{H(Z)}{\\bar{L}}\\\\'
-     +'&=\\frac{2.3516}{2.3889}\\\\'
-     +'&=0.9844'
+     +'\\frac{E_s}{N_0}\\bigg|_{1.2\\ \\text{km}}&=1.50+6.02\\\\'
+     +'&=7.52\\ \\text{dB}'
      +'\\end{aligned}$$'
-     +'In percent, $\\eta=98.44\\%$.<br>'
+     +'64-QAM needs $9.95$ dB and falls $2.43$ dB short. 16-QAM needs $6.27$ dB and has $7.52-6.27=1.25$ dB to spare.'
+     +' So 16-QAM is the best choice at $1.2$ km, with $R_b=12$ Mbit/s.<br>'
      +'<b>Check.</b> '
-     +'The average length also equals the sum of the probabilities formed by the merges, the root included:'
-     +'$$\\bar{L}=\\frac{2+5+8+10+18}{18}=\\frac{43}{18}$$'
-     +'This matches part (c). The entropy follows by a second route, from the numerators $n_z=18\\,P(Z=z)$:'
-     +'$$\\begin{aligned}'
-     +' H(Z)&=\\log_2 18-\\frac{1}{18}\\sum_{z}n_z\\log_2 n_z\\\\'
-     +'&=4.1699-\\frac{1}{18}\\bigl(2\\cdot5\\log_2 5+2\\cdot3\\log_2 3\\bigr)\\\\'
-     +'&=4.1699-1.8183\\\\'
-     +'&=2.3516'
-     +'\\end{aligned}$$'
-     +'The Kraft sum is $3\\cdot 2^{-2}+2^{-3}+2\\cdot 2^{-4}=1$, so the tree has no unused branch. The bound $2.3516\\le 2.3889<3.3516$ holds.'
-     +' The pmf is symmetric about $z=2.5$. This must hold, since $X$ is symmetric about $1.5$ and $Y$ about $1$.',
-  err:'Using $q=\\tfrac14$ because $X$ has four symbols. The ratio gives two parts to each middle symbol, so there are six parts.',
-  teach:'The examination\'s sum of two sources with new alphabets. The ties among $\\tfrac{3}{18}$ and $\\tfrac{5}{18}$ make the placement rule matter.' },
+     +'At the limit, $E_s/N_0=r\\,(2^{r}-1)/r=2^{r}-1$. That gives $1$, $3$ and $7$, or $0$, $4.77$ and $8.45$ dB. Adding $1.5$ dB returns $1.50$, $6.27$ and $9.95$ dB.'
+     +' The $1.5$ dB cancels in the ranges, so $d_{16}=2.4/\\sqrt{3}=1.386$ km and $d_{64}=2.4/\\sqrt{7}=0.907$ km. The distance $1.2$ km lies between them, as part (d) found.',
+  err:'Adding $1.5$ dB to $(2^{r}-1)/r$ and calling the result $E_s/N_0$. That expression is $E_b/N_0$. The energy per symbol is $r$ times larger, so $10\\log_{10}r$ must be added.',
+  teach:'An adaptive link steps down the constellations as the user moves away. The two steps up in rate cost $4.77$ dB and then $3.68$ dB. They shorten the range by factors of $\\sqrt{3}$ and then $\\sqrt{7/3}$.' },
 
 { id:'D6-23', module:'M6', type:'judge', src:'Final Q4 (variant)',
   stem:'Let $X$ be a discrete memoryless source (DMS) which is modeled as a uniform random variable taking the integer values between $1$ and $16$. Let $Y\\triangleq \\left\\lfloor \\log_2 X\\right\\rfloor$ be another DMS which is a function of $X$. Here $\\lfloor u\\rfloor$ is the largest integer not greater than $u$.',
@@ -30725,11 +31173,11 @@ window.DRILL_M6 = [
 { id:'m6-drill', module:'M6', nav:'Module 6 · practice questions',
   title:'Module 6 — practice questions',
   objective:'Thirty open-ended questions with worked solutions, in the form they are asked in.',
-  keywords:'practice questions module 6 entropy derived source function mod floor maximum minimum sum product huffman code efficiency kraft variance extension mutual information',
+  keywords:'practice questions module 6 entropy derived source function mod floor maximum minimum sum product huffman code efficiency kraft variance extension mutual information repetition code binary symmetric channel capacity shannon limit spectral efficiency',
   steps:0, blocks:[
   {t:'eyebrow', text:'Module 6 · Practice D6-01 … D6-30'},
   {t:'title', text:'Practice questions'},
-  {t:'small', html:'Work each question before opening its solution. Use these checks:<ul><li>The pmf of the derived source adds to one.</li><li>$H\\le\\log_2 K$ for a source with $K$ symbols.</li><li>A Huffman code has $H\\le\\bar{L}<H+1$ and a Kraft sum of one.</li><li>$\\bar{L}$ equals the sum of the probabilities formed by the merges.</li><li>The coding efficiency is at most one.</li></ul>'},
+  {t:'small', html:'Work each question before opening its solution. Use these checks:<ul><li>The pmf of the derived source adds to one.</li><li>$H\\le\\log_2 K$ for a source with $K$ symbols.</li><li>A Huffman code has $H\\le\\bar{L}<H+1$ and a Kraft sum of one.</li><li>$\\bar{L}$ equals the sum of the probabilities formed by the merges.</li><li>The coding efficiency is at most one.</li><li>A reliable link at spectral efficiency $r$ has $E_b/N_0\\ge(2^{r}-1)/r$.</li></ul>'},
   {t:'rule', short:true},
   {t:'drill', module:'M6'}
 ]}

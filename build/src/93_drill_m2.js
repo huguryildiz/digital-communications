@@ -172,7 +172,8 @@ function outT(pts, yr, yl, ys, marks){
 /* Poisson probabilities P(Z=k) for mean m, by the product m/1 * m/2 * ... */
 const pois = (m, k) => { let p = Math.exp(-m); for(let i=1;i<=k;i++) p *= m/i; return p; };
 /* The two conditional probability mass functions of a count as stems, with
-   the threshold. A dashed stem is message "0" and a solid one message "1".
+   the threshold, each with a round head as a pmf is drawn in this course.
+   A dashed stem is message "0" and a solid one message "1".
    A stem on the wrong side of the threshold is an error mass and is drawn
    red. The count is drawn shifted by one, so the vertical axis sits at the
    left edge and never runs through the stems at k = 0. */
@@ -185,7 +186,7 @@ function pmfFig(m0, m1, lam, lamTex, K){
   const stems = (m, dx, dash, bad) => { for(let k=0;k<=K;k++){ const v = pois(m, k);
     const col = bad(k) ? C.err : C.mid, X = a.sx(k + off + dx), Y0 = a.sy(0), Y = a.sy(v);
     a.raw(`<line x1="${X.toFixed(2)}" y1="${Y0.toFixed(2)}" x2="${X.toFixed(2)}" y2="${Y.toFixed(2)}" stroke="${col}" stroke-width="2"${dash ? ` stroke-dasharray="${dash}"` : ''}/>`);
-    a.raw(P.stemTip(X, Y, 3.6, v, col)); } };
+    a.point(k + off + dx, v, {color:col, r:4}); } };
   stems(m0, -0.17, '4 3', k => k > lam);
   stems(m1, 0.17, null, k => k < lam);
   a.vline(lam + off, {color:C.ink, dash:'6 4', width:1.6, opacity:1});

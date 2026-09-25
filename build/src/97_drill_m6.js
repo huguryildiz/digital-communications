@@ -122,7 +122,7 @@ function figLimit(o){
   const [xa,xb] = o.xr, rt = o.yr[1];
   const a = P.Axes({w:720, h:o.h||300, xr:o.xr, yr:[0,rt],
     xlabel:'E_b/N_0\\;(\\mathrm{dB})', ylabel:'r\\;(\\mathrm{bit/s/Hz})',
-    pad:{l:58,r:30,t:24,b:46}, xstep:2, ystep:1});
+    pad:{l:58,r:30,t:40,b:46}, xstep:2, ystep:1});
   const pts = [];
   for(let r=0.002; r<=rt+1e-9; r+=0.002){ const d = limDB(r); if(d>=xa && d<=xb) pts.push([d,r]); }
   const last = pts[pts.length-1];
