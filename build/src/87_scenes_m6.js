@@ -797,8 +797,8 @@ function figLZLong(v){
   seg(a, E, {color:C.mid, width:2.6});
   dot(a, pt[0], pt[1], {color:C.mid, r:7});
   lbl(a, 6.1, 1.06, '\\text{one bit a symbol}', C.ink, 'end', 15);
-  lbl(a, 6.1, hb(LZL.p)-0.1, 'H_b(0.1)=0.469', C.in, 'end', 15);
-  lbl(a, 1.9, 0.18, 'n=10^{'+num(pt[0],1)+'}:\\ '+num(pt[1],3)+'\\text{ bits a source bit}', C.mid, 'start', 16);
+  lbl(a, 6.1, hb(LZL.p)-(P.labelScale() > 1 ? 0.17 : 0.1), 'H_b(0.1)=0.469', C.in, 'end', 15);
+  lbl(a, 1.9, P.labelScale() > 1 ? 0.08 : 0.18, 'n=10^{'+num(pt[0],1)+'}:\\ '+num(pt[1],3)+'\\text{ bits a source bit}', C.mid, 'start', 16);
   return a.svg();
 }
 
@@ -1129,11 +1129,11 @@ const HAM_CIRC = [[-0.62,0.3],[0.62,0.3],[0,-0.72]];
 const syn = w => [1,2,4].map(b=>[1,2,3,4,5,6,7].filter(i=>i&b).reduce((s,i)=>s^w[i-1],0));
 function figHamming(v){
   const f = Math.min(4, frameOf(v, 4)), o0 = 1-clamp01(f);
-  if(o0 > 0.5){ const a = P.Axes(bare(SZ({xr:[0,4.2], yr:[-0.6,8.4]})));
+  if(o0 > 0.5){ const big = P.labelScale() > 1, a = P.Axes(bare(SZ({xr:[0,4.2], yr:[big ? -1.5 : -0.6,8.4]})));
     HAM.words.forEach((w,i)=>{ const col = Math.floor(i/8), row = i%8, x = 0.2+2.1*col, y = 7.6-row*1.0;
       lbl(a, x, y-0.18, '\\mathtt{'+w.join('')+'}', C.mid, 'start', 17);
       lbl(a, x+1.45, y-0.18, String(w.reduce((s,b)=>s+b,0)), C.muted, 'start', 15); });
-    lbl(a, 2.1, -0.35, '16\\text{ codewords, weights at right: }d_{\\min}=3', C.ink, 'middle', 15);
+    lbl(a, 2.1, big ? -0.95 : -0.35, '16\\text{ codewords, weights at right: }d_{\\min}=3', C.ink, 'middle', 15);
     return a.svg(); }
   const a = planeAx([[-2.6,2.6],[-2.4,2.9]]);
   const w = HAM_C.slice(); if(f >= 1.5 && f < 3.5) w[HAM_ERR-1] ^= 1;
@@ -1899,7 +1899,7 @@ codeScene('m6-code-bound', 'Limits of compression', 'The limits of compression i
     {t:'fig', frame:true, grow:true,
       live:{controls:[{k:'e', label:'$\\log_{10}n$', min:2, max:6, step:0.1, v:3, show:v=>'$'+num(v,1)+'$'}]},
       svg:figLZLong,
-      caption:'Lempel–Ziv on a binary source with $P(1)=0.1$: the bits sent a source bit, against $H_b(0.1)$. Drag $n$.'}
+      caption:'Lempel–Ziv on one random stream from a binary source with $P(1)=0.1$: the bits sent a source bit, against $H_b(0.1)$. Drag $n$.'}
   ], right:[
     {t:'note', kind:'def', head:'Universal code', html:'Lempel–Ziv is told nothing about the source. It learns the frequent strings from the stream itself.'},
     {t:'reveal', at:1, items:[

@@ -147,7 +147,9 @@ Object.assign(LABS, (function(){
       const fin = Is.filter(isFinite);
       /* the legend sits in the top-left corner, so the tallest bar or line
          stops a legend's height (in pixels) under the top of the plot */
-      const hA = ph ? 250 : gh(170), inner = hA - 26 - 62*ls;
+      /* in lecture mode the labels grow by ls but the column does not, so the
+         bar panel takes a larger share of the height */
+      const hA = ph ? 250 : gh(ls > 1 ? 210 : 170), inner = hA - 26 - 62*ls;
       const room = ph ? 1.36 : Math.max(1.36, inner / Math.max(20, inner - 34*ls - 10));
       const vmax = Math.min(7, Math.max(1.4, cap, ...fin)), top = vmax * room;
 
@@ -1069,7 +1071,7 @@ Object.assign(LABS, (function(){
       /* ---- capacity against total power, both ways ---- */
       const cw = [], ce = [];
       for(let i=0;i<=160;i++){ const x = PMAX*i/160; cw.push([x, cap(Ns, fill(Ns, x).Ps)]); ce.push([x, cap(Ns, equal(Ns, x))]); }
-      const cmax = Math.max(1, cw[cw.length-1][1])*1.12;
+      const cmax = Math.max(1, cw[cw.length-1][1])*(!ph && ls > 1 ? 1.5 : 1.12);   /* lecture: the curves pass under the legend */
       const b = P.Axes({w:W,h:ph?200:gh(140),xr:[0,PMAX],yr:[0,cmax],xlabel:'P',ylabel:'C\\;(\\text{bits a use})',
         pad:{l:ph?46:60,r:(ph?30:44)*ls,t:26,b:30}, xticksOverride:[0,2,4,6], ytarget:4, arrows:false, xnameDrop:26*ls});
       b.poly(cw, {color:P.COL.in, width:2.6});

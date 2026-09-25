@@ -76,7 +76,7 @@ function tree(codes,labels,opts){
 
 /* Capacity of the binary symmetric channel against its crossover. */
 function capfig(){
-  const a=ax({w:420,h:240,xr:[0,1],yr:[0,1.14],xlabel:'p',ylabel:'C\\;(\\text{bits per use})',
+  const a=ax({w:560,h:230,xr:[0,1],yr:[0,1.14],xlabel:'p',ylabel:'C\\;(\\text{bits per use})',
     pad:{l:58,r:20,t:20,b:40},xtarget:5,ytarget:4});
   a.curve(p=>1-hbin(p),{color:C.out,width:2.2});
   a.point(0.5,0,{color:C.err,r:4});
@@ -89,7 +89,7 @@ function capfig(){
 /* Mutual information of the Z-channel against its input distribution. */
 function zfig(){
   const I=q=>hbin((1-q)/2)-(1-q);
-  const a=ax({w:420,h:240,xr:[0,1],yr:[0,0.42],xlabel:'q=P(X=0)',
+  const a=ax({w:560,h:230,xr:[0,1],yr:[0,0.42],xlabel:'q=P(X=0)',
     ylabel:'I(X;Y)\\;(\\text{bits})',pad:{l:58,r:20,t:20,b:40},xtarget:5,ytarget:4});
   a.curve(I,{color:C.out,width:2.2});
   a.vline(0.6,{color:C.out,dash:'4 3'});

@@ -450,7 +450,7 @@ plt.show()`},
 
 'm6-huf-lz': {
   title:'Lempel–Ziv parsing',
-  what:'Parses a stream into phrases, each an earlier phrase plus one new bit. Phrase $i$ is sent as a pointer of $\\lceil\\log_2 i\\rceil$ bits and the new bit. The program codes a short stream and $10\\,000$ bits of a source with $P(1)=0.1$.',
+  what:'Parses a stream into phrases, each an earlier phrase plus one new bit. Phrase $i$ is sent as a pointer of $\\lceil\\log_2 i\\rceil$ bits and the new bit. The program codes a short stream and $10\\,000$ bits of a source with $P(1)=0.1$. The long stream is random, so another stream from the same source, like the one drawn for Lempel–Ziv on a long stream, gives slightly different counts.',
   try:'Make the long stream $100\\,000$ bits. Predict whether the cost falls below $0.6$ bits a source bit before you run it.',
   out:'source bits   phrases   coded bits   per source bit\n         18         8           25            1.389\n      10000       669         6336            0.634\nentropy of the long stream: H = 0.469 bits a source bit',
   m:`% Lempel-Ziv parsing: each new phrase is an earlier phrase plus one new bit
