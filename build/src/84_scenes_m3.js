@@ -307,9 +307,9 @@ function figConst(v){
   const a = plane({need:[[-2,2],[-1.9,1.9]], xticksOverride:[-1,1], yticksOverride:[-1,1]});
   if(op(1) > 0.02){ circle(a, Math.SQRT2, {opacity:op(1)});
     seg(a, [[0,0],[-1,1]], {color:C.mid, width:2.4, opacity:op(1)});
-    if(op(1) > 0.5) a.note(-0.62, 0.36, '\\sqrt{E}=\\sqrt2', {tex:true, fs:15, color:C.mid, anchor:'end'}); }
+    if(op(1) > 0.5) a.note(-0.34, 0.1, '\\sqrt{E}=\\sqrt2', {tex:true, fs:15, color:C.mid, anchor:'end'}); }
   if(op(2) > 0.02){ seg(a, [[1,1],[1,-1]], {color:C.mid, width:2.4, opacity:op(2)});
-    if(op(2) > 0.5) a.note(1.14, -0.12, 'd=2', {tex:true, fs:15, color:C.mid}); }
+    if(op(2) > 0.5) a.note(0.86, 0.45, 'd=2', {tex:true, fs:15, color:C.mid, anchor:'end'}); }
   SQ.forEach(p=>{ a.point(p.v[0], p.v[1], {color:C.in, r:7});
     a.note(p.v[0]+(p.v[0]>0?0.14:-0.14), p.v[1]+(p.v[1]>0?0.18:-0.38), p.l,
       {tex:true, fs:15, color:C.in, anchor:p.v[0]>0?'start':'end'}); });
@@ -320,7 +320,7 @@ function figConst(v){
    orthogonal and on-off, the points moving from one set to the next. */
 const BIN = [ [[1,0],[-1,0]], [[1,0],[0,1]], [[Math.SQRT2,0],[0,0]] ];
 const BIN_D = ['d=2\\sqrt{E_b}', 'd=\\sqrt{2E_b}', 'd=\\sqrt{2E_b}'];
-const BIN_L = [ [0,0.24,'middle'], [0.62,0.62,'start'], [0.707,0.22,'middle'] ];
+const BIN_L = [ [-0.5,0.12,'middle'], [0.78,0.76,'start'], [0.52,0.2,'middle'] ];
 function figBinary(v){
   const f = frameOf(v, 0), i = Math.min(1, Math.floor(f)), u = clamp01(f-i);
   const lerp = (p,q) => [p[0]+(q[0]-p[0])*u, p[1]+(q[1]-p[1])*u];
@@ -494,7 +494,7 @@ function figChain(v){
   const d = plane({h:160, need:[[-2,2],[-1.25,1.25]], xticksOverride:[-1,1], yticksOverride:[-1,1]});
   if(op(3) > 0.02){ seg(d, [[1.5,0],[1.5,-0.8],[0,-0.8]], {dash:'4 5', opacity:op(3)});
     dot(d, 1.5, -0.8, {r:6.5, opacity:op(3)});
-    if(op(3) > 0.5) d.note(1.36, -0.66, '\\mathbf{s}=(1.5,\\,-0.8)', {tex:true, fs:15, color:C.in, anchor:'end'}); }
+    if(op(3) > 0.5) d.note(1.8, -0.58, '\\mathbf{s}=(1.5,\\,-0.8)', {tex:true, fs:15, color:C.in}); }
   return stack(560, [[a.svg(),130],[c.svg(),158],[d.svg(),160]]);
 }
 
@@ -1079,7 +1079,7 @@ REAL_CONST,
       {t:'eq', label:'Solution', tex:'\\begin{aligned}\\mathbf{s}_1&=(\\sqrt2,0,0),&\\mathbf{s}_2&=(0,\\sqrt2,0)\\\\\\mathbf{s}_3&=(0,-\\sqrt2,1),&\\mathbf{s}_4&=(\\sqrt2,0,1)\\end{aligned}',
         note:'Check: energies $2$, $2$, $3$, $3$, equal to $\\int s_i^{2}\\,dt$.'}]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'err', head:'Common error', html:'Count one axis for each signal. Here $g_4=0$, so $N=3$, not $4$.'}]}
+      {t:'note', kind:'err', head:'Common error', html:'Use one axis for each independent signal, not one for each signal, so $N\\le M$. Here $g_4=0$, so $N=3$, not $M=4$.'}]}
   ]}
 ]},
 

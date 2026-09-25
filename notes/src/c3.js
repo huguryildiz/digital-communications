@@ -183,9 +183,9 @@ function figConst(){
   const a=plane({need:[[-2,2],[-1.9,1.9]],xticksOverride:[-1,1],yticksOverride:[-1,1]});
   circle(a,Math.SQRT2);
   seg(a,[[0,0],[-1,1]],{color:C.mid,width:2.4});
-  a.note(-0.62,0.36,'\\sqrt{E}=\\sqrt2',{tex:true,fs:15,color:C.mid,anchor:'end'});
+  a.note(-0.34,0.1,'\\sqrt{E}=\\sqrt2',{tex:true,fs:15,color:C.mid,anchor:'end'});
   seg(a,[[1,1],[1,-1]],{color:C.mid,width:2.4});
-  a.note(0.86,0.4,'d=2',{tex:true,fs:15,color:C.mid,anchor:'end'});
+  a.note(0.86,0.45,'d=2',{tex:true,fs:15,color:C.mid,anchor:'end'});
   points(a,SQ);
   return narrow(a.svg(),50);
 }
@@ -193,7 +193,9 @@ function figConst(){
 function figBinary(){
   const SETS=[[[1,0],[-1,0]],[[1,0],[0,1]],[[Math.SQRT2,0],[0,0]]];
   const D=['d=2\\sqrt{E_b}','d=\\sqrt{2E_b}','d=\\sqrt{2E_b}'];
-  const L=[[0.5,0.24,'middle'],[0.62,0.62,'start'],[0.707,0.22,'middle']];
+  /* A panel is narrower than the slide's figure, so no label fits inside its
+     circle clear of an axis: each one is set above the circle. */
+  const L=[[0.18,1.1,'start'],[0.18,1.1,'start'],[0.18,1.1,'start']];
   const pan=k=>{ const [A,B]=SETS[k], a=plane({w:360,h:260,pad:{l:46,r:22,t:24,b:40},
       need:[[-1.8,1.9],[-0.7,1.5]],xticksOverride:[],yticksOverride:[]});
     circle(a,1);
@@ -329,7 +331,7 @@ function figChain(){
   const d=plane({h:160,need:[[-2,2],[-1.25,1.25]],xticksOverride:[-1,1],yticksOverride:[-1,1]});
   seg(d,[[1.5,0],[1.5,-0.8],[0,-0.8]],{dash:'4 5'});
   d.point(1.5,-0.8,{color:C.in,r:6.5});
-  d.note(1.7,-0.9,'\\mathbf{s}=(1.5,\\,-0.8)',{tex:true,fs:15,color:C.in,anchor:'start'});
+  d.note(1.8,-0.58,'\\mathbf{s}=(1.5,\\,-0.8)',{tex:true,fs:15,color:C.in,anchor:'start'});
   return narrow(stack(560,[[a.svg(),130],[c.svg(),158],[d.svg(),160]]),54);
 }
 
@@ -640,7 +642,7 @@ window.C3 = [
  ['Solution','$\\mathbf{s}_1=(\\sqrt2,0,0)$, $\\mathbf{s}_2=(0,\\sqrt2,0)$, $\\mathbf{s}_3=(0,-\\sqrt2,1)$ and $\\mathbf{s}_4=(\\sqrt2,0,1)$. The set spans $N=3$ dimensions.'],
  ['Check','Energies from the vectors are $2$, $2$, $3$ and $3$, equal to $\\int s_i^{2}\\,dt$.']
 ]},
-{t:'box', kind:'err', hd:'Common error', html:'Count one axis for each signal. Here $g_4=0$, so $N=3$, not $4$.'},
+{t:'box', kind:'err', hd:'Common error', html:'Use one axis for each independent signal, not one for each signal, so $N\\le M$. Here $g_4=0$, so $N=3$, not $M=4$.'},
 {t:'p', text:'The figure draws the four vectors in three dimensions.'},
 {t:'fig', svg:figExGsB, cap:'Four signals need three axes, seen here from an angle of $30^{\\circ}$. $\\mathbf{s}_4$ sits one unit above $\\mathbf{s}_1$, along $\\psi_3$.',
  short:'Four signals need three axes.'},
