@@ -122,13 +122,13 @@ PI = math.pi
 q01 = [U([0, 2, 2, 0]), U([1, 1, 1, 1])]
 q02 = [U([2, 2, 0]), U([1, 1, -2])]
 q03 = [U([2, 2, -4]), U([-1, -1, 2])]
-q04 = [U([1, 1, 1, 1]), U([3, 3, -1, -1])]
+q04 = [U([3, 6, 6]), U([6, 3, -6]), U([6, -6, 3])]
 q05 = [U([3, 0, 0]), U([1, 1, 1]), U([0, -2, -2])]
 q06 = [U([1, 1, 1]), U([2, 2, -1]), U([-1, -1, 2])]
 q07 = [U([2, 2, -2, -2]), U([1, -1, -1, 1]), U([3, 1, -3, -1])]
 q08 = [U([1, 1, 1]), U([3, 1, -1]), U([-1, 1, 3])]
 q09 = [U([1, 1, 0]), U([1, 0, 1]), U([0, 1, 1])]
-q10 = [U([1, 1, -1, -1]), U([1, 1, 1, 1]), U([0, 0, 2, 2])]
+q10 = [U([2, 0, 0, 0]), U([0, 2, 0, 0]), U([0, 0, 2, 0]), U([0, 0, 0, 2])]    # set A
 q11 = [U([1, 1, 1, 1]), U([1, 1, -1, -1]), U([-1, -1, -1, -1]), U([-1, -1, 1, 1])]
 q12 = [pw([(0, 1.5, 2)], 3), pw([(0, 3, 1)], 3)]
 
@@ -176,15 +176,6 @@ CHECKS = [
     {"name": "D3-03 d01^2", "stated": 54, "derive": lambda: dist(*q03, DT) ** 2},
     {"name": "D3-03 rho01", "stated": -1, "derive": lambda: rho(*q03, DT)},
     {"name": "D3-03 Es,av", "stated": 15, "derive": lambda: e_av(q03, DT)},
-    # D3-04
-    {"name": "D3-04 E0", "stated": 4, "derive": lambda: energy(q04[0], DT)},
-    {"name": "D3-04 s11", "stated": 2, "derive": lambda: co("q04", 1, 0)},
-    {"name": "D3-04 remainder energy", "stated": 16, "derive": lambda: rem("q04", 1)},
-    {"name": "D3-04 s12", "stated": 4, "derive": lambda: co("q04", 1, 1)},
-    {"name": "D3-04 E1", "stated": 20, "derive": lambda: energy(q04[1], DT)},
-    {"name": "D3-04 d01", "stated": 4, "derive": lambda: dist(*q04, DT)},
-    {"name": "D3-04 rho01", "stated": 0.4472, "derive": lambda: rho(*q04, DT), "tol": 1e-3},
-    {"name": "D3-04 Es,av", "stated": 12, "derive": lambda: e_av(q04, DT)},
     # D3-05
     {"name": "D3-05 E1", "stated": 9, "derive": lambda: energy(q05[0], DT)},
     {"name": "D3-05 s21", "stated": 1, "derive": lambda: co("q05", 1, 0)},
@@ -252,16 +243,6 @@ CHECKS = [
     {"name": "D3-09 d12", "stated": 1.414, "derive": lambda: dist(q09[0], q09[1], DT), "tol": 1e-3},
     {"name": "D3-09 d13", "stated": 1.414, "derive": lambda: dist(q09[0], q09[2], DT), "tol": 1e-3},
     {"name": "D3-09 d23", "stated": 1.414, "derive": lambda: dist(q09[1], q09[2], DT), "tol": 1e-3},
-    # D3-10
-    {"name": "D3-10 s21 (1 + value)", "stated": 1, "derive": lambda: 1 + co("q10", 1, 0)},
-    {"name": "D3-10 s31", "stated": -2, "derive": lambda: co("q10", 2, 0)},
-    {"name": "D3-10 s32", "stated": 2, "derive": lambda: co("q10", 2, 1)},
-    {"name": "D3-10 dimensions", "stated": 2, "derive": lambda: dim(q10, DT)},
-    {"name": "D3-10 E3", "stated": 8, "derive": lambda: energy(q10[2], DT)},
-    {"name": "D3-10 rho23", "stated": 0.7071, "derive": lambda: rho(q10[1], q10[2], DT), "tol": 1e-3},
-    {"name": "D3-10 d12", "stated": 2.828, "derive": lambda: dist(q10[0], q10[1], DT), "tol": 1e-3},
-    {"name": "D3-10 d13", "stated": 4.472, "derive": lambda: dist(q10[0], q10[2], DT), "tol": 1e-3},
-    {"name": "D3-10 d23", "stated": 2, "derive": lambda: dist(q10[1], q10[2], DT)},
     # D3-11
     {"name": "D3-11 dimensions", "stated": 2, "derive": lambda: dim(q11, DT)},
     {"name": "D3-11 Es,av", "stated": 4, "derive": lambda: e_av(q11, DT)},
@@ -296,7 +277,6 @@ b19 = ([carrier(2 * math.sqrt(2), 1000, (k - 1) * PI / 2) for k in range(1, 5)]
 b20 = [0 * TB] + [carrier(2 * math.sqrt(2), 1000, 2 * PI * (k - 2) / 3) for k in (2, 3, 4)]
 b21 = [carrier(3 * math.sqrt(2), 1000, 0), carrier(3 * math.sqrt(2), 1500, 0)]
 b21 = b21 + [-b21[0], -b21[1]]
-b22 = [(3 * k - 6) * math.sqrt(2) * np.cos(2500 * PI * TB) for k in range(5)]
 b23 = [math.sqrt(2) * ((2 * m - 5) * np.cos(2000 * PI * TB) - (2 * n - 3) * np.sin(2000 * PI * TB))
        for m in range(1, 5) for n in range(1, 3)]
 b24 = [carrier(k * math.sqrt(2), 1500, k * PI / 2) for k in range(1, 5)]
@@ -403,13 +383,6 @@ CHECKS += [
     {"name": "D3-21 dmin", "stated": 4.243, "derive": lambda: dmin(b21, dB), "tol": 1e-3},
     {"name": "D3-21 opposite", "stated": 6, "derive": lambda: dist(b21[0], b21[2], dB), "tol": 1e-5},
     {"name": "D3-21 nearest neighbours", "stated": 2, "derive": lambda: min(nn_counts(b21, dB))},
-    {"name": "D3-22 unit energy of the basis", "stated": 1,
-     "derive": lambda: energy(math.sqrt(2) * np.cos(2500 * PI * TB), dB), "tol": 1e-6},
-    {"name": "D3-22 dimensions", "stated": 1, "derive": lambda: dim(b22, dB)},
-    {"name": "D3-22 Es,av", "stated": 18, "derive": lambda: e_av(b22, dB), "tol": 1e-5},
-    {"name": "D3-22 dmin", "stated": 3, "derive": lambda: dmin(b22, dB), "tol": 1e-5},
-    {"name": "D3-22 dmin^2/Es,av", "stated": 0.5, "derive": lambda: dmin(b22, dB) ** 2 / e_av(b22, dB), "tol": 1e-5},
-    {"name": "D3-22 outer neighbours", "stated": 1, "derive": lambda: nn_counts(b22, dB)[0]},
 ]
 CHECKS += ortho_checks("D3-23", 1000) + [
     {"name": "D3-23 Es,av", "stated": 6, "derive": lambda: e_av(b23, dB), "tol": 1e-5},
@@ -538,6 +511,195 @@ CHECKS += [
     {"name": "D3-30 gain of A over B in dB", "stated": 3.01,
      "derive": lambda: 10 * math.log10((dist(*A30, DT) ** 2 / e_av(A30, DT)) / (dist(*B30, DT) ** 2 / e_av(B30, DT))),
      "tol": 1e-3},
+]
+
+# ── the three textbook-shaped questions: D3-04, D3-10, D3-22 ──────────────
+
+# D3-04: simplex set from three orthogonal waveforms. The simplex waveforms are
+# formed by subtracting the sampled average, and every number is read off the
+# samples. The general-M claims use sampled Walsh sets, not the formula.
+sbar04 = sum(q04) / 3
+u04 = [s - sbar04 for s in q04]
+B04 = G["q04"][0]
+
+
+def walsh_set(M):
+    """M orthogonal equal-energy waveforms on [0, M]: rows of a Sylvester matrix."""
+    H = np.array([[1.0]])
+    while H.shape[0] < M:
+        H = np.block([[H, H], [H, -H]])
+    return [U(list(r)) for r in H]
+
+
+def simplex_of(sigs):
+    m = sum(sigs) / len(sigs)
+    return [s - m for s in sigs]
+
+
+def saving_db(sigs):
+    u = simplex_of(sigs)
+    return 10 * math.log10(e_av(sigs, DT) / e_av(u, DT))
+
+
+def energy_ratio(sigs):
+    return e_av(sigs, DT) / e_av(simplex_of(sigs), DT)
+
+
+def at(x, t):
+    """Sample value of a drawn waveform at time t."""
+    return float(x[int(t / DT)])
+
+
+# D3-10: two four-point sets on shifted pulses of height 2.
+A10 = q10
+B10 = [U([2, 2, 0, 0]), U([0, 0, 2, 2]), U([2, 0, 2, 0]), U([0, 2, 0, 2])]
+psi10 = [U([1 if j == i else 0 for j in range(4)]) for i in range(4)]
+bbar10 = sum(B10) / 4
+phia10 = U([0.5, 0.5, -0.5, -0.5])
+
+# D3-22: carrier waveforms built from a(t), b(t) on [0, 2] at f_c = 1000 Hz.
+N22 = 2 * NB
+T22 = (np.arange(N22) + 0.5) / NB
+d22 = 1 / NB
+C22 = np.cos(2 * PI * 1000 * T22)
+S22 = np.sin(2 * PI * 1000 * T22)
+a22 = np.where(T22 < 1, 3.0, 1.0)
+b22 = np.where(T22 < 1, 1.0, -3.0)
+
+
+def set22(a, b):
+    return [a * C22 - b * S22, b * C22 - a * S22, b * C22 + a * S22, a * C22 + b * S22]
+
+
+s22 = set22(a22, b22)
+t22 = set22(a22, 2 * b22)
+phi22 = [a22 * C22 / math.sqrt(5), -a22 * S22 / math.sqrt(5),
+         b22 * C22 / math.sqrt(5), -b22 * S22 / math.sqrt(5)]
+first22 = T22 < 1
+
+CHECKS += [
+    # D3-04
+    {"name": "D3-04 <s1,s2> (1 + value)", "stated": 1, "derive": lambda: 1 + ip(q04[0], q04[1], DT)},
+    {"name": "D3-04 <s1,s3> (1 + value)", "stated": 1, "derive": lambda: 1 + ip(q04[0], q04[2], DT)},
+    {"name": "D3-04 <s2,s3> (1 + value)", "stated": 1, "derive": lambda: 1 + ip(q04[1], q04[2], DT)},
+    {"name": "D3-04 E1", "stated": 81, "derive": lambda: energy(q04[0], DT)},
+    {"name": "D3-04 E2", "stated": 81, "derive": lambda: energy(q04[1], DT)},
+    {"name": "D3-04 E3", "stated": 81, "derive": lambda: energy(q04[2], DT)},
+    {"name": "D3-04 coordinate of s3 on psi3", "stated": 9, "derive": lambda: co("q04", 2, 2)},
+    {"name": "D3-04 orthogonal set dimensions", "stated": 3, "derive": lambda: dim(q04, DT)},
+    {"name": "D3-04 average on [0,1)", "stated": 5, "derive": lambda: at(sbar04, 0.5)},
+    {"name": "D3-04 average on [2,3]", "stated": 1, "derive": lambda: at(sbar04, 2.5)},
+    {"name": "D3-04 u1 on [0,1)", "stated": -2, "derive": lambda: at(u04[0], 0.5)},
+    {"name": "D3-04 u2 on [2,3]", "stated": -7, "derive": lambda: at(u04[1], 2.5)},
+    {"name": "D3-04 u3 on [1,2)", "stated": -7, "derive": lambda: at(u04[2], 1.5)},
+    {"name": "D3-04 average vector coordinate", "stated": 3, "derive": lambda: ip(sbar04, B04[0], DT)},
+    {"name": "D3-04 u1 coordinate on psi1", "stated": 6, "derive": lambda: ip(u04[0], B04[0], DT)},
+    {"name": "D3-04 u1 coordinate on psi2", "stated": -3, "derive": lambda: ip(u04[0], B04[1], DT)},
+    {"name": "D3-04 u2 coordinate on psi2", "stated": 6, "derive": lambda: ip(u04[1], B04[1], DT)},
+    {"name": "D3-04 Eu", "stated": 54, "derive": lambda: energy(u04[0], DT)},
+    {"name": "D3-04 Eu of u3", "stated": 54, "derive": lambda: energy(u04[2], DT)},
+    {"name": "D3-04 <u1,u2>", "stated": -27, "derive": lambda: ip(u04[0], u04[1], DT)},
+    {"name": "D3-04 <u1,u3>", "stated": -27, "derive": lambda: ip(u04[0], u04[2], DT)},
+    {"name": "D3-04 <u2,u3>", "stated": -27, "derive": lambda: ip(u04[1], u04[2], DT)},
+    {"name": "D3-04 rho", "stated": -0.5, "derive": lambda: rho(u04[0], u04[1], DT)},
+    {"name": "D3-04 d12 orthogonal set", "stated": 12.73, "derive": lambda: dist(q04[0], q04[1], DT), "tol": 1e-3},
+    {"name": "D3-04 d12 simplex set", "stated": 12.73, "derive": lambda: dist(u04[0], u04[1], DT), "tol": 1e-3},
+    {"name": "D3-04 d23 simplex set", "stated": 12.73, "derive": lambda: dist(u04[1], u04[2], DT), "tol": 1e-3},
+    {"name": "D3-04 d12^2", "stated": 162, "derive": lambda: dist(u04[0], u04[1], DT) ** 2},
+    {"name": "D3-04 simplex dimensions", "stated": 2, "derive": lambda: dim(u04, DT)},
+    {"name": "D3-04 Es/Eu, M=2", "stated": 2, "derive": lambda: energy_ratio(walsh_set(2))},
+    {"name": "D3-04 Es/Eu, M=3", "stated": 1.5, "derive": lambda: energy_ratio(q04)},
+    {"name": "D3-04 Es/Eu, M=4", "stated": 1.333, "derive": lambda: energy_ratio(walsh_set(4)), "tol": 1e-3},
+    {"name": "D3-04 Es/Eu, M=8", "stated": 1.143, "derive": lambda: energy_ratio(walsh_set(8)), "tol": 1e-3},
+    {"name": "D3-04 Es/Eu, M=16", "stated": 1.067, "derive": lambda: energy_ratio(walsh_set(16)), "tol": 1e-3},
+    {"name": "D3-04 saving dB, M=2", "stated": 3.010, "derive": lambda: saving_db(walsh_set(2)), "tol": 1e-3},
+    {"name": "D3-04 saving dB, M=3", "stated": 1.761, "derive": lambda: saving_db(q04), "tol": 1e-3},
+    {"name": "D3-04 saving dB, M=4", "stated": 1.249, "derive": lambda: saving_db(walsh_set(4)), "tol": 1e-3},
+    {"name": "D3-04 saving dB, M=8", "stated": 0.580, "derive": lambda: saving_db(walsh_set(8)), "tol": 1e-3},
+    {"name": "D3-04 saving dB, M=16", "stated": 0.280, "derive": lambda: saving_db(walsh_set(16)), "tol": 2e-3},
+    {"name": "D3-04 rho for M=2", "stated": -1, "derive": lambda: rho(*simplex_of(walsh_set(2)), DT)},
+    {"name": "D3-04 rho for M=8 is -1/7", "stated": -1 / 7,
+     "derive": lambda: rho(simplex_of(walsh_set(8))[2], simplex_of(walsh_set(8))[5], DT)},
+    # D3-10
+    {"name": "D3-10 psi_i energy", "stated": 1, "derive": lambda: energy(psi10[2], DT)},
+    {"name": "D3-10 <psi0,psi1> (1 + value)", "stated": 1, "derive": lambda: 1 + ip(psi10[0], psi10[1], DT)},
+    {"name": "D3-10 set A dimensions", "stated": 4, "derive": lambda: dim(A10, DT)},
+    {"name": "D3-10 a2 coordinate", "stated": 2, "derive": lambda: ip(A10[2], psi10[2], DT)},
+    {"name": "D3-10 b2 coordinate on psi2", "stated": 2, "derive": lambda: ip(B10[2], psi10[2], DT)},
+    {"name": "D3-10 b2 coordinate on psi1 (1 + value)", "stated": 1, "derive": lambda: 1 + ip(B10[2], psi10[1], DT)},
+    {"name": "D3-10 Es,av of A", "stated": 4, "derive": lambda: e_av(A10, DT)},
+    {"name": "D3-10 Eb of A", "stated": 2, "derive": lambda: e_av(A10, DT) / math.log2(4)},
+    {"name": "D3-10 Es,av of B", "stated": 8, "derive": lambda: e_av(B10, DT)},
+    {"name": "D3-10 Eb of B", "stated": 4, "derive": lambda: e_av(B10, DT) / math.log2(4)},
+    {"name": "D3-10 B d01", "stated": 4, "derive": lambda: dist(B10[0], B10[1], DT)},
+    {"name": "D3-10 B d02", "stated": 2.828, "derive": lambda: dist(B10[0], B10[2], DT), "tol": 1e-3},
+    {"name": "D3-10 B d03", "stated": 2.828, "derive": lambda: dist(B10[0], B10[3], DT), "tol": 1e-3},
+    {"name": "D3-10 B d12", "stated": 2.828, "derive": lambda: dist(B10[1], B10[2], DT), "tol": 1e-3},
+    {"name": "D3-10 B d13", "stated": 2.828, "derive": lambda: dist(B10[1], B10[3], DT), "tol": 1e-3},
+    {"name": "D3-10 B d23", "stated": 4, "derive": lambda: dist(B10[2], B10[3], DT)},
+    {"name": "D3-10 dmin of A", "stated": 2.828, "derive": lambda: dmin(A10, DT), "tol": 1e-3},
+    {"name": "D3-10 dmin of B", "stated": 2.828, "derive": lambda: dmin(B10, DT), "tol": 1e-3},
+    {"name": "D3-10 nearest neighbours in A", "stated": 3, "derive": lambda: min(nn_counts(A10, DT))},
+    {"name": "D3-10 nearest neighbours in B (min)", "stated": 2, "derive": lambda: min(nn_counts(B10, DT))},
+    {"name": "D3-10 nearest neighbours in B (max)", "stated": 2, "derive": lambda: max(nn_counts(B10, DT))},
+    {"name": "D3-10 dmin^2/Eb of A", "stated": 4, "derive": lambda: dmin(A10, DT) ** 2 / (e_av(A10, DT) / 2)},
+    {"name": "D3-10 dmin^2/Eb of B", "stated": 2, "derive": lambda: dmin(B10, DT) ** 2 / (e_av(B10, DT) / 2)},
+    {"name": "D3-10 gain of A over B in dB", "stated": 3.01,
+     "derive": lambda: 10 * math.log10((dmin(A10, DT) ** 2 / e_av(A10, DT)) / (dmin(B10, DT) ** 2 / e_av(B10, DT))),
+     "tol": 1e-3},
+    {"name": "D3-10 energy of the common part", "stated": 4, "derive": lambda: energy(bbar10, DT)},
+    {"name": "D3-10 remainder energy", "stated": 4, "derive": lambda: energy(B10[3] - bbar10, DT)},
+    {"name": "D3-10 common part orthogonal to remainder (1 + value)", "stated": 1,
+     "derive": lambda: 1 + ip(bbar10, B10[0] - bbar10, DT)},
+    {"name": "D3-10 b0 - bbar on phi_a", "stated": 2, "derive": lambda: ip(B10[0] - bbar10, phia10, DT)},
+    {"name": "D3-10 energy of b0 - b2", "stated": 8, "derive": lambda: energy(B10[0] - B10[2], DT)},
+    {"name": "D3-10 energy of a0 - a1", "stated": 8, "derive": lambda: energy(A10[0] - A10[1], DT)},
+    {"name": "D3-10 set B dimensions", "stated": 3, "derive": lambda: dim(B10, DT)},
+    # D3-22
+    {"name": "D3-22 Ea", "stated": 10, "derive": lambda: energy(a22, d22), "tol": 1e-6},
+    {"name": "D3-22 Eb", "stated": 10, "derive": lambda: energy(b22, d22), "tol": 1e-6},
+    {"name": "D3-22 <a,b> (1 + value)", "stated": 1, "derive": lambda: 1 + ip(a22, b22, d22), "tol": 1e-6},
+    {"name": "D3-22 integral of cos^2 on [0,1)", "stated": 0.5,
+     "derive": lambda: ip(C22[first22], C22[first22], d22), "tol": 1e-6},
+    {"name": "D3-22 integral of sin^2 on [1,2)", "stated": 0.5,
+     "derive": lambda: ip(S22[~first22], S22[~first22], d22), "tol": 1e-6},
+    {"name": "D3-22 integral of cos sin on [0,1) (1 + value)", "stated": 1,
+     "derive": lambda: 1 + ip(C22[first22], S22[first22], d22), "tol": 1e-6},
+] + [
+    {"name": f"D3-22 E{k + 1}", "stated": 10, "derive": (lambda k=k: energy(s22[k], d22)), "tol": 1e-6}
+    for k in range(4)
+] + [
+    {"name": f"D3-22 <s{j + 1},s{k + 1}> (1 + value)", "stated": 1,
+     "derive": (lambda j=j, k=k: 1 + ip(s22[j], s22[k], d22)), "tol": 1e-6}
+    for j, k in itertools.combinations(range(4), 2)
+] + [
+    {"name": "D3-22 dimensions", "stated": 4, "derive": lambda: dim(s22, d22)},
+    {"name": "D3-22 energy of aC", "stated": 5, "derive": lambda: energy(a22 * C22, d22), "tol": 1e-6},
+    {"name": "D3-22 phi1 energy", "stated": 1, "derive": lambda: energy(phi22[0], d22), "tol": 1e-6},
+    {"name": "D3-22 <phi1,phi3> (1 + value)", "stated": 1, "derive": lambda: 1 + ip(phi22[0], phi22[2], d22), "tol": 1e-6},
+    {"name": "D3-22 <phi2,phi4> (1 + value)", "stated": 1, "derive": lambda: 1 + ip(phi22[1], phi22[3], d22), "tol": 1e-6},
+    {"name": "D3-22 s1 on phi1", "stated": math.sqrt(5), "derive": lambda: ip(s22[0], phi22[0], d22), "tol": 1e-6},
+    {"name": "D3-22 s1 on phi4", "stated": math.sqrt(5), "derive": lambda: ip(s22[0], phi22[3], d22), "tol": 1e-6},
+    {"name": "D3-22 s3 on phi2", "stated": -math.sqrt(5), "derive": lambda: ip(s22[2], phi22[1], d22), "tol": 1e-6},
+    {"name": "D3-22 s4 on phi4", "stated": -math.sqrt(5), "derive": lambda: ip(s22[3], phi22[3], d22), "tol": 1e-6},
+    {"name": "D3-22 dmin", "stated": 4.472, "derive": lambda: dmin(s22, d22), "tol": 1e-3},
+    {"name": "D3-22 largest distance", "stated": 4.472, "derive": lambda: max(all_d(s22, d22).values()), "tol": 1e-3},
+    {"name": "D3-22 dmin^2/Es,av", "stated": 2, "derive": lambda: dmin(s22, d22) ** 2 / e_av(s22, d22), "tol": 1e-6},
+    {"name": "D3-22 energy of 2b", "stated": 40, "derive": lambda: energy(2 * b22, d22), "tol": 1e-6},
+    {"name": "D3-22 (d) energy", "stated": 25, "derive": lambda: energy(t22[0], d22), "tol": 1e-6},
+    {"name": "D3-22 (d) <s1,s4>", "stated": -15, "derive": lambda: ip(t22[0], t22[3], d22), "tol": 1e-6},
+    {"name": "D3-22 (d) <s2,s3>", "stated": 15, "derive": lambda: ip(t22[1], t22[2], d22), "tol": 1e-6},
+    {"name": "D3-22 (d) rho14", "stated": -0.6, "derive": lambda: rho(t22[0], t22[3], d22), "tol": 1e-6},
+    {"name": "D3-22 (d) rho23", "stated": 0.6, "derive": lambda: rho(t22[1], t22[2], d22), "tol": 1e-6},
+] + [
+    {"name": f"D3-22 (d) <s{j + 1},s{k + 1}> stays 0 (1 + value)", "stated": 1,
+     "derive": (lambda j=j, k=k: 1 + ip(t22[j], t22[k], d22)), "tol": 1e-6}
+    for j, k in [(0, 1), (2, 3), (0, 2), (1, 3)]
+] + [
+    {"name": "D3-22 check: <s1,s4> over [0,1)", "stated": 4,
+     "derive": lambda: ip(s22[0][first22], s22[3][first22], d22), "tol": 1e-6},
+    {"name": "D3-22 check: <s1,s4> over [1,2]", "stated": -4,
+     "derive": lambda: ip(s22[0][~first22], s22[3][~first22], d22), "tol": 1e-6},
 ]
 
 DEFAULT_TOL = 5e-4
