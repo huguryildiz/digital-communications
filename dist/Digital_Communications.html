@@ -2206,6 +2206,10 @@ const PLOT = (() => {
   let LBLS = 1;   /* label scale  */
   let STRW = 1;   /* stroke scale */
   let EMPH = false; /* lecture slides and laboratories use the back-row scale */
+  let FEATHER = false; /* the soft outer edge of a TeX label's halo: the app turns it
+                          on through setTheme; the printed notes never call setTheme
+                          and leave it off, because a PDF stores every blurred edge
+                          as its own raster mask (about a quarter of the notes' size) */
   let CLIPN = 0;  /* serial number for the data-area clip of each figure */
   function setTheme(o){
     o = o || {};
@@ -2213,6 +2217,7 @@ const PLOT = (() => {
     LBLS = o.scale || 1;
     STRW = 1 + (LBLS - 1) * 0.75;
     EMPH = !!o.emphasis;
+    FEATHER = true;
   }
   const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
@@ -2321,7 +2326,7 @@ const PLOT = (() => {
     const c = 'var(--fig-halo,#FCF9F3)';
     const r = (2.2*LBLS).toFixed(2), d = (1.6*LBLS).toFixed(2);
     const ring = [[r,0],[-r,0],[0,r],[0,-r],[d,d],[d,-d],[-d,d],[-d,-d]]
-      .map(([a,b]) => `${a}px ${b}px 0 ${c}`).join(',') + `,0 0 ${r}px ${c}`;
+      .map(([a,b]) => `${a}px ${b}px 0 ${c}`).join(',') + (FEATHER ? `,0 0 ${r}px ${c}` : '');
     return `<foreignObject x="${x.toFixed(2)}" y="${(baseline-BH).toFixed(2)}" width="${BW}" height="${BH}"
       overflow="visible" data-texlabel="1"${role} style="overflow:visible;pointer-events:none">
       <div xmlns="http://www.w3.org/1999/xhtml" style="height:${BH}px;display:flex;align-items:flex-end;
