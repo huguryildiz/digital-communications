@@ -1,5 +1,11 @@
 """Re-derives every number stated in the Module 5 practice questions (D5-01 ... D5-30).
 
+Four questions (D5-09, D5-14, D5-16, D5-17) take their shape from textbook
+problems. Their checks sit in their own section below and use the same idea:
+a sampled spectrum, a Simpson integral of the full tone product, a distance
+table and label table, a projection of the sampled received waveform, and a
+Monte Carlo run, never the closed form the solution writes down.
+
 Each question gives a set of carrier waveforms. The solutions work with trig
 identities and signal-space coordinates. The checks here take a different road:
 the waveforms are sampled on a dense grid and every energy, inner product and
@@ -12,6 +18,7 @@ Same shape as verify_drills.py: a CHECKS list of dicts with a `derive` callable
 and a relative tolerance, and the same runner.
 """
 
+import functools
 import math
 import sys
 
@@ -125,17 +132,12 @@ def qam_wave(a, b, f, amp=math.sqrt(2)):
 
 
 S08 = WaveSet([qam_wave(2 * m - 5, 2 * n - 3, 1500) for n in (1, 2) for m in range(1, 5)], 1, 1500)
-S09 = WaveSet([qam_wave(2 * m - 5, 2 * n - 5, 2000, amp=1.0) for n in range(1, 5) for m in range(1, 5)], 2, 2000)
 S10 = WaveSet([cosw(math.sqrt(2) if k % 2 else 4.0, 1000, (k - 1) * PI / 4) for k in range(1, 9)], 1, 1000)
 S11 = WaveSet([lambda t: 0 * t, lambda t: math.sqrt(2) * np.cos(4 * PI * t),
                lambda t: -math.sqrt(2) * np.sin(4 * PI * t), lambda t: 2 * np.cos(4 * PI * t + PI / 4)], 1, 2)
 S12 = WaveSet([cosw(2 * math.sqrt(3), 1000, PI / 6 + (k - 1) * PI / 2) for k in range(1, 5)], 1, 1000)
 S13 = WaveSet([cosw(math.sqrt(2) * (2 * k - 9), 1000) for k in range(1, 9)], 1, 1000)
-S14 = WaveSet([cosw(5 * math.sqrt(2), 1500, 2 * PI * k / 5 - PI / 10) for k in range(1, 6)], 1, 1500)
 S15 = WaveSet([lambda t: 0 * t] + [cosw(2, 1000, (k - 2) * PI / 3) for k in range(2, 8)], 1, 1000)
-S16 = WaveSet([cosw(math.sqrt(2), 1000, (k - 1) * PI / 2) for k in range(1, 5)]
-              + [cosw(2 * math.sqrt(2), 1000, (k - 5) * PI / 2) for k in range(5, 9)], 1, 1000)
-S17 = WaveSet([cosw(3, 2500), cosw(3, 2500, 2 * PI / 3)], 2, 2500)
 S18 = WaveSet([cosw(2, 1000), cosw(-2, 1000), cosw(2, 1500), cosw(-2, 1500)], 1, 1500)
 S19 = WaveSet([lambda t: 0 * t, cosw(3, 2000), cosw(3, 2500)], 2, 2500)
 S20 = WaveSet([qam_wave(2 * (m - 2), 2 * n - 3, 1000) for n in (1, 2) for m in range(1, 4)], 1, 1000)
@@ -284,6 +286,190 @@ def _d24_thresholds():
     return thresholds_1d([-2, 0, 2, 6], -10, 10)
 
 
+# ── the four textbook-shaped questions (D5-09, D5-14, D5-16, D5-17) ─────────
+
+# D5-09. The occupied band is measured on a sampled raised-cosine spectrum as
+# the width where it is nonzero; the distance ratios come from square grids
+# built point by point, not from the 6E_s/(M-1) formula the solution uses.
+
+def _rc_band(rs, alpha):
+    """Width (MHz) of the support of a raised-cosine spectrum with symbol rate rs."""
+    f = np.linspace(-3 * rs, 3 * rs, 600001)
+    a = np.abs(f)
+    f1, f2 = (1 - alpha) * rs / 2, (1 + alpha) * rs / 2
+    s = np.where(a <= f1, 1.0,
+                 np.where(a >= f2, 0.0, 0.5 * (1 + np.cos(PI * (a - f1) / (alpha * rs)))))
+    on = f[s > 1e-12]
+    return float(on.max() - on.min())
+
+
+def _grid_ratio(M):
+    """d_min^2 / E_s of square M-QAM, from its points."""
+    L = int(round(math.sqrt(M)))
+    lv = np.arange(L) - (L - 1) / 2
+    P = np.array([(a, b) for a in lv for b in lv])
+    D = np.sqrt(((P[:, None] - P[None]) ** 2).sum(-1)) + np.eye(M) * 1e9
+    return D.min() ** 2 / np.mean((P ** 2).sum(1))
+
+
+def _d09_power(M, rb, p16=250.0):
+    """Power for the same d_min as 16-QAM at 48 Mb/s: E_s scales by the ratio of
+    d_min^2/E_s, and P = E_s R_s."""
+    rs16, rs = 48 / 4, rb / math.log2(M)
+    return p16 * (_grid_ratio(16) / _grid_ratio(M)) * (rs / rs16)
+
+
+# D5-14. The inner products are Simpson integrals of the full sampled product,
+# sum-frequency term included; the least spacings are found by scanning.
+
+def _d14_rho(df, dphi, T=0.002, f0=20000.0):
+    t = np.linspace(0.0, T, 40001)
+    s0 = np.cos(2 * PI * f0 * t)
+    s1 = np.cos(2 * PI * (f0 + df) * t + dphi)
+    return integrate.simpson(s0 * s1, x=t) / integrate.simpson(s0 * s0, x=t)
+
+
+def _d14_first_zero(fn, lo=20.0, hi=900.0, step=5.0):
+    """The first sign change of fn on a scan, refined by bisection."""
+    f = lo
+    a = fn(f)
+    while f < hi:
+        g = f + step
+        b = fn(g)
+        if a == 0 or a * b < 0:
+            x0, x1, fa = f, g, a
+            for _ in range(40):
+                m = (x0 + x1) / 2
+                fm = fn(m)
+                if fa * fm <= 0:
+                    x1 = m
+                else:
+                    x0, fa = m, fm
+            return (x0 + x1) / 2
+        f, a = g, b
+    return float("nan")
+
+
+@functools.lru_cache(maxsize=None)
+def _d14_worst(df):
+    """Largest |rho| over a grid of phase differences."""
+    return max(abs(_d14_rho(df, p)) for p in np.linspace(0, 2 * PI, 73))
+
+
+@functools.lru_cache(maxsize=None)
+def _d14_all_phase_spacing():
+    """The least spacing where the worst |rho| over all phases vanishes, found by
+    scanning for its first minimum and checking it is (numerically) zero."""
+    fs = np.arange(50.0, 800.0, 10.0)
+    w = [_d14_worst(f) for f in fs]
+    k = next(i for i in range(1, len(w) - 1) if w[i] <= w[i - 1] and w[i] <= w[i + 1])
+    fine = np.arange(fs[k] - 10, fs[k] + 10.01, 0.5)
+    wf = [_d14_worst(f) for f in fine]
+    j = int(np.argmin(wf))
+    return float(fine[j]) if wf[j] < 5e-3 else float("nan")
+
+
+# D5-16. The three sets are built from their statements, scaled numerically to
+# E_s = 9, and every count is taken from the distance table and label table.
+
+G3 = [0b000, 0b001, 0b011, 0b010, 0b110, 0b111, 0b101, 0b100]
+
+
+def _scaled(P, es=9.0):
+    P = np.array(P, dtype=float)
+    return P * math.sqrt(es / np.mean((P ** 2).sum(1)))
+
+
+def _pairs(P):
+    D = np.sqrt(((P[:, None] - P[None]) ** 2).sum(-1)) + np.eye(len(P)) * 1e9
+    d = D.min()
+    return d, [(i, j) for i in range(len(P)) for j in range(i + 1, len(P)) if abs(D[i, j] - d) < 1e-9 * (1 + d)]
+
+
+H = math.sqrt(3) / 2
+D16A = _scaled([(1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1), (0, -1), (1, -1)])
+D16B = _scaled([(-1, H), (0, H), (1, H), (-0.5, 0), (0.5, 0), (-1, -H), (0, -H), (1, -H)])
+D16C = _scaled([((2 * k - 9) / 2, 0) for k in range(1, 9)])
+L16A = G3
+L16B = [0b000, 0b001, 0b011, 0b100, 0b101, 0b010, 0b110, 0b111]
+L16C = G3
+
+
+def _w(P, lab):
+    d, pr = _pairs(P)
+    return 2 * sum(bin(lab[i] ^ lab[j]).count("1") for i, j in pr) / len(P)
+
+
+def _max_one_bit(P, lab):
+    """Largest number of differing bits over the d_min pairs: 1 for a Gray labelling."""
+    d, pr = _pairs(P)
+    return max(bin(lab[i] ^ lab[j]).count("1") for i, j in pr)
+
+
+def _d16_max_degree(P):
+    d, pr = _pairs(P)
+    deg = [0] * len(P)
+    for i, j in pr:
+        deg[i] += 1
+        deg[j] += 1
+    return max(deg)
+
+
+def _d16_best_B():
+    """The least total of differing bits over set B's d_min pairs, over all 8!
+    labellings. Above 13 means no labelling of B is Gray."""
+    import itertools
+    d, pr = _pairs(D16B)
+    best = 99
+    for perm in itertools.permutations(range(8)):
+        w = sum(bin(perm[i] ^ perm[j]).count("1") for i, j in pr)
+        best = min(best, w)
+    return best
+
+
+def _d16_pb(P, lab, eb_n0, eb=3.0):
+    d, _ = _pairs(P)
+    n0 = eb / eb_n0
+    return _w(P, lab) / 3 * Q(math.sqrt(d * d / (2 * n0)))
+
+
+def _d16_ratio(P, eb=3.0):
+    d, _ = _pairs(P)
+    return d * d / eb
+
+
+# D5-17. The outputs are projections of the sampled received waveform; the
+# error at 60 degrees is also measured by Monte Carlo on the psi_1 output.
+
+def _d17_proj(deg, which, eb=1.0, T=1.0, fc=50.0):
+    t = np.linspace(0.0, T, 200001)
+    r = math.sqrt(2 * eb / T) * np.cos(2 * PI * fc * t + math.radians(deg))
+    psi = (math.sqrt(2 / T) * np.cos(2 * PI * fc * t) if which == 1
+           else -math.sqrt(2 / T) * np.sin(2 * PI * fc * t))
+    return integrate.simpson(r * psi, x=t)
+
+
+def _d17_pb(deg, eb_n0=8.0):
+    """The error from the projected distance to psi_1 = 0 and sigma = sqrt(N0/2)."""
+    y = _d17_proj(deg, 1)
+    return Q(y / math.sqrt(1.0 / eb_n0 / 2))
+
+
+def _d17_mc(deg, eb_n0=8.0, n=2_000_000):
+    rng = np.random.default_rng(20260925)
+    y = _d17_proj(deg, 1)
+    r = y + rng.normal(0, math.sqrt(1.0 / eb_n0 / 2), n)
+    return float(np.mean(r < 0))
+
+
+def _d17_loss(deg):
+    """The E_b/N_0 factor that brings the error at deg back to the error at 0."""
+    from scipy.optimize import brentq
+    target = _d17_pb(0)
+    k = brentq(lambda g: _d17_pb(deg, 8.0 * g) - target, 1.0, 100.0, xtol=1e-12)
+    return db(k)
+
+
 # ── the checks ─────────────────────────────────────────────────────────────
 
 T2 = 0.02   # a value the solution reads from a Q table at two decimals
@@ -340,12 +526,31 @@ CHECKS = [
     {"name": "D5-08 d_min", "stated": 2, "derive": S08.dmin},
     {"name": "D5-08 N_min", "stated": 2.5, "derive": S08.nmin},
     {"name": "D5-08 P_e at 27", "stated": 3.38e-3, "derive": lambda: nn_pe(S08, 27)},
-    # D5-09
-    {"name": "D5-09 E_s,avg", "stated": 10, "derive": S09.e_avg},
-    {"name": "D5-09 E_b", "stated": 2.5, "derive": lambda: S09.e_avg() / 4},
-    {"name": "D5-09 d_min", "stated": 2, "derive": S09.dmin},
-    {"name": "D5-09 N_min", "stated": 3, "derive": S09.nmin},
-    {"name": "D5-09 P_e at Eb/N0 11.25", "stated": 4.05e-3, "derive": lambda: nn_pe(S09, 4 * 11.25)},
+    # D5-09 (Madhow P4.16 and P4.21)
+    {"name": "D5-09 16-QAM R_s", "stated": 12, "derive": lambda: 48 / math.log2(16)},
+    {"name": "D5-09 16-QAM band", "stated": 15, "derive": lambda: _rc_band(12, 0.25), "tol": 1e-4},
+    {"name": "D5-09 lower edge", "stated": 2392.5, "derive": lambda: 2400 - _rc_band(12, 0.25) / 2, "tol": 1e-6},
+    {"name": "D5-09 upper edge", "stated": 2407.5, "derive": lambda: 2400 + _rc_band(12, 0.25) / 2, "tol": 1e-6},
+    {"name": "D5-09 QPSK R_b in 15 MHz", "stated": 24, "derive": lambda: 15 / 1.25 * math.log2(4)},
+    {"name": "D5-09 16-QAM d^2/E_s", "stated": 0.4, "derive": lambda: _grid_ratio(16)},
+    {"name": "D5-09 QPSK d^2/E_s", "stated": 2, "derive": lambda: _grid_ratio(4)},
+    {"name": "D5-09 QPSK E_s factor", "stated": 0.2, "derive": lambda: _grid_ratio(16) / _grid_ratio(4)},
+    {"name": "D5-09 QPSK power mW", "stated": 50, "derive": lambda: _d09_power(4, 24)},
+    {"name": "D5-09 QPSK saving dB", "stated": 6.99, "derive": lambda: db(250 / _d09_power(4, 24))},
+    {"name": "D5-09 64-QAM R_s", "stated": 8, "derive": lambda: 48 / math.log2(64)},
+    {"name": "D5-09 64-QAM band", "stated": 10, "derive": lambda: _rc_band(8, 0.25), "tol": 1e-4},
+    {"name": "D5-09 64-QAM E_s factor", "stated": 4.2, "derive": lambda: _grid_ratio(16) / _grid_ratio(64)},
+    {"name": "D5-09 64-QAM power factor", "stated": 2.8, "derive": lambda: _d09_power(64, 48) / 250},
+    {"name": "D5-09 64-QAM power mW", "stated": 700, "derive": lambda: _d09_power(64, 48)},
+    {"name": "D5-09 64-QAM extra dB", "stated": 4.47, "derive": lambda: db(_d09_power(64, 48) / 250)},
+    {"name": "D5-09 R_b/B QPSK", "stated": 1.6, "derive": lambda: 24 / _rc_band(12, 0.25), "tol": 1e-4},
+    {"name": "D5-09 R_b/B 16-QAM", "stated": 3.2, "derive": lambda: 48 / _rc_band(12, 0.25), "tol": 1e-4},
+    {"name": "D5-09 R_b/B 64-QAM", "stated": 4.8, "derive": lambda: 48 / _rc_band(8, 0.25), "tol": 1e-4},
+    {"name": "D5-09 check QPSK d^2/E_b", "stated": 4, "derive": lambda: _grid_ratio(4) * 2},
+    {"name": "D5-09 check 16-QAM d^2/E_b", "stated": 1.6, "derive": lambda: _grid_ratio(16) * 4},
+    {"name": "D5-09 check per-bit gap dB", "stated": 3.98, "derive": lambda: db(_grid_ratio(4) * 2 / (_grid_ratio(16) * 4))},
+    {"name": "D5-09 figure 64-QAM per-bit gap dB", "stated": 8.45,
+     "derive": lambda: db(_grid_ratio(4) * 2 / (_grid_ratio(64) * 6))},
     # D5-10
     {"name": "D5-10 E_s,avg", "stated": 4.5, "derive": S10.e_avg},
     {"name": "D5-10 d_min", "stated": 1.414, "derive": S10.dmin},
@@ -380,15 +585,18 @@ CHECKS = [
     {"name": "D5-13 Eb/N0 dB for argument 3", "stated": 14.98,
      "derive": lambda: db(9 * 2 * (S13.e_avg() / S13.dmin() ** 2) / 3)},
     {"name": "D5-13 P_e", "stated": 2.36e-3, "derive": lambda: nn_pe(S13, 3 * 31.5)},
-    # D5-14
-    {"name": "D5-14 E_s,avg", "stated": 25, "derive": S14.e_avg},
-    {"name": "D5-14 d_min^2", "stated": 34.55, "derive": lambda: S14.dmin() ** 2},
-    {"name": "D5-14 d_min", "stated": 5.878, "derive": S14.dmin},
-    {"name": "D5-14 coefficient", "stated": 0.6910, "derive": lambda: S14.coef() / 2},
-    {"name": "D5-14 argument at 13", "stated": 2.997, "derive": lambda: math.sqrt(S14.coef() / 2 * 13)},
-    {"name": "D5-14 P_e at 13", "stated": 2.70e-3, "derive": lambda: nn_pe(S14, 13), "tol": T2},
-    {"name": "D5-14 s4 on psi2", "stated": -5,
-     "derive": lambda: _proj(S14, 3, lambda t: -math.sqrt(2) * np.sin(3000 * PI * t))},
+    # D5-14 (Madhow P4.18)
+    {"name": "D5-14 rho at 125 Hz", "stated": 0.637, "derive": lambda: _d14_rho(125, 0.0), "tol": 1e-2},
+    {"name": "D5-14 equal-phase spacing Hz", "stated": 250,
+     "derive": lambda: _d14_first_zero(lambda f: _d14_rho(f, 0.0)), "tol": 1e-2},
+    {"name": "D5-14 all-phase spacing Hz", "stated": 500, "derive": _d14_all_phase_spacing, "tol": 1e-2},
+    {"name": "D5-14 rho at 250 Hz, 90 deg", "stated": -0.637, "derive": lambda: _d14_rho(250, PI / 2), "tol": 1e-2},
+    {"name": "D5-14 1 + rho at 500 Hz, 90 deg", "stated": 1.0, "derive": lambda: 1.0 + _d14_rho(500, PI / 2), "tol": 5e-3},
+    {"name": "D5-14 worst rho at 250 Hz", "stated": 0.637, "derive": lambda: _d14_worst(250), "tol": 1e-2},
+    {"name": "D5-14 8-FSK bit rate", "stated": 1500, "derive": lambda: math.log2(8) / 0.002},
+    {"name": "D5-14 coherent band", "stated": 2000, "derive": lambda: 8 * _d14_first_zero(lambda f: _d14_rho(f, 0.0)), "tol": 1e-2},
+    {"name": "D5-14 noncoherent band", "stated": 4000, "derive": lambda: 8 * _d14_all_phase_spacing(), "tol": 1e-2},
+    {"name": "D5-14 orthogonal band formula", "stated": 2000, "derive": lambda: 8 * 1500 / (2 * math.log2(8))},
     # D5-15
     {"name": "D5-15 E_s,avg", "stated": 1.714, "derive": S15.e_avg},
     {"name": "D5-15 d_min", "stated": math.sqrt(2), "derive": S15.dmin},
@@ -398,21 +606,51 @@ CHECKS = [
     {"name": "D5-15 centre conditional", "stated": 0.0242, "derive": lambda: 6 * Q(math.sqrt(S15.coef() / 2 * 12)), "tol": T2},
     {"name": "D5-15 ring conditional", "stated": 0.0121, "derive": lambda: 3 * Q(math.sqrt(S15.coef() / 2 * 12)), "tol": T2},
     {"name": "D5-15 average", "stated": 0.0138, "derive": lambda: nn_pe(S15, 12), "tol": T2},
-    # D5-16
-    {"name": "D5-16 E_s,avg", "stated": 2.5, "derive": S16.e_avg},
-    {"name": "D5-16 d_min", "stated": 1, "derive": S16.dmin},
-    {"name": "D5-16 N_min", "stated": 1, "derive": S16.nmin},
-    {"name": "D5-16 8-PSK advantage dB", "stated": 1.66,
-     "derive": lambda: db(WaveSet([cosw(2, 1000, k * PI / 4) for k in range(8)], 1, 1000).coef() / S16.coef())},
-    # D5-17
-    {"name": "D5-17 E_s,avg", "stated": 9, "derive": S17.e_avg},
-    {"name": "D5-17 d^2", "stated": 27, "derive": lambda: S17.dmin() ** 2},
-    {"name": "D5-17 s2 on psi2", "stated": 2.598,
-     "derive": lambda: _proj(S17, 1, lambda t: -np.sin(5000 * PI * t))},
-    {"name": "D5-17 loss dB", "stated": 1.25,
-     "derive": lambda: db(WaveSet([cosw(3, 2500), cosw(-3, 2500)], 2, 2500).coef() / S17.coef())},
-    {"name": "D5-17 P_e at 6", "stated": 1.35e-3, "derive": lambda: nn_pe(S17, 6)},
-    {"name": "D5-17 BPSK table Q(3.46)", "stated": 2.70e-4, "derive": lambda: Q(3.46)},
+    # D5-16 (Madhow P6.19)
+    {"name": "D5-16 c", "stated": 2.449, "derive": lambda: D16A[0, 0]},
+    {"name": "D5-16 b", "stated": 2.828, "derive": lambda: D16B[2, 0]},
+    {"name": "D5-16 g", "stated": 1.309, "derive": lambda: D16C[1, 0] - D16C[0, 0]},
+    {"name": "D5-16 g^2", "stated": 12 / 7, "derive": lambda: (D16C[1, 0] - D16C[0, 0]) ** 2},
+    {"name": "D5-16 A d_min", "stated": 2.449, "derive": lambda: _pairs(D16A)[0]},
+    {"name": "D5-16 B d_min", "stated": 2.828, "derive": lambda: _pairs(D16B)[0]},
+    {"name": "D5-16 C d_min", "stated": 1.309, "derive": lambda: _pairs(D16C)[0]},
+    {"name": "D5-16 B middle-point degree", "stated": 5, "derive": lambda: _d16_max_degree(D16B)},
+    {"name": "D5-16 A Gray labels one bit", "stated": 1, "derive": lambda: _max_one_bit(D16A, L16A)},
+    {"name": "D5-16 C Gray labels one bit", "stated": 1, "derive": lambda: _max_one_bit(D16C, L16C)},
+    {"name": "D5-16 B pairs at d_min", "stated": 13, "derive": lambda: len(_pairs(D16B)[1])},
+    {"name": "D5-16 B given-label bit total", "stated": 17,
+     "derive": lambda: sum(bin(L16B[i] ^ L16B[j]).count("1") for i, j in _pairs(D16B)[1])},
+    {"name": "D5-16 B best labelling above 13", "stated": 17, "derive": _d16_best_B},
+    {"name": "D5-16 w_B", "stated": 4.25, "derive": lambda: _w(D16B, L16B)},
+    {"name": "D5-16 w_A = N_min", "stated": 2, "derive": lambda: _w(D16A, L16A)},
+    {"name": "D5-16 w_C = N_min", "stated": 1.75, "derive": lambda: _w(D16C, L16C)},
+    {"name": "D5-16 A d^2/E_b", "stated": 2, "derive": lambda: _d16_ratio(D16A)},
+    {"name": "D5-16 B d^2/E_b", "stated": 8 / 3, "derive": lambda: _d16_ratio(D16B)},
+    {"name": "D5-16 C d^2/E_b", "stated": 4 / 7, "derive": lambda: _d16_ratio(D16C)},
+    {"name": "D5-16 B argument at 9", "stated": 3.46, "derive": lambda: math.sqrt(_d16_ratio(D16B) / 2 * 9), "tol": T2},
+    {"name": "D5-16 C argument at 9", "stated": 1.60, "derive": lambda: math.sqrt(_d16_ratio(D16C) / 2 * 9), "tol": T2},
+    {"name": "D5-16 P_b A at 9", "stated": 9.00e-4, "derive": lambda: _d16_pb(D16A, L16A, 9)},
+    {"name": "D5-16 P_b B at 9", "stated": 3.83e-4, "derive": lambda: _d16_pb(D16B, L16B, 9), "tol": T2},
+    {"name": "D5-16 P_b C at 9", "stated": 3.20e-2, "derive": lambda: _d16_pb(D16C, L16C, 9), "tol": T2},
+    {"name": "D5-16 B over A dB", "stated": 1.25, "derive": lambda: db(_d16_ratio(D16B) / _d16_ratio(D16A))},
+    {"name": "D5-16 A over C dB", "stated": 5.44, "derive": lambda: db(_d16_ratio(D16A) / _d16_ratio(D16C))},
+    {"name": "D5-16 table Q(1.60)", "stated": 5.48e-2, "derive": lambda: Q(1.60)},
+    {"name": "D5-16 table Q(3.46)", "stated": 2.70e-4, "derive": lambda: Q(3.46)},
+    {"name": "D5-16 table Q ratio", "stated": 5.0, "derive": lambda: Q(3.00) / Q(3.46)},
+    # D5-17 (Madhow P6.29)
+    {"name": "D5-17 psi1 output at 25 deg", "stated": 0.906, "derive": lambda: _d17_proj(25, 1)},
+    {"name": "D5-17 psi2 output at 25 deg", "stated": 0.423, "derive": lambda: _d17_proj(25, 2)},
+    {"name": "D5-17 P_b at 0", "stated": 3.17e-5, "derive": lambda: _d17_pb(0)},
+    {"name": "D5-17 P_b at 25 deg", "stated": 1.42e-4, "derive": lambda: _d17_pb(25), "tol": T2},
+    {"name": "D5-17 P_b at 60 deg", "stated": 2.28e-2, "derive": lambda: _d17_pb(60)},
+    {"name": "D5-17 P_b at 60 deg, Monte Carlo", "stated": 2.28e-2, "derive": lambda: _d17_mc(60), "tol": T2},
+    {"name": "D5-17 loss at 25 deg dB", "stated": 0.85, "derive": lambda: _d17_loss(25), "tol": T2},
+    {"name": "D5-17 loss at 60 deg dB", "stated": 6.02, "derive": lambda: _d17_loss(60)},
+    {"name": "D5-17 table Q(3.63)", "stated": 1.42e-4, "derive": lambda: Q(3.63)},
+    {"name": "D5-17 P_b at 155 deg", "stated": 0.99986, "derive": lambda: _d17_pb(155), "tol": 1e-5},
+    {"name": "D5-17 differential pair rule at the table argument", "stated": 2.84e-4,
+     "derive": lambda: 2 * Q(3.63) * (1 - Q(3.63)), "tol": T2},
+    {"name": "D5-17 P_b at 90 deg", "stated": 0.5, "derive": lambda: _d17_pb(90), "tol": 1e-6},
     # D5-18
     {"name": "D5-18 cross product integral", "stated": 1.0,
      "derive": lambda: 1.0 + integrate.simpson(np.cos(2000 * PI * S18.t) * np.cos(3000 * PI * S18.t), x=S18.t), "tol": 1e-6},

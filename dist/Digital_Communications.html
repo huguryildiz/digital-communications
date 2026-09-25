@@ -27439,17 +27439,29 @@ window.DRILL_M4 = [
 /* ==========================================================================
    Practice questions — Module 5.
 
-   Thirty questions in the shape of the final examination's modulation
-   question: a set of equally likely carrier waveforms is given, the student
-   draws the constellation with its optimal decision regions, and then writes
-   the nearest-neighbour approximation of the symbol error probability as a
-   function of E_s,avg/N0. Twenty-two keep that shape with new sets (offset and
-   odd-M PSK, PAM with a zero or asymmetric point, QAM, rings, a zero signal,
-   a point off the circle, two-frequency sets). Eight turn it round: the
-   regions are given and the waveforms are asked for, the error expression is
-   given and the set is asked for, or two sets are compared at equal energy.
+   Thirty questions. Twenty-six are in the shape of the final examination's
+   modulation question: a set of equally likely carrier waveforms is given,
+   the student draws the constellation with its optimal decision regions, and
+   then writes the nearest-neighbour approximation of the symbol error
+   probability as a function of E_s,avg/N0. Eighteen keep that shape with new
+   sets (offset and odd-M PSK, PAM with a zero or asymmetric point, QAM,
+   rings, a zero signal, a point off the circle, two-frequency sets). Eight
+   turn it round: the regions are given and the waveforms are asked for, the
+   error expression is given and the set is asked for, or two sets are
+   compared at equal energy.
 
-   Every solution figure is drawn by cfig(): exact minimum-distance regions
+   Four take their shape from a textbook problem (src 'Madhow P...') and keep
+   the id of the question they replaced, the closest duplicate of one that
+   stays. D5-09 (band) puts 16-QAM, QPSK and 64-QAM in one band or at one bit
+   rate and prices each in power; it replaced a 16-QAM grid that D5-26 and
+   D5-29 still cover. D5-14 (spacing) finds the least tone spacing for
+   coherent and noncoherent FSK; it replaced an offset odd-M PSK set, a shape
+   D5-01 and D5-02 keep. D5-16 (gray) asks which of three 8-point sets take
+   a Gray labelling and gives their bit errors; it replaced two aligned
+   rings, the set D5-28 optimises. D5-17 (phase) is BPSK with a carrier phase
+   error; it replaced a two-point set with a 120 degree phase difference.
+
+   Every constellation figure is drawn by cfig(): exact minimum-distance regions
    (half-plane clipping, not a raster), each filled at low opacity in the
    colour of its symbol, the points labelled, the nearest-neighbour pairs in
    coral and d_min written beside one of them. Labels are placed by a small
@@ -27555,7 +27567,9 @@ function texW(s, fs){
    o.hide        draw the regions and boundaries only (a given, not an answer)
    o.regionNames names written inside the regions instead of at the points
    o.nn=false    no nearest-neighbour marking
-   o.title       a short TeX title at the top right of the data area         */
+   o.title       a short TeX title at the top right of the data area
+   o.pairStyle   {color, width, dash} of a nearest-neighbour pair (i,j),
+                 a solid coral line by default                               */
 function cfig(pts, o){
   o = o || {};
   const M = pts.length, LS = P.labelScale();
@@ -27599,7 +27613,8 @@ function cfig(pts, o){
   const xtAll = o.xticks || (oneD ? pts.map(p=>+p[0].toFixed(6)).concat(edges.map(e=>+e[0][0].toFixed(6))).filter(v=>Math.abs(v)>1e-9) : tk(xr).filter(v=>clear(xLab(v))));
   const yt = oneD ? [] : (o.yticks || tk(yr).filter(v=>clear(yLab(v))));
   const xt = xtAll.filter(v=>!onEdge(v)), xtSide = xtAll.filter(onEdge);
-  const pad = {l:46, r:28, t:22, b:40};
+  /* a one-dimensional set has no psi2 name above it, so a title needs its own room */
+  const pad = {l:46, r:28, t:(oneD && o.title) ? 36 : 22, b:40};
   let w = Math.round(kpx*(xr[1]-xr[0]))+pad.l+pad.r, h = Math.round(kpx*(yr[1]-yr[0]))+pad.t+pad.b, a;
   for(let it=0; it<4; it++){
     a = P.Axes({w, h, xr, yr, pad, xlabel:'\\psi_1', ylabel: oneD ? '' : '\\psi_2',
@@ -27653,7 +27668,8 @@ function cfig(pts, o){
     if(Math.abs(Math.hypot(pts[i][0]-pts[j][0], pts[i][1]-pts[j][1]) - dmin) < 1e-6*(1+dmin)) pairs.push([i,j]);
   const showNN = o.nn !== false && !o.hide;
   if(showNN) pairs.forEach(([i,j])=>{
-    a.poly([pts[i],pts[j]], {color:C.coral, width:2.4});
+    const ps = o.pairStyle ? o.pairStyle(i,j) : {};
+    a.poly([pts[i],pts[j]], {color:ps.color||C.coral, width:ps.width||2.4, dash:ps.dash});
     segs.push([[X(pts[i][0]),Y(pts[i][1])],[X(pts[j][0]),Y(pts[j][1])],12]);
   });
   /* points */
@@ -27733,6 +27749,107 @@ function cfig(pts, o){
 const pair = (s1, s2) => `<div style="display:flex;flex-wrap:wrap;gap:12px 20px;justify-content:center;align-items:flex-end">`
   + [s1,s2].map(s=>`<div style="flex:1 1 300px;min-width:0">${s}</div>`).join('') + `</div>`;
 
+/* several figures in a row, wrapping on a narrow screen */
+const row = (...ss) => `<div style="display:flex;flex-wrap:wrap;gap:12px 20px;justify-content:center;align-items:flex-end">`
+  + ss.map(s=>`<div style="flex:1 1 260px;min-width:0">${s}</div>`).join('') + `</div>`;
+
+/* ---- figures for the four textbook-shaped questions ------------------- */
+
+/* D5-09: raised-cosine spectra about the carrier, at unit height. The solid
+   band is 16-QAM and QPSK, which share a symbol rate; the dashed one is
+   64-QAM. Each band is marked by a bracket with its width. */
+function rcSpec(f, Rs, al){
+  const x = Math.abs(f), f1 = (1-al)*Rs/2, f2 = (1+al)*Rs/2;
+  if(x<=f1) return 1;
+  if(x>=f2) return 0;
+  return 0.5*(1+Math.cos(Math.PI*(x-f1)/(al*Rs)));
+}
+function figBands(){
+  const a = P.Axes({w:460, h:290, xr:[-10,10], yr:[0,1.62], xlabel:'f-f_c\\;(\\mathrm{MHz})', ylabel:'|S(f)|',
+    pad:{l:34,r:22,t:22,b:44}, xticksOverride:[-7.5,-5,0,5,7.5], yticksOverride:[], grid:false});
+  a.curve(f=>rcSpec(f,12,0.25), {color:C.in, width:2.4});
+  a.curve(f=>rcSpec(f,8,0.25), {color:C.in, width:2.2, dash:'7 5'});
+  /* the band names start right of the vertical axis, so the axis never crosses them */
+  a.span(-7.5, 7.5, 1.40, '', {color:C.in});
+  a.span(-5, 5, 1.12, '', {color:C.in});
+  a.note(0.45, 1.47, '\\text{16-QAM, QPSK: }15\\ \\mathrm{MHz}', {tex:true, fs:13, color:C.in});
+  a.note(0.45, 1.19, '\\text{64-QAM: }10\\ \\mathrm{MHz}', {tex:true, fs:13, color:C.in});
+  return a.svg();
+}
+
+/* D5-09: the three schemes on the bandwidth-efficiency plane of m5-plane:
+   R_b/B against the extra E_b/N_0 each needs over QPSK for the same error,
+   with the transmit power of each written beside it. */
+function figRate(){
+  const a = P.Axes({w:460, h:290, xr:[-1,10.5], yr:[0,6], xlabel:'\\Delta(E_b/N_0)\\;(\\mathrm{dB})',
+    ylabel:'R_b/B\\;(\\mathrm{b/s/Hz})', pad:{l:44,r:22,t:22,b:44}, xstep:2, ystep:1});
+  const S = [[0,1.6,'\\text{QPSK, }50\\ \\mathrm{mW}',0.35,0.55,'start'],
+             [3.98,3.2,'\\text{16-QAM, }250\\ \\mathrm{mW}',4.35,2.25,'start'],
+             [8.45,4.8,'\\text{64-QAM, }700\\ \\mathrm{mW}',8.1,5.25,'end']];
+  a.poly(S.map(s=>[s[0],s[1]]), {color:C.muted, width:1.2, dash:'4 4'});
+  S.forEach(s=>{ a.point(s[0], s[1], {color:C.in, r:5.2, ring:C.plate});
+    a.note(s[3], s[4], s[2], {tex:true, fs:13, color:C.in, anchor:s[5]}); });
+  return a.svg();
+}
+
+/* D5-17: BPSK seen by a receiver whose carrier is off by phi. The plane is
+   drawn in units of sqrt(E_b). The fixed boundary psi1 = 0 splits the
+   plane into the two decision regions; the hollow rings are the points
+   without the phase error and the filled ones the turned points. The
+   horizontal bar from the boundary to s_1 is its distance, coral while
+   the point is on its own side and red once it has crossed. */
+function figPhase(deg, o){
+  const ph = deg*Math.PI/180, c = Math.cos(ph), s = Math.sin(ph);
+  const a = P.Axes({w:330, h:330, xr:[-1.55,1.55], yr:[-1.55,1.55], xlabel:'\\psi_1', ylabel:'\\psi_2',
+    pad:{l:30,r:26,t:22,b:40}, xticksOverride:[-1,1], yticksOverride:[-1,1], grid:false});
+  const X = a.sx, Y = a.sy;
+  a.under(`<rect x="${X(0).toFixed(2)}" y="${a.y1}" width="${(a.x1-X(0)).toFixed(2)}" height="${(a.y0-a.y1).toFixed(2)}" fill="${C.dec.in}"/>`
+        + `<rect x="${a.x0}" y="${a.y1}" width="${(X(0)-a.x0).toFixed(2)}" height="${(a.y0-a.y1).toFixed(2)}" fill="${C.dec.out}"/>`);
+  a.poly([[0,-1.55],[0,1.55]], {color:C.muted, width:1.3, dash:'6 4'});
+  [1,-1].forEach(v=>a.raw(`<circle cx="${X(v).toFixed(2)}" cy="${Y(0).toFixed(2)}" r="6.2" fill="none" stroke="${C.muted}" stroke-width="1.4" stroke-dasharray="3 2"/>`));
+  /* the turn: an arc of radius 0.22 from 0 to phi */
+  const R = 0.22, n = 40, arc = [];
+  for(let i=0;i<=n;i++){ const t = ph*i/n; arc.push(X(R*Math.cos(t)).toFixed(2)+','+Y(R*Math.sin(t)).toFixed(2)); }
+  a.raw(`<path d="M${arc.join('L')}" fill="none" stroke="${C.mid}" stroke-width="1.6"/>`);
+  a.poly([[c,s],[c,0]], {color:C.muted, width:1.1, dash:'3 3'});
+  a.poly([[0,s],[c,s]], {color: c>0 ? C.coral : C.err, width:2.4});
+  a.point(c, s, {color:C.in, r:6.2, ring:C.plate, ringw:1.6});
+  a.point(-c, -s, {color:C.out, r:6.2, ring:C.plate, ringw:1.6});
+  a.note(1.34*c, 1.34*s-0.07, 's_1', {tex:true, fs:15, color:C.in, anchor:'middle'});
+  a.note(-1.34*c, -1.34*s-0.07, 's_2', {tex:true, fs:15, color:C.out, anchor:'middle'});
+  a.note(o.dAt[0], o.dAt[1], o.dTex, {tex:true, fs:14, color: c>0 ? C.coral : C.err, anchor:o.dAt[2]});
+  a.raw(P.texName('\\varphi='+deg+'^{\\circ}', { xRight:a.x1, baseline:a.y1-5, size:15, color:C.mid, figW:330 }));
+  return a.svg();
+}
+
+/* D5-14: the correlation coefficient of two tones against their spacing.
+   Solid: equal phases, rho = sin(2 pi df T)/(2 pi df T), zero at every
+   multiple of 1/(2T). Dashed: the largest |rho| over all phase differences,
+   |sin(pi df T)/(pi df T)|, zero only at multiples of 1/T. The two least
+   spacings are marked. */
+function figCorr(){
+  const T = 0.002;
+  const coh = f => { const x = 2*Math.PI*f*T; return f<1e-9 ? 1 : Math.sin(x)/x; };
+  const env = f => { const x = Math.PI*f*T; return f<1e-9 ? 1 : Math.abs(Math.sin(x)/x); };
+  const a = P.Axes({w:720, h:310, xr:[0,1650], yr:[-0.32,1.12], xlabel:'\\Delta f\\;(\\mathrm{Hz})', ylabel:'\\rho',
+    pad:{l:52,r:30,t:22,b:44}, xticksOverride:[250,500,750,1000,1250,1500], yticksOverride:[-0.2,0.5,1]});
+  [[250,'\\tfrac{1}{2T}'],[500,'\\tfrac{1}{T}']].forEach(([f,t])=>{
+    a.poly([[f,-0.32],[f,0.9]], {color:C.muted, width:1.1, dash:'3 4'});
+    a.note(f, 0.97, t, {tex:true, fs:14, color:C.ink, anchor:'middle'}); });
+  a.curve(env, {color:C.mid, width:2.2, dash:'7 5'});
+  a.curve(coh, {color:C.in, width:2.4});
+  for(let k=1;k<=6;k++) a.point(250*k, 0, {color:C.in, r:3.6, ring:C.plate});
+  [500,1000,1500].forEach(f=>a.raw(`<circle cx="${a.sx(f).toFixed(2)}" cy="${a.sy(0).toFixed(2)}" r="8" fill="none" stroke="${C.mid}" stroke-width="1.8"/>`));
+  /* a legend card in the upper right, where both traces are low */
+  const lx = a.sx(1040), ly = a.sy(1.02), lw = a.x1 - 8 - lx, lh = 62;
+  a.raw(`<rect x="${lx.toFixed(2)}" y="${ly.toFixed(2)}" width="${lw.toFixed(2)}" height="${lh}" rx="6" fill="${C.plate}" stroke="${C.rule}" stroke-width="1"/>`
+      + `<line x1="${(lx+12).toFixed(2)}" y1="${(ly+19).toFixed(2)}" x2="${(lx+42).toFixed(2)}" y2="${(ly+19).toFixed(2)}" stroke="${C.in}" stroke-width="2.4"/>`
+      + `<line x1="${(lx+12).toFixed(2)}" y1="${(ly+45).toFixed(2)}" x2="${(lx+42).toFixed(2)}" y2="${(ly+45).toFixed(2)}" stroke="${C.mid}" stroke-width="2.2" stroke-dasharray="7 5"/>`);
+  a.raw(P.texName('\\Delta\\varphi=0', { xLeft:lx+50, baseline:ly+26, size:14, color:C.ink, figW:720 }));
+  a.raw(P.texName('\\max_{\\Delta\\varphi}|\\rho|', { xLeft:lx+50, baseline:ly+53, size:14, color:C.ink, figW:720 }));
+  return a.svg();
+}
+
 /* the examination wording, shared by the questions that keep it */
 const OPEN = 'Consider an $M$-ary modulation scheme where the equally probable symbols have the following waveforms: ';
 const AWGN = ' These signals are planned to be transmitted over a standard AWGN channel with $\\mathcal{N}(0,N_0/2)$.';
@@ -27782,7 +27899,35 @@ CONTENT.DRILLTYPES.M5 = [
     method:['A boundary is the perpendicular bisector of two points. So each point is the mirror image of its neighbour in the boundary they share.',
             'An error expression gives $d_{\\min}^{2}/E_{s,\\text{avg}}$ and $N_{\\min}$. Match both against the formulas of each family.',
             'Compare two sets at the same $E_{s,\\text{avg}}$ through $10\\log_{10}$ of the ratio of their $d_{\\min}^{2}/E_{s,\\text{avg}}$ values. Mention $N_{\\min}$ as the second-order difference.'],
-    go:'m5-compare' }
+    go:'m5-compare' },
+
+  { k:'band', name:'Rate, band and power of several schemes',
+    asks:'A scheme with a given bit rate, carrier and roll-off is compared with others in the same band or at the same bit rate. Find symbol rates, bands, bit rates and the power each needs for the same error.',
+    method:['A symbol carries $\\log_2M$ bits, so $R_s=R_b/\\log_2M$. On a carrier the band is $(1+\\alpha)R_s$, centred on $f_c$.',
+            'The band fixes the symbol rate. In the same band a smaller constellation carries fewer bits a second.',
+            'The same error at high SNR means the same $d_{\\min}$. Compare $E_s$ through $d_{\\min}^{2}=6E_s/(M-1)$, then the power through $P=E_sR_s$.'],
+    go:'m5-spectrum' },
+
+  { k:'gray', name:'Bit error and Gray labels',
+    asks:'Several sets of $M$ points at the same $E_b$. Find $d_{\\min}$, decide whether a Gray labelling exists, and give the nearest-neighbour bit error.',
+    method:['Scale each set to the given $E_b$ through $E_s=E_b\\log_2M$. Then read $d_{\\min}$ and $N_{\\min}$ from the distance table.',
+            'A $k$-bit label has only $k$ labels one bit away. A point with more than $k$ neighbours at $d_{\\min}$ rules out a Gray labelling.',
+            'Sum the differing bits over the $d_{\\min}$ pairs of each point and average to get $w$. Then $P_b\\approx(w/k)\\,Q\\big(\\sqrt{d_{\\min}^{2}/2N_0}\\big)$, and Gray labels give $w=N_{\\min}$.'],
+    go:'m5-gray' },
+
+  { k:'phase', name:'A carrier phase error',
+    asks:'A coherent receiver whose carrier phase is off by $\\varphi$. Sketch the turned points against the fixed boundary, then find the error as a function of $\\varphi$ and the loss in decibels.',
+    method:['Expand $\\cos(2\\pi f_ct+\\varphi)$ on $\\psi_1$ and $\\psi_2$. Every point turns by $\\varphi$, and the boundaries stay.',
+            'For BPSK the distance to the boundary is $\\sqrt{E_b}\\cos\\varphi$, so $P_b=Q\\big(\\sqrt{2E_b/N_0}\\cos\\varphi\\big)$.',
+            'The loss is $-20\\log_{10}\\cos\\varphi$ dB. Past $90^{\\circ}$ the decisions invert, and differential encoding removes a constant $\\varphi$.'],
+    go:'m5-phase-offset' },
+
+  { k:'spacing', name:'Tone spacing for FSK',
+    asks:'Two tones on $0\\le t\\le T$. Find their inner product, the least spacing for orthogonality with equal phases and with any phases, and the band of $M$-FSK.',
+    method:['Write the product of two cosines as half a difference-frequency cosine plus half a sum-frequency cosine. Drop the sum-frequency term and integrate.',
+            'With equal phases $\\rho=\\sin(2\\pi\\Delta fT)/(2\\pi\\Delta fT)$, which is zero first at $\\Delta f=1/(2T)$.',
+            'For every phase the difference term must run whole periods, so $\\Delta f=1/T$. $M$ tones take a band of about $M\\Delta f$.'],
+    go:'m5-noncoh' }
 ];
 
 /* ======================================================================
@@ -27962,27 +28107,46 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   teach:'A rectangular eight-point set in the examination shape. Students must count three and two neighbours, not the four of an interior QAM point.',
   figSol:()=>cfig(grid([-3,-1,1,3],[1,-1]), {names:gridNames(4,2), dTex:'2', tick:1}) },
 
-{ id:'D5-09', module:'M5', type:'qam', src:'Final Q3',
-  stem:OPEN+'$$s_{mn}(t)=(2m-5)\\cos(4000\\pi t)-(2n-5)\\sin(4000\\pi t),$$ with $m,n\\in\\{1,2,3,4\\}$ and $0\\le t\\le2$.'+AWGN,
-  parts:['[8 pts] Find $E_{s,\\text{avg}}$, the number of bits per symbol and the average energy per bit $E_b$.',
-         PDRAW(8),
-         '[9 pts] Determine the nearest-neighbour approximation of the average symbol error probability as a function of $E_{s,\\text{avg}}/N_0$ and of $E_b/N_0$. Evaluate it at $E_b/N_0=11.25$.'],
-  sol:'<b>Given.</b> Sixteen equally likely waveforms on a $2000$ Hz carrier, $0\\le t\\le2$, with coefficients $2m-5$ and $2n-5$ in $\\{-3,-1,1,3\\}$.<br>'
-     +'<b>Find.</b> $E_{s,\\text{avg}}$, bits per symbol, $E_b$, the constellation, and $P_e$ with its value at $E_b/N_0=11.25$.<br>'
-     +'<b>Method.</b> With $T=2$ the orthonormal pair is $\\psi_1(t)=\\cos(4000\\pi t)$ and $\\psi_2(t)=-\\sin(4000\\pi t)$, since $\\sqrt{2/T}=1$. So $\\mathbf{s}_{mn}=(2m-5,\\,2n-5)$.<br>'
-     +'<b>Solution — (a).</b> Check that $\\psi_1$ has unit energy:'
-     +'$$\\int_0^2\\cos^{2}(4000\\pi t)\\,dt=\\frac12\\Big[t+\\frac{\\sin(8000\\pi t)}{8000\\pi}\\Big]_0^2=1.$$'
-     +'Each axis averages $(9+1+1+9)/4=5$, so $E_{s,\\text{avg}}=5+5=10$. One symbol carries $\\log_2 16=4$ bits, so $E_b=10/4=2.5$.<br>'
-     +'<b>Solution — (b).</b> The points form a $4\\times4$ grid on $\\{-3,-1,1,3\\}^{2}$. The boundaries are the lines $\\psi_1=-2,0,2$ and $\\psi_2=-2,0,2$. Inner regions are squares, edge regions are half-strips and corner regions are quarter-planes.<br>'
-     +'<b>Solution — (c).</b> The spacing is $d_{\\min}=2$, so $d_{\\min}^{2}=4=0.4E_{s,\\text{avg}}$. Four corners have two neighbours, eight edge points three, and four inner points four:'
-     +'$$N_{\\min}=\\frac{4(2)+8(3)+4(4)}{16}=3.$$'
-     +'Substitute, then use $E_{s,\\text{avg}}=4E_b$:'
-     +'$$\\begin{aligned}P_e&\\approx3\\,Q\\Big(\\sqrt{\\frac{0.4E_{s,\\text{avg}}}{2N_0}}\\Big)\\\\&=3\\,Q\\Big(\\sqrt{\\frac{E_{s,\\text{avg}}}{5N_0}}\\Big)\\\\&=3\\,Q\\Big(\\sqrt{\\frac{4E_b}{5N_0}}\\Big).\\end{aligned}$$'
-     +'At $E_b/N_0=11.25$ the argument is $\\sqrt{9}=3.00$, so $P_e\\approx3(0.001350)=4.05\\times10^{-3}$.<br>'
-     +'<b>Check.</b> The square-grid formula gives $d_{\\min}^{2}=6E_{s,\\text{avg}}/(M-1)=60/15=4$. The pair count gives the same $N_{\\min}$: $24$ pairs at $d_{\\min}$, and $2\\times24/16=3$.',
-  err:'Writing $N_{\\min}=4$ because an interior point has four neighbours. Only four of the sixteen points are interior. The corners and edges pull the average down to $3$.',
-  teach:'Sixteen-point QAM in the examination shape, with the energy-per-bit form asked for. The two-second interval makes the basis functions plain cosines and sines.',
-  figSol:()=>cfig(grid([-3,-1,1,3],[3,1,-1,-3]), {names:gridNames(4,4), dTex:'2', tick:1, margin:1.6}) },
+{ id:'D5-09', module:'M5', type:'band', src:'Madhow P4.16 and P4.21',
+  stem:'A wireless link sends 16-QAM at $R_b=48$ Mb/s on a carrier at $f_c=2.4$ GHz. The pulses are raised cosines with roll-off $\\alpha=0.25$. On a carrier the occupied band is $B=(1+\\alpha)R_s$, where $R_s$ is the symbol rate. The transmit power is $250$ mW. The noise level $N_0$ and the path to the receiver are the same for every scheme below.',
+  parts:['[6 pts] Find the symbol rate $R_s$, the occupied band $B$ and the frequency interval that the signal occupies.',
+         '[5 pts] QPSK is sent in the same band with the same roll-off. Find its symbol rate and its bit rate.',
+         '[8 pts] The QPSK link must give the same symbol error probability at high signal-to-noise ratio. Use the nearest-neighbour approximation and ignore the difference in $N_{\\min}$. Find the QPSK transmit power and the saving in decibels.',
+         '[6 pts] 64-QAM is to carry the same $48$ Mb/s with the same roll-off. Find its band and the transmit power it needs for the same error. Give $R_b/B$ for all three schemes.'],
+  sol:'<b>Given.</b> 16-QAM at $R_b=48$ Mb/s on $f_c=2.4$ GHz, roll-off $\\alpha=0.25$, transmit power $250$ mW. On a carrier the band is $B=(1+\\alpha)R_s$. The noise and the path are the same for every scheme.<br>'
+     +'<b>Find.</b> $R_s$, $B$ and the band edges. The QPSK rates in the same band and its power for the same error. The band, power and $R_b/B$ of 64-QAM.<br>'
+     +'<b>Method.</b> A symbol carries $\\log_2M$ bits, so $R_s=R_b/\\log_2M$. The band depends on $R_s$ alone. At high signal-to-noise ratio the error is set by $d_{\\min}^{2}/2N_0$, so the same error means the same $d_{\\min}$. '
+     +'For square QAM, QPSK included, $d_{\\min}^{2}=6E_s/(M-1)$ with $E_s$ the average symbol energy. The transmit power is energy a symbol times symbols a second, $P=E_sR_s$.<br>'
+     +'<b>Solution — (a).</b> One 16-QAM symbol carries $\\log_216=4$ bits. So'
+     +'$$R_s=\\frac{R_b}{\\log_2M}=\\frac{48}{4}=12\\ \\text{Msymbol/s}.$$'
+     +'The occupied band is'
+     +'$$B=(1+\\alpha)R_s=1.25(12)=15\\ \\text{MHz}.$$'
+     +'It is centred on the carrier, $7.5$ MHz on each side. So the signal occupies'
+     +'$$2400-7.5=2392.5\\ \\text{MHz}\\quad\\text{to}\\quad2400+7.5=2407.5\\ \\text{MHz}.$$<br>'
+     +'<b>Solution — (b).</b> The same band and roll-off give the same symbol rate:'
+     +'$$R_s=\\frac{B}{1+\\alpha}=\\frac{15}{1.25}=12\\ \\text{Msymbol/s}.$$'
+     +'A QPSK symbol carries $\\log_24=2$ bits, so $R_b=2(12)=24$ Mb/s. The band fixes the symbol rate. The constellation fixes the bits on each symbol.<br>'
+     +'<b>Solution — (c).</b> Write each $d_{\\min}^{2}$ as a multiple of its own $E_s$:'
+     +'$$\\begin{aligned}\\text{16-QAM:}\\quad d_{\\min}^{2}&=\\frac{6E_s}{16-1}=0.4\\,E_s,\\\\\\text{QPSK:}\\quad d_{\\min}^{2}&=\\frac{6E_s}{4-1}=2\\,E_s.\\end{aligned}$$'
+     +'The same error needs the same $d_{\\min}$. Set the two distances equal and solve for the QPSK energy:'
+     +'$$\\begin{aligned}2\\,E_{s,\\text{QPSK}}&=0.4\\,E_{s,16}\\\\E_{s,\\text{QPSK}}&=0.2\\,E_{s,16}.\\end{aligned}$$'
+     +'Both links send $12$ Msymbol/s, and $P=E_sR_s$. So the power scales with $E_s$:'
+     +'$$\\begin{aligned}P_{\\text{QPSK}}&=0.2\\,P_{16}\\\\&=0.2(250)=50\\ \\text{mW}.\\end{aligned}$$'
+     +'The saving is $10\\log_{10}(250/50)=10\\log_{10}5=6.99$ dB. QPSK pays for it with half the bit rate.<br>'
+     +'<b>Solution — (d).</b> One 64-QAM symbol carries $\\log_264=6$ bits:'
+     +'$$R_s=\\frac{48}{6}=8\\ \\text{Msymbol/s},\\qquad B=1.25(8)=10\\ \\text{MHz}.$$'
+     +'The band runs from $2395$ to $2405$ MHz. For the same $d_{\\min}$ as 16-QAM,'
+     +'$$\\begin{aligned}\\frac{6E_{s,64}}{64-1}&=0.4\\,E_{s,16}\\\\E_{s,64}&=\\frac{0.4(63)}{6}\\,E_{s,16}=4.2\\,E_{s,16}.\\end{aligned}$$'
+     +'64-QAM sends $8$ Msymbol/s against $12$ Msymbol/s, so'
+     +'$$\\begin{aligned}P_{64}&=4.2\\cdot\\frac{8}{12}\\cdot P_{16}\\\\&=2.8(250)=700\\ \\text{mW}.\\end{aligned}$$'
+     +'That is $10\\log_{10}2.8=4.47$ dB more than 16-QAM. The bandwidth efficiencies are'
+     +'$$\\begin{aligned}\\text{QPSK:}\\quad&\\frac{24}{15}=1.6\\ \\text{b/s/Hz},\\\\\\text{16-QAM:}\\quad&\\frac{48}{15}=3.2\\ \\text{b/s/Hz},\\\\\\text{64-QAM:}\\quad&\\frac{48}{10}=4.8\\ \\text{b/s/Hz}.\\end{aligned}$$'
+     +'Each two extra bits a symbol add $1.6$ b/s/Hz and cost energy. The figure shows the bands and the three schemes on the bandwidth-efficiency plane.<br>'
+     +'<b>Check.</b> Compare the energy a bit instead. With $E_s=E_b\\log_2M$, $d_{\\min}^{2}/E_b$ is $2(2)=4$ for QPSK and $0.4(4)=1.6$ for 16-QAM. '
+     +'So QPSK needs $10\\log_{10}(4/1.6)=3.98$ dB less energy a bit. It also sends half the bits a second, another $10\\log_{10}2=3.01$ dB. The sum is $3.98+3.01=6.99$ dB, as in part (c).',
+  err:'Keeping the bit rate when the scheme changes. The band fixes the symbol rate $B/(1+\\alpha)$, so QPSK in the same band carries $24$ Mb/s, not $48$ Mb/s.',
+  teach:'One band shared by two constellations, with the power bill of each. Work part (c) two ways: by $E_s$ at equal symbol rate, and by $E_b$ plus the bit rate. The neighbour counts, $2$ for QPSK and $3$ for 16-QAM, move the answer by a fraction of a decibel.',
+  figSol:()=>pair(figBands(), figRate()) },
 
 { id:'D5-10', module:'M5', type:'qam', src:'Final Q3',
   stem:OPEN+'$$s_k(t)=A_k\\cos\\!\\Big(2000\\pi t+\\frac{(k-1)\\pi}{4}\\Big),\\quad k\\in\\{1,\\ldots,8\\},\\quad0\\le t\\le1,$$ where $A_k=\\sqrt2$ for odd $k$ and $A_k=4$ for even $k$.'+AWGN,
@@ -28080,24 +28244,43 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   teach:'Eight amplitude levels in the examination shape. The required $15$ dB per bit shows why amplitude-only sets stop at small $M$.',
   figSol:()=>cfig([-7,-5,-3,-1,1,3,5,7].map(c=>[c,0]), {oneD:true, dTex:'2', margin:2.4, tick:2}) },
 
-{ id:'D5-14', module:'M5', type:'psk', src:'Final Q3',
-  stem:OPEN+'$$s_k(t)=5\\sqrt2\\cos\\!\\Big(3000\\pi t+\\frac{2\\pi k}{5}-\\frac{\\pi}{10}\\Big),\\quad k\\in\\{1,\\ldots,5\\},\\quad0\\le t\\le1.$$'+AWGN,
-  parts:[PDRAW(10), PNN(10), '[5 pts] Evaluate the approximation of part (b) at $E_{s,\\text{avg}}/N_0=13$.'],
-  sol:'<b>Given.</b> Five waveforms of amplitude $5\\sqrt2$ at $1500$ Hz with phases $2\\pi k/5-\\pi/10$, $0\\le t\\le1$.<br>'
-     +'<b>Find.</b> The constellation and regions, $P_e$ against $E_{s,\\text{avg}}/N_0$, and its value at $13$.<br>'
-     +'<b>Method.</b> Use $\\psi_1(t)=\\sqrt2\\cos(3000\\pi t)$ and $\\psi_2(t)=-\\sqrt2\\sin(3000\\pi t)$. The radius is $5\\sqrt2/\\sqrt2=5$.<br>'
-     +'<b>Solution — (a).</b> The phases are'
-     +'$$\\theta_1=54^{\\circ},\\ \\theta_2=126^{\\circ},\\ \\theta_3=198^{\\circ},\\ \\theta_4=270^{\\circ},\\ \\theta_5=342^{\\circ}.$$'
-     +'So $\\mathbf{s}_4=(0,-5)$ and the set is symmetric about the $\\psi_2$ axis. Each region is a $72^{\\circ}$ wedge centred on its point. The boundaries are the rays at $18^{\\circ},90^{\\circ},162^{\\circ},234^{\\circ},306^{\\circ}$.<br>'
-     +'<b>Solution — (b).</b> Every energy is $5^{2}$, so $E_{s,\\text{avg}}=25$. The chord across $72^{\\circ}$ is'
-     +'$$\\begin{aligned}d_{\\min}^{2}&=4E_{s,\\text{avg}}\\sin^{2}36^{\\circ}\\\\&=4(25)(0.3455)\\\\&=34.55=1.382E_{s,\\text{avg}}.\\end{aligned}$$'
-     +'Each point has two neighbours, so $N_{\\min}=2$ and'
-     +'$$\\begin{aligned}P_e&\\approx2\\,Q\\Big(\\sqrt{\\frac{1.382E_{s,\\text{avg}}}{2N_0}}\\Big)\\\\&=2\\,Q\\Big(\\sqrt{0.6910\\frac{E_{s,\\text{avg}}}{N_0}}\\Big).\\end{aligned}$$<br>'
-     +'<b>Solution — (c).</b> The argument is $\\sqrt{0.6910\\times13}=\\sqrt{8.983}=2.997$, which the table reads as $3.00$. So $P_e\\approx2(0.001350)=2.70\\times10^{-3}$.<br>'
-     +'<b>Check.</b> The cosine rule gives $25+25-50\\cos72^{\\circ}=50-15.45=34.55$. This equals the chord value.',
-  err:'Using $\\sin(2\\pi/M)$ for the chord. The chord is $2r\\sin(\\text{half the angle})$, so the sine takes $\\pi/M=36^{\\circ}$.',
-  teach:'An odd $M$ with an offset that puts one point on the negative $\\psi_2$ axis. The offset is there to make students compute each angle.',
-  figSol:()=>cfig(onCircle(5, range(1,5).map(k=>2*Math.PI*k/5-Math.PI/10)), {dTex:'5.878', tick:2}) },
+{ id:'D5-14', module:'M5', type:'spacing', src:'Madhow P4.18',
+  stem:'Two tones are sent on $0\\le t\\le T$ with $T=2$ ms: $$s_0(t)=A\\cos(2\\pi f_0t+\\varphi_0),\\qquad s_1(t)=A\\cos(2\\pi f_1t+\\varphi_1),$$ with $f_0=20$ kHz and $f_1=f_0+\\Delta f$, $\\Delta f>0$. Both tones have energy $E=A^{2}T/2$. Neglect every term at the sum frequency $f_0+f_1$. The correlation coefficient is $\\rho=\\langle s_0,s_1\\rangle/E$.',
+  parts:['[8 pts] Find $\\langle s_0,s_1\\rangle$ as a function of $\\Delta f$ and $\\Delta\\varphi=\\varphi_1-\\varphi_0$. Evaluate $\\rho$ for $\\Delta f=125$ Hz and equal phases.',
+         '[5 pts] With equal phases, find the smallest $\\Delta f$ that makes the two tones orthogonal.',
+         '[7 pts] Find the smallest $\\Delta f$ that makes the tones orthogonal for every $\\Delta\\varphi$. Show that the spacing of part (b) fails for $\\Delta\\varphi=90^{\\circ}$.',
+         '[5 pts] An 8-FSK set uses tones of this kind with the same $T$. Find its bit rate, and its band with the spacing of part (b) and with that of part (c).'],
+  sol:'<b>Given.</b> Two tones of amplitude $A$ on $0\\le t\\le2$ ms, at $f_0=20$ kHz and $f_0+\\Delta f$, with phases $\\varphi_0$ and $\\varphi_1$. Terms at the sum frequency are neglected.<br>'
+     +'<b>Find.</b> $\\langle s_0,s_1\\rangle$ and $\\rho$ at $125$ Hz, the least orthogonal spacing with equal phases and with any phases, and the band of 8-FSK with each.<br>'
+     +'<b>Method.</b> Turn the product of two cosines into a sum with $\\cos a\\cos b=\\tfrac12[\\cos(a-b)+\\cos(a+b)]$. Drop the sum-frequency term and integrate the difference term. Two tones are orthogonal when $\\rho=0$.<br>'
+     +'<b>Solution — (a).</b> Apply the identity with $a=2\\pi f_1t+\\varphi_1$ and $b=2\\pi f_0t+\\varphi_0$. Then $a-b=2\\pi\\Delta f\\,t+\\Delta\\varphi$, and'
+     +'$$\\begin{aligned}\\langle s_0,s_1\\rangle&=\\frac{A^{2}}{2}\\int_0^T\\cos(2\\pi\\Delta f\\,t+\\Delta\\varphi)\\,dt\\\\&=\\frac{A^{2}}{2}\\Big[\\frac{\\sin(2\\pi\\Delta f\\,t+\\Delta\\varphi)}{2\\pi\\Delta f}\\Big]_0^T\\\\&=\\frac{A^{2}\\big[\\sin(2\\pi\\Delta fT+\\Delta\\varphi)-\\sin\\Delta\\varphi\\big]}{4\\pi\\Delta f}.\\end{aligned}$$'
+     +'Divide by $E=A^{2}T/2$:'
+     +'$$\\rho=\\frac{\\sin(2\\pi\\Delta fT+\\Delta\\varphi)-\\sin\\Delta\\varphi}{2\\pi\\Delta fT}.$$'
+     +'For $\\Delta f=125$ Hz, $2\\pi\\Delta fT=2\\pi(125)(0.002)=\\pi/2$. With $\\Delta\\varphi=0$,'
+     +'$$\\rho=\\frac{\\sin(\\pi/2)-0}{\\pi/2}=\\frac{2}{\\pi}=0.637.$$<br>'
+     +'<b>Solution — (b).</b> With $\\Delta\\varphi=0$ the result of part (a) becomes'
+     +'$$\\rho=\\frac{\\sin(2\\pi\\Delta fT)}{2\\pi\\Delta fT}.$$'
+     +'It is zero when $2\\pi\\Delta fT=n\\pi$ for a whole number $n\\ge1$. The smallest spacing takes $n=1$:'
+     +'$$\\Delta f=\\frac{1}{2T}=\\frac{1}{2(0.002)}=250\\ \\text{Hz}.$$<br>'
+     +'<b>Solution — (c).</b> For every $\\Delta\\varphi$ we need $\\sin(2\\pi\\Delta fT+\\Delta\\varphi)=\\sin\\Delta\\varphi$. Take $\\Delta\\varphi=0$: this asks $\\sin(2\\pi\\Delta fT)=0$. Take $\\Delta\\varphi=90^{\\circ}$: this asks $\\cos(2\\pi\\Delta fT)=1$. '
+     +'Both hold only when $2\\pi\\Delta fT$ is a whole multiple of $2\\pi$. Then the sine has run whole periods, and every phase works. The smallest spacing is'
+     +'$$\\Delta f=\\frac{1}{T}=\\frac{1}{0.002}=500\\ \\text{Hz}.$$'
+     +'At $250$ Hz with $\\Delta\\varphi=90^{\\circ}$, $2\\pi\\Delta fT=\\pi$ and'
+     +'$$\\rho=\\frac{\\sin(\\pi+\\pi/2)-\\sin(\\pi/2)}{\\pi}=\\frac{-1-1}{\\pi}=-0.637.$$'
+     +'The tones are far from orthogonal. A noncoherent receiver does not know the phases, so it needs the spacing $1/T$.<br>'
+     +'<b>Solution — (d).</b> Eight tones carry $\\log_28=3$ bits a symbol:'
+     +'$$R_b=\\frac{3}{T}=\\frac{3}{0.002}=1500\\ \\text{b/s}.$$'
+     +'$M$ tones spaced $\\Delta f$ apart take a band of about $M\\Delta f$:'
+     +'$$\\begin{aligned}\\text{coherent:}\\quad W&=8(250)=2000\\ \\text{Hz},\\\\\\text{noncoherent:}\\quad W&=8(500)=4000\\ \\text{Hz}.\\end{aligned}$$'
+     +'The coherent value is the band of orthogonal signals, $MR_b/(2\\log_2M)=8(1500)/6=2000$ Hz. Not knowing the phase doubles the band.<br>'
+     +'<b>Check.</b> Put $\\Delta f=500$ Hz and $\\Delta\\varphi=90^{\\circ}$ into $\\rho$. Then $2\\pi\\Delta fT=2\\pi$ and $\\rho=[\\sin(5\\pi/2)-\\sin(\\pi/2)]/(2\\pi)=(1-1)/(2\\pi)=0$. '
+     +'For the largest $|\\rho|$ over all phases, write the difference of sines as a product, with $x=2\\pi\\Delta fT$:'
+     +'$$\\sin(x+\\Delta\\varphi)-\\sin\\Delta\\varphi=2\\cos\\Big(\\Delta\\varphi+\\frac x2\\Big)\\sin\\frac x2.$$'
+     +'The cosine reaches $\\pm1$, so the largest $|\\rho|$ is $2|\\sin(x/2)|/x$. At $250$ Hz, $x=\\pi$ and this is $2/\\pi=0.637$, the value found in part (c). The figure shows it against $\\Delta f$.',
+  err:'Taking $1/T$ as the coherent spacing. With known, equal phases the tones are already orthogonal at $1/(2T)$. The spacing $1/T$ is the price of an unknown phase.',
+  teach:'Tone spacing from one integral. The equal-phase zeros sit at every multiple of $1/(2T)$, but only every second one survives an arbitrary phase. That is why noncoherent FSK needs twice the band.',
+  figSol:()=>figCorr() },
 
 { id:'D5-15', module:'M5', type:'qam', src:'Final Q3',
   stem:OPEN+'$$\\begin{aligned}s_1(t)&=0,\\\\s_k(t)&=2\\cos\\!\\Big(2000\\pi t+\\frac{(k-2)\\pi}{3}\\Big),\\quad k\\in\\{2,\\ldots,7\\},\\end{aligned}$$ all on $0\\le t\\le1$.'+AWGN,
@@ -28121,49 +28304,104 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   teach:'The hexagonal set with a centre point. It shows that the inner point carries the largest error, which the average hides.',
   figSol:()=>cfig([[0,0]].concat(onCircle(R2, range(2,7).map(k=>(k-2)*Math.PI/3))), {dTex:'\\sqrt{2}', tick:1, margin:1.25}) },
 
-{ id:'D5-16', module:'M5', type:'qam', src:'Final Q3',
-  stem:OPEN+'$$s_k(t)=\\begin{cases}\\sqrt2\\cos\\!\\big(2000\\pi t+(k-1)\\frac{\\pi}{2}\\big),&k\\in\\{1,2,3,4\\},\\\\2\\sqrt2\\cos\\!\\big(2000\\pi t+(k-5)\\frac{\\pi}{2}\\big),&k\\in\\{5,6,7,8\\},\\end{cases}$$ all on $0\\le t\\le1$.'+AWGN,
-  parts:[PDRAW(10), PNN(10), '[5 pts] Compare this set with $8$-PSK at the same $E_{s,\\text{avg}}$, in decibels.'],
-  sol:'<b>Given.</b> Two rings of four waveforms at the same four phases $0^{\\circ},90^{\\circ},180^{\\circ},270^{\\circ}$, with amplitudes $\\sqrt2$ and $2\\sqrt2$.<br>'
-     +'<b>Find.</b> The constellation and regions, $P_e$ against $E_{s,\\text{avg}}/N_0$, and the comparison with $8$-PSK.<br>'
-     +'<b>Method.</b> Use $\\psi_1(t)=\\sqrt2\\cos(2000\\pi t)$ and $\\psi_2(t)=-\\sqrt2\\sin(2000\\pi t)$. The radii are $1$ and $2$.<br>'
-     +'<b>Solution — (a).</b> The inner points are $(\\pm1,0)$ and $(0,\\pm1)$. The outer points are $(\\pm2,0)$ and $(0,\\pm2)$, each on the same ray as an inner point. '
-     +'The diagonals $\\psi_2=\\pm\\psi_1$ divide the plane into four wedges. In each wedge the bisector at radius $1.5$ separates the inner region, a triangle, from the outer region.<br>'
-     +'<b>Solution — (b).</b> Average the energies:'
-     +'$$E_{s,\\text{avg}}=\\frac{4(1)+4(4)}{8}=2.5.$$'
-     +'An inner point and the outer point on its ray are $1$ apart. Inner neighbours are $\\sqrt2$ apart and outer neighbours $2\\sqrt2$. So $d_{\\min}=1$ and $d_{\\min}^{2}=1=0.4E_{s,\\text{avg}}$. '
-     +'Every point has exactly one neighbour at $d_{\\min}$, so $N_{\\min}=1$:'
-     +'$$\\begin{aligned}P_e&\\approx Q\\Big(\\sqrt{\\frac{0.4E_{s,\\text{avg}}}{2N_0}}\\Big)\\\\&=Q\\Big(\\sqrt{\\frac{E_{s,\\text{avg}}}{5N_0}}\\Big).\\end{aligned}$$<br>'
-     +'<b>Solution — (c).</b> For $8$-PSK, $d_{\\min}^{2}=4E_{s,\\text{avg}}\\sin^{2}(\\pi/8)=0.5858E_{s,\\text{avg}}$. The ratio of the two coefficients gives'
-     +'$$10\\log_{10}\\frac{0.5858}{0.4}=1.66\\ \\text{dB}$$'
-     +'in favour of $8$-PSK. The ring set has the smaller $N_{\\min}$, $1$ against $2$, but that does not make up $1.66$ dB.<br>'
-     +'<b>Check.</b> The inner and outer points on one ray are $2-1=1$ apart. The coordinates give $(2-1)^{2}+0^{2}=1$, the same value.',
-  err:'Taking $d_{\\min}=\\sqrt2$ from the inner square. The radial pair is closer, and it sets $d_{\\min}=1$.',
-  teach:'Two aligned rings. The radial pair, not the ring, sets the distance, and the comparison with $8$-PSK shows the cost.',
-  figSol:()=>cfig(onCircle(1,[0,Math.PI/2,Math.PI,3*Math.PI/2]).concat(onCircle(2,[0,Math.PI/2,Math.PI,3*Math.PI/2])), {dTex:'1', tick:1, margin:1.3}) },
+{ id:'D5-16', module:'M5', type:'gray', src:'Madhow P6.19',
+  stem:'Three sets of eight equally likely points on the signal plane $(\\psi_1,\\psi_2)$ are compared. Each point carries $3$ bits, and the channel is AWGN with $\\mathcal{N}(0,N_0/2)$. '
+      +'Set A is a square ring: $(\\pm c,\\pm c)$, $(\\pm c,0)$ and $(0,\\pm c)$. '
+      +'Set B is three rows of a triangular grid: $(\\pm b,\\pm h)$, $(0,\\pm h)$ and $(\\pm\\tfrac b2,0)$, with $h=\\tfrac{\\sqrt3}{2}b$. '
+      +'Set C is eight levels on one axis: $\\psi_1=(2k-9)\\,g/2$ for $k=1,\\ldots,8$. '
+      +'Set B comes with labels, read from left to right. The top row carries $\\mathtt{000},\\mathtt{001},\\mathtt{011}$, the middle row $\\mathtt{100},\\mathtt{101}$ and the bottom row $\\mathtt{010},\\mathtt{110},\\mathtt{111}$.',
+  parts:['[7 pts] Scale each set so that $E_b=3$. Find $c$, $b$ and $g$, and the $d_{\\min}$ of each set.',
+         '[6 pts] A Gray labelling gives every pair at $d_{\\min}$ labels that differ in one bit. For each set, give a Gray labelling or show that none exists.',
+         '[8 pts] Write the nearest-neighbour approximation of the bit error probability $P_b$ of each set as a function of $E_b/N_0$. Use your labels from part (b), or the given labels for a set without a Gray labelling. Evaluate each at $E_b/N_0=9$.',
+         '[4 pts] Rank the three sets by $P_b$ at high signal-to-noise ratio. Give the gap between neighbours in the ranking in decibels.'],
+  sol:'<b>Given.</b> Three sets of eight points, each point $3$ bits. Set A is a square ring with spacing $c$. Set B is three rows of a triangular grid with spacing $b$. Set C is eight levels $g$ apart. Labels for set B, and AWGN with $\\mathcal{N}(0,N_0/2)$.<br>'
+     +'<b>Find.</b> The scale of each set at $E_b=3$ and its $d_{\\min}$. Which sets take a Gray labelling. The bit error of each at $E_b/N_0=9$, and the ranking.<br>'
+     +'<b>Method.</b> With $3$ bits a symbol, $E_s=3E_b=9$ for every set. A symbol error to a neighbour at $d_{\\min}$ costs as many bits as the two labels differ in. So the nearest-neighbour approximation of the bit error is'
+     +'$$P_b\\approx\\frac{w}{3}\\,Q\\Big(\\sqrt{\\frac{d_{\\min}^{2}}{2N_0}}\\Big).$$'
+     +'Here $w$ is the number of differing bits, summed over the $d_{\\min}$ pairs of one point and averaged over the eight points. With Gray labels every pair costs one bit, so $w=N_{\\min}$ and $P_b\\approx P_e/3$.<br>'
+     +'<b>Solution — (a).</b> Set $E_s=9$ in each set. Set A has four corners of energy $2c^{2}$ and four edge points of energy $c^{2}$:'
+     +'$$\\begin{aligned}E_s&=\\frac{4(2c^{2})+4c^{2}}{8}=1.5\\,c^{2}=9\\\\c^{2}&=6,\\qquad c=\\sqrt6=2.449.\\end{aligned}$$'
+     +'A corner and the edge point beside it are $c$ apart. Two edge points are $c\\sqrt2$ apart. So $d_{\\min}=c=2.449$. '
+     +'Set B has four corners of energy $b^{2}+h^{2}=1.75\\,b^{2}$, two row centres of energy $h^{2}=0.75\\,b^{2}$ and two middle points of energy $0.25\\,b^{2}$:'
+     +'$$\\begin{aligned}E_s&=\\frac{4(1.75\\,b^{2})+2(0.75\\,b^{2})+2(0.25\\,b^{2})}{8}\\\\&=\\frac{9b^{2}}{8}=9\\\\b^{2}&=8,\\qquad b=2\\sqrt2=2.828.\\end{aligned}$$'
+     +'Points side by side in a row are $b$ apart. A middle point and the nearest points of the row above are also $b$ apart:'
+     +'$$\\sqrt{\\Big(\\frac b2\\Big)^{2}+h^{2}}=\\sqrt{0.25\\,b^{2}+0.75\\,b^{2}}=b.$$'
+     +'So $d_{\\min}=b=2.828$. Set C has the levels $\\pm\\tfrac g2,\\pm\\tfrac{3g}2,\\pm\\tfrac{5g}2,\\pm\\tfrac{7g}2$:'
+     +'$$\\begin{aligned}E_s&=\\frac{2\\,(1+9+25+49)\\,g^{2}}{4\\cdot8}=5.25\\,g^{2}=9\\\\g^{2}&=\\frac{12}{7}=1.714,\\qquad g=1.309.\\end{aligned}$$'
+     +'Neighbouring levels are $g$ apart, so $d_{\\min}=g=1.309$.<br>'
+     +'<b>Solution — (b).</b> A $3$-bit label has exactly $3$ labels that differ from it in one bit. So a point with more than $3$ neighbours at $d_{\\min}$ cannot have all of them one bit away. '
+     +'In set A every point has two neighbours at $d_{\\min}$, and the eight points form one closed ring. The $3$-bit Gray code $\\mathtt{000},\\mathtt{001},\\mathtt{011},\\mathtt{010},\\mathtt{110},\\mathtt{111},\\mathtt{101},\\mathtt{100}$ also closes, since its last and first words differ in one bit. '
+     +'Put it round the ring, starting at $(c,0)$ and turning anticlockwise. So set A has a Gray labelling. '
+     +'In set B each middle point has $5$ neighbours at $d_{\\min}$: the other middle point and two points in each outer row. Five is more than $3$, so set B has no Gray labelling. '
+     +'In set C each level has at most two neighbours. The same Gray code, read from left to right, is a Gray labelling.<br>'
+     +'<b>Solution — (c).</b> First count the bits of the given labels of set B over its $13$ pairs at $d_{\\min}$. Nine pairs differ in one bit. Four differ in two bits: $\\mathtt{001}$ and $\\mathtt{100}$, $\\mathtt{011}$ and $\\mathtt{101}$, $\\mathtt{100}$ and $\\mathtt{010}$, $\\mathtt{101}$ and $\\mathtt{110}$. '
+     +'Each pair is counted once from each of its two points:'
+     +'$$w_B=\\frac{2(9\\cdot1+4\\cdot2)}{8}=\\frac{34}{8}=4.25.$$'
+     +'Sets A and C have Gray labels, so $w=N_{\\min}$. Set A has $N_{\\min}=2$. Set C has two end levels with one neighbour and six with two, so $N_{\\min}=(2+12)/8=1.75$. '
+     +'Next write $d_{\\min}^{2}/2N_0$ through $E_b/N_0$, with $E_b=3$:'
+     +'$$\\begin{aligned}\\text{A:}\\quad\\frac{d_{\\min}^{2}}{2N_0}&=\\frac{6}{2N_0}=\\frac{E_b}{N_0},\\\\\\text{B:}\\quad\\frac{d_{\\min}^{2}}{2N_0}&=\\frac{8}{2N_0}=\\frac43\\,\\frac{E_b}{N_0},\\\\\\text{C:}\\quad\\frac{d_{\\min}^{2}}{2N_0}&=\\frac{12/7}{2N_0}=\\frac27\\,\\frac{E_b}{N_0}.\\end{aligned}$$'
+     +'So'
+     +'$$\\begin{aligned}P_{b,\\text{A}}&\\approx\\frac23\\,Q\\Big(\\sqrt{\\frac{E_b}{N_0}}\\Big),\\\\P_{b,\\text{B}}&\\approx\\frac{4.25}{3}\\,Q\\Big(\\sqrt{\\frac{4E_b}{3N_0}}\\Big),\\\\P_{b,\\text{C}}&\\approx\\frac{1.75}{3}\\,Q\\Big(\\sqrt{\\frac{2E_b}{7N_0}}\\Big).\\end{aligned}$$'
+     +'At $E_b/N_0=9$ the arguments are $\\sqrt9=3.00$, $\\sqrt{12}=3.46$ and $\\sqrt{18/7}=1.60$. The table gives $Q(3.00)=1.350\\times10^{-3}$, $Q(3.46)=2.70\\times10^{-4}$ and $Q(1.60)=5.48\\times10^{-2}$:'
+     +'$$\\begin{aligned}P_{b,\\text{A}}&\\approx0.667(1.350\\times10^{-3})=9.00\\times10^{-4},\\\\P_{b,\\text{B}}&\\approx1.417(2.70\\times10^{-4})=3.83\\times10^{-4},\\\\P_{b,\\text{C}}&\\approx0.583(5.48\\times10^{-2})=3.20\\times10^{-2}.\\end{aligned}$$<br>'
+     +'<b>Solution — (d).</b> At high signal-to-noise ratio the $Q$ argument decides. So rank by $d_{\\min}^{2}/E_b$: $8/3=2.667$ for B, $2$ for A and $4/7=0.571$ for C. B is best, then A, then C. The gaps are'
+     +'$$10\\log_{10}\\frac{8/3}{2}=1.25\\ \\text{dB},\\qquad10\\log_{10}\\frac{2}{4/7}=5.44\\ \\text{dB}.$$'
+     +'Set B wins without a Gray labelling. Its extra bits a symbol error multiply $P_b$ by $4.25/2$, about $2$. Its larger distance divides $Q$ by $1.350\\times10^{-3}/2.70\\times10^{-4}=5$. The figure draws the three sets with their labels, and the dashed red pairs of set B are the four that differ in two bits.<br>'
+     +'<b>Check.</b> List the energies of set A with $c^{2}=6$: four corners at $12$ and four edge points at $6$. The average is $(48+24)/8=9=3E_b$. '
+     +'For set B with $b^{2}=8$ the energies are $14$, $6$ and $2$, and $(4\\cdot14+2\\cdot6+2\\cdot2)/8=72/8=9$.',
+  err:'Using $P_b\\approx P_e/3$ for set B. That rule needs Gray labels. Four of the thirteen closest pairs of set B differ in two bits, so an error there costs two bits.',
+  teach:'Symbol error against bit error. The counting argument of part (b) is one line: a $3$-bit label has only three one-bit neighbours. Set B shows that the best set need not have a Gray labelling.',
+  figSol:()=>{
+    const G = ['000','001','011','010','110','111','101','100'].map(s=>'\\mathtt{'+s+'}');
+    const c = Math.sqrt(6), b = 2*R2, h = b*R3/2, g = Math.sqrt(12/7);
+    const A = [[c,0],[c,c],[0,c],[-c,c],[-c,0],[-c,-c],[0,-c],[c,-c]];
+    const B = [[-b,h],[0,h],[b,h],[-b/2,0],[b/2,0],[-b,-h],[0,-h],[b,-h]];
+    const BL = ['000','001','011','100','101','010','110','111'];
+    const hd = (i,j) => { let x = parseInt(BL[i],2)^parseInt(BL[j],2), n = 0; while(x){ n += x&1; x >>= 1; } return n; };
+    const Cp = range(1,8).map(k=>[(2*k-9)*g/2, 0]);
+    return pair(cfig(A, {names:G, dTex:'\\sqrt{6}', tick:2, margin:1.9, title:'\\text{A}'}),
+                cfig(B, {names:BL.map(s=>'\\mathtt{'+s+'}'), dTex:'2\\sqrt{2}', tick:2, margin:1.9, title:'\\text{B}',
+                  pairStyle:(i,j)=>hd(i,j)>1 ? {color:C.err, width:2.8, dash:'8 5'} : {}}))
+         + cfig(Cp, {oneD:true, names:G, dTex:'1.309', margin:1.9, xticks:[-4.582, 4.582], title:'\\text{C}'}); } },
 
-{ id:'D5-17', module:'M5', type:'psk', src:'Final Q3',
-  stem:'Consider a binary modulation scheme where the equally probable symbols have the following waveforms: $$s_1(t)=3\\cos(5000\\pi t),\\qquad s_2(t)=3\\cos\\!\\Big(5000\\pi t+\\frac{2\\pi}{3}\\Big),\\qquad0\\le t\\le2.$$'+AWGN,
-  parts:['[8 pts] Draw the signal constellation and the optimal decision boundary.',
-         '[9 pts] Determine the symbol error probability as a function of $E_{s,\\text{avg}}/N_0$. Explain why the nearest-neighbour approximation is exact here.',
-         '[8 pts] Which phase difference minimises the error probability at the same energy? Find the loss of the given set in decibels, and both error probabilities at $E_{s,\\text{avg}}/N_0=6$.'],
-  sol:'<b>Given.</b> Two waveforms of amplitude $3$ at $2500$ Hz, $0\\le t\\le2$, with phases $0$ and $120^{\\circ}$.<br>'
-     +'<b>Find.</b> The constellation and boundary, $P_e$, the best phase difference and the loss.<br>'
-     +'<b>Method.</b> With $T=2$ the orthonormal pair is $\\psi_1(t)=\\cos(5000\\pi t)$ and $\\psi_2(t)=-\\sin(5000\\pi t)$. The radius is $3\\sqrt{T/2}=3$.<br>'
-     +'<b>Solution — (a).</b> The points are $\\mathbf{s}_1=(3,0)$ and $\\mathbf{s}_2=(3\\cos120^{\\circ},3\\sin120^{\\circ})=(-1.5,2.598)$. '
-     +'The boundary is the perpendicular bisector of the two points. It passes through the origin, because both points have the same energy. It is the line at $60^{\\circ}$ and $240^{\\circ}$, halfway between the two phases.<br>'
-     +'<b>Solution — (b).</b> Both energies are $9$, so $E_{s,\\text{avg}}=9$. The distance is'
-     +'$$\\begin{aligned}d^{2}&=(3+1.5)^{2}+(0-2.598)^{2}\\\\&=20.25+6.75=27=3E_{s,\\text{avg}}.\\end{aligned}$$'
-     +'Each point has one neighbour, so'
-     +'$$\\begin{aligned}P_e&=Q\\Big(\\sqrt{\\frac{3E_{s,\\text{avg}}}{2N_0}}\\Big).\\end{aligned}$$'
-     +'This is exact. With two points there is one boundary, and the noise component across it is Gaussian with variance $N_0/2$.<br>'
-     +'<b>Solution — (c).</b> The distance is $2\\sqrt{E}\\sin(\\Delta\\theta/2)$, largest at $\\Delta\\theta=180^{\\circ}$. That is binary PSK, with $d^{2}=4E_{s,\\text{avg}}$. The loss is'
-     +'$$10\\log_{10}\\frac{4}{3}=1.25\\ \\text{dB}.$$'
-     +'At $6$, the given set has $Q(\\sqrt{9})=Q(3.00)=1.35\\times10^{-3}$. Binary PSK has $Q(\\sqrt{12})=Q(3.46)=2.70\\times10^{-4}$.<br>'
-     +'<b>Check.</b> The cosine rule gives $d^{2}=9+9-2(9)\\cos120^{\\circ}=18+9=27$. This agrees with the coordinates.',
-  err:'Calling the set orthogonal because the phases differ. Only a $90^{\\circ}$ difference gives zero correlation. At $120^{\\circ}$ the correlation is $\\cos120^{\\circ}=-0.5$.',
-  teach:'A binary set in the examination format. It connects phase difference to distance and shows that binary PSK is the best two-point set.',
-  figSol:()=>cfig([[3,0],[-1.5,1.5*R3]], {dTex:'3\\sqrt{3}', tick:1, margin:1.9}) },
+{ id:'D5-17', module:'M5', type:'phase', src:'Madhow P6.29',
+  stem:'A BPSK link sends $s_{1,2}(t)=\\pm\\sqrt{2E_b/T}\\cos(2\\pi f_ct)$ on $0\\le t\\le T$ over an AWGN channel with $\\mathcal{N}(0,N_0/2)$. The carrier reaches the receiver with an extra phase $\\varphi$ that the receiver does not know. '
+      +'The receiver correlates with $\\psi_1(t)=\\sqrt{2/T}\\cos(2\\pi f_ct)$ and $\\psi_2(t)=-\\sqrt{2/T}\\sin(2\\pi f_ct)$. It decides from the sign of the $\\psi_1$ output alone. Take $E_b/N_0=8$.',
+  parts:['[7 pts] For $\\varphi=25^{\\circ}$, find the noiseless outputs on $\\psi_1$ and $\\psi_2$ in units of $\\sqrt{E_b}$. Sketch the two points against the decision boundary.',
+         '[8 pts] Find the bit error probability as a function of $\\varphi$ and $E_b/N_0$ for $0\\le\\varphi<90^{\\circ}$. Evaluate it at $\\varphi=0$, $25^{\\circ}$ and $60^{\\circ}$.',
+         '[5 pts] Find the loss in decibels at $\\varphi=25^{\\circ}$ and at $\\varphi=60^{\\circ}$.',
+         '[5 pts] The phase error grows to $\\varphi=155^{\\circ}$. Find the bit error probability, and say how differential encoding removes the problem.'],
+  sol:'<b>Given.</b> BPSK with energy $E_b$ a bit, a carrier phase error $\\varphi$, a decision from the sign of the $\\psi_1$ output, and $E_b/N_0=8$.<br>'
+     +'<b>Find.</b> The noiseless outputs at $25^{\\circ}$, and $P_b$ as a function of $\\varphi$ at three angles. The loss in decibels, and the result at $155^{\\circ}$.<br>'
+     +'<b>Method.</b> Project the received waveform on each basis function. A phase error turns the constellation by $\\varphi$, while the boundary stays where the receiver put it. The distance from a point to the boundary sets $P_b$. The noise on the $\\psi_1$ output has variance $N_0/2$.<br>'
+     +'<b>Solution — (a).</b> The noiseless received waveform is $\\pm\\sqrt{2E_b/T}\\cos(2\\pi f_ct+\\varphi)$. Expand the cosine of a sum:'
+     +'$$\\begin{aligned}\\sqrt{\\tfrac{2E_b}{T}}\\cos(2\\pi f_ct+\\varphi)&=\\sqrt{\\tfrac{2E_b}{T}}\\big[\\cos\\varphi\\cos(2\\pi f_ct)-\\sin\\varphi\\sin(2\\pi f_ct)\\big]\\\\&=\\sqrt{E_b}\\cos\\varphi\\,\\psi_1(t)+\\sqrt{E_b}\\sin\\varphi\\,\\psi_2(t).\\end{aligned}$$'
+     +'So the two points sit at $\\pm\\sqrt{E_b}\\,(\\cos\\varphi,\\sin\\varphi)$. With $\\varphi=25^{\\circ}$ they are'
+     +'$$\\pm\\sqrt{E_b}\\,(\\cos25^{\\circ},\\sin25^{\\circ})=\\pm\\sqrt{E_b}\\,(0.906,\\;0.423).$$'
+     +'The boundary is still the $\\psi_2$ axis, $\\psi_1=0$, because the receiver uses only the sign of the $\\psi_1$ output. The points have turned by $25^{\\circ}$ about the origin. '
+     +'Their distance to the boundary has shrunk from $\\sqrt{E_b}$ to $\\sqrt{E_b}\\cos25^{\\circ}=0.906\\sqrt{E_b}$.<br>'
+     +'<b>Solution — (b).</b> Given $s_1$, the $\\psi_1$ output is $Y=\\sqrt{E_b}\\cos\\varphi+N$ with $N\\sim\\mathcal{N}(0,N_0/2)$. An error is $Y<0$:'
+     +'$$\\begin{aligned}P_b&=P\\big(N<-\\sqrt{E_b}\\cos\\varphi\\big)\\\\&=Q\\Big(\\frac{\\sqrt{E_b}\\cos\\varphi}{\\sqrt{N_0/2}}\\Big)\\\\&=Q\\Big(\\sqrt{\\frac{2E_b}{N_0}}\\cos\\varphi\\Big).\\end{aligned}$$'
+     +'By symmetry $s_2$ gives the same value. At $E_b/N_0=8$, $\\sqrt{2E_b/N_0}=\\sqrt{16}=4$:'
+     +'$$\\begin{aligned}\\varphi=0:&\\quad P_b=Q(4.00)=3.17\\times10^{-5},\\\\\\varphi=25^{\\circ}:&\\quad P_b=Q(4\\cos25^{\\circ})=Q(3.63)=1.42\\times10^{-4},\\\\\\varphi=60^{\\circ}:&\\quad P_b=Q(4\\cos60^{\\circ})=Q(2.00)=2.28\\times10^{-2}.\\end{aligned}$$'
+     +'The $\\psi_2$ output does not enter the decision, so its noise does not matter.<br>'
+     +'<b>Solution — (c).</b> The factor $\\cos\\varphi$ scales the distance to the boundary. To win that distance back, the energy must grow by $1/\\cos^{2}\\varphi$. So the loss is'
+     +'$$L=10\\log_{10}\\frac{1}{\\cos^{2}\\varphi}=-20\\log_{10}\\cos\\varphi.$$'
+     +'At the two angles,'
+     +'$$\\begin{aligned}\\varphi=25^{\\circ}:&\\quad L=-20\\log_{10}0.9063=0.85\\ \\text{dB},\\\\\\varphi=60^{\\circ}:&\\quad L=-20\\log_{10}0.5=6.02\\ \\text{dB}.\\end{aligned}$$'
+     +'A small phase error costs little. The cost grows fast as $\\varphi$ nears $90^{\\circ}$.<br>'
+     +'<b>Solution — (d).</b> At $\\varphi=155^{\\circ}$, $\\cos\\varphi=-0.906$. The point sent as $s_1$ has crossed the boundary:'
+     +'$$\\begin{aligned}P_b&=Q\\big(4(-0.906)\\big)=Q(-3.63)\\\\&=1-Q(3.63)=0.99986.\\end{aligned}$$'
+     +'Almost every bit is inverted. With differential encoding the bit is carried by the change of phase from one symbol to the next. '
+     +'A constant $\\varphi$ turns both symbols by the same angle, so the change survives. At $155^{\\circ}$ the receiver inverts both decisions, and their comparison is still right. '
+     +'The distance is then $0.906\\sqrt{E_b}$, as at $25^{\\circ}$. One wrong decision spoils two comparisons, so $P_b\\approx2(1.42\\times10^{-4})=2.84\\times10^{-4}$. The figure draws the three angles in units of $\\sqrt{E_b}$, with the distance of $s_1$ to the boundary marked.<br>'
+     +'<b>Check.</b> Put $\\varphi=90^{\\circ}$ in the formula of part (b). Then $\\cos\\varphi=0$ and $P_b=Q(0)=\\tfrac12$. Both points sit on the boundary, and the decision is a coin toss. '
+     +'The energy of each point is $E_b(\\cos^{2}\\varphi+\\sin^{2}\\varphi)=E_b$, so the phase error moves the points without changing their energy.',
+  err:'Writing $\\cos^{2}\\varphi$ inside the argument of $Q$. The argument is a distance over $\\sqrt{N_0/2}$, and the distance shrinks by $\\cos\\varphi$. The energy, and so the loss in decibels, carries $\\cos^{2}\\varphi$.',
+  teach:'A receiver that is slightly wrong in phase. The sketch of part (a) is the whole argument: the points turn and the boundary stays. Part (d) links to differential PSK, where a constant phase error cancels.',
+  figSol:()=>row(figPhase(25, {dTex:'0.906', dAt:[0.55, 0.13, 'middle']}),
+                 figPhase(60, {dTex:'0.5', dAt:[0.25, 1.02, 'middle']}),
+                 figPhase(155, {dTex:'-0.906', dAt:[-0.55, 0.13, 'middle']})) },
 
 { id:'D5-18', module:'M5', type:'fsk', src:'Final Q3',
   stem:OPEN+'$$s_{1,2}(t)=\\pm2\\cos(2000\\pi t),\\qquad s_{3,4}(t)=\\pm2\\cos(3000\\pi t),\\qquad0\\le t\\le1.$$'+AWGN,
@@ -28465,8 +28703,8 @@ window.DRILL_M5 = [
 
 { id:'m5-drill', module:'M5', nav:'Module 5 · practice questions',
   title:'Module 5 — practice questions',
-  objective:'Thirty examination questions on signal sets, decision regions and the nearest-neighbour approximation, with worked solutions.',
-  keywords:'practice questions module 5 constellation decision regions nearest neighbour approximation psk pam qam fsk average symbol energy',
+  objective:'Thirty examination questions on signal sets, decision regions, the nearest-neighbour approximation, bit error, bandwidth and carrier phase, with worked solutions.',
+  keywords:'practice questions module 5 constellation decision regions nearest neighbour approximation psk pam qam fsk average symbol energy gray labels bit error bandwidth roll-off tone spacing noncoherent phase error',
   steps:0, blocks:[
   {t:'eyebrow', text:'Module 5 · Practice D5-01 … D5-30'},
   {t:'title', text:'Practice questions'},
