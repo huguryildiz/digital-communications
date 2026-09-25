@@ -198,10 +198,10 @@ const EXPAND = 'Expand with $\\cos(x+\\theta)=\\cos\\theta\\cos x-\\sin\\theta\\
   + 'So its vector is $\\tfrac{A}{\\sqrt2}(\\cos\\theta,\\,\\sin\\theta)$ and its energy is $A^2/2$.';
 const BAND = f => 'Consider an $M$-ary modulation scheme where the equiprobable symbols have the following waveforms:' + f
   + 'These signals are planned to be transmitted over a standard AWGN channel. According to the information given above,';
-const BPARTS = ['[8 pts] Find an orthonormal basis for the signal set and show that it is orthonormal.',
-  '[7 pts] Find the signal vectors and draw the signal constellation.',
-  '[5 pts] Calculate the symbol energies and the average symbol energy $E_{s,av}$.',
-  '[5 pts] Determine the minimum distance $d_{\\min}$ and the number of nearest neighbours of each symbol.'];
+const BPARTS = ['Find an orthonormal basis for the signal set and show that it is orthonormal.',
+  'Find the signal vectors and draw the signal constellation.',
+  'Calculate the symbol energies and the average symbol energy $E_{s,av}$.',
+  'Determine the minimum distance $d_{\\min}$ and the number of nearest neighbours of each symbol.'];
 const R2 = Math.SQRT2, R3 = Math.sqrt(3), R6 = Math.sqrt(6);
 
 CONTENT.DRILL = CONTENT.DRILL.concat([
@@ -213,10 +213,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
       +'Before a receiver is designed, the pair is written in geometric form. The correlation coefficient of the pair is '
       +'$$\\rho_{01}=\\frac{1}{\\sqrt{E_0E_1}}\\int_0^{T}s_0(t)\\,s_1(t)\\,dt.$$According to the information given above,',
   figure: () => ROW([wave(U([0,2,2,0]),{T:4,name:'s_0(t)',color:C.in}), wave(U([1,1,1,1]),{T:4,name:'s_1(t)',color:C.out})]),
-  parts:['[8 pts] Find an orthonormal basis for $\\{s_0(t),s_1(t)\\}$ by the Gram–Schmidt procedure, starting with $s_0(t)$. Plot the basis functions.',
-         '[7 pts] Find the signal vectors $\\mathbf{s}_0$, $\\mathbf{s}_1$ and the energies $E_0$, $E_1$.',
-         '[5 pts] Calculate the distance $d_{01}=\\|\\mathbf{s}_0-\\mathbf{s}_1\\|$ and the correlation coefficient $\\rho_{01}$.',
-         '[5 pts] Draw the signal constellation. How many dimensions does the signal set need?'],
+  parts:['Find an orthonormal basis for $\\{s_0(t),s_1(t)\\}$ by the Gram–Schmidt procedure, starting with $s_0(t)$. Plot the basis functions.',
+         'Find the signal vectors $\\mathbf{s}_0$, $\\mathbf{s}_1$ and the energies $E_0$, $E_1$.',
+         'Calculate the distance $d_{01}=\\|\\mathbf{s}_0-\\mathbf{s}_1\\|$ and the correlation coefficient $\\rho_{01}$.',
+         'Draw the signal constellation. How many dimensions does the signal set need?'],
   sol:'<b>Given.</b> $s_0(t)=2$ for $1\\le t<3$ and zero elsewhere on $[0,4]$. $s_1(t)=1$ for $0\\le t\\le 4$.<br>'
      +'<b>Find.</b> A basis, $\\mathbf{s}_0$, $\\mathbf{s}_1$, $E_0$, $E_1$, $d_{01}$, $\\rho_{01}$ and the number of dimensions.<br>'
      +'<b>Method.</b> Gram–Schmidt builds the basis one waveform at a time. Each waveform is constant on unit intervals. So every integral is a constant times $t$, evaluated at the ends of its interval.<br>'
@@ -250,10 +250,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   stem:'Two equiprobable messages are transmitted by the waveforms $s_0(t)$ and $s_1(t)$ shown below, with $T=3$ s. '
       +'The correlation coefficient of the pair is $\\rho_{01}=\\langle s_0,s_1\\rangle/\\sqrt{E_0E_1}$, where $\\langle s_0,s_1\\rangle=\\int_0^T s_0(t)s_1(t)\\,dt$. According to the information given above,',
   figure: () => ROW([wave(U([2,2,0]),{T:3,name:'s_0(t)',color:C.in}), wave(U([1,1,-2]),{T:3,name:'s_1(t)',color:C.out})]),
-  parts:['[8 pts] Use the Gram–Schmidt procedure, starting with $s_0(t)$, to find an orthonormal basis. Plot the basis functions.',
-         '[6 pts] Find the signal vectors and the energies $E_0$ and $E_1$.',
-         '[6 pts] Calculate $d_{01}$ and $\\rho_{01}$.',
-         '[5 pts] Draw the signal constellation and calculate the average symbol energy $E_{s,av}$.'],
+  parts:['Use the Gram–Schmidt procedure, starting with $s_0(t)$, to find an orthonormal basis. Plot the basis functions.',
+         'Find the signal vectors and the energies $E_0$ and $E_1$.',
+         'Calculate $d_{01}$ and $\\rho_{01}$.',
+         'Draw the signal constellation and calculate the average symbol energy $E_{s,av}$.'],
   sol:'<b>Given.</b> $s_0(t)=2$ on $[0,2)$ and $0$ on $[2,3]$. $s_1(t)=1$ on $[0,2)$ and $-2$ on $[2,3]$.<br>'
      +'<b>Find.</b> The basis, $\\mathbf{s}_0$, $\\mathbf{s}_1$, $E_0$, $E_1$, $d_{01}$, $\\rho_{01}$ and $E_{s,av}$.<br>'
      +'<b>Method.</b> Normalise $s_0$, remove its component from $s_1$, and normalise the remainder. Then read every other quantity off the two vectors.<br>'
@@ -285,10 +285,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 { id:'D3-03', module:'M3', type:'gs', src:'MT Q3',
   stem:'In an additive white Gaussian noise channel, two equiprobable messages are transmitted by the waveforms below, with $T=3$ s. According to the information given above,',
   figure: () => ROW([wave(U([2,2,-4]),{T:3,name:'s_0(t)',color:C.in}), wave(U([-1,-1,2]),{T:3,name:'s_1(t)',color:C.out})]),
-  parts:['[9 pts] Apply the Gram–Schmidt procedure, starting with $s_0(t)$. Show that it stops after one basis function, and plot that function.',
-         '[6 pts] Find the coordinates of the two signals and their energies.',
-         '[5 pts] Calculate the distance $d_{01}$ and the correlation coefficient $\\rho_{01}=\\langle s_0,s_1\\rangle/\\sqrt{E_0E_1}$.',
-         '[5 pts] Draw the signal constellation and give $E_{s,av}$.'],
+  parts:['Apply the Gram–Schmidt procedure, starting with $s_0(t)$. Show that it stops after one basis function, and plot that function.',
+         'Find the coordinates of the two signals and their energies.',
+         'Calculate the distance $d_{01}$ and the correlation coefficient $\\rho_{01}=\\langle s_0,s_1\\rangle/\\sqrt{E_0E_1}$.',
+         'Draw the signal constellation and give $E_{s,av}$.'],
   sol:'<b>Given.</b> $s_0(t)=2$ on $[0,2)$ and $-4$ on $[2,3]$. $s_1(t)=-1$ on $[0,2)$ and $2$ on $[2,3]$.<br>'
      +'<b>Find.</b> The basis, the coordinates, $E_0$, $E_1$, $d_{01}$, $\\rho_{01}$ and $E_{s,av}$.<br>'
      +'<b>Method.</b> Run Gram–Schmidt. If the remainder of $s_1$ is zero, one axis carries both signals.<br>'
@@ -316,10 +316,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
       +'$$\\bar s(t)=\\tfrac13\\big[s_1(t)+s_2(t)+s_3(t)\\big],\\qquad u_k(t)=s_k(t)-\\bar s(t),\\quad k=1,2,3.$$'
       +'The set $\\{u_1,u_2,u_3\\}$ is called a simplex set. According to the information given above,',
   figure: () => ROW([wave(U([3,6,6]),{T:3,name:'s_1(t)',color:C.in}), wave(U([6,3,-6]),{T:3,name:'s_2(t)',color:C.out}), wave(U([6,-6,3]),{T:3,name:'s_3(t)',color:C.mid})]),
-  parts:['[7 pts] Show that $s_1$, $s_2$ and $s_3$ are orthogonal and have one common energy $E_s$. Give an orthonormal basis and the three signal vectors.',
-         '[6 pts] Find and sketch $\\bar s(t)$ and the three simplex waveforms $u_k(t)$. Give their signal vectors in the same basis.',
-         '[6 pts] Calculate the energy $E_u$ of each $u_k$, the inner products $\\langle u_j,u_k\\rangle$ and the correlation coefficient $\\rho=\\langle u_j,u_k\\rangle/E_u$. Compare the distances in the two sets.',
-         '[6 pts] Now start from $M$ orthogonal waveforms of energy $E_s$. Show that $E_u=(1-1/M)E_s$ and $\\rho=-1/(M-1)$. Give the energy saving $10\\log_{10}(E_s/E_u)$ in dB for $M=2,3,4,8,16$.'],
+  parts:['Show that $s_1$, $s_2$ and $s_3$ are orthogonal and have one common energy $E_s$. Give an orthonormal basis and the three signal vectors.',
+         'Find and sketch $\\bar s(t)$ and the three simplex waveforms $u_k(t)$. Give their signal vectors in the same basis.',
+         'Calculate the energy $E_u$ of each $u_k$, the inner products $\\langle u_j,u_k\\rangle$ and the correlation coefficient $\\rho=\\langle u_j,u_k\\rangle/E_u$. Compare the distances in the two sets.',
+         'Now start from $M$ orthogonal waveforms of energy $E_s$. Show that $E_u=(1-1/M)E_s$ and $\\rho=-1/(M-1)$. Give the energy saving $10\\log_{10}(E_s/E_u)$ in dB for $M=2,3,4,8,16$.'],
   sol:'<b>Given.</b> On the three unit intervals of $[0,3]$, $s_1$ takes $3,6,6$, $s_2$ takes $6,3,-6$ and $s_3$ takes $6,-6,3$.<br>'
      +'<b>Find.</b> $E_s$, a basis, the vectors, $\\bar s$, the $u_k$, $E_u$, $\\rho$, the distances and the saving in dB.<br>'
      +'<b>Method.</b> Every waveform is constant on unit intervals, so an inner product is a sum of three products of heights. The average is subtracted interval by interval, or vector by vector.<br>'
@@ -362,10 +362,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 { id:'D3-05', module:'M3', type:'gs', src:'MT Q3',
   stem:'Three equiprobable messages are transmitted by the waveforms $s_1(t)$, $s_2(t)$ and $s_3(t)$ shown below, with $T=3$ s. According to the information given above,',
   figure: () => ROW([wave(U([3,0,0]),{T:3,name:'s_1(t)',color:C.in}), wave(U([1,1,1]),{T:3,name:'s_2(t)',color:C.out}), wave(U([0,-2,-2]),{T:3,name:'s_3(t)',color:C.mid})]),
-  parts:['[9 pts] Find an orthonormal basis by the Gram–Schmidt procedure, taking the signals in the order $s_1,s_2,s_3$. Plot the basis functions.',
-         '[6 pts] Find the three signal vectors and their energies.',
-         '[6 pts] Calculate the three distances between the signals and give $d_{\\min}$.',
-         '[4 pts] Draw the signal constellation and state the number of dimensions.'],
+  parts:['Find an orthonormal basis by the Gram–Schmidt procedure, taking the signals in the order $s_1,s_2,s_3$. Plot the basis functions.',
+         'Find the three signal vectors and their energies.',
+         'Calculate the three distances between the signals and give $d_{\\min}$.',
+         'Draw the signal constellation and state the number of dimensions.'],
   sol:'<b>Given.</b> $s_1=3$ on $[0,1)$. $s_2=1$ on $[0,3]$. $s_3=-2$ on $[1,3]$. Each is zero elsewhere on $[0,3]$.<br>'
      +'<b>Find.</b> The basis, $\\mathbf{s}_1,\\mathbf{s}_2,\\mathbf{s}_3$, the energies, the distances and the dimension.<br>'
      +'<b>Method.</b> Gram–Schmidt in the stated order. A zero remainder adds no axis.<br>'
@@ -393,10 +393,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 { id:'D3-06', module:'M3', type:'gs', src:'MT Q3',
   stem:'Three equiprobable symbols are represented by the waveforms shown below on $0\\le t\\le T$, with $T=3$ s. According to the information given above,',
   figure: () => ROW([wave(U([1,1,1]),{T:3,name:'s_1(t)',color:C.in}), wave(U([2,2,-1]),{T:3,name:'s_2(t)',color:C.out}), wave(U([-1,-1,2]),{T:3,name:'s_3(t)',color:C.mid})]),
-  parts:['[9 pts] Use the Gram–Schmidt procedure in the order $s_1,s_2,s_3$ to find an orthonormal basis. Plot the basis functions.',
-         '[6 pts] Find the signal vectors.',
-         '[5 pts] Calculate $E_{s,av}$ and the minimum distance $d_{\\min}$.',
-         '[5 pts] Draw the signal constellation, and write $s_3(t)$ as a combination of $s_1(t)$ and $s_2(t)$.'],
+  parts:['Use the Gram–Schmidt procedure in the order $s_1,s_2,s_3$ to find an orthonormal basis. Plot the basis functions.',
+         'Find the signal vectors.',
+         'Calculate $E_{s,av}$ and the minimum distance $d_{\\min}$.',
+         'Draw the signal constellation, and write $s_3(t)$ as a combination of $s_1(t)$ and $s_2(t)$.'],
   sol:'<b>Given.</b> $s_1=1$ on $[0,3]$. $s_2=2$ on $[0,2)$ and $-1$ on $[2,3]$. $s_3=-1$ on $[0,2)$ and $2$ on $[2,3]$.<br>'
      +'<b>Find.</b> The basis, the vectors, $E_{s,av}$, $d_{\\min}$ and the relation among the signals.<br>'
      +'<b>Method.</b> Gram–Schmidt in order. Then energies and distances from the vectors.<br>'
@@ -425,10 +425,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 { id:'D3-07', module:'M3', type:'gs', src:'MT Q3',
   stem:'Three equiprobable messages are transmitted by the waveforms shown below, with $T=4$ s. According to the information given above,',
   figure: () => ROW([wave(U([2,2,-2,-2]),{T:4,name:'s_1(t)',color:C.in}), wave(U([1,-1,-1,1]),{T:4,name:'s_2(t)',color:C.out}), wave(U([3,1,-3,-1]),{T:4,name:'s_3(t)',color:C.mid})]),
-  parts:['[6 pts] Show that $s_1(t)$ and $s_2(t)$ are orthogonal, and give their correlation coefficient $\\rho_{12}=\\langle s_1,s_2\\rangle/\\sqrt{E_1E_2}$.',
-         '[9 pts] Find an orthonormal basis for all three signals by the Gram–Schmidt procedure in the order $s_1,s_2,s_3$, and the three signal vectors.',
-         '[5 pts] Calculate the three distances and $d_{\\min}$. Which pair is closest?',
-         '[5 pts] Draw the signal constellation and calculate $E_{s,av}$.'],
+  parts:['Show that $s_1(t)$ and $s_2(t)$ are orthogonal, and give their correlation coefficient $\\rho_{12}=\\langle s_1,s_2\\rangle/\\sqrt{E_1E_2}$.',
+         'Find an orthonormal basis for all three signals by the Gram–Schmidt procedure in the order $s_1,s_2,s_3$, and the three signal vectors.',
+         'Calculate the three distances and $d_{\\min}$. Which pair is closest?',
+         'Draw the signal constellation and calculate $E_{s,av}$.'],
   sol:'<b>Given.</b> On the four unit intervals, $s_1$ takes $2,2,-2,-2$, $s_2$ takes $1,-1,-1,1$ and $s_3$ takes $3,1,-3,-1$.<br>'
      +'<b>Find.</b> $\\rho_{12}$, the basis, the vectors, the distances, $d_{\\min}$ and $E_{s,av}$.<br>'
      +'<b>Method.</b> Each inner product is a sum over the four unit intervals of height times height. Gram–Schmidt then uses the same sums.<br>'
@@ -457,10 +457,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 { id:'D3-08', module:'M3', type:'gs', src:'MT Q3',
   stem:'Three equiprobable symbols are transmitted with the staircase waveforms shown below on $0\\le t\\le T$, with $T=3$ s. According to the information given above,',
   figure: () => ROW([wave(U([1,1,1]),{T:3,name:'s_1(t)',color:C.in}), wave(U([3,1,-1]),{T:3,name:'s_2(t)',color:C.out}), wave(U([-1,1,3]),{T:3,name:'s_3(t)',color:C.mid})]),
-  parts:['[9 pts] Find an orthonormal basis by the Gram–Schmidt procedure in the order $s_1,s_2,s_3$. Plot the basis functions.',
-         '[6 pts] Find the signal vectors and the symbol energies.',
-         '[6 pts] Calculate all distances, $d_{\\min}$, and the number of nearest neighbours of each symbol.',
-         '[4 pts] Draw the constellation. The three points lie on one straight line. Explain why the set still needs two dimensions.'],
+  parts:['Find an orthonormal basis by the Gram–Schmidt procedure in the order $s_1,s_2,s_3$. Plot the basis functions.',
+         'Find the signal vectors and the symbol energies.',
+         'Calculate all distances, $d_{\\min}$, and the number of nearest neighbours of each symbol.',
+         'Draw the constellation. The three points lie on one straight line. Explain why the set still needs two dimensions.'],
   sol:'<b>Given.</b> $s_1$ takes $1,1,1$, $s_2$ takes $3,1,-1$ and $s_3$ takes $-1,1,3$ on the three unit intervals.<br>'
      +'<b>Find.</b> The basis, the vectors, the energies, the distances, $d_{\\min}$, the nearest neighbours and the dimension.<br>'
      +'<b>Method.</b> Gram–Schmidt with sums over unit intervals. Then distances from the vectors.<br>'
@@ -488,10 +488,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 { id:'D3-09', module:'M3', type:'gs', src:'MT Q3',
   stem:'Three equiprobable messages are transmitted by the waveforms shown below, with $T=3$ s. Each waveform is $1$ on two of the three unit intervals and $0$ on the third. According to the information given above,',
   figure: () => ROW([wave(U([1,1,0]),{T:3,name:'s_1(t)',color:C.in}), wave(U([1,0,1]),{T:3,name:'s_2(t)',color:C.out}), wave(U([0,1,1]),{T:3,name:'s_3(t)',color:C.mid})]),
-  parts:['[10 pts] Apply the Gram–Schmidt procedure in the order $s_1,s_2,s_3$ and find an orthonormal basis. Plot the basis functions.',
-         '[6 pts] Find the three signal vectors.',
-         '[5 pts] Calculate the energies and the three distances.',
-         '[4 pts] How many dimensions does the set need, and what shape do the three points form?'],
+  parts:['Apply the Gram–Schmidt procedure in the order $s_1,s_2,s_3$ and find an orthonormal basis. Plot the basis functions.',
+         'Find the three signal vectors.',
+         'Calculate the energies and the three distances.',
+         'How many dimensions does the set need, and what shape do the three points form?'],
   sol:'<b>Given.</b> $s_1$ takes $1,1,0$, $s_2$ takes $1,0,1$ and $s_3$ takes $0,1,1$ on the unit intervals of $[0,3]$.<br>'
      +'<b>Find.</b> The basis, the vectors, the energies, the distances and the dimension.<br>'
      +'<b>Method.</b> Gram–Schmidt. Every inner product is a sum of three products over unit intervals.<br>'
@@ -522,10 +522,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
       +'$$\\begin{aligned}&\\text{Set A:}\\quad a_i(t)=p(t-i),\\quad i=0,1,2,3,\\\\&\\text{Set B:}\\quad b_0(t)=p(t)+p(t-1),\\quad b_1(t)=p(t-2)+p(t-3),\\\\&\\phantom{\\text{Set B:}}\\quad b_2(t)=p(t)+p(t-2),\\quad b_3(t)=p(t-1)+p(t-3).\\end{aligned}$$'
       +'Each symbol carries $\\log_2 4=2$ bits, so the energy per bit is $E_b=E_{s,av}/2$. According to the information given above,',
   figure: () => ROW([wave([[0,1,2]],{T:4,name:'p(t)',color:C.in})]),
-  parts:['[7 pts] Show that $\\psi_i(t)=\\tfrac12p(t-i)$, $i=0,1,2,3$, is an orthonormal basis for both sets. Find the signal vectors of set A and of set B.',
-         '[5 pts] Calculate $E_{s,av}$ and $E_b$ for each set.',
-         '[8 pts] Calculate the six distances within set B. Give $d_{\\min}$ and the number of nearest neighbours of each symbol, for both sets.',
-         '[5 pts] Compare the sets by $d_{\\min}^2/E_b$. Which set is better, and by how many dB? Where does the other set spend its extra energy?'],
+  parts:['Show that $\\psi_i(t)=\\tfrac12p(t-i)$, $i=0,1,2,3$, is an orthonormal basis for both sets. Find the signal vectors of set A and of set B.',
+         'Calculate $E_{s,av}$ and $E_b$ for each set.',
+         'Calculate the six distances within set B. Give $d_{\\min}$ and the number of nearest neighbours of each symbol, for both sets.',
+         'Compare the sets by $d_{\\min}^2/E_b$. Which set is better, and by how many dB? Where does the other set spend its extra energy?'],
   sol:'<b>Given.</b> $p(t)=2$ on $[0,1)$. A symbol of set A holds one shifted pulse, and a symbol of set B holds two. The symbols are equiprobable, with $2$ bits each.<br>'
      +'<b>Find.</b> The basis, the vectors, $E_{s,av}$, $E_b$, the distances, $d_{\\min}$, the nearest neighbours and the comparison.<br>'
      +'<b>Method.</b> The four shifts never overlap, so they are orthogonal. Each coordinate is then the number of pulses on that interval times the height $2$. '
@@ -560,10 +560,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 { id:'D3-11', module:'M3', type:'gs', src:'MT Q3',
   stem:'Four equiprobable symbols are transmitted by the waveforms $s_1(t)$ and $s_2(t)$ shown below and by their negatives, $s_3(t)=-s_1(t)$ and $s_4(t)=-s_2(t)$, with $T=4$ s. According to the information given above,',
   figure: () => ROW([wave(U([1,1,1,1]),{T:4,name:'s_1(t)',color:C.in}), wave(U([1,1,-1,-1]),{T:4,name:'s_2(t)',color:C.out})]),
-  parts:['[8 pts] Find an orthonormal basis for the four signals by the Gram–Schmidt procedure, in the order $s_1,s_2,s_3,s_4$.',
-         '[6 pts] Find the four signal vectors.',
-         '[6 pts] Calculate $E_{s,av}$, the minimum distance $d_{\\min}$, and the number of nearest neighbours of each symbol.',
-         '[5 pts] Draw the signal constellation and give the ratio $d_{\\min}^2/E_{s,av}$.'],
+  parts:['Find an orthonormal basis for the four signals by the Gram–Schmidt procedure, in the order $s_1,s_2,s_3,s_4$.',
+         'Find the four signal vectors.',
+         'Calculate $E_{s,av}$, the minimum distance $d_{\\min}$, and the number of nearest neighbours of each symbol.',
+         'Draw the signal constellation and give the ratio $d_{\\min}^2/E_{s,av}$.'],
   sol:'<b>Given.</b> $s_1=1$ on $[0,4]$. $s_2=1$ on $[0,2)$ and $-1$ on $[2,4]$. $s_3=-s_1$ and $s_4=-s_2$.<br>'
      +'<b>Find.</b> The basis, the vectors, $E_{s,av}$, $d_{\\min}$, the nearest neighbours and $d_{\\min}^2/E_{s,av}$.<br>'
      +'<b>Method.</b> Gram–Schmidt. A negative of an earlier signal leaves a zero remainder.<br>'
@@ -586,10 +586,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 { id:'D3-12', module:'M3', type:'gs', src:'MT Q3',
   stem:'Two equiprobable messages are transmitted by the waveforms $s_0(t)$ and $s_1(t)$ shown below, with $T=3$ s. Note that $s_0(t)$ changes value at $t=1.5$ s. According to the information given above,',
   figure: () => ROW([wave([[0,1.5,2],[1.5,3,0]],{T:3,name:'s_0(t)',color:C.in,xt:[0,1.5,3]}), wave([[0,3,1]],{T:3,name:'s_1(t)',color:C.out,xt:[0,1.5,3]})]),
-  parts:['[8 pts] Find an orthonormal basis by the Gram–Schmidt procedure, starting with $s_0(t)$. Plot the basis functions.',
-         '[7 pts] Find the signal vectors and the energies.',
-         '[5 pts] Calculate $d_{01}$ and $\\rho_{01}=\\langle s_0,s_1\\rangle/\\sqrt{E_0E_1}$.',
-         '[5 pts] Draw the signal constellation and calculate $d_{01}^2/E_{s,av}$.'],
+  parts:['Find an orthonormal basis by the Gram–Schmidt procedure, starting with $s_0(t)$. Plot the basis functions.',
+         'Find the signal vectors and the energies.',
+         'Calculate $d_{01}$ and $\\rho_{01}=\\langle s_0,s_1\\rangle/\\sqrt{E_0E_1}$.',
+         'Draw the signal constellation and calculate $d_{01}^2/E_{s,av}$.'],
   sol:'<b>Given.</b> $s_0(t)=2$ on $[0,1.5)$ and $0$ on $[1.5,3]$. $s_1(t)=1$ on $[0,3]$.<br>'
      +'<b>Find.</b> The basis, the vectors, the energies, $d_{01}$, $\\rho_{01}$ and $d_{01}^2/E_{s,av}$.<br>'
      +'<b>Method.</b> Gram–Schmidt. The intervals now have width $1.5$, so each integral is a height times $1.5$.<br>'
@@ -642,10 +642,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D3-14', module:'M3', type:'band', src:'Final Q3',
   stem: BAND('$$\\begin{aligned}s_1(t)&=0,\\\\ s_2(t)&=3\\sqrt2\\cos(6000\\pi t),\\\\ s_3(t)&=3\\sqrt2\\cos\\Big(6000\\pi t+\\frac{\\pi}{2}\\Big),\\\\ s_4(t)&=6\\cos\\Big(6000\\pi t+\\frac{\\pi}{4}\\Big),\\end{aligned}\\qquad 0\\le t\\le 1.$$'),
-  parts:['[8 pts] Find an orthonormal basis for the signal set and show that it is orthonormal.',
-         '[7 pts] Find the four signal vectors and draw the signal constellation.',
-         '[5 pts] Calculate the symbol energies and $E_{s,av}$.',
-         '[5 pts] Determine $d_{\\min}$, the number of nearest neighbours of each symbol, and $d_{\\min}^2/E_{s,av}$.'],
+  parts:['Find an orthonormal basis for the signal set and show that it is orthonormal.',
+         'Find the four signal vectors and draw the signal constellation.',
+         'Calculate the symbol energies and $E_{s,av}$.',
+         'Determine $d_{\\min}$, the number of nearest neighbours of each symbol, and $d_{\\min}^2/E_{s,av}$.'],
   sol:'<b>Given.</b> One zero waveform and three cosines at $f_c=3000$ Hz, on $0\\le t\\le 1$.<br>'
      +'<b>Find.</b> The basis, the vectors, the energies, $E_{s,av}$, $d_{\\min}$, the nearest neighbours and $d_{\\min}^2/E_{s,av}$.<br>'
      +'<b>Method.</b> All non-zero symbols are cosines at one frequency. Write each against the in-phase and quadrature basis.<br>'
@@ -665,10 +665,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D3-15', module:'M3', type:'band', src:'Final Q3',
   stem: BAND('$$s_k(t)=(2k-5)\\sqrt2\\cos(5000\\pi t),\\qquad k\\in\\{1,2,3,4\\},\\quad 0\\le t\\le 1.$$'),
-  parts:['[8 pts] Show that one basis function is enough for this set. Give it and show that it has unit energy.',
-         '[7 pts] Find the signal coordinates and draw the signal constellation.',
-         '[5 pts] Calculate the symbol energies and $E_{s,av}$.',
-         '[5 pts] Determine $d_{\\min}$, the number of nearest neighbours of each symbol, and their average.'],
+  parts:['Show that one basis function is enough for this set. Give it and show that it has unit energy.',
+         'Find the signal coordinates and draw the signal constellation.',
+         'Calculate the symbol energies and $E_{s,av}$.',
+         'Determine $d_{\\min}$, the number of nearest neighbours of each symbol, and their average.'],
   sol:'<b>Given.</b> Four scaled copies of one cosine at $f_c=2500$ Hz, with amplitudes $(2k-5)\\sqrt2=-3\\sqrt2,-\\sqrt2,\\sqrt2,3\\sqrt2$.<br>'
      +'<b>Find.</b> The basis, the coordinates, the energies, $E_{s,av}$, $d_{\\min}$ and the nearest neighbours.<br>'
      +'<b>Method.</b> Every symbol is a multiple of the same waveform, so one normalised copy of it is the whole basis.<br>'
@@ -686,10 +686,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D3-16', module:'M3', type:'band', src:'Final Q3',
   stem: BAND('$$s_k(t)=2\\cos\\Big(2000\\pi t+\\frac{k\\pi}{4}\\Big),\\qquad k\\in\\{0,1,\\ldots,7\\},\\quad 0\\le t\\le 1.$$'),
-  parts:['[8 pts] Find an orthonormal basis for the signal set and show that it is orthonormal.',
-         '[7 pts] Find the signal vectors and draw the signal constellation.',
-         '[5 pts] Calculate $E_{s,av}$ and the minimum distance $d_{\\min}$.',
-         '[5 pts] Give the number of nearest neighbours of each symbol and the ratio $d_{\\min}^2/E_{s,av}$.'],
+  parts:['Find an orthonormal basis for the signal set and show that it is orthonormal.',
+         'Find the signal vectors and draw the signal constellation.',
+         'Calculate $E_{s,av}$ and the minimum distance $d_{\\min}$.',
+         'Give the number of nearest neighbours of each symbol and the ratio $d_{\\min}^2/E_{s,av}$.'],
   sol:'<b>Given.</b> Eight cosines of amplitude $2$ at $f_c=1000$ Hz, with phases $k\\pi/4$.<br>'
      +'<b>Find.</b> The basis, the vectors, $E_{s,av}$, $d_{\\min}$, the nearest neighbours and $d_{\\min}^2/E_{s,av}$.<br>'
      +'<b>Method.</b> In-phase and quadrature basis, then read the points off a circle.<br>'
@@ -710,10 +710,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D3-17', module:'M3', type:'band', src:'Final Q3',
   stem: BAND('$$s_k(t)=\\sqrt{10}\\cos\\Big(6000\\pi t+\\frac{(2k-1)\\pi}{4}\\Big),\\qquad k\\in\\{1,2,3,4\\},\\quad 0\\le t\\le 1.$$'),
-  parts:['[8 pts] Find an orthonormal basis for the signal set and show that it is orthonormal.',
-         '[7 pts] Find the signal vectors and draw the signal constellation.',
-         '[5 pts] Calculate $E_{s,av}$.',
-         '[5 pts] Determine $d_{\\min}$, the number of nearest neighbours, and the largest distance between two symbols.'],
+  parts:['Find an orthonormal basis for the signal set and show that it is orthonormal.',
+         'Find the signal vectors and draw the signal constellation.',
+         'Calculate $E_{s,av}$.',
+         'Determine $d_{\\min}$, the number of nearest neighbours, and the largest distance between two symbols.'],
   sol:'<b>Given.</b> Four cosines of amplitude $\\sqrt{10}$ at $f_c=3000$ Hz, with phases $\\pi/4$, $3\\pi/4$, $5\\pi/4$ and $7\\pi/4$.<br>'
      +'<b>Find.</b> The basis, the vectors, $E_{s,av}$, $d_{\\min}$, the nearest neighbours and the largest distance.<br>'
      +'<b>Method.</b> In-phase and quadrature basis. Each phase is an odd multiple of $45^\\circ$, so the points sit on the diagonals.<br>'
@@ -733,10 +733,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D3-18', module:'M3', type:'band', src:'Final Q3',
   stem: BAND('$$\\begin{gathered}s_{m,n}(t)=\\sqrt2\\,\\big[(2m-5)\\cos(4000\\pi t)-(2n-5)\\sin(4000\\pi t)\\big],\\\\ m,n\\in\\{1,2,3,4\\},\\quad 0\\le t\\le 1.\\end{gathered}$$'),
-  parts:['[8 pts] Find an orthonormal basis for the signal set and show that it is orthonormal.',
-         '[6 pts] Find the signal vector of $s_{m,n}$ and draw the signal constellation.',
-         '[6 pts] Calculate the symbol energies that occur and $E_{s,av}$.',
-         '[5 pts] Determine $d_{\\min}$ and the number of nearest neighbours of a corner, an edge and an inner symbol. Give the average.'],
+  parts:['Find an orthonormal basis for the signal set and show that it is orthonormal.',
+         'Find the signal vector of $s_{m,n}$ and draw the signal constellation.',
+         'Calculate the symbol energies that occur and $E_{s,av}$.',
+         'Determine $d_{\\min}$ and the number of nearest neighbours of a corner, an edge and an inner symbol. Give the average.'],
   sol:'<b>Given.</b> Sixteen symbols, each a combination of $\\cos(4000\\pi t)$ and $\\sin(4000\\pi t)$ with weights from $\\{-3,-1,1,3\\}$.<br>'
      +'<b>Find.</b> The basis, the vectors, the energies, $E_{s,av}$, $d_{\\min}$ and the nearest neighbours.<br>'
      +'<b>Method.</b> The waveform is already written against the in-phase and quadrature functions. Read the coordinates off directly.<br>'
@@ -779,10 +779,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D3-20', module:'M3', type:'band', src:'Final Q3',
   stem: BAND('$$s_1(t)=0,\\qquad s_k(t)=2\\sqrt2\\cos\\Big(2000\\pi t+\\frac{2\\pi(k-2)}{3}\\Big),\\quad k\\in\\{2,3,4\\},\\qquad 0\\le t\\le 1.$$'),
-  parts:['[8 pts] Find an orthonormal basis for the signal set and show that it is orthonormal.',
-         '[7 pts] Find the four signal vectors and draw the signal constellation.',
-         '[5 pts] Calculate the symbol energies and $E_{s,av}$.',
-         '[5 pts] Determine $d_{\\min}$, the number of nearest neighbours of each symbol, and $d_{\\min}^2/E_{s,av}$.'],
+  parts:['Find an orthonormal basis for the signal set and show that it is orthonormal.',
+         'Find the four signal vectors and draw the signal constellation.',
+         'Calculate the symbol energies and $E_{s,av}$.',
+         'Determine $d_{\\min}$, the number of nearest neighbours of each symbol, and $d_{\\min}^2/E_{s,av}$.'],
   sol:'<b>Given.</b> A zero symbol and three cosines of amplitude $2\\sqrt2$ at $f_c=1000$ Hz, with phases $0$, $2\\pi/3$ and $4\\pi/3$.<br>'
      +'<b>Find.</b> The basis, the vectors, the energies, $E_{s,av}$, $d_{\\min}$, the nearest neighbours and $d_{\\min}^2/E_{s,av}$.<br>'
      +'<b>Method.</b> In-phase and quadrature basis. The zero symbol sits at the origin.<br>'
@@ -802,10 +802,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D3-21', module:'M3', type:'band', src:'Final Q3',
   stem: BAND('$$\\begin{aligned}s_1(t)&=3\\sqrt2\\cos(2000\\pi t), & s_3(t)&=-s_1(t),\\\\ s_2(t)&=3\\sqrt2\\cos(3000\\pi t), & s_4(t)&=-s_2(t),\\end{aligned}\\qquad 0\\le t\\le 1.$$'),
-  parts:['[8 pts] Show that $\\psi_1(t)=\\sqrt2\\cos(2000\\pi t)$ and $\\psi_2(t)=\\sqrt2\\cos(3000\\pi t)$ form an orthonormal basis for the set.',
-         '[7 pts] Find the signal vectors and draw the signal constellation.',
-         '[5 pts] Calculate the symbol energies and $E_{s,av}$.',
-         '[5 pts] Determine $d_{\\min}$ and the number of nearest neighbours of each symbol.'],
+  parts:['Show that $\\psi_1(t)=\\sqrt2\\cos(2000\\pi t)$ and $\\psi_2(t)=\\sqrt2\\cos(3000\\pi t)$ form an orthonormal basis for the set.',
+         'Find the signal vectors and draw the signal constellation.',
+         'Calculate the symbol energies and $E_{s,av}$.',
+         'Determine $d_{\\min}$ and the number of nearest neighbours of each symbol.'],
   sol:'<b>Given.</b> Two cosines of amplitude $3\\sqrt2$ at $1000$ Hz and $1500$ Hz, and their negatives, on $0\\le t\\le 1$.<br>'
      +'<b>Find.</b> The orthonormality of the basis, the vectors, the energies, $E_{s,av}$, $d_{\\min}$ and the nearest neighbours.<br>'
      +'<b>Method.</b> Here the two axes are two frequencies, not two phases. Each inner product becomes a sum of cosines by $2\\cos a\\cos b=\\cos(a-b)+\\cos(a+b)$.<br>'
@@ -830,10 +830,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
       +'$$\\begin{aligned}s_1(t)&=a(t)\\cos(2\\pi f_ct)-b(t)\\sin(2\\pi f_ct),\\\\ s_2(t)&=b(t)\\cos(2\\pi f_ct)-a(t)\\sin(2\\pi f_ct),\\\\ s_3(t)&=b(t)\\cos(2\\pi f_ct)+a(t)\\sin(2\\pi f_ct),\\\\ s_4(t)&=a(t)\\cos(2\\pi f_ct)+b(t)\\sin(2\\pi f_ct),\\end{aligned}\\qquad 0\\le t\\le 2.$$'
       +'Each unit interval holds a whole number of carrier cycles. According to the information given above,',
   figure: () => ROW([wave(U([3,1]),{T:2,name:'a(t)',color:C.in}), wave(U([1,-3]),{T:2,name:'b(t)',color:C.out})]),
-  parts:['[6 pts] Find the energies $E_a$, $E_b$ and the inner product $\\langle a,b\\rangle$. Show that on any unit interval $[k,k+1)$ the integrals of $\\cos^2(2\\pi f_ct)$ and $\\sin^2(2\\pi f_ct)$ are $\\tfrac12$, and the integral of $\\cos(2\\pi f_ct)\\sin(2\\pi f_ct)$ is $0$.',
-         '[8 pts] Write the energy of each $s_k(t)$ and the six inner products $\\langle s_j,s_k\\rangle$ in terms of $E_a$, $E_b$ and $\\langle a,b\\rangle$, and evaluate them. Can the set serve for 4-ary orthogonal signalling with coherent detection?',
-         '[6 pts] Find an orthonormal basis of four functions and the four signal vectors. Give the distance between two symbols and $d_{\\min}^2/E_{s,av}$.',
-         '[5 pts] The pulse $b(t)$ is replaced by $2b(t)$. Which pairs stay orthogonal? Give the inner product and the correlation coefficient of each other pair.'],
+  parts:['Find the energies $E_a$, $E_b$ and the inner product $\\langle a,b\\rangle$. Show that on any unit interval $[k,k+1)$ the integrals of $\\cos^2(2\\pi f_ct)$ and $\\sin^2(2\\pi f_ct)$ are $\\tfrac12$, and the integral of $\\cos(2\\pi f_ct)\\sin(2\\pi f_ct)$ is $0$.',
+         'Write the energy of each $s_k(t)$ and the six inner products $\\langle s_j,s_k\\rangle$ in terms of $E_a$, $E_b$ and $\\langle a,b\\rangle$, and evaluate them. Can the set serve for 4-ary orthogonal signalling with coherent detection?',
+         'Find an orthonormal basis of four functions and the four signal vectors. Give the distance between two symbols and $d_{\\min}^2/E_{s,av}$.',
+         'The pulse $b(t)$ is replaced by $2b(t)$. Which pairs stay orthogonal? Give the inner product and the correlation coefficient of each other pair.'],
   sol:'<b>Given.</b> $a(t)$ is $3$ on $[0,1)$ and $1$ on $[1,2]$. $b(t)$ is $1$ on $[0,1)$ and $-3$ on $[1,2]$. The carrier is at $f_c=1000$ Hz, so each unit interval holds $1000$ whole cycles.<br>'
      +'<b>Find.</b> $E_a$, $E_b$, $\\langle a,b\\rangle$, the energies and inner products of the $s_k$, a basis, the vectors, the distance, and the effect of replacing $b$ by $2b$.<br>'
      +'<b>Method.</b> Write $C=\\cos(2\\pi f_ct)$ and $S=\\sin(2\\pi f_ct)$. The product of two symbols splits into terms in $C^2$, $S^2$ and $CS$, each multiplied by two pulses. '
@@ -878,10 +878,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D3-23', module:'M3', type:'band', src:'Final Q3',
   stem: BAND('$$\\begin{gathered}s_{m,n}(t)=\\sqrt2\\,\\big[(2m-5)\\cos(2000\\pi t)-(2n-3)\\sin(2000\\pi t)\\big],\\\\ m\\in\\{1,2,3,4\\},\\ n\\in\\{1,2\\},\\quad 0\\le t\\le 1.\\end{gathered}$$'),
-  parts:['[8 pts] Find an orthonormal basis for the signal set and show that it is orthonormal.',
-         '[6 pts] Find the signal vectors and draw the signal constellation.',
-         '[5 pts] Calculate the symbol energies and $E_{s,av}$.',
-         '[6 pts] Determine $d_{\\min}$ and the number of nearest neighbours of each symbol. Give the average.'],
+  parts:['Find an orthonormal basis for the signal set and show that it is orthonormal.',
+         'Find the signal vectors and draw the signal constellation.',
+         'Calculate the symbol energies and $E_{s,av}$.',
+         'Determine $d_{\\min}$ and the number of nearest neighbours of each symbol. Give the average.'],
   sol:'<b>Given.</b> Eight symbols, each a combination of $\\cos(2000\\pi t)$ and $\\sin(2000\\pi t)$. The cosine weight is from $\\{-3,-1,1,3\\}$ and the sine weight from $\\{-1,1\\}$.<br>'
      +'<b>Find.</b> The basis, the vectors, the energies, $E_{s,av}$, $d_{\\min}$ and the nearest neighbours.<br>'
      +'<b>Method.</b> The waveforms are written against the in-phase and quadrature functions. Read the coordinates off directly.<br>'
@@ -899,10 +899,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D3-24', module:'M3', type:'band', src:'Final Q3',
   stem: BAND('$$s_k(t)=k\\sqrt2\\cos\\Big(3000\\pi t+\\frac{k\\pi}{2}\\Big),\\qquad k\\in\\{1,2,3,4\\},\\quad 0\\le t\\le 1.$$'),
-  parts:['[8 pts] Find an orthonormal basis for the signal set and show that it is orthonormal.',
-         '[7 pts] Find the four signal vectors and draw the signal constellation.',
-         '[4 pts] Calculate the symbol energies and $E_{s,av}$.',
-         '[6 pts] Calculate all six distances, $d_{\\min}$, and the number of nearest neighbours of each symbol.'],
+  parts:['Find an orthonormal basis for the signal set and show that it is orthonormal.',
+         'Find the four signal vectors and draw the signal constellation.',
+         'Calculate the symbol energies and $E_{s,av}$.',
+         'Calculate all six distances, $d_{\\min}$, and the number of nearest neighbours of each symbol.'],
   sol:'<b>Given.</b> Four cosines at $f_c=1500$ Hz. Symbol $k$ has amplitude $k\\sqrt2$ and phase $k\\pi/2$.<br>'
      +'<b>Find.</b> The basis, the vectors, the energies, $E_{s,av}$, the distances, $d_{\\min}$ and the nearest neighbours.<br>'
      +'<b>Method.</b> In-phase and quadrature basis. The amplitude grows while the phase turns, so the points trace a spiral.<br>'
@@ -926,10 +926,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
       +'The four equiprobable symbols have the signal vectors $\\mathbf{s}_1=(2,2)$, $\\mathbf{s}_2=(2,-2)$, $\\mathbf{s}_3=(-2,-2)$ and $\\mathbf{s}_4=(-2,2)$. According to the information given above,',
   figure: () => ROW([wave([[0,4,0.5]],{T:4,name:'\\psi_1(t)',color:C.mid,yt:[0,0.5]}),
                      wave([[0,2,0.5],[2,4,-0.5]],{T:4,name:'\\psi_2(t)',color:C.mid,yt:[-0.5,0,0.5]})]),
-  parts:['[6 pts] Show that $\\psi_1(t)$ and $\\psi_2(t)$ are orthonormal.',
-         '[8 pts] Write the four waveforms $s_1(t),\\ldots,s_4(t)$ and sketch them.',
-         '[6 pts] Calculate the energy of each waveform from its sketch, and $E_{s,av}$.',
-         '[5 pts] Determine $d_{\\min}$ and the number of nearest neighbours. Which pairs of waveforms are orthogonal?'],
+  parts:['Show that $\\psi_1(t)$ and $\\psi_2(t)$ are orthonormal.',
+         'Write the four waveforms $s_1(t),\\ldots,s_4(t)$ and sketch them.',
+         'Calculate the energy of each waveform from its sketch, and $E_{s,av}$.',
+         'Determine $d_{\\min}$ and the number of nearest neighbours. Which pairs of waveforms are orthogonal?'],
   sol:'<b>Given.</b> $\\psi_1=\\tfrac12$ on $[0,4]$. $\\psi_2=\\tfrac12$ on $[0,2)$ and $-\\tfrac12$ on $[2,4]$. Four vectors at the corners of a square.<br>'
      +'<b>Find.</b> Orthonormality, the waveforms, the energies, $E_{s,av}$, $d_{\\min}$, the nearest neighbours and the orthogonal pairs.<br>'
      +'<b>Method.</b> Synthesis: $s_i(t)=s_{i1}\\psi_1(t)+s_{i2}\\psi_2(t)$, added interval by interval.<br>'
@@ -956,10 +956,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   figure: () => cons([[1,1,'\\mathbf{s}_1','ne'],[-1,1,'\\mathbf{s}_2','nw'],[-1,-1,'\\mathbf{s}_3','sw'],[1,-1,'\\mathbf{s}_4','se'],
                       [3,0,'\\mathbf{s}_5','ne'],[0,3,'\\mathbf{s}_6','ne'],[-3,0,'\\mathbf{s}_7','nw'],[0,-3,'\\mathbf{s}_8','se']],
                      {xr:[-4,4],yr:[-4,4],w:460,h:440}),
-  parts:['[10 pts] Write each waveform in the form $s_k(t)=A_k\\cos(4000\\pi t+\\theta_k)$.',
-         '[5 pts] Calculate the symbol energies from the waveforms, and $E_{s,av}$.',
-         '[5 pts] Determine $d_{\\min}$ and the number of nearest neighbours of each symbol.',
-         '[5 pts] An eight-phase set with the same $E_{s,av}$ is proposed. Which of the two sets has the larger $d_{\\min}$?'],
+  parts:['Write each waveform in the form $s_k(t)=A_k\\cos(4000\\pi t+\\theta_k)$.',
+         'Calculate the symbol energies from the waveforms, and $E_{s,av}$.',
+         'Determine $d_{\\min}$ and the number of nearest neighbours of each symbol.',
+         'An eight-phase set with the same $E_{s,av}$ is proposed. Which of the two sets has the larger $d_{\\min}$?'],
   sol:'<b>Given.</b> The points $(\\pm1,\\pm1)$ and $(\\pm3,0)$, $(0,\\pm3)$, and the in-phase and quadrature basis at $f_c=2000$ Hz.<br>'
      +'<b>Find.</b> $A_k$ and $\\theta_k$, the energies, $E_{s,av}$, $d_{\\min}$, the nearest neighbours and a comparison with eight-phase keying.<br>'
      +'<b>Method.</b> Synthesis, then the identity $\\cos(x+\\theta)=\\cos\\theta\\cos x-\\sin\\theta\\sin x$ read backwards.<br>'
@@ -986,10 +986,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   stem:'Four equiprobable messages are transmitted by the waveforms shown below, with $T=4$ s. According to the information given above,',
   figure: () => ROW([wave(U([2,2,0,0]),{T:4,name:'s_1(t)',color:C.in}), wave(U([0,0,2,2]),{T:4,name:'s_2(t)',color:C.out}),
                      wave(U([1,1,1,1]),{T:4,name:'s_3(t)',color:C.mid}), wave(U([3,3,-1,-1]),{T:4,name:'s_4(t)',color:C.h})], 2),
-  parts:['[8 pts] Apply the Gram–Schmidt procedure in the order $s_1,s_2,s_3,s_4$. How many basis functions does the set need?',
-         '[6 pts] Find the four signal vectors and the energies.',
-         '[6 pts] Determine $d_{\\min}$ and the number of nearest neighbours of each symbol.',
-         '[5 pts] Draw the constellation, give $E_{s,av}$, and write $s_3(t)$ and $s_4(t)$ in terms of $s_1(t)$ and $s_2(t)$.'],
+  parts:['Apply the Gram–Schmidt procedure in the order $s_1,s_2,s_3,s_4$. How many basis functions does the set need?',
+         'Find the four signal vectors and the energies.',
+         'Determine $d_{\\min}$ and the number of nearest neighbours of each symbol.',
+         'Draw the constellation, give $E_{s,av}$, and write $s_3(t)$ and $s_4(t)$ in terms of $s_1(t)$ and $s_2(t)$.'],
   sol:'<b>Given.</b> On the unit intervals, $s_1$ takes $2,2,0,0$, $s_2$ takes $0,0,2,2$, $s_3$ takes $1,1,1,1$ and $s_4$ takes $3,3,-1,-1$.<br>'
      +'<b>Find.</b> The basis, its size, the vectors, the energies, $d_{\\min}$, the nearest neighbours, $E_{s,av}$ and the two relations.<br>'
      +'<b>Method.</b> Gram–Schmidt. Every waveform is constant on $[0,2)$ and on $[2,4]$, which suggests two axes at most.<br>'
@@ -1018,10 +1018,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   stem:'Consider an $M$-ary modulation scheme where the equiprobable symbols have the following waveforms:'
       +'$$s_k(t)=2(2k-5)\\cos\\Big(2000\\pi t+\\frac{\\pi}{3}\\Big),\\qquad k\\in\\{1,2,3,4\\},\\quad 0\\le t\\le 1.$$'
       +'The functions $\\psi_1(t)=\\sqrt2\\cos(2000\\pi t)$ and $\\psi_2(t)=-\\sqrt2\\sin(2000\\pi t)$ are orthonormal on this interval. According to the information given above,',
-  parts:['[8 pts] Find the signal vectors against $\\psi_1$ and $\\psi_2$, and draw the constellation.',
-         '[7 pts] Show that the set needs only one dimension. Give a single unit-energy basis function $\\phi(t)$ and the coordinates against it.',
-         '[5 pts] Calculate the symbol energies and $E_{s,av}$.',
-         '[5 pts] Determine $d_{\\min}$ and the number of nearest neighbours, in both descriptions.'],
+  parts:['Find the signal vectors against $\\psi_1$ and $\\psi_2$, and draw the constellation.',
+         'Show that the set needs only one dimension. Give a single unit-energy basis function $\\phi(t)$ and the coordinates against it.',
+         'Calculate the symbol energies and $E_{s,av}$.',
+         'Determine $d_{\\min}$ and the number of nearest neighbours, in both descriptions.'],
   sol:'<b>Given.</b> Four multiples of one cosine at $1000$ Hz with phase $\\pi/3$. The amplitudes are $2(2k-5)=-6,-2,2,6$.<br>'
      +'<b>Find.</b> The two-axis vectors, a one-axis basis, the coordinates, the energies, $E_{s,av}$, $d_{\\min}$ and the nearest neighbours.<br>'
      +'<b>Method.</b> Expand each symbol against $\\psi_1,\\psi_2$. Then notice that all four vectors point along one direction.<br>'
@@ -1044,10 +1044,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 { id:'D3-29', module:'M3', type:'compare', src:'MT Q3 (variant)',
   stem:'Two equiprobable messages are transmitted by the waveforms $s_1(t)$ and $s_2(t)$ shown below, with $T=3$ s. According to the information given above,',
   figure: () => ROW([wave(U([1,1,1]),{T:3,name:'s_1(t)',color:C.in}), wave(U([2,0,0]),{T:3,name:'s_2(t)',color:C.out})]),
-  parts:['[8 pts] Apply the Gram–Schmidt procedure starting with $s_1(t)$. Give the basis $\\{\\psi_1,\\psi_2\\}$ and the two signal vectors.',
-         '[8 pts] Apply it again starting with $s_2(t)$. Give the basis $\\{\\phi_1,\\phi_2\\}$ and the two signal vectors.',
-         '[5 pts] In each basis, calculate $E_1$, $E_2$, $d_{12}$ and $\\rho_{12}=\\langle\\mathbf{s}_1,\\mathbf{s}_2\\rangle/\\sqrt{E_1E_2}$.',
-         '[4 pts] Draw both constellations. State what changed between them and what did not.'],
+  parts:['Apply the Gram–Schmidt procedure starting with $s_1(t)$. Give the basis $\\{\\psi_1,\\psi_2\\}$ and the two signal vectors.',
+         'Apply it again starting with $s_2(t)$. Give the basis $\\{\\phi_1,\\phi_2\\}$ and the two signal vectors.',
+         'In each basis, calculate $E_1$, $E_2$, $d_{12}$ and $\\rho_{12}=\\langle\\mathbf{s}_1,\\mathbf{s}_2\\rangle/\\sqrt{E_1E_2}$.',
+         'Draw both constellations. State what changed between them and what did not.'],
   sol:'<b>Given.</b> $s_1=1$ on $[0,3]$. $s_2=2$ on $[0,1)$ and $0$ on $[1,3]$.<br>'
      +'<b>Find.</b> Two bases, the vectors in each, and the energies, distance and correlation in each.<br>'
      +'<b>Method.</b> Run Gram–Schmidt twice. Then compare the numbers the two runs produce.<br>'
@@ -1077,10 +1077,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   stem:'Three binary designs are proposed for two equiprobable messages on $[0,T]$, with $T=4$ s. Each design uses the pair of waveforms in one column below. According to the information given above,',
   figure: () => ROW([wave(U([1,1,1,1]),{T:4,name:'\\text{A: }s_0(t)',color:C.in}), wave(U([1,1,1,1]),{T:4,name:'\\text{B: }s_0(t)',color:C.in}), wave(U([0,0,0,0]),{T:4,name:'\\text{C: }s_0(t)',color:C.in,yr:[-0.5,2.4]}),
                      wave(U([-1,-1,-1,-1]),{T:4,name:'\\text{A: }s_1(t)',color:C.out}), wave(U([1,1,-1,-1]),{T:4,name:'\\text{B: }s_1(t)',color:C.out}), wave(U([2,2,0,0]),{T:4,name:'\\text{C: }s_1(t)',color:C.out})], 3),
-  parts:['[6 pts] Find an orthonormal basis for each design and give its number of dimensions.',
-         '[6 pts] Find the signal vectors and $E_{s,av}$ of each design.',
-         '[6 pts] Calculate the distance $d_{01}$ of each design.',
-         '[7 pts] Compare the designs by $d_{01}^2/E_{s,av}$. By how many decibels does the best design exceed the others?'],
+  parts:['Find an orthonormal basis for each design and give its number of dimensions.',
+         'Find the signal vectors and $E_{s,av}$ of each design.',
+         'Calculate the distance $d_{01}$ of each design.',
+         'Compare the designs by $d_{01}^2/E_{s,av}$. By how many decibels does the best design exceed the others?'],
   sol:'<b>Given.</b> Design A: $s_0=1$ on $[0,4]$ and $s_1=-s_0$. Design B: the same $s_0$, and $s_1=1$ on $[0,2)$, $-1$ on $[2,4]$. Design C: $s_0=0$, and $s_1=2$ on $[0,2)$.<br>'
      +'<b>Find.</b> The bases, the vectors, $E_{s,av}$, $d_{01}$ and the comparison.<br>'
      +'<b>Method.</b> Gram–Schmidt for each pair. Designs are fair to compare only at the same average energy, so compare $d_{01}^2/E_{s,av}$.<br>'

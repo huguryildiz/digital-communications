@@ -360,10 +360,10 @@ CONTENT.DRILLTYPES.M6 = [
 CONTENT.DRILL = CONTENT.DRILL.concat([
 { id:'D6-01', module:'M6', type:'hard', src:'Madhow P7.4',
   stem:'A binary code of rate $R=\\tfrac35$ is sent with Gray-coded QPSK over a passband channel of bandwidth $W$. The noise is white and Gaussian with two-sided power spectral density $N_0/2$. The symbols use ideal Nyquist pulses with no excess bandwidth, so the link sends $W$ symbols per second. With Gray coding, each QPSK symbol carries two coded bits, and each coded bit is detected like one BPSK bit. Let $E_b$ be the energy per information bit, $E_c$ the energy per coded bit and $E_s$ the energy per symbol. A hard decision on each coded bit turns the link into a binary symmetric channel (BSC) with crossover probability $p=Q\\big(\\sqrt{2E_c/N_0}\\big)$. Here $Q(x)$ is the probability that a zero-mean, unit-variance Gaussian variable exceeds $x$. The binary entropy is $H_b(p)=-p\\log_2 p-(1-p)\\log_2(1-p)$. Use $Q(1.302)=0.0965$, $Q(1.409)=0.0794$ and $H_b(0.0965)=0.4578$. This entropy reaches $H_b(p)=0.4$ at $p=0.0794$.',
-  parts:['[5 pts] Express $E_c$ and $E_s$ in terms of $E_b$, and $E_s/N_0$ in dB in terms of $E_b/N_0$ in dB. Find the spectral efficiency $r=R_b/W$ of the link.',
-         '[6 pts] The receiver keeps its matched-filter outputs as they are, which is a soft decision. Find the Shannon limit at efficiency $r$, the least $E_b/N_0$ in dB for reliable transmission.',
-         '[8 pts] The receiver makes hard decisions instead. Reliable transmission then needs the BSC capacity $1-H_b(p)$ to be at least $R$. Find the least $E_b/N_0$ in dB with hard decisions, and the loss in dB against part (b).',
-         '[6 pts] The link runs at $E_b/N_0=1.5$ dB. Find $p$ and the capacity of the BSC. Decide whether reliable transmission is possible with soft decisions and with hard decisions, and give each margin or shortfall in dB.'],
+  parts:['Express $E_c$ and $E_s$ in terms of $E_b$, and $E_s/N_0$ in dB in terms of $E_b/N_0$ in dB. Find the spectral efficiency $r=R_b/W$ of the link.',
+         'The receiver keeps its matched-filter outputs as they are, which is a soft decision. Find the Shannon limit at efficiency $r$, the least $E_b/N_0$ in dB for reliable transmission.',
+         'The receiver makes hard decisions instead. Reliable transmission then needs the BSC capacity $1-H_b(p)$ to be at least $R$. Find the least $E_b/N_0$ in dB with hard decisions, and the loss in dB against part (b).',
+         'The link runs at $E_b/N_0=1.5$ dB. Find $p$ and the capacity of the BSC. Decide whether reliable transmission is possible with soft decisions and with hard decisions, and give each margin or shortfall in dB.'],
   figSol: () => figHard({R:0.6, Rlab:'\\tfrac35', soft:0.34, hard:2.19, at:1.5,
     loss:'1.85\\ \\mathrm{dB}', softLab:'0.34', hardLab:'2.19', cs:'0.7152', ch:'0.5422'}),
   sol:'<b>Given.</b> A code of rate $R=\\tfrac35$ on Gray-coded QPSK, $W$ symbols per second in a band $W$, and noise of two-sided density $N_0/2$. A hard decision gives a BSC with $p=Q\\big(\\sqrt{2E_c/N_0}\\big)$. The statement gives two values of $Q$ and two points of $H_b$.<br>'
@@ -469,9 +469,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D6-02', module:'M6', type:'fx', src:'Final Q4',
   stem:'Let $X$ be a discrete memoryless source (DMS) which is modeled as a uniform random variable taking the integer values between $0$ and $9$. Let $Y\\triangleq X^{2}\\;(\\bmod 10)$ be another DMS which is a function of $X$. Here $a\\bmod m$ denotes the remainder of $a$ on division by $m$, taken in $\\{0,1,\\ldots,m-1\\}$. In words, $Y$ is the last decimal digit of $X^{2}$.',
-  parts:['[10 pts] Calculate the entropy of the source, $Y$.',
-         '[10 pts] Design a <em>binary</em> Huffman code for the source, $Y$.',
-         '[5 pts] Calculate the coding efficiency of the Huffman code designed in part (b).'],
+  parts:['Calculate the entropy of the source, $Y$.',
+         'Design a <em>binary</em> Huffman code for the source, $Y$.',
+         'Calculate the coding efficiency of the Huffman code designed in part (b).'],
   figSol: () => figPmf({v:[0,1,4,5,6,9],n:[1,2,2,1,2,2],D:10,name:'Y'})+figHuff({n:[1,2,2,1,2,2],D:10,name:'Y',lab:['0','1','4','5','6','9'],codes:['010','10','11','011','000','001'],order:['01','00','1','0','']}),
   sol:'<b>Given.</b> $X$ is uniform on $0,1,\\ldots,9$, and $Y=X^{2}\\bmod 10$.<br>'
      +'<b>Find.</b> $H(Y)$, a binary Huffman code for $Y$, and its coding efficiency.<br>'
@@ -545,9 +545,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D6-03', module:'M6', type:'fx', src:'Final Q4',
   stem:'Let $X$ be a discrete memoryless source (DMS) which is modeled as a uniform random variable taking the integer values between $1$ and $12$. Let $Y\\triangleq \\left\\lfloor 12/X\\right\\rfloor$ be another DMS which is a function of $X$. Here $\\lfloor u\\rfloor$ is the largest integer not greater than $u$.',
-  parts:['[10 pts] Calculate the entropy of the source, $Y$.',
-         '[10 pts] Design a <em>binary</em> Huffman code for the source, $Y$.',
-         '[5 pts] Calculate the coding efficiency of the Huffman code designed in part (b).'],
+  parts:['Calculate the entropy of the source, $Y$.',
+         'Design a <em>binary</em> Huffman code for the source, $Y$.',
+         'Calculate the coding efficiency of the Huffman code designed in part (b).'],
   figSol: () => figPmf({v:[1,2,3,4,6,12],n:[6,2,1,1,1,1],D:12,name:'Y'})+figHuff({n:[6,2,1,1,1,1],D:12,name:'Y',lab:['1','2','3','4','6','12'],codes:['1','001','010','011','0000','0001'],order:['000','01','00','0','']}),
   sol:'<b>Given.</b> $X$ is uniform on $1,2,\\ldots,12$, and $Y=\\lfloor 12/X\\rfloor$.<br>'
      +'<b>Find.</b> $H(Y)$, a binary Huffman code for $Y$, and its coding efficiency.<br>'
@@ -621,9 +621,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D6-04', module:'M6', type:'fx', src:'Final Q4',
   stem:'Let $X$ be a discrete memoryless source (DMS) which is modeled as a uniform random variable taking the integer values between $0$ and $15$. Each value of $X$ is written as a four-bit binary word. Let $Y$ be the number of ones in that word. $Y$ is another DMS which is a function of $X$.',
-  parts:['[10 pts] Calculate the entropy of the source, $Y$.',
-         '[10 pts] Design a <em>binary</em> Huffman code for the source, $Y$.',
-         '[5 pts] Calculate the coding efficiency of the Huffman code designed in part (b).'],
+  parts:['Calculate the entropy of the source, $Y$.',
+         'Design a <em>binary</em> Huffman code for the source, $Y$.',
+         'Calculate the coding efficiency of the Huffman code designed in part (b).'],
   figSol: () => figPmf({v:[0,1,2,3,4],n:[1,4,6,4,1],D:16,name:'Y'})+figHuff({n:[1,4,6,4,1],D:16,name:'Y',lab:['0','1','2','3','4'],codes:['110','01','00','10','111'],order:['11','1','0','']}),
   sol:'<b>Given.</b> $X$ is uniform on $0,\\ldots,15$, and $Y$ is the number of ones in the four-bit word of $X$.<br>'
      +'<b>Find.</b> $H(Y)$, a binary Huffman code for $Y$, and its coding efficiency.<br>'
@@ -694,9 +694,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D6-05', module:'M6', type:'fx', src:'Final Q4',
   stem:'Let $X$ be a discrete memoryless source (DMS) which is modeled as a uniform random variable taking the integer values between $-5$ and $5$. Let $Y\\triangleq \\left\\lceil |X|/2\\right\\rceil$ be another DMS which is a function of $X$. Here $\\lceil u\\rceil$ is the smallest integer not less than $u$.',
-  parts:['[10 pts] Calculate the entropy of the source, $Y$.',
-         '[10 pts] Design a <em>binary</em> Huffman code for the source, $Y$.',
-         '[5 pts] Calculate the coding efficiency of the Huffman code designed in part (b).'],
+  parts:['Calculate the entropy of the source, $Y$.',
+         'Design a <em>binary</em> Huffman code for the source, $Y$.',
+         'Calculate the coding efficiency of the Huffman code designed in part (b).'],
   figSol: () => figPmf({v:[0,1,2,3],n:[1,4,4,2],D:11,name:'Y'})+figHuff({n:[1,4,4,2],D:11,name:'Y',lab:['0','1','2','3'],codes:['011','1','00','010'],order:['01','0','']}),
   sol:'<b>Given.</b> $X$ is uniform on the eleven integers $-5,\\ldots,5$, and $Y=\\lceil |X|/2\\rceil$.<br>'
      +'<b>Find.</b> $H(Y)$, a binary Huffman code for $Y$, and its coding efficiency.<br>'
@@ -763,10 +763,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D6-06', module:'M6', type:'coding', src:'Madhow 7.1 and P7.12',
   stem:'A binary symmetric channel (BSC) flips each transmitted bit with probability $p=0.05$, independently of the other bits. A message of $k=20$ information bits is sent over it. A block error occurs when at least one of the $20$ decoded bits is wrong. A repetition code of length $n$ sends each information bit $n$ times. The receiver then decides each bit by a majority vote over its $n$ received copies. Use $H_b(0.05)=0.2864$ bits, where $H_b(p)=-p\\log_2 p-(1-p)\\log_2(1-p)$.',
-  parts:['[6 pts] The $20$ bits are sent without coding. Calculate the probability of a block error.',
-         '[9 pts] Each bit is sent with a repetition code of length $n=3$, and then of length $n=5$. For each $n$, calculate the bit error probability after the majority vote and the block error probability.',
-         '[5 pts] Give the code rate of each repetition code, and the number of channel bits it uses for the $20$ information bits.',
-         '[5 pts] Calculate the capacity of the channel. Compare the rates of part (c) with it, and state what the channel coding theorem allows.'],
+  parts:['The $20$ bits are sent without coding. Calculate the probability of a block error.',
+         'Each bit is sent with a repetition code of length $n=3$, and then of length $n=5$. For each $n$, calculate the bit error probability after the majority vote and the block error probability.',
+         'Give the code rate of each repetition code, and the number of channel bits it uses for the $20$ information bits.',
+         'Calculate the capacity of the channel. Compare the rates of part (c) with it, and state what the channel coding theorem allows.'],
   figSol: () => figFlips({n:3, p:0.05, h:220, lab:['0.857','0.135','7.13\\times10^{-3}','1.25\\times10^{-4}'],
                           fail:'P_3=7.25\\times10^{-3}'})
               + figFlips({n:5, p:0.05, h:240, lab:['0.774','0.204','0.0214','1.13\\times10^{-3}','2.97\\times10^{-5}','3.13\\times10^{-7}'],
@@ -852,10 +852,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D6-07', module:'M6', type:'capacity', src:'Madhow Ex 7.3.1',
   stem:'A company claims a modem that sends $R_b=60$ Mb/s in a bandwidth of $W=10$ MHz. The received signal power is $P=1.8\\times10^{-11}$ W. The noise is white and Gaussian with two-sided power spectral density $N_0/2$, where $N_0=4.0\\times10^{-20}$ W/Hz. Treat the link as an ideal bandlimited channel with additive white Gaussian noise and no excess bandwidth.',
-  parts:['[6 pts] Find the spectral efficiency $r=R_b/W$ of the claimed link. Then find the Shannon limit at that efficiency, the least $E_b/N_0$ in dB at which any system with it works reliably.',
-         '[6 pts] Calculate the energy per bit at the receiver and the actual $E_b/N_0$ in dB.',
-         '[6 pts] Decide whether the claim can be true, and by how many dB it misses or clears the limit. Confirm the verdict with the capacity $C=W\\log_2\\!\\left(1+P/(N_0W)\\right)$.',
-         '[7 pts] The company then says the modem uses two separate channels at once, for example two pairs of antennas. Each has bandwidth $10$ MHz and the same $N_0$, and the power and the bits are split equally. Repeat the test for one channel and give the new verdict.'],
+  parts:['Find the spectral efficiency $r=R_b/W$ of the claimed link. Then find the Shannon limit at that efficiency, the least $E_b/N_0$ in dB at which any system with it works reliably.',
+         'Calculate the energy per bit at the receiver and the actual $E_b/N_0$ in dB.',
+         'Decide whether the claim can be true, and by how many dB it misses or clears the limit. Confirm the verdict with the capacity $C=W\\log_2\\!\\left(1+P/(N_0W)\\right)$.',
+         'The company then says the modem uses two separate channels at once, for example two pairs of antennas. Each has bandwidth $10$ MHz and the same $N_0$, and the power and the bits are split equally. Repeat the test for one channel and give the new verdict.'],
   figSol: () => figLimit({xr:[-4,14], yr:[0,7], h:320, imp:[3.2,4.9], floor:0.45,
     gaps:[{r:6, x:8.75, c:C.err, lab:'1.46\\ \\mathrm{dB}\\ \\text{short}', pos:[10.6, 5.5, 'start']},
           {r:3, x:8.75, c:C.mid, lab:'5.07\\ \\mathrm{dB}\\ \\text{to spare}', dx:0.7}],
@@ -947,9 +947,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D6-08', module:'M6', type:'fx', src:'Final Q4',
   stem:'Let $X$ be a discrete memoryless source (DMS) which is modeled as a uniform random variable taking the integer values between $-7$ and $7$. Let $Y\\triangleq \\max(X,0)$ be another DMS which is a function of $X$.',
-  parts:['[10 pts] Calculate the entropy of the source, $Y$.',
-         '[10 pts] Design a <em>binary</em> Huffman code for the source, $Y$.',
-         '[5 pts] Calculate the coding efficiency of the Huffman code designed in part (b).'],
+  parts:['Calculate the entropy of the source, $Y$.',
+         'Design a <em>binary</em> Huffman code for the source, $Y$.',
+         'Calculate the coding efficiency of the Huffman code designed in part (b).'],
   figSol: () => figPmf({v:[0,1,2,3,4,5,6,7],n:[8,1,1,1,1,1,1,1],D:15,name:'Y'})+figHuff({n:[8,1,1,1,1,1,1,1],D:15,name:'Y',lab:['0','1','2','3','4','5','6','7'],codes:['0','111','1000','1001','1010','1011','1100','1101'],order:['110','101','100','11','10','1','']}),
   sol:'<b>Given.</b> $X$ is uniform on the fifteen integers $-7,\\ldots,7$, and $Y=\\max(X,0)$.<br>'
      +'<b>Find.</b> $H(Y)$, a binary Huffman code for $Y$, and its coding efficiency.<br>'
@@ -1028,9 +1028,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D6-09', module:'M6', type:'fxz', src:'Final Q4',
   stem:'Let $X$ be a discrete memoryless source (DMS) which is modeled as a uniform random variable on the alphabet $\\{1,2,3\\}$. Let $Z$ be a random variable (independent of $X$) with the probability mass function $p_Z(z)=c\\left(\\frac{1}{3}\\right)^{z}$ for the integers $-1\\le z\\le 1$. It is zero otherwise, and $c$ is a constant. Finally, let $Y\\triangleq X\\times Z$ be another DMS which is a function of both $X$ and $Z$.',
-  parts:['[10 pts] Calculate the entropy of the source, $Y$.',
-         '[10 pts] Design a <em>binary</em> Huffman code for the source, $Y$.',
-         '[5 pts] Calculate the coding efficiency of the Huffman code designed in part (b).'],
+  parts:['Calculate the entropy of the source, $Y$.',
+         'Design a <em>binary</em> Huffman code for the source, $Y$.',
+         'Calculate the coding efficiency of the Huffman code designed in part (b).'],
   figSol: () => figPmf({v:[-3,-2,-1,0,1,2,3],n:[9,9,9,9,1,1,1],D:39,name:'Y'})+figHuff({n:[9,9,9,9,1,1,1],D:39,name:'Y',lab:['-3','-2','-1','0','1','2','3'],codes:['01','10','11','000','0011','00100','00101'],order:['0010','001','00','1','0','']}),
   sol:'<b>Given.</b> $X$ uniform on $\\{1,2,3\\}$, $p_Z(z)=c\\left(\\tfrac13\\right)^{z}$ for $z=-1,0,1$, independent, and $Y=XZ$.<br>'
      +'<b>Find.</b> $c$, $H(Y)$, a binary Huffman code for $Y$, and its coding efficiency.<br>'
@@ -1113,10 +1113,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D6-10', module:'M6', type:'hamming', src:'Madhow P7.7 and P7.8',
   stem:'A $(7,4)$ Hamming code places four data bits $d_1d_2d_3d_4$ at positions $1$ to $4$ of a codeword $c_1c_2\\cdots c_7$. Its three parity bits sit at positions $5$ to $7$. The code is defined by the parity-check matrix $$H=\\begin{bmatrix}1&1&1&0&1&0&0\\\\0&1&1&1&0&1&0\\\\1&0&1&1&0&0&1\\end{bmatrix}$$ Row $j$ of $H$ is parity check $j$. It covers the positions where the row holds a $1$, and it passes when the bits there hold an even number of ones. A codeword passes all three checks. For a received word, the syndrome $s_1s_2s_3$ has $s_j=1$ when check $j$ fails. The code is used on a binary symmetric channel (BSC) with crossover probability $p=0.02$.',
-  parts:['[7 pts] Write each parity bit in terms of the data bits. Find the codewords for the data $\\mathtt{1010}$ and $\\mathtt{0111}$. Decide whether $\\mathtt{1100011}$ and $\\mathtt{0101100}$ are codewords.',
-         '[5 pts] Find the minimum distance $d_{\\min}$ of the code and the number $t$ of errors it can correct.',
-         '[7 pts] Write the syndrome of no error and of a single error at each position. Use this table to decode the received word $\\mathtt{1101110}$: give its syndrome, the codeword and the data bits.',
-         '[6 pts] The decoder of part (c) flips the bit its table names. Find the probability that a word is decoded correctly, the probability that no table entry fits, and the probability of a decoding error.'],
+  parts:['Write each parity bit in terms of the data bits. Find the codewords for the data $\\mathtt{1010}$ and $\\mathtt{0111}$. Decide whether $\\mathtt{1100011}$ and $\\mathtt{0101100}$ are codewords.',
+         'Find the minimum distance $d_{\\min}$ of the code and the number $t$ of errors it can correct.',
+         'Write the syndrome of no error and of a single error at each position. Use this table to decode the received word $\\mathtt{1101110}$: give its syndrome, the codeword and the data bits.',
+         'The decoder of part (c) flips the bit its table names. Find the probability that a word is decoded correctly, the probability that no table entry fits, and the probability of a decoding error.'],
   figSol: () => figSyn({r:'1101110', err:2, H:['1110100','0111010','1011001'], s:'110', c:'1001110'})
               + figFlips({n:7, p:0.02, t:2, h:260, room:3.2, head:'\\text{two or more flips: a wrong codeword}',
                           lab:['0.868','0.124','7.59\\times10^{-3}','2.58\\times10^{-4}','5.27\\times10^{-6}','6.45\\times10^{-8}','4.39\\times10^{-10}','1.28\\times10^{-12}'],
@@ -1227,9 +1227,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D6-11', module:'M6', type:'fxz', src:'Final Q4',
   stem:'Let $X$ be a discrete memoryless source (DMS) which is modeled as a uniform random variable on the alphabet $\\{0,1,2,3\\}$. Let $Z$ be a random variable (independent of $X$) with the probability mass function $p_Z(z)=c\\left(\\frac{1}{2}\\right)^{z}$ for the integers $0\\le z\\le 2$. It is zero otherwise, and $c$ is a constant. Finally, let $Y\\triangleq \\max(X,Z)$ be another DMS which is a function of both $X$ and $Z$.',
-  parts:['[10 pts] Calculate the entropy of the source, $Y$.',
-         '[10 pts] Design a <em>binary</em> Huffman code for the source, $Y$.',
-         '[5 pts] Calculate the coding efficiency of the Huffman code designed in part (b).'],
+  parts:['Calculate the entropy of the source, $Y$.',
+         'Design a <em>binary</em> Huffman code for the source, $Y$.',
+         'Calculate the coding efficiency of the Huffman code designed in part (b).'],
   figSol: () => figPmf({v:[0,1,2,3],n:[4,8,9,7],D:28,name:'Y'})+figHuff({n:[4,8,9,7],D:28,name:'Y',lab:['0','1','2','3'],codes:['11','01','00','10'],order:['1','0','']}),
   sol:'<b>Given.</b> $X$ uniform on $\\{0,1,2,3\\}$, $p_Z(z)=c\\left(\\tfrac12\\right)^{z}$ for $z=0,1,2$, independent, and $Y=\\max(X,Z)$.<br>'
      +'<b>Find.</b> $c$, $H(Y)$, a binary Huffman code for $Y$, and its coding efficiency.<br>'
@@ -1306,9 +1306,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 { id:'D6-12', module:'M6', type:'fxz', src:'Final Q4',
   stem:'Let $X$ be a discrete memoryless source (DMS) which is modeled as a uniform random variable on the alphabet $\\{0,1,2,3\\}$. Let $Z$ be a random variable (independent of $X$) with the probability mass function $p_Z(z)=c\\,2^{-|z|}$ for the integers $-1\\le z\\le 1$. It is zero otherwise, and $c$ is a constant. The pmf is shown below. Finally, let $Y\\triangleq X+Z$ be another DMS which is a function of both $X$ and $Z$.',
   figure: () => figGiven({v:[-1,0,1],h:[0.5,1,0.5],lab:['\\tfrac{c}{2}','c','\\tfrac{c}{2}'],name:'Z'}),
-  parts:['[10 pts] Calculate the entropy of the source, $Y$.',
-         '[10 pts] Design a <em>binary</em> Huffman code for the source, $Y$.',
-         '[5 pts] Calculate the coding efficiency of the Huffman code designed in part (b).'],
+  parts:['Calculate the entropy of the source, $Y$.',
+         'Design a <em>binary</em> Huffman code for the source, $Y$.',
+         'Calculate the coding efficiency of the Huffman code designed in part (b).'],
   figSol: () => figPmf({v:[-1,0,1,2,3,4],n:[1,3,4,4,3,1],D:16,name:'Y'})+figHuff({n:[1,3,4,4,3,1],D:16,name:'Y',lab:['-1','0','1','2','3','4'],codes:['0010','11','01','10','000','0011'],order:['001','00','1','0','']}),
   sol:'<b>Given.</b> $X$ uniform on $\\{0,1,2,3\\}$, $p_Z(z)=c\\,2^{-|z|}$ for $z=-1,0,1$, independent, and $Y=X+Z$.<br>'
      +'<b>Find.</b> $c$, $H(Y)$, a binary Huffman code for $Y$, and its coding efficiency.<br>'
@@ -1388,9 +1388,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 { id:'D6-13', module:'M6', type:'fxz', src:'Final Q4',
   stem:'Let $X$ be a discrete memoryless source (DMS) which is modeled as a uniform random variable on the integers $0,1,\\ldots,5$. Let $Z$ be a random variable (independent of $X$) with the probability mass function $p_Z(z)=c\\,z$ for $z\\in\\{1,3\\}$. It is zero otherwise, and $c$ is a constant. The pmf is shown below. Finally, let $Y\\triangleq \\left\\lfloor X/Z\\right\\rfloor$ be another DMS which is a function of both $X$ and $Z$. Here $\\lfloor u\\rfloor$ is the largest integer not greater than $u$.',
   figure: () => figGiven({v:[1,3],h:[1,3],lab:['c','3c'],name:'Z'}),
-  parts:['[10 pts] Calculate the entropy of the source, $Y$.',
-         '[10 pts] Design a <em>binary</em> Huffman code for the source, $Y$.',
-         '[5 pts] Calculate the coding efficiency of the Huffman code designed in part (b).'],
+  parts:['Calculate the entropy of the source, $Y$.',
+         'Design a <em>binary</em> Huffman code for the source, $Y$.',
+         'Calculate the coding efficiency of the Huffman code designed in part (b).'],
   figSol: () => figPmf({v:[0,1,2,3,4,5],n:[10,10,1,1,1,1],D:24,name:'Y'})+figHuff({n:[10,10,1,1,1,1],D:24,name:'Y',lab:['0','1','2','3','4','5'],codes:['1','00','0100','0101','0110','0111'],order:['011','010','01','0','']}),
   sol:'<b>Given.</b> $X$ uniform on $\\{0,\\ldots,5\\}$, $p_Z(z)=cz$ for $z=1,3$, independent, and $Y=\\lfloor X/Z\\rfloor$.<br>'
      +'<b>Find.</b> $c$, $H(Y)$, a binary Huffman code for $Y$, and its coding efficiency.<br>'
@@ -1471,9 +1471,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D6-14', module:'M6', type:'capacity', src:'Madhow P7.2',
   stem:'Three uncoded constellations with Gray coding are used on a channel with additive white Gaussian noise: QPSK, 8-PSK and 16-QAM. Each must reach the bit error probability $P_b=10^{-4}$. With ideal Nyquist pulses and no excess bandwidth, an $M$-point constellation sends $\\log_2 M$ bits per second per hertz. The nearest-neighbour approximations of the bit error probability are $P_b=Q\\big(\\sqrt{2E_b/N_0}\\big)$ for QPSK, $P_b\\approx\\tfrac{2}{3}\\,Q\\big(\\sqrt{0.879\\,E_b/N_0}\\big)$ for 8-PSK and $P_b\\approx\\tfrac{3}{4}\\,Q\\big(\\sqrt{0.8\\,E_b/N_0}\\big)$ for 16-QAM. Here $Q(x)$ is the probability that a zero-mean, unit-variance Gaussian variable exceeds $x$. A table gives $Q(3.719)=1.00\\times10^{-4}$, $Q(3.646)=1.33\\times10^{-4}$ and $Q(3.615)=1.50\\times10^{-4}$.',
-  parts:['[10 pts] For each constellation, find the $E_b/N_0$ in dB that gives $P_b=10^{-4}$.',
-         '[8 pts] Give the spectral efficiency $r$ of each constellation. Then find the Shannon limit at that efficiency, the least $E_b/N_0$ in dB at which any system with it works reliably.',
-         '[7 pts] How far is each constellation from its Shannon limit, in dB? Name the constellation farthest from its limit, and give that gap as a ratio of energies per bit.'],
+  parts:['For each constellation, find the $E_b/N_0$ in dB that gives $P_b=10^{-4}$.',
+         'Give the spectral efficiency $r$ of each constellation. Then find the Shannon limit at that efficiency, the least $E_b/N_0$ in dB at which any system with it works reliably.',
+         'How far is each constellation from its Shannon limit, in dB? Name the constellation farthest from its limit, and give that gap as a ratio of energies per bit.'],
   figSol: () => figLimit({xr:[-4,16], yr:[0,5], h:320, imp:[2.2,4.3], floor:0.35,
     gaps:[{r:2, x:8.40, c:C.mid, lab:'6.64\\ \\mathrm{dB}'},
           {r:3, x:11.72, c:C.mid, lab:'8.04\\ \\mathrm{dB}'},
@@ -1539,9 +1539,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D6-15', module:'M6', type:'fxz', src:'Final Q4',
   stem:'Let $X$ be a discrete memoryless source (DMS) which is modeled as a uniform random variable on the alphabet $\\{0,1,2,3\\}$. Let $Z$ be a random variable (independent of $X$) with the probability mass function $p_Z(z)=c\\left(\\frac{1}{2}\\right)^{z}$ for the integers $0\\le z\\le 3$. It is zero otherwise, and $c$ is a constant. Finally, let $Y\\triangleq \\min(X,Z)$ be another DMS which is a function of both $X$ and $Z$.',
-  parts:['[10 pts] Calculate the entropy of the source, $Y$.',
-         '[10 pts] Design a <em>binary</em> Huffman code for the source, $Y$.',
-         '[5 pts] Calculate the coding efficiency of the Huffman code designed in part (b).'],
+  parts:['Calculate the entropy of the source, $Y$.',
+         'Design a <em>binary</em> Huffman code for the source, $Y$.',
+         'Calculate the coding efficiency of the Huffman code designed in part (b).'],
   figSol: () => figPmf({v:[0,1,2,3],n:[39,15,5,1],D:60,name:'Y'})+figHuff({n:[39,15,5,1],D:60,name:'Y',lab:['0','1','2','3'],codes:['0','10','110','111'],order:['11','1','']}),
   sol:'<b>Given.</b> $X$ uniform on $\\{0,1,2,3\\}$, $p_Z(z)=c\\left(\\tfrac12\\right)^{z}$ for $z=0,\\ldots,3$, independent, and $Y=\\min(X,Z)$.<br>'
      +'<b>Find.</b> $c$, $H(Y)$, a binary Huffman code for $Y$, and its coding efficiency.<br>'
@@ -1617,9 +1617,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D6-16', module:'M6', type:'sum', src:'Final Q4',
   stem:'Consider two <em>independent</em> discrete memoryless sources, $X$ and $Y$. The source $X$ is described by the alphabet $\\mathcal{X}=\\{0,1,2\\}$, where $P(X=0)=2P(X=1)=4P(X=2)$. Similarly, the source $Y$ is described by the alphabet $\\mathcal{Y}=\\{0,1,2,3\\}$, where each symbol is generated with equal probability. Let $Z\\triangleq X+Y$ be another discrete memoryless source.',
-  parts:['[10 pts] Calculate the entropy of the source, $Z$.',
-         '[10 pts] Design a <em>binary</em> Huffman code for the source, $Z$.',
-         '[5 pts] Calculate the coding efficiency of the Huffman code designed in part (b).'],
+  parts:['Calculate the entropy of the source, $Z$.',
+         'Design a <em>binary</em> Huffman code for the source, $Z$.',
+         'Calculate the coding efficiency of the Huffman code designed in part (b).'],
   figSol: () => figPmf({v:[0,1,2,3,4,5],n:[4,6,7,7,3,1],D:28,name:'Z'})+figHuff({n:[4,6,7,7,3,1],D:28,name:'Z',lab:['0','1','2','3','4','5'],codes:['001','11','01','10','0000','0001'],order:['000','00','1','0','']}),
   sol:'<b>Given.</b> $P(X=0)=2P(X=1)=4P(X=2)$ on $\\{0,1,2\\}$, $Y$ uniform on $\\{0,1,2,3\\}$, independent, and $Z=X+Y$.<br>'
      +'<b>Find.</b> $H(Z)$, a binary Huffman code for $Z$, and its coding efficiency.<br>'
@@ -1695,9 +1695,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D6-17', module:'M6', type:'sum', src:'Final Q4',
   stem:'Consider two <em>independent</em> discrete memoryless sources, $X$ and $Y$. The source $X$ is described by the alphabet $\\mathcal{X}=\\{1,2,3\\}$, where each symbol is generated with equal probability. Similarly, the source $Y$ is described by the alphabet $\\mathcal{Y}=\\{1,2,3\\}$, where $P(Y=1)=2P(Y=2)=2P(Y=3)$. Let $Z\\triangleq X\\times Y$ be another discrete memoryless source.',
-  parts:['[10 pts] Calculate the entropy of the source, $Z$.',
-         '[10 pts] Design a <em>binary</em> Huffman code for the source, $Z$.',
-         '[5 pts] Calculate the coding efficiency of the Huffman code designed in part (b).'],
+  parts:['Calculate the entropy of the source, $Z$.',
+         'Design a <em>binary</em> Huffman code for the source, $Z$.',
+         'Calculate the coding efficiency of the Huffman code designed in part (b).'],
   figSol: () => figPmf({v:[1,2,3,4,6,9],n:[2,3,3,1,2,1],D:12,name:'Z'})+figHuff({n:[2,3,3,1,2,1],D:12,name:'Z',lab:['1','2','3','4','6','9'],codes:['000','01','10','110','001','111'],order:['11','00','1','0','']}),
   sol:'<b>Given.</b> $X$ uniform on $\\{1,2,3\\}$, $P(Y=1)=2P(Y=2)=2P(Y=3)$, independent, and $Z=XY$.<br>'
      +'<b>Find.</b> $H(Z)$, a binary Huffman code for $Z$, and its coding efficiency.<br>'
@@ -1771,9 +1771,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D6-18', module:'M6', type:'sum', src:'Final Q4',
   stem:'Consider two <em>independent</em> discrete memoryless sources, $X$ and $Y$. The source $X$ is described by the alphabet $\\mathcal{X}=\\{0,1,2,3\\}$, where each symbol is generated with equal probability. Similarly, the source $Y$ is described by the alphabet $\\mathcal{Y}=\\{0,1,\\ldots,5\\}$, where each symbol is generated with equal probability. Let $Z\\triangleq |X-Y|$ be another discrete memoryless source.',
-  parts:['[10 pts] Calculate the entropy of the source, $Z$.',
-         '[10 pts] Design a <em>binary</em> Huffman code for the source, $Z$.',
-         '[5 pts] Calculate the coding efficiency of the Huffman code designed in part (b).'],
+  parts:['Calculate the entropy of the source, $Z$.',
+         'Design a <em>binary</em> Huffman code for the source, $Z$.',
+         'Calculate the coding efficiency of the Huffman code designed in part (b).'],
   figSol: () => figPmf({v:[0,1,2,3,4,5],n:[4,7,6,4,2,1],D:24,name:'Z'})+figHuff({n:[4,7,6,4,2,1],D:24,name:'Z',lab:['0','1','2','3','4','5'],codes:['11','01','10','000','0010','0011'],order:['001','00','1','0','']}),
   sol:'<b>Given.</b> $X$ uniform on $\\{0,\\ldots,3\\}$, $Y$ uniform on $\\{0,\\ldots,5\\}$, independent, and $Z=|X-Y|$.<br>'
      +'<b>Find.</b> $H(Z)$, a binary Huffman code for $Z$, and its coding efficiency.<br>'
@@ -1848,9 +1848,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D6-19', module:'M6', type:'sum', src:'Final Q4',
   stem:'Consider two <em>independent</em> discrete memoryless sources, $X$ and $Y$. The source $X$ is described by the alphabet $\\mathcal{X}=\\{1,2,3,4,5\\}$, where each symbol is generated with equal probability. Similarly, the source $Y$ is described by the same alphabet, where each symbol is generated with equal probability. Let $Z\\triangleq \\min(X,Y)$ be another discrete memoryless source.',
-  parts:['[10 pts] Calculate the entropy of the source, $Z$.',
-         '[10 pts] Design a <em>binary</em> Huffman code for the source, $Z$.',
-         '[5 pts] Calculate the coding efficiency of the Huffman code designed in part (b).'],
+  parts:['Calculate the entropy of the source, $Z$.',
+         'Design a <em>binary</em> Huffman code for the source, $Z$.',
+         'Calculate the coding efficiency of the Huffman code designed in part (b).'],
   figSol: () => figPmf({v:[1,2,3,4,5],n:[9,7,5,3,1],D:25,name:'Z'})+figHuff({n:[9,7,5,3,1],D:25,name:'Z',lab:['1','2','3','4','5'],codes:['00','01','10','110','111'],order:['11','1','0','']}),
   sol:'<b>Given.</b> $X$ and $Y$ independent and uniform on $\\{1,\\ldots,5\\}$, and $Z=\\min(X,Y)$.<br>'
      +'<b>Find.</b> $H(Z)$, a binary Huffman code for $Z$, and its coding efficiency.<br>'
@@ -1922,9 +1922,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D6-20', module:'M6', type:'sum', src:'Final Q4',
   stem:'Consider two <em>independent</em> discrete memoryless sources, $X$ and $Y$. The source $X$ is described by the alphabet $\\mathcal{X}=\\{0,1,2\\}$, where $P(X=1)=2P(X=0)=2P(X=2)$. Similarly, the source $Y$ is described by the alphabet $\\mathcal{Y}=\\{0,1,2\\}$, where $P(Y=0)=2P(Y=1)=4P(Y=2)$. Let $Z\\triangleq X-Y$ be another discrete memoryless source.',
-  parts:['[10 pts] Calculate the entropy of the source, $Z$.',
-         '[10 pts] Design a <em>binary</em> Huffman code for the source, $Z$.',
-         '[5 pts] Calculate the coding efficiency of the Huffman code designed in part (b).'],
+  parts:['Calculate the entropy of the source, $Z$.',
+         'Design a <em>binary</em> Huffman code for the source, $Z$.',
+         'Calculate the coding efficiency of the Huffman code designed in part (b).'],
   figSol: () => figPmf({v:[-2,-1,0,1,2],n:[1,4,9,10,4],D:28,name:'Z'})+figHuff({n:[1,4,9,10,4],D:28,name:'Z',lab:['-2','-1','0','1','2'],codes:['0001','001','01','1','0000'],order:['000','00','0','']}),
   sol:'<b>Given.</b> $P(X=1)=2P(X=0)=2P(X=2)$, $P(Y=0)=2P(Y=1)=4P(Y=2)$, both on $\\{0,1,2\\}$, independent, and $Z=X-Y$.<br>'
      +'<b>Find.</b> $H(Z)$, a binary Huffman code for $Z$, and its coding efficiency.<br>'
@@ -1997,9 +1997,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D6-21', module:'M6', type:'sum', src:'Final Q4',
   stem:'Consider two <em>independent</em> discrete memoryless sources, $X$ and $Y$. The source $X$ is described by the alphabet $\\mathcal{X}=\\{1,2,3,4\\}$, where $P(X=k)=k\\,P(X=1)$. Similarly, the source $Y$ is described by the alphabet $\\mathcal{Y}=\\{0,2,4\\}$, where each symbol is generated with equal probability. Let $Z\\triangleq X+Y$ be another discrete memoryless source.',
-  parts:['[10 pts] Calculate the entropy of the source, $Z$.',
-         '[10 pts] Design a <em>binary</em> Huffman code for the source, $Z$.',
-         '[5 pts] Calculate the coding efficiency of the Huffman code designed in part (b).'],
+  parts:['Calculate the entropy of the source, $Z$.',
+         'Design a <em>binary</em> Huffman code for the source, $Z$.',
+         'Calculate the coding efficiency of the Huffman code designed in part (b).'],
   figSol: () => figPmf({v:[1,2,3,4,5,6,7,8],n:[1,2,4,6,4,6,3,4],D:30,name:'Z'})+figHuff({n:[1,2,4,6,4,6,3,4],D:30,name:'Z',lab:['1','2','3','4','5','6','7','8'],codes:['1001','1000','001','11','010','000','101','011'],order:['100','10','01','00','1','0','']}),
   sol:'<b>Given.</b> $P(X=k)=kP(X=1)$ on $\\{1,2,3,4\\}$, $Y$ uniform on $\\{0,2,4\\}$, independent, and $Z=X+Y$.<br>'
      +'<b>Find.</b> $H(Z)$, a binary Huffman code for $Z$, and its coding efficiency.<br>'
@@ -2081,10 +2081,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D6-22', module:'M6', type:'capacity', src:'Madhow P7.5',
   stem:'An adaptive link uses a binary code of rate $\\tfrac12$ with one of three constellations: QPSK, 16-QAM or 64-QAM. The passband channel has bandwidth $W=6$ MHz. The symbols use ideal Nyquist pulses with no excess bandwidth, so the link sends $W$ symbols per second. Each coded scheme works $1.5$ dB above the Shannon limit for its spectral efficiency. The transmit power and the noise are fixed, and the received power falls as $1/d^{2}$ with the distance $d$.',
-  parts:['[6 pts] Calculate the information bit rate $R_b$ of each scheme and its spectral efficiency $r=R_b/W$.',
-         '[8 pts] Find the minimum $E_s/N_0$ in dB that each scheme needs, where $E_s$ is the energy per symbol.',
-         '[6 pts] QPSK reaches the largest range, $2.4$ km. Find the ranges of the other two schemes.',
-         '[5 pts] A user is at $d=1.2$ km. Which scheme gives the highest bit rate there, and with how many dB to spare?'],
+  parts:['Calculate the information bit rate $R_b$ of each scheme and its spectral efficiency $r=R_b/W$.',
+         'Find the minimum $E_s/N_0$ in dB that each scheme needs, where $E_s$ is the energy per symbol.',
+         'QPSK reaches the largest range, $2.4$ km. Find the ranges of the other two schemes.',
+         'A user is at $d=1.2$ km. Which scheme gives the highest bit rate there, and with how many dB to spare?'],
   figSol: () => figLimit({xr:[-4,8], yr:[0,4], h:300, imp:[0.2,3.3], floor:0.3,
     gaps:[{r:1, x:1.50, c:C.mid, lab:'1.5\\ \\mathrm{dB}', dy:-0.32},
           {r:2, x:3.26, c:C.mid, lab:'1.5\\ \\mathrm{dB}', dy:-0.32},
@@ -2148,10 +2148,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D6-23', module:'M6', type:'judge', src:'Final Q4 (variant)',
   stem:'Let $X$ be a discrete memoryless source (DMS) which is modeled as a uniform random variable taking the integer values between $1$ and $16$. Let $Y\\triangleq \\left\\lfloor \\log_2 X\\right\\rfloor$ be another DMS which is a function of $X$. Here $\\lfloor u\\rfloor$ is the largest integer not greater than $u$.',
-  parts:['[8 pts] Calculate the entropy of the source, $Y$.',
-         '[8 pts] Design a <em>binary</em> Huffman code for the source, $Y$.',
-         '[5 pts] A fixed-length binary code is proposed for $Y$ instead. Give its codeword length and its coding efficiency.',
-         '[4 pts] Calculate the coding efficiency of the Huffman code of part (b), and explain the value.'],
+  parts:['Calculate the entropy of the source, $Y$.',
+         'Design a <em>binary</em> Huffman code for the source, $Y$.',
+         'A fixed-length binary code is proposed for $Y$ instead. Give its codeword length and its coding efficiency.',
+         'Calculate the coding efficiency of the Huffman code of part (b), and explain the value.'],
   figSol: () => figPmf({v:[0,1,2,3,4],n:[1,2,4,8,1],D:16,name:'Y'})+figHuff({n:[1,2,4,8,1],D:16,name:'Y',lab:['0','1','2','3','4'],codes:['0000','001','01','1','0001'],order:['000','00','0','']}),
   sol:'<b>Given.</b> $X$ uniform on $1,\\ldots,16$, and $Y=\\lfloor\\log_2 X\\rfloor$.<br>'
      +'<b>Find.</b> $H(Y)$, a Huffman code, the fixed-length alternative, and both efficiencies.<br>'
@@ -2233,10 +2233,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D6-24', module:'M6', type:'judge', src:'Final Q4 (variant)',
   stem:'Consider two <em>independent</em> discrete memoryless sources, $X$ and $Y$. The source $X$ is described by the alphabet $\\mathcal{X}=\\{0,1,2,3\\}$, where each symbol is generated with equal probability. Similarly, the source $Y$ is described by the same alphabet, where each symbol is generated with equal probability. Let $Z\\triangleq |X-Y|$ be another discrete memoryless source.',
-  parts:['[7 pts] Calculate the entropy of the source, $Z$.',
-         '[8 pts] Design a <em>binary</em> Huffman code for $Z$, placing each merged probability as high as possible in the list.',
-         '[6 pts] Design a second binary Huffman code, placing each merged probability as low as possible. Show that both codes have the same average length.',
-         '[4 pts] Calculate the coding efficiency and the variance of the codeword lengths of both codes. Which code suits a transmitter with a finite buffer?'],
+  parts:['Calculate the entropy of the source, $Z$.',
+         'Design a <em>binary</em> Huffman code for $Z$, placing each merged probability as high as possible in the list.',
+         'Design a second binary Huffman code, placing each merged probability as low as possible. Show that both codes have the same average length.',
+         'Calculate the coding efficiency and the variance of the codeword lengths of both codes. Which code suits a transmitter with a finite buffer?'],
   figSol: () => figPmf({v:[0,1,2,3],n:[4,6,4,2],D:16,name:'Z'})+figHuff({n:[4,6,4,2],D:16,name:'Z',lab:['0','1','2','3'],codes:['01','00','10','11'],order:['1','0',''],head:'\\text{high placement}'})+figHuff({n:[4,6,4,2],D:16,name:'Z',lab:['0','1','2','3'],codes:['01','1','000','001'],order:['00','0',''],head:'\\text{low placement}'}),
   sol:'<b>Given.</b> $X$ and $Y$ independent and uniform on $\\{0,1,2,3\\}$, and $Z=|X-Y|$.<br>'
      +'<b>Find.</b> $H(Z)$, two Huffman codes, their average lengths, efficiencies and length variances.<br>'
@@ -2326,10 +2326,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D6-25', module:'M6', type:'block', src:'Final Q4 (variant)',
   stem:'Let $X$ be a DMS which is modeled as a uniform random variable on $\\{0,1,2,3\\}$. Let $Z$ be independent of $X$ and uniform on $\\{0,1\\}$. Let $Y\\triangleq (X\\times Z)\\;(\\bmod 2)$ be another DMS, the parity of the product.',
-  parts:['[6 pts] Calculate the probabilities and the entropy of the source, $Y$.',
-         '[5 pts] Design a <em>binary</em> Huffman code for $Y$ and calculate its coding efficiency.',
-         '[9 pts] Design a binary Huffman code for the second-order extension of $Y$, whose symbols are pairs $Y_1Y_2$ of successive outputs.',
-         '[5 pts] Calculate the average number of bits per symbol of $Y$ and the coding efficiency for the code of part (c). Compare with part (b).'],
+  parts:['Calculate the probabilities and the entropy of the source, $Y$.',
+         'Design a <em>binary</em> Huffman code for $Y$ and calculate its coding efficiency.',
+         'Design a binary Huffman code for the second-order extension of $Y$, whose symbols are pairs $Y_1Y_2$ of successive outputs.',
+         'Calculate the average number of bits per symbol of $Y$ and the coding efficiency for the code of part (c). Compare with part (b).'],
   figSol: () => figPmf({v:[0,1],n:[3,1],D:4,name:'Y'})+figHuff({n:[9,3,3,1],D:16,name:'W',lab:['\\mathtt{00}','\\mathtt{01}','\\mathtt{10}','\\mathtt{11}'],codes:['0','11','100','101'],order:['10','1','']}),
   sol:'<b>Given.</b> $X$ uniform on $\\{0,1,2,3\\}$, $Z$ uniform on $\\{0,1\\}$, independent, and $Y=XZ\\bmod 2$.<br>'
      +'<b>Find.</b> $H(Y)$, a code for $Y$, a code for its second-order extension, and both efficiencies.<br>'
@@ -2394,10 +2394,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D6-26', module:'M6', type:'info', src:'Final Q4 (variant)',
   stem:'Let $X$ be a discrete memoryless source (DMS) which is modeled as a uniform random variable taking the integer values between $-2$ and $5$. Let $Y\\triangleq |X-1|$ be another DMS which is a function of $X$.',
-  parts:['[6 pts] Calculate the entropies $H(X)$ and $H(Y)$.',
-         '[7 pts] Calculate the mutual information $I(X;Y)$, the conditional entropy $H(X\\mid Y)$ and the joint entropy $H(X,Y)$.',
-         '[8 pts] Design a <em>binary</em> Huffman code for the source, $Y$.',
-         '[4 pts] Calculate the coding efficiency of the Huffman code designed in part (c).'],
+  parts:['Calculate the entropies $H(X)$ and $H(Y)$.',
+         'Calculate the mutual information $I(X;Y)$, the conditional entropy $H(X\\mid Y)$ and the joint entropy $H(X,Y)$.',
+         'Design a <em>binary</em> Huffman code for the source, $Y$.',
+         'Calculate the coding efficiency of the Huffman code designed in part (c).'],
   figSol: () => figPmf({v:[0,1,2,3,4],n:[1,2,2,2,1],D:8,name:'Y'})+figHuff({n:[1,2,2,2,1],D:8,name:'Y',lab:['0','1','2','3','4'],codes:['000','01','10','11','001'],order:['00','1','0','']}),
   sol:'<b>Given.</b> $X$ uniform on the eight integers $-2,\\ldots,5$, and $Y=|X-1|$.<br>'
      +'<b>Find.</b> $H(X)$, $H(Y)$, $I(X;Y)$, $H(X\\mid Y)$, $H(X,Y)$, a Huffman code for $Y$ and its efficiency.<br>'
@@ -2490,10 +2490,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D6-27', module:'M6', type:'info', src:'Final Q4 (variant)',
   stem:'Consider two <em>independent</em> discrete memoryless sources, $X$ and $Y$. The source $X$ is described by the alphabet $\\mathcal{X}=\\{0,1,2\\}$, where $P(X=0)=2P(X=1)=2P(X=2)$. Similarly, the source $Y$ is described by the alphabet $\\mathcal{Y}=\\{0,1,2,3\\}$, where each symbol is generated with equal probability. Let $Z\\triangleq X+Y$ be another discrete memoryless source.',
-  parts:['[8 pts] Calculate the entropy of the source, $Z$.',
-         '[6 pts] Calculate the conditional entropy $H(Z\\mid X)$ and the mutual information $I(X;Z)$.',
-         '[7 pts] Design a <em>binary</em> Huffman code for the source, $Z$.',
-         '[4 pts] Calculate the coding efficiency of the Huffman code designed in part (c).'],
+  parts:['Calculate the entropy of the source, $Z$.',
+         'Calculate the conditional entropy $H(Z\\mid X)$ and the mutual information $I(X;Z)$.',
+         'Design a <em>binary</em> Huffman code for the source, $Z$.',
+         'Calculate the coding efficiency of the Huffman code designed in part (c).'],
   figSol: () => figPmf({v:[0,1,2,3,4,5],n:[2,3,4,4,2,1],D:16,name:'Z'})+figHuff({n:[2,3,4,4,2,1],D:16,name:'Z',lab:['0','1','2','3','4','5'],codes:['001','000','01','10','110','111'],order:['11','00','1','0','']}),
   sol:'<b>Given.</b> $P(X=0)=2P(X=1)=2P(X=2)$ on $\\{0,1,2\\}$, $Y$ uniform on $\\{0,1,2,3\\}$, independent, and $Z=X+Y$.<br>'
      +'<b>Find.</b> $H(Z)$, $H(Z\\mid X)$, $I(X;Z)$, a Huffman code for $Z$ and its efficiency.<br>'
@@ -2583,10 +2583,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D6-28', module:'M6', type:'judge', src:'Final Q4 (variant)',
   stem:'Let $X$ be a discrete memoryless source (DMS) which is modeled as a uniform random variable taking the integer values between $1$ and $9$. Let $Y\\triangleq X\\;(\\bmod 4)$ be another DMS which is a function of $X$. Here $a\\bmod m$ denotes the remainder of $a$ on division by $m$, taken in $\\{0,1,\\ldots,m-1\\}$. A designer proposes the code $Y=1\\to\\mathtt{0}$, $Y=0\\to\\mathtt{1}$, $Y=2\\to\\mathtt{01}$, $Y=3\\to\\mathtt{10}$.',
-  parts:['[7 pts] Calculate the entropy of the source, $Y$.',
-         '[6 pts] Use the Kraft inequality to decide whether a prefix code with the lengths of the proposed code exists. Give a bit string that the proposed code cannot decode uniquely.',
-         '[8 pts] Design a <em>binary</em> Huffman code for the source, $Y$.',
-         '[4 pts] Calculate the coding efficiency of the Huffman code, and compare it with a fixed-length code for $Y$.'],
+  parts:['Calculate the entropy of the source, $Y$.',
+         'Use the Kraft inequality to decide whether a prefix code with the lengths of the proposed code exists. Give a bit string that the proposed code cannot decode uniquely.',
+         'Design a <em>binary</em> Huffman code for the source, $Y$.',
+         'Calculate the coding efficiency of the Huffman code, and compare it with a fixed-length code for $Y$.'],
   figSol: () => figPmf({v:[0,1,2,3],n:[2,3,2,2],D:9,name:'Y'})+figHuff({n:[2,3,2,2],D:9,name:'Y',lab:['0','1','2','3'],codes:['01','00','10','11'],order:['1','0','']}),
   sol:'<b>Given.</b> $X$ uniform on $1,\\ldots,9$, $Y=X\\bmod 4$, and a proposed code with lengths $1,1,2,2$.<br>'
      +'<b>Find.</b> $H(Y)$, the Kraft test of the proposal, a Huffman code and its efficiency.<br>'
@@ -2666,10 +2666,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D6-29', module:'M6', type:'judge', src:'Final Q4 (variant)',
   stem:'Let $X$ be a discrete memoryless source (DMS) which is modeled as a uniform random variable taking the integer values between $1$ and $12$. Let $Y\\triangleq X\\;(\\bmod 5)$ be another DMS which is a function of $X$. Here $a\\bmod m$ denotes the remainder of $a$ on division by $m$, taken in $\\{0,1,\\ldots,m-1\\}$.',
-  parts:['[7 pts] Calculate the entropy of the source, $Y$.',
-         '[6 pts] Give each symbol the length $l(y)=\\left\\lceil\\log_2\\frac{1}{P(Y=y)}\\right\\rceil$. Check the Kraft inequality for these lengths and calculate their average length.',
-         '[8 pts] Design a <em>binary</em> Huffman code for the source, $Y$.',
-         '[4 pts] Calculate the coding efficiency of both codes. Which one is optimal?'],
+  parts:['Calculate the entropy of the source, $Y$.',
+         'Give each symbol the length $l(y)=\\left\\lceil\\log_2\\frac{1}{P(Y=y)}\\right\\rceil$. Check the Kraft inequality for these lengths and calculate their average length.',
+         'Design a <em>binary</em> Huffman code for the source, $Y$.',
+         'Calculate the coding efficiency of both codes. Which one is optimal?'],
   figSol: () => figPmf({v:[0,1,2,3,4],n:[2,3,3,2,2],D:12,name:'Y'})+figHuff({n:[2,3,3,2,2],D:12,name:'Y',lab:['0','1','2','3','4'],codes:['11','01','10','000','001'],order:['00','1','0','']}),
   sol:'<b>Given.</b> $X$ uniform on $1,\\ldots,12$, and $Y=X\\bmod 5$.<br>'
      +'<b>Find.</b> $H(Y)$, the rounded-up lengths and their average, a Huffman code, and both efficiencies.<br>'
@@ -2755,10 +2755,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D6-30', module:'M6', type:'fxz', src:'Final Q4 (variant)',
   stem:'Let $X$ be a discrete memoryless source (DMS) which is modeled as a uniform random variable on the alphabet $\\{0,1,2,3\\}$. Let $Z$ be a random variable (independent of $X$) with the probability mass function $p_Z(z)=c\\,a^{z}$ for $z\\in\\{0,1,2\\}$. It is zero otherwise, and $c$ and $0<a<1$ are constants. Finally, let $Y\\triangleq X\\times Z$ be another DMS which is a function of both $X$ and $Z$. It is known that $P(Y=0)=\\frac{10}{13}$.',
-  parts:['[7 pts] Find the constants $c$ and $a$.',
-         '[7 pts] Calculate the entropy of the source, $Y$.',
-         '[7 pts] Design a <em>binary</em> Huffman code for the source, $Y$.',
-         '[4 pts] Calculate the coding efficiency of the Huffman code designed in part (c).'],
+  parts:['Find the constants $c$ and $a$.',
+         'Calculate the entropy of the source, $Y$.',
+         'Design a <em>binary</em> Huffman code for the source, $Y$.',
+         'Calculate the coding efficiency of the Huffman code designed in part (c).'],
   figSol: () => figPmf({v:[0,1,2,3,4,6],n:[40,3,4,3,1,1],D:52,name:'Y'})+figHuff({n:[40,3,4,3,1,1],D:52,name:'Y',lab:['0','1','2','3','4','6'],codes:['0','101','100','110','1110','1111'],order:['111','11','10','1','']}),
   sol:'<b>Given.</b> $X$ uniform on $\\{0,1,2,3\\}$, $p_Z(z)=ca^{z}$ for $z=0,1,2$, independent, $Y=XZ$, and $P(Y=0)=\\tfrac{10}{13}$.<br>'
      +'<b>Find.</b> $c$, $a$, $H(Y)$, a binary Huffman code for $Y$, and its coding efficiency.<br>'

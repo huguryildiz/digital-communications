@@ -221,9 +221,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D1-01', module:'M1', type:'pcm', src:'MT Q1',
   stem:'Assume that a sinusoidal message signal is defined as $x(t)=V_{\\max}\\cos(12000\\pi t)$, where $V_{\\max}$ is the maximum amplitude of the message signal. This analog message signal is sampled at the Nyquist rate and quantized by using a uniform quantizer. The quantization noise is a uniform random variable between $-\\tfrac{\\Delta}{2}$ and $\\tfrac{\\Delta}{2}$, where $\\Delta$ is the step size. The quantization noise is required not to exceed $\\pm0.25\\%$ of the peak-to-peak message signal. Quantized data are encoded by using a $4$-level PAM system.',
-  parts:['[9 pts] What is the minimum number of bits per sample for this PAM system?',
-         '[8 pts] Calculate the bit rate of this system.',
-         '[8 pts] What is the symbol rate of this system?'],
+  parts:['What is the minimum number of bits per sample for this PAM system?',
+         'Calculate the bit rate of this system.',
+         'What is the symbol rate of this system?'],
   sol:'<b>Given.</b> $x(t)=V_{\\max}\\cos(2\\pi(6000)t)$, Nyquist sampling, noise within $\\pm0.25\\%$ of the peak-to-peak value, $4$-level PAM.<br>'
      +'<b>Find.</b> The least number of bits per sample $R$, the bit rate $R_b$ and the symbol rate $R_s$.<br>'
      +'<b>Method.</b> The requirement bounds the step $\\Delta$. That bound gives a least level count $L$, rounded up to a power of two. The rates then follow from $R_b=Rf_s$ and $R_s=R_b/\\log_2 M$.<br>'
@@ -243,10 +243,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D1-02', module:'M1', type:'pcm', src:'MT Q1',
   stem:'Assume that a sinusoidal message signal is defined as $x(t)=V_{\\max}\\sin(7000\\pi t)$, where $V_{\\max}$ is the maximum amplitude of the message signal. It is sampled at a rate $25\\%$ greater than the Nyquist rate and quantized by using a uniform quantizer. The quantization noise is a uniform random variable between $-\\tfrac{\\Delta}{2}$ and $\\tfrac{\\Delta}{2}$. It is required not to exceed $\\pm0.8\\%$ of the peak-to-peak message signal. Quantized data are encoded by using an $8$-level PAM system.',
-  parts:['[7 pts] What is the minimum number of bits per sample?',
-         '[6 pts] Determine the sampling rate.',
-         '[6 pts] Calculate the bit rate of this system.',
-         '[6 pts] What is the symbol rate of this system?'],
+  parts:['What is the minimum number of bits per sample?',
+         'Determine the sampling rate.',
+         'Calculate the bit rate of this system.',
+         'What is the symbol rate of this system?'],
   sol:'<b>Given.</b> $x(t)=V_{\\max}\\sin(2\\pi(3500)t)$, sampling $25\\%$ above the Nyquist rate, noise within $\\pm0.8\\%$ of the peak-to-peak value, $8$-level PAM.<br>'
      +'<b>Find.</b> $R$, $f_s$, $R_b$ and $R_s$.<br>'
      +'<b>Method.</b> Bound $\\Delta$ from the requirement, then $L$ and $R$. A percentage above the Nyquist rate multiplies that rate.<br>'
@@ -265,10 +265,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D1-03', module:'M1', type:'pcm', src:'MT Q1',
   stem:'Let $X(t)$ have a bandwidth of $3.2$ MHz. This signal is sampled, quantized and binary encoded to obtain a PCM signal.',
-  parts:['[7 pts] Determine the sampling rate if $X(t)$ is sampled at a rate $25\\%$ greater than the Nyquist rate.',
-         '[6 pts] If the samples of $X(t)$ are quantized by using a uniform quantizer with $2048$ levels, determine the number of bits required per sample.',
-         '[6 pts] Calculate the bit rate of this system in bits per second.',
-         '[6 pts] Find the least channel bandwidth that can carry this PCM signal.'],
+  parts:['Determine the sampling rate if $X(t)$ is sampled at a rate $25\\%$ greater than the Nyquist rate.',
+         'If the samples of $X(t)$ are quantized by using a uniform quantizer with $2048$ levels, determine the number of bits required per sample.',
+         'Calculate the bit rate of this system in bits per second.',
+         'Find the least channel bandwidth that can carry this PCM signal.'],
   sol:'<b>Given.</b> $W=3.2$ MHz, a rate $25\\%$ above the Nyquist rate, $L=2048$.<br>'
      +'<b>Find.</b> $f_s$, $R$, $R_b$ and the least channel bandwidth $B_T$.<br>'
      +'<b>Method.</b> The Nyquist rate is $2W$, and the margin multiplies it. Then $R=\\log_2 L$ and $R_b=Rf_s$. A binary stream needs at least $R_b/2$ hertz.<br>'
@@ -284,10 +284,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D1-04', module:'M1', type:'pcm', src:'MT Q1 (variant)',
   stem:'A PCM system carries the sinusoid $x(t)=V_{\\max}\\cos(10000\\pi t)$. It samples at the Nyquist rate and quantizes uniformly over $[-V_{\\max},V_{\\max}]$. The quantization noise is uniform between $-\\tfrac{\\Delta}{2}$ and $\\tfrac{\\Delta}{2}$. The bits are sent by a $16$-level PAM system, and the measured symbol rate is $17\\,500$ symbols per second.',
-  parts:['[6 pts] Find the bit rate and the number of bits per sample.',
-         '[6 pts] Find the number of quantization levels and the step size in terms of $V_{\\max}$.',
-         '[7 pts] Find the largest quantization error as a percentage of the peak-to-peak message signal.',
-         '[6 pts] The design came from a requirement of $\\pm p\\%$ of the peak-to-peak signal. Find the range of $p$ for which this number of bits is the minimum.'],
+  parts:['Find the bit rate and the number of bits per sample.',
+         'Find the number of quantization levels and the step size in terms of $V_{\\max}$.',
+         'Find the largest quantization error as a percentage of the peak-to-peak message signal.',
+         'The design came from a requirement of $\\pm p\\%$ of the peak-to-peak signal. Find the range of $p$ for which this number of bits is the minimum.'],
   sol:'<b>Given.</b> $f_0=5000$ Hz, Nyquist sampling, $16$-level PAM at $R_s=17\\,500$ symbols per second.<br>'
      +'<b>Find.</b> $R_b$, $R$, $L$, $\\Delta$, the largest error in per cent, and the range of $p$.<br>'
      +'<b>Method.</b> Work the design backwards. The symbol rate gives the bit rate, and the sampling rate gives the bits per sample. The last part asks when $R$ passes and $R-1$ fails.<br>'
@@ -304,10 +304,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D1-05', module:'M1', type:'pcm', src:'MT Q1 (variant)',
   stem:'Assume that a sinusoidal message signal is defined as $x(t)=V_{\\max}\\cos(18000\\pi t)$. It is sampled at the Nyquist rate and quantized by using a uniform quantizer. The quantization noise is uniform between $-\\tfrac{\\Delta}{2}$ and $\\tfrac{\\Delta}{2}$. It is required not to exceed $\\pm0.1\\%$ of the peak-to-peak message signal. The bits are sent by an $M$-level PAM system over a channel that accepts at most $60\\,000$ symbols per second.',
-  parts:['[8 pts] What is the minimum number of bits per sample?',
-         '[6 pts] Calculate the bit rate of this system.',
-         '[5 pts] Find the smallest PAM order $M$, a power of two, that the channel accepts.',
-         '[6 pts] Calculate the symbol rate with that $M$.'],
+  parts:['What is the minimum number of bits per sample?',
+         'Calculate the bit rate of this system.',
+         'Find the smallest PAM order $M$, a power of two, that the channel accepts.',
+         'Calculate the symbol rate with that $M$.'],
   sol:'<b>Given.</b> $f_0=9000$ Hz, Nyquist sampling, noise within $\\pm0.1\\%$ of the peak-to-peak value, at most $60\\,000$ symbols per second.<br>'
      +'<b>Find.</b> $R$, $R_b$, the least $M$ and the symbol rate.<br>'
      +'<b>Method.</b> Bound $\\Delta$ to get $R$. The symbol rate is $R_b/k$ with $k=\\log_2 M$ bits a symbol. Solve $R_b/k\\le60\\,000$ for the smallest whole $k$.<br>'
@@ -334,10 +334,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D1-06', module:'M1', type:'pcm', src:'MT Q1 (variant)',
   stem:'Let $X(t)$ have a bandwidth of $2.5$ MHz. It is sampled at a rate $30\\%$ greater than the Nyquist rate, quantized by a uniform quantizer and binary encoded. The PCM signal must fit a link that carries $64$ Mbit/s. Assume that $1$ Mbit/s $=10^{6}$ bit/s.',
-  parts:['[6 pts] Determine the sampling rate.',
-         '[7 pts] Find the largest number of bits per sample, and the number of levels, that the link allows.',
-         '[6 pts] Calculate the bit rate of the resulting system.',
-         '[6 pts] For a full-scale sinusoidal test signal, calculate the SQNR in dB.'],
+  parts:['Determine the sampling rate.',
+         'Find the largest number of bits per sample, and the number of levels, that the link allows.',
+         'Calculate the bit rate of the resulting system.',
+         'For a full-scale sinusoidal test signal, calculate the SQNR in dB.'],
   sol:'<b>Given.</b> $W=2.5$ MHz, a rate $30\\%$ above the Nyquist rate, a link of $64$ Mbit/s.<br>'
      +'<b>Find.</b> $f_s$, the largest $R$ and its $L$, $R_b$, and the SQNR of a full-scale sinusoid.<br>'
      +'<b>Method.</b> The link bounds $Rf_s$ from above. With $f_s$ fixed, $R$ is the largest whole number with $Rf_s\\le64$ Mbit/s. For a full-scale sinusoid $3P_X/x_{\\max}^{2}=1.5$.<br>'
@@ -356,10 +356,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D1-07', module:'M1', type:'spectrum', src:'MT Q1',
   stem:'Let $x(t)=10\\cos(3000\\pi t)\\cos(6000\\pi t)$ be sampled and quantized by using a $512$-level uniform quantizer. Assume that $1$ kbit/s $=1000$ bit/s.',
-  parts:['[6 pts] Determine the minimum sampling rate if a guard band of $1$ kHz is required.',
-         '[6 pts] Calculate the bit rate of this system.',
-         '[6 pts] If the data rate of this system is required as $108$ kbit/s, what should the guard band be?',
-         '[7 pts] Calculate the step size of the uniform quantizer.'],
+  parts:['Determine the minimum sampling rate if a guard band of $1$ kHz is required.',
+         'Calculate the bit rate of this system.',
+         'If the data rate of this system is required as $108$ kbit/s, what should the guard band be?',
+         'Calculate the step size of the uniform quantizer.'],
   sol:'<b>Given.</b> A product of two cosines, a guard band of $1$ kHz, $L=512$.<br>'
      +'<b>Find.</b> $f_s$, $R_b$, the guard band for $108$ kbit/s, and $\\Delta$.<br>'
      +'<b>Method.</b> Expand the product into a sum first. The highest frequency of the sum sets $W$, and $f_s=2W+f_g$.<br>'
@@ -378,10 +378,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D1-08', module:'M1', type:'spectrum', src:'MT Q1',
   stem:'Let $x(t)=5\\sin(2000\\pi t)\\cos(8000\\pi t)$ be sampled and quantized by using a $64$-level uniform quantizer. Assume that $1$ kbit/s $=1000$ bit/s.',
-  parts:['[6 pts] Determine the minimum sampling rate if a guard band of $1.5$ kHz is required.',
-         '[6 pts] Calculate the bit rate of this system.',
-         '[6 pts] If the data rate of this system is required as $78$ kbit/s, what should the guard band be?',
-         '[7 pts] Calculate the step size of the uniform quantizer.'],
+  parts:['Determine the minimum sampling rate if a guard band of $1.5$ kHz is required.',
+         'Calculate the bit rate of this system.',
+         'If the data rate of this system is required as $78$ kbit/s, what should the guard band be?',
+         'Calculate the step size of the uniform quantizer.'],
   sol:'<b>Given.</b> A product of a sine and a cosine, a guard band of $1.5$ kHz, $L=64$.<br>'
      +'<b>Find.</b> $f_s$, $R_b$, the guard band for $78$ kbit/s, and $\\Delta$.<br>'
      +'<b>Method.</b> Expand the product with $2\\sin A\\cos B=\\sin(A+B)+\\sin(A-B)$. Then $f_s=2W+f_g$ and $R_b=Rf_s$.<br>'
@@ -400,10 +400,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D1-09', module:'M1', type:'spectrum', src:'MT Q1',
   stem:'Let $x(t)=8\\cos^{2}(3000\\pi t)$ be sampled and quantized by using a $256$-level uniform quantizer that spans the range of $x(t)$. Assume that $1$ kbit/s $=1000$ bit/s.',
-  parts:['[6 pts] Determine the minimum sampling rate if a guard band of $2$ kHz is required.',
-         '[6 pts] Calculate the bit rate of this system.',
-         '[6 pts] If the data rate of this system is required as $72$ kbit/s, what should the guard band be?',
-         '[7 pts] Calculate the step size of the uniform quantizer.'],
+  parts:['Determine the minimum sampling rate if a guard band of $2$ kHz is required.',
+         'Calculate the bit rate of this system.',
+         'If the data rate of this system is required as $72$ kbit/s, what should the guard band be?',
+         'Calculate the step size of the uniform quantizer.'],
   sol:'<b>Given.</b> A squared cosine, a guard band of $2$ kHz, $L=256$ over the range of $x(t)$.<br>'
      +'<b>Find.</b> $f_s$, $R_b$, the guard band for $72$ kbit/s, and $\\Delta$.<br>'
      +'<b>Method.</b> Write the square as a sum with $\\cos^{2}\\theta=\\tfrac12(1+\\cos2\\theta)$. The square doubles the frequency and adds a constant.<br>'
@@ -422,9 +422,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D1-10', module:'M1', type:'spectrum', src:'Final Q1',
   stem:'The signal $$x(t)=\\left(\\frac{\\sin(200\\pi t)}{20\\pi t}\\right)^{2}$$ is sampled at the Nyquist rate. The samples are uniformly quantized with $256$ levels over the range of $x(t)$. Use $\\operatorname{sinc}(u)=\\sin(\\pi u)/(\\pi u)$. According to the information given above,',
-  parts:['[8 pts] Calculate the bit rate of this system.',
-         '[8 pts] Calculate the step size of the uniform quantizer.',
-         '[9 pts] Find the quantized value and the natural binary code word of the samples at $t=0$, $t=2.5$ ms and $t=7.5$ ms.'],
+  parts:['Calculate the bit rate of this system.',
+         'Calculate the step size of the uniform quantizer.',
+         'Find the quantized value and the natural binary code word of the samples at $t=0$, $t=2.5$ ms and $t=7.5$ ms.'],
   sol:'<b>Given.</b> A squared sinc, Nyquist sampling, $L=256$ over the range of $x(t)$.<br>'
      +'<b>Find.</b> $R_b$, $\\Delta$, and three quantized samples with their code words.<br>'
      +'<b>Method.</b> Write $x(t)$ with the sinc. A square in time is a convolution in frequency, so the bandwidth doubles. The sample index is $\\lfloor x/\\Delta\\rfloor$, capped at $L-1$.<br>'
@@ -453,9 +453,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D1-11', module:'M1', type:'spectrum', src:'Final Q1',
   stem:'The signal $$x(t)=\\frac{\\sin(200\\pi t)}{10\\pi t}\\cdot\\frac{\\sin(600\\pi t)}{10\\pi t}$$ is sampled at the Nyquist rate. The samples are uniformly quantized with $128$ levels over the range of $x(t)$. Use $\\operatorname{sinc}(u)=\\sin(\\pi u)/(\\pi u)$. According to the information given above,',
-  parts:['[8 pts] Calculate the bit rate of this system.',
-         '[8 pts] Calculate the step size of the uniform quantizer. (Hint: $\\min x(t)\\cong-177$.)',
-         '[9 pts] Find the smallest number of levels, a power of two, that makes the step size smaller than $1$. Calculate the bit rate it needs.'],
+  parts:['Calculate the bit rate of this system.',
+         'Calculate the step size of the uniform quantizer. (Hint: $\\min x(t)\\cong-177$.)',
+         'Find the smallest number of levels, a power of two, that makes the step size smaller than $1$. Calculate the bit rate it needs.'],
   sol:'<b>Given.</b> A product of two sinc factors, Nyquist sampling, $L=128$, and $\\min x(t)\\cong-177$.<br>'
      +'<b>Find.</b> $R_b$, $\\Delta$, and the least $L$ with $\\Delta<1$ and its bit rate.<br>'
      +'<b>Method.</b> A product in time is a convolution in frequency, so the two bandwidths add. The step is the range over $L$.<br>'
@@ -477,10 +477,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D1-12', module:'M1', type:'spectrum', src:'Final Q1',
   stem:'The signal $$x(t)=\\frac{\\sin(1000\\pi t)}{\\pi t}\\,\\cos(4000\\pi t)$$ is sampled at the Nyquist rate. The samples are uniformly quantized with $1024$ levels over the range of $x(t)$. According to the information given above,',
-  parts:['[8 pts] Find the Fourier transform $X(f)$ and the highest frequency in $x(t)$.',
-         '[6 pts] Calculate the bit rate of this system.',
-         '[5 pts] Calculate the step size of the uniform quantizer. (Hint: $\\min x(t)\\cong-902$.)',
-         '[6 pts] Calculate the energy of $x(t)$ by Parseval\'s theorem.'],
+  parts:['Find the Fourier transform $X(f)$ and the highest frequency in $x(t)$.',
+         'Calculate the bit rate of this system.',
+         'Calculate the step size of the uniform quantizer. (Hint: $\\min x(t)\\cong-902$.)',
+         'Calculate the energy of $x(t)$ by Parseval\'s theorem.'],
   sol:'<b>Given.</b> A sinc pulse times a cosine carrier, Nyquist sampling, $L=1024$, and $\\min x(t)\\cong-902$.<br>'
      +'<b>Find.</b> $X(f)$, the highest frequency, $R_b$, $\\Delta$, and the energy $E_x$.<br>'
      +'<b>Method.</b> Use the pair $2W\\operatorname{sinc}(2Wt)\\leftrightarrow\\Pi(f/2W)$ and the modulation property. The energy is $\\int|X(f)|^{2}\\,df$.<br>'
@@ -507,9 +507,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D1-13', module:'M1', type:'wave', src:'Final Q1',
   stem:'The signal $x(t)=2\\cos(3000\\pi t)+3\\cos(9000\\pi t)$ is sampled at the Nyquist rate and samples are uniformly quantized with $256$ levels. According to the information given above,',
-  parts:['[5 pts] Calculate the bit rate of this system.',
-         '[10 pts] Calculate the step size of the uniform quantizer.',
-         '[10 pts] Calculate the SQNR of the quantization scheme (in dB).'],
+  parts:['Calculate the bit rate of this system.',
+         'Calculate the step size of the uniform quantizer.',
+         'Calculate the SQNR of the quantization scheme (in dB).'],
   sol:'<b>Given.</b> Two cosines at $1.5$ kHz and $4.5$ kHz with amplitudes $2$ and $3$, Nyquist sampling, $L=256$.<br>'
      +'<b>Find.</b> $R_b$, $\\Delta$ and the SQNR.<br>'
      +'<b>Method.</b> The rate comes from the highest frequency. The step comes from the range $[x_{\\min},x_{\\max}]$. The SQNR is $P_X/(\\Delta^{2}/12)$, with $P_X$ from the amplitudes.<br>'
@@ -527,10 +527,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D1-14', module:'M1', type:'wave', src:'Final Q1',
   stem:'The signal $x(t)=2\\cos(2000\\pi t)+\\cos(4000\\pi t)$ is sampled at the Nyquist rate and samples are uniformly quantized with $128$ levels. The quantizer spans the range of $x(t)$, from its minimum to its maximum. According to the information given above,',
-  parts:['[5 pts] Calculate the bit rate of this system.',
-         '[7 pts] Find the maximum and the minimum of $x(t)$.',
-         '[6 pts] Calculate the step size of the uniform quantizer.',
-         '[7 pts] Calculate the SQNR of the quantization scheme (in dB).'],
+  parts:['Calculate the bit rate of this system.',
+         'Find the maximum and the minimum of $x(t)$.',
+         'Calculate the step size of the uniform quantizer.',
+         'Calculate the SQNR of the quantization scheme (in dB).'],
   sol:'<b>Given.</b> Tones at $1$ kHz and $2$ kHz with amplitudes $2$ and $1$, Nyquist sampling, $L=128$ over $[x_{\\min},x_{\\max}]$.<br>'
      +'<b>Find.</b> $R_b$, $x_{\\max}$, $x_{\\min}$, $\\Delta$ and the SQNR.<br>'
      +'<b>Method.</b> The second tone is the double angle of the first. Write $x$ as a function of $c=\\cos\\theta$ and find its extremes on $[-1,1]$.<br>'
@@ -548,9 +548,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D1-15', module:'M1', type:'wave', src:'Final Q1',
   stem:'The signal $x(t)=\\cos(1000\\pi t)+\\cos(3000\\pi t)+\\cos(5000\\pi t)$ is sampled at the Nyquist rate and samples are uniformly quantized with $512$ levels. According to the information given above,',
-  parts:['[5 pts] Calculate the bit rate of this system.',
-         '[10 pts] Calculate the step size of the uniform quantizer.',
-         '[10 pts] Calculate the SQNR of the quantization scheme (in dB).'],
+  parts:['Calculate the bit rate of this system.',
+         'Calculate the step size of the uniform quantizer.',
+         'Calculate the SQNR of the quantization scheme (in dB).'],
   sol:'<b>Given.</b> Three unit cosines at $0.5$, $1.5$ and $2.5$ kHz, Nyquist sampling, $L=512$.<br>'
      +'<b>Find.</b> $R_b$, $\\Delta$ and the SQNR.<br>'
      +'<b>Method.</b> As before: the highest frequency, the range, and $P_X/(\\Delta^{2}/12)$.<br>'
@@ -566,10 +566,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D1-16', module:'M1', type:'wave', src:'Final Q1 (variant)',
   stem:'The signal $x(t)=3\\sin(5000\\pi t)+4\\cos(5000\\pi t)$ is sampled at the Nyquist rate and samples are uniformly quantized with $128$ levels over the range of $x(t)$. According to the information given above,',
-  parts:['[5 pts] Calculate the bit rate of this system.',
-         '[8 pts] Find the peak value of $x(t)$.',
-         '[5 pts] Calculate the step size of the uniform quantizer.',
-         '[7 pts] Calculate the SQNR of the quantization scheme (in dB).'],
+  parts:['Calculate the bit rate of this system.',
+         'Find the peak value of $x(t)$.',
+         'Calculate the step size of the uniform quantizer.',
+         'Calculate the SQNR of the quantization scheme (in dB).'],
   sol:'<b>Given.</b> A sine and a cosine at the same frequency $2.5$ kHz, Nyquist sampling, $L=128$.<br>'
      +'<b>Find.</b> $R_b$, the peak, $\\Delta$ and the SQNR.<br>'
      +'<b>Method.</b> Two terms at one frequency are one sinusoid. Write $a\\sin\\theta+b\\cos\\theta=A\\cos(\\theta-\\varphi)$ with $A=\\sqrt{a^{2}+b^{2}}$.<br>'
@@ -588,10 +588,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D1-17', module:'M1', type:'wave', src:'Final Q1 (variant)',
   stem:'The signal $x(t)=4\\cos(2000\\pi t)+2\\cos(6000\\pi t)$ is sampled with a guard band of at least $1$ kHz and uniformly quantized over the range of $x(t)$. The bits must fit a link of $80$ kbit/s. Assume that $1$ kbit/s $=1000$ bit/s.',
-  parts:['[5 pts] Determine the minimum sampling rate.',
-         '[7 pts] Find the largest number of bits per sample that the link allows at that rate.',
-         '[6 pts] Calculate the step size of the uniform quantizer.',
-         '[7 pts] Calculate the SQNR of the quantization scheme (in dB).'],
+  parts:['Determine the minimum sampling rate.',
+         'Find the largest number of bits per sample that the link allows at that rate.',
+         'Calculate the step size of the uniform quantizer.',
+         'Calculate the SQNR of the quantization scheme (in dB).'],
   sol:'<b>Given.</b> Tones at $1$ kHz and $3$ kHz with amplitudes $4$ and $2$, $f_g\\ge1$ kHz, a link of $80$ kbit/s.<br>'
      +'<b>Find.</b> $f_s$, the largest $R$, $\\Delta$ and the SQNR.<br>'
      +'<b>Method.</b> The guard band sets the least $f_s$. The link sets the largest $R$ at that $f_s$. Then $\\Delta$ and the SQNR follow as usual.<br>'
@@ -610,9 +610,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D1-18', module:'M1', type:'fine', src:'MT Q2',
   stem:'A strict-sense stationary random process $X(t)$ is sampled. The sampled values $X$ have the following PDF: $f_X(x)=k\\left[1+x^{2}\\right]$ for $x\\in[-1,1]$. Sampled values are quantized by using a uniform quantizer with $128$ levels. The quantization noise is a uniform random variable between $-\\tfrac{\\Delta}{2}$ and $\\tfrac{\\Delta}{2}$, where $\\Delta$ is the step size.',
-  parts:['[5 pts] Determine the value of $k$.',
-         '[15 pts] Obtain the SQNR in dB.',
-         '[5 pts] If the bandwidth of the signal is $4$ kHz, what is the bit rate of the corresponding PCM system?'],
+  parts:['Determine the value of $k$.',
+         'Obtain the SQNR in dB.',
+         'If the bandwidth of the signal is $4$ kHz, what is the bit rate of the corresponding PCM system?'],
   sol:'<b>Given.</b> $f_X(x)=k(1+x^{2})$ on $[-1,1]$, $L=128$ over $[-1,1]$, uniform noise.<br>'
      +'<b>Find.</b> $k$, the SQNR and the bit rate.<br>'
      +'<b>Method.</b> The total area gives $k$. The second moment gives $P_X$. The noise is $\\Delta^{2}/12$ with $\\Delta=2/L$.<br>'
@@ -630,9 +630,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D1-19', module:'M1', type:'fine', src:'MT Q2',
   stem:'A strict-sense stationary random process $X(t)$ is sampled. The sampled values $X$ have the following PDF: $f_X(x)=k\\left[1-|x|^{1/2}\\right]$ for $x\\in[-1,1]$. Sampled values are quantized by using a uniform quantizer with $512$ levels. The quantization noise is a uniform random variable between $-\\tfrac{\\Delta}{2}$ and $\\tfrac{\\Delta}{2}$, where $\\Delta$ is the step size.',
-  parts:['[5 pts] Determine the value of $k$.',
-         '[15 pts] Obtain the SQNR in dB.',
-         '[5 pts] If the bandwidth of the signal is $5$ kHz, what is the bit rate of the corresponding PCM system?'],
+  parts:['Determine the value of $k$.',
+         'Obtain the SQNR in dB.',
+         'If the bandwidth of the signal is $5$ kHz, what is the bit rate of the corresponding PCM system?'],
   sol:'<b>Given.</b> $f_X(x)=k(1-|x|^{1/2})$ on $[-1,1]$, $L=512$ over $[-1,1]$.<br>'
      +'<b>Find.</b> $k$, the SQNR and the bit rate.<br>'
      +'<b>Method.</b> The density is even, so integrate over $[0,1]$ and double. There $|x|=x$.<br>'
@@ -649,9 +649,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D1-20', module:'M1', type:'fine', src:'MT Q2',
   stem:'The samples of a stationary source, $X(t)$, are distributed according to the PDF $f_X(x)=k\\left(4-x^{2}\\right)$ for $|x|\\le2$, and zero elsewhere. The samples are quantized by using a uniform quantizer with $64$ levels over $[-2,2]$. The quantization noise is a uniform random variable between $-\\tfrac{\\Delta}{2}$ and $\\tfrac{\\Delta}{2}$.',
-  parts:['[5 pts] Determine the value of $k$.',
-         '[15 pts] Obtain the SQNR in dB.',
-         '[5 pts] If the bandwidth of the signal is $6$ kHz, what is the bit rate of the corresponding PCM system?'],
+  parts:['Determine the value of $k$.',
+         'Obtain the SQNR in dB.',
+         'If the bandwidth of the signal is $6$ kHz, what is the bit rate of the corresponding PCM system?'],
   sol:'<b>Given.</b> A parabolic density on $[-2,2]$, $L=64$ over $[-2,2]$.<br>'
      +'<b>Find.</b> $k$, the SQNR and the bit rate.<br>'
      +'<b>Method.</b> Area for $k$, second moment for $P_X$, and $\\Delta^{2}/12$ with $\\Delta=4/64$.<br>'
@@ -668,10 +668,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D1-21', module:'M1', type:'fine', src:'MT Q2',
   stem:'The samples of a stationary source $X(t)$ have the PDF $f_X(x)=k\\,e^{-|x|}$ for $|x|\\le2$, and zero elsewhere. They are quantized by a uniform quantizer with $256$ levels over $[-2,2]$. The quantization noise is a uniform random variable between $-\\tfrac{\\Delta}{2}$ and $\\tfrac{\\Delta}{2}$.',
-  parts:['[5 pts] Determine the value of $k$.',
-         '[7 pts] Calculate the power of the samples.',
-         '[7 pts] Obtain the SQNR in dB.',
-         '[6 pts] Find the smallest number of levels, a power of two, that gives an SQNR of at least $50$ dB.'],
+  parts:['Determine the value of $k$.',
+         'Calculate the power of the samples.',
+         'Obtain the SQNR in dB.',
+         'Find the smallest number of levels, a power of two, that gives an SQNR of at least $50$ dB.'],
   sol:'<b>Given.</b> A truncated two-sided exponential on $[-2,2]$, $L=256$ over $[-2,2]$.<br>'
      +'<b>Find.</b> $k$, $P_X$, the SQNR, and the least $L$ for $50$ dB.<br>'
      +'<b>Method.</b> Integrate over $[0,2]$ and double. The power needs integration by parts twice. For the last part use $\\mathrm{SQNR}=\\alpha+6.02R$.<br>'
@@ -691,10 +691,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D1-22', module:'M1', type:'fine', src:'MT Q2 (variant)',
   stem:'The samples of a stationary source $X(t)$ have the PDF $f_X(x)=k(1+x)$ for $-1\\le x\\le1$, and zero elsewhere. The samples are quantized by a uniform quantizer with $32$ levels over $[-1,1]$. The quantization noise is a uniform random variable between $-\\tfrac{\\Delta}{2}$ and $\\tfrac{\\Delta}{2}$.',
-  parts:['[5 pts] Determine the value of $k$.',
-         '[8 pts] Calculate the mean and the power of the samples.',
-         '[7 pts] Obtain the SQNR in dB.',
-         '[5 pts] If the bandwidth of the signal is $3.5$ kHz, what is the bit rate of the corresponding PCM system?'],
+  parts:['Determine the value of $k$.',
+         'Calculate the mean and the power of the samples.',
+         'Obtain the SQNR in dB.',
+         'If the bandwidth of the signal is $3.5$ kHz, what is the bit rate of the corresponding PCM system?'],
   sol:'<b>Given.</b> A ramp density on $[-1,1]$, $L=32$ over $[-1,1]$.<br>'
      +'<b>Find.</b> $k$, $E[X]$, $P_X$, the SQNR and the bit rate.<br>'
      +'<b>Method.</b> The density is not even, so integrate over the whole interval. The signal power is $E[X^{2}]$, with the mean inside it.<br>'
@@ -711,10 +711,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D1-23', module:'M1', type:'fine', src:'MT Q2 (variant)',
   stem:'The samples of a stationary source $X(t)$ have the PDF $f_X(x)=k|x|$ for $|x|\\le a$, and zero elsewhere. The power of the samples is $E[X^{2}]=2$. A uniform quantizer with $L$ levels covers $[-a,a]$. The quantization noise is a uniform random variable between $-\\tfrac{\\Delta}{2}$ and $\\tfrac{\\Delta}{2}$.',
-  parts:['[8 pts] Determine $a$ and $k$.',
-         '[7 pts] Find the smallest $L$, a power of two, that gives an SQNR of at least $40$ dB.',
-         '[5 pts] Calculate the step size and the SQNR obtained with that $L$.',
-         '[5 pts] If the bandwidth of the signal is $6.5$ kHz, what is the bit rate of the corresponding PCM system?'],
+  parts:['Determine $a$ and $k$.',
+         'Find the smallest $L$, a power of two, that gives an SQNR of at least $40$ dB.',
+         'Calculate the step size and the SQNR obtained with that $L$.',
+         'If the bandwidth of the signal is $6.5$ kHz, what is the bit rate of the corresponding PCM system?'],
   sol:'<b>Given.</b> A V-shaped density on $[-a,a]$ with unknown $a$ and $k$, and $E[X^{2}]=2$.<br>'
      +'<b>Find.</b> $a$, $k$, the least $L$ for $40$ dB, $\\Delta$, the SQNR and the bit rate.<br>'
      +'<b>Method.</b> Two conditions fix two unknowns: the area is $1$ and the power is $2$. Then use $\\mathrm{SQNR}=\\alpha+6.02R$.<br>'
@@ -736,10 +736,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 { id:'D1-24', module:'M1', type:'coarse', src:'MT Q2',
   stem:'The samples of a stationary source, $X(t)$, are distributed according to the probability density function (PDF) drawn below. These samples are quantized using the following quantizer: $$\\hat X=\\mathbb{Q}(X)=\\begin{cases}-2,&-3<X<0\\\\2,&0<X<3\\\\0,&\\text{otherwise}\\end{cases}$$ According to the information given above,',
   figure:()=>figPdf({xr:[-6,6], xticks:[-5,-3,3,5], pts:[[-6,0],[-5,0],[-3,1],[3,1],[5,0],[6,0]], levels:[[1,'c',-3]]}),
-  parts:['[6 pts] Determine the value of $c$.',
-         '[6 pts] Calculate the power of the samples of the stationary source.',
-         '[6 pts] Calculate the power of the quantization noise.',
-         '[7 pts] Obtain the SQNR in dB.'],
+  parts:['Determine the value of $c$.',
+         'Calculate the power of the samples of the stationary source.',
+         'Calculate the power of the quantization noise.',
+         'Obtain the SQNR in dB.'],
   sol:'<b>Given.</b> A trapezoidal density on $[-5,5]$, flat at height $c$ on $[-3,3]$. The quantizer gives $\\pm2$ on $(-3,0)$ and $(0,3)$, and $0$ elsewhere.<br>'
      +'<b>Find.</b> $c$, $P_X$, $P_Q$ and the SQNR.<br>'
      +'<b>Method.</b> The area gives $c$. Both powers are even integrals, so work on $x\\ge0$ and double. Split the noise integral at the corner $x=3$, which is also a quantizer boundary.<br>'
@@ -758,10 +758,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 { id:'D1-25', module:'M1', type:'coarse', src:'MT Q2',
   stem:'The samples of a stationary source, $X(t)$, are distributed according to the probability density function (PDF) drawn below. These samples are quantized using the following quantizer: $$\\hat X=\\mathbb{Q}(X)=\\begin{cases}-3,&-6<X<0\\\\3,&0<X<6\\\\0,&\\text{otherwise}\\end{cases}$$ According to the information given above,',
   figure:()=>figPdf({xr:[-8,8], xticks:[-6,-3,3,6], pts:[[-8,0],[-6,0],[0,1],[6,0],[8,0]], levels:[[1,'c',0]]}),
-  parts:['[6 pts] Determine the value of $c$.',
-         '[6 pts] Calculate the power of the samples of the stationary source.',
-         '[6 pts] Calculate the power of the quantization noise.',
-         '[7 pts] Obtain the SQNR in dB.'],
+  parts:['Determine the value of $c$.',
+         'Calculate the power of the samples of the stationary source.',
+         'Calculate the power of the quantization noise.',
+         'Obtain the SQNR in dB.'],
   sol:'<b>Given.</b> A triangular density on $[-6,6]$ with peak $c$, and outputs $\\pm3$ on $(-6,0)$ and $(0,6)$.<br>'
      +'<b>Find.</b> $c$, $P_X$, $P_Q$ and the SQNR.<br>'
      +'<b>Method.</b> The area gives $c$. For $x\\ge0$ the density is $c(1-x/6)$, and both powers are twice the integral over $[0,6]$.<br>'
@@ -780,10 +780,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 { id:'D1-26', module:'M1', type:'coarse', src:'MT Q2',
   stem:'The samples of a stationary source, $X(t)$, are distributed according to the probability density function (PDF) drawn below. These samples are quantized using the following quantizer: $$\\hat X=\\mathbb{Q}(X)=\\begin{cases}-2,&-4<X<-1\\\\0,&-1\\le X\\le1\\\\2,&1<X<4\\end{cases}$$ According to the information given above,',
   figure:()=>figPdf({xr:[-5,5], xticks:[-4,-2,-1,1,2,4], pts:[[-5,0],[-4,0],[-2,1],[2,1],[4,0],[5,0]], levels:[[1,'c',-2]]}),
-  parts:['[6 pts] Determine the value of $c$.',
-         '[6 pts] Calculate the power of the samples of the stationary source.',
-         '[6 pts] Calculate the power of the quantization noise.',
-         '[7 pts] Obtain the SQNR in dB.'],
+  parts:['Determine the value of $c$.',
+         'Calculate the power of the samples of the stationary source.',
+         'Calculate the power of the quantization noise.',
+         'Obtain the SQNR in dB.'],
   sol:'<b>Given.</b> A trapezoidal density on $[-4,4]$, flat at height $c$ on $[-2,2]$, and a three-level quantizer with outputs $-2$, $0$, $2$.<br>'
      +'<b>Find.</b> $c$, $P_X$, $P_Q$ and the SQNR.<br>'
      +'<b>Method.</b> Work on $x\\ge0$ and double. Split the noise integral at the quantizer boundary $x=1$ and at the corner $x=2$.<br>'
@@ -801,10 +801,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 { id:'D1-27', module:'M1', type:'coarse', src:'MT Q2',
   stem:'The samples of a stationary source, $X(t)$, are distributed according to the probability density function (PDF) drawn below. These samples are quantized using the following quantizer: $$\\hat X=\\mathbb{Q}(X)=\\begin{cases}-2,&-4<X<0\\\\2,&0<X<4\\\\0,&\\text{otherwise}\\end{cases}$$ According to the information given above,',
   figure:()=>figPdf({xr:[-7,7], xticks:[-6,-4,-2,2,4,6], pts:[[-7,0],[-6,0],[-2,1],[2,1],[6,0],[7,0]], levels:[[1,'c',-2]]}),
-  parts:['[6 pts] Determine the value of $c$.',
-         '[6 pts] Calculate the power of the samples of the stationary source.',
-         '[6 pts] Calculate the power of the quantization noise.',
-         '[7 pts] Obtain the SQNR in dB.'],
+  parts:['Determine the value of $c$.',
+         'Calculate the power of the samples of the stationary source.',
+         'Calculate the power of the quantization noise.',
+         'Obtain the SQNR in dB.'],
   sol:'<b>Given.</b> A trapezoidal density on $[-6,6]$, flat at height $c$ on $[-2,2]$. The outputs are $\\pm2$ on $(-4,0)$ and $(0,4)$, and $0$ outside.<br>'
      +'<b>Find.</b> $c$, $P_X$, $P_Q$ and the SQNR.<br>'
      +'<b>Method.</b> Work on $x\\ge0$ and double. The noise integral splits at the corner $x=2$ and at the boundary $x=4$.<br>'
@@ -824,10 +824,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   stem:'The samples of a stationary source $X(t)$ have the piecewise-constant PDF drawn below. They are quantized by a $4$-level uniform quantizer over $[-3,3]$, with outputs $\\pm0.75$ and $\\pm2.25$ and boundaries $0$ and $\\pm1.5$.',
   figure:()=>figPdf({xr:[-4,4], xticks:[-3,-1.5,-1,1,1.5,3], pts:[[-4,0],[-3,0],[-3,0.5],[-1,0.5],[-1,1],[1,1],[1,0.5],[3,0.5],[3,0],[4,0]],
     levels:[[1,'c',-1],[0.5,'c/2',-3]]}),
-  parts:['[5 pts] Determine the value of $c$.',
-         '[6 pts] Calculate the power of the samples.',
-         '[8 pts] Calculate the power of the quantization noise, region by region.',
-         '[6 pts] Obtain the SQNR in dB, and compare the noise power with $\\Delta^{2}/12$.'],
+  parts:['Determine the value of $c$.',
+         'Calculate the power of the samples.',
+         'Calculate the power of the quantization noise, region by region.',
+         'Obtain the SQNR in dB, and compare the noise power with $\\Delta^{2}/12$.'],
   sol:'<b>Given.</b> A density of height $c$ on $|x|<1$ and $c/2$ on $1<|x|<3$. A uniform quantizer with $\\Delta=1.5$ and outputs at the cell midpoints.<br>'
      +'<b>Find.</b> $c$, $P_X$, $P_Q$, the SQNR, and a comparison with $\\Delta^{2}/12$.<br>'
      +'<b>Method.</b> The step of the density at $x=1$ falls inside the cell $(0,1.5)$. Split the noise integral there as well as at the boundaries.<br>'
@@ -846,10 +846,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 { id:'D1-29', module:'M1', type:'coarse', src:'MT Q2 (variant)',
   stem:'The samples of a stationary source $X(t)$ have the triangular PDF drawn below. They are quantized by $$\\hat X=\\mathbb{Q}(X)=\\begin{cases}-b,&-3<X<0\\\\b,&0<X<3\\\\0,&\\text{otherwise}\\end{cases}$$ where $b>0$ is a design constant.',
   figure:()=>figPdf({xr:[-4,4], xticks:[-3,-1,1,3], pts:[[-4,0],[-3,0],[0,1],[3,0],[4,0]], levels:[[1,'c',0]]}),
-  parts:['[5 pts] Determine the value of $c$.',
-         '[5 pts] Calculate the power of the samples.',
-         '[7 pts] For $b=2$, calculate the power of the quantization noise and the SQNR in dB.',
-         '[8 pts] Find the value of $b$ that makes the noise power smallest, and the SQNR it gives.'],
+  parts:['Determine the value of $c$.',
+         'Calculate the power of the samples.',
+         'For $b=2$, calculate the power of the quantization noise and the SQNR in dB.',
+         'Find the value of $b$ that makes the noise power smallest, and the SQNR it gives.'],
   sol:'<b>Given.</b> A triangular density on $[-3,3]$ with peak $c$, and outputs $\\pm b$ on the two halves.<br>'
      +'<b>Find.</b> $c$, $P_X$, $P_Q$ and the SQNR for $b=2$, and the best $b$.<br>'
      +'<b>Method.</b> Expand $(x-b)^{2}$ so that $P_Q$ becomes a quadratic in $b$. Its coefficients are moments of the density. Then set the derivative in $b$ to zero.<br>'
@@ -870,10 +870,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 { id:'D1-30', module:'M1', type:'coarse', src:'MT Q2 (variant)',
   stem:'The samples of a non-negative stationary source $X(t)$ have the PDF drawn below. It falls linearly from $c$ at $x=0$ to zero at $x=4$. They are quantized by $$\\hat X=\\mathbb{Q}(X)=\\begin{cases}1,&0<X<2\\\\3,&2<X<4\\\\0,&\\text{otherwise}\\end{cases}$$ According to the information given above,',
   figure:()=>figPdf({xr:[-1,5], xticks:[1,2,3,4], pts:[[-1,0],[0,0],[0,1],[4,0],[5,0]], levels:[[1,'c',0]]}),
-  parts:['[5 pts] Determine the value of $c$.',
-         '[6 pts] Calculate the mean and the power of the samples.',
-         '[8 pts] Calculate the power of the quantization noise.',
-         '[6 pts] Obtain the SQNR in dB, and compare the noise power with $\\Delta^{2}/12$.'],
+  parts:['Determine the value of $c$.',
+         'Calculate the mean and the power of the samples.',
+         'Calculate the power of the quantization noise.',
+         'Obtain the SQNR in dB, and compare the noise power with $\\Delta^{2}/12$.'],
   sol:'<b>Given.</b> $f_X(x)=c(1-x/4)$ on $[0,4]$, and a two-level uniform quantizer with $\\Delta=2$ and outputs at the cell midpoints.<br>'
      +'<b>Find.</b> $c$, $E[X]$, $P_X$, $P_Q$, the SQNR and a comparison with $\\Delta^{2}/12$.<br>'
      +'<b>Method.</b> Integrate each cell after centring it on its output. The substitution $u=x-v$ makes the odd terms vanish.<br>'

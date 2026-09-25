@@ -282,9 +282,9 @@ CONTENT.DRILLTYPES.M2 = [
 
 /* Wording shared by the matched-filter questions. */
 const MF_PARTS = [
-  '<b>[5 pts]</b> Plot the impulse response of the matched filter, $h(t)=\\psi(T-t)$.',
-  '<b>[10 pts]</b> Determine the conditional PDFs, $f_Y(y\\mid 1)$ and $f_Y(y\\mid 0)$.',
-  '<b>[10 pts]</b> Find the optimal decision threshold ($\\lambda$) and calculate the average probability of bit error ($P_b$). Use a table of the $Q$ function for the numerical value.'];
+  'Plot the impulse response of the matched filter, $h(t)=\\psi(T-t)$.',
+  'Determine the conditional PDFs, $f_Y(y\\mid 1)$ and $f_Y(y\\mid 0)$.',
+  'Find the optimal decision threshold ($\\lambda$) and calculate the average probability of bit error ($P_b$). Use a table of the $Q$ function for the numerical value.'];
 const MF_STEM = (psd, T) => 'Consider an additive white Gaussian noise channel with two-sided noise power spectral density $N_0/2=' + psd + '$ W/Hz. '
   + 'Two equiprobable messages, $s_0(t)$ for “0” and $s_1(t)$ for “1”, are transmitted by the waveforms below. '
   + 'These signals are passed through the following matched-filter type demodulator. '
@@ -437,10 +437,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
      +'The signals pass through the matched-filter type demodulator shown, with the unit-energy basis signal $\\psi(t)$ and $T=3$ s. According to the information given above,',
   figure: () => mfQ(3, [[0,2,-2],[2,3,1]], [[0,2,2],[2,3,-1]],
     {yr:[-2.6,1.6], ys:1}, {yr:[-1.6,2.6], ys:1}),
-  parts:['<b>[5 pts]</b> Plot the impulse response of the matched filter, $h(t)=\\psi(T-t)$.',
-         '<b>[8 pts]</b> Determine the conditional PDFs, $f_Y(y\\mid 1)$ and $f_Y(y\\mid 0)$.',
-         '<b>[7 pts]</b> Find the optimal decision threshold ($\\lambda$).',
-         '<b>[5 pts]</b> Calculate $P_b$ at this threshold. Compare it with $P_b$ for the threshold $\\lambda=0$.'],
+  parts:['Plot the impulse response of the matched filter, $h(t)=\\psi(T-t)$.',
+         'Determine the conditional PDFs, $f_Y(y\\mid 1)$ and $f_Y(y\\mid 0)$.',
+         'Find the optimal decision threshold ($\\lambda$).',
+         'Calculate $P_b$ at this threshold. Compare it with $P_b$ for the threshold $\\lambda=0$.'],
   sol:'<b>Given.</b> $p_0=0.8$, $p_1=0.2$, $N_0/2=2.25$ W/Hz and $T=3$ s. $s_1(t)=2$ on $[0,2)$ and $-1$ on $[2,3]$. $s_0(t)=-s_1(t)$.<br>'
      +'<b>Find.</b> $h(t)$, the two conditional PDFs, $\\lambda$ and $P_b$.<br>'
      +'<b>Method.</b> The signals are antipodal, so one basis signal represents both. The priors are unequal, so the threshold moves away from the more likely message. It solves $p_0f_Y(\\lambda\\mid 0)=p_1f_Y(\\lambda\\mid 1)$.<br>'
@@ -463,10 +463,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   stem: MF_STEM('2.56', 4),
   figure: () => mfQ(4, [[0,2,-3],[2,4,3]], [[0,2,1],[2,4,-1]],
     {yr:[-3.8,3.8], ys:1}, {yr:[-1.6,1.6], ys:1}),
-  parts:['<b>[6 pts]</b> Show that one basis signal represents both waveforms. Give $\\psi(t)$ and the coordinates of $s_0$ and $s_1$.',
-         '<b>[5 pts]</b> Plot the impulse response of the matched filter, $h(t)=\\psi(T-t)$.',
-         '<b>[7 pts]</b> Determine the conditional PDFs, $f_Y(y\\mid 1)$ and $f_Y(y\\mid 0)$.',
-         '<b>[7 pts]</b> Find the optimal decision threshold ($\\lambda$) and calculate $P_b$ with a table of the $Q$ function.'],
+  parts:['Show that one basis signal represents both waveforms. Give $\\psi(t)$ and the coordinates of $s_0$ and $s_1$.',
+         'Plot the impulse response of the matched filter, $h(t)=\\psi(T-t)$.',
+         'Determine the conditional PDFs, $f_Y(y\\mid 1)$ and $f_Y(y\\mid 0)$.',
+         'Find the optimal decision threshold ($\\lambda$) and calculate $P_b$ with a table of the $Q$ function.'],
   sol:'<b>Given.</b> Equal priors, $N_0/2=2.56$ W/Hz and $T=4$ s. $s_0(t)=-3$ on $[0,2)$ and $3$ on $[2,4]$. $s_1(t)=1$ on $[0,2)$ and $-1$ on $[2,4]$.<br>'
      +'<b>Find.</b> $\\psi(t)$, the coordinates, $h(t)$, the conditional PDFs, $\\lambda$ and $P_b$.<br>'
      +'<b>Method.</b> Two waveforms need one basis signal when one is a multiple of the other. Test this piece by piece, then normalise.<br>'
@@ -529,10 +529,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
     [row([[waveAx([[0,2,2],[2,3,-1]], 3, {yl:'s(t)', yr:[-1.6,2.6], ys:1}), 380],
           [waveAx([[0,2,1]], 3, {yl:'h_2(t)', yr:[-0.4,1.4], ys:1, col:C.h}), 380]], 220), 220],
     [filtDiag(), 150]]),
-  parts:['<b>[6 pts]</b> The filter is matched, $h(t)=s(T-t)$, and the output is sampled at $t_0=T$. Find $y_s(T)$, $E[n^{2}(T)]$ and $\\eta$.',
-         '<b>[6 pts]</b> The clock of the same receiver runs early and samples at $t_0=2.5$ s. Find $y_s(2.5)$ and $\\eta$.',
-         '<b>[8 pts]</b> The matched filter is replaced by $h_2(t)=1$ on $[0,2]$, shown above. Find and plot the signal part $z_s(t)$ of its output. Give the best sampling instant and $\\eta$ there.',
-         '<b>[5 pts]</b> Give the loss of part (b) and the loss of part (c) against part (a) in dB. Which fault costs more?'],
+  parts:['The filter is matched, $h(t)=s(T-t)$, and the output is sampled at $t_0=T$. Find $y_s(T)$, $E[n^{2}(T)]$ and $\\eta$.',
+         'The clock of the same receiver runs early and samples at $t_0=2.5$ s. Find $y_s(2.5)$ and $\\eta$.',
+         'The matched filter is replaced by $h_2(t)=1$ on $[0,2]$, shown above. Find and plot the signal part $z_s(t)$ of its output. Give the best sampling instant and $\\eta$ there.',
+         'Give the loss of part (b) and the loss of part (c) against part (a) in dB. Which fault costs more?'],
   sol:'<b>Given.</b> $s(t)=2$ on $[0,2)$, $-1$ on $[2,3)$ and $0$ elsewhere. $T=3$ s and $N_0/2=0.5$ W/Hz, so $N_0=1$ W/Hz.<br>'
      +'<b>Find.</b> $\\eta$ of the matched filter at $t_0=3$ and at $t_0=2.5$. The output $z_s(t)$ of $h_2$, its best instant and its $\\eta$. The two losses in dB.<br>'
      +'<b>Method.</b> The signal part is a convolution, $y_s(t)=\\int s(\\tau)h(t-\\tau)\\,d\\tau$. The noise variance at the output is $E[n^{2}(t_0)]=(N_0/2)\\int h^{2}(t)\\,dt$. '
@@ -595,9 +595,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
      +'The probability density function of the noise sample $N$ is shown below: $$f_N(n)=\\begin{cases}\\dfrac18\\left(1-\\dfrac{|n|}{8}\\right),&-8\\le n\\le 8\\\\0,&\\text{otherwise.}\\end{cases}$$ '
      +'Assume that “0” and “1” are transmitted with equal probabilities.',
   figure: () => noiseQ(tri(8), [-10,10], [-0.01,0.16], {xs:2, yt:[0.125], yf:()=>'1/8'}),
-  parts:['<b>[9 pts]</b> Calculate the average probability of bit error ($P_b$) for the decision rule $Y\\underset{0}{\\overset{1}{\\gtrless}}3$, that is, decide “1” if $Y>3$ and “0” if $Y<3$.',
-         '<b>[8 pts]</b> Determine the optimal decision threshold ($\\lambda$).',
-         '<b>[8 pts]</b> Calculate $P_b$ for the $\\lambda$ value obtained in part (b).'],
+  parts:['Calculate the average probability of bit error ($P_b$) for the decision rule $Y\\underset{0}{\\overset{1}{\\gtrless}}3$, that is, decide “1” if $Y>3$ and “0” if $Y<3$.',
+         'Determine the optimal decision threshold ($\\lambda$).',
+         'Calculate $P_b$ for the $\\lambda$ value obtained in part (b).'],
   sol:'<b>Given.</b> A triangular noise density on $[-8,8]$ with peak $1/8$. $Y=N$ for “0” and $Y=5+N$ for “1”. Equal priors.<br>'
      +'<b>Find.</b> $P_b$ for the rule $Y>3$, the optimal $\\lambda$, and $P_b$ at $\\lambda$.<br>'
      +'<b>Method.</b> The noise is not Gaussian, so no $Q$ function appears. Integrate the triangle directly. With equal priors the optimal threshold is where the two conditional densities cross.<br>'
@@ -622,9 +622,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
      +'The PDF of the noise sample $N$ is $$f_N(n)=c\\,e^{-|n|/2},\\qquad -\\infty<n<\\infty,$$ where $c$ is a constant. '
      +'Assume that “0” and “1” are transmitted with equal probabilities.',
   figure: () => noiseQ(lap(2), [-9,9], [-0.02,0.3], {xs:2, yt:[0.25], yf:()=>'c'}),
-  parts:['<b>[9 pts]</b> Find $c$. Then calculate the average probability of bit error for the decision rule $Y\\underset{0}{\\overset{1}{\\gtrless}}1$, that is, decide “1” if $Y>1$ and “0” if $Y<1$.',
-         '<b>[8 pts]</b> Determine the optimal decision threshold ($\\lambda$).',
-         '<b>[8 pts]</b> Calculate the average probability of bit error ($P_b$) for the $\\lambda$ value obtained in part (b).'],
+  parts:['Find $c$. Then calculate the average probability of bit error for the decision rule $Y\\underset{0}{\\overset{1}{\\gtrless}}1$, that is, decide “1” if $Y>1$ and “0” if $Y<1$.',
+         'Determine the optimal decision threshold ($\\lambda$).',
+         'Calculate the average probability of bit error ($P_b$) for the $\\lambda$ value obtained in part (b).'],
   sol:'<b>Given.</b> $f_N(n)=c\\,e^{-|n|/2}$. $Y=-2+N$ for “0” and $Y=2+N$ for “1”. Equal priors.<br>'
      +'<b>Find.</b> $c$, $P_b$ for the rule $Y>1$, the optimal $\\lambda$, and $P_b$ at $\\lambda$.<br>'
      +'<b>Method.</b> The constant comes from the total area. The error probabilities are tails of the Laplacian density, integrated directly.<br>'
@@ -646,9 +646,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   stem:'In a binary digital communication system, the received sample is denoted by $Y$. '
      +'If “0” is transmitted, $Y$ is exponentially distributed with mean $2$. If “1” is transmitted, $Y$ is exponentially distributed with mean $6$. '
      +'The input bits are equiprobable. An exponential PDF with mean $\\mu$ is $f_Y(y)=\\frac{1}{\\mu}e^{-y/\\mu}$ for $y\\ge 0$, and $0$ otherwise.',
-  parts:['<b>[9 pts]</b> Calculate the average probability of bit error for the decision rule $Y\\underset{0}{\\overset{1}{\\gtrless}}4$, that is, decide “1” if $Y>4$ and “0” if $Y<4$.',
-         '<b>[8 pts]</b> Determine the optimal decision threshold ($\\lambda$).',
-         '<b>[8 pts]</b> Calculate the average probability of bit error ($P_b$) for the $\\lambda$ value obtained in part (b).'],
+  parts:['Calculate the average probability of bit error for the decision rule $Y\\underset{0}{\\overset{1}{\\gtrless}}4$, that is, decide “1” if $Y>4$ and “0” if $Y<4$.',
+         'Determine the optimal decision threshold ($\\lambda$).',
+         'Calculate the average probability of bit error ($P_b$) for the $\\lambda$ value obtained in part (b).'],
   sol:'<b>Given.</b> $f_Y(y\\mid 0)=\\tfrac12e^{-y/2}$ and $f_Y(y\\mid 1)=\\tfrac16e^{-y/6}$ for $y\\ge 0$. Equal priors.<br>'
      +'<b>Find.</b> $P_b$ for the rule $Y>4$, the optimal $\\lambda$, and $P_b$ at $\\lambda$.<br>'
      +'<b>Method.</b> Integrate each density over the region where its message is decided wrongly. The optimal threshold is where the two densities cross.<br>'
@@ -670,9 +670,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
      +'The noise sample $N$ has the triangular PDF shown below: $$f_N(n)=\\begin{cases}\\dfrac14\\left(1-\\dfrac{|n|}{4}\\right),&-4\\le n\\le 4\\\\0,&\\text{otherwise.}\\end{cases}$$ '
      +'Assume that “0” and “1” are transmitted with equal probabilities.',
   figure: () => noiseQ(tri(4), [-6,6], [-0.02,0.3], {xs:1, yt:[0.25], yf:()=>'1/4'}),
-  parts:['<b>[9 pts]</b> Calculate the average probability of bit error for the decision rule $Y\\underset{0}{\\overset{1}{\\gtrless}}5$, that is, decide “1” if $Y>5$ and “0” if $Y<5$.',
-         '<b>[8 pts]</b> Determine the optimal decision threshold ($\\lambda$).',
-         '<b>[8 pts]</b> Calculate the average probability of bit error ($P_b$) for the $\\lambda$ value obtained in part (b).'],
+  parts:['Calculate the average probability of bit error for the decision rule $Y\\underset{0}{\\overset{1}{\\gtrless}}5$, that is, decide “1” if $Y>5$ and “0” if $Y<5$.',
+         'Determine the optimal decision threshold ($\\lambda$).',
+         'Calculate the average probability of bit error ($P_b$) for the $\\lambda$ value obtained in part (b).'],
   sol:'<b>Given.</b> A triangular noise density on $[-4,4]$ with peak $1/4$. $Y=N$ for “0” and $Y=6+N$ for “1”. Equal priors.<br>'
      +'<b>Find.</b> $P_b$ for the rule $Y>5$, the optimal $\\lambda$, and $P_b$ at $\\lambda$.<br>'
      +'<b>Method.</b> The noise has finite support. A conditional error can therefore be exactly zero. Integrate the triangle and compare the densities region by region.<br>'
@@ -692,9 +692,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
      +'The PDF of the noise sample $N$ is $$f_N(n)=c\\,e^{-|n|/5},\\qquad -\\infty<n<\\infty,$$ where $c$ is a constant. '
      +'Assume that “0” and “1” are transmitted with equal probabilities.',
   figure: () => noiseQ(lap(5), [-20,20], [-0.01,0.12], {xs:5, yt:[0.1], yf:()=>'c'}),
-  parts:['<b>[9 pts]</b> Find $c$. Then calculate the average probability of bit error for the decision rule $Y\\underset{0}{\\overset{1}{\\gtrless}}3$, that is, decide “1” if $Y>3$ and “0” if $Y<3$.',
-         '<b>[8 pts]</b> Determine the optimal decision threshold ($\\lambda$).',
-         '<b>[8 pts]</b> Calculate the average probability of bit error ($P_b$) for the $\\lambda$ value obtained in part (b).'],
+  parts:['Find $c$. Then calculate the average probability of bit error for the decision rule $Y\\underset{0}{\\overset{1}{\\gtrless}}3$, that is, decide “1” if $Y>3$ and “0” if $Y<3$.',
+         'Determine the optimal decision threshold ($\\lambda$).',
+         'Calculate the average probability of bit error ($P_b$) for the $\\lambda$ value obtained in part (b).'],
   sol:'<b>Given.</b> $f_N(n)=c\\,e^{-|n|/5}$. $Y=N$ for “0” and $Y=8+N$ for “1”. Equal priors.<br>'
      +'<b>Find.</b> $c$, $P_b$ for the rule $Y>3$, the optimal $\\lambda$, and $P_b$ at $\\lambda$.<br>'
      +'<b>Method.</b> Find $c$ from the total area, then integrate Laplacian tails.<br>'
@@ -713,9 +713,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   stem:'In a binary digital communication system, the received sample is denoted by $Y$. '
      +'If “0” is transmitted, $Y$ is exponentially distributed with mean $3$. If “1” is transmitted, $Y$ is exponentially distributed with mean $12$. '
      +'The input bits are equiprobable. An exponential PDF with mean $\\mu$ is $f_Y(y)=\\frac{1}{\\mu}e^{-y/\\mu}$ for $y\\ge 0$.',
-  parts:['<b>[9 pts]</b> Calculate the average probability of bit error for the decision rule $Y\\underset{0}{\\overset{1}{\\gtrless}}6$, that is, decide “1” if $Y>6$ and “0” if $Y<6$.',
-         '<b>[8 pts]</b> Determine the optimal decision threshold ($\\lambda$).',
-         '<b>[8 pts]</b> Calculate the average probability of bit error ($P_b$) for the $\\lambda$ value obtained in part (b).'],
+  parts:['Calculate the average probability of bit error for the decision rule $Y\\underset{0}{\\overset{1}{\\gtrless}}6$, that is, decide “1” if $Y>6$ and “0” if $Y<6$.',
+         'Determine the optimal decision threshold ($\\lambda$).',
+         'Calculate the average probability of bit error ($P_b$) for the $\\lambda$ value obtained in part (b).'],
   sol:'<b>Given.</b> $f_Y(y\\mid 0)=\\tfrac13e^{-y/3}$ and $f_Y(y\\mid 1)=\\tfrac{1}{12}e^{-y/12}$ for $y\\ge 0$. Equal priors.<br>'
      +'<b>Find.</b> $P_b$ for the rule $Y>6$, the optimal $\\lambda$, and $P_b$ at $\\lambda$.<br>'
      +'<b>Method.</b> Integrate each exponential over its error region. Equate the densities for the threshold.<br>'
@@ -734,9 +734,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
      +'The PDF of the noise sample $N$ is $f_N(n)=c\\,e^{-|n|}$ for all $n$, where $c$ is a constant. '
      +'The bit “0” is sent with probability $0.8$ and “1” with probability $0.2$.',
   figure: () => noiseQ(lap(1), [-5,5], [-0.04,0.6], {xs:1, yt:[0.5], yf:()=>'c'}),
-  parts:['<b>[9 pts]</b> Find $c$. Then calculate $P_b$ for the decision rule $Y\\underset{0}{\\overset{1}{\\gtrless}}0$.',
-         '<b>[8 pts]</b> Determine the optimal decision threshold ($\\lambda$) for these priors.',
-         '<b>[8 pts]</b> Calculate $P_b$ for the $\\lambda$ value obtained in part (b).'],
+  parts:['Find $c$. Then calculate $P_b$ for the decision rule $Y\\underset{0}{\\overset{1}{\\gtrless}}0$.',
+         'Determine the optimal decision threshold ($\\lambda$) for these priors.',
+         'Calculate $P_b$ for the $\\lambda$ value obtained in part (b).'],
   sol:'<b>Given.</b> $f_N(n)=c\\,e^{-|n|}$. $Y=-3+N$ for “0” and $Y=3+N$ for “1”. $p_0=0.8$ and $p_1=0.2$.<br>'
      +'<b>Find.</b> $c$, $P_b$ at $\\lambda=0$, the optimal $\\lambda$, and $P_b$ there.<br>'
      +'<b>Method.</b> The optimal threshold solves $p_0f_Y(\\lambda\\mid 0)=p_1f_Y(\\lambda\\mid 1)$. Between the two means both exponents are linear in $\\lambda$, so the equation is easy to solve.<br>'
@@ -758,9 +758,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
      +'The noise $N$ has the triangular PDF $f_N(n)=\\frac15\\left(1-\\frac{|n|}{5}\\right)$ for $|n|\\le 5$, and $0$ otherwise. '
      +'The bit “0” is sent with probability $0.6$ and “1” with probability $0.4$.',
   figure: () => noiseQ(tri(5), [-7,7], [-0.02,0.24], {xs:1, yt:[0.2], yf:()=>'1/5'}),
-  parts:['<b>[9 pts]</b> Calculate $P_b$ for the decision rule $Y\\underset{0}{\\overset{1}{\\gtrless}}2$, the midpoint between the two signal values.',
-         '<b>[8 pts]</b> Determine the optimal decision threshold ($\\lambda$) for these priors.',
-         '<b>[8 pts]</b> Calculate $P_b$ for the $\\lambda$ value obtained in part (b).'],
+  parts:['Calculate $P_b$ for the decision rule $Y\\underset{0}{\\overset{1}{\\gtrless}}2$, the midpoint between the two signal values.',
+         'Determine the optimal decision threshold ($\\lambda$) for these priors.',
+         'Calculate $P_b$ for the $\\lambda$ value obtained in part (b).'],
   sol:'<b>Given.</b> A triangular noise density on $[-5,5]$ with peak $1/5$. $Y=N$ for “0” and $Y=4+N$ for “1”. $p_0=0.6$ and $p_1=0.4$.<br>'
      +'<b>Find.</b> $P_b$ at $2$, the optimal $\\lambda$, and $P_b$ at $\\lambda$.<br>'
      +'<b>Method.</b> Integrate the triangle for each error and weight by the priors. For the threshold, compare $p_0f_Y(y\\mid 0)$ with $p_1f_Y(y\\mid 1)$ region by region.<br>'
@@ -785,10 +785,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
      +'Background light gives a few counts even when no pulse is sent. '
      +'The count $Z$ is a Poisson random variable with mean $m_0=2$ if “0” is sent and $m_1=8$ if “1” is sent: $$P(Z=k\\mid m)=\\frac{e^{-m}m^{k}}{k!},\\qquad k=0,1,2,\\ldots$$ '
      +'The count takes whole values only. According to this information,',
-  parts:['<b>[7 pts]</b> Assume equal priors. Show that the optimal rule compares $Z$ with a threshold, and find the smallest count that is decided as “1”.',
-         '<b>[6 pts]</b> Calculate the conditional error probabilities $P(e\\mid 0)$ and $P(e\\mid 1)$ of this rule.',
-         '<b>[6 pts]</b> The bit “1” is now sent with probability $0.2$. Find the optimal rule for these priors.',
-         '<b>[6 pts]</b> Calculate $P_b$ for the rule of part (c). Compare it with $P_b$ of the rule of part (a) at the same priors.'],
+  parts:['Assume equal priors. Show that the optimal rule compares $Z$ with a threshold, and find the smallest count that is decided as “1”.',
+         'Calculate the conditional error probabilities $P(e\\mid 0)$ and $P(e\\mid 1)$ of this rule.',
+         'The bit “1” is now sent with probability $0.2$. Find the optimal rule for these priors.',
+         'Calculate $P_b$ for the rule of part (c). Compare it with $P_b$ of the rule of part (a) at the same priors.'],
   sol:'<b>Given.</b> $P(Z=k\\mid 0)=e^{-2}2^{k}/k!$ and $P(Z=k\\mid 1)=e^{-8}8^{k}/k!$ for $k=0,1,2,\\ldots$ The priors are equal in parts (a) and (b). In parts (c) and (d), $p_0=0.8$ and $p_1=0.2$.<br>'
      +'<b>Find.</b> The rule and its threshold, $P(e\\mid 0)$, $P(e\\mid 1)$, the rule for the new priors, and $P_b$ of both rules.<br>'
      +'<b>Method.</b> The count is a whole number, so each value $k$ is decided on its own. $P_b$ collects $p_0P(Z=k\\mid 0)$ for every $k$ decided as “1” and $p_1P(Z=k\\mid 1)$ for every $k$ decided as “0”. '
@@ -825,9 +825,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
      +'At the output of the matched filter, we observe $Y=|N_0|$ when “0” is transmitted and $Y=|N_1|$ when “1” is transmitted. '
      +'Here $N_0$ and $N_1$ are independent Gaussian random variables with $N_0\\sim\\mathcal{N}(\\mu=0,\\sigma^{2}=1)$ and $N_1\\sim\\mathcal{N}(\\mu=0,\\sigma^{2}=4)$. '
      +'Assume that “0” and “1” are transmitted with equal probabilities.',
-  parts:['<b>[8 pts]</b> Determine the conditional PDFs, $f_Y(y\\mid 1)$ and $f_Y(y\\mid 0)$.',
-         '<b>[9 pts]</b> Find the optimal decision threshold ($\\lambda$).',
-         '<b>[8 pts]</b> Calculate the average probability of bit error ($P_b$). Give the result as a numerical value, using a table of the $Q$ function.'],
+  parts:['Determine the conditional PDFs, $f_Y(y\\mid 1)$ and $f_Y(y\\mid 0)$.',
+         'Find the optimal decision threshold ($\\lambda$).',
+         'Calculate the average probability of bit error ($P_b$). Give the result as a numerical value, using a table of the $Q$ function.'],
   sol:'<b>Given.</b> $Y=|N_0|$ for “0” and $Y=|N_1|$ for “1”, with $N_0\\sim\\mathcal{N}(0,1)$ and $N_1\\sim\\mathcal{N}(0,4)$. Equal priors.<br>'
      +'<b>Find.</b> The two conditional PDFs, $\\lambda$, and $P_b$ as a number.<br>'
      +'<b>Method.</b> Find the density of a magnitude from its distribution function. Then set the two densities equal. Both have zero mean, so the one with the larger variance wins for large $y$.<br>'
@@ -851,9 +851,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   stem:'Assume that in a binary pulse amplitude modulation (PAM) communication system, “0” and “1” bits occur with probabilities $0.6$ and $0.4$. '
      +'At the output of the matched filter, the output signal has a Gaussian distribution with mean $3$ and variance $4$ if “1” is transmitted. '
      +'It has a Gaussian distribution with mean $0$ and variance $1$ if “0” is transmitted. According to this information,',
-  parts:['<b>[8 pts]</b> Determine the conditional PDFs, $f_Y(y\\mid 1)$ and $f_Y(y\\mid 0)$.',
-         '<b>[9 pts]</b> Find the optimal decision rule. Show that it needs two thresholds, and give both.',
-         '<b>[8 pts]</b> Calculate the average probability of bit error ($P_b$) as a numerical value, using a table of the $Q$ function.'],
+  parts:['Determine the conditional PDFs, $f_Y(y\\mid 1)$ and $f_Y(y\\mid 0)$.',
+         'Find the optimal decision rule. Show that it needs two thresholds, and give both.',
+         'Calculate the average probability of bit error ($P_b$) as a numerical value, using a table of the $Q$ function.'],
   sol:'<b>Given.</b> $p_0=0.6$ and $p_1=0.4$. $Y\\sim\\mathcal{N}(0,1)$ given “0” and $Y\\sim\\mathcal{N}(3,4)$ given “1”.<br>'
      +'<b>Find.</b> The two conditional PDFs, the decision rule, and $P_b$.<br>'
      +'<b>Method.</b> Set the weighted densities equal and take logarithms. The variances differ, so the $y^{2}$ terms do not cancel. The result is a quadratic with two roots.<br>'
@@ -878,9 +878,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   stem:'Assume that in a binary pulse amplitude modulation (PAM) communication system, “0” and “1” bits occur with probabilities $0.7$ and $0.3$. '
      +'Consider a signal detector with the input $$Y=\\begin{cases}5+N,&\\text{if }1\\text{ is sent}\\\\N,&\\text{if }0\\text{ is sent}\\end{cases}$$ '
      +'where $N$ is a Gaussian random variable with mean $0$ and variance $4$. According to this information,',
-  parts:['<b>[8 pts]</b> Determine the conditional PDFs, $f_Y(y\\mid 1)$ and $f_Y(y\\mid 0)$.',
-         '<b>[8 pts]</b> Find the optimal decision threshold ($\\lambda$).',
-         '<b>[9 pts]</b> Calculate the average probability of bit error ($P_b$) as a numerical value, using a table of the $Q$ function.'],
+  parts:['Determine the conditional PDFs, $f_Y(y\\mid 1)$ and $f_Y(y\\mid 0)$.',
+         'Find the optimal decision threshold ($\\lambda$).',
+         'Calculate the average probability of bit error ($P_b$) as a numerical value, using a table of the $Q$ function.'],
   sol:'<b>Given.</b> $p_0=0.7$ and $p_1=0.3$. $Y=5+N$ for “1” and $Y=N$ for “0”, with $N\\sim\\mathcal{N}(0,4)$.<br>'
      +'<b>Find.</b> The two conditional PDFs, $\\lambda$ and $P_b$.<br>'
      +'<b>Method.</b> The variances are equal, so the $y^{2}$ terms cancel and one threshold results. It moves from the midpoint $2.5$ toward the less likely “1”.<br>'
@@ -897,10 +897,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 { id:'D2-25', module:'M2', type:'pam', src:'Final Q2',
   stem:'In a binary pulse amplitude modulation (PAM) communication system, the matched-filter output is $Y=-2+N$ when “0” is sent and $Y=2+N$ when “1” is sent. '
      +'The noise $N$ is Gaussian with mean $0$ and variance $1$. The bit “1” occurs three times as often as the bit “0”. According to this information,',
-  parts:['<b>[6 pts]</b> Determine the conditional PDFs, $f_Y(y\\mid 1)$ and $f_Y(y\\mid 0)$.',
-         '<b>[7 pts]</b> Find the optimal decision threshold ($\\lambda$).',
-         '<b>[7 pts]</b> Calculate $P_b$ as a numerical value, using a table of the $Q$ function.',
-         '<b>[5 pts]</b> A receiver ignores the priors and uses $\\lambda=0$. Calculate its $P_b$ and compare.'],
+  parts:['Determine the conditional PDFs, $f_Y(y\\mid 1)$ and $f_Y(y\\mid 0)$.',
+         'Find the optimal decision threshold ($\\lambda$).',
+         'Calculate $P_b$ as a numerical value, using a table of the $Q$ function.',
+         'A receiver ignores the priors and uses $\\lambda=0$. Calculate its $P_b$ and compare.'],
   sol:'<b>Given.</b> $p_1=3p_0$, so $p_0=0.25$ and $p_1=0.75$. $Y=\\mp2+N$ with $N\\sim\\mathcal{N}(0,1)$.<br>'
      +'<b>Find.</b> The two conditional PDFs, $\\lambda$, $P_b$, and $P_b$ at $\\lambda=0$.<br>'
      +'<b>Method.</b> The priors come from the ratio: $p_0+3p_0=1$. The threshold then moves toward the less likely “0”.<br>'
@@ -920,10 +920,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   stem:'A binary baseband link uses the pulse $$s(t)=\\operatorname{sinc}(at)\\,\\operatorname{sinc}(bt),\\qquad a\\ge b>0,$$ where $\\operatorname{sinc}(x)=\\sin(\\pi x)/(\\pi x)$. '
      +'The channel is an ideal lowpass channel that passes the band $|f|\\le B=2.5$ kHz. '
      +'Use the transform pair $\\operatorname{sinc}(at)\\leftrightarrow\\frac1a\\Pi(f/a)$, where $\\Pi(f/a)=1$ for $|f|<a/2$ and $0$ otherwise. According to this information,',
-  parts:['<b>[7 pts]</b> Find the spectrum $S(f)$ and sketch it. Give $S(0)$, the frequency where its flat top ends and the frequency where it reaches zero.',
-         '<b>[6 pts]</b> Choose $a$ and $b$ so that the pulse has zero intersymbol interference at $R_b=4$ kb/s and exactly fills the channel.',
-         '<b>[7 pts]</b> With these $a$ and $b$, is the pulse free of intersymbol interference at $R_b=2$ kb/s? At $R_b=5$ kb/s? Give a reason for each.',
-         '<b>[5 pts]</b> Find the roll-off factor $\\alpha=(B-W)/W$ at $R_b=4$ kb/s, where $W=R_b/2$. Then redesign $a$ and $b$ for $R_b=4.5$ kb/s in the same channel, and give the new $\\alpha$.'],
+  parts:['Find the spectrum $S(f)$ and sketch it. Give $S(0)$, the frequency where its flat top ends and the frequency where it reaches zero.',
+         'Choose $a$ and $b$ so that the pulse has zero intersymbol interference at $R_b=4$ kb/s and exactly fills the channel.',
+         'With these $a$ and $b$, is the pulse free of intersymbol interference at $R_b=2$ kb/s? At $R_b=5$ kb/s? Give a reason for each.',
+         'Find the roll-off factor $\\alpha=(B-W)/W$ at $R_b=4$ kb/s, where $W=R_b/2$. Then redesign $a$ and $b$ for $R_b=4.5$ kb/s in the same channel, and give the new $\\alpha$.'],
   sol:'<b>Given.</b> $s(t)=\\operatorname{sinc}(at)\\operatorname{sinc}(bt)$ with $a\\ge b>0$ and $\\operatorname{sinc}(x)=\\sin(\\pi x)/(\\pi x)$. The channel passes $|f|\\le2.5$ kHz.<br>'
      +'<b>Find.</b> $S(f)$, and the values of $a$ and $b$ for $4$ kb/s. A test at $2$ and at $5$ kb/s, and $\\alpha$ at $4$ and at $4.5$ kb/s.<br>'
      +'<b>Method.</b> A product in time is a convolution in frequency, so $S(f)$ is the convolution of two rectangles. Nyquist\'s criterion asks for $\\sum_nS(f-nR_b)=T_b$. '
@@ -962,10 +962,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 { id:'D2-27', module:'M2', type:'design', src:'Final Q2 (variant)',
   stem:'In a binary pulse amplitude modulation (PAM) communication system, the matched-filter output is $Y=N$ when “0” is sent and $Y=3+N$ when “1” is sent. '
      +'The noise $N$ is Gaussian with mean $0$ and variance $1$. A designer wants the optimal threshold to sit at $\\lambda=2$. According to this information,',
-  parts:['<b>[6 pts]</b> Write $f_Y(y\\mid 1)$ and $f_Y(y\\mid 0)$. Find the optimal threshold and $P_b$ for equal priors.',
-         '<b>[7 pts]</b> Find the probability $p_0$ of “0” that makes $\\lambda=2$ the optimal threshold.',
-         '<b>[7 pts]</b> Calculate $P_b$ for this prior with $\\lambda=2$.',
-         '<b>[5 pts]</b> With this prior, the receiver keeps the threshold of part (a). Calculate its $P_b$ and compare.'],
+  parts:['Write $f_Y(y\\mid 1)$ and $f_Y(y\\mid 0)$. Find the optimal threshold and $P_b$ for equal priors.',
+         'Find the probability $p_0$ of “0” that makes $\\lambda=2$ the optimal threshold.',
+         'Calculate $P_b$ for this prior with $\\lambda=2$.',
+         'With this prior, the receiver keeps the threshold of part (a). Calculate its $P_b$ and compare.'],
   sol:'<b>Given.</b> $Y=N$ for “0” and $Y=3+N$ for “1”, with $N\\sim\\mathcal{N}(0,1)$. Target $\\lambda=2$.<br>'
      +'<b>Find.</b> The PDFs, the equal-prior threshold and $P_b$, the prior $p_0$ for $\\lambda=2$, and two values of $P_b$.<br>'
      +'<b>Method.</b> Write the optimal threshold as a function of the priors, then solve it backwards for $p_0$.<br>'
@@ -984,10 +984,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
      +'They pass through the matched-filter type demodulator shown, with the unit-energy basis signal $\\psi(t)$. '
      +'The channel adds zero-mean white Gaussian noise of two-sided power spectral density $N_0/2$, which is not yet known. The link must reach $P_b\\le10^{-3}$. According to the information given above,',
   figure: () => mfQ(4, [[0,2,-2],[2,3,-1],[3,4,0]], [[0,2,2],[2,3,1],[3,4,0]], {yr:[-2.6,0.8], ys:1}, {yr:[-0.8,2.6], ys:1}),
-  parts:['<b>[5 pts]</b> Plot the impulse response of the matched filter, $h(t)=\\psi(T-t)$.',
-         '<b>[8 pts]</b> Write the optimal threshold and $P_b$ as a function of $N_0/2$.',
-         '<b>[7 pts]</b> Find the largest $N_0/2$ that meets $P_b\\le10^{-3}$. Use $Q(3.09)=1.00\\times10^{-3}$.',
-         '<b>[5 pts]</b> The message “0” is now sent as $s_0(t)=0$, with the same $s_1(t)$. Find the largest $N_0/2$ again.'],
+  parts:['Plot the impulse response of the matched filter, $h(t)=\\psi(T-t)$.',
+         'Write the optimal threshold and $P_b$ as a function of $N_0/2$.',
+         'Find the largest $N_0/2$ that meets $P_b\\le10^{-3}$. Use $Q(3.09)=1.00\\times10^{-3}$.',
+         'The message “0” is now sent as $s_0(t)=0$, with the same $s_1(t)$. Find the largest $N_0/2$ again.'],
   sol:'<b>Given.</b> $s_1(t)=2$ on $[0,2)$, $1$ on $[2,3)$ and $0$ on $[3,4]$. $s_0(t)=-s_1(t)$. Equal priors. Target $P_b\\le10^{-3}$.<br>'
      +'<b>Find.</b> $h(t)$, $P_b$ as a function of $N_0/2$, and the largest allowed $N_0/2$ for two designs.<br>'
      +'<b>Method.</b> Keep $\\sigma=\\sqrt{N_0/2}$ as the unknown. The $Q$ function falls as its argument grows, so $P_b\\le10^{-3}$ means an argument of at least $3.09$.<br>'
@@ -1012,10 +1012,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   stem:'A binary antipodal baseband link sends $R_b=12$ kb/s with raised-cosine pulses of roll-off factor $\\alpha=0.25$. '
      +'The matched-filter sample is $Y=\\sqrt{E_b}+N$ for “1” and $Y=-\\sqrt{E_b}+N$ for “0”, and the bits are equiprobable. '
      +'The received power is $P=3.6\\ \\mu$W. $N$ is Gaussian with mean $0$ and variance $N_0/2$, where $N_0=5\\times10^{-11}$ W/Hz. According to this information,',
-  parts:['<b>[6 pts]</b> Find the Nyquist bandwidth $W$, the frequency $f_1$ where the roll-off starts, and the transmission bandwidth $B_T$.',
-         '<b>[7 pts]</b> Find $E_b$. Write $f_Y(y\\mid 1)$ and $f_Y(y\\mid 0)$, and give the optimal threshold.',
-         '<b>[6 pts]</b> Calculate $P_b$ with a table of the $Q$ function.',
-         '<b>[6 pts]</b> The channel offers $B_T=9$ kHz. The rate is raised to fill it, with the same $\\alpha$ and the same received power. Find the new $R_b$ and $P_b$.'],
+  parts:['Find the Nyquist bandwidth $W$, the frequency $f_1$ where the roll-off starts, and the transmission bandwidth $B_T$.',
+         'Find $E_b$. Write $f_Y(y\\mid 1)$ and $f_Y(y\\mid 0)$, and give the optimal threshold.',
+         'Calculate $P_b$ with a table of the $Q$ function.',
+         'The channel offers $B_T=9$ kHz. The rate is raised to fill it, with the same $\\alpha$ and the same received power. Find the new $R_b$ and $P_b$.'],
   sol:'<b>Given.</b> $R_b=12$ kb/s, $\\alpha=0.25$, $P=3.6\\ \\mu$W, $N_0=5\\times10^{-11}$ W/Hz, equal priors.<br>'
      +'<b>Find.</b> $W$, $f_1$, $B_T$, $E_b$, the conditional PDFs, $\\lambda$, $P_b$, and the new rate and $P_b$.<br>'
      +'<b>Method.</b> The bandwidth depends on the rate and the roll-off. The error depends on $E_b/N_0$, and $E_b=P/R_b$ ties the two together.<br>'
@@ -1046,9 +1046,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   stem:'In a binary PAM system, the pulse of each bit spreads into the next bit interval. The matched-filter sample of the current bit is $Y=a+c+N$. '
      +'Here $a=1.8$ for “1” and $a=-1.8$ for “0”. The term $c$ comes from the previous bit: $c=0.6$ if that bit was “1” and $c=-0.6$ if it was “0”. '
      +'All bits are independent and equiprobable, and $N$ is Gaussian with mean $0$ and variance $0.36$. According to this information,',
-  parts:['<b>[8 pts]</b> Determine the conditional PDFs, $f_Y(y\\mid 1)$ and $f_Y(y\\mid 0)$, averaged over the previous bit.',
-         '<b>[7 pts]</b> Find the optimal decision threshold ($\\lambda$).',
-         '<b>[10 pts]</b> Calculate $P_b$ with a table of the $Q$ function. Compare it with $P_b$ when the interference is removed ($c=0$).'],
+  parts:['Determine the conditional PDFs, $f_Y(y\\mid 1)$ and $f_Y(y\\mid 0)$, averaged over the previous bit.',
+         'Find the optimal decision threshold ($\\lambda$).',
+         'Calculate $P_b$ with a table of the $Q$ function. Compare it with $P_b$ when the interference is removed ($c=0$).'],
   sol:'<b>Given.</b> $a=\\pm1.8$, $c=\\pm0.6$ with equal probabilities, $N\\sim\\mathcal{N}(0,0.36)$, so $\\sigma=0.6$. Equal priors.<br>'
      +'<b>Find.</b> The two conditional PDFs, $\\lambda$, and $P_b$ with and without interference.<br>'
      +'<b>Method.</b> Given the current bit, the sample still depends on the previous bit. Its density is the average of two Gaussians, one for each previous bit.<br>'

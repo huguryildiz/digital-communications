@@ -511,8 +511,8 @@ function figRange38(){
 /* the examination wording, shared by the questions that keep it */
 const OPEN = 'Consider an $M$-ary modulation scheme where the equally probable symbols have the following waveforms: ';
 const AWGN = ' These signals are planned to be transmitted over a standard AWGN channel with $\\mathcal{N}(0,N_0/2)$.';
-const PDRAW = n => '['+n+' pts] Draw the signal constellation and the optimal decision regions for this signal constellation.';
-const PNN = n => '['+n+' pts] Determine the nearest-neighbour approximation of the average symbol error probability as a function of $E_{s,\\text{avg}}/N_0$, where $E_{s,\\text{avg}}$ is the average symbol energy.';
+const PDRAW = 'Draw the signal constellation and the optimal decision regions for this signal constellation.';
+const PNN = 'Determine the nearest-neighbour approximation of the average symbol error probability as a function of $E_{s,\\text{avg}}/N_0$, where $E_{s,\\text{avg}}$ is the average symbol energy.';
 
 /* sets used by more than one question */
 const onCircle = (r, angles) => angles.map(t=>[r*Math.cos(t), r*Math.sin(t)]);
@@ -611,9 +611,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D5-01', module:'M5', type:'psk', src:'Final Q3',
   stem:'Consider an $M$-ary modulation scheme where the equally probable symbols have the following waveforms: $$s_k(t)=\\sqrt{18}\\cos\\!\\Big(3000\\pi t+\\frac{\\pi(2k+1)}{6}\\Big),\\quad k\\in\\{1,\\ldots,6\\},\\quad0\\le t\\le1.$$ These signals are planned to be transmitted over a standard AWGN channel with $\\mathcal{N}(0,N_0/2)$.',
-  parts:['[10 pts] Draw the signal constellation and the optimal decision regions for this signal constellation.',
-         '[10 pts] Determine the nearest-neighbour approximation of the average symbol error probability as a function of $E_{s,\\text{avg}}/N_0$, where $E_{s,\\text{avg}}$ is the average symbol energy.',
-         '[5 pts] Evaluate the approximation of part (b) at $E_{s,\\text{avg}}/N_0=18$.'],
+  parts:['Draw the signal constellation and the optimal decision regions for this signal constellation.',
+         'Determine the nearest-neighbour approximation of the average symbol error probability as a function of $E_{s,\\text{avg}}/N_0$, where $E_{s,\\text{avg}}$ is the average symbol energy.',
+         'Evaluate the approximation of part (b) at $E_{s,\\text{avg}}/N_0=18$.'],
   sol:'<b>Given.</b> Six equally likely waveforms of amplitude $\\sqrt{18}$ at $f_c=1500$ Hz on $0\\le t\\le1$. The phases are $\\theta_k=\\pi(2k+1)/6$.<br>'
      +'<b>Find.</b> The constellation with its regions, $P_e$ as a function of $E_{s,\\text{avg}}/N_0$, and its value at $E_{s,\\text{avg}}/N_0=18$.<br>'
      +'<b>Method.</b> Use the orthonormal pair $\\psi_1(t)=\\sqrt2\\cos(3000\\pi t)$ and $\\psi_2(t)=-\\sqrt2\\sin(3000\\pi t)$ on $0\\le t\\le1$. Equally likely signals in AWGN are detected best by the minimum-distance rule. Then $P_e\\approx N_{\\min}Q\\big(\\sqrt{d_{\\min}^{2}/2N_0}\\big)$.<br>'
@@ -635,9 +635,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D5-02', module:'M5', type:'psk', src:'Final Q3',
   stem:'Consider an $M$-ary modulation scheme where the equally probable symbols have the following waveforms: $$s_k(t)=\\sqrt{24}\\cos\\!\\Big(2000\\pi t+\\frac{\\pi(4k-3)}{6}\\Big),\\quad k\\in\\{1,2,3\\},\\quad0\\le t\\le1.$$ These signals are planned to be transmitted over a standard AWGN channel with $\\mathcal{N}(0,N_0/2)$.',
-  parts:['[10 pts] Draw the signal constellation and the optimal decision regions for this signal constellation.',
-         '[10 pts] Determine the nearest-neighbour approximation of the average symbol error probability as a function of $E_{s,\\text{avg}}/N_0$.',
-         '[5 pts] How many bits does one symbol carry? Rewrite the result of part (b) as a function of $E_b/N_0$.'],
+  parts:['Draw the signal constellation and the optimal decision regions for this signal constellation.',
+         'Determine the nearest-neighbour approximation of the average symbol error probability as a function of $E_{s,\\text{avg}}/N_0$.',
+         'How many bits does one symbol carry? Rewrite the result of part (b) as a function of $E_b/N_0$.'],
   sol:'<b>Given.</b> Three equally likely waveforms of amplitude $\\sqrt{24}$ at $f_c=1000$ Hz on $0\\le t\\le1$, with phases $\\theta_k=\\pi(4k-3)/6$.<br>'
      +'<b>Find.</b> The constellation and regions, $P_e$ against $E_{s,\\text{avg}}/N_0$, and the same against $E_b/N_0$.<br>'
      +'<b>Method.</b> Use $\\psi_1(t)=\\sqrt2\\cos(2000\\pi t)$ and $\\psi_2(t)=-\\sqrt2\\sin(2000\\pi t)$. Then $A\\cos(2000\\pi t+\\theta)$ has coordinates $\\frac{A}{\\sqrt2}(\\cos\\theta,\\sin\\theta)$.<br>'
@@ -657,9 +657,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D5-03', module:'M5', type:'psk', src:'Final Q3',
   stem:'Consider an $M$-ary modulation scheme where the equally probable symbols have the following waveforms: $$s_k(t)=2\\cos\\!\\Big(4000\\pi t+\\frac{(2k-1)\\pi}{8}\\Big),\\quad k\\in\\{1,\\ldots,8\\},\\quad0\\le t\\le2.$$ These signals are planned to be transmitted over a standard AWGN channel with $\\mathcal{N}(0,N_0/2)$.',
-  parts:['[8 pts] Find $E_{s,\\text{avg}}$, the number of bits per symbol and the average energy per bit $E_b$.',
-         '[8 pts] Draw the signal constellation and the optimal decision regions for this signal constellation.',
-         '[9 pts] Determine the nearest-neighbour approximation of the average symbol error probability as a function of $E_{s,\\text{avg}}/N_0$, and then as a function of $E_b/N_0$.'],
+  parts:['Find $E_{s,\\text{avg}}$, the number of bits per symbol and the average energy per bit $E_b$.',
+         'Draw the signal constellation and the optimal decision regions for this signal constellation.',
+         'Determine the nearest-neighbour approximation of the average symbol error probability as a function of $E_{s,\\text{avg}}/N_0$, and then as a function of $E_b/N_0$.'],
   sol:'<b>Given.</b> Eight equally likely waveforms of amplitude $2$ at $f_c=2000$ Hz, now on $0\\le t\\le2$. The phases are $\\theta_k=(2k-1)\\pi/8$.<br>'
      +'<b>Find.</b> $E_{s,\\text{avg}}$, bits per symbol, $E_b$, the constellation, and $P_e$ against both energies.<br>'
      +'<b>Method.</b> With $T=2$ the orthonormal pair is $\\psi_1(t)=\\sqrt{2/2}\\cos(4000\\pi t)=\\cos(4000\\pi t)$ and $\\psi_2(t)=-\\sin(4000\\pi t)$. A symbol of amplitude $A$ then has radius $A\\sqrt{T/2}=A$.<br>'
@@ -679,7 +679,7 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D5-04', module:'M5', type:'pam', src:'Final Q3',
   stem:OPEN+'$$s_k(t)=2(2k-5)\\cos(5000\\pi t),\\quad k\\in\\{1,2,3,4\\},\\quad0\\le t\\le1.$$'+AWGN,
-  parts:[PDRAW(10), PNN(10), '[5 pts] Evaluate the approximation of part (b) at $E_{s,\\text{avg}}/N_0=22.5$.'],
+  parts:[PDRAW, PNN, 'Evaluate the approximation of part (b) at $E_{s,\\text{avg}}/N_0=22.5$.'],
   sol:'<b>Given.</b> Four equally likely waveforms with amplitudes $2(2k-5)\\in\\{-6,-2,2,6\\}$ on one carrier at $2500$ Hz, $0\\le t\\le1$.<br>'
      +'<b>Find.</b> The line constellation and its thresholds, $P_e$ against $E_{s,\\text{avg}}/N_0$, and its value at $22.5$.<br>'
      +'<b>Method.</b> One function $\\psi_1(t)=\\sqrt2\\cos(5000\\pi t)$ carries all four waveforms. A waveform $c\\cos(5000\\pi t)$ has the coordinate $c/\\sqrt2$ on it. Then use $P_e\\approx N_{\\min}Q\\big(\\sqrt{d_{\\min}^{2}/2N_0}\\big)$.<br>'
@@ -700,7 +700,7 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D5-05', module:'M5', type:'pam', src:'Final Q3',
   stem:OPEN+'$$s_k(t)=3\\sqrt2\\,(k-1)\\cos(3000\\pi t),\\quad k\\in\\{1,2,3\\},\\quad0\\le t\\le1.$$'+AWGN,
-  parts:[PDRAW(10), PNN(10), '[5 pts] The set is shifted so that its points are symmetric about the origin, with the same $d_{\\min}$. Find the saving in $E_{s,\\text{avg}}$ in decibels.'],
+  parts:[PDRAW, PNN, 'The set is shifted so that its points are symmetric about the origin, with the same $d_{\\min}$. Find the saving in $E_{s,\\text{avg}}$ in decibels.'],
   sol:'<b>Given.</b> Three equally likely waveforms $0$, $3\\sqrt2\\cos(3000\\pi t)$ and $6\\sqrt2\\cos(3000\\pi t)$ on $0\\le t\\le1$.<br>'
      +'<b>Find.</b> The constellation and thresholds, $P_e$ against $E_{s,\\text{avg}}/N_0$, and the energy a symmetric set would save.<br>'
      +'<b>Method.</b> Use $\\psi_1(t)=\\sqrt2\\cos(3000\\pi t)$. The waveform $3\\sqrt2(k-1)\\cos(3000\\pi t)$ equals $3(k-1)\\psi_1(t)$. The set is one-dimensional and not centred on the origin.<br>'
@@ -719,9 +719,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D5-06', module:'M5', type:'pam', src:'Final Q3',
   stem:OPEN+'$$s_k(t)=2(k-3)\\cos(4000\\pi t),\\quad k\\in\\{1,\\ldots,5\\},\\quad0\\le t\\le0.5.$$'+AWGN,
-  parts:['[8 pts] Find $E_{s,\\text{avg}}$ and the number of bits carried by one symbol.',
-         PDRAW(8),
-         '[9 pts] Determine the nearest-neighbour approximation of the average symbol error probability as a function of $E_{s,\\text{avg}}/N_0$. Evaluate it at $E_{s,\\text{avg}}/N_0=36$.'],
+  parts:['Find $E_{s,\\text{avg}}$ and the number of bits carried by one symbol.',
+         PDRAW,
+         'Determine the nearest-neighbour approximation of the average symbol error probability as a function of $E_{s,\\text{avg}}/N_0$. Evaluate it at $E_{s,\\text{avg}}/N_0=36$.'],
   sol:'<b>Given.</b> Five equally likely amplitudes $2(k-3)\\in\\{-4,-2,0,2,4\\}$ on a $2000$ Hz carrier. The symbol lasts $T=0.5$.<br>'
      +'<b>Find.</b> $E_{s,\\text{avg}}$, bits per symbol, the constellation, and $P_e$ with its value at $36$.<br>'
      +'<b>Method.</b> With $T=0.5$ the unit-energy carrier is $\\psi_1(t)=\\sqrt{2/T}\\cos(4000\\pi t)=2\\cos(4000\\pi t)$. So $2(k-3)\\cos(4000\\pi t)=(k-3)\\psi_1(t)$.<br>'
@@ -741,7 +741,7 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D5-07', module:'M5', type:'qam', src:'Final Q3',
   stem:OPEN+'$$\\begin{aligned}s_1(t)&=0,\\\\s_k(t)&=2\\sqrt2\\cos\\!\\Big(2000\\pi t+\\frac{\\pi}{2}+\\frac{2\\pi(k-2)}{3}\\Big),\\quad k\\in\\{2,3,4\\},\\end{aligned}$$ all on $0\\le t\\le1$.'+AWGN,
-  parts:[PDRAW(10), PNN(10), '[5 pts] Evaluate the approximation of part (b) at $E_{s,\\text{avg}}/N_0=6$.'],
+  parts:[PDRAW, PNN, 'Evaluate the approximation of part (b) at $E_{s,\\text{avg}}/N_0=6$.'],
   sol:'<b>Given.</b> A zero signal and three waveforms of amplitude $2\\sqrt2$ at $1000$ Hz with phases $90^{\\circ},210^{\\circ},330^{\\circ}$.<br>'
      +'<b>Find.</b> The constellation and regions, $P_e$ against $E_{s,\\text{avg}}/N_0$, and its value at $6$.<br>'
      +'<b>Method.</b> Use $\\psi_1(t)=\\sqrt2\\cos(2000\\pi t)$ and $\\psi_2(t)=-\\sqrt2\\sin(2000\\pi t)$. The waveform $A\\cos(2000\\pi t+\\theta)$ has coordinates $\\frac{A}{\\sqrt2}(\\cos\\theta,\\sin\\theta)$.<br>'
@@ -763,7 +763,7 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D5-08', module:'M5', type:'qam', src:'Final Q3',
   stem:OPEN+'$$s_{mn}(t)=\\sqrt2\\big[(2m-5)\\cos(3000\\pi t)-(2n-3)\\sin(3000\\pi t)\\big],$$ with $m\\in\\{1,2,3,4\\}$, $n\\in\\{1,2\\}$ and $0\\le t\\le1$.'+AWGN,
-  parts:[PDRAW(10), PNN(10), '[5 pts] Evaluate the approximation of part (b) at $E_{s,\\text{avg}}/N_0=27$.'],
+  parts:[PDRAW, PNN, 'Evaluate the approximation of part (b) at $E_{s,\\text{avg}}/N_0=27$.'],
   sol:'<b>Given.</b> Eight equally likely waveforms. The cosine carries $2m-5\\in\\{-3,-1,1,3\\}$ and the sine carries $2n-3\\in\\{-1,1\\}$.<br>'
      +'<b>Find.</b> The constellation and regions, $P_e$ against $E_{s,\\text{avg}}/N_0$, and its value at $27$.<br>'
      +'<b>Method.</b> With $\\psi_1(t)=\\sqrt2\\cos(3000\\pi t)$ and $\\psi_2(t)=-\\sqrt2\\sin(3000\\pi t)$ the waveform reads $(2m-5)\\psi_1+(2n-3)\\psi_2$. So $\\mathbf{s}_{mn}=(2m-5,\\,2n-3)$.<br>'
@@ -781,10 +781,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D5-09', module:'M5', type:'band', src:'Madhow P4.16 and P4.21',
   stem:'A wireless link sends 16-QAM at $R_b=48$ Mb/s on a carrier at $f_c=2.4$ GHz. The pulses are raised cosines with roll-off $\\alpha=0.25$. On a carrier the occupied band is $B=(1+\\alpha)R_s$, where $R_s$ is the symbol rate. The transmit power is $250$ mW. The noise level $N_0$ and the path to the receiver are the same for every scheme below.',
-  parts:['[6 pts] Find the symbol rate $R_s$, the occupied band $B$ and the frequency interval that the signal occupies.',
-         '[5 pts] QPSK is sent in the same band with the same roll-off. Find its symbol rate and its bit rate.',
-         '[8 pts] The QPSK link must give the same symbol error probability at high signal-to-noise ratio. Use the nearest-neighbour approximation and ignore the difference in $N_{\\min}$. Find the QPSK transmit power and the saving in decibels.',
-         '[6 pts] 64-QAM is to carry the same $48$ Mb/s with the same roll-off. Find its band and the transmit power it needs for the same error. Give $R_b/B$ for all three schemes.'],
+  parts:['Find the symbol rate $R_s$, the occupied band $B$ and the frequency interval that the signal occupies.',
+         'QPSK is sent in the same band with the same roll-off. Find its symbol rate and its bit rate.',
+         'The QPSK link must give the same symbol error probability at high signal-to-noise ratio. Use the nearest-neighbour approximation and ignore the difference in $N_{\\min}$. Find the QPSK transmit power and the saving in decibels.',
+         '64-QAM is to carry the same $48$ Mb/s with the same roll-off. Find its band and the transmit power it needs for the same error. Give $R_b/B$ for all three schemes.'],
   sol:'<b>Given.</b> 16-QAM at $R_b=48$ Mb/s on $f_c=2.4$ GHz, roll-off $\\alpha=0.25$, transmit power $250$ mW. On a carrier the band is $B=(1+\\alpha)R_s$. The noise and the path are the same for every scheme.<br>'
      +'<b>Find.</b> $R_s$, $B$ and the band edges. The QPSK rates in the same band and its power for the same error. The band, power and $R_b/B$ of 64-QAM.<br>'
      +'<b>Method.</b> A symbol carries $\\log_2M$ bits, so $R_s=R_b/\\log_2M$. The band depends on $R_s$ alone. At high signal-to-noise ratio the error is set by $d_{\\min}^{2}/2N_0$, so the same error means the same $d_{\\min}$. '
@@ -822,7 +822,7 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D5-10', module:'M5', type:'qam', src:'Final Q3',
   stem:OPEN+'$$s_k(t)=A_k\\cos\\!\\Big(2000\\pi t+\\frac{(k-1)\\pi}{4}\\Big),\\quad k\\in\\{1,\\ldots,8\\},\\quad0\\le t\\le1,$$ where $A_k=\\sqrt2$ for odd $k$ and $A_k=4$ for even $k$.'+AWGN,
-  parts:[PDRAW(10), PNN(10), '[5 pts] Which symbols have no neighbour at $d_{\\min}$? Evaluate the approximation at $E_{s,\\text{avg}}/N_0=40.5$.'],
+  parts:[PDRAW, PNN, 'Which symbols have no neighbour at $d_{\\min}$? Evaluate the approximation at $E_{s,\\text{avg}}/N_0=40.5$.'],
   sol:'<b>Given.</b> Eight waveforms at $1000$ Hz with phases $0,45^{\\circ},\\ldots,315^{\\circ}$. The odd ones have amplitude $\\sqrt2$ and the even ones amplitude $4$.<br>'
      +'<b>Find.</b> The constellation and regions, $P_e$ against $E_{s,\\text{avg}}/N_0$, and the points without a nearest neighbour.<br>'
      +'<b>Method.</b> Use $\\psi_1(t)=\\sqrt2\\cos(2000\\pi t)$ and $\\psi_2(t)=-\\sqrt2\\sin(2000\\pi t)$. The radius of a point is $A_k/\\sqrt2$ and its angle is its phase.<br>'
@@ -853,10 +853,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
         return a.svg();
       }).join('') + `</div>`;
   },
-  parts:['[7 pts] Write each waveform in the form $A\\cos(4\\pi t+\\theta)$ and find its signal-space coordinates.',
-         PDRAW(8),
-         '[6 pts] Determine the nearest-neighbour approximation of the average symbol error probability as a function of $E_{s,\\text{avg}}/N_0$.',
-         '[4 pts] The four points are moved together so that their centre is at the origin. Find the saving in $E_{s,\\text{avg}}$ in decibels.'],
+  parts:['Write each waveform in the form $A\\cos(4\\pi t+\\theta)$ and find its signal-space coordinates.',
+         PDRAW,
+         'Determine the nearest-neighbour approximation of the average symbol error probability as a function of $E_{s,\\text{avg}}/N_0$.',
+         'The four points are moved together so that their centre is at the origin. Find the saving in $E_{s,\\text{avg}}$ in decibels.'],
   sol:'<b>Given.</b> $s_1=0$, and three $2$ Hz sinusoids on $0\\le t\\le1$ with peaks $\\sqrt2$, $\\sqrt2$ and $2$, read from the drawing.<br>'
      +'<b>Find.</b> Amplitudes, phases and coordinates, the constellation, $P_e$, and the saving of a centred set.<br>'
      +'<b>Method.</b> For $A\\cos(4\\pi t+\\theta)$ the value at $t=0$ is $A\\cos\\theta$ and the slope is $-4\\pi A\\sin\\theta$. A curve that falls first has $\\sin\\theta>0$. Then use $\\psi_1(t)=\\sqrt2\\cos(4\\pi t)$, $\\psi_2(t)=-\\sqrt2\\sin(4\\pi t)$.<br>'
@@ -877,8 +877,8 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D5-12', module:'M5', type:'psk', src:'Final Q3',
   stem:OPEN+'$$s_k(t)=2\\sqrt3\\cos\\!\\Big(2000\\pi t+\\frac{\\pi}{6}+\\frac{(k-1)\\pi}{2}\\Big),\\quad k\\in\\{1,2,3,4\\},\\quad0\\le t\\le1.$$'+AWGN,
-  parts:[PDRAW(10), PNN(8),
-         '[7 pts] With Gray labelling, one symbol error costs about one bit error. Find $E_b$, then compare the bit error probability with binary PSK at $E_b/N_0=4.5$.'],
+  parts:[PDRAW, PNN,
+         'With Gray labelling, one symbol error costs about one bit error. Find $E_b$, then compare the bit error probability with binary PSK at $E_b/N_0=4.5$.'],
   sol:'<b>Given.</b> Four waveforms of amplitude $2\\sqrt3$ at $1000$ Hz with phases $30^{\\circ},120^{\\circ},210^{\\circ},300^{\\circ}$.<br>'
      +'<b>Find.</b> The constellation and regions, $P_e$ against $E_{s,\\text{avg}}/N_0$, and the per-bit comparison with binary PSK.<br>'
      +'<b>Method.</b> Use $\\psi_1(t)=\\sqrt2\\cos(2000\\pi t)$ and $\\psi_2(t)=-\\sqrt2\\sin(2000\\pi t)$. The radius is $2\\sqrt3/\\sqrt2=\\sqrt6$.<br>'
@@ -898,9 +898,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D5-13', module:'M5', type:'pam', src:'Final Q3',
   stem:OPEN+'$$s_k(t)=\\sqrt2\\,(2k-9)\\cos(2000\\pi t),\\quad k\\in\\{1,\\ldots,8\\},\\quad0\\le t\\le1.$$'+AWGN,
-  parts:['[8 pts] Find $E_{s,\\text{avg}}$, the number of bits per symbol and the average energy per bit $E_b$.',
-         PDRAW(8),
-         '[9 pts] Determine the nearest-neighbour approximation as a function of $E_{s,\\text{avg}}/N_0$ and of $E_b/N_0$. Find the $E_b/N_0$ in decibels that makes the $Q$ argument $3.00$, and the resulting $P_e$.'],
+  parts:['Find $E_{s,\\text{avg}}$, the number of bits per symbol and the average energy per bit $E_b$.',
+         PDRAW,
+         'Determine the nearest-neighbour approximation as a function of $E_{s,\\text{avg}}/N_0$ and of $E_b/N_0$. Find the $E_b/N_0$ in decibels that makes the $Q$ argument $3.00$, and the resulting $P_e$.'],
   sol:'<b>Given.</b> Eight equally likely amplitudes $\\sqrt2(2k-9)$ on one $1000$ Hz carrier, $0\\le t\\le1$.<br>'
      +'<b>Find.</b> $E_{s,\\text{avg}}$, bits, $E_b$, the line constellation, $P_e$ in both energies, and the $E_b/N_0$ for a $Q$ argument of $3.00$.<br>'
      +'<b>Method.</b> With $\\psi_1(t)=\\sqrt2\\cos(2000\\pi t)$ each waveform is $(2k-9)\\psi_1(t)$. The points are $\\pm1,\\pm3,\\pm5,\\pm7$.<br>'
@@ -918,10 +918,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D5-14', module:'M5', type:'spacing', src:'Madhow P4.18',
   stem:'Two tones are sent on $0\\le t\\le T$ with $T=2$ ms: $$s_0(t)=A\\cos(2\\pi f_0t+\\varphi_0),\\qquad s_1(t)=A\\cos(2\\pi f_1t+\\varphi_1),$$ with $f_0=20$ kHz and $f_1=f_0+\\Delta f$, $\\Delta f>0$. Both tones have energy $E=A^{2}T/2$. Neglect every term at the sum frequency $f_0+f_1$. The correlation coefficient is $\\rho=\\langle s_0,s_1\\rangle/E$.',
-  parts:['[8 pts] Find $\\langle s_0,s_1\\rangle$ as a function of $\\Delta f$ and $\\Delta\\varphi=\\varphi_1-\\varphi_0$. Evaluate $\\rho$ for $\\Delta f=125$ Hz and equal phases.',
-         '[5 pts] With equal phases, find the smallest $\\Delta f$ that makes the two tones orthogonal.',
-         '[7 pts] Find the smallest $\\Delta f$ that makes the tones orthogonal for every $\\Delta\\varphi$. Show that the spacing of part (b) fails for $\\Delta\\varphi=90^{\\circ}$.',
-         '[5 pts] An 8-FSK set uses tones of this kind with the same $T$. Find its bit rate, and its band with the spacing of part (b) and with that of part (c).'],
+  parts:['Find $\\langle s_0,s_1\\rangle$ as a function of $\\Delta f$ and $\\Delta\\varphi=\\varphi_1-\\varphi_0$. Evaluate $\\rho$ for $\\Delta f=125$ Hz and equal phases.',
+         'With equal phases, find the smallest $\\Delta f$ that makes the two tones orthogonal.',
+         'Find the smallest $\\Delta f$ that makes the tones orthogonal for every $\\Delta\\varphi$. Show that the spacing of part (b) fails for $\\Delta\\varphi=90^{\\circ}$.',
+         'An 8-FSK set uses tones of this kind with the same $T$. Find its bit rate, and its band with the spacing of part (b) and with that of part (c).'],
   sol:'<b>Given.</b> Two tones of amplitude $A$ on $0\\le t\\le2$ ms, at $f_0=20$ kHz and $f_0+\\Delta f$, with phases $\\varphi_0$ and $\\varphi_1$. Terms at the sum frequency are neglected.<br>'
      +'<b>Find.</b> $\\langle s_0,s_1\\rangle$ and $\\rho$ at $125$ Hz, the least orthogonal spacing with equal phases and with any phases, and the band of 8-FSK with each.<br>'
      +'<b>Method.</b> Turn the product of two cosines into a sum with $\\cos a\\cos b=\\tfrac12[\\cos(a-b)+\\cos(a+b)]$. Drop the sum-frequency term and integrate the difference term. Two tones are orthogonal when $\\rho=0$.<br>'
@@ -956,10 +956,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D5-15', module:'M5', type:'link', src:'Madhow P6.38',
   stem:'A line-of-sight radio link is designed for a range $d_0=5$ km at a carrier frequency $f_c=1.5$ GHz. It sends QPSK with Gray labels at $R_b=8$ Mb/s. The pulses are raised cosines with roll-off $\\alpha=0.25$, so the occupied band is $B=(1+\\alpha)R_s$, where $R_s$ is the symbol rate. The target $P_b=10^{-5}$ needs $E_b/N_0=9.6$ dB. The transmit power is $P_t=20$ dBm, each antenna has a gain of $10$ dBi, and the receiver noise figure is $\\text{NF}=4$ dB. Take $kT_0=-174$ dBm/Hz, $c=3\\times10^{8}$ m/s and the free-space loss $L_p=20\\log_{10}(4\\pi d/\\lambda)$ dB. Give powers in dBm and decibel values to two decimals.',
-  parts:['[7 pts] Find the occupied band, the noise power in that band and the receiver sensitivity $P_{\\min}$.',
-         '[5 pts] Find the path loss at $d_0$, the received power and the link margin.',
-         '[7 pts] The carrier moves to $6$ GHz and the antenna gains stay at $10$ dBi. Find the range that keeps the margin of part (b). Then find that range if instead the antennas keep their size, so that each gain grows in proportion to $f_c^{2}$.',
-         '[6 pts] Back at $1.5$ GHz, the bit rate rises to $32$ Mb/s with the same scheme and roll-off. Find the new band, the new sensitivity and the range that keeps the same margin.'],
+  parts:['Find the occupied band, the noise power in that band and the receiver sensitivity $P_{\\min}$.',
+         'Find the path loss at $d_0$, the received power and the link margin.',
+         'The carrier moves to $6$ GHz and the antenna gains stay at $10$ dBi. Find the range that keeps the margin of part (b). Then find that range if instead the antennas keep their size, so that each gain grows in proportion to $f_c^{2}$.',
+         'Back at $1.5$ GHz, the bit rate rises to $32$ Mb/s with the same scheme and roll-off. Find the new band, the new sensitivity and the range that keeps the same margin.'],
   sol:'<b>Given.</b> QPSK at $R_b=8$ Mb/s, roll-off $0.25$, $f_c=1.5$ GHz, $d_0=5$ km, $P_t=20$ dBm, $G_t=G_r=10$ dBi, $\\text{NF}=4$ dB, $(E_b/N_0)_{\\text{req}}=9.6$ dB, $kT_0=-174$ dBm/Hz.<br>'
      +'<b>Find.</b> The band, the noise power and $P_{\\min}$. The path loss, $P_r$ and the margin at $d_0$. The range at $6$ GHz with fixed gains and with fixed antenna size. The band, $P_{\\min}$ and the range at $32$ Mb/s.<br>'
      +'<b>Method.</b> Work in decibels: powers in dBm, gains in dBi, losses and ratios in dB. The noise in a band is $N=-174+\\text{NF}+10\\log_{10}B$. The sensitivity comes from $E_b=P_r/R_b$, so it takes the bit rate: $P_{\\min}=-174+\\text{NF}+10\\log_{10}R_b+(E_b/N_0)_{\\text{dB}}$. '
@@ -1001,10 +1001,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
       +'Set B is three rows of a triangular grid: $(\\pm b,\\pm h)$, $(0,\\pm h)$ and $(\\pm\\tfrac b2,0)$, with $h=\\tfrac{\\sqrt3}{2}b$. '
       +'Set C is eight levels on one axis: $\\psi_1=(2k-9)\\,g/2$ for $k=1,\\ldots,8$. '
       +'Set B comes with labels, read from left to right. The top row carries $\\mathtt{000},\\mathtt{001},\\mathtt{011}$, the middle row $\\mathtt{100},\\mathtt{101}$ and the bottom row $\\mathtt{010},\\mathtt{110},\\mathtt{111}$.',
-  parts:['[7 pts] Scale each set so that $E_b=3$. Find $c$, $b$ and $g$, and the $d_{\\min}$ of each set.',
-         '[6 pts] A Gray labelling gives every pair at $d_{\\min}$ labels that differ in one bit. For each set, give a Gray labelling or show that none exists.',
-         '[8 pts] Write the nearest-neighbour approximation of the bit error probability $P_b$ of each set as a function of $E_b/N_0$. Use your labels from part (b), or the given labels for a set without a Gray labelling. Evaluate each at $E_b/N_0=9$.',
-         '[4 pts] Rank the three sets by $P_b$ at high signal-to-noise ratio. Give the gap between neighbours in the ranking in decibels.'],
+  parts:['Scale each set so that $E_b=3$. Find $c$, $b$ and $g$, and the $d_{\\min}$ of each set.',
+         'A Gray labelling gives every pair at $d_{\\min}$ labels that differ in one bit. For each set, give a Gray labelling or show that none exists.',
+         'Write the nearest-neighbour approximation of the bit error probability $P_b$ of each set as a function of $E_b/N_0$. Use your labels from part (b), or the given labels for a set without a Gray labelling. Evaluate each at $E_b/N_0=9$.',
+         'Rank the three sets by $P_b$ at high signal-to-noise ratio. Give the gap between neighbours in the ranking in decibels.'],
   sol:'<b>Given.</b> Three sets of eight points, each point $3$ bits. Set A is a square ring with spacing $c$. Set B is three rows of a triangular grid with spacing $b$. Set C is eight levels $g$ apart. Labels for set B, and AWGN with $\\mathcal{N}(0,N_0/2)$.<br>'
      +'<b>Find.</b> The scale of each set at $E_b=3$ and its $d_{\\min}$. Which sets take a Gray labelling. The bit error of each at $E_b/N_0=9$, and the ranking.<br>'
      +'<b>Method.</b> With $3$ bits a symbol, $E_s=3E_b=9$ for every set. A symbol error to a neighbour at $d_{\\min}$ costs as many bits as the two labels differ in. So the nearest-neighbour approximation of the bit error is'
@@ -1058,10 +1058,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 { id:'D5-17', module:'M5', type:'phase', src:'Madhow P6.29',
   stem:'A BPSK link sends $s_{1,2}(t)=\\pm\\sqrt{2E_b/T}\\cos(2\\pi f_ct)$ on $0\\le t\\le T$ over an AWGN channel with $\\mathcal{N}(0,N_0/2)$. The carrier reaches the receiver with an extra phase $\\varphi$ that the receiver does not know. '
       +'The receiver correlates with $\\psi_1(t)=\\sqrt{2/T}\\cos(2\\pi f_ct)$ and $\\psi_2(t)=-\\sqrt{2/T}\\sin(2\\pi f_ct)$. It decides from the sign of the $\\psi_1$ output alone. Take $E_b/N_0=8$.',
-  parts:['[7 pts] For $\\varphi=25^{\\circ}$, find the noiseless outputs on $\\psi_1$ and $\\psi_2$ in units of $\\sqrt{E_b}$. Sketch the two points against the decision boundary.',
-         '[8 pts] Find the bit error probability as a function of $\\varphi$ and $E_b/N_0$ for $0\\le\\varphi<90^{\\circ}$. Evaluate it at $\\varphi=0$, $25^{\\circ}$ and $60^{\\circ}$.',
-         '[5 pts] Find the loss in decibels at $\\varphi=25^{\\circ}$ and at $\\varphi=60^{\\circ}$.',
-         '[5 pts] The phase error grows to $\\varphi=155^{\\circ}$. Find the bit error probability, and say how differential encoding removes the problem.'],
+  parts:['For $\\varphi=25^{\\circ}$, find the noiseless outputs on $\\psi_1$ and $\\psi_2$ in units of $\\sqrt{E_b}$. Sketch the two points against the decision boundary.',
+         'Find the bit error probability as a function of $\\varphi$ and $E_b/N_0$ for $0\\le\\varphi<90^{\\circ}$. Evaluate it at $\\varphi=0$, $25^{\\circ}$ and $60^{\\circ}$.',
+         'Find the loss in decibels at $\\varphi=25^{\\circ}$ and at $\\varphi=60^{\\circ}$.',
+         'The phase error grows to $\\varphi=155^{\\circ}$. Find the bit error probability, and say how differential encoding removes the problem.'],
   sol:'<b>Given.</b> BPSK with energy $E_b$ a bit, a carrier phase error $\\varphi$, a decision from the sign of the $\\psi_1$ output, and $E_b/N_0=8$.<br>'
      +'<b>Find.</b> The noiseless outputs at $25^{\\circ}$, and $P_b$ as a function of $\\varphi$ at three angles. The loss in decibels, and the result at $155^{\\circ}$.<br>'
      +'<b>Method.</b> Project the received waveform on each basis function. A phase error turns the constellation by $\\varphi$, while the boundary stays where the receiver put it. The distance from a point to the boundary sets $P_b$. The noise on the $\\psi_1$ output has variance $N_0/2$.<br>'
@@ -1096,9 +1096,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D5-18', module:'M5', type:'fsk', src:'Final Q3',
   stem:OPEN+'$$s_{1,2}(t)=\\pm2\\cos(2000\\pi t),\\qquad s_{3,4}(t)=\\pm2\\cos(3000\\pi t),\\qquad0\\le t\\le1.$$'+AWGN,
-  parts:['[8 pts] Show that the two carriers are orthogonal on $0\\le t\\le1$, and choose an orthonormal basis.',
-         PDRAW(8),
-         '[9 pts] Determine the nearest-neighbour approximation as a function of $E_{s,\\text{avg}}/N_0$. Evaluate it at $9$ and compare with a four-point PSK set of the same energy.'],
+  parts:['Show that the two carriers are orthogonal on $0\\le t\\le1$, and choose an orthonormal basis.',
+         PDRAW,
+         'Determine the nearest-neighbour approximation as a function of $E_{s,\\text{avg}}/N_0$. Evaluate it at $9$ and compare with a four-point PSK set of the same energy.'],
   sol:'<b>Given.</b> Four waveforms: $\\pm2\\cos$ at $1000$ Hz and $\\pm2\\cos$ at $1500$ Hz, $0\\le t\\le1$.<br>'
      +'<b>Find.</b> The orthogonality, the constellation and regions, $P_e$, and the comparison with four-point PSK.<br>'
      +'<b>Method.</b> Two cosines are orthogonal when their product integrates to zero. Then each frequency is one axis of the constellation.<br>'
@@ -1116,7 +1116,7 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D5-19', module:'M5', type:'fsk', src:'Final Q3',
   stem:OPEN+'$$s_1(t)=0,\\qquad s_2(t)=3\\cos(4000\\pi t),\\qquad s_3(t)=3\\cos(5000\\pi t),\\qquad0\\le t\\le2.$$'+AWGN,
-  parts:[PDRAW(10), PNN(10), '[5 pts] Evaluate the approximation of part (b) at $E_{s,\\text{avg}}/N_0=12$.'],
+  parts:[PDRAW, PNN, 'Evaluate the approximation of part (b) at $E_{s,\\text{avg}}/N_0=12$.'],
   sol:'<b>Given.</b> The zero signal and two cosines of amplitude $3$ at $2000$ Hz and $2500$ Hz, $0\\le t\\le2$.<br>'
      +'<b>Find.</b> The constellation and regions, $P_e$ against $E_{s,\\text{avg}}/N_0$, and its value at $12$.<br>'
      +'<b>Method.</b> The two cosines differ by $500$ Hz, a multiple of $1/(2T)=0.25$ Hz, so they are orthogonal on $0\\le t\\le2$. With $T=2$ the unit-energy functions are $\\psi_1(t)=\\cos(4000\\pi t)$ and $\\psi_2(t)=\\cos(5000\\pi t)$.<br>'
@@ -1136,10 +1136,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D5-20', module:'M5', type:'sens', src:'Madhow P6.35',
   stem:'A receiver is given a carrier channel of bandwidth $B=6$ MHz. The pulses are raised cosines with roll-off $\\alpha=0.2$, so $B=(1+\\alpha)R_s$, where $R_s$ is the symbol rate. The receiver noise figure is $\\text{NF}=6$ dB, and thermal noise at room temperature is $kT_0=-174$ dBm/Hz. The target bit error probability is $P_b=10^{-6}$. Three schemes with Gray labels are compared: QPSK, 8-PSK and 16-QAM. Use the nearest-neighbour form $$P_b\\approx\\frac{\\bar N_{\\min}}{\\log_2M}\\,Q\\Big(\\sqrt{\\frac{d_{\\min}^{2}}{2N_0}}\\Big)$$ and the values $Q(4.753)=1.00\\times10^{-6}$, $Q(4.695)=1.33\\times10^{-6}$ and $Q(4.671)=1.50\\times10^{-6}$.',
-  parts:['[5 pts] Find the symbol rate and the bit rate of each scheme.',
-         '[10 pts] Write $d_{\\min}^{2}$ of each scheme in terms of $E_b$, and its $P_b$ as a function of $E_b/N_0$. Find the $E_b/N_0$ in dB that each needs for $P_b=10^{-6}$.',
-         '[6 pts] Find the sensitivity of each scheme in dBm.',
-         '[4 pts] Find the noise power in the $6$ MHz band. Find the signal-to-noise ratio $P_{\\min}/N$ at the QPSK sensitivity, and explain why it differs from the $E_b/N_0$ of part (b).'],
+  parts:['Find the symbol rate and the bit rate of each scheme.',
+         'Write $d_{\\min}^{2}$ of each scheme in terms of $E_b$, and its $P_b$ as a function of $E_b/N_0$. Find the $E_b/N_0$ in dB that each needs for $P_b=10^{-6}$.',
+         'Find the sensitivity of each scheme in dBm.',
+         'Find the noise power in the $6$ MHz band. Find the signal-to-noise ratio $P_{\\min}/N$ at the QPSK sensitivity, and explain why it differs from the $E_b/N_0$ of part (b).'],
   sol:'<b>Given.</b> A band $B=6$ MHz with roll-off $0.2$, $\\text{NF}=6$ dB, $kT_0=-174$ dBm/Hz and the target $P_b=10^{-6}$. QPSK, 8-PSK and 16-QAM with Gray labels, and three values of $Q$.<br>'
      +'<b>Find.</b> $R_s$ and each $R_b$. Each $d_{\\min}^{2}$, $P_b$ and required $E_b/N_0$. Each sensitivity. The noise in the band and the SNR at the QPSK sensitivity.<br>'
      +'<b>Method.</b> The band fixes the symbol rate $R_s=B/(1+\\alpha)$, and $R_b=R_s\\log_2M$. Write $E_s=E_b\\log_2M$ so each $d_{\\min}^{2}$ is a multiple of $E_b$. Then set $P_b$ equal to the target and read the argument of $Q$ from the table. '
@@ -1174,7 +1174,7 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D5-21', module:'M5', type:'qam', src:'Final Q3',
   stem:OPEN+'$$\\begin{aligned}s_k(t)&=2\\cos\\!\\Big(2000\\pi t+\\frac{(k-1)\\pi}{2}\\Big),\\quad k\\in\\{1,2,3\\},\\\\s_4(t)&=4\\cos\\!\\Big(2000\\pi t+\\frac{3\\pi}{2}\\Big),\\end{aligned}$$ all on $0\\le t\\le1$.'+AWGN,
-  parts:[PDRAW(10), PNN(10), '[5 pts] Compare with a regular four-point PSK set of the same $E_{s,\\text{avg}}$, in decibels.'],
+  parts:[PDRAW, PNN, 'Compare with a regular four-point PSK set of the same $E_{s,\\text{avg}}$, in decibels.'],
   sol:'<b>Given.</b> Three waveforms of amplitude $2$ at phases $0,90^{\\circ},180^{\\circ}$, and a fourth of amplitude $4$ at $270^{\\circ}$. The carrier is $1000$ Hz, $0\\le t\\le1$.<br>'
      +'<b>Find.</b> The constellation and regions, $P_e$ against $E_{s,\\text{avg}}/N_0$, and the loss against regular four-point PSK.<br>'
      +'<b>Method.</b> Use $\\psi_1(t)=\\sqrt2\\cos(2000\\pi t)$ and $\\psi_2(t)=-\\sqrt2\\sin(2000\\pi t)$. The radii are $2/\\sqrt2=\\sqrt2$ and $4/\\sqrt2=2\\sqrt2$.<br>'
@@ -1195,8 +1195,8 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D5-22', module:'M5', type:'qam', src:'Final Q3',
   stem:OPEN+'$$s_{1,2}(t)=\\pm\\sqrt2\\cos(3000\\pi t),\\qquad s_{3,4}(t)=2\\sqrt2\\cos\\!\\Big(3000\\pi t\\pm\\frac{\\pi}{2}\\Big),\\qquad0\\le t\\le1.$$'+AWGN,
-  parts:[PDRAW(10), PNN(10),
-         '[5 pts] The next distance is only slightly larger than $d_{\\min}$. Add its terms to the approximation and evaluate both at $E_{s,\\text{avg}}/N_0=11.25$.'],
+  parts:[PDRAW, PNN,
+         'The next distance is only slightly larger than $d_{\\min}$. Add its terms to the approximation and evaluate both at $E_{s,\\text{avg}}/N_0=11.25$.'],
   sol:'<b>Given.</b> $\\pm\\sqrt2\\cos(3000\\pi t)$, and two waveforms of amplitude $2\\sqrt2$ at phases $\\pm90^{\\circ}$, on $0\\le t\\le1$.<br>'
      +'<b>Find.</b> The constellation and regions, $P_e$ against $E_{s,\\text{avg}}/N_0$, and the effect of the second distance.<br>'
      +'<b>Method.</b> Use $\\psi_1(t)=\\sqrt2\\cos(3000\\pi t)$ and $\\psi_2(t)=-\\sqrt2\\sin(3000\\pi t)$. Note $\\cos(x+\\pi/2)=-\\sin x$, so $s_3=2\\psi_2$ and $s_4=-2\\psi_2$.<br>'
@@ -1221,9 +1221,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
       +'The central region is the square $|\\psi_1|<1$, $|\\psi_2|<1$, and the diagonals split the rest. One waveform is the zero signal. The other four have equal energy, and $E_{s,\\text{avg}}=3.2$.',
   figure:()=>cfig([[0,0],[2,0],[0,2],[-2,0],[0,-2]], {hide:true, tick:1, margin:1.6,
     regionNames:['D_1','D_2','D_3','D_4','D_5'], regionAt:[[0,0],[2.6,0.5],[-0.5,2.6],[-2.6,-0.5],[0.5,-2.6]]}),
-  parts:['[8 pts] Locate the five signal points from the regions, and confirm the value of $E_{s,\\text{avg}}$.',
-         '[7 pts] Write the five waveforms $s_1(t),\\ldots,s_5(t)$, with $s_k$ the symbol decided in $D_k$.',
-         '[10 pts] Determine the nearest-neighbour approximation of the average symbol error probability as a function of $E_{s,\\text{avg}}/N_0$. Evaluate it at $E_{s,\\text{avg}}/N_0=14.4$.'],
+  parts:['Locate the five signal points from the regions, and confirm the value of $E_{s,\\text{avg}}$.',
+         'Write the five waveforms $s_1(t),\\ldots,s_5(t)$, with $s_k$ the symbol decided in $D_k$.',
+         'Determine the nearest-neighbour approximation of the average symbol error probability as a function of $E_{s,\\text{avg}}/N_0$. Evaluate it at $E_{s,\\text{avg}}/N_0=14.4$.'],
   sol:'<b>Given.</b> The five regions: a square $|\\psi_1|<1$, $|\\psi_2|<1$ in the centre, and four outer regions split by the diagonals. The zero signal is one of the points, and $E_{s,\\text{avg}}=3.2$.<br>'
      +'<b>Find.</b> The points, the waveforms, and $P_e$ with its value at $14.4$.<br>'
      +'<b>Method.</b> A boundary between two regions is the perpendicular bisector of their two points. So each point is the mirror image of its neighbour in the shared boundary.<br>'
@@ -1246,10 +1246,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
       +'The figure shows the decision thresholds on the axis $\\psi_1(t)=\\sqrt2\\cos(2000\\pi t)$. The smallest coefficient is $c_1=-2$.',
   figure:()=>cfig([[-2,0],[0,0],[2,0],[6,0]], {oneD:true, hide:true, xticks:[-1,1,4], margin:2.2,
     regionNames:['D_1','D_2','D_3','D_4'], regionAt:[[-2.2,0],[0,0],[2.5,0],[6,0]]}),
-  parts:['[8 pts] Find $c_2$, $c_3$ and $c_4$ from the thresholds.',
-         '[7 pts] Find $E_{s,\\text{avg}}$ and write the four waveforms.',
-         '[6 pts] Determine the nearest-neighbour approximation of the average symbol error probability as a function of $E_{s,\\text{avg}}/N_0$.',
-         '[4 pts] Give the four-point set with the same $d_{\\min}$ and the least $E_{s,\\text{avg}}$. Find its saving in decibels.'],
+  parts:['Find $c_2$, $c_3$ and $c_4$ from the thresholds.',
+         'Find $E_{s,\\text{avg}}$ and write the four waveforms.',
+         'Determine the nearest-neighbour approximation of the average symbol error probability as a function of $E_{s,\\text{avg}}/N_0$.',
+         'Give the four-point set with the same $d_{\\min}$ and the least $E_{s,\\text{avg}}$. Find its saving in decibels.'],
   sol:'<b>Given.</b> Thresholds at $-1$, $1$ and $4$ on the $\\psi_1$ axis, and $c_1=-2$.<br>'
      +'<b>Find.</b> $c_2,c_3,c_4$, the waveforms and $E_{s,\\text{avg}}$, $P_e$, and the best set with the same $d_{\\min}$.<br>'
      +'<b>Method.</b> The coordinate of $s_k$ on $\\psi_1$ is $c_k$. An optimal threshold between equally likely neighbours is their midpoint, so $c_{k+1}=2\\lambda_k-c_k$.<br>'
@@ -1267,9 +1267,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D5-25', module:'M5', type:'pam', src:'Final Q3 (variant)',
   stem:OPEN+'$$s_k(t)=c_k\\sqrt2\\cos(2000\\pi t),\\quad c_k\\in\\{-2,\\,0,\\,1,\\,3\\},\\quad0\\le t\\le1.$$'+AWGN,
-  parts:[PDRAW(8), PNN(7),
-         '[5 pts] Evaluate the approximation of part (b) at $E_{s,\\text{avg}}/N_0=28$.',
-         '[5 pts] Find the exact symbol error probability at the same value from the thresholds, and compare.'],
+  parts:[PDRAW, PNN,
+         'Evaluate the approximation of part (b) at $E_{s,\\text{avg}}/N_0=28$.',
+         'Find the exact symbol error probability at the same value from the thresholds, and compare.'],
   sol:'<b>Given.</b> Four equally likely coefficients $-2,0,1,3$ on the unit-energy carrier $\\psi_1(t)=\\sqrt2\\cos(2000\\pi t)$.<br>'
      +'<b>Find.</b> The constellation and thresholds, $P_e$ against $E_{s,\\text{avg}}/N_0$, its value at $28$, and the exact value.<br>'
      +'<b>Method.</b> The points are the coefficients themselves. The noise on $\\psi_1$ is Gaussian with variance $\\sigma^{2}=N_0/2$, so each conditional error is a sum of $Q$ terms.<br>'
@@ -1290,9 +1290,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D5-26', module:'M5', type:'design', src:'Final Q3 (variant)',
   stem:'Two sets of sixteen equally probable waveforms are proposed, both on $0\\le t\\le1$: $$\\text{A:}\\ s_k(t)=2\\sqrt5\\cos\\!\\Big(2000\\pi t+\\frac{k\\pi}{8}\\Big),\\ k\\in\\{1,\\ldots,16\\},$$ $$\\text{B:}\\ s_{mn}(t)=\\sqrt2\\big[(2m-5)\\cos(2000\\pi t)-(2n-5)\\sin(2000\\pi t)\\big],\\ m,n\\in\\{1,2,3,4\\}.$$'+AWGN,
-  parts:['[8 pts] Show that the two sets have the same $E_{s,\\text{avg}}$, and draw both constellations with their optimal decision regions.',
-         '[9 pts] Determine the nearest-neighbour approximation of the average symbol error probability of each set as a function of $E_{s,\\text{avg}}/N_0$.',
-         '[8 pts] Which set is better at equal $E_{s,\\text{avg}}$, and by how many decibels? Evaluate both approximations at $E_{s,\\text{avg}}/N_0=45$.'],
+  parts:['Show that the two sets have the same $E_{s,\\text{avg}}$, and draw both constellations with their optimal decision regions.',
+         'Determine the nearest-neighbour approximation of the average symbol error probability of each set as a function of $E_{s,\\text{avg}}/N_0$.',
+         'Which set is better at equal $E_{s,\\text{avg}}$, and by how many decibels? Evaluate both approximations at $E_{s,\\text{avg}}/N_0=45$.'],
   sol:'<b>Given.</b> Set A: sixteen phases of one amplitude $2\\sqrt5$. Set B: a $4\\times4$ grid with coefficients in $\\{-3,-1,1,3\\}$.<br>'
      +'<b>Find.</b> Both energies and constellations, both approximations, and the difference in decibels.<br>'
      +'<b>Method.</b> Use $\\psi_1(t)=\\sqrt2\\cos(2000\\pi t)$ and $\\psi_2(t)=-\\sqrt2\\sin(2000\\pi t)$ for both. Then compare $d_{\\min}^{2}/E_{s,\\text{avg}}$.<br>'
@@ -1314,9 +1314,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D5-27', module:'M5', type:'fsk', src:'Final Q3 (variant)',
   stem:'Consider a binary modulation scheme where the equally probable symbols have the following waveforms: $$s_1(t)=2\\cos(2000\\pi t),\\qquad s_2(t)=2\\cos\\big(2\\pi(1000.75)t\\big),\\qquad0\\le t\\le1.$$'+AWGN,
-  parts:['[8 pts] Find the energies and the correlation coefficient $\\rho=\\langle s_1,s_2\\rangle/E$. Neglect terms at the double frequency.',
-         '[8 pts] Use Gram–Schmidt to find the signal points, and draw the constellation with its optimal decision boundary.',
-         '[9 pts] Find the error probability as a function of $E_{s,\\text{avg}}/N_0$. Compare it with the orthogonal choice $f_2=1000.5$ Hz at $E_{s,\\text{avg}}/N_0=7.5$.'],
+  parts:['Find the energies and the correlation coefficient $\\rho=\\langle s_1,s_2\\rangle/E$. Neglect terms at the double frequency.',
+         'Use Gram–Schmidt to find the signal points, and draw the constellation with its optimal decision boundary.',
+         'Find the error probability as a function of $E_{s,\\text{avg}}/N_0$. Compare it with the orthogonal choice $f_2=1000.5$ Hz at $E_{s,\\text{avg}}/N_0=7.5$.'],
   sol:'<b>Given.</b> Two cosines of amplitude $2$ on $0\\le t\\le1$, at $1000$ Hz and $1000.75$ Hz.<br>'
      +'<b>Find.</b> $E$, $\\rho$, the two points, the boundary, and $P_e$ against the orthogonal choice.<br>'
      +'<b>Method.</b> A frequency gap of $0.75$ Hz is not a multiple of $1/(2T)=0.5$ Hz, so the two waveforms are not orthogonal. The distance is $d^{2}=2E(1-\\rho)$.<br>'
@@ -1338,10 +1338,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D5-28', module:'M5', type:'design', src:'Final Q3 (variant)',
   stem:'Eight equally probable waveforms are formed from two rings on $0\\le t\\le1$: $$s_k(t)=\\begin{cases}\\sqrt2\\cos\\!\\big(2000\\pi t+(k-1)\\frac{\\pi}{2}\\big),&k\\in\\{1,2,3,4\\},\\\\R\\sqrt2\\cos\\!\\big(2000\\pi t+(k-5)\\frac{\\pi}{2}\\big),&k\\in\\{5,6,7,8\\},\\end{cases}$$ with $R>1$.'+AWGN,
-  parts:['[7 pts] Find $d_{\\min}$ as a function of $R$.',
-         '[8 pts] Find the $R$ that maximises $d_{\\min}^{2}/E_{s,\\text{avg}}$, and that maximum.',
-         '[6 pts] For this $R$, draw the constellation and regions, and determine the nearest-neighbour approximation as a function of $E_{s,\\text{avg}}/N_0$.',
-         '[4 pts] Compare the result with $8$-PSK.'],
+  parts:['Find $d_{\\min}$ as a function of $R$.',
+         'Find the $R$ that maximises $d_{\\min}^{2}/E_{s,\\text{avg}}$, and that maximum.',
+         'For this $R$, draw the constellation and regions, and determine the nearest-neighbour approximation as a function of $E_{s,\\text{avg}}/N_0$.',
+         'Compare the result with $8$-PSK.'],
   sol:'<b>Given.</b> An inner ring of radius $1$ and an outer ring of radius $R$, at the same four phases.<br>'
      +'<b>Find.</b> $d_{\\min}(R)$, the best $R$, the approximation at that $R$, and the comparison with $8$-PSK.<br>'
      +'<b>Method.</b> With $\\psi_1(t)=\\sqrt2\\cos(2000\\pi t)$ and $\\psi_2(t)=-\\sqrt2\\sin(2000\\pi t)$, the rings have radii $1$ and $R$. List every kind of distance, then maximise the ratio.<br>'
@@ -1364,10 +1364,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 { id:'D5-29', module:'M5', type:'design', src:'Final Q3 (variant)',
   stem:'A set of $M$ equally probable waveforms $s(t)=a\\sqrt2\\cos(2000\\pi t)-b\\sqrt2\\sin(2000\\pi t)$, $0\\le t\\le1$, is transmitted over a standard AWGN channel with $\\mathcal{N}(0,N_0/2)$. '
       +'The points $(a,b)$ form a square grid centred on the origin. The nearest-neighbour approximation of the set is $$P_e\\approx3\\,Q\\Big(\\sqrt{\\frac{E_{s,\\text{avg}}}{5N_0}}\\Big),$$ and $E_{s,\\text{avg}}=2.5$.',
-  parts:['[8 pts] Find $M$ and $d_{\\min}$.',
-         '[7 pts] Give the values that $a$ and $b$ take, and confirm $N_{\\min}=3$.',
-         PDRAW(6),
-         '[4 pts] Find the bits per symbol and $E_b$, and write the approximation as a function of $E_b/N_0$.'],
+  parts:['Find $M$ and $d_{\\min}$.',
+         'Give the values that $a$ and $b$ take, and confirm $N_{\\min}=3$.',
+         PDRAW,
+         'Find the bits per symbol and $E_b$, and write the approximation as a function of $E_b/N_0$.'],
   sol:'<b>Given.</b> A centred square grid, $P_e\\approx3Q\\big(\\sqrt{E_{s,\\text{avg}}/5N_0}\\big)$, and $E_{s,\\text{avg}}=2.5$.<br>'
      +'<b>Find.</b> $M$, $d_{\\min}$, the coefficient values, the constellation, and the per-bit form.<br>'
      +'<b>Method.</b> For an $M$-point square grid, $d_{\\min}^{2}=6E_{s,\\text{avg}}/(M-1)$. Match the $Q$ argument to $\\sqrt{d_{\\min}^{2}/2N_0}$.<br>'
@@ -1385,8 +1385,8 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D5-30', module:'M5', type:'qam', src:'Final Q3 (variant)',
   stem:OPEN+'$$\\begin{aligned}s_0(t)&=0,\\\\s_k(t)&=3\\cos\\!\\Big(3000\\pi t+\\frac{k\\pi}{4}\\Big),\\quad k\\in\\{1,\\ldots,8\\},\\end{aligned}$$ all on $0\\le t\\le2$.'+AWGN,
-  parts:[PDRAW(8), PNN(9),
-         '[8 pts] Compare this set with $8$-PSK at the same $E_{s,\\text{avg}}$, both in decibels and in bits per symbol.'],
+  parts:[PDRAW, PNN,
+         'Compare this set with $8$-PSK at the same $E_{s,\\text{avg}}$, both in decibels and in bits per symbol.'],
   sol:'<b>Given.</b> The zero signal and eight waveforms of amplitude $3$ at $1500$ Hz, $45^{\\circ}$ apart, on $0\\le t\\le2$.<br>'
      +'<b>Find.</b> The constellation and regions, $P_e$ against $E_{s,\\text{avg}}/N_0$, and the comparison with $8$-PSK.<br>'
      +'<b>Method.</b> With $T=2$ the orthonormal pair is $\\psi_1(t)=\\cos(3000\\pi t)$ and $\\psi_2(t)=-\\sin(3000\\pi t)$. The radius is $3\\sqrt{T/2}=3$.<br>'

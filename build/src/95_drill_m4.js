@@ -298,9 +298,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
     {name:'s_0(t)', xr:[0,3.4], yr:[-4,2], pts:[[0,0],[1,0],[1,-3],[3,-3],[3,0],[3.4,0]], ystep:2},
     {name:'s_1(t)', xr:[0,3.4], yr:[-4,2], pts:[[0,0],[1,0],[1,1],[3,1],[3,0],[3.4,0]], ystep:2})
     + receiver('corr'),
-  parts:['[7 pts] Find $\\psi(t)$ and the coordinates $s_0$ and $s_1$ of the two signals on it.',
-         '[8 pts] Determine the conditional probability density functions $f_Y(y\\mid 1)$ and $f_Y(y\\mid 0)$.',
-         '[10 pts] Find the optimal decision threshold $\\lambda$ and calculate the average probability of bit error $P_b$.'],
+  parts:['Find $\\psi(t)$ and the coordinates $s_0$ and $s_1$ of the two signals on it.',
+         'Determine the conditional probability density functions $f_Y(y\\mid 1)$ and $f_Y(y\\mid 0)$.',
+         'Find the optimal decision threshold $\\lambda$ and calculate the average probability of bit error $P_b$.'],
   sol:'<b>Given.</b> $s_0(t)=-3$ and $s_1(t)=1$ for $1\\le t<3$, both zero elsewhere in $[0,3]$. Equal priors, $N_0/2=2$ W/Hz, sample at $T=3$ s.<br>'
      +'<b>Find.</b> $\\psi(t)$, $s_0$, $s_1$, the two conditional densities, $\\lambda$ and $P_b$.<br>'
      +'<b>Method.</b> Both waveforms are multiples of one rectangular pulse, so one basis function carries both. The correlator output is the coordinate plus Gaussian noise of variance $N_0/2$. With equal priors the MAP rule is the ML rule, and the threshold is the midpoint.<br>'
@@ -321,9 +321,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
     {name:'s_0(t)', xr:[0,3.4], yr:[-4,7], pts:[[0,0],[3,6],[3,0],[3.4,0]], ystep:2},
     {name:'s_1(t)', xr:[0,3.4], yr:[-4,7], pts:[[0,0],[3,-3],[3,0],[3.4,0]], ystep:2})
     + receiver('mf'),
-  parts:['[5 pts] Plot the impulse response of the matched filter, $h(t)=\\psi(T-t)$.',
-         '[10 pts] Determine the conditional PDFs $f_Y(y\\mid 1)$ and $f_Y(y\\mid 0)$.',
-         '[10 pts] Find the optimal decision threshold $\\lambda$ and calculate the average probability of bit error $P_b$. Use a $Q$-function table.'],
+  parts:['Plot the impulse response of the matched filter, $h(t)=\\psi(T-t)$.',
+         'Determine the conditional PDFs $f_Y(y\\mid 1)$ and $f_Y(y\\mid 0)$.',
+         'Find the optimal decision threshold $\\lambda$ and calculate the average probability of bit error $P_b$. Use a $Q$-function table.'],
   sol:'<b>Given.</b> $s_0(t)=2t$ and $s_1(t)=-t$ for $0\\le t\\le3$, read from the drawing. Equal priors, $N_0/2=9$ W/Hz, $T=3$ s.<br>'
      +'<b>Find.</b> $h(t)$, the two conditional densities, $\\lambda$ and $P_b$.<br>'
      +'<b>Method.</b> Both waveforms are multiples of the ramp $p(t)=t$. Normalise it to get $\\psi(t)$. The matched filter sampled at $T$ computes the projection on $\\psi(t)$, so $Y$ is a coordinate plus noise.<br>'
@@ -345,10 +345,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
     {name:'s_0(t)', xr:[0,3.4], yr:[-1,5], pts:[[0,0],[3.4,0]], ystep:2},
     {name:'s_1(t)', xr:[0,3.4], yr:[-1,5], pts:[[0,0],[1.5,4],[3,0],[3.4,0]], ystep:2})
     + receiver('corr'),
-  parts:['[6 pts] Find the basis function $\\psi(t)$, the coordinates $s_0$ and $s_1$, and the energies $E_0$ and $E_1$.',
-         '[6 pts] Determine the conditional PDFs $f_Y(y\\mid 1)$ and $f_Y(y\\mid 0)$.',
-         '[7 pts] Find the optimal decision threshold $\\lambda$ and the average probability of bit error $P_b$.',
-         '[6 pts] The receiver is rebuilt to compare $\\int_0^T r(t)s_i(t)\\,dt-E_i/2$ for $i=0,1$ and pick the larger. Show that it makes the same decisions as part (c).'],
+  parts:['Find the basis function $\\psi(t)$, the coordinates $s_0$ and $s_1$, and the energies $E_0$ and $E_1$.',
+         'Determine the conditional PDFs $f_Y(y\\mid 1)$ and $f_Y(y\\mid 0)$.',
+         'Find the optimal decision threshold $\\lambda$ and the average probability of bit error $P_b$.',
+         'The receiver is rebuilt to compare $\\int_0^T r(t)s_i(t)\\,dt-E_i/2$ for $i=0,1$ and pick the larger. Show that it makes the same decisions as part (c).'],
   sol:'<b>Given.</b> $s_0(t)=0$. $s_1(t)=\\tfrac83 t$ for $0\\le t\\le1.5$ and $s_1(t)=\\tfrac83(3-t)$ for $1.5\\le t\\le3$. Equal priors, $N_0/2=0.64$ W/Hz.<br>'
      +'<b>Find.</b> $\\psi(t)$, $s_0$, $s_1$, $E_0$, $E_1$, the densities, $\\lambda$, $P_b$, and the equivalence of the correlation metric.<br>'
      +'<b>Method.</b> On-off signalling needs one basis function, the normalised pulse. The threshold is the midpoint of the two coordinates. The correlation metric must keep the energy term, because the two energies differ.<br>'
@@ -366,10 +366,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D4-04', module:'M4', type:'bound', src:'Madhow P6.17',
   stem:'A symbol of length $T=2$ s has four slots of $0.5$ s. The pulse in slot $i$ is $p_i(t)=2$ for $0.5(i-1)\\le t<0.5i$, and zero elsewhere, with $i=1,\\ldots,4$. Two sets of four equally likely signals are built from these pulses. Set A puts one pulse in one slot, $s_i(t)=p_i(t)$. Set B puts pulses in two slots: $$s_1=p_1+p_2,\\quad s_2=p_3+p_4,\\quad s_3=p_1+p_3,\\quad s_4=p_2+p_4.$$ The channel adds white Gaussian noise with power spectral density $N_0/2$. Let $E_p$ be the energy of one pulse. The receiver uses the basis $\\psi_i(t)=p_i(t)/\\sqrt{E_p}$ and forms $r_i=\\int_0^T r(t)\\psi_i(t)\\,dt$. According to the information given above,',
-  parts:['[6 pts] Find $E_p$, the four signal vectors of each set, and the energy per bit $E_b$ of each set.',
-         '[7 pts] Find every pairwise distance in each set in terms of its $E_b$. Write the union bound on the symbol error probability $P_e$ of each set as a function of $E_b/N_0$.',
-         '[6 pts] Find the penalty of set B in decibels at high $E_b/N_0$. Evaluate both union bounds at $E_b/N_0=4$.',
-         '[6 pts] Show that the ML receiver for set B needs only the signs of $Z_1=r_1-r_4$ and $Z_2=r_2-r_3$. Find the exact $P_e$ of set B and evaluate it at $E_b/N_0=4$.'],
+  parts:['Find $E_p$, the four signal vectors of each set, and the energy per bit $E_b$ of each set.',
+         'Find every pairwise distance in each set in terms of its $E_b$. Write the union bound on the symbol error probability $P_e$ of each set as a function of $E_b/N_0$.',
+         'Find the penalty of set B in decibels at high $E_b/N_0$. Evaluate both union bounds at $E_b/N_0=4$.',
+         'Show that the ML receiver for set B needs only the signs of $Z_1=r_1-r_4$ and $Z_2=r_2-r_3$. Find the exact $P_e$ of set B and evaluate it at $E_b/N_0=4$.'],
   sol:'<b>Given.</b> Four pulses of height $2$ and width $0.5$ s in disjoint slots. Set A uses one slot, set B two. Equal priors, noise power spectral density $N_0/2$.<br>'
      +'<b>Find.</b> $E_p$, the vectors, $E_b$ of each set, the distances, the two union bounds, the penalty of set B, and the exact $P_e$ of set B.<br>'
      +'<b>Method.</b> The pulses do not overlap, so they are orthogonal, and each one gives one basis direction. A vector then lists which slots carry a pulse. The union bound needs only the pairwise distances. For set B all energies are equal, so the ML rule becomes a largest-correlation rule, and that splits into two independent sign tests.<br>'
@@ -407,10 +407,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D4-05', module:'M4', type:'mismatch', src:'Madhow P6.28',
   stem:'A 4-PAM receiver expects the noiseless samples $-6$, $-2$, $2$ and $6$. It decides with the fixed thresholds $-4$, $0$ and $4$. The four symbols are equally likely. The noise on the sample is Gaussian with mean $0$ and variance $1$. A faulty gain stage scales the noiseless samples by a factor $g$, so they arrive at $\\pm2g$ and $\\pm6g$. The thresholds and the noise variance do not change. The gain stage divides its input by $\\sqrt{\\hat P}$, where $\\hat P$ is its estimate of the received power $P$. According to the information given above,',
-  parts:['[5 pts] For $g=0.85$, sketch the thresholds and the four noiseless samples. Give the distance from each sample to each threshold beside it.',
-         '[7 pts] For $g=0.85$, find the conditional error probability of an inner and of an outer symbol, and the average symbol error probability $P_e$.',
-         '[7 pts] Repeat part (b) for $g=1.15$.',
-         '[6 pts] For each $g$, give the loss in decibels at high signal-to-noise ratio against thresholds at the midpoints of the scaled samples. Say which gain is worse, and whether $\\hat P$ is too large or too small.'],
+  parts:['For $g=0.85$, sketch the thresholds and the four noiseless samples. Give the distance from each sample to each threshold beside it.',
+         'For $g=0.85$, find the conditional error probability of an inner and of an outer symbol, and the average symbol error probability $P_e$.',
+         'Repeat part (b) for $g=1.15$.',
+         'For each $g$, give the loss in decibels at high signal-to-noise ratio against thresholds at the midpoints of the scaled samples. Say which gain is worse, and whether $\\hat P$ is too large or too small.'],
   sol:'<b>Given.</b> Nominal samples $\\pm2$ and $\\pm6$, thresholds $-4$, $0$, $4$, noise standard deviation $\\sigma=1$, equal priors. First $g=0.85$, then $g=1.15$.<br>'
      +'<b>Find.</b> The distances to the thresholds, the conditional errors and $P_e$ for both gains, the loss of each in decibels, and the power error.<br>'
      +'<b>Method.</b> The thresholds stay and only the samples move. So each symbol has its own distance to each threshold beside it. In one dimension an error past one threshold is one Gaussian tail. The negative samples mirror the positive ones, so work with the two positive samples.<br>'
@@ -435,10 +435,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   figure: () => waves(
     {name:'s_0(t)', xr:[0,2.2], yr:[-3.5,3.5], f:t=>t<=2?Math.sin(Math.PI*t):0, xstep:0.5, ystep:1},
     {name:'s_1(t)', xr:[0,2.2], yr:[-3.5,3.5], f:t=>t<=2?3*Math.sin(Math.PI*t):0, xstep:0.5, ystep:1}),
-  parts:['[6 pts] Find $\\psi(t)$, the coordinates $s_0$ and $s_1$, and the energies $E_0$ and $E_1$.',
-         '[6 pts] Determine the conditional PDFs $f_Y(y\\mid 1)$ and $f_Y(y\\mid 0)$.',
-         '[7 pts] Find the optimal decision threshold $\\lambda$ and calculate $P_b$.',
-         '[6 pts] A designer builds a receiver that picks the larger of $\\int_0^T r(t)s_i(t)\\,dt$ and leaves out $-E_i/2$. Find its $P_b$.'],
+  parts:['Find $\\psi(t)$, the coordinates $s_0$ and $s_1$, and the energies $E_0$ and $E_1$.',
+         'Determine the conditional PDFs $f_Y(y\\mid 1)$ and $f_Y(y\\mid 0)$.',
+         'Find the optimal decision threshold $\\lambda$ and calculate $P_b$.',
+         'A designer builds a receiver that picks the larger of $\\int_0^T r(t)s_i(t)\\,dt$ and leaves out $-E_i/2$. Find its $P_b$.'],
   sol:'<b>Given.</b> $s_0(t)=\\sin(\\pi t)$, $s_1(t)=3\\sin(\\pi t)$ on $[0,2]$. Equal priors, $N_0/2=0.36$ W/Hz.<br>'
      +'<b>Find.</b> $\\psi(t)$, $s_0$, $s_1$, $E_0$, $E_1$, the densities, $\\lambda$, $P_b$, and $P_b$ without the energy term.<br>'
      +'<b>Method.</b> Both signals are multiples of $\\sin(\\pi t)$, so one basis function carries both. The two energies differ. So the correlation metric needs $-E_i/2$, and part (d) measures what leaving it out costs.<br>'
@@ -461,9 +461,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
     {name:'s_0(t)', xr:[0,1.1], yr:[-4.6,4.6], f:t=>t<=1?Math.SQRT2*Math.cos(4*Math.PI*t):0, xstep:0.25, ystep:2},
     {name:'s_1(t)', xr:[0,1.1], yr:[-4.6,4.6], f:t=>t<=1?-3*Math.SQRT2*Math.cos(4*Math.PI*t):0, xstep:0.25, ystep:2})
     + receiver('corr'),
-  parts:['[7 pts] Find the unit-energy basis $\\psi(t)$ and the coordinates $s_0$ and $s_1$.',
-         '[8 pts] Determine the conditional PDFs $f_Y(y\\mid 1)$ and $f_Y(y\\mid 0)$.',
-         '[10 pts] Find the optimal decision threshold $\\lambda$ and calculate the average probability of bit error $P_b$.'],
+  parts:['Find the unit-energy basis $\\psi(t)$ and the coordinates $s_0$ and $s_1$.',
+         'Determine the conditional PDFs $f_Y(y\\mid 1)$ and $f_Y(y\\mid 0)$.',
+         'Find the optimal decision threshold $\\lambda$ and calculate the average probability of bit error $P_b$.'],
   sol:'<b>Given.</b> $s_0(t)=\\sqrt2\\cos(4\\pi t)$ and $s_1(t)=-3\\sqrt2\\cos(4\\pi t)$ on $[0,1]$. Equal priors, $N_0/2=0.49$ W/Hz.<br>'
      +'<b>Find.</b> $\\psi(t)$, $s_0$, $s_1$, the densities, $\\lambda$ and $P_b$.<br>'
      +'<b>Method.</b> Both signals are multiples of $\\cos(4\\pi t)$. Normalise it, project, and use the midpoint threshold.<br>'
@@ -484,9 +484,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
     {name:'s_0(t)', xr:[0,3.4], yr:[-3,5], pts:[[0,0],[0,4],[3,0],[3.4,0]], ystep:2},
     {name:'s_1(t)', xr:[0,3.4], yr:[-3,5], pts:[[0,0],[0,-2],[3,0],[3.4,0]], ystep:2})
     + receiver('mf'),
-  parts:['[5 pts] Plot the impulse response of the matched filter, $h(t)=\\psi(T-t)$.',
-         '[8 pts] Determine the conditional PDFs $f_Y(y\\mid 1)$ and $f_Y(y\\mid 0)$.',
-         '[12 pts] Find the optimal decision threshold $\\lambda$ and calculate the average probability of bit error $P_b$.'],
+  parts:['Plot the impulse response of the matched filter, $h(t)=\\psi(T-t)$.',
+         'Determine the conditional PDFs $f_Y(y\\mid 1)$ and $f_Y(y\\mid 0)$.',
+         'Find the optimal decision threshold $\\lambda$ and calculate the average probability of bit error $P_b$.'],
   sol:'<b>Given.</b> $s_0(t)=\\tfrac43(3-t)$ and $s_1(t)=-\\tfrac23(3-t)$ for $0\\le t\\le3$. $P_0=0.6$, $P_1=0.4$, $N_0/2=4$ W/Hz.<br>'
      +'<b>Find.</b> $h(t)$, the densities, the MAP threshold $\\lambda$ and $P_b$.<br>'
      +'<b>Method.</b> Both ramps are multiples of $p(t)=3-t$. The priors differ, so the optimal threshold is the MAP threshold, not the midpoint.<br>'
@@ -507,10 +507,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   figure: () => waves(
     {name:'s_0(t)', xr:[0,2.4], yr:[-1,3], pts:[[0,0],[0,2],[2,2],[2,0],[2.4,0]], xstep:0.5, ystep:1},
     {name:'s_1(t)', xr:[0,2.4], yr:[-1,3], pts:[[0,0],[0,2],[1,2],[1,0],[2.4,0]], xstep:0.5, ystep:1}),
-  parts:['[7 pts] Apply Gram–Schmidt, starting from $s_1(t)$, to find $\\psi_1(t)$, $\\psi_2(t)$ and the vectors $\\mathbf{s}_0$ and $\\mathbf{s}_1$.',
-         '[6 pts] Find the ML decision rule and draw the decision regions.',
-         '[6 pts] Calculate the average probability of bit error $P_b$.',
-         '[6 pts] Show that one correlator with $s_0(t)-s_1(t)$ makes the same decisions, and give its threshold.'],
+  parts:['Apply Gram–Schmidt, starting from $s_1(t)$, to find $\\psi_1(t)$, $\\psi_2(t)$ and the vectors $\\mathbf{s}_0$ and $\\mathbf{s}_1$.',
+         'Find the ML decision rule and draw the decision regions.',
+         'Calculate the average probability of bit error $P_b$.',
+         'Show that one correlator with $s_0(t)-s_1(t)$ makes the same decisions, and give its threshold.'],
   sol:'<b>Given.</b> $s_0(t)=2$ on $[0,2)$, $s_1(t)=2$ on $[0,1)$ and $0$ on $[1,2)$. Equal priors, $N_0/2=0.2$ W/Hz.<br>'
      +'<b>Find.</b> The basis and vectors, the ML regions, $P_b$, and the single-correlator threshold.<br>'
      +'<b>Method.</b> The signals are not multiples of one pulse, so Gram–Schmidt gives two basis functions. The ML rule is minimum distance, and $P_b$ depends only on the distance between the points.<br>'
@@ -532,9 +532,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
     {name:'s_0(t)', xr:[0,4.5], yr:[-3,3], pts:[[0,0],[0,1],[2,1],[2,-1],[4,-1],[4,0],[4.5,0]], ystep:1},
     {name:'s_1(t)', xr:[0,4.5], yr:[-3,3], pts:[[0,0],[0,-2],[2,-2],[2,2],[4,2],[4,0],[4.5,0]], ystep:1})
     + receiver('mf'),
-  parts:['[5 pts] Plot the impulse response of the matched filter, $h(t)=\\psi(T-t)$.',
-         '[10 pts] Determine the conditional PDFs $f_Y(y\\mid 1)$ and $f_Y(y\\mid 0)$.',
-         '[10 pts] Find the optimal decision threshold $\\lambda$ and calculate the average probability of bit error $P_b$.'],
+  parts:['Plot the impulse response of the matched filter, $h(t)=\\psi(T-t)$.',
+         'Determine the conditional PDFs $f_Y(y\\mid 1)$ and $f_Y(y\\mid 0)$.',
+         'Find the optimal decision threshold $\\lambda$ and calculate the average probability of bit error $P_b$.'],
   sol:'<b>Given.</b> $s_0(t)=1$ on $[0,2)$ and $-1$ on $[2,4)$. $s_1(t)=-2s_0(t)$. Equal priors, $N_0/2=9$ W/Hz, $T=4$ s.<br>'
      +'<b>Find.</b> $h(t)$, the densities, $\\lambda$ and $P_b$.<br>'
      +'<b>Method.</b> $s_1$ is a multiple of $s_0$, so $\\psi(t)$ is $s_0$ normalised. The matched filter reverses $\\psi$ in time.<br>'
@@ -555,9 +555,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   figure: () => waves(
     {name:'s_0(t)', xr:[0,2.4], yr:[-3,3], pts:[[0,0],[0,-2],[2,-2],[2,0],[2.4,0]], xstep:0.5, ystep:1},
     {name:'s_1(t)', xr:[0,2.4], yr:[-3,3], pts:[[0,0],[0,2],[2,2],[2,0],[2.4,0]], xstep:0.5, ystep:1}),
-  parts:['[8 pts] Find the coordinates $s_0$ and $s_1$, and write $P_b$ as a function of $N_0/2$.',
-         '[9 pts] Find the largest $N_0/2$ that meets the requirement.',
-         '[8 pts] The link is changed to on-off signalling, $s_0(t)=0$ and $s_1(t)=A$ on $[0,2)$, with the same average energy per bit. Find $A$, the largest $N_0/2$ now, and the loss in decibels.'],
+  parts:['Find the coordinates $s_0$ and $s_1$, and write $P_b$ as a function of $N_0/2$.',
+         'Find the largest $N_0/2$ that meets the requirement.',
+         'The link is changed to on-off signalling, $s_0(t)=0$ and $s_1(t)=A$ on $[0,2)$, with the same average energy per bit. Find $A$, the largest $N_0/2$ now, and the loss in decibels.'],
   sol:'<b>Given.</b> Antipodal rectangular pulses of height $2$ on $[0,2)$. Equal priors, $P_b\\le1.0\\times10^{-3}$.<br>'
      +'<b>Find.</b> $s_0$, $s_1$, $P_b(N_0/2)$, the largest $N_0/2$, and the same for on-off signalling.<br>'
      +'<b>Method.</b> Write $P_b=Q\\bigl((d/2)/\\sigma\\bigr)$. $Q$ is decreasing, so $P_b\\le10^{-3}$ holds when the argument is at least the value $x$ with $Q(x)=10^{-3}$. Solve that for $\\sigma$.<br>'
@@ -582,9 +582,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D4-12', module:'M4', type:'priors', src:'Final Q2',
   stem:'Assume that in a binary pulse amplitude modulation (PAM) communication system, "0" and "1" bits occur with probabilities $0.4$ and $0.6$. At the output of the matched filter the sample is $$Y=\\begin{cases}2+N, & \\text{if "1" is sent}\\\\-2+N, & \\text{if "0" is sent}\\end{cases}.$$ Here $N$ is a Gaussian random variable with mean $0$ and variance $2.25$. According to this information,',
-  parts:['[8 pts] Determine the conditional PDFs $f_Y(y\\mid 1)$ and $f_Y(y\\mid 0)$.',
-         '[8 pts] Find the optimal decision threshold $\\lambda$.',
-         '[9 pts] Calculate the average probability of bit error $P_b$ as a number. Use a $Q$-function table.'],
+  parts:['Determine the conditional PDFs $f_Y(y\\mid 1)$ and $f_Y(y\\mid 0)$.',
+         'Find the optimal decision threshold $\\lambda$.',
+         'Calculate the average probability of bit error $P_b$ as a number. Use a $Q$-function table.'],
   sol:'<b>Given.</b> Means $\\pm2$, variance $\\sigma^{2}=2.25$ ($\\sigma=1.5$), $P_0=0.4$, $P_1=0.6$.<br>'
      +'<b>Find.</b> The two densities, the MAP threshold and $P_b$.<br>'
      +'<b>Method.</b> The optimal rule is MAP: decide the bit with the larger $P_i\\,f_Y(y\\mid i)$. Solve the equality for $y$, then add the two weighted tails.<br>'
@@ -601,9 +601,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D4-13', module:'M4', type:'priors', src:'Final Q2',
   stem:'Assume that in a binary PAM communication system, "0" and "1" bits occur with probabilities $0.6$ and $0.4$. Consider a signal detector with the input $$Y=\\begin{cases}5+N, & \\text{if "1" is sent}\\\\ N, & \\text{if "0" is sent}\\end{cases}.$$ Here $N$ is a Gaussian random variable with mean $0$ and variance $4$. According to this information,',
-  parts:['[8 pts] Find the optimal decision threshold $\\lambda$.',
-         '[10 pts] Calculate the average probability of bit error $P_b$ as a number. Use a $Q$-function table.',
-         '[7 pts] A simpler detector uses the midpoint $2.5$ as its threshold. Calculate its $P_b$ and compare.'],
+  parts:['Find the optimal decision threshold $\\lambda$.',
+         'Calculate the average probability of bit error $P_b$ as a number. Use a $Q$-function table.',
+         'A simpler detector uses the midpoint $2.5$ as its threshold. Calculate its $P_b$ and compare.'],
   sol:'<b>Given.</b> Means $0$ and $5$, $\\sigma^{2}=4$ ($\\sigma=2$), $P_0=0.6$, $P_1=0.4$.<br>'
      +'<b>Find.</b> The MAP threshold, its $P_b$, and $P_b$ at the midpoint.<br>'
      +'<b>Method.</b> Set $P_0f_Y(y\\mid0)=P_1f_Y(y\\mid1)$ and solve for $y$. Then add the two weighted Gaussian tails.<br>'
@@ -620,10 +620,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D4-14', module:'M4', type:'priors', src:'Final Q2',
   stem:'In a binary PAM system the matched-filter output is $Y=1+N$ when "1" is sent and $Y=-2+N$ when "0" is sent. $N$ is Gaussian with mean $0$ and variance $1$. The bits "0" and "1" occur with probabilities $0.75$ and $0.25$. According to this information,',
-  parts:['[6 pts] Determine the conditional PDFs $f_Y(y\\mid 1)$ and $f_Y(y\\mid 0)$.',
-         '[6 pts] Find the ML threshold and the $P_b$ of a detector that uses it.',
-         '[7 pts] Find the optimal (MAP) decision threshold $\\lambda$.',
-         '[6 pts] Calculate $P_b$ of the MAP detector as a number, and compare.'],
+  parts:['Determine the conditional PDFs $f_Y(y\\mid 1)$ and $f_Y(y\\mid 0)$.',
+         'Find the ML threshold and the $P_b$ of a detector that uses it.',
+         'Find the optimal (MAP) decision threshold $\\lambda$.',
+         'Calculate $P_b$ of the MAP detector as a number, and compare.'],
   sol:'<b>Given.</b> Means $m_0=-2$ and $m_1=1$, $\\sigma=1$, $P_0=0.75$, $P_1=0.25$.<br>'
      +'<b>Find.</b> The densities, the ML threshold and its $P_b$, the MAP threshold and its $P_b$.<br>'
      +'<b>Method.</b> The ML threshold is the midpoint of the means. The MAP threshold shifts it by $\\frac{\\sigma^{2}}{m_1-m_0}\\ln\\frac{P_0}{P_1}$.<br>'
@@ -641,10 +641,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D4-15', module:'M4', type:'priors', src:'Final Q2',
   stem:'Bits are sent by antipodal signalling with energy $E_b=2.25$ J per bit. The two signal points are $s_0=-\\sqrt{E_b}$ and $s_1=+\\sqrt{E_b}$ on one basis function. The noise is white and Gaussian with $N_0=0.5$ W/Hz. The bit "0" occurs with probability $0.8$ and "1" with probability $0.2$. According to this information,',
-  parts:['[6 pts] Find the distance $d$ between the two points and the $P_b$ of the ML detector.',
-         '[7 pts] Find the MAP boundary: its distance $\\mu$ from $s_0$, and the threshold $\\lambda$.',
-         '[7 pts] Calculate the conditional error probabilities $P(e\\mid 0)$ and $P(e\\mid 1)$ of the MAP detector.',
-         '[5 pts] Calculate $P_b$ of the MAP detector and compare it with part (a).'],
+  parts:['Find the distance $d$ between the two points and the $P_b$ of the ML detector.',
+         'Find the MAP boundary: its distance $\\mu$ from $s_0$, and the threshold $\\lambda$.',
+         'Calculate the conditional error probabilities $P(e\\mid 0)$ and $P(e\\mid 1)$ of the MAP detector.',
+         'Calculate $P_b$ of the MAP detector and compare it with part (a).'],
   sol:'<b>Given.</b> $s_0=-1.5$, $s_1=1.5$, $N_0=0.5$, so $\\sigma^{2}=N_0/2=0.25$ and $\\sigma=0.5$. $P_0=0.8$, $P_1=0.2$.<br>'
      +'<b>Find.</b> $d$, the ML $P_b$, $\\mu$, $\\lambda$, the two conditional errors and the MAP $P_b$.<br>'
      +'<b>Method.</b> The MAP boundary sits at $\\mu=\\frac d2+\\frac{N_0}{2d}\\ln\\frac{P_0}{P_1}$ from $s_0$. Each conditional error is the tail beyond the boundary.<br>'
@@ -662,10 +662,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D4-16', module:'M4', type:'priors', src:'Final Q2 (variant)',
   stem:'A three-level PAM system sends $Y=s+N$ with $s\\in\\{-2,\\,0,\\,2\\}$. The priors are $P(-2)=P(2)=0.25$ and $P(0)=0.5$. $N$ is Gaussian with mean $0$ and variance $0.5$. According to this information,',
-  parts:['[6 pts] Write the three conditional PDFs $f_Y(y\\mid s)$.',
-         '[7 pts] Find the two optimal (MAP) thresholds $\\lambda_1<\\lambda_2$.',
-         '[7 pts] Calculate the average symbol error probability $P_e$ as a number.',
-         '[5 pts] Calculate $P_e$ of the ML detector, with thresholds $\\pm1$, and compare.'],
+  parts:['Write the three conditional PDFs $f_Y(y\\mid s)$.',
+         'Find the two optimal (MAP) thresholds $\\lambda_1<\\lambda_2$.',
+         'Calculate the average symbol error probability $P_e$ as a number.',
+         'Calculate $P_e$ of the ML detector, with thresholds $\\pm1$, and compare.'],
   sol:'<b>Given.</b> Three levels $-2,0,2$ with priors $0.25,0.5,0.25$. $\\sigma^{2}=0.5$, $\\sigma=0.7071$.<br>'
      +'<b>Find.</b> The densities, the MAP thresholds, $P_e$ for MAP and for ML.<br>'
      +'<b>Method.</b> A threshold separates two neighbouring levels only. Apply the binary MAP rule to each neighbouring pair. Symmetry gives $\\lambda_1=-\\lambda_2$.<br>'
@@ -684,9 +684,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D4-17', module:'M4', type:'priors', src:'Final Q2',
   stem:'In a binary PAM system the bit "1" is twice as likely as the bit "0". The matched-filter output is $Y=1+N$ when "1" is sent and $Y=-1+N$ when "0" is sent. $N$ is Gaussian with mean $0$ and variance $0.25$. According to this information,',
-  parts:['[8 pts] Find the two priors and the optimal decision threshold $\\lambda$.',
-         '[9 pts] Calculate the average probability of bit error $P_b$ as a number.',
-         '[8 pts] The noise variance rises to $1$. Find the new threshold and $P_b$, and say how far $\\lambda$ moved.'],
+  parts:['Find the two priors and the optimal decision threshold $\\lambda$.',
+         'Calculate the average probability of bit error $P_b$ as a number.',
+         'The noise variance rises to $1$. Find the new threshold and $P_b$, and say how far $\\lambda$ moved.'],
   sol:'<b>Given.</b> $P_1=2P_0$, means $\\pm1$, $\\sigma^{2}=0.25$, then $\\sigma^{2}=1$.<br>'
      +'<b>Find.</b> $P_0$, $P_1$, $\\lambda$ and $P_b$ at both noise levels.<br>'
      +'<b>Method.</b> The priors sum to one. The MAP shift is $\\frac{\\sigma^{2}}{m_1-m_0}\\ln\\frac{P_0}{P_1}$, so it grows in proportion to the noise variance.<br>'
@@ -703,10 +703,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D4-18', module:'M4', type:'priors', src:'Final Q2 (variant)',
   stem:'In a binary PAM system the matched-filter output is $Y=2+N$ for "1" and $Y=-2+N$ for "0". $N$ is Gaussian with mean $0$ and variance $4$. The bit "0" occurs with probability $0.9$ and "1" with probability $0.1$. According to this information,',
-  parts:['[6 pts] For the sample $y=0.5$, compute $P_0f_Y(y\\mid0)$ and $P_1f_Y(y\\mid1)$. Give the MAP and the ML decisions.',
-         '[6 pts] Find the MAP threshold $\\lambda$.',
-         '[7 pts] Calculate $P_b$ of the MAP detector as a number.',
-         '[6 pts] Show that $P(e\\mid1)$ exceeds one half, and compare $P_b$ with the ML detector.'],
+  parts:['For the sample $y=0.5$, compute $P_0f_Y(y\\mid0)$ and $P_1f_Y(y\\mid1)$. Give the MAP and the ML decisions.',
+         'Find the MAP threshold $\\lambda$.',
+         'Calculate $P_b$ of the MAP detector as a number.',
+         'Show that $P(e\\mid1)$ exceeds one half, and compare $P_b$ with the ML detector.'],
   sol:'<b>Given.</b> Means $\\pm2$, $\\sigma=2$, $P_0=0.9$, $P_1=0.1$, one sample $y=0.5$.<br>'
      +'<b>Find.</b> The two weighted likelihoods at $y=0.5$, the decisions, $\\lambda$, $P_b$ and the comparison.<br>'
      +'<b>Method.</b> MAP compares $P_i f_Y(y\\mid i)$ and ML compares $f_Y(y\\mid i)$. The threshold follows from equating the weighted densities.<br>'
@@ -724,9 +724,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D4-19', module:'M4', type:'priors', src:'Final Q2 (variant)',
   stem:'In a binary PAM system the matched-filter output is $Y=1+N$ for "1" and $Y=-1+N$ for "0". $N$ is Gaussian with mean $0$ and variance $0.5$. The priors are not known. The MAP detector of this system uses the threshold $\\lambda=-0.25$. According to this information,',
-  parts:['[9 pts] Find the priors $P_0$ and $P_1$.',
-         '[8 pts] Calculate $P_b$ of this MAP detector as a number.',
-         '[8 pts] Calculate $P_b$ of the ML detector with the same priors, and compare.'],
+  parts:['Find the priors $P_0$ and $P_1$.',
+         'Calculate $P_b$ of this MAP detector as a number.',
+         'Calculate $P_b$ of the ML detector with the same priors, and compare.'],
   sol:'<b>Given.</b> Means $\\pm1$, $\\sigma^{2}=0.5$, $\\sigma=0.7071$, MAP threshold $\\lambda=-0.25$.<br>'
      +'<b>Find.</b> $P_0$, $P_1$ and the two error probabilities.<br>'
      +'<b>Method.</b> The threshold formula $\\lambda=\\frac{m_0+m_1}{2}+\\frac{\\sigma^{2}}{m_1-m_0}\\ln\\frac{P_0}{P_1}$ has one unknown, the prior ratio. Solve for it, then use $P_0+P_1=1$.<br>'
@@ -743,10 +743,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D4-20', module:'M4', type:'priors', src:'Final Q2 (variant)',
   stem:'Two messages use $s_0(t)=2\\sqrt2\\cos(2\\pi t)$ and $s_1(t)=2\\sqrt2\\sin(2\\pi t)$ for $0\\le t\\le1$ s. The channel adds white Gaussian noise with $N_0/2=0.5$ W/Hz. The priors are $P(s_0)=0.75$ and $P(s_1)=0.25$. The receiver has two correlators with $\\psi_1(t)=\\sqrt2\\cos(2\\pi t)$ and $\\psi_2(t)=\\sqrt2\\sin(2\\pi t)$. According to the information given above,',
-  parts:['[6 pts] Find the signal vectors $\\mathbf{s}_0$ and $\\mathbf{s}_1$, and write the MAP metric of each.',
-         '[7 pts] Find the MAP decision boundary and draw the two decision regions.',
-         '[6 pts] The observation is $\\mathbf{r}=(0.9,\\,1.1)$. Give the MAP and the ML decisions.',
-         '[6 pts] Calculate $P_b$ of the MAP detector and compare it with the ML detector.'],
+  parts:['Find the signal vectors $\\mathbf{s}_0$ and $\\mathbf{s}_1$, and write the MAP metric of each.',
+         'Find the MAP decision boundary and draw the two decision regions.',
+         'The observation is $\\mathbf{r}=(0.9,\\,1.1)$. Give the MAP and the ML decisions.',
+         'Calculate $P_b$ of the MAP detector and compare it with the ML detector.'],
   sol:'<b>Given.</b> Two orthogonal carrier pulses, $N_0=1$, $\\sigma^{2}=0.5$, $P(s_0)=0.75$, $P(s_1)=0.25$.<br>'
      +'<b>Find.</b> $\\mathbf{s}_0$, $\\mathbf{s}_1$, the MAP boundary, two decisions and $P_b$.<br>'
      +'<b>Method.</b> MAP chooses the smallest $\\|\\mathbf{r}-\\mathbf{s}_i\\|^{2}-N_0\\ln P(s_i)$. Setting the two metrics equal gives a straight line parallel to the ML bisector.<br>'
@@ -769,9 +769,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D4-21', module:'M4', type:'mary', src:'Final Q3',
   stem:'Consider an $M$-ary modulation scheme where the equally probable symbols have the waveforms $$s_k(t)=\\sqrt6\\cos\\!\\left(2000\\pi t+\\frac{(2k-1)\\pi}{6}\\right),\\qquad k\\in\\{1,\\ldots,6\\},\\ 0\\le t\\le1.$$ These signals are planned to be transmitted over a standard AWGN channel with $\\mathcal{N}(0,N_0/2)$. According to the information given above,',
-  parts:['[8 pts] Choose an orthonormal basis, find the coordinates of the six points, and give $E_{s,\\text{avg}}$.',
-         '[7 pts] Draw the signal constellation and the optimal decision regions.',
-         '[10 pts] Determine the nearest-neighbour approximation of the average symbol error probability as a function of $E_{s,\\text{avg}}/N_0$.'],
+  parts:['Choose an orthonormal basis, find the coordinates of the six points, and give $E_{s,\\text{avg}}$.',
+         'Draw the signal constellation and the optimal decision regions.',
+         'Determine the nearest-neighbour approximation of the average symbol error probability as a function of $E_{s,\\text{avg}}/N_0$.'],
   sol:'<b>Given.</b> Six phases $30^{\\circ},90^{\\circ},\\ldots,330^{\\circ}$, amplitude $\\sqrt6$, $T=1$ s, carrier $1000$ Hz, equal priors.<br>'
      +'<b>Find.</b> The basis, the six points, $E_{s,\\text{avg}}$, the regions and $P_e$ by the nearest-neighbour approximation.<br>'
      +'<b>Method.</b> Expand the cosine of a sum to split each waveform on a cosine and a sine. The regions are bounded by perpendicular bisectors. Then $P_e\\approx N_{\\min}Q\\!\\left(\\sqrt{d_{\\min}^{2}/2N_0}\\right)$.<br>'
@@ -789,10 +789,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D4-22', module:'M4', type:'mary', src:'Final Q3',
   stem:'Consider an $M$-ary modulation scheme where the equally probable symbols have the following waveforms: $$\\begin{aligned}s_1(t)&=0\\\\s_2(t)&=2\\sqrt2\\cos(2000\\pi t)\\\\s_3(t)&=4\\cos\\!\\left(2000\\pi t+\\frac{\\pi}{4}\\right)\\\\s_4(t)&=2\\sqrt2\\cos\\!\\left(2000\\pi t+\\frac{\\pi}{2}\\right)\\end{aligned}$$ all for $0\\le t\\le1$. These signals are planned to be transmitted over a standard AWGN channel with $\\mathcal{N}(0,N_0/2)$. According to the information given above,',
-  parts:['[7 pts] Find the four signal points and $E_{s,\\text{avg}}$.',
-         '[6 pts] Draw the signal constellation and the optimal decision regions.',
-         '[7 pts] Determine the nearest-neighbour approximation of the average symbol error probability as a function of $E_{s,\\text{avg}}/N_0$.',
-         '[5 pts] Moving the constellation so that its centre is at the origin keeps $P_e$. How much energy does it save, in decibels?'],
+  parts:['Find the four signal points and $E_{s,\\text{avg}}$.',
+         'Draw the signal constellation and the optimal decision regions.',
+         'Determine the nearest-neighbour approximation of the average symbol error probability as a function of $E_{s,\\text{avg}}/N_0$.',
+         'Moving the constellation so that its centre is at the origin keeps $P_e$. How much energy does it save, in decibels?'],
   sol:'<b>Given.</b> Four waveforms on a $1000$ Hz carrier, $T=1$ s, equal priors.<br>'
      +'<b>Find.</b> The points, $E_{s,\\text{avg}}$, the regions, $P_e$ and the saving from centring.<br>'
      +'<b>Method.</b> Use $\\psi_1=\\sqrt2\\cos(2000\\pi t)$ and $\\psi_2=-\\sqrt2\\sin(2000\\pi t)$. A waveform $A\\cos(2000\\pi t+\\theta)$ has the point $\\frac{A}{\\sqrt2}(\\cos\\theta,\\sin\\theta)$.<br>'
@@ -810,9 +810,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D4-23', module:'M4', type:'mary', src:'Final Q3',
   stem:'Consider an $M$-ary modulation scheme where the equally probable symbols have the waveforms $$s_k(t)=(2k-5)\\sqrt2\\cos(4000\\pi t),\\qquad k\\in\\{1,2,3,4\\},\\ 0\\le t\\le1.$$ These signals are planned to be transmitted over a standard additive white Gaussian noise (AWGN) channel with $\\mathcal{N}(0,N_0/2)$. According to the information given above,',
-  parts:['[8 pts] Find the basis, the four signal points and $E_{s,\\text{avg}}$.',
-         '[7 pts] Draw the signal constellation and the optimal decision regions.',
-         '[10 pts] Determine the nearest-neighbour approximation of the average symbol error probability as a function of $E_{s,\\text{avg}}/N_0$.'],
+  parts:['Find the basis, the four signal points and $E_{s,\\text{avg}}$.',
+         'Draw the signal constellation and the optimal decision regions.',
+         'Determine the nearest-neighbour approximation of the average symbol error probability as a function of $E_{s,\\text{avg}}/N_0$.'],
   sol:'<b>Given.</b> Four-level PAM on a $2000$ Hz carrier, $T=1$ s, equal priors.<br>'
      +'<b>Find.</b> The points, $E_{s,\\text{avg}}$, the regions and $P_e$.<br>'
      +'<b>Method.</b> All four waveforms are multiples of one pulse, so the constellation is one-dimensional. The boundaries are midpoints, and $N_{\\min}$ is an average over the points.<br>'
@@ -828,10 +828,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D4-24', module:'M4', type:'mary', src:'Final Q3',
   stem:'Consider an $M$-ary modulation scheme where the equally probable symbols have the waveforms $$s_k(t)=2\\cos\\!\\left(1000\\pi t+\\frac{(2k-1)\\pi}{8}\\right),\\qquad k\\in\\{1,\\ldots,8\\},\\ 0\\le t\\le2.$$ These signals are planned to be transmitted over a standard AWGN channel with $\\mathcal{N}(0,N_0/2)$. According to the information given above,',
-  parts:['[7 pts] Choose an orthonormal basis and find the signal points and $E_{s,\\text{avg}}$.',
-         '[6 pts] Draw the signal constellation and the optimal decision regions.',
-         '[7 pts] Determine the nearest-neighbour approximation of $P_e$ as a function of $E_{s,\\text{avg}}/N_0$.',
-         '[5 pts] Evaluate it at $E_{s,\\text{avg}}/N_0=20$.'],
+  parts:['Choose an orthonormal basis and find the signal points and $E_{s,\\text{avg}}$.',
+         'Draw the signal constellation and the optimal decision regions.',
+         'Determine the nearest-neighbour approximation of $P_e$ as a function of $E_{s,\\text{avg}}/N_0$.',
+         'Evaluate it at $E_{s,\\text{avg}}/N_0=20$.'],
   sol:'<b>Given.</b> Eight phases $22.5^{\\circ},67.5^{\\circ},\\ldots$, amplitude $2$, $T=2$ s, carrier $500$ Hz, equal priors.<br>'
      +'<b>Find.</b> The basis, points, $E_{s,\\text{avg}}$, regions, $P_e$ and its value at $20$.<br>'
      +'<b>Method.</b> With $T=2$ the unit-energy basis is $\\sqrt{2/T}\\cos=\\cos$. Neighbours on a circle are $2\\sqrt{E_s}\\sin(\\pi/M)$ apart.<br>'
@@ -850,9 +850,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D4-25', module:'M4', type:'mary', src:'Final Q3',
   stem:'Consider an $M$-ary modulation scheme where the equally probable symbols have the waveforms $$s_{a,b}(t)=a\\sqrt2\\cos(2000\\pi t)-b\\sqrt2\\sin(2000\\pi t),\\qquad 0\\le t\\le1,$$ with $a\\in\\{-3,-1,1,3\\}$ and $b\\in\\{-1,1\\}$. These signals are planned to be transmitted over a standard AWGN channel with $\\mathcal{N}(0,N_0/2)$. According to the information given above,',
-  parts:['[8 pts] Find the signal points and $E_{s,\\text{avg}}$.',
-         '[7 pts] Draw the signal constellation and the optimal decision regions.',
-         '[10 pts] Determine the nearest-neighbour approximation of the average symbol error probability as a function of $E_{s,\\text{avg}}/N_0$.'],
+  parts:['Find the signal points and $E_{s,\\text{avg}}$.',
+         'Draw the signal constellation and the optimal decision regions.',
+         'Determine the nearest-neighbour approximation of the average symbol error probability as a function of $E_{s,\\text{avg}}/N_0$.'],
   sol:'<b>Given.</b> Eight points, four amplitudes on the cosine and two on the sine, $T=1$ s, equal priors.<br>'
      +'<b>Find.</b> The points, $E_{s,\\text{avg}}$, the regions and $P_e$.<br>'
      +'<b>Method.</b> With $\\psi_1=\\sqrt2\\cos(2000\\pi t)$ and $\\psi_2=-\\sqrt2\\sin(2000\\pi t)$ the point is $(a,b)$. Count the neighbours at $d_{\\min}$ point by point and average.<br>'
@@ -870,10 +870,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D4-26', module:'M4', type:'erasure', src:'Madhow P6.24',
   stem:'A QPSK receiver works on the two correlator outputs $\\mathbf{y}=(y_1,y_2)$. The four equally likely signal points are $\\mathbf{s}_1=(2,2)$, $\\mathbf{s}_2=(-2,2)$, $\\mathbf{s}_3=(-2,-2)$ and $\\mathbf{s}_4=(2,-2)$. Each coordinate carries independent Gaussian noise with mean $0$ and variance $N_0/2=0.64$. The receiver does not decide when the observation lies close to a boundary. If $|y_1|<0.4$ or $|y_2|<0.4$, it puts out an erasure, a mark that means "no decision". Otherwise it decides the point in the quadrant of $\\mathbf{y}$. Let $d$ be the distance between neighbouring points, $d_1$ the width of each erasure strip, and $\\alpha=d_1/d$. The energy per bit is $E_b=E_{s,\\text{avg}}/2$. According to the information given above,',
-  parts:['[6 pts] Find $d$, $d_1$, $\\alpha$, $E_b$ and $E_b/N_0$. Draw the decision regions and the erasure zone.',
-         '[7 pts] Use the intelligent union bound to approximate the symbol error probability $p$ and the erasure probability $q$. Write each as a function of $E_b/N_0$ and $\\alpha$, then evaluate it.',
-         '[7 pts] Find $p$ and $q$ exactly, as products of probabilities of the two coordinates, and evaluate them.',
-         '[5 pts] Find the symbol error probability of the ordinary QPSK receiver, which has no erasure zone. State what the zone gains and what it costs.'],
+  parts:['Find $d$, $d_1$, $\\alpha$, $E_b$ and $E_b/N_0$. Draw the decision regions and the erasure zone.',
+         'Use the intelligent union bound to approximate the symbol error probability $p$ and the erasure probability $q$. Write each as a function of $E_b/N_0$ and $\\alpha$, then evaluate it.',
+         'Find $p$ and $q$ exactly, as products of probabilities of the two coordinates, and evaluate them.',
+         'Find the symbol error probability of the ordinary QPSK receiver, which has no erasure zone. State what the zone gains and what it costs.'],
   sol:'<b>Given.</b> Points $(\\pm2,\\pm2)$ with equal priors. Noise variance $\\sigma^{2}=N_0/2=0.64$ on each coordinate, so $\\sigma=0.8$ and $N_0=1.28$. Erasure strips $|y_1|<0.4$ and $|y_2|<0.4$.<br>'
      +'<b>Find.</b> $d$, $d_1$, $\\alpha$, $E_b$, $E_b/N_0$, the regions, $p$ and $q$ by the bound and exactly, and $P_e$ without the zone.<br>'
      +'<b>Method.</b> By symmetry all four points have the same $p$ and $q$, so take $\\mathbf{s}_1=(2,2)$. Each coordinate has three outcomes: the right side, the strip, or the wrong side. The noise on the two coordinates is independent, so their probabilities multiply.<br>'
@@ -894,10 +894,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D4-27', module:'M4', type:'mary', src:'Final Q3',
   stem:'Consider an $M$-ary modulation scheme where the equally probable symbols have the waveforms $$s_k(t)=2\\cos\\!\\left(2000\\pi t+\\frac{2\\pi k}{3}+\\frac\\pi2\\right),\\qquad k\\in\\{0,1,2\\},\\ 0\\le t\\le1.$$ These signals are planned to be transmitted over a standard AWGN channel with $\\mathcal{N}(0,N_0/2)$. According to the information given above,',
-  parts:['[7 pts] Find the three signal points and $E_{s,\\text{avg}}$.',
-         '[6 pts] Draw the signal constellation and the optimal decision regions.',
-         '[7 pts] Determine the nearest-neighbour approximation of $P_e$ as a function of $E_{s,\\text{avg}}/N_0$.',
-         '[5 pts] Evaluate it at $E_{s,\\text{avg}}/N_0=6$.'],
+  parts:['Find the three signal points and $E_{s,\\text{avg}}$.',
+         'Draw the signal constellation and the optimal decision regions.',
+         'Determine the nearest-neighbour approximation of $P_e$ as a function of $E_{s,\\text{avg}}/N_0$.',
+         'Evaluate it at $E_{s,\\text{avg}}/N_0=6$.'],
   sol:'<b>Given.</b> Three phases $90^{\\circ},210^{\\circ},330^{\\circ}$, amplitude $2$, $T=1$ s, equal priors.<br>'
      +'<b>Find.</b> The points, $E_{s,\\text{avg}}$, the regions, $P_e$ and its value at $6$.<br>'
      +'<b>Method.</b> The point of $A\\cos(2000\\pi t+\\theta)$ is $\\frac{A}{\\sqrt2}(\\cos\\theta,\\sin\\theta)$. Three points on a circle are all neighbours of each other.<br>'
@@ -915,9 +915,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D4-28', module:'M4', type:'mary', src:'Final Q3 (variant)',
   stem:'Consider an $M$-ary modulation scheme where the equally probable symbols have the waveforms $s_1(t)=0$ and $$s_k(t)=2\\sqrt2\\cos\\!\\left(2000\\pi t+\\frac{(k-2)\\pi}{3}\\right),\\qquad k\\in\\{2,\\ldots,7\\},\\ 0\\le t\\le1.$$ These signals are planned to be transmitted over a standard AWGN channel with $\\mathcal{N}(0,N_0/2)$. According to the information given above,',
-  parts:['[8 pts] Find the seven signal points and $E_{s,\\text{avg}}$.',
-         '[8 pts] Draw the signal constellation and the optimal decision regions.',
-         '[9 pts] Determine the nearest-neighbour approximation of the average symbol error probability as a function of $E_{s,\\text{avg}}/N_0$.'],
+  parts:['Find the seven signal points and $E_{s,\\text{avg}}$.',
+         'Draw the signal constellation and the optimal decision regions.',
+         'Determine the nearest-neighbour approximation of the average symbol error probability as a function of $E_{s,\\text{avg}}/N_0$.'],
   sol:'<b>Given.</b> A zero signal and six carrier pulses of amplitude $2\\sqrt2$, $60^{\\circ}$ apart. $T=1$ s, equal priors.<br>'
      +'<b>Find.</b> The points, $E_{s,\\text{avg}}$, the regions and $P_e$.<br>'
      +'<b>Method.</b> The ring has radius $2$. A regular hexagon has side equal to its radius, so the ring points are also $2$ apart.<br>'
@@ -937,10 +937,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D4-29', module:'M4', type:'bound', src:'Final Q3 (variant)',
   stem:'Two designs carry three bits per symbol with the same average symbol energy $E_{s,\\text{avg}}$ over a standard AWGN channel with $\\mathcal{N}(0,N_0/2)$. Design A is 8-PSK: eight equally likely points on a circle, $45^{\\circ}$ apart. Design B is the rectangle of points $c(a,b)$ with $a\\in\\{\\pm1,\\pm3\\}$, $b\\in\\{\\pm1\\}$ and a scale $c>0$. According to the information given above,',
-  parts:['[7 pts] Find $d_{\\min}^{2}$ of each design in terms of $E_{s,\\text{avg}}$.',
-         '[6 pts] Find $N_{\\min}$ of each design.',
-         '[7 pts] Evaluate the nearest-neighbour approximation of $P_e$ for both at $E_{s,\\text{avg}}/N_0=20$.',
-         '[5 pts] Say which design is better, and give its gain in $d_{\\min}^{2}$ in decibels.'],
+  parts:['Find $d_{\\min}^{2}$ of each design in terms of $E_{s,\\text{avg}}$.',
+         'Find $N_{\\min}$ of each design.',
+         'Evaluate the nearest-neighbour approximation of $P_e$ for both at $E_{s,\\text{avg}}/N_0=20$.',
+         'Say which design is better, and give its gain in $d_{\\min}^{2}$ in decibels.'],
   sol:'<b>Given.</b> 8-PSK and a $4\\times2$ rectangle at the same $E_{s,\\text{avg}}$. Equal priors.<br>'
      +'<b>Find.</b> $d_{\\min}^{2}$, $N_{\\min}$, $P_e$ at $20$, and the gain.<br>'
      +'<b>Method.</b> Write each $d_{\\min}^{2}$ as a multiple of the same $E_{s,\\text{avg}}$. Only then are the two $Q$ arguments comparable.<br>'
@@ -964,10 +964,10 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
 
 { id:'D4-30', module:'M4', type:'bound', src:'Final Q3 (variant)',
   stem:'Three equally likely messages use $s_1(t)=0$, $s_2(t)=2$ for $0\\le t<1$ (zero after), and $s_3(t)=3$ for $1\\le t<2$ (zero before). $T=2$ s. The channel adds white Gaussian noise with $N_0/2=0.25$ W/Hz. The receiver is the optimal ML receiver. According to the information given above,',
-  parts:['[6 pts] Find the basis, the three signal points, and draw the decision regions.',
-         '[6 pts] Find all pairwise distances, $d_{\\min}$ and $N_{\\min}$.',
-         '[7 pts] Evaluate the union bound on the symbol error probability $P_e$.',
-         '[6 pts] Evaluate the nearest-neighbour approximation and the minimum-distance bound, and put the three numbers in order.'],
+  parts:['Find the basis, the three signal points, and draw the decision regions.',
+         'Find all pairwise distances, $d_{\\min}$ and $N_{\\min}$.',
+         'Evaluate the union bound on the symbol error probability $P_e$.',
+         'Evaluate the nearest-neighbour approximation and the minimum-distance bound, and put the three numbers in order.'],
   sol:'<b>Given.</b> Points built from two disjoint unit pulses, equal priors, $N_0=0.5$, $\\sigma=0.5$.<br>'
      +'<b>Find.</b> The points, the regions, the distances, and three estimates of $P_e$.<br>'
      +'<b>Method.</b> The union bound adds $Q\\!\\left(\\sqrt{d_{kj}^{2}/2N_0}\\right)$ over every ordered pair and divides by $M$. Here $\\sqrt{d^{2}/2N_0}=d$, because $2N_0=1$.<br>'
