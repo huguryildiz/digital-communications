@@ -30,8 +30,7 @@ dist/Formula_Reference.html
 dist/Laboratory_Sheets.html
 # The lecture notes, student workbook and formula reference PDFs are published
 # deliverables and stay tracked. The instructor PDF and the laboratory sheets PDF
-# remain local build products; the sheets are copied to the site from dist/ at
-# deploy time, so a fresh clone must run notes/topdf.js before building the site.
+# remain local build products and are not published on the site.
 dist/Instructor_Solutions.pdf
 dist/Laboratory_Sheets.pdf
 # build/qa.js screenshot dump and build/textclash.js report.

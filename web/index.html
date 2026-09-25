@@ -136,7 +136,7 @@ a:focus-visible, button:focus-visible{ outline:2px solid var(--coral); outline-o
 .mods h3{ margin:0 0 4px; font-family:var(--serif); font-weight:400; font-size:22px; line-height:1.25; color:var(--ink); }
 .mods p{ margin:0; font-size:14.5px; color:var(--muted); }
 
-.docs{ list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:28px; }
+.docs{ list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:36px; }
 .doc{ display:flex; flex-direction:column; height:100%; text-decoration:none; color:inherit; }
 .doc__img{ position:relative; aspect-ratio:4/3; overflow:hidden; background:radial-gradient(90% 80% at 50% 100%, #122031 0%, var(--bg-2) 70%); }
 .doc__img::after{ content:""; position:absolute; inset:12px; border:1px solid var(--hair); pointer-events:none; }
@@ -154,7 +154,6 @@ a:focus-visible, button:focus-visible{ outline:2px solid var(--coral); outline-o
 .end{ display:flex; align-items:center; justify-content:space-between; gap:16px; margin-top:120px; padding:24px 0 36px; border-top:1px solid var(--hair); font-size:13.5px; color:var(--faint); }
 .end a{ text-underline-offset:3px; }
 
-@media (max-width:1180px){ .docs{ grid-template-columns:repeat(2,minmax(0,1fr)); gap:48px 36px; } }
 @media (max-width:980px){
   .inner{ padding:20px 22px 18px; }
   .body{ grid-template-columns:1fr; gap:8px; align-content:center; }
@@ -276,7 +275,7 @@ a:focus-visible, button:focus-visible{ outline:2px solid var(--coral); outline-o
 
     <section class="sec" id="documents" aria-labelledby="docs-h">
       <div class="sec__head">
-        <div><p class="label">On paper</p><h2 id="docs-h">Four <em>documents.</em></h2></div>
+        <div><p class="label">On paper</p><h2 id="docs-h">Three <em>documents.</em></h2></div>
         <p>Typeset from the same sources as the course, as PDFs.</p>
       </div>
       <ul class="docs">
@@ -294,11 +293,6 @@ a:focus-visible, button:focus-visible{ outline:2px solid var(--coral); outline-o
           <div class="doc__img"><img class="page" src="img/fr_page.jpg" alt="" loading="lazy"><img class="cover" src="img/fr_cover.jpg" alt="" loading="lazy"></div>
           <span class="label">PDF · 13 pp · 582 KB</span><h3>Formula reference</h3>
           <p>Every result the course uses, on the fewest pages it fits on.</p>
-          <span class="doc__go">Download</span></a></li>
-        <li><a class="doc" href="Laboratory_Sheets.pdf" download>
-          <div class="doc__img"><img class="page" src="img/ls_page.jpg" alt="" loading="lazy"><img class="cover" src="img/ls_cover.jpg" alt="" loading="lazy"></div>
-          <span class="label">PDF · 14 pp · 1.4 MB</span><h3>Laboratory sheets</h3>
-          <p>The four laboratories, each one run and measured against its formula.</p>
           <span class="doc__go">Download</span></a></li>
       </ul>
     </section>

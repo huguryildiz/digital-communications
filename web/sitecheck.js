@@ -175,7 +175,7 @@ const note = m => console.log('  ' + m);
     for (const k of Object.keys(facts))
       if (shown[k] !== facts[k]) problems.push('the cover says ' + shown[k] + ' ' + k + '; the artifact has ' + facts[k]);
 
-    /* The four document cards each download a published PDF, never the
+    /* The three document cards each download a published PDF, never the
        instructor edition, and each card's page images load. */
     const cards = await page.evaluate(() => [...document.querySelectorAll('.doc')].map(a => ({
       href: a.getAttribute('href'),
@@ -183,7 +183,7 @@ const note = m => console.log('  ' + m);
       imgs: [...a.querySelectorAll('img')].filter(i => i.complete && i.naturalWidth > 0).length
     })));
     note('cover cards ' + cards.length + ' · with both images ' + cards.filter(c => c.imgs === 2).length);
-    if (cards.length !== 4) problems.push('the cover shows ' + cards.length + ' document cards, not 4');
+    if (cards.length !== 3) problems.push('the cover shows ' + cards.length + ' document cards, not 3');
     for (const c of cards) {
       if (/instructor/i.test(c.href)) problems.push('a cover card links the instructor edition');
       if (!/\.pdf$/i.test(c.href) || !c.download) problems.push('the ' + c.href + ' card is not a PDF download');

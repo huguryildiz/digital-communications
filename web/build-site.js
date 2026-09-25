@@ -291,13 +291,12 @@ copy(path.join(DIST, 'Student_Workbook.html'), 'Student_Workbook.html');
 copy(path.join(DIST, 'Formula_Reference.html'), 'Formula_Reference.html');
 copy(path.join(DIST, 'Laboratory_Sheets.html'), 'Laboratory_Sheets.html');
 
-/* The lecture notes, student workbook, formula reference and laboratory sheets
-   PDFs are published as tracked deliverables. The instructor edition remains
-   local. */
+/* The lecture notes, student workbook and formula reference PDFs are published
+   as tracked deliverables. The instructor edition and the laboratory sheets PDF
+   remain local. */
 copy(path.join(DIST, 'Lecture_Notes.pdf'), 'Lecture_Notes.pdf');
 copy(path.join(DIST, 'Student_Workbook.pdf'), 'Student_Workbook.pdf');
 copy(path.join(DIST, 'Formula_Reference.pdf'), 'Formula_Reference.pdf');
-copy(path.join(DIST, 'Laboratory_Sheets.pdf'), 'Laboratory_Sheets.pdf');
 
 /* The cover page, the hero background, Figure 1, and the cover and inside
    page of each PDF, rendered from the PDFs themselves. */
