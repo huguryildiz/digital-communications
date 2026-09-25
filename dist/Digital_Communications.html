@@ -129,6 +129,8 @@ body[data-theme=dark]{
   --dec-mid:        rgba(172,153,220,.13);
   --dec-err:        rgba(232,120,95,.12);
 }
+/* dark scrollbars: thumb and track from the theme tokens (inherited by every scroller) */
+body[data-theme=dark]{ scrollbar-color:var(--rule-strong) var(--paper-3); }
 body[data-theme=dark] #stage::after{ opacity:.25;
   background-image:radial-gradient(rgba(214,230,255,.045) 1px, transparent 1px); }
 body[data-theme=dark] .eq{ background:rgba(255,255,255,.035); }
