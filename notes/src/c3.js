@@ -487,7 +487,7 @@ window.C3 = [
  ['Solution','Take $\\psi_1(t)=1$ for $0\\le t<1$ and $\\psi_2(t)=1$ for $1\\le t<2$. Then $\\int\\psi_1^{2}\\,dt=\\int\\psi_2^{2}\\,dt=1$. Also $\\int\\psi_1\\psi_2\\,dt=0$, because the pulses never overlap. Each coordinate is the height on that half times its width $1$. So $\\mathbf{s}_1=(1,1)$, $\\mathbf{s}_2=(1,-1)$, $\\mathbf{s}_3=(-1,1)$ and $\\mathbf{s}_4=(-1,-1)$, with $N=2$.'],
  ['Check','The four points form a square. Each energy is $1^{2}+1^{2}=2$ from the vectors, and $\\int_0^{2}(\\pm1)^{2}\\,dt=2$ from the waveforms.']
 ]},
-{t:'box', kind:'err', hd:'Common error', html:'Take $\\psi_1=s_1$ as an axis. Its energy is $2$, not $1$, so every coordinate on it comes out a factor $\\sqrt2$ wrong.'},
+{t:'box', kind:'err', hd:'Common error', html:'Use $\\psi_1=s_1/\\sqrt{E_1}$ as an axis, not $s_1$ itself. Here $E_1=2$, so an unscaled axis puts every coordinate a factor $\\sqrt2$ off.'},
 
 /* m3-real-vectors */
 {t:'h3', text:'Orthogonal signals around us'},

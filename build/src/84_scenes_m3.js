@@ -830,7 +830,7 @@ const SC = [
       {t:'eq', label:'Solution', tex:'\\mathbf{s}_1=(1,1),\\quad \\mathbf{s}_2=(1,-1),\\quad \\mathbf{s}_3=(-1,1),\\quad \\mathbf{s}_4=(-1,-1)',
         note:'Each coordinate is the height on that half times its width $1$. The four points form a square, and each energy is $2$.'}]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'err', head:'Common error', html:'Take $\\psi_1=s_1$ as an axis. Its energy is $2$, not $1$, so every coordinate on it comes out a factor $\\sqrt2$ wrong.'}]}
+      {t:'note', kind:'err', head:'Common error', html:'Use $\\psi_1=s_1/\\sqrt{E_1}$ as an axis, not $s_1$ itself. Here $E_1=2$, so an unscaled axis puts every coordinate a factor $\\sqrt2$ off.'}]}
   ]}
 ]},
 
