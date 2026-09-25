@@ -1,15 +1,25 @@
 /* ==========================================================================
    Practice questions — Module 6.
 
-   Thirty questions in the form of the final examination's source-coding
-   question: a source derived from one or two others by a mapping, then its
-   entropy, a binary Huffman code and the efficiency of that code. The close
-   variants change the range, the mapping and the input pmfs so that the
-   alphabets run from four to eight symbols and the trees differ. The last
-   eight keep the examination format and add one twist each: a fixed-length
-   comparison, two tie-breaking rules, a second-order extension, the entropy
-   of the function against its input, a Kraft test, rounded-up lengths, and a
-   reversed question.
+   Thirty questions. Twenty-six are in the form of the final examination's
+   source-coding question: a source derived from one or two others by a
+   mapping, then its entropy, a binary Huffman code and the efficiency of that
+   code. The close variants change the range, the mapping and the input pmfs
+   so that the alphabets run from four to eight symbols and the trees differ.
+   The last eight keep the examination format and add one twist each: a
+   fixed-length comparison, two tie-breaking rules, a second-order extension,
+   the entropy of the function against its input, a Kraft test, rounded-up
+   lengths, and a reversed question.
+
+   Four questions take the channel side. Each has the shape of a textbook
+   problem already in examination form and keeps the id of the source-coding
+   question it replaced, the closest duplicate of one that stays: two of the
+   remainder questions, one product and one sum. D6-06 is a repetition code
+   over a BSC against its capacity. D6-07 tests a claimed link against the
+   Shannon limit. D6-14 measures how far uncoded constellations sit from that
+   limit. D6-22 places coded constellations in one band. They use the
+   capacity of the BSC and of the bandlimited channel, and any modulation
+   error formula they need is given in the statement.
 
    Every solution works with numerators over a common denominator, so ties are
    exact. The Huffman lists place a merged sum as high as possible among equal
@@ -98,9 +108,90 @@ function figHuff(o){
   return a.svg();
 }
 
+/* The four channel-side questions draw on three more frames.
+
+   figLimit is the plane of m6-shannon and m6-limit: spectral efficiency r
+   against E_b/N_0 in dB, with the capacity boundary E_b/N_0=(2^r-1)/r. The
+   region to its left, where no system works reliably, is shaded as an error,
+   and the -1.59 dB floor is the red dashed line. An operating point is a dot
+   with its name. A gap is a bar at one r, from the boundary to the point,
+   labelled with its length in dB (at `pos` when the middle of the bar is
+   crowded); the boundary end is a small cyan dot. */
+const limDB = r => 10*Math.log10((Math.pow(2,r)-1)/r);
+function figLimit(o){
+  const [xa,xb] = o.xr, rt = o.yr[1];
+  const a = P.Axes({w:720, h:o.h||300, xr:o.xr, yr:[0,rt],
+    xlabel:'E_b/N_0\\;(\\mathrm{dB})', ylabel:'r\\;(\\mathrm{bit/s/Hz})',
+    pad:{l:58,r:30,t:24,b:46}, xstep:2, ystep:1});
+  const pts = [];
+  for(let r=0.002; r<=rt+1e-9; r+=0.002){ const d = limDB(r); if(d>=xa && d<=xb) pts.push([d,r]); }
+  const last = pts[pts.length-1];
+  const reg = [[xa,0],[pts[0][0],0]].concat(pts, last[1] < rt-1e-6 ? [[xb,last[1]],[xb,rt]] : [], [[xa,rt]]);
+  a.under('<path d="M'+reg.map(p=>a.sx(p[0]).toFixed(2)+','+a.sy(p[1]).toFixed(2)).join('L')+'Z" fill="'+C.dec.err+'"/>');
+  a.vline(10*Math.log10(Math.log(2)), {color:C.err, width:1.6, dash:'5 4'});
+  a.poly(pts, {color:C.in, width:2.3});
+  if(o.imp) a.note(o.imp[0], o.imp[1], '\\text{no reliable system}', {tex:true, fs:13, color:C.err, anchor:'middle'});
+  if(o.floor) a.note(10*Math.log10(Math.log(2))-0.2, o.floor, '-1.59\\ \\mathrm{dB}', {tex:true, fs:12, color:C.err, anchor:'end'});
+  (o.gaps||[]).forEach(g=>{ const x0 = limDB(g.r);
+    a.poly([[x0,g.r],[g.x,g.r]], {color:g.c, width:2, dash:'6 4'});
+    a.point(x0, g.r, {color:C.in, r:3.4});
+    if(g.pos) a.note(g.pos[0], g.pos[1], g.lab, {tex:true, fs:12, color:g.c, anchor:g.pos[2]});
+    else a.note((x0+g.x)/2 + (g.dx||0), g.r + (g.dy==null ? 0.24 : g.dy), g.lab, {tex:true, fs:12, color:g.c, anchor:'middle'}); });
+  (o.pts||[]).forEach(p=>{
+    a.point(p.x, p.r, {color:p.c, r:5});
+    a.note(p.x + (p.dx==null ? 0.25 : p.dx), p.r + (p.dy||0), p.lab, {tex:true, fs:13, color:p.c, anchor:p.anchor||'start'}); });
+  return a.svg();
+}
+
+/* figRange is the bit rate an adaptive link offers against distance: a
+   staircase that steps down where each constellation runs out of range, with
+   each range marked by a dashed drop to the axis. The dot is the user's
+   distance on the scheme chosen there. */
+function figRange(o){
+  const a = P.Axes({w:720, h:260, xr:[0,o.dmax], yr:[0,o.Rmax],
+    xlabel:'d\\;(\\mathrm{km})', ylabel:'R_b\\;(\\mathrm{Mbit/s})',
+    pad:{l:58,r:30,t:24,b:46}, xstep:0.5, ystep:6});
+  let d0 = 0;
+  o.steps.forEach(s=>{
+    a.poly([[d0,s.R],[s.d,s.R]], {color:C.out, width:2.6});
+    a.poly([[s.d,s.R],[s.d,0]], {color:C.muted, width:1.2, dash:'3 4'});
+    a.note((d0+s.d)/2, s.R-3.4, s.lab, {tex:true, fs:13, color:C.out, anchor:'middle'});
+    a.note(s.d+0.03, 1.2, s.dlab, {tex:true, fs:12, color:C.muted});
+    d0 = s.d; });
+  a.point(o.at, o.pick, {color:C.out, r:5.5});
+  a.note(o.at, o.pick+2.2, 'd='+o.at+'\\ \\mathrm{km}', {tex:true, fs:12, color:C.out, anchor:'middle'});
+  return a.svg();
+}
+
+/* figFlips is the pmf of the number K of flipped copies of one bit sent n
+   times over a binary symmetric channel. The probabilities span several
+   decades, so the stems are drawn on a logarithmic scale, each tip labelled
+   with its value; the vertical axis carries no numbers. The values of K for
+   which the majority vote fails sit on a red band, and their stems are red. */
+function figFlips(o){
+  const n = o.n, p = o.p, t = (n+1)/2;
+  const comb = (m,k) => { let c = 1; for(let i=1;i<=k;i++) c = c*(m-k+i)/i; return c; };
+  const pk = k => comb(n,k)*Math.pow(p,k)*Math.pow(1-p,n-k);
+  const lo = Math.floor(Math.log10(pk(n))) - 0.6;
+  const y = k => Math.log10(pk(k)) - lo, top = -lo + 2.0;
+  const a = P.Axes({w:720, h:o.h||240, xr:[0.3, n+1.7], yr:[0, top],
+    xlabel:'k', ylabel:'P(K=k)\\;\\text{on a log scale}', pad:{l:24,r:30,t:24,b:44},
+    xticksOverride:Array.from({length:n+1},(_,k)=>k+1), xtickfmt:(v=>String(Math.round(v)-1)),
+    yticksOverride:[], grid:false});
+  a.rect(t+0.5, 0, n+1.7, top, {fill:C.dec.err});
+  for(let k=0;k<=n;k++){ const col = k>=t ? C.err : C.in;
+    a.poly([[k+1,0],[k+1,y(k)]], {color:col, width:2});
+    a.point(k+1, y(k), {color:col, r:4.5});
+    a.note(k+1, y(k), o.lab[k], {tex:true, fs:12, color:col, anchor:'middle', dy:-16}); }
+  const xm = (t+0.5+n+1.7)/2;
+  a.note(xm, top-1.0, 'n='+n+'\\text{: the vote fails}', {tex:true, fs:13, color:C.err, anchor:'middle'});
+  a.note(xm, top-1.0, o.fail, {tex:true, fs:13, color:C.err, anchor:'middle', dy:26});
+  return a.svg();
+}
+
 /* ======================================================================
-   The taxonomy: the three columns of the examination question, and three
-   shapes that add one judgement to it.
+   The taxonomy: the three columns of the examination question, three
+   shapes that add one judgement to it, and two shapes on the channel side.
    ====================================================================== */
 CONTENT.DRILLTYPES.M6 = [
   { k:'fx', name:'A function of one uniform source',
@@ -143,7 +234,21 @@ CONTENT.DRILLTYPES.M6 = [
     method:['A function of $X$ has $H(Y\\mid X)=0$, so $I(X;Y)=H(Y)$ and $H(X,Y)=H(X)$.',
             'For $Z=X+Y$ with independent inputs, fixing $X$ leaves only the uncertainty of $Y$, so $H(Z\\mid X)=H(Y)$.',
             'Check $H(Y)\\le H(X)$ for a function, and $I(X;Z)\\le\\min\\{H(X),H(Z)\\}$ for any pair.'],
-    go:'m6-condent' }
+    go:'m6-condent' },
+
+  { k:'coding', name:'Repetition coding over a binary symmetric channel',
+    asks:'A block of bits crosses a BSC without coding, then with a repetition code and a majority vote. Find the bit and block error probabilities, the rate each code costs, and compare with the capacity.',
+    method:['The number of flipped copies among $n$ is binomial, $P(K=j)=\\binom{n}{j}p^{j}(1-p)^{n-j}$. A majority vote over odd $n$ fails when $K\\ge(n+1)/2$.',
+            'A block of $k$ bits is correct only when every bit is, so $P_B=1-(1-P_b)^{k}$.',
+            'A repetition code has rate $1/n$. The BSC allows any rate below $C=1-H_b(p)$ with an error as small as required.'],
+    go:'m6-coding-thm' },
+
+  { k:'capacity', name:'The Shannon limit of the bandlimited channel',
+    asks:'A bit rate, a bandwidth and a received power are given, or a constellation and a target error probability. Find the spectral efficiency, the Shannon limit at that efficiency, and the gap in dB.',
+    method:['The spectral efficiency is $r=R_b/B$. A reliable link needs $E_b/N_0\\ge(2^{r}-1)/r$.',
+            'The energy per bit is $E_b=P/R_b$. A symbol that carries $r$ information bits has $E_s=r\\,E_b$.',
+            'A gap in dB is a difference of values in dB, which is $10\\log_{10}$ of a ratio of energies.'],
+    go:'m6-shannon' }
 ];
 
 /* ======================================================================
@@ -519,160 +624,189 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   err:'Rounding down instead of up, which sends $|X|=1$ to $0$. The ceiling is the smallest integer not below its argument, so $\\lceil 0.5\\rceil=1$.',
   teach:'Four symbols, but not a fixed-length code. One symbol has probability $\\tfrac{1}{11}$, and the tree becomes a ladder of lengths $1,2,3,3$.' },
 
-{ id:'D6-06', module:'M6', type:'fx', src:'Final Q4',
-  stem:'Let $X$ be a discrete memoryless source (DMS) which is modeled as a uniform random variable taking the integer values between $-2$ and $9$. Let $Y\\triangleq |X|\\;(\\bmod 7)$ be another DMS which is a function of $X$. Here $a\\bmod m$ denotes the remainder of $a$ on division by $m$, taken in $\\{0,1,\\ldots,m-1\\}$.',
-  parts:['[10 pts] Calculate the entropy of the source, $Y$.',
-         '[10 pts] Design a <em>binary</em> Huffman code for the source, $Y$.',
-         '[5 pts] Calculate the coding efficiency of the Huffman code designed in part (b).'],
-  figSol: () => figPmf({v:[0,1,2,3,4,5,6],n:[2,3,3,1,1,1,1],D:12,name:'Y'})+figHuff({n:[2,3,3,1,1,1,1],D:12,name:'Y',lab:['0','1','2','3','4','5','6'],codes:['001','01','10','110','111','0000','0001'],order:['000','11','00','1','0','']}),
-  sol:'<b>Given.</b> $X$ is uniform on the twelve integers $-2,\\ldots,9$, and $Y=|X|\\bmod 7$.<br>'
-     +'<b>Find.</b> $H(Y)$, a binary Huffman code for $Y$, and its coding efficiency.<br>'
-     +'<b>Method.</b> List $Y$ for every value of $X$, then add the probabilities that give the same value of $Y$. The entropy is $H(Y)=\\sum_{y}P(Y=y)\\log_2\\frac{1}{P(Y=y)}$, in bits because the logarithm has base two. Huffman\'s procedure fits the code part, since no prefix code for single symbols has a smaller average length. Merge the two smallest, give $0$ to the upper and $1$ to the lower, and place each sum as high as possible among equals. The efficiency is $\\eta=H(Y)/\\bar{L}$.<br>'
+{ id:'D6-06', module:'M6', type:'coding', src:'Madhow 7.1 and P7.12',
+  stem:'A binary symmetric channel (BSC) flips each transmitted bit with probability $p=0.05$, independently of the other bits. A message of $k=20$ information bits is sent over it. A block error occurs when at least one of the $20$ decoded bits is wrong. A repetition code of length $n$ sends each information bit $n$ times. The receiver then decides each bit by a majority vote over its $n$ received copies. Use $H_b(0.05)=0.2864$ bits, where $H_b(p)=-p\\log_2 p-(1-p)\\log_2(1-p)$.',
+  parts:['[6 pts] The $20$ bits are sent without coding. Calculate the probability of a block error.',
+         '[9 pts] Each bit is sent with a repetition code of length $n=3$, and then of length $n=5$. For each $n$, calculate the bit error probability after the majority vote and the block error probability.',
+         '[5 pts] Give the code rate of each repetition code, and the number of channel bits it uses for the $20$ information bits.',
+         '[5 pts] Calculate the capacity of the channel. Compare the rates of part (c) with it, and state what the channel coding theorem allows.'],
+  figSol: () => figFlips({n:3, p:0.05, h:220, lab:['0.857','0.135','7.13\\times10^{-3}','1.25\\times10^{-4}'],
+                          fail:'P_3=7.25\\times10^{-3}'})
+              + figFlips({n:5, p:0.05, h:240, lab:['0.774','0.204','0.0214','1.13\\times10^{-3}','2.97\\times10^{-5}','3.13\\times10^{-7}'],
+                          fail:'P_5=1.158\\times10^{-3}'}),
+  sol:'<b>Given.</b> A BSC with crossover probability $p=0.05$, a block of $k=20$ information bits, repetition codes of length $n=3$ and $n=5$ with a majority vote, and $H_b(0.05)=0.2864$.<br>'
+     +'<b>Find.</b> The block error probability without coding. The bit and block error probabilities for $n=3$ and $n=5$. The code rates and channel bits. The capacity and what it allows.<br>'
+     +'<b>Method.</b> The flips are independent, so the number $K$ of flipped copies among $n$ sent copies is binomial:'
+     +'$$P(K=j)=\\binom{n}{j}p^{j}(1-p)^{n-j}$$'
+     +'A majority vote over an odd number $n$ of copies fails when more than half of them are flipped, that is when $K\\ge (n+1)/2$.'
+     +' A block is correct only when all $20$ bits are correct. So a bit error probability $P_b$ gives the block error probability $P_B=1-(1-P_b)^{20}$.'
+     +' A repetition code of length $n$ has rate $R=1/n$ information bits a channel bit. The capacity of the BSC is $C=1-H_b(p)$ bits a channel use.<br>'
      +'<b>Solution — (a).</b> '
-     +'Each of the twelve values of $X$ has probability $\\tfrac{1}{12}$. The absolute value is taken first.'
-     +' For example $X=-2$ gives $|X|=2$ and $Y=2$, and $X=9$ gives $9\\bmod 7=2$.'
-     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c}'
-     +' y&x\\ \\text{values}&P(Y=y)\\\\\\hline'
-     +' 0&0,\\,7&\\frac{2}{12}\\\\'
-     +' 1&-1,\\,1,\\,8&\\frac{3}{12}\\\\'
-     +' 2&-2,\\,2,\\,9&\\frac{3}{12}\\\\'
-     +' 3&3&\\frac{1}{12}\\\\'
-     +' 4&4&\\frac{1}{12}\\\\'
-     +' 5&5&\\frac{1}{12}\\\\'
-     +' 6&6&\\frac{1}{12}'
-     +'\\end{array}$$</div>'
-     +'The probabilities add to $\\frac{12}{12}=1$. The entropy is'
+     +'Without coding each bit is decided alone, so $P_b=p=0.05$. Each bit arrives correctly with probability $1-p=0.95$. The $20$ bits are independent, so all of them arrive correctly with probability $(0.95)^{20}$.'
      +'$$\\begin{aligned}'
-     +' H(Y)&=\\sum_{y}P(Y=y)\\log_2\\frac{1}{P(Y=y)}\\\\'
-     +'&=2\\cdot\\frac{3}{12}\\log_2 4+\\frac{2}{12}\\log_2 6+4\\cdot\\frac{1}{12}\\log_2 12\\\\'
-     +'&=2(0.50000)+0.43083+4(0.29875)\\\\'
-     +'&=2.6258\\ \\text{bits/symbol}'
-     +'\\end{aligned}$$<br>'
+     +'P_B&=1-(1-p)^{20}\\\\'
+     +'&=1-(0.95)^{20}\\\\'
+     +'&=1-0.3585\\\\'
+     +'&=0.6415'
+     +'\\end{aligned}$$'
+     +'Almost two blocks in three contain an error.<br>'
      +'<b>Solution — (b).</b> '
-     +'Work with the numerators over $12$. Each line gives one merge and the new list, with the new sum in bold.<br>'
-     +'Start: $3,3,2,1,1,1,1$.<br>'
-     +'Merge $1$: $1+1=2$, list $3,3,\\mathbf{2},2,1,1$.<br>'
-     +'Merge $2$: $1+1=2$, list $3,3,\\mathbf{2},2,2$.<br>'
-     +'Merge $3$: $2+2=4$, list $\\mathbf{4},3,3,2$.<br>'
-     +'Merge $4$: $3+2=5$, list $\\mathbf{5},4,3$.<br>'
-     +'Merge $5$: $4+3=7$, list $\\mathbf{7},5$.<br>'
-     +'Merge $6$: $7+5=12$, list $\\mathbf{12}$.<br>'
-     +'In every merge the upper entry takes $0$ and the lower entry takes $1$. Reading the labels from the root back to each symbol gives the code.'
-     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c|c}'
-     +' y&P(Y=y)&\\text{codeword}&l\\\\\\hline'
-     +' 5&\\frac{1}{12}&\\mathtt{0000}&4\\\\'
-     +' 6&\\frac{1}{12}&\\mathtt{0001}&4\\\\'
-     +' 0&\\frac{2}{12}&\\mathtt{001}&3\\\\'
-     +' 1&\\frac{3}{12}&\\mathtt{01}&2\\\\'
-     +' 2&\\frac{3}{12}&\\mathtt{10}&2\\\\'
-     +' 3&\\frac{1}{12}&\\mathtt{110}&3\\\\'
-     +' 4&\\frac{1}{12}&\\mathtt{111}&3'
-     +'\\end{array}$$</div><br>'
+     +'For $n=3$ the vote fails when $K\\ge 2$, so two or three copies are flipped.'
+     +'$$\\begin{aligned}'
+     +'P_3&=P(K=2)+P(K=3)\\\\'
+     +'&=\\binom{3}{2}p^{2}(1-p)+\\binom{3}{3}p^{3}\\\\'
+     +'&=3(0.05)^{2}(0.95)+(0.05)^{3}\\\\'
+     +'&=0.007125+0.000125\\\\'
+     +'&=7.25\\times10^{-3}'
+     +'\\end{aligned}$$'
+     +'The block error probability for $n=3$ follows from $P_3$.'
+     +'$$\\begin{aligned}'
+     +'P_B&=1-(1-P_3)^{20}\\\\'
+     +'&=1-(0.99275)^{20}\\\\'
+     +'&=1-0.8646\\\\'
+     +'&=0.1354'
+     +'\\end{aligned}$$'
+     +'For $n=5$ the vote fails when $K\\ge 3$, so three, four or five copies are flipped.'
+     +'$$\\begin{aligned}'
+     +'P_5&=\\binom{5}{3}p^{3}(1-p)^{2}+\\binom{5}{4}p^{4}(1-p)+\\binom{5}{5}p^{5}\\\\'
+     +'&=10(0.05)^{3}(0.95)^{2}+5(0.05)^{4}(0.95)+(0.05)^{5}\\\\'
+     +'&=1.1281\\times10^{-3}+2.969\\times10^{-5}+3.125\\times10^{-7}\\\\'
+     +'&=1.158\\times10^{-3}'
+     +'\\end{aligned}$$'
+     +'The block error probability for $n=5$ follows from $P_5$.'
+     +'$$\\begin{aligned}'
+     +'P_B&=1-(1-P_5)^{20}\\\\'
+     +'&=1-(0.998842)^{20}\\\\'
+     +'&=1-0.97709\\\\'
+     +'&=0.02291'
+     +'\\end{aligned}$$<br>'
      +'<b>Solution — (c).</b> '
-     +'The average codeword length is'
+     +'A code of length $n$ sends $n$ channel bits for each information bit, so $R=1/n$ and it uses $20n$ channel bits.'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c|c|c}'
+     +'\\text{scheme}&R&\\text{channel bits}&P_b&P_B\\\\\\hline'
+     +'\\text{no coding}&1&20&0.05&0.6415\\\\'
+     +'n=3&\\tfrac{1}{3}&60&7.25\\times10^{-3}&0.1354\\\\'
+     +'n=5&\\tfrac{1}{5}&100&1.158\\times10^{-3}&0.02291'
+     +'\\end{array}$$</div>'
+     +'Each longer code lowers the block error, but only by sending more channel bits for the same message.<br>'
+     +'<b>Solution — (d).</b> '
+     +'The capacity of the BSC is'
      +'$$\\begin{aligned}'
-     +'\\bar{L}&=\\sum_{y}P(Y=y)\\,l(y)\\\\'
-     +'&=\\frac{1}{12}\\bigl[1(4)+1(4)+2(3)+3(2)\\\\&\\qquad+3(2)+1(3)+1(3)\\bigr]\\\\'
-     +'&=\\frac{32}{12}\\\\'
-     +'&=\\frac{8}{3}\\\\'
-     +'&=2.6667\\ \\text{bits/symbol}'
+     +'C&=1-H_b(p)\\\\'
+     +'&=1-H_b(0.05)\\\\'
+     +'&=1-0.2864\\\\'
+     +'&=0.7136\\ \\text{bits per channel use}'
      +'\\end{aligned}$$'
-     +'The coding efficiency is'
-     +'$$\\begin{aligned}'
-     +'\\eta&=\\frac{H(Y)}{\\bar{L}}\\\\'
-     +'&=\\frac{2.6258}{2.6667}\\\\'
-     +'&=0.9847'
-     +'\\end{aligned}$$'
-     +'In percent, $\\eta=98.47\\%$.<br>'
+     +'Both repetition rates, $\\tfrac13=0.333$ and $\\tfrac15=0.200$, lie far below $C$. The channel coding theorem allows any rate $R<0.7136$ with a block error as small as required, if long enough codes are used.'
+     +' At a rate just below $C$, the $20$ information bits need only a little more than $20/C$ channel bits:'
+     +'$$\\frac{20}{C}=\\frac{20}{0.7136}=28.03$$'
+     +'The code of length $5$ spends $100$ channel bits and still loses $2.3\\%$ of the blocks. Repetition lowers the error only by pushing the rate toward zero, so it cannot approach capacity.<br>'
      +'<b>Check.</b> '
-     +'The average length also equals the sum of the probabilities formed by the merges, the root included:'
-     +'$$\\bar{L}=\\frac{2+2+4+5+7+12}{12}=\\frac{32}{12}$$'
-     +'This matches part (c). The entropy follows by a second route, from the numerators $n_y=12\\,P(Y=y)$:'
+     +'The six probabilities of $K$ for $n=5$ add to one:'
      +'$$\\begin{aligned}'
-     +' H(Y)&=\\log_2 12-\\frac{1}{12}\\sum_{y}n_y\\log_2 n_y\\\\'
-     +'&=3.5850-\\frac{1}{12}\\bigl(2\\cdot3\\log_2 3+2\\log_2 2\\bigr)\\\\'
-     +'&=3.5850-0.9591\\\\'
-     +'&=2.6258'
+     +'\\sum_{j=0}^{5}P(K=j)&=0.77378+0.20363+0.02143\\\\'
+     +'&\\quad+0.00113+0.00003+0.0000003\\\\'
+     +'&=1.00000'
      +'\\end{aligned}$$'
-     +'The Kraft sum is $2\\cdot 2^{-2}+3\\cdot 2^{-3}+2\\cdot 2^{-4}=1$, so the tree has no unused branch. The bound $2.6258\\le 2.6667<3.6258$ holds.',
-  err:'Dropping the absolute value, so $X=-2$ gives $-2\\bmod 7=5$. The absolute value is applied first, which gives $Y=2$.',
-  teach:'Seven output symbols give a tree four levels deep. The four symbols of probability $\\tfrac{1}{12}$ are merged in pairs before anything else.' },
+     +'For small $p$ the first failing term dominates. So $P_3\\approx 3p^{2}=0.0075$ and $P_5\\approx 10p^{3}=0.00125$, close to the exact $0.00725$ and $0.001158$.'
+     +' For a small $P_b$ the block error is close to $20P_b$, and $20(1.158\\times10^{-3})=0.0232$ agrees with $0.02291$. The order $P_5<P_3<p$ holds.',
+  err:'Taking the block error without coding as $20p=1.0$. The approximation $P_B\\approx 20P_b$ holds only when $20P_b$ is small. Here the exact value $1-(0.95)^{20}=0.6415$ must be used.',
+  teach:'The two extremes before the coding theorem. Sending bits bare loses most blocks, and repetition buys reliability only by spending rate. Capacity says a rate near $0.71$ is possible with long codes.' },
 
-{ id:'D6-07', module:'M6', type:'fx', src:'Final Q4',
-  stem:'Let $X$ be a discrete memoryless source (DMS) which is modeled as a uniform random variable taking the integer values between $-6$ and $6$. Let $Y\\triangleq X^{2}\\;(\\bmod 11)$ be another DMS which is a function of $X$. Here $a\\bmod m$ denotes the remainder of $a$ on division by $m$, taken in $\\{0,1,\\ldots,m-1\\}$.',
-  parts:['[10 pts] Calculate the entropy of the source, $Y$.',
-         '[10 pts] Design a <em>binary</em> Huffman code for the source, $Y$.',
-         '[5 pts] Calculate the coding efficiency of the Huffman code designed in part (b).'],
-  figSol: () => figPmf({v:[0,1,3,4,5,9],n:[1,2,4,2,2,2],D:13,name:'Y'})+figHuff({n:[1,2,4,2,2,2],D:13,name:'Y',lab:['0','1','3','4','5','9'],codes:['101','11','01','000','001','100'],order:['10','00','1','0','']}),
-  sol:'<b>Given.</b> $X$ is uniform on the thirteen integers $-6,\\ldots,6$, and $Y=X^{2}\\bmod 11$.<br>'
-     +'<b>Find.</b> $H(Y)$, a binary Huffman code for $Y$, and its coding efficiency.<br>'
-     +'<b>Method.</b> List $Y$ for every value of $X$, then add the probabilities that give the same value of $Y$. The entropy is $H(Y)=\\sum_{y}P(Y=y)\\log_2\\frac{1}{P(Y=y)}$, in bits because the logarithm has base two. Huffman\'s procedure fits the code part, since no prefix code for single symbols has a smaller average length. Merge the two smallest, give $0$ to the upper and $1$ to the lower, and place each sum as high as possible among equals. The efficiency is $\\eta=H(Y)/\\bar{L}$.<br>'
+{ id:'D6-07', module:'M6', type:'capacity', src:'Madhow Ex 7.3.1',
+  stem:'A company claims a modem that sends $R_b=60$ Mbit/s in a bandwidth of $B=10$ MHz. The received signal power is $P=1.8\\times10^{-11}$ W. The noise is white and Gaussian with two-sided power spectral density $N_0/2$, where $N_0=4.0\\times10^{-20}$ W/Hz. Treat the link as an ideal bandlimited channel with additive white Gaussian noise and no excess bandwidth.',
+  parts:['[6 pts] Find the spectral efficiency $r=R_b/B$ of the claimed link. Then find the Shannon limit at that efficiency, the smallest $E_b/N_0$ in dB at which any system with it works reliably.',
+         '[6 pts] Calculate the energy per bit at the receiver and the actual $E_b/N_0$ in dB.',
+         '[6 pts] Decide whether the claim can be true, and by how many dB it misses or clears the limit. Confirm the verdict with the capacity $C=B\\log_2\\!\\left(1+P/(N_0B)\\right)$.',
+         '[7 pts] The company then says the modem uses two separate channels at once, for example two pairs of antennas. Each has bandwidth $10$ MHz and the same $N_0$, and the power and the bits are split equally. Repeat the test for one channel and give the new verdict.'],
+  figSol: () => figLimit({xr:[-4,14], yr:[0,7], h:320, imp:[3.2,4.9], floor:0.45,
+    gaps:[{r:6, x:8.75, c:C.err, lab:'1.46\\ \\mathrm{dB}\\ \\text{short}', pos:[10.6, 5.5, 'start']},
+          {r:3, x:8.75, c:C.mid, lab:'5.07\\ \\mathrm{dB}\\ \\text{to spare}', dx:0.7}],
+    pts:[{x:8.75, r:6, c:C.err, lab:'\\text{one channel},\\ r=6', dx:-0.3, dy:-0.08, anchor:'end'},
+         {x:8.75, r:3, c:C.out, lab:'\\text{each of two channels},\\ r=3', dy:-0.42}]}),
+  sol:'<b>Given.</b> $R_b=60$ Mbit/s, $B=10$ MHz, $P=1.8\\times10^{-11}$ W and $N_0=4.0\\times10^{-20}$ W/Hz, on an ideal bandlimited channel with white Gaussian noise.<br>'
+     +'<b>Find.</b> The spectral efficiency and its Shannon limit, the actual $E_b/N_0$, the verdict with its margin, and the verdict for two parallel channels.<br>'
+     +'<b>Method.</b> The spectral efficiency is $r=R_b/B$ in bit/s/Hz. A reliable link at efficiency $r$ needs'
+     +'$$\\frac{E_b}{N_0}\\ge\\frac{2^{r}-1}{r}$$'
+     +'The energy per bit is the received power divided by the bit rate, $E_b=P/R_b$. A value $x$ in dB is $10\\log_{10}x$. The claim can be true only when the actual $E_b/N_0$ lies above the limit.<br>'
      +'<b>Solution — (a).</b> '
-     +'Each of the thirteen values of $X$ has probability $\\tfrac{1}{13}$. Since $(-x)^{2}=x^{2}$, the values $x$ and $-x$ give the same $Y$.'
-     +' For example $5^{2}=25=2(11)+3$ and $6^{2}=36=3(11)+3$, so both give $Y=3$.'
-     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c}'
-     +' y&x\\ \\text{values}&P(Y=y)\\\\\\hline'
-     +' 0&0&\\frac{1}{13}\\\\'
-     +' 1&-1,\\,1&\\frac{2}{13}\\\\'
-     +' 3&-6,\\,-5,\\,5,\\,6&\\frac{4}{13}\\\\'
-     +' 4&-2,\\,2&\\frac{2}{13}\\\\'
-     +' 5&-4,\\,4&\\frac{2}{13}\\\\'
-     +' 9&-3,\\,3&\\frac{2}{13}'
-     +'\\end{array}$$</div>'
-     +'The probabilities add to $\\frac{13}{13}=1$. The entropy is'
+     +'The spectral efficiency of the claimed link is'
      +'$$\\begin{aligned}'
-     +' H(Y)&=\\sum_{y}P(Y=y)\\log_2\\frac{1}{P(Y=y)}\\\\'
-     +'&=\\frac{4}{13}\\log_2 \\frac{13}{4}+4\\cdot\\frac{2}{13}\\log_2 \\frac{13}{2}+\\frac{1}{13}\\log_2 13\\\\'
-     +'&=0.52321+4(0.41545)+0.28465\\\\'
-     +'&=2.4697\\ \\text{bits/symbol}'
+     +'r&=\\frac{R_b}{B}\\\\'
+     +'&=\\frac{60\\times10^{6}}{10\\times10^{6}}\\\\'
+     +'&=6\\ \\text{bit/s/Hz}'
+     +'\\end{aligned}$$'
+     +'The Shannon limit at this efficiency is'
+     +'$$\\begin{aligned}'
+     +'\\frac{E_b}{N_0}\\bigg|_{\\min}&=\\frac{2^{6}-1}{6}\\\\'
+     +'&=\\frac{63}{6}\\\\'
+     +'&=10.5\\\\'
+     +'&=10\\log_{10}10.5\\ \\text{dB}\\\\'
+     +'&=10.21\\ \\text{dB}'
      +'\\end{aligned}$$<br>'
      +'<b>Solution — (b).</b> '
-     +'Work with the numerators over $13$. Each line gives one merge and the new list, with the new sum in bold.<br>'
-     +'Start: $4,2,2,2,2,1$.<br>'
-     +'Merge $1$: $2+1=3$, list $4,\\mathbf{3},2,2,2$.<br>'
-     +'Merge $2$: $2+2=4$, list $\\mathbf{4},4,3,2$.<br>'
-     +'Merge $3$: $3+2=5$, list $\\mathbf{5},4,4$.<br>'
-     +'Merge $4$: $4+4=8$, list $\\mathbf{8},5$.<br>'
-     +'Merge $5$: $8+5=13$, list $\\mathbf{13}$.<br>'
-     +'In every merge the upper entry takes $0$ and the lower entry takes $1$. Reading the labels from the root back to each symbol gives the code.'
-     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c|c}'
-     +' y&P(Y=y)&\\text{codeword}&l\\\\\\hline'
-     +' 4&\\frac{2}{13}&\\mathtt{000}&3\\\\'
-     +' 5&\\frac{2}{13}&\\mathtt{001}&3\\\\'
-     +' 3&\\frac{4}{13}&\\mathtt{01}&2\\\\'
-     +' 9&\\frac{2}{13}&\\mathtt{100}&3\\\\'
-     +' 0&\\frac{1}{13}&\\mathtt{101}&3\\\\'
-     +' 1&\\frac{2}{13}&\\mathtt{11}&2'
-     +'\\end{array}$$</div><br>'
+     +'The energy per bit at the receiver is'
+     +'$$\\begin{aligned}'
+     +'E_b&=\\frac{P}{R_b}\\\\'
+     +'&=\\frac{1.8\\times10^{-11}}{6.0\\times10^{7}}\\\\'
+     +'&=3.0\\times10^{-19}\\ \\text{J}'
+     +'\\end{aligned}$$'
+     +'Dividing by $N_0$ gives the actual ratio.'
+     +'$$\\begin{aligned}'
+     +'\\frac{E_b}{N_0}&=\\frac{3.0\\times10^{-19}}{4.0\\times10^{-20}}\\\\'
+     +'&=7.5\\\\'
+     +'&=10\\log_{10}7.5\\ \\text{dB}\\\\'
+     +'&=8.75\\ \\text{dB}'
+     +'\\end{aligned}$$<br>'
      +'<b>Solution — (c).</b> '
-     +'The average codeword length is'
+     +'The actual $8.75$ dB lies below the limit of $10.21$ dB, so the claim cannot be true. The shortfall is'
+     +'$$10.21-8.75=1.46\\ \\text{dB}$$'
+     +'No code, modulation or receiver closes that gap at $r=6$. The capacity gives the same verdict. The signal-to-noise ratio in the band is'
      +'$$\\begin{aligned}'
-     +'\\bar{L}&=\\sum_{y}P(Y=y)\\,l(y)\\\\'
-     +'&=\\frac{1}{13}\\bigl[2(3)+2(3)+4(2)+2(3)\\\\&\\qquad+1(3)+2(2)\\bigr]\\\\'
-     +'&=\\frac{33}{13}\\\\'
-     +'&=2.5385\\ \\text{bits/symbol}'
+     +'\\frac{P}{N_0B}&=\\frac{1.8\\times10^{-11}}{(4.0\\times10^{-20})(10\\times10^{6})}\\\\'
+     +'&=\\frac{1.8\\times10^{-11}}{4.0\\times10^{-13}}\\\\'
+     +'&=45'
      +'\\end{aligned}$$'
-     +'The coding efficiency is'
+     +'The capacity of the channel is then'
      +'$$\\begin{aligned}'
-     +'\\eta&=\\frac{H(Y)}{\\bar{L}}\\\\'
-     +'&=\\frac{2.4697}{2.5385}\\\\'
-     +'&=0.9729'
+     +'C&=B\\log_2\\!\\left(1+\\frac{P}{N_0B}\\right)\\\\'
+     +'&=10^{7}\\log_2 46\\\\'
+     +'&=10^{7}(5.5236)\\\\'
+     +'&=55.24\\ \\text{Mbit/s}'
      +'\\end{aligned}$$'
-     +'In percent, $\\eta=97.29\\%$.<br>'
+     +'The claimed $60$ Mbit/s is above $C$, so no system reaches it reliably.<br>'
+     +'<b>Solution — (d).</b> '
+     +'Each channel now carries half the bits in the same $10$ MHz, with half the power. Its bit rate is $R_b\'=30$ Mbit/s and its power is $P\'=0.9\\times10^{-11}$ W.'
+     +'$$\\begin{aligned}'
+     +'r\'&=\\frac{30\\times10^{6}}{10\\times10^{6}}\\\\'
+     +'&=3\\ \\text{bit/s/Hz}'
+     +'\\end{aligned}$$'
+     +'The Shannon limit at this efficiency is'
+     +'$$\\begin{aligned}'
+     +'\\frac{E_b}{N_0}\\bigg|_{\\min}&=\\frac{2^{3}-1}{3}\\\\'
+     +'&=\\frac{7}{3}\\\\'
+     +'&=2.333\\\\'
+     +'&=3.68\\ \\text{dB}'
+     +'\\end{aligned}$$'
+     +'Halving both the power and the bit rate leaves the energy per bit unchanged.'
+     +'$$\\begin{aligned}'
+     +'E_b&=\\frac{0.9\\times10^{-11}}{3.0\\times10^{7}}\\\\'
+     +'&=3.0\\times10^{-19}\\ \\text{J}'
+     +'\\end{aligned}$$'
+     +'So the actual $E_b/N_0$ is still $8.75$ dB. It now clears the limit by'
+     +'$$8.75-3.68=5.07\\ \\text{dB}$$'
+     +'The claim becomes possible. A good code that works within one or two dB of the limit would meet it.<br>'
      +'<b>Check.</b> '
-     +'The average length also equals the sum of the probabilities formed by the merges, the root included:'
-     +'$$\\bar{L}=\\frac{3+4+5+8+13}{13}=\\frac{33}{13}$$'
-     +'This matches part (c). The entropy follows by a second route, from the numerators $n_y=13\\,P(Y=y)$:'
+     +'The signal-to-noise ratio equals $r\\,E_b/N_0$, because $P/(N_0B)=(E_bR_b)/(N_0B)$. For one channel, $6(7.5)=45$ agrees with part (c).'
+     +' For each of the two channels, the ratio is $3(7.5)=22.5$, and the capacity of one channel is'
      +'$$\\begin{aligned}'
-     +' H(Y)&=\\log_2 13-\\frac{1}{13}\\sum_{y}n_y\\log_2 n_y\\\\'
-     +'&=3.7004-\\frac{1}{13}\\bigl(4\\log_2 4+4\\cdot2\\log_2 2\\bigr)\\\\'
-     +'&=3.7004-1.2308\\\\'
-     +'&=2.4697'
+     +'C\'&=10^{7}\\log_2 23.5\\\\'
+     +'&=10^{7}(4.5546)\\\\'
+     +'&=45.55\\ \\text{Mbit/s}'
      +'\\end{aligned}$$'
-     +'The Kraft sum is $2\\cdot 2^{-2}+4\\cdot 2^{-3}=1$, so the tree has no unused branch. The bound $2.4697\\le 2.5385<3.4697$ holds.'
-     +' Only $Y=0$ has an odd numerator, because $X=0$ is the only value without a partner $-X$.',
-  err:'Counting $X=5$ and $X=-5$ as different symbols of $Y$. They have the same square, so they give one symbol with twice the probability.',
-  teach:'The symbol $Y=3$ collects four values of $X$ from two different squares, so it is the most likely symbol.' },
+     +'This is above the $30$ Mbit/s each channel carries, as the margin of part (d) says.',
+  err:'Comparing $E_b/N_0$ with the $-1.59$ dB floor and accepting the claim. The floor holds only as $r\\to0$. At $r=6$ the limit is $10.21$ dB.',
+  teach:'Splitting the rate over two channels halves $r$. The limit falls from $10.21$ dB to $3.68$ dB while $E_b/N_0$ stays the same. The spectral efficiency makes the first claim impossible, not the power.' },
 
 { id:'D6-08', module:'M6', type:'fx', src:'Final Q4',
   stem:'Let $X$ be a discrete memoryless source (DMS) which is modeled as a uniform random variable taking the integer values between $-7$ and $7$. Let $Y\\triangleq \\max(X,0)$ be another DMS which is a function of $X$.',
@@ -1172,94 +1306,73 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   err:'Rounding $5/3$ to $2$. The floor keeps the integer part, so $\\lfloor 5/3\\rfloor=1$.',
   teach:'Two symbols share $\\tfrac{20}{24}$ of the probability. The four rare symbols sit together at depth four.' },
 
-{ id:'D6-14', module:'M6', type:'fxz', src:'Final Q4',
-  stem:'Let $X$ be a discrete memoryless source (DMS) which is modeled as a uniform random variable on the alphabet $\\{-2,-1,1,2\\}$. Let $Z$ be a random variable (independent of $X$) with the probability mass function $p_Z(z)=c\\,(z+1)$ for $z\\in\\{0,1,2\\}$. It is zero otherwise, and $c$ is a constant. The pmf is shown below. Finally, let $Y\\triangleq X\\times Z$ be another DMS which is a function of both $X$ and $Z$.',
-  figure: () => figGiven({v:[0,1,2],h:[1,2,3],lab:['c','2c','3c'],name:'Z'}),
-  parts:['[5 pts] Find the constant $c$.',
-         '[8 pts] Calculate the entropy of the source, $Y$.',
-         '[8 pts] Design a <em>binary</em> Huffman code for the source, $Y$.',
-         '[4 pts] Calculate the coding efficiency of the Huffman code designed in part (c).'],
-  figSol: () => figPmf({v:[-4,-2,-1,0,1,2,4],n:[3,5,2,4,2,5,3],D:24,name:'Y'})+figHuff({n:[3,5,2,4,2,5,3],D:24,name:'Y',lab:['-4','-2','-1','0','1','2','4'],codes:['010','10','0000','001','0001','11','011'],order:['000','01','00','1','0','']}),
-  sol:'<b>Given.</b> $X$ uniform on $\\{-2,-1,1,2\\}$, $p_Z(z)=c(z+1)$ for $z=0,1,2$, independent, and $Y=XZ$.<br>'
-     +'<b>Find.</b> $c$, $H(Y)$, a binary Huffman code for $Y$, and its coding efficiency.<br>'
-     +'<b>Method.</b> Find $c$ from $\\sum_z p_Z(z)=1$ before anything else. List $Y$ for every pair $(x,z)$, then add the probabilities that give the same value of $Y$. The entropy is $H(Y)=\\sum_{y}P(Y=y)\\log_2\\frac{1}{P(Y=y)}$, in bits because the logarithm has base two. Huffman\'s procedure fits the code part, since no prefix code for single symbols has a smaller average length. Merge the two smallest, give $0$ to the upper and $1$ to the lower, and place each sum as high as possible among equals. The efficiency is $\\eta=H(Y)/\\bar{L}$.<br>'
+{ id:'D6-14', module:'M6', type:'capacity', src:'Madhow P7.2',
+  stem:'Three uncoded constellations with Gray coding are used on a channel with additive white Gaussian noise: QPSK, 8-PSK and 16-QAM. Each must reach the bit error probability $P_b=10^{-4}$. With ideal Nyquist pulses and no excess bandwidth, an $M$-point constellation sends $\\log_2 M$ bits per second per hertz. The nearest-neighbour approximations of the bit error probability are $P_b=Q\\big(\\sqrt{2E_b/N_0}\\big)$ for QPSK, $P_b\\approx\\tfrac{2}{3}\\,Q\\big(\\sqrt{0.879\\,E_b/N_0}\\big)$ for 8-PSK and $P_b\\approx\\tfrac{3}{4}\\,Q\\big(\\sqrt{0.8\\,E_b/N_0}\\big)$ for 16-QAM. Here $Q(x)$ is the probability that a zero-mean, unit-variance Gaussian variable exceeds $x$. A table gives $Q(3.719)=1.00\\times10^{-4}$, $Q(3.646)=1.33\\times10^{-4}$ and $Q(3.615)=1.50\\times10^{-4}$.',
+  parts:['[10 pts] For each constellation, find the $E_b/N_0$ in dB that gives $P_b=10^{-4}$.',
+         '[8 pts] Give the spectral efficiency $r$ of each constellation. Then find the Shannon limit at that efficiency, the smallest $E_b/N_0$ in dB at which any system with it works reliably.',
+         '[7 pts] How far is each constellation from its Shannon limit, in dB? Name the constellation farthest from its limit, and give that gap as a ratio of energies per bit.'],
+  figSol: () => figLimit({xr:[-4,16], yr:[0,5], h:320, imp:[2.2,4.3], floor:0.35,
+    gaps:[{r:2, x:8.40, c:C.mid, lab:'6.64\\ \\mathrm{dB}'},
+          {r:3, x:11.72, c:C.mid, lab:'8.04\\ \\mathrm{dB}'},
+          {r:4, x:12.21, c:C.mid, lab:'6.47\\ \\mathrm{dB}'}],
+    pts:[{x:8.40, r:2, c:C.out, lab:'\\text{QPSK}'},
+         {x:11.72, r:3, c:C.out, lab:'8\\text{-PSK}'},
+         {x:12.21, r:4, c:C.out, lab:'16\\text{-QAM}'}]}),
+  sol:'<b>Given.</b> QPSK, 8-PSK and 16-QAM with Gray coding, the target $P_b=10^{-4}$, their nearest-neighbour approximations, $r=\\log_2 M$ bit/s/Hz, and three values of $Q$.<br>'
+     +'<b>Find.</b> The $E_b/N_0$ each constellation needs, its spectral efficiency and Shannon limit, and the gap between the two in dB.<br>'
+     +'<b>Method.</b> Each approximation has the form $P_b\\approx a\\,Q\\big(\\sqrt{b\\,E_b/N_0}\\big)$. Divide the target by $a$ to get the value of $Q$, read its argument $x$ from the table, and solve $b\\,E_b/N_0=x^{2}$.'
+     +' The Shannon limit at efficiency $r$ is the capacity boundary of the bandlimited channel:'
+     +'$$\\frac{E_b}{N_0}\\bigg|_{\\min}=\\frac{2^{r}-1}{r}$$'
+     +'A gap in dB is the difference of two values in dB, which is $10\\log_{10}$ of the ratio of the two energies per bit.<br>'
      +'<b>Solution — (a).</b> '
-     +'The constant comes first. The pmf of $Z$ must add to one:'
+     +'For QPSK, $a=1$, so $Q\\big(\\sqrt{2E_b/N_0}\\big)=1.00\\times10^{-4}$ and the table gives the argument $3.719$.'
      +'$$\\begin{aligned}'
-     +'\\sum_{z}p_Z(z)&=c(1)+c(2)+c(3)\\\\'
-     +'&=6c\\\\'
-     +'&=1'
+     +'\\frac{E_b}{N_0}&=\\frac{3.719^{2}}{2}\\\\'
+     +'&=\\frac{13.831}{2}\\\\'
+     +'&=6.915\\\\'
+     +'&=8.40\\ \\text{dB}'
      +'\\end{aligned}$$'
-     +'So $c=\\tfrac16$, and $P(Z=0)=\\tfrac16$, $P(Z=1)=\\tfrac26$, $P(Z=2)=\\tfrac36$.<br>'
-     +'<b>Solution — (b).</b> '
-     +'With $P(X=x)=\\tfrac14$, the pair $(x,z)$ has probability $n_Z(z)/24$, where $n_Z=1,2,3$ for $z=0,1,2$.'
-     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c}'
-     +' y&(x,z)\\ \\text{pairs}&P(Y=y)\\\\\\hline'
-     +'-4&(-2,2)&\\frac{3}{24}\\\\'
-     +'-2&(-2,1),\\,(-1,2)&\\frac{2+3}{24}=\\frac{5}{24}\\\\'
-     +'-1&(-1,1)&\\frac{2}{24}\\\\'
-     +' 0&(-2,0),\\,(-1,0),\\,(1,0),\\,(2,0)&\\frac{4}{24}\\\\'
-     +' 1&(1,1)&\\frac{2}{24}\\\\'
-     +' 2&(1,2),\\,(2,1)&\\frac{3+2}{24}=\\frac{5}{24}\\\\'
-     +' 4&(2,2)&\\frac{3}{24}'
-     +'\\end{array}$$</div>'
-     +'The probabilities add to $\\frac{24}{24}=1$. The entropy is'
+     +'For 8-PSK, the value of $Q$ is $10^{-4}/\\tfrac{2}{3}=1.50\\times10^{-4}$, so the argument is $3.615$.'
      +'$$\\begin{aligned}'
-     +' H(Y)&=\\sum_{y}P(Y=y)\\log_2\\frac{1}{P(Y=y)}\\\\'
-     +'&=2\\cdot\\frac{5}{24}\\log_2 \\frac{24}{5}+\\frac{4}{24}\\log_2 6+2\\cdot\\frac{3}{24}\\log_2 8\\\\'
-     +'&\\quad+2\\cdot\\frac{2}{24}\\log_2 12\\\\'
-     +'&=2(0.47147)+0.43083+2(0.37500)+2(0.29875)\\\\'
-     +'&=2.7213\\ \\text{bits/symbol}'
+     +'\\frac{E_b}{N_0}&=\\frac{3.615^{2}}{0.879}\\\\'
+     +'&=\\frac{13.068}{0.879}\\\\'
+     +'&=14.867\\\\'
+     +'&=11.72\\ \\text{dB}'
+     +'\\end{aligned}$$'
+     +'For 16-QAM, the value of $Q$ is $10^{-4}/\\tfrac{3}{4}=1.33\\times10^{-4}$, so the argument is $3.646$.'
+     +'$$\\begin{aligned}'
+     +'\\frac{E_b}{N_0}&=\\frac{3.646^{2}}{0.8}\\\\'
+     +'&=\\frac{13.293}{0.8}\\\\'
+     +'&=16.617\\\\'
+     +'&=12.21\\ \\text{dB}'
+     +'\\end{aligned}$$<br>'
+     +'<b>Solution — (b).</b> '
+     +'The spectral efficiencies are $r=\\log_2 4=2$, $\\log_2 8=3$ and $\\log_2 16=4$ bit/s/Hz. The limit at each one follows from the boundary.'
+     +'$$\\begin{aligned}'
+     +'r=2:\\quad\\frac{E_b}{N_0}\\bigg|_{\\min}&=\\frac{2^{2}-1}{2}=1.5=1.76\\ \\text{dB}\\\\'
+     +'r=3:\\quad\\frac{E_b}{N_0}\\bigg|_{\\min}&=\\frac{2^{3}-1}{3}=2.333=3.68\\ \\text{dB}\\\\'
+     +'r=4:\\quad\\frac{E_b}{N_0}\\bigg|_{\\min}&=\\frac{2^{4}-1}{4}=3.75=5.74\\ \\text{dB}'
      +'\\end{aligned}$$<br>'
      +'<b>Solution — (c).</b> '
-     +'Work with the numerators over $24$. Each line gives one merge and the new list, with the new sum in bold.<br>'
-     +'Start: $5,5,4,3,3,2,2$.<br>'
-     +'Merge $1$: $2+2=4$, list $5,5,\\mathbf{4},4,3,3$.<br>'
-     +'Merge $2$: $3+3=6$, list $\\mathbf{6},5,5,4,4$.<br>'
-     +'Merge $3$: $4+4=8$, list $\\mathbf{8},6,5,5$.<br>'
-     +'Merge $4$: $5+5=10$, list $\\mathbf{10},8,6$.<br>'
-     +'Merge $5$: $8+6=14$, list $\\mathbf{14},10$.<br>'
-     +'Merge $6$: $14+10=24$, list $\\mathbf{24}$.<br>'
-     +'In every merge the upper entry takes $0$ and the lower entry takes $1$. Reading the labels from the root back to each symbol gives the code.'
-     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c|c}'
-     +' y&P(Y=y)&\\text{codeword}&l\\\\\\hline'
-     +'-1&\\frac{2}{24}&\\mathtt{0000}&4\\\\'
-     +' 1&\\frac{2}{24}&\\mathtt{0001}&4\\\\'
-     +' 0&\\frac{4}{24}&\\mathtt{001}&3\\\\'
-     +'-4&\\frac{3}{24}&\\mathtt{010}&3\\\\'
-     +' 4&\\frac{3}{24}&\\mathtt{011}&3\\\\'
-     +'-2&\\frac{5}{24}&\\mathtt{10}&2\\\\'
-     +' 2&\\frac{5}{24}&\\mathtt{11}&2'
-     +'\\end{array}$$</div><br>'
-     +'<b>Solution — (d).</b> '
-     +'The average codeword length is'
+     +'Each gap is the required value of part (a) minus the limit of part (b).'
+     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c|c|c}'
+     +'\\text{constellation}&r&E_b/N_0\\ \\text{needed}&\\text{limit}&\\text{gap}\\\\\\hline'
+     +'\\text{QPSK}&2&8.40\\ \\text{dB}&1.76\\ \\text{dB}&6.64\\ \\text{dB}\\\\'
+     +'8\\text{-PSK}&3&11.72\\ \\text{dB}&3.68\\ \\text{dB}&8.04\\ \\text{dB}\\\\'
+     +'16\\text{-QAM}&4&12.21\\ \\text{dB}&5.74\\ \\text{dB}&6.47\\ \\text{dB}'
+     +'\\end{array}$$</div>'
+     +'8-PSK is farthest from its limit. As a ratio of energies per bit, its gap is'
      +'$$\\begin{aligned}'
-     +'\\bar{L}&=\\sum_{y}P(Y=y)\\,l(y)\\\\'
-     +'&=\\frac{1}{24}\\bigl[2(4)+2(4)+4(3)+3(3)\\\\&\\qquad+3(3)+5(2)+5(2)\\bigr]\\\\'
-     +'&=\\frac{66}{24}\\\\'
-     +'&=\\frac{11}{4}\\\\'
-     +'&=2.7500\\ \\text{bits/symbol}'
+     +'\\frac{14.867}{2.333}&=6.37\\\\'
+     +'&=10\\log_{10}6.37\\ \\text{dB}\\\\'
+     +'&=8.04\\ \\text{dB}'
      +'\\end{aligned}$$'
-     +'The coding efficiency is'
-     +'$$\\begin{aligned}'
-     +'\\eta&=\\frac{H(Y)}{\\bar{L}}\\\\'
-     +'&=\\frac{2.7213}{2.7500}\\\\'
-     +'&=0.9895'
-     +'\\end{aligned}$$'
-     +'In percent, $\\eta=98.95\\%$.<br>'
+     +'A code with the same efficiency could at best cut the energy per bit of 8-PSK by a factor of $6.37$.<br>'
      +'<b>Check.</b> '
-     +'The average length also equals the sum of the probabilities formed by the merges, the root included:'
-     +'$$\\bar{L}=\\frac{4+6+8+10+14+24}{24}=\\frac{66}{24}$$'
-     +'This matches part (d). The entropy follows by a second route, from the numerators $n_y=24\\,P(Y=y)$:'
-     +'$$\\begin{aligned}'
-     +' H(Y)&=\\log_2 24-\\frac{1}{24}\\sum_{y}n_y\\log_2 n_y\\\\'
-     +'&=4.5850-\\frac{1}{24}\\bigl(2\\cdot5\\log_2 5+4\\log_2 4+2\\cdot3\\log_2 3+2\\cdot2\\log_2 2\\bigr)\\\\'
-     +'&=4.5850-1.8637\\\\'
-     +'&=2.7213'
-     +'\\end{aligned}$$'
-     +'The Kraft sum is $2\\cdot 2^{-2}+3\\cdot 2^{-3}+2\\cdot 2^{-4}=1$, so the tree has no unused branch. The bound $2.7213\\le 2.7500<3.7213$ holds.',
-  err:'Letting $Y=0$ keep only one pair. Every $x$ paired with $z=0$ gives $Y=0$, so $P(Y=0)=4\\cdot\\tfrac{1}{24}$.',
-  teach:'The value $Y=2$ has two routes, $(1,2)$ and $(2,1)$. A student who misses one gets a pmf that does not add to one.' },
+     +'Each gap also follows from the ratio of energies per bit. For QPSK, $6.915/1.5=4.610$, and $10\\log_{10}4.610=6.64$ dB. For 16-QAM, $16.617/3.75=4.431$, and $10\\log_{10}4.431=6.47$ dB.'
+     +' Every constellation needs more than its limit, as an uncoded system must. The limits rise with $r$, and none lies below the floor of $-1.59$ dB.',
+  err:'Setting $Q\\big(\\sqrt{b\\,E_b/N_0}\\big)=10^{-4}$ for 8-PSK and 16-QAM. The factor in front must be divided out first, so the values of $Q$ are $1.50\\times10^{-4}$ and $1.33\\times10^{-4}$.',
+  teach:'8-PSK sits farthest from its limit because its points share one circle, while 16-QAM uses the plane. Uncoded systems leave six to eight dB that coding can recover.' },
 
 { id:'D6-15', module:'M6', type:'fxz', src:'Final Q4',
   stem:'Let $X$ be a discrete memoryless source (DMS) which is modeled as a uniform random variable on the alphabet $\\{0,1,2,3\\}$. Let $Z$ be a random variable (independent of $X$) with the probability mass function $p_Z(z)=c\\left(\\frac{1}{2}\\right)^{z}$ for the integers $0\\le z\\le 3$. It is zero otherwise, and $c$ is a constant. Finally, let $Y\\triangleq \\min(X,Z)$ be another DMS which is a function of both $X$ and $Z$.',
@@ -1803,81 +1916,72 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   err:'Taking $P(X=k)=\\tfrac{k}{4}$, which adds to $\\tfrac{10}{4}$. The constant must make the four probabilities add to one.',
   teach:'Eight output symbols, the largest alphabet in the set. The sums overlap only in the middle, where $3,4,5,6$ each have two routes.' },
 
-{ id:'D6-22', module:'M6', type:'sum', src:'Final Q4',
-  stem:'Consider two <em>independent</em> discrete memoryless sources, $X$ and $Y$. The source $X$ is described by the alphabet $\\mathcal{X}=\\{0,1,2,3\\}$, where $P(X=0)=P(X=3)=\\frac{1}{2}P(X=1)=\\frac{1}{2}P(X=2)$. Similarly, the source $Y$ is described by the alphabet $\\mathcal{Y}=\\{0,1,2\\}$, where each symbol is generated with equal probability. Let $Z\\triangleq X+Y$ be another discrete memoryless source.',
-  parts:['[10 pts] Calculate the entropy of the source, $Z$.',
-         '[10 pts] Design a <em>binary</em> Huffman code for the source, $Z$.',
-         '[5 pts] Calculate the coding efficiency of the Huffman code designed in part (b).'],
-  figSol: () => figPmf({v:[0,1,2,3,4,5],n:[1,3,5,5,3,1],D:18,name:'Z'})+figHuff({n:[1,3,5,5,3,1],D:18,name:'Z',lab:['0','1','2','3','4','5'],codes:['0010','11','01','10','000','0011'],order:['001','00','1','0','']}),
-  sol:'<b>Given.</b> $P(X=0)=P(X=3)=\\tfrac12P(X=1)=\\tfrac12P(X=2)$, $Y$ uniform on $\\{0,1,2\\}$, independent, and $Z=X+Y$.<br>'
-     +'<b>Find.</b> $H(Z)$, a binary Huffman code for $Z$, and its coding efficiency.<br>'
-     +'<b>Method.</b> Turn the ratio statement into probabilities first. List $Z$ for every pair $(x,y)$, then add the probabilities that give the same value of $Z$. The entropy is $H(Z)=\\sum_{z}P(Z=z)\\log_2\\frac{1}{P(Z=z)}$, in bits because the logarithm has base two. Huffman\'s procedure fits the code part, since no prefix code for single symbols has a smaller average length. Merge the two smallest, give $0$ to the upper and $1$ to the lower, and place each sum as high as possible among equals. The efficiency is $\\eta=H(Z)/\\bar{L}$.<br>'
+{ id:'D6-22', module:'M6', type:'capacity', src:'Madhow P7.5',
+  stem:'An adaptive link uses a binary code of rate $\\tfrac12$ with one of three constellations: QPSK, 16-QAM or 64-QAM. The passband channel has bandwidth $B=6$ MHz. The symbols use ideal Nyquist pulses with no excess bandwidth, so the link sends $B$ symbols per second. Each coded scheme works $1.5$ dB above the Shannon limit for its spectral efficiency. The transmit power and the noise are fixed, and the received power falls as $1/d^{2}$ with the distance $d$.',
+  parts:['[6 pts] Calculate the information bit rate $R_b$ of each scheme and its spectral efficiency $r=R_b/B$.',
+         '[8 pts] Find the minimum $E_s/N_0$ in dB that each scheme needs, where $E_s$ is the energy per symbol.',
+         '[6 pts] QPSK reaches the largest range, $2.4$ km. Find the ranges of the other two schemes.',
+         '[5 pts] A user is at $d=1.2$ km. Which scheme gives the highest bit rate there, and with how many dB to spare?'],
+  figSol: () => figLimit({xr:[-4,8], yr:[0,4], h:300, imp:[0.2,3.3], floor:0.3,
+    gaps:[{r:1, x:1.50, c:C.mid, lab:'1.5\\ \\mathrm{dB}', dy:-0.32},
+          {r:2, x:3.26, c:C.mid, lab:'1.5\\ \\mathrm{dB}', dy:-0.32},
+          {r:3, x:5.18, c:C.mid, lab:'1.5\\ \\mathrm{dB}', dy:-0.32}],
+    pts:[{x:1.50, r:1, c:C.out, lab:'\\text{QPSK}', dy:-0.02},
+         {x:3.26, r:2, c:C.out, lab:'16\\text{-QAM}', dy:-0.02},
+         {x:5.18, r:3, c:C.out, lab:'64\\text{-QAM}', dy:-0.02}]})
+     + figRange({dmax:2.8, Rmax:22, at:1.2, pick:12,
+    steps:[{d:0.907, R:18, lab:'64\\text{-QAM}', dlab:'0.91\\ \\mathrm{km}'},
+           {d:1.386, R:12, lab:'16\\text{-QAM}', dlab:'1.39\\ \\mathrm{km}'},
+           {d:2.4, R:6, lab:'\\text{QPSK}', dlab:'2.4\\ \\mathrm{km}'}]}),
+  sol:'<b>Given.</b> A rate-$\\tfrac12$ code with QPSK, 16-QAM or 64-QAM, $B=6$ MHz and $B$ symbols per second. Each scheme works $1.5$ dB above its Shannon limit. The received power is proportional to $1/d^{2}$, and QPSK reaches $2.4$ km.<br>'
+     +'<b>Find.</b> The bit rates and spectral efficiencies, the minimum $E_s/N_0$ of each scheme, the other two ranges, and the best scheme at $1.2$ km.<br>'
+     +'<b>Method.</b> An $M$-point symbol carries $\\log_2 M$ coded bits. A code of rate $\\tfrac12$ makes half of them information bits.'
+     +' The Shannon limit at efficiency $r$ is'
+     +'$$\\frac{E_b}{N_0}\\bigg|_{\\min}=\\frac{2^{r}-1}{r}$$'
+     +'Each symbol carries $r$ information bits here, so $E_s=r\\,E_b$. At a fixed transmit power the received $E_s/N_0$ is proportional to $1/d^{2}$. So a scheme that needs $\\Delta$ dB more has its range scaled by $10^{-\\Delta/20}$.<br>'
      +'<b>Solution — (a).</b> '
-     +'With $P(X=0)=P(X=3)=q$ and $P(X=1)=P(X=2)=2q$, the sum $6q=1$ gives $q=\\tfrac16$.'
-     +' The pair $(x,y)$ has probability $n_X(x)/18$, where $n_X=1,2,2,1$.'
-     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c}'
-     +' z&(x,y)\\ \\text{pairs}&P(Z=z)\\\\\\hline'
-     +' 0&(0,0)&\\frac{1}{18}\\\\'
-     +' 1&(0,1),\\,(1,0)&\\frac{1+2}{18}=\\frac{3}{18}\\\\'
-     +' 2&(0,2),\\,(1,1),\\,(2,0)&\\frac{1+2+2}{18}=\\frac{5}{18}\\\\'
-     +' 3&(1,2),\\,(2,1),\\,(3,0)&\\frac{2+2+1}{18}=\\frac{5}{18}\\\\'
-     +' 4&(2,2),\\,(3,1)&\\frac{2+1}{18}=\\frac{3}{18}\\\\'
-     +' 5&(3,2)&\\frac{1}{18}'
-     +'\\end{array}$$</div>'
-     +'The probabilities add to $\\frac{18}{18}=1$. The entropy is'
+     +'The symbol rate is $6\\times10^{6}$ symbols per second. A symbol carries $\\tfrac12\\log_2 M$ information bits: $1$ for QPSK, $2$ for 16-QAM and $3$ for 64-QAM.'
      +'$$\\begin{aligned}'
-     +' H(Z)&=\\sum_{z}P(Z=z)\\log_2\\frac{1}{P(Z=z)}\\\\'
-     +'&=2\\cdot\\frac{5}{18}\\log_2 \\frac{18}{5}+2\\cdot\\frac{3}{18}\\log_2 6+2\\cdot\\frac{1}{18}\\log_2 18\\\\'
-     +'&=2(0.5133)+2(0.4308)+2(0.2317)\\\\'
-     +'&=2.3516\\ \\text{bits/symbol}'
+     +'\\text{QPSK:}\\quad R_b&=(6\\times10^{6})(1)=6\\ \\text{Mbit/s},\\quad r=1\\\\'
+     +'\\text{16-QAM:}\\quad R_b&=(6\\times10^{6})(2)=12\\ \\text{Mbit/s},\\quad r=2\\\\'
+     +'\\text{64-QAM:}\\quad R_b&=(6\\times10^{6})(3)=18\\ \\text{Mbit/s},\\quad r=3'
      +'\\end{aligned}$$<br>'
      +'<b>Solution — (b).</b> '
-     +'Work with the numerators over $18$. Each line gives one merge and the new list, with the new sum in bold.<br>'
-     +'Start: $5,5,3,3,1,1$.<br>'
-     +'Merge $1$: $1+1=2$, list $5,5,3,3,\\mathbf{2}$.<br>'
-     +'Merge $2$: $3+2=5$, list $\\mathbf{5},5,5,3$.<br>'
-     +'Merge $3$: $5+3=8$, list $\\mathbf{8},5,5$.<br>'
-     +'Merge $4$: $5+5=10$, list $\\mathbf{10},8$.<br>'
-     +'Merge $5$: $10+8=18$, list $\\mathbf{18}$.<br>'
-     +'In every merge the upper entry takes $0$ and the lower entry takes $1$. Reading the labels from the root back to each symbol gives the code.'
-     +'<div class="eq plain sm">$$\\def\\arraystretch{1.6}\\begin{array}{c|c|c|c}'
-     +' z&P(Z=z)&\\text{codeword}&l\\\\\\hline'
-     +' 4&\\frac{3}{18}&\\mathtt{000}&3\\\\'
-     +' 0&\\frac{1}{18}&\\mathtt{0010}&4\\\\'
-     +' 5&\\frac{1}{18}&\\mathtt{0011}&4\\\\'
-     +' 2&\\frac{5}{18}&\\mathtt{01}&2\\\\'
-     +' 3&\\frac{5}{18}&\\mathtt{10}&2\\\\'
-     +' 1&\\frac{3}{18}&\\mathtt{11}&2'
-     +'\\end{array}$$</div><br>'
+     +'First the Shannon limit of each efficiency, in dB.'
+     +'$$\\begin{aligned}'
+     +'r=1:\\quad\\frac{E_b}{N_0}\\bigg|_{\\min}&=\\frac{2-1}{1}=1=0\\ \\text{dB}\\\\'
+     +'r=2:\\quad\\frac{E_b}{N_0}\\bigg|_{\\min}&=\\frac{4-1}{2}=1.5=1.76\\ \\text{dB}\\\\'
+     +'r=3:\\quad\\frac{E_b}{N_0}\\bigg|_{\\min}&=\\frac{8-1}{3}=2.333=3.68\\ \\text{dB}'
+     +'\\end{aligned}$$'
+     +'Each scheme works $1.5$ dB above its limit. Then $E_s/N_0$ in dB adds $10\\log_{10}r$, because $E_s=r\\,E_b$.'
+     +'$$\\begin{aligned}'
+     +'\\text{QPSK:}\\quad \\frac{E_s}{N_0}&=0+1.5+10\\log_{10}1=1.50\\ \\text{dB}\\\\'
+     +'\\text{16-QAM:}\\quad \\frac{E_s}{N_0}&=1.76+1.5+3.01=6.27\\ \\text{dB}\\\\'
+     +'\\text{64-QAM:}\\quad \\frac{E_s}{N_0}&=3.68+1.5+4.77=9.95\\ \\text{dB}'
+     +'\\end{aligned}$$<br>'
      +'<b>Solution — (c).</b> '
-     +'The average codeword length is'
+     +'16-QAM needs $6.27-1.50=4.77$ dB more than QPSK, and 64-QAM needs $9.95-1.50=8.45$ dB more. The received power falls as $1/d^{2}$. So a range shorter by a factor $k$ gives $20\\log_{10}k$ dB more power.'
      +'$$\\begin{aligned}'
-     +'\\bar{L}&=\\sum_{z}P(Z=z)\\,l(z)\\\\'
-     +'&=\\frac{1}{18}\\bigl[3(3)+1(4)+1(4)+5(2)\\\\&\\qquad+5(2)+3(2)\\bigr]\\\\'
-     +'&=\\frac{43}{18}\\\\'
-     +'&=2.3889\\ \\text{bits/symbol}'
-     +'\\end{aligned}$$'
-     +'The coding efficiency is'
+     +'d_{16}&=2.4\\times10^{-4.77/20}\\\\'
+     +'&=2.4\\,(0.5774)\\\\'
+     +'&=1.39\\ \\text{km}\\\\'
+     +'d_{64}&=2.4\\times10^{-8.45/20}\\\\'
+     +'&=2.4\\,(0.3780)\\\\'
+     +'&=0.91\\ \\text{km}'
+     +'\\end{aligned}$$<br>'
+     +'<b>Solution — (d).</b> '
+     +'At $2.4$ km the received $E_s/N_0$ is $1.50$ dB, just what QPSK needs. Halving the distance raises it by $20\\log_{10}2=6.02$ dB.'
      +'$$\\begin{aligned}'
-     +'\\eta&=\\frac{H(Z)}{\\bar{L}}\\\\'
-     +'&=\\frac{2.3516}{2.3889}\\\\'
-     +'&=0.9844'
+     +'\\frac{E_s}{N_0}\\bigg|_{1.2\\ \\text{km}}&=1.50+6.02\\\\'
+     +'&=7.52\\ \\text{dB}'
      +'\\end{aligned}$$'
-     +'In percent, $\\eta=98.44\\%$.<br>'
+     +'64-QAM needs $9.95$ dB and falls $2.43$ dB short. 16-QAM needs $6.27$ dB and has $7.52-6.27=1.25$ dB to spare.'
+     +' So 16-QAM is the best choice at $1.2$ km, with $R_b=12$ Mbit/s.<br>'
      +'<b>Check.</b> '
-     +'The average length also equals the sum of the probabilities formed by the merges, the root included:'
-     +'$$\\bar{L}=\\frac{2+5+8+10+18}{18}=\\frac{43}{18}$$'
-     +'This matches part (c). The entropy follows by a second route, from the numerators $n_z=18\\,P(Z=z)$:'
-     +'$$\\begin{aligned}'
-     +' H(Z)&=\\log_2 18-\\frac{1}{18}\\sum_{z}n_z\\log_2 n_z\\\\'
-     +'&=4.1699-\\frac{1}{18}\\bigl(2\\cdot5\\log_2 5+2\\cdot3\\log_2 3\\bigr)\\\\'
-     +'&=4.1699-1.8183\\\\'
-     +'&=2.3516'
-     +'\\end{aligned}$$'
-     +'The Kraft sum is $3\\cdot 2^{-2}+2^{-3}+2\\cdot 2^{-4}=1$, so the tree has no unused branch. The bound $2.3516\\le 2.3889<3.3516$ holds.'
-     +' The pmf is symmetric about $z=2.5$. This must hold, since $X$ is symmetric about $1.5$ and $Y$ about $1$.',
-  err:'Using $q=\\tfrac14$ because $X$ has four symbols. The ratio gives two parts to each middle symbol, so there are six parts.',
-  teach:'The examination\'s sum of two sources with new alphabets. The ties among $\\tfrac{3}{18}$ and $\\tfrac{5}{18}$ make the placement rule matter.' },
+     +'At the limit, $E_s/N_0=r\\,(2^{r}-1)/r=2^{r}-1$. That gives $1$, $3$ and $7$, or $0$, $4.77$ and $8.45$ dB. Adding $1.5$ dB returns $1.50$, $6.27$ and $9.95$ dB.'
+     +' The $1.5$ dB cancels in the ranges, so $d_{16}=2.4/\\sqrt{3}=1.386$ km and $d_{64}=2.4/\\sqrt{7}=0.907$ km. The distance $1.2$ km lies between them, as part (d) found.',
+  err:'Adding $1.5$ dB to $(2^{r}-1)/r$ and calling the result $E_s/N_0$. That expression is $E_b/N_0$. The energy per symbol is $r$ times larger, so $10\\log_{10}r$ must be added.',
+  teach:'An adaptive link steps down the constellations as the user moves away. The two steps up in rate cost $4.77$ dB and then $3.68$ dB. They shorten the range by factors of $\\sqrt{3}$ and then $\\sqrt{7/3}$.' },
 
 { id:'D6-23', module:'M6', type:'judge', src:'Final Q4 (variant)',
   stem:'Let $X$ be a discrete memoryless source (DMS) which is modeled as a uniform random variable taking the integer values between $1$ and $16$. Let $Y\\triangleq \\left\\lfloor \\log_2 X\\right\\rfloor$ be another DMS which is a function of $X$. Here $\\lfloor u\\rfloor$ is the largest integer not greater than $u$.',
@@ -2586,11 +2690,11 @@ window.DRILL_M6 = [
 { id:'m6-drill', module:'M6', nav:'Module 6 · practice questions',
   title:'Module 6 — practice questions',
   objective:'Thirty open-ended questions with worked solutions, in the form they are asked in.',
-  keywords:'practice questions module 6 entropy derived source function mod floor maximum minimum sum product huffman code efficiency kraft variance extension mutual information',
+  keywords:'practice questions module 6 entropy derived source function mod floor maximum minimum sum product huffman code efficiency kraft variance extension mutual information repetition code binary symmetric channel capacity shannon limit spectral efficiency',
   steps:0, blocks:[
   {t:'eyebrow', text:'Module 6 · Practice D6-01 … D6-30'},
   {t:'title', text:'Practice questions'},
-  {t:'small', html:'Work each question before opening its solution. Use these checks:<ul><li>The pmf of the derived source adds to one.</li><li>$H\\le\\log_2 K$ for a source with $K$ symbols.</li><li>A Huffman code has $H\\le\\bar{L}<H+1$ and a Kraft sum of one.</li><li>$\\bar{L}$ equals the sum of the probabilities formed by the merges.</li><li>The coding efficiency is at most one.</li></ul>'},
+  {t:'small', html:'Work each question before opening its solution. Use these checks:<ul><li>The pmf of the derived source adds to one.</li><li>$H\\le\\log_2 K$ for a source with $K$ symbols.</li><li>A Huffman code has $H\\le\\bar{L}<H+1$ and a Kraft sum of one.</li><li>$\\bar{L}$ equals the sum of the probabilities formed by the merges.</li><li>The coding efficiency is at most one.</li><li>A reliable link at spectral efficiency $r$ has $E_b/N_0\\ge(2^{r}-1)/r$.</li></ul>'},
   {t:'rule', short:true},
   {t:'drill', module:'M6'}
 ]}
