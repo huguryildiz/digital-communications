@@ -293,10 +293,13 @@ not remove it, and do not set either property on a `.katex` subtree.
 
 The artifact is one document with two layouts, and `body[data-layout]` says which is in force. The
 wide one above is the original. On a screen that cannot carry that basis (under 760 px width, or under
-480 px height with a coarse pointer, or up to 1024 px wide upright with a coarse pointer) the stage is
-dropped rather than shrunk further: the scene becomes one fluid column of real pixels that scrolls, the
-contents rail becomes a drawer, and the header hands its settings to the foot of that drawer. None of
-the gates in `.claude/rules/build-pipeline.md` reads this layout; `mcheck.js` and `mshot.js` do.
+480 px height with a coarse pointer, or up to 1024 px wide upright with a coarse pointer; the test is
+`NARROW` in `build/src/40_core.js`) the stage is dropped rather than shrunk further: the scene becomes one fluid column of real pixels that scrolls, the
+contents rail becomes a drawer, and the header hands its settings to the foot of that drawer. So a
+phone either way up and a tablet held upright get the column; a tablet on its side is a desktop and
+gets the wide stage, and so does a laptop window of any width above 760 px, because a mouse is not a
+finger. None of the gates in `.claude/rules/build-pipeline.md` reads this layout; `mcheck.js` and
+`mshot.js` do, in the phone and tablet sweeps listed there.
 
 ### Rollout: a scene opts in
 
@@ -514,9 +517,9 @@ through a raw block, `{t:'raw', html:()=>CODEBANK.page('<scene id>')}`.
   prints with `out`.
 - Module 1's scene ids already name six code pages in `CONTENT.SECTIONS`
   (`build/src/89_sections.js`): `m1-code-sampling`, `m1-code-reconstruct`, `m1-code-quant`,
-  `m1-code-sqnr`, `m1-code-companding`, `m1-code-pcm`. The corresponding `build/src/7?_code_m1.js`
-  file with their `CODE_M1` and `CODE_BANKS_M1` entries does not yet exist; write it before the code
-  pages can render or pass `code_check.py`.
+  `m1-code-sqnr`, `m1-code-companding`, `m1-code-pcm`. Their `CODE_M1` and `CODE_BANKS_M1` entries
+  are in `build/src/76_code_m1.js`; Modules 2–6 keep theirs in `78_code_m2.js` and `79_code_m3.js` to
+  `79_code_m6.js`.
 
 ### Title icons
 
@@ -536,8 +539,8 @@ to `build/src/10_style.css`; it does not reuse an icon that already means someth
 ### A laboratory on a slide — built for Module 1's laboratories
 
 A laboratory scene carries `slide:true` like any other slide, and its text follows the card language
-rather than a plain stack. The rule applies to Module 1 now; the laboratories of Modules 2–6 keep their
-current look until their module is converted.
+rather than a plain stack. The rule was built on Module 1's laboratories; the laboratories of Modules 2–6 follow it now that their
+modules are converted.
 
 - Every derivation, verdict and note that the laboratory draws is a card. A computed equation takes a
   coral tab that names what it computes; a note keeps its kind's tab and icon (`ok` for a result,

@@ -23,7 +23,7 @@ be backed up with the working copy. The full pre-migration instructions are in
 ## Facts
 
 - The artifact is `dist/Digital_Communications.html`, built by `build/build.js` from `build/src/*`.
-- Seven modules, M0–M7 as declared in `build/src/80_content_core.js` (`CONTENT.MODULES`); addresses,
+- Seven modules, M0–M6 as declared in `build/src/80_content_core.js` (`CONTENT.MODULES`); addresses,
   sections and textbook anchors are declared once in `build/src/89_sections.js`.
 - **Module 1 is frozen in the slide design and is the reference.** Modules 2–6 are converted to the
   same design and are on `main`, awaiting owner review (status per module in `TODO.md`). Any further

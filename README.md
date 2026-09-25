@@ -50,7 +50,7 @@ Alongside the scenes, the artifact contains:
 
 - **Laboratories.** Each has controls for a signal, a coder or a receiver; moving one updates the plot and the numbers beside it, computed from the definitions at that moment.
 - **Practice questions.** Twenty open-ended questions for each of Modules 1 to 6, each with a worked solution that checks its own answer a second way.
-- **Code pages.** Short Python programs that reproduce a result from the lecture. A reader can run them in the browser from the course site. Module 1 has them so far.
+- **Code pages.** Short Python programs that reproduce a result from the lecture. A reader can run them in the browser from the course site. Modules 1 to 6 have them.
 
 The same content also produces a set of printable PDF editions: the lecture notes, a student workbook
 with the questions only, and a formula reference.
@@ -59,7 +59,7 @@ with the questions only, and a formula reference.
 
 | Module | Title | Topics |
 | --- | --- | --- |
-| 0 | The frame of the course | What the subject asks · the transmitter–channel–receiver chain · why digits are sent at all · the course map · how to use the artifact |
+| 0 | Why digital communications? | What the subject asks · the transmitter–channel–receiver chain · why digits are sent at all · the course map · how to use the artifact |
 | 1 | Sampling, quantization and PCM | The sampling theorem and aliasing · reconstruction · uniform and non-uniform quantization · SQNR and the 6 dB rule · companding · PCM, DPCM and delta modulation · line codes |
 | 2 | Baseband transmission | The transmitted pulse · the matched filter · the threshold and its error probability · intersymbol interference · the Nyquist criterion · raised-cosine shaping · the eye diagram |
 | 3 | Geometric representation of signals | Gram–Schmidt · orthonormal bases · a waveform as a point · energy as squared length · the noise projection |

@@ -14,8 +14,9 @@ paths:
 Read `DESIGN.md` before changing a scene, figure, or style. Respect its LOCKED decisions. The palette
 is defined across `build/src/10_style.css`, `build/src/60_plot.js`, and `build/textclash.js`; keep
 those files consistent when changing it. Module 1 is the converted reference (`slide:true`); new
-lecture-slide styles apply to a scene only once it carries that flag. Modules 2–6 are not yet
-converted and keep their current look until they are.
+lecture-slide styles apply to a scene only once it carries that flag. Modules 2–6 are converted to
+match it and await the owner's review (`TODO.md`); they follow Module 1 and take no design decision
+of their own.
 
 **R7 — Figures and examples.** Worked examples use Given, Find, Method, Solution, Check. Label every
 axis. Draw continuous-time signals as curves, discrete-time signals as stems, and impulses as arrows
