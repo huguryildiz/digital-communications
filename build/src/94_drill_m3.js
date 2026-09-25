@@ -15,6 +15,12 @@
    D3-13 … D3-24   carrier waveform families (final shape)
    D3-25 … D3-30   reversed and comparison questions in the same format
 
+   Three questions take their shape from textbook problems instead (src names
+   the problem): D3-04, the simplex set built from an orthogonal set; D3-10,
+   two four-point sets of shifted pulses compared per bit; D3-22, which carrier
+   waveforms built from two baseband pulses are orthogonal. Each replaced the
+   closest duplicate of a midterm or final shape that stays in the set.
+
    Every number a solution states has a check in verify/drills_m3.py that
    reaches it by sampling the waveforms and running the procedure numerically.
    ========================================================================== */
@@ -55,7 +61,21 @@ CONTENT.DRILLTYPES.M3 = [
     method:['A different order in Gram–Schmidt gives different axes and different coordinates.',
             'Energies, distances and inner products do not depend on the basis. Compute them in each basis to see it.',
             'Compare designs by $d_{\\min}^2/E_{s,av}$. A factor of two is $3.01$ dB.'],
-    go:'m3-remarks' }
+    go:'m3-remarks' },
+
+  { k:'simplex', name:'Removing the average point',
+    asks:'An orthogonal set of $M$ equal-energy waveforms is given. Subtract the average waveform from each one, and find the new energies, correlations and distances, and the energy saved.',
+    method:['Subtract the average interval by interval, or subtract the average vector from every point.',
+            'The same vector is taken from every point, so every difference $\\mathbf{s}_j-\\mathbf{s}_k$ and every distance stays the same.',
+            'Expand $\\|\\mathbf{s}_k-\\bar{\\mathbf{s}}\\|^2$ with $\\|\\bar{\\mathbf{s}}\\|^2=E_s/M$ and $\\langle\\mathbf{s}_k,\\bar{\\mathbf{s}}\\rangle=E_s/M$.'],
+    go:'m3-energy' },
+
+  { k:'passband', name:'Carrier waveforms built from two pulses',
+    asks:'Four waveforms $a(t)\\cos(2\\pi f_ct)\\pm b(t)\\sin(2\\pi f_ct)$ and $b(t)\\cos(2\\pi f_ct)\\pm a(t)\\sin(2\\pi f_ct)$ are given. Find their inner products, the orthogonal pairs, a basis and the vectors.',
+    method:['With whole carrier cycles on each interval, $\\cos^2$ and $\\sin^2$ average to $\\tfrac12$ and $\\cos\\sin$ to $0$.',
+            'Multiply out a pair and keep the $\\cos^2$ and $\\sin^2$ terms. Each becomes half a baseband inner product.',
+            'Some pairs are orthogonal for any pulses. Others need $\\langle a,b\\rangle=0$ or $E_a=E_b$.'],
+    go:'m3-passband' }
 ];
 
 /* ---------- figures ----------
@@ -132,6 +152,37 @@ function cons3(pts, o){
     a.note(q[0],q[1],p[3],Object.assign({tex:true,fs:15,color:C.in},OFF[p[4]||'n'])); });
   if(o.dl) a.note(o.dl[0],o.dl[1],o.dl[2],{tex:true,fs:14,color:C.err,anchor:o.dl[3]||'start'});
   return BOX(a.svg(), 560);
+}
+
+/* The simplex construction in the same oblique view. S holds the orthogonal
+   points, m their average, and each simplex point is S[i]-m. Coordinates are
+   multiplied by k to fit the drawing. The violet lines are the shift by -m,
+   and the red edges show one distance before and after it. */
+function simplex3(S, m, o){
+  const k = o.k, pr = (x,y,z) => [k*(x-0.3*z), k*(y-0.6*z)];
+  const Uv = S.map(s=>s.map((v,j)=>v-m[j]));
+  const a = P.Axes({w:600,h:470,xr:o.xr,yr:o.yr,pad:{l:20,r:20,t:20,b:20},
+    grid:false,zeroAxes:false,arrows:false,xticksOverride:[],yticksOverride:[]});
+  const L = o.len;
+  [[pr(L[0],0,0),'\\psi_1','e'],[pr(0,L[1],0),'\\psi_2','n'],[pr(0,0,L[2]),'\\psi_3','s']].forEach(([q,l,w])=>{
+    a.poly([[0,0],q],{color:C.axis,width:1.5});
+    a.note(q[0],q[1],l,Object.assign({tex:true,fs:15,color:C.ink},OFF[w])); });
+  const tri = P3 => [0,1,2,0].map(i=>pr(...P3[i]));
+  a.poly(tri(S),{color:C.rule,width:1.2,dash:'4 5'});
+  a.poly(tri(Uv),{color:C.rule,width:1.2});
+  S.forEach((s,i)=>a.poly([pr(...s),pr(...Uv[i])],{color:C.mid,width:1.6,dash:'5 4'}));
+  a.poly([pr(...m),[0,0]],{color:C.mid,width:1.6,dash:'5 4'});
+  a.poly([pr(...S[0]),pr(...S[1])],{color:C.err,width:2.2});
+  a.poly([pr(...Uv[0]),pr(...Uv[1])],{color:C.err,width:2.2});
+  a.point(0,0,{color:C.ink,r:3});
+  const pm = pr(...m); a.point(pm[0],pm[1],{color:C.mid,r:5.5});
+  a.note(pm[0],pm[1],'\\bar{\\mathbf{s}}',Object.assign({tex:true,fs:15,color:C.mid},OFF[o.mw||'e']));
+  S.forEach((s,i)=>{ const q = pr(...s); a.point(q[0],q[1],{color:C.in,r:6});
+    a.note(q[0],q[1],'\\mathbf{s}_'+(i+1),Object.assign({tex:true,fs:15,color:C.in},OFF[o.sw[i]])); });
+  Uv.forEach((u,i)=>{ const q = pr(...u); a.point(q[0],q[1],{color:C.in,r:6});
+    a.note(q[0],q[1],'\\mathbf{u}_'+(i+1),Object.assign({tex:true,fs:15,color:C.in},OFF[o.uw[i]])); });
+  if(o.dl) a.note(o.dl[0],o.dl[1],o.dl[2],{tex:true,fs:14,color:C.err,anchor:o.dl[3]||'start'});
+  return BOX(a.svg(), 600);
 }
 
 /* a chain of equalities, one to a line, aligned at the equals sign */
@@ -259,35 +310,54 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   err:'Adding a second axis because the two waveforms "look different". A negative multiple of a waveform points along the same axis. The remainder is zero, and that settles it.',
   teach:'This set has the same shape as the midterm pair: one waveform a negative multiple of the other. It is a one-dimensional set with unequal energies, not an antipodal pair.' },
 
-{ id:'D3-04', module:'M3', type:'gs', src:'MT Q3',
-  stem:'Two equiprobable messages are transmitted by the waveforms $s_0(t)$ and $s_1(t)$ shown below, with $T=4$ s. According to the information given above,',
-  figure: () => ROW([wave(U([1,1,1,1]),{T:4,name:'s_0(t)',color:C.in}), wave(U([3,3,-1,-1]),{T:4,name:'s_1(t)',color:C.out})]),
-  parts:['[8 pts] Find an orthonormal basis for the two signals by the Gram–Schmidt procedure, starting with $s_0(t)$. Plot the basis functions.',
-         '[7 pts] Find $\\mathbf{s}_0$ and $\\mathbf{s}_1$, and compute each energy both from the vector and from the waveform.',
-         '[5 pts] Calculate $d_{01}$ and $\\rho_{01}=\\langle s_0,s_1\\rangle/\\sqrt{E_0E_1}$.',
-         '[5 pts] Draw the signal constellation and give $E_{s,av}$.'],
-  sol:'<b>Given.</b> $s_0(t)=1$ on $[0,4]$. $s_1(t)=3$ on $[0,2)$ and $-1$ on $[2,4]$.<br>'
-     +'<b>Find.</b> The basis, both vectors, both energies, $d_{01}$, $\\rho_{01}$ and $E_{s,av}$.<br>'
-     +'<b>Method.</b> Gram–Schmidt, then squared lengths and distances of the vectors.<br>'
-     +'<b>Solution — (a).</b> $E_0=\\int_0^4 1\\,dt=t\\,\\big|_0^4=4$, so $\\psi_1(t)=s_0(t)/2=\\tfrac12$ on $[0,4]$. The projection of $s_1$ is'
-     + AL('s_{11}&=\\int_0^2 (3)\\big(\\tfrac12\\big)dt+\\int_2^4 (-1)\\big(\\tfrac12\\big)dt','&=\\tfrac32 t\\,\\Big|_0^2-\\tfrac12 t\\,\\Big|_2^4','&=3-1','&=2.')
-     +'The remainder $g(t)=s_1(t)-2\\psi_1(t)=s_1(t)-1$ is $2$ on $[0,2)$ and $-2$ on $[2,4]$. Its energy is'
-     + AL('E_g&=\\int_0^2 4\\,dt+\\int_2^4 4\\,dt','&=8+8','&=16.')
-     +'So $\\psi_2(t)=g(t)/4$, which is $\\tfrac12$ on $[0,2)$ and $-\\tfrac12$ on $[2,4]$.<br>'
-     +'<b>Solution — (b).</b> $\\mathbf{s}_0=(2,\\,0)$. The second coordinate of $s_1$ is'
-     + AL('s_{12}&=\\int_0^2 (3)\\big(\\tfrac12\\big)dt+\\int_2^4 (-1)\\big(-\\tfrac12\\big)dt','&=3+1','&=4.')
-     +'So $\\mathbf{s}_1=(2,\\,4)$. From the vectors, $E_0=4$ and $E_1=2^2+4^2=20$. From the waveforms, $E_0=1^2(4)=4$ and $E_1=3^2(2)+(-1)^2(2)=18+2=20$.<br>'
-     +'<b>Solution — (c).</b> $\\mathbf{s}_1-\\mathbf{s}_0=(0,\\,4)$, so $d_{01}=4$. The inner product is $(2)(2)+(0)(4)=4$, so'
-     + AL('\\rho_{01}&=\\frac{4}{\\sqrt{(4)(20)}}','&=\\frac{4}{\\sqrt{80}}','&=0.4472.')
-     +'<b>Solution — (d).</b> $\\mathbf{s}_0$ lies on the $\\psi_1$ axis at $2$. $\\mathbf{s}_1$ lies straight above it at $(2,4)$. With equal priors, $E_{s,av}=\\tfrac12(4+20)=12$.<br>'
-     +'<b>Check.</b> The difference $s_1(t)-s_0(t)$ is $2$ on $[0,2)$ and $-2$ on $[2,4]$. Its energy is $4(2)+4(2)=16$, so the distance is $4$. '
-     +'It is the remainder $g(t)$ itself, because $s_{11}$ equals the only coordinate of $s_0$.',
-  figSol: () => ROW([wave([[0,4,0.5]],{T:4,name:'\\psi_1(t)',color:C.mid,yt:[0,0.5]}),
-                     wave([[0,2,0.5],[2,4,-0.5]],{T:4,name:'\\psi_2(t)',color:C.mid,yt:[-0.5,0,0.5]})])
-     + cons([[2,0,'\\mathbf{s}_0','ne'],[2,4,'\\mathbf{s}_1','e']],
-            {xr:[-0.8,4],yr:[-0.8,4.8],d:[[0,1]],dl:[1.85,2,'d_{01}=4','end']}),
-  err:'Taking $\\psi_2$ proportional to $s_1(t)$ itself. The second axis must be built from the remainder after the $\\psi_1$ part is removed. Otherwise the two axes are not orthogonal.',
-  teach:'The two points share their first coordinate, so the distance is the remainder energy. That is a quick route to part (c) worth pointing out.' },
+{ id:'D3-04', module:'M3', type:'simplex', src:'Madhow P6.30',
+  stem:'Three equiprobable messages are sent with the waveforms $s_1(t)$, $s_2(t)$ and $s_3(t)$ shown below, with $T=3$ s. '
+      +'A new set is built by subtracting their average waveform from each of them:'
+      +'$$\\bar s(t)=\\tfrac13\\big[s_1(t)+s_2(t)+s_3(t)\\big],\\qquad u_k(t)=s_k(t)-\\bar s(t),\\quad k=1,2,3.$$'
+      +'The set $\\{u_1,u_2,u_3\\}$ is called a simplex set. According to the information given above,',
+  figure: () => ROW([wave(U([3,6,6]),{T:3,name:'s_1(t)',color:C.in}), wave(U([6,3,-6]),{T:3,name:'s_2(t)',color:C.out}), wave(U([6,-6,3]),{T:3,name:'s_3(t)',color:C.mid})]),
+  parts:['[7 pts] Show that $s_1$, $s_2$ and $s_3$ are orthogonal and have one common energy $E_s$. Give an orthonormal basis and the three signal vectors.',
+         '[6 pts] Find and sketch $\\bar s(t)$ and the three simplex waveforms $u_k(t)$. Give their signal vectors in the same basis.',
+         '[6 pts] Calculate the energy $E_u$ of each $u_k$, the inner products $\\langle u_j,u_k\\rangle$ and the correlation coefficient $\\rho=\\langle u_j,u_k\\rangle/E_u$. Compare the distances in the two sets.',
+         '[6 pts] Now start from $M$ orthogonal waveforms of energy $E_s$. Show that $E_u=(1-1/M)E_s$ and $\\rho=-1/(M-1)$. Give the energy saving $10\\log_{10}(E_s/E_u)$ in dB for $M=2,3,4,8,16$.'],
+  sol:'<b>Given.</b> On the three unit intervals of $[0,3]$, $s_1$ takes $3,6,6$, $s_2$ takes $6,3,-6$ and $s_3$ takes $6,-6,3$.<br>'
+     +'<b>Find.</b> $E_s$, a basis, the vectors, $\\bar s$, the $u_k$, $E_u$, $\\rho$, the distances and the saving in dB.<br>'
+     +'<b>Method.</b> Every waveform is constant on unit intervals, so an inner product is a sum of three products of heights. The average is subtracted interval by interval, or vector by vector.<br>'
+     +'<b>Solution — (a).</b> Interval by interval, the three inner products are'
+     + AL('\\langle s_1,s_2\\rangle&=(3)(6)+(6)(3)+(6)(-6)=18+18-36=0,','\\langle s_1,s_3\\rangle&=(3)(6)+(6)(-6)+(6)(3)=18-36+18=0,','\\langle s_2,s_3\\rangle&=(6)(6)+(3)(-6)+(-6)(3)=36-18-18=0.')
+     +'The energies are'
+     + AL('E_1&=3^2+6^2+6^2=81,','E_2&=6^2+3^2+(-6)^2=81,','E_3&=6^2+(-6)^2+3^2=81.')
+     +'So $E_s=81$. In the Gram–Schmidt procedure every projection on an earlier axis is zero, so nothing is removed. '
+     +'Each basis function is $\\psi_k(t)=s_k(t)/\\sqrt{81}=s_k(t)/9$. The vectors are $\\mathbf{s}_1=(9,0,0)$, $\\mathbf{s}_2=(0,9,0)$ and $\\mathbf{s}_3=(0,0,9)$.<br>'
+     +'<b>Solution — (b).</b> Average the heights on each interval:'
+     + AL('\\bar s&=\\tfrac13\\big(3+6+6,\\;6+3-6,\\;6-6+3\\big)','&=\\tfrac13(15,\\,3,\\,3)','&=(5,\\,1,\\,1),')
+     +'listed by interval. Subtract it from each waveform:'
+     + AL('u_1&=(3-5,\\;6-1,\\;6-1)=(-2,\\,5,\\,5),','u_2&=(6-5,\\;3-1,\\;-6-1)=(1,\\,2,\\,-7),','u_3&=(6-5,\\;-6-1,\\;3-1)=(1,\\,-7,\\,2).')
+     +'In vector form the average is $\\bar{\\mathbf{s}}=\\tfrac13(9,9,9)=(3,3,3)$. So'
+     + AL('\\mathbf{u}_1&=(9,0,0)-(3,3,3)=(6,\\,-3,\\,-3),','\\mathbf{u}_2&=(0,9,0)-(3,3,3)=(-3,\\,6,\\,-3),','\\mathbf{u}_3&=(0,0,9)-(3,3,3)=(-3,\\,-3,\\,6).')
+     +'<b>Solution — (c).</b> The energy of each simplex symbol is'
+     + AL('E_u&=6^2+(-3)^2+(-3)^2','&=36+9+9','&=54.')
+     +'The three inner products are'
+     + AL('\\langle\\mathbf{u}_1,\\mathbf{u}_2\\rangle&=(6)(-3)+(-3)(6)+(-3)(-3)=-27,','\\langle\\mathbf{u}_1,\\mathbf{u}_3\\rangle&=(6)(-3)+(-3)(-3)+(-3)(6)=-27,','\\langle\\mathbf{u}_2,\\mathbf{u}_3\\rangle&=(-3)(-3)+(6)(-3)+(-3)(6)=-27.')
+     +'So $\\rho=-27/54=-0.5$. For the distances, $\\mathbf{u}_j-\\mathbf{u}_k=\\mathbf{s}_j-\\mathbf{s}_k$, because the same vector $(3,3,3)$ is taken from both. For example,'
+     + AL('d_{12}^2&=\\|\\mathbf{s}_1-\\mathbf{s}_2\\|^2','&=9^2+(-9)^2+0^2','&=162,')
+     +'so $d_{12}=9\\sqrt2=12.73$ in both sets. Every pair is at this distance. The simplex set keeps the distances with energy $54$ instead of $81$.<br>'
+     +'<b>Solution — (d).</b> Take $\\mathbf{s}_k=\\sqrt{E_s}\\,\\mathbf{e}_k$, where $\\mathbf{e}_k$ is the unit vector on axis $k$. The average is $\\bar{\\mathbf{s}}=\\tfrac{\\sqrt{E_s}}{M}(1,1,\\ldots,1)$. Two numbers are needed:'
+     + AL('\\|\\bar{\\mathbf{s}}\\|^2&=M\\cdot\\frac{E_s}{M^2}=\\frac{E_s}{M},','\\langle\\mathbf{s}_k,\\bar{\\mathbf{s}}\\rangle&=\\sqrt{E_s}\\cdot\\frac{\\sqrt{E_s}}{M}=\\frac{E_s}{M}.')
+     +'Expand the squared length of $\\mathbf{u}_k=\\mathbf{s}_k-\\bar{\\mathbf{s}}$:'
+     + AL('E_u&=\\|\\mathbf{s}_k\\|^2-2\\langle\\mathbf{s}_k,\\bar{\\mathbf{s}}\\rangle+\\|\\bar{\\mathbf{s}}\\|^2','&=E_s-\\frac{2E_s}{M}+\\frac{E_s}{M}','&=\\Big(1-\\frac1M\\Big)E_s.')
+     +'For $j\\ne k$ the product $\\langle\\mathbf{s}_j,\\mathbf{s}_k\\rangle$ is zero, so'
+     + AL('\\langle\\mathbf{u}_j,\\mathbf{u}_k\\rangle&=0-\\frac{E_s}{M}-\\frac{E_s}{M}+\\frac{E_s}{M}=-\\frac{E_s}{M},','\\rho&=\\frac{-E_s/M}{(M-1)E_s/M}=-\\frac{1}{M-1}.')
+     +'The distances do not change, so the saving is $10\\log_{10}\\frac{M}{M-1}$ dB:'
+     +'$$\\begin{array}{c|ccccc}M&2&3&4&8&16\\\\\\hline E_s/E_u&2&1.5&1.333&1.143&1.067\\\\ \\text{saving (dB)}&3.010&1.761&1.249&0.580&0.280\\end{array}$$'
+     +'For $M=2$ the simplex set is the antipodal pair, with $\\rho=-1$. As $M$ grows, the saving falls towards $0$ dB.<br>'
+     +'<b>Check.</b> With $M=3$ the formulas give $E_u=\\tfrac23(81)=54$ and $\\rho=-\\tfrac12$, as in part (c). From the waveform, $E_u=(-2)^2+5^2+5^2=4+25+25=54$. '
+     +'The three $u_k$ add to zero on every interval: $-2+1+1=0$, $5+2-7=0$ and $5-7+2=0$. So the simplex points lie in a plane through the origin, and the set needs only two dimensions.',
+  figSol: () => ROW([wave(U([-2,5,5]),{T:3,name:'u_1(t)',color:C.in}), wave(U([1,2,-7]),{T:3,name:'u_2(t)',color:C.in,yt:[-7,0,2]}), wave(U([1,-7,2]),{T:3,name:'u_3(t)',color:C.in,yt:[-7,0,2]})])
+     + simplex3([[9,0,0],[0,9,0],[0,0,9]],[3,3,3],
+                {k:1/6,len:[12,11,16],xr:[-1.3,2.4],yr:[-1.9,2.0],sw:['ne','ne','e'],uw:['se','w','w'],mw:'e',dl:[0.95,0.95,'d=9\\sqrt2']}),
+  err:'Scaling the distances down with the energy. The same vector $\\bar{\\mathbf{s}}$ is taken from every point, so each difference $\\mathbf{u}_j-\\mathbf{u}_k=\\mathbf{s}_j-\\mathbf{s}_k$ is unchanged.',
+  teach:'Orthogonal signalling spends energy on the average point, which every symbol shares. The simplex set removes it and keeps every distance. Part (d) turns the three-signal case into the general rule.' },
 
 { id:'D3-05', module:'M3', type:'gs', src:'MT Q3',
   stem:'Three equiprobable messages are transmitted by the waveforms $s_1(t)$, $s_2(t)$ and $s_3(t)$ shown below, with $T=3$ s. According to the information given above,',
@@ -447,32 +517,45 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   err:'Stopping after two axes because "three signals in a small space" seem dependent. The remainder $g_3$ has energy $\\tfrac43$, so a third axis is needed.',
   teach:'A three-dimensional answer, drawn in oblique view. The equal distances follow from the waveforms at once, which makes a good check.' },
 
-{ id:'D3-10', module:'M3', type:'gs', src:'MT Q3',
-  stem:'Three equiprobable messages are transmitted by the waveforms shown below, with $T=4$ s. According to the information given above,',
-  figure: () => ROW([wave(U([1,1,-1,-1]),{T:4,name:'s_1(t)',color:C.in}), wave(U([1,1,1,1]),{T:4,name:'s_2(t)',color:C.out}), wave(U([0,0,2,2]),{T:4,name:'s_3(t)',color:C.mid})]),
-  parts:['[8 pts] Find an orthonormal basis by the Gram–Schmidt procedure in the order $s_1,s_2,s_3$. Plot the basis functions.',
-         '[6 pts] Find the signal vectors and the energies.',
-         '[6 pts] Calculate $\\rho_{12}$ and $\\rho_{23}$, where $\\rho_{ij}=\\langle s_i,s_j\\rangle/\\sqrt{E_iE_j}$, and all three distances.',
-         '[5 pts] Draw the signal constellation, give $d_{\\min}$, and write $s_3(t)$ in terms of $s_1(t)$ and $s_2(t)$.'],
-  sol:'<b>Given.</b> $s_1$ takes $1,1,-1,-1$, $s_2$ takes $1,1,1,1$ and $s_3$ takes $0,0,2,2$ on the unit intervals of $[0,4]$.<br>'
-     +'<b>Find.</b> The basis, the vectors, the energies, $\\rho_{12}$, $\\rho_{23}$, the distances, $d_{\\min}$ and the relation.<br>'
-     +'<b>Method.</b> Gram–Schmidt with interval sums. Correlations and distances from the vectors.<br>'
-     +'<b>Solution — (a).</b> $E_1=4$, so $\\psi_1=s_1/2$ takes $\\tfrac12,\\tfrac12,-\\tfrac12,-\\tfrac12$. The projection of $s_2$ is $s_{21}=\\tfrac12+\\tfrac12-\\tfrac12-\\tfrac12=0$. '
-     +'So $g_2=s_2$, with energy $4$, and $\\psi_2=s_2/2=\\tfrac12$ on $[0,4]$.<br>'
-     +'For $s_3$, $s_{31}=\\int_2^4(2)(-\\tfrac12)\\,dt=-2$ and $s_{32}=\\int_2^4(2)(\\tfrac12)\\,dt=2$. The remainder $g_3=s_3+2\\psi_1-2\\psi_2=s_3+s_1-s_2$ takes $0+1-1$, $0+1-1$, $2-1-1$ and $2-1-1$. It is zero, so there is no third axis.<br>'
-     +'<b>Solution — (b).</b> $\\mathbf{s}_1=(2,\\,0)$, $\\mathbf{s}_2=(0,\\,2)$ and $\\mathbf{s}_3=(-2,\\,2)$. The energies are $4$, $4$ and $8$.<br>'
-     +'<b>Solution — (c).</b> $\\langle\\mathbf{s}_1,\\mathbf{s}_2\\rangle=0$, so $\\rho_{12}=0$. Also $\\langle\\mathbf{s}_2,\\mathbf{s}_3\\rangle=(0)(-2)+(2)(2)=4$, so'
-     + AL('\\rho_{23}&=\\frac{4}{\\sqrt{(4)(8)}}','&=\\frac{1}{\\sqrt2}','&=0.7071.')
-     +'The distances are'
-     + AL('d_{12}&=\\sqrt{2^2+2^2}=2\\sqrt2=2.828,','d_{13}&=\\sqrt{4^2+2^2}=\\sqrt{20}=4.472,','d_{23}&=\\sqrt{2^2+0^2}=2.')
-     +'<b>Solution — (d).</b> The points are $(2,0)$, $(0,2)$ and $(-2,2)$. So $d_{\\min}=2$, between $s_2$ and $s_3$. From part (a), $s_3=s_2-s_1$.<br>'
-     +'<b>Check.</b> On the waveforms, $s_2-s_1$ takes $0,0,2,2$, which is $s_3$. The difference $s_3-s_2$ takes $-1,-1,1,1$, with energy $4$. So $d_{23}=2$.',
-  figSol: () => ROW([wave([[0,2,0.5],[2,4,-0.5]],{T:4,name:'\\psi_1(t)',color:C.mid,yt:[-0.5,0,0.5]}),
-                     wave([[0,4,0.5]],{T:4,name:'\\psi_2(t)',color:C.mid,yt:[0,0.5]})])
-     + cons([[2,0,'\\mathbf{s}_1','n'],[0,2,'\\mathbf{s}_2','e'],[-2,2,'\\mathbf{s}_3','n']],
-            {xr:[-3,3],yr:[-0.8,3],yt:[1,3],d:[[1,2]],dl:[-1,1.55,'d_{\\min}=2','middle']}),
-  err:'Writing $\\rho_{23}=\\langle s_2,s_3\\rangle$ without dividing by $\\sqrt{E_2E_3}$. The correlation coefficient must lie between $-1$ and $1$, and $4$ does not.',
-  teach:'The first two waveforms are orthogonal, so the Gram–Schmidt work is light. The effort goes into the correlation and the relation $s_3=s_2-s_1$.' },
+{ id:'D3-10', module:'M3', type:'compare', src:'Madhow P6.17',
+  stem:'Let $p(t)$ be the rectangular pulse of height $2$ on $0\\le t<1$ s, zero elsewhere. Two sets of four equiprobable waveforms on $0\\le t\\le 4$ s are built from its shifts:'
+      +'$$\\begin{aligned}&\\text{Set A:}\\quad a_i(t)=p(t-i),\\quad i=0,1,2,3,\\\\&\\text{Set B:}\\quad b_0(t)=p(t)+p(t-1),\\quad b_1(t)=p(t-2)+p(t-3),\\\\&\\phantom{\\text{Set B:}}\\quad b_2(t)=p(t)+p(t-2),\\quad b_3(t)=p(t-1)+p(t-3).\\end{aligned}$$'
+      +'Each symbol carries $\\log_2 4=2$ bits, so the energy per bit is $E_b=E_{s,av}/2$. According to the information given above,',
+  figure: () => ROW([wave([[0,1,2]],{T:4,name:'p(t)',color:C.in})]),
+  parts:['[7 pts] Show that $\\psi_i(t)=\\tfrac12p(t-i)$, $i=0,1,2,3$, is an orthonormal basis for both sets. Find the signal vectors of set A and of set B.',
+         '[5 pts] Calculate $E_{s,av}$ and $E_b$ for each set.',
+         '[8 pts] Calculate the six distances within set B. Give $d_{\\min}$ and the number of nearest neighbours of each symbol, for both sets.',
+         '[5 pts] Compare the sets by $d_{\\min}^2/E_b$. Which set is better, and by how many dB? Where does the other set spend its extra energy?'],
+  sol:'<b>Given.</b> $p(t)=2$ on $[0,1)$. A symbol of set A holds one shifted pulse, and a symbol of set B holds two. The symbols are equiprobable, with $2$ bits each.<br>'
+     +'<b>Find.</b> The basis, the vectors, $E_{s,av}$, $E_b$, the distances, $d_{\\min}$, the nearest neighbours and the comparison.<br>'
+     +'<b>Method.</b> The four shifts never overlap, so they are orthogonal. Each coordinate is then the number of pulses on that interval times the height $2$. '
+     +'Two designs are compared fairly at equal energy per bit, so the measure is $d_{\\min}^2/E_b$.<br>'
+     +'<b>Solution — (a).</b> On $[i,i+1)$ the function $\\psi_i$ equals $\\tfrac12(2)=1$, and it is zero elsewhere. Its energy is'
+     + AL('\\int_0^4\\psi_i^2\\,dt&=\\int_i^{i+1}1^2\\,dt','&=t\\,\\Big|_i^{i+1}','&=1.')
+     +'For $i\\ne j$ the two pulses sit on different intervals. So $\\psi_i(t)\\psi_j(t)=0$ at every $t$, and $\\langle\\psi_i,\\psi_j\\rangle=0$. '
+     +'Every waveform of either set is a sum of shifted pulses, so this basis carries both sets. Since $p(t-i)=2\\psi_i(t)$, the vectors are'
+     + AL('\\mathbf{a}_0&=(2,0,0,0),\\quad \\mathbf{a}_1=(0,2,0,0),','\\mathbf{a}_2&=(0,0,2,0),\\quad \\mathbf{a}_3=(0,0,0,2),','\\mathbf{b}_0&=(2,2,0,0),\\quad \\mathbf{b}_1=(0,0,2,2),','\\mathbf{b}_2&=(2,0,2,0),\\quad \\mathbf{b}_3=(0,2,0,2).')
+     +'<b>Solution — (b).</b> Every symbol of set A has energy $2^2=4$. So $E_{s,av}=4$ and $E_b=4/2=2$. '
+     +'Every symbol of set B has energy $2^2+2^2=8$. So $E_{s,av}=8$ and $E_b=8/2=4$.<br>'
+     +'<b>Solution — (c).</b> In set A, $\\mathbf{a}_i-\\mathbf{a}_j$ has one entry $2$ and one entry $-2$. So every pair is $\\sqrt{4+4}=2\\sqrt2$ apart, and each symbol has <b>three</b> nearest neighbours. In set B the six differences give'
+     + AL('d_{01}&=\\|(2,2,-2,-2)\\|=\\sqrt{16}=4,','d_{02}&=\\|(0,2,-2,0)\\|=\\sqrt8=2.828,','d_{03}&=\\|(2,0,0,-2)\\|=\\sqrt8=2.828,','d_{12}&=\\|(-2,0,0,2)\\|=\\sqrt8=2.828,','d_{13}&=\\|(0,-2,2,0)\\|=\\sqrt8=2.828,','d_{23}&=\\|(2,-2,2,-2)\\|=\\sqrt{16}=4.')
+     +'So both sets have $d_{\\min}=2\\sqrt2=2.828$. Each symbol of set B has <b>two</b> nearest neighbours.<br>'
+     +'<b>Solution — (d).</b> The two ratios are'
+     + AL('\\text{A:}\\quad\\frac{d_{\\min}^2}{E_b}&=\\frac{8}{2}=4,','\\text{B:}\\quad\\frac{d_{\\min}^2}{E_b}&=\\frac{8}{4}=2.')
+     +'Set A is better. It reaches the same $d_{\\min}$ with half the energy per bit, a gain of'
+     + AL('10\\log_{10}\\frac{4}{2}&=10(0.30103)','&=3.01\\ \\text{dB}.')
+     +'Set B spends the extra energy on a common part. The average of its four vectors is $\\bar{\\mathbf{b}}=(1,1,1,1)$, with energy $4$. Every symbol contains it, so it carries no information. What is left is'
+     + AL('\\mathbf{b}_0-\\bar{\\mathbf{b}}&=(1,1,-1,-1),\\quad \\mathbf{b}_1-\\bar{\\mathbf{b}}=(-1,-1,1,1),','\\mathbf{b}_2-\\bar{\\mathbf{b}}&=(1,-1,1,-1),\\quad \\mathbf{b}_3-\\bar{\\mathbf{b}}=(-1,1,-1,1).')
+     +'Each remainder has energy $4$ and is orthogonal to $\\bar{\\mathbf{b}}$, for example $(1,1,1,1)\\cdot(1,1,-1,-1)=0$. So each symbol energy splits as $4+4=8$, and half of it is the common part. '
+     +'Along the unit vectors $\\boldsymbol{\\phi}_a=\\tfrac12(1,1,-1,-1)$ and $\\boldsymbol{\\phi}_b=\\tfrac12(1,-1,1,-1)$, the four remainders sit at $\\pm2$ and form a square.<br>'
+     +'<b>Check.</b> From the waveforms, $b_0-b_2$ is $2$ on $[1,2)$, $-2$ on $[2,3)$ and zero elsewhere. Its energy is $4(1)+4(1)=8$, so $d_{02}=2\\sqrt2$. '
+     +'The waveform $a_0-a_1$ has the same energy $8$. Also $\\mathbf{b}_0+\\mathbf{b}_1=\\mathbf{b}_2+\\mathbf{b}_3=(2,2,2,2)$, so set B needs only three of the four axes.',
+  figSol: () => ROW([wave(U([2,2,0,0]),{T:4,name:'b_0(t)',color:C.in}), wave(U([0,0,2,2]),{T:4,name:'b_1(t)',color:C.in}),
+                     wave(U([2,0,2,0]),{T:4,name:'b_2(t)',color:C.in}), wave(U([0,2,0,2]),{T:4,name:'b_3(t)',color:C.in})], 2)
+     + cons([[2,0,'\\mathbf{b}_0-\\bar{\\mathbf{b}}','s'],[-2,0,'\\mathbf{b}_1-\\bar{\\mathbf{b}}','n'],[0,2,'\\mathbf{b}_2-\\bar{\\mathbf{b}}','w'],[0,-2,'\\mathbf{b}_3-\\bar{\\mathbf{b}}','e']],
+            {xr:[-3.2,3.2],yr:[-3,3],xt:[-3,-1,1,3],yt:[-3,-1,1,3],xl:'\\phi_a',yl:'\\phi_b',d:[[0,2]],dl:[1.15,1.25,'d_{\\min}=2\\sqrt2'],w:480,h:440}),
+  err:'Comparing the two sets by $d_{\\min}$ alone. Both have $d_{\\min}=2\\sqrt2$, but set B uses twice the energy per bit to reach it.',
+  teach:'Two four-point sets with the same minimum distance. Set B is a square carried on a constant offset, the waste the simplex construction removes. Error probabilities for both sets belong to Module 4.' },
 
 { id:'D3-11', module:'M3', type:'gs', src:'MT Q3',
   stem:'Four equiprobable symbols are transmitted by the waveforms $s_1(t)$ and $s_2(t)$ shown below and by their negatives, $s_3(t)=-s_1(t)$ and $s_4(t)=-s_2(t)$, with $T=4$ s. According to the information given above,',
@@ -742,27 +825,56 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   err:'Using the in-phase and quadrature basis at one frequency. These symbols use two frequencies, so each frequency needs its own axis.',
   teach:'A creative turn on the family: the second axis is a second frequency. The geometry is the same square as four-phase keying, rotated by $45^\\circ$.' },
 
-{ id:'D3-22', module:'M3', type:'band', src:'Final Q3',
-  stem: BAND('$$s_k(t)=(3k-6)\\sqrt2\\cos(2500\\pi t),\\qquad k\\in\\{0,1,2,3,4\\},\\quad 0\\le t\\le 1.$$'),
-  parts:['[8 pts] Find a basis for the signal set, show that it has unit energy, and state the number of dimensions.',
-         '[7 pts] Find the signal coordinates and draw the signal constellation.',
-         '[5 pts] Calculate the symbol energies and $E_{s,av}$.',
-         '[5 pts] Determine $d_{\\min}$, the number of nearest neighbours of each symbol, and $d_{\\min}^2/E_{s,av}$.'],
-  sol:'<b>Given.</b> Five multiples of $\\sqrt2\\cos(2500\\pi t)$ with factors $3k-6=-6,-3,0,3,6$, so $f_c=1250$ Hz.<br>'
-     +'<b>Find.</b> The basis, the coordinates, the energies, $E_{s,av}$, $d_{\\min}$, the nearest neighbours and $d_{\\min}^2/E_{s,av}$.<br>'
-     +'<b>Method.</b> All symbols are multiples of one waveform, so the set is one-dimensional.<br>'
-     +'<b>Solution — (a).</b> Take $\\psi(t)=\\sqrt2\\cos(2500\\pi t)$. Its energy is'
-     + AL('\\int_0^1\\psi^2\\,dt&=\\int_0^1\\big[1+\\cos(5000\\pi t)\\big]\\,dt','&=\\Big[t+\\frac{\\sin(5000\\pi t)}{5000\\pi}\\Big]_0^1','&=1,')
-     +'because $\\sin(5000\\pi)=0$. Every symbol is $(3k-6)\\psi(t)$, so the set needs <b>one</b> dimension.<br>'
-     +'<b>Solution — (b).</b> The coordinates are $-6,-3,0,3,6$. The constellation is five equally spaced points on the $\\psi$ axis, one of them at the origin.<br>'
-     +'<b>Solution — (c).</b> The energies are $36,9,0,9,36$. So'
-     + AL('E_{s,av}&=\\tfrac15(36+9+0+9+36)','&=\\tfrac{90}{5}','&=18.')
-     +'<b>Solution — (d).</b> Neighbours are $3$ apart, so $d_{\\min}=3$. The two outer symbols have one nearest neighbour, the three inner symbols two. The ratio is $d_{\\min}^2/E_{s,av}=9/18=0.5$.<br>'
-     +'<b>Check.</b> The waveform $s_1-s_0=3\\sqrt2\\cos(2500\\pi t)$ has energy $(3\\sqrt2)^2/2=9$, so $d_{01}=3$. From the waveform, $E_4=(6\\sqrt2)^2/2=36$.',
-  figSol: () => cons([[-6,0,'\\mathbf{s}_0','n'],[-3,0,'\\mathbf{s}_1','n'],[0,0,'\\mathbf{s}_2','n'],[3,0,'\\mathbf{s}_3','n'],[6,0,'\\mathbf{s}_4','n']],
-                     {xr:[-7.5,7.5],yr:[-0.6,1.3],oneD:true,xl:'\\psi',xs:3,d:[[3,4]],dl:[4.5,0.9,'d_{\\min}=3','middle'],w:560,h:200}),
-  err:'Leaving the zero symbol out of $E_{s,av}$ and dividing $90$ by $4$. The zero symbol is sent as often as any other, so the sum is divided by $5$.',
-  teach:'The examination set with three levels, extended to five. The zero symbol stays in the average energy, which is the usual slip.' },
+{ id:'D3-22', module:'M3', type:'passband', src:'Madhow P4.20',
+  stem:'The baseband pulses $a(t)$ and $b(t)$ below, on $0\\le t\\le 2$ s, build four carrier waveforms at $f_c=1000$ Hz:'
+      +'$$\\begin{aligned}s_1(t)&=a(t)\\cos(2\\pi f_ct)-b(t)\\sin(2\\pi f_ct),\\\\ s_2(t)&=b(t)\\cos(2\\pi f_ct)-a(t)\\sin(2\\pi f_ct),\\\\ s_3(t)&=b(t)\\cos(2\\pi f_ct)+a(t)\\sin(2\\pi f_ct),\\\\ s_4(t)&=a(t)\\cos(2\\pi f_ct)+b(t)\\sin(2\\pi f_ct),\\end{aligned}\\qquad 0\\le t\\le 2.$$'
+      +'Each unit interval holds a whole number of carrier cycles. According to the information given above,',
+  figure: () => ROW([wave(U([3,1]),{T:2,name:'a(t)',color:C.in}), wave(U([1,-3]),{T:2,name:'b(t)',color:C.out})]),
+  parts:['[6 pts] Find the energies $E_a$, $E_b$ and the inner product $\\langle a,b\\rangle$. Show that on any unit interval $[k,k+1)$ the integrals of $\\cos^2(2\\pi f_ct)$ and $\\sin^2(2\\pi f_ct)$ are $\\tfrac12$, and the integral of $\\cos(2\\pi f_ct)\\sin(2\\pi f_ct)$ is $0$.',
+         '[8 pts] Write the energy of each $s_k(t)$ and the six inner products $\\langle s_j,s_k\\rangle$ in terms of $E_a$, $E_b$ and $\\langle a,b\\rangle$, and evaluate them. Can the set serve for 4-ary orthogonal signalling with coherent detection?',
+         '[6 pts] Find an orthonormal basis of four functions and the four signal vectors. Give the distance between two symbols and $d_{\\min}^2/E_{s,av}$.',
+         '[5 pts] The pulse $b(t)$ is replaced by $2b(t)$. Which pairs stay orthogonal? Give the inner product and the correlation coefficient of each other pair.'],
+  sol:'<b>Given.</b> $a(t)$ is $3$ on $[0,1)$ and $1$ on $[1,2]$. $b(t)$ is $1$ on $[0,1)$ and $-3$ on $[1,2]$. The carrier is at $f_c=1000$ Hz, so each unit interval holds $1000$ whole cycles.<br>'
+     +'<b>Find.</b> $E_a$, $E_b$, $\\langle a,b\\rangle$, the energies and inner products of the $s_k$, a basis, the vectors, the distance, and the effect of replacing $b$ by $2b$.<br>'
+     +'<b>Method.</b> Write $C=\\cos(2\\pi f_ct)$ and $S=\\sin(2\\pi f_ct)$. The product of two symbols splits into terms in $C^2$, $S^2$ and $CS$, each multiplied by two pulses. '
+     +'The pulses are constant on each unit interval, so the carrier integrals of part (a) turn every term into a baseband inner product.<br>'
+     +'<b>Solution — (a).</b> The pulses are constant on unit intervals, so'
+     + AL('E_a&=3^2(1)+1^2(1)=10,','E_b&=1^2(1)+(-3)^2(1)=10,','\\langle a,b\\rangle&=(3)(1)(1)+(1)(-3)(1)=0.')
+     +'On $[k,k+1)$, use $\\cos^2x=\\tfrac12(1+\\cos2x)$:'
+     + AL('\\int_k^{k+1}\\cos^2(2\\pi f_ct)\\,dt&=\\int_k^{k+1}\\tfrac12\\big[1+\\cos(4\\pi f_ct)\\big]\\,dt','&=\\Big[\\frac t2+\\frac{\\sin(4\\pi f_ct)}{8\\pi f_c}\\Big]_k^{k+1}','&=\\frac12+\\frac{\\sin\\big(4000\\pi(k+1)\\big)-\\sin(4000\\pi k)}{8000\\pi}','&=\\frac12.')
+     +'Both sines are zero, because $4000\\pi k$ is a whole multiple of $\\pi$. In the same way, $\\sin^2x=\\tfrac12(1-\\cos2x)$ gives $\\tfrac12$ for the sine. With $\\cos x\\sin x=\\tfrac12\\sin2x$,'
+     + AL('\\int_k^{k+1}\\cos(2\\pi f_ct)\\sin(2\\pi f_ct)\\,dt&=\\int_k^{k+1}\\tfrac12\\sin(4\\pi f_ct)\\,dt','&=\\Big[-\\frac{\\cos(4\\pi f_ct)}{8\\pi f_c}\\Big]_k^{k+1}','&=\\frac{\\cos(4000\\pi k)-\\cos\\big(4000\\pi(k+1)\\big)}{8000\\pi}','&=0,')
+     +'because both cosines equal $1$.<br>'
+     +'<b>Solution — (b).</b> Let $x(t)$ and $y(t)$ be two of the pulses, with constant values $x_k$ and $y_k$ on $[k,k+1)$. Part (a) gives'
+     + AL('\\int_0^2 x\\,y\\,C^2\\,dt&=\\sum_k x_ky_k\\cdot\\tfrac12=\\tfrac12\\langle x,y\\rangle,','\\int_0^2 x\\,y\\,S^2\\,dt&=\\tfrac12\\langle x,y\\rangle,','\\int_0^2 x\\,y\\,C\\,S\\,dt&=0.')
+     +'Multiply out each pair and keep only the $C^2$ and $S^2$ terms. The energy of $s_1$ is'
+     + AL('E_1&=\\int_0^2\\big(a^2C^2-2abCS+b^2S^2\\big)\\,dt','&=\\tfrac12E_a+\\tfrac12E_b','&=5+5=10.')
+     +'The same steps give $E_2=E_3=E_4=\\tfrac12(E_a+E_b)=10$. For the six pairs,'
+     + AL('\\langle s_1,s_2\\rangle&=\\tfrac12\\langle a,b\\rangle+\\tfrac12\\langle a,b\\rangle=\\langle a,b\\rangle=0,','\\langle s_1,s_3\\rangle&=\\tfrac12\\langle a,b\\rangle-\\tfrac12\\langle a,b\\rangle=0,','\\langle s_1,s_4\\rangle&=\\tfrac12E_a-\\tfrac12E_b=5-5=0,','\\langle s_2,s_3\\rangle&=\\tfrac12E_b-\\tfrac12E_a=5-5=0,','\\langle s_2,s_4\\rangle&=\\tfrac12\\langle a,b\\rangle-\\tfrac12\\langle a,b\\rangle=0,','\\langle s_3,s_4\\rangle&=\\tfrac12\\langle a,b\\rangle+\\tfrac12\\langle a,b\\rangle=\\langle a,b\\rangle=0.')
+     +'All six inner products are zero and all four energies are $10$. So the answer is <b>yes</b>: the set is a 4-ary orthogonal set for coherent detection.<br>'
+     +'<b>Solution — (c).</b> The four products $aC$, $aS$, $bC$ and $bS$ are orthogonal. A $CS$ term integrates to zero, and $\\langle a,b\\rangle=0$ removes the $C^2$ and $S^2$ terms between $a$ and $b$. '
+     +'Each product has energy $\\tfrac12(10)=5$. So take'
+     + AL('\\phi_1(t)&=\\frac{a(t)\\,C}{\\sqrt5},\\qquad \\phi_2(t)=-\\frac{a(t)\\,S}{\\sqrt5},','\\phi_3(t)&=\\frac{b(t)\\,C}{\\sqrt5},\\qquad \\phi_4(t)=-\\frac{b(t)\\,S}{\\sqrt5}.')
+     +'Then $aC=\\sqrt5\\,\\phi_1$, $-aS=\\sqrt5\\,\\phi_2$, $bC=\\sqrt5\\,\\phi_3$ and $-bS=\\sqrt5\\,\\phi_4$. Reading off each waveform,'
+     + AL('\\mathbf{s}_1&=(\\sqrt5,\\,0,\\,0,\\,\\sqrt5),','\\mathbf{s}_2&=(0,\\,\\sqrt5,\\,\\sqrt5,\\,0),','\\mathbf{s}_3&=(0,\\,-\\sqrt5,\\,\\sqrt5,\\,0),','\\mathbf{s}_4&=(\\sqrt5,\\,0,\\,0,\\,-\\sqrt5).')
+     +'$\\mathbf{s}_1$ and $\\mathbf{s}_4$ use only $\\phi_1$ and $\\phi_4$. $\\mathbf{s}_2$ and $\\mathbf{s}_3$ use only $\\phi_2$ and $\\phi_3$. Two orthogonal symbols of energy $E_s=10$ are'
+     + AL('d&=\\sqrt{E_s+E_s}','&=\\sqrt{20}','&=4.472')
+     +'apart, for every pair. So $d_{\\min}=2\\sqrt5$ and $d_{\\min}^2/E_{s,av}=20/10=2$.<br>'
+     +'<b>Solution — (d).</b> Now the second pulse has energy $4E_b=40$, and $\\langle a,2b\\rangle=2(0)=0$. The pairs $(s_1,s_2)$ and $(s_3,s_4)$ need only $\\langle a,b\\rangle=0$, so they stay orthogonal. '
+     +'The pairs $(s_1,s_3)$ and $(s_2,s_4)$ are orthogonal for any pulses. The other two pairs change:'
+     + AL('\\langle s_1,s_4\\rangle&=\\tfrac12(10-40)=-15,','\\langle s_2,s_3\\rangle&=\\tfrac12(40-10)=15.')
+     +'Every energy is now $\\tfrac12(10+40)=25$. So'
+     + AL('\\rho_{14}&=\\frac{-15}{25}=-0.6,','\\rho_{23}&=\\frac{15}{25}=0.6.')
+     +'Four orthogonal carrier waveforms of this form need both $\\langle a,b\\rangle=0$ and $E_a=E_b$.<br>'
+     +'<b>Check.</b> Compute $\\langle s_1,s_4\\rangle$ interval by interval for the given pulses. On $[0,1)$ the $C^2$ and $S^2$ terms give $\\tfrac12(3^2)-\\tfrac12(1^2)=4$. '
+     +'On $[1,2]$ they give $\\tfrac12(1^2)-\\tfrac12\\big((-3)^2\\big)=-4$. The sum is $0$, as in part (b).',
+  figSol: () => { const r = Math.sqrt(5);
+    return ROW([cons([[r,r,'\\mathbf{s}_1','ne'],[r,-r,'\\mathbf{s}_4','se']],
+                     {xr:[-3.2,3.2],yr:[-3.2,3.2],xt:[-3,-1,1,3],yt:[-3,-1,1,3],xl:'\\phi_1',yl:'\\phi_4',d:[[0,1]],dl:[2.45,0.7,'d=2\\sqrt5'],w:400,h:400}),
+                cons([[r,r,'\\mathbf{s}_2','ne'],[-r,r,'\\mathbf{s}_3','nw']],
+                     {xr:[-3.2,3.2],yr:[-3.2,3.2],xt:[-3,-1,1,3],yt:[-3,-1,1,3],xl:'\\phi_2',yl:'\\phi_3',d:[[0,1]],dl:[1.2,2.65,'d=2\\sqrt5','middle'],w:400,h:400})]); },
+  err:'Declaring $s_1$ and $s_4$ orthogonal because $\\langle a,b\\rangle=0$. Their inner product is $\\tfrac12(E_a-E_b)$, which is zero only because the two pulses have equal energy.',
+  teach:'Four carrier waveforms built from two baseband pulses. The inner products fall into three kinds of pair, and part (d) shows which condition each kind needs. Detection with an unknown carrier phase is not asked.' },
 
 { id:'D3-23', module:'M3', type:'band', src:'Final Q3',
   stem: BAND('$$s_{m,n}(t)=\\sqrt2\\,\\big[(2m-5)\\cos(2000\\pi t)-(2n-3)\\sin(2000\\pi t)\\big],\\qquad m\\in\\{1,2,3,4\\},\\ n\\in\\{1,2\\},\\quad 0\\le t\\le 1.$$'),
