@@ -38,10 +38,11 @@ a:focus-visible, button:focus-visible{ outline:2px solid var(--coral); outline-o
   position:sticky; top:0; height:100vh; overflow:hidden;
   background:radial-gradient(70% 60% at 68% 48%, #0E1826 0%, var(--bg) 70%);
 }
-#grid{ position:absolute; inset:0; width:100%; height:100%; display:block; pointer-events:none;
-  mix-blend-mode:screen; opacity:.5;
+#backdrop{ position:absolute; inset:0; width:100%; height:100%; display:block; pointer-events:none;
+  mix-blend-mode:screen; opacity:0; transition:opacity 1.6s var(--ease);
   -webkit-mask-image:linear-gradient(90deg,#000 0%,rgba(0,0,0,.6) 30%,transparent 55%);
           mask-image:linear-gradient(90deg,#000 0%,rgba(0,0,0,.6) 30%,transparent 55%); }
+#backdrop.is-on{ opacity:.22; }
 
 /* the viewfinder: four corner marks inset from the window */
 .frame{ position:absolute; inset:22px; pointer-events:none; }
@@ -189,7 +190,7 @@ a:focus-visible, button:focus-visible{ outline:2px solid var(--coral); outline-o
 <main>
   <section class="story" id="track">
     <div class="stage" id="fig">
-      <canvas id="grid" aria-hidden="true"></canvas>
+      <canvas id="backdrop" aria-hidden="true"></canvas>
       <div class="frame" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
 
       <div class="inner">
@@ -333,6 +334,6 @@ document.querySelectorAll('.line__marks button').forEach(function (b) {
 });
 </script>
 <script src="fig.js"></script>
-<script src="grid.js" defer></script>
+<script src="backdrop.js" defer></script>
 </body>
 </html>

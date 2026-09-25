@@ -3,7 +3,9 @@
 
    Section 2.3 of the course, the decision and its error, in three steps:
      1. twelve bits leave the transmitter as a Manchester waveform s(t)
-        (IEEE 802.3: a 1 rises in the middle of its cell, a 0 falls);
+        (IEEE 802.3: a 1 rises in the middle of its cell, a 0 falls),
+        drawn over a dashed trace of the whole word; three are sent when
+        the page opens, the rest follow the scroll;
      2. the channel adds white Gaussian noise, r(t) = s(t) + n(t), while
         Eb/N0 falls from 16 dB to 4 dB;
      3. the bit error probability of antipodal signalling,
@@ -29,6 +31,7 @@
   var BITS = [0,1,1,0,1,0,1,1,0,1,0,0];   // the first twelve bits of the earlier scope's pattern
   var NB = BITS.length, SPB = 40;         // samples per bit for the noisy trace
   var DB_HI = 16, DB_LO = 4, DB_END = 10;
+  var UP0 = 3;                            // bits already sent when the page opens
   var W = 0, H = 0, dpr = 1, C = {};
   var pad = (cv.dataset.pad || '40,16,24,40').split(',').map(Number);
   var L = pad[0], R = pad[1], T = pad[2], B = pad[3];
@@ -113,7 +116,7 @@
   }
 
   function drawTime(st, alpha) {
-    var lo = -2, hi = 2.4, y0 = fy(0, lo, hi);
+    var lo = -2.2, hi = 2.9, y0 = fy(0, lo, hi);
     ctx.save(); ctx.globalAlpha = alpha; ctx.strokeStyle = C.axis; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(L, y0); ctx.lineTo(W - R, y0); ctx.moveTo(L, T); ctx.lineTo(L, H - B); ctx.stroke();
     ctx.setLineDash([2, 5]); ctx.beginPath();
@@ -122,12 +125,14 @@
     text('t', W - R, y0 + 20, 'right', C.text, alpha);
 
     var shown = st.stage === 0 ? st.upto : NB;
-    for (var i = 0; i < NB && i < Math.ceil(shown); i++)
-      text(String(BITS[i]), fx((i + .5) / NB), fy(2.15, lo, hi), 'center', C.text,
-           alpha * clamp(shown - i), '500 13px Inter, -apple-system, sans-serif');
+    for (var i = 0; i < NB; i++)
+      text(String(BITS[i]), fx((i + .5) / NB), fy(2.4, lo, hi), 'center', C.text,
+           alpha * (.25 + .75 * clamp(shown - i)), '500 13px Inter, -apple-system, sans-serif');
 
     if (st.stage === 0) {
+      stroke(wavePts(NB, lo, hi), C.text, 1, .35 * alpha, false, [4, 5]);
       stroke(wavePts(st.upto, lo, hi), C.cyan, 2.2, alpha, true);
+      text('s(t)', L + 8, T + 2, 'left', C.cyan, alpha);
     } else {
       stroke(wavePts(NB, lo, hi), C.cyan, 1.3, .4 * alpha);
       var sig = 0.55 / Math.sqrt(Math.pow(10, st.db / 10)), pts = [];
@@ -136,6 +141,7 @@
         pts.push([fx(pos / NB), fy(level(Math.min(pos, NB - 1e-6)) + sig * NOISE[j], lo, hi)]);
       }
       stroke(pts, C.green, 1.6, alpha, true);
+      text('r(t)', L + 8, T + 2, 'left', C.green, alpha);
     }
   }
 
@@ -183,7 +189,7 @@
     var p = progress();
     var sa = clamp(p / .34), sb = clamp((p - .36) / .28), sc = clamp((p - .68) / .3);
     var s = p < .35 ? 0 : p < .67 ? 1 : 2;
-    var upto = 1 + ease(sa) * (NB - 1);
+    var upto = UP0 + ease(sa) * (NB - UP0);
     var db = DB_HI - (DB_HI - DB_LO) * ease(sb);
     var op = DB_LO + (DB_END - DB_LO) * ease(clamp((sc - .5) / .5));
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);

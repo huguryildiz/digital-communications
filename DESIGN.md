@@ -191,7 +191,7 @@ be the same colour; this is a known gap, not a decision. The print layout rules 
 
 Redesigned on 2026-09-24 on the pattern of the Signals and Systems cover
 (`~/Documents/GitHub/signals-and-systems/web/index.html`); the two share the layout and differ in
-their figure, their text and their backdrop. The styles are inline in `web/index.html`, with no web
+their figure and their text. The styles are inline in `web/index.html`, with no web
 font and no stylesheet request (`site.css` and the old scope, `scope.js`, were removed). The page is
 dark only: ground `#070C13`, ink `#E6E2D9`, hairlines in ink at 13% and 28%, coral `#E09A6A` for the
 nav dots and the `+` on the figure label, and the dark-theme signal tints for the traces. The cover is
@@ -211,13 +211,21 @@ After the frame: the four facts as large serif numerals, the seven modules as a 
 three PDFs, and a footer with the copyright line and the GitHub button again.
 
 **Figure 1** (`web/fig.js`) is section 2.3, the decision and its error, in three steps driven by the
-scroll position. Twelve bits leave as a Manchester waveform s(t) in cyan; the channel adds white
+scroll position. Twelve bits leave as a Manchester waveform s(t) in cyan, drawn over a dashed trace
+of the whole word so the first frame is already a full figure (three bits are sent when the page
+opens, the rest follow the scroll); the channel adds white
 Gaussian noise and the received r(t), in green, roughens as Eb/N0 falls from 16 dB to 4 dB; then
 Pb = Q(√(2Eb/N0)) for antipodal signalling is drawn in red on a log axis, with the operating point
 moving from 4 dB (1.25 × 10⁻²) to 10 dB (3.87 × 10⁻⁶). The noise is one seeded Gaussian realisation,
 drawn with a standard deviation of 0.55/√(Eb/N0) of the pulse height: proportional to the true one,
 scaled for the eye. The figure moves only when the reader scrolls, so it needs no reduced-motion
 branch.
+
+**The backdrop** (`web/backdrop.js`) is the Signals and Systems cover's own file, Radiant Shaders
+"Signal Decay" (MIT): ten waveform tracks that degrade by clipping, quantisation and noise along their
+length. It is animated, sits behind the left of the stage at 22% opacity and fades out towards the
+figure; under reduced motion it draws one still frame. It replaced the spring-coupled grid on
+2026-09-25 so the two covers read the same.
 
 **The facts row** is written by hand, one `data-fact` attribute per number. `web/sitecheck.js` counts
 the same four things in the published artifact (modules, scenes, scenes whose id matches `-lab-x`,
