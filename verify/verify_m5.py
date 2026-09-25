@@ -411,6 +411,88 @@ for n, f, want in steps:
 truth("m5-adaptive 22 dB picks 16-QAM", th['16-QAM'] <= 22 < th['64-QAM'])
 check("m5-adaptive 16 to 64 step (dB)", th['64-QAM'] - th['16-QAM'], 6, 0.2)
 check("m5-adaptive 64 to 256 step (dB)", th['256-QAM'] - th['64-QAM'], 6, 0.2)
+# ---- 5.5 the link budget: noise floor, sensitivity, Friis, the example ----
+# Every number is rebuilt from physical constants and linear units (watts,
+# metres), then taken to decibels once, so the dB shortcuts on the slides are
+# checked rather than repeated.
+KB, T0, C0 = 1.380649e-23, 290.0, 3e8
+dBm = lambda w: 10 * math.log10(w / 1e-3)
+kt0 = KB * T0                                             # W/Hz, one-sided N0 with F = 1
+check("m5-noise-floor kT0 (W/Hz)", kt0, 4.00e-21, 0.005e-21)
+check("m5-noise-floor kT0 (dBm/Hz)", dBm(kt0), -174, 0.05)
+check("m5-noise-floor k", KB, 1.38e-23, 0.005e-23)
+# The slides round kT0 to -174 dBm/Hz and carry that value through, so the
+# budget below uses the rounded density, in watts.
+kt0c = 1e-3 * 10 ** (-174 / 10)
+noise = lambda nf_db, b: dBm(kt0c * 10 ** (nf_db / 10) * b)         # N = N0 B, N0 = kT0 F
+check("m5-noise-floor 10 MHz, NF 5 dB (dBm)", noise(5, 10e6), -99, 0.05)
+check("m5-noise-floor 10 log10 of 10 MHz", 10 * math.log10(10e6), 70, 1e-9)
+check("m5-noise-floor 1 to 10 MHz rise (dB)", noise(5, 10e6) - noise(5, 1e6), 10, 1e-9)
+check("m5-noise-floor two-sided N0/2 (dBm/Hz)", dBm(kt0 / 2), -177, 0.05)
+# two-sided N0/2 over |f| in a passband of width B about +-fc collects N0 B
+check("m5-noise-floor two-sided over both bands = N0 B", (kt0 / 2) * 2 * 10e6 / (kt0 * 10e6), 1, 1e-12)
+check("m5-noise-floor figure reads -99.0 at NF 5", round(-174 + 5 + 70, 1), -99.0, 1e-9)
+
+
+def sens(ebn0_db, rb, nf_db):
+    """Least received power (dBm): P = (Eb/N0) Rb N0 in watts, N0 = kT0 F."""
+    return dBm(10 ** (ebn0_db / 10) * rb * kt0c * 10 ** (nf_db / 10))
+
+
+def friis(pt_dbm, g_dbi, f, d):
+    """Received power (dBm) from the linear Friis formula with two equal gains."""
+    lam = C0 / f
+    return dBm(1e-3 * 10 ** (pt_dbm / 10) * (10 ** (g_dbi / 10)) ** 2 * (lam / (4 * math.pi * d)) ** 2)
+
+
+def rng_km(pt_dbm, g_dbi, f, pmin, margin):
+    """Largest distance (km) at which Friis still leaves the margin, by bisection."""
+    return solve(lambda dd: friis(pt_dbm, g_dbi, f, dd * 1000) - (pmin + margin), 1e-3, 1e4)
+
+
+check("m5-budget QPSK at 1e-5 needs Eb/N0 (dB)", at(bpsk, 1e-5, 0, 20), 9.6, 0.05)
+check("m5-budget sensitivity, QPSK 10 Mb/s, NF 5 (dBm)", sens(9.6, 10e6, 5), -89.4, 0.05)
+check("m5-budget wavelength at 2.4 GHz (cm)", 100 * C0 / 2.4e9, 12.5, 1e-9)
+check("m5-budget L_p at 2.4 GHz and 1 km (dB)", 20 + 20 - friis(20, 10, 2.4e9, 1000), 100.0, 0.05)
+check("m5-budget figure P_r at 1 km (dBm)", friis(20, 10, 2.4e9, 1000), -60.0, 0.05)
+check("m5-budget figure margin at 1 km (dB)", friis(20, 10, 2.4e9, 1000) - (-89.4), 29.4, 0.05)
+check("m5-budget range keeping 10 dB (km)", rng_km(20, 10, 2.4e9, -89.4, 10), 9.3, 0.05)
+check("m5-budget doubling d (dB)", friis(20, 10, 2.4e9, 1000) - friis(20, 10, 2.4e9, 2000), 6, 0.03)
+truth("m5-budget figure: margin at 16 km under 10 dB (red)", friis(20, 10, 2.4e9, 16000) + 89.4 < 10)
+truth("m5-budget figure: margin at 8 km still 10 dB (violet)", friis(20, 10, 2.4e9, 8000) + 89.4 >= 10)
+q16 = lambda g: pe_qam(16, g) / 4
+check("m5-ex-link 16-QAM at 1e-5 needs Eb/N0 (dB)", at(q16, 1e-5, 0, 30), 13.4, 0.05)
+check("m5-ex-link R_s = 25/1.25 (Msym/s)", 25 / 1.25, 20, 1e-12)
+check("m5-ex-link QPSK R_b (Mb/s)", 20 * L2(4), 40, 0)
+check("m5-ex-link 16-QAM R_b (Mb/s)", 20 * L2(16), 80, 0)
+check("m5-ex-link 10 log10 40e6", 10 * math.log10(40e6), 76.0, 0.05)
+check("m5-ex-link 10 log10 80e6", 10 * math.log10(80e6), 79.0, 0.05)
+check("m5-ex-link -174 + NF", -174 + 7, -167, 0)
+pq, p16 = sens(9.6, 40e6, 7), sens(13.4, 80e6, 7)
+check("m5-ex-link QPSK sensitivity (dBm)", pq, -81.4, 0.05)
+check("m5-ex-link 16-QAM sensitivity (dBm)", p16, -74.6, 0.05)
+check("m5-ex-link QPSK allowed L_p (dB)", 20 + 24 - pq - 15, 110.4, 0.05)
+check("m5-ex-link 16-QAM allowed L_p (dB)", 20 + 24 - p16 - 15, 103.6, 0.05)
+check("m5-ex-link wavelength at 5.8 GHz (cm)", 100 * C0 / 5.8e9, 5.17, 0.005)
+dq, d16 = rng_km(20, 12, 5.8e9, pq, 15), rng_km(20, 12, 5.8e9, p16, 15)
+check("m5-ex-link QPSK range (km)", dq, 1.36, 0.005)
+check("m5-ex-link 16-QAM range (km)", d16, 0.62, 0.005)
+check("m5-ex-link figure QPSK range from -81.4 (km)", rng_km(20, 12, 5.8e9, -81.4, 15), 1.36, 0.005)
+check("m5-ex-link figure 16-QAM range from -74.6 (km)", rng_km(20, 12, 5.8e9, -74.6, 15), 0.62, 0.005)
+check("m5-ex-link Eb/N0 gap (dB)", 13.4 - 9.6, 3.8, 1e-9)
+check("m5-ex-link bit-rate gap (dB)", 10 * math.log10(2), 3.0, 0.02)
+check("m5-ex-link sensitivity gap (dB)", p16 - pq, 6.8, 0.05)
+check("m5-ex-link range ratio", dq / d16, 2.2, 0.05)
+check("m5-ex-link wrong 10 log ratio", 10 ** (6.8 / 10), 4.8, 0.05)
+truth("m5-ex-link QPSK reaches farther", dq > d16)
+# the same numbers as the lecture notes state them
+check("notes 5.5 allowed loss keeping 10 dB (dB)", 20 + 10 + 10 - (-89.4) - 10, 119.4, 1e-9)
+check("notes 5.5 lambda/4pi at 5.8 GHz (m)", C0 / 5.8e9 / (4 * math.pi), 4.12e-3, 0.005e-3)
+check("notes 5.5 QPSK range from 110.4 dB (km)", 4.12e-3 * 10 ** (110.4 / 20) / 1000, 1.36, 0.005)
+check("notes 5.5 16-QAM range from 103.6 dB (km)", 4.12e-3 * 10 ** (103.6 / 20) / 1000, 0.62, 0.005)
+check("notes 5.5 range ratio 1.36/0.62", 1.36 / 0.62, 2.19, 0.005)
+check("notes 5.5 range ratio 10^(6.8/20)", 10 ** (6.8 / 20), 2.19, 0.005)
+
 APSK = psk_pts(4, 1, math.pi / 4) + psk_pts(12, 2.7, math.pi / 12)
 check("m5-real-choice 16APSK has 4 + 12 points", len(APSK), 16, 0)
 check("m5-real-choice 16APSK two amplitudes", len({round(math.hypot(*p), 6) for p in APSK}), 2, 0)

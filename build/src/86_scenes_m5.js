@@ -1183,6 +1183,92 @@ function figAdaptive(v){
   return a.svg();
 }
 
+/* ---- the link budget --------------------------------------------------------
+   Every quantity in decibels: powers in dBm (decibels above 1 mW), antenna
+   gains in dBi, losses and ratios in dB. Thermal noise at T_0 = 290 K is
+   kT_0 = 4.00e-21 W/Hz, -174 dBm/Hz: the one-sided density N_0 of a receiver
+   that adds no noise of its own. Noise takes no colour, so the noise levels are
+   drawn in the ink and the muted tone. */
+const KT0 = -174;
+const lossDb = (d, f) => 20*Math.log10(4*Math.PI*d*f/3e8);
+
+const kT0lab = '\\text{thermal only, }kT_0';
+/* The noise floor N = -174 + NF + 10 log10 B dBm against the band, on a
+   logarithmic axis of B. Dashed: thermal noise alone. Solid: the receiver with
+   noise figure NF. The guides read the floor at B = 10 MHz. */
+function figNoise(v){
+  const nf = v ? v.nf : 5, y7 = KT0+nf+70, big = P.labelScale() > 1;
+  const a = TAx(SZ({w:big ? 660 : 560, h:big ? 448 : 380, xr:[-0.3,8.3], yr:[-190,-64], xlabel:'B\\;(\\text{Hz})', ylabel:'N\\;(\\text{dBm})',
+    xt:[0,2,4,6,8], xfmt:P.decade, yticksOverride:[], grid:false, zeroAxes:false}));
+  leftTicks(a, [-170,-150,-130,-110,-90,-70]);
+  seg(a, [[-0.3,y7],[7,y7]], {color:C.muted, width:1.2, dash:'3 4'});
+  seg(a, [[7,-190],[7,y7]], {color:C.muted, width:1.2, dash:'3 4'});
+  a.curve(x=>KT0+10*x, {color:C.muted, width:1.8, dash:'7 5'});
+  a.curve(x=>KT0+nf+10*x, {color:C.ink, width:2.6});
+  dot(a, 0, KT0, {color:C.muted, r:5});
+  dot(a, 7, y7, {color:C.ink, r:6});
+  lbl(a, 0.3, -186, '-174\\text{ dBm at }1\\text{ Hz}', C.muted, 'start', 14);
+  lbl(a, -0.15, -80, 'B=10\\text{ MHz: }N='+num(y7,1)+'\\text{ dBm}', C.ink, 'start');
+  lbl(a, 2.6, KT0+nf+26+12, '\\text{NF}='+num(nf,0)+'\\text{ dB}', C.ink, 'end', 14);
+  lbl(a, 4.2, -152, kT0lab, C.muted, 'start', 14);
+  return a.svg();
+}
+
+/* A budget in decibels, drawn as a waterfall: the transmit power, the two
+   antenna gains and the path loss as arrows, the received power against the
+   sensitivity line, and the margin between them. QPSK at 10 Mb/s with
+   NF = 5 dB needs 9.6 + 70 - 174 + 5 = -89.4 dBm. The slider moves d. */
+const LB = {pt:20, g:10, f:2.4e9, pmin:-89.4, keep:10};
+const kmShow = v => '$'+String(Math.pow(2, v))+'$ km';
+function figBudget(v){
+  const d = 1000*Math.pow(2, v ? v.k : 0), lp = lossDb(d, LB.f);
+  const lv = [LB.pt, LB.pt+LB.g, LB.pt+LB.g-lp, LB.pt+2*LB.g-lp], pr = lv[3], mg = pr-LB.pmin;
+  const cx = [0.5, 1.7, 2.9, 4.1, 5.4], big = P.labelScale() > 1;
+  const a = TAx(SZ({w:big ? 680 : 560, h:big ? 462 : 380, xr:[0,7], yr:[-112,44], xlabel:'', ylabel:'\\text{power}\\;(\\text{dBm})', xt:[], yticksOverride:[], grid:false, zeroAxes:false}));
+  leftTicks(a, [-100,-80,-60,-40,-20,0,20,40]);
+  a.hline(LB.pmin, {color:C.ink, dash:'6 4', width:1.4, opacity:0.9});
+  lbl(a, 0.12, LB.pmin+4.5, 'P_{\\min}='+num(LB.pmin,1)+'\\text{ dBm}', C.ink, 'start');
+  seg(a, [[cx[0]-0.3,lv[0]],[cx[0]+0.3,lv[0]]], {color:C.in, width:4});
+  lbl(a, 0.2, lv[0]+6, num(lv[0],0)+'\\text{ dBm}', C.in, 'start');
+  arrow(a, cx[1], lv[0], cx[1], lv[1], {color:C.h, width:2.4, head:0.7});
+  lbl(a, cx[1]+0.12, (lv[0]+lv[1])/2-2, '+'+LB.g+'\\text{ dB}', C.h, 'start');
+  arrow(a, cx[2], lv[1], cx[2], lv[2], {color:C.h, width:2.4, head:0.8});
+  lbl(a, cx[2]+0.12, (lv[1]+lv[2])/2, '-'+num(lp,1)+'\\text{ dB}', C.h, 'start');
+  arrow(a, cx[3], lv[2], cx[3], lv[3], {color:C.h, width:2.4, head:0.7});
+  lbl(a, cx[3]-0.12, (lv[2]+lv[3])/2-2, '+'+LB.g+'\\text{ dB}', C.h, 'end');
+  seg(a, [[cx[4]-0.3,pr],[cx[4]+0.3,pr]], {color:C.out, width:4});
+  lbl(a, cx[4], pr+5, num(pr,1)+'\\text{ dBm}', C.out, 'middle');
+  const mc = mg >= LB.keep ? C.mid : C.err;
+  seg(a, [[cx[4],LB.pmin],[cx[4],pr]], {color:mc, width:2.2});
+  seg(a, [[cx[4]-0.1,LB.pmin],[cx[4]+0.1,LB.pmin]], {color:mc, width:2.2});
+  lbl(a, cx[4]+0.18, (pr+LB.pmin)/2-2, num(mg,1)+'\\text{ dB}', mc, 'start');
+  ['P_t','G_t','L_p','G_r','P_r'].forEach((n,i)=>lbl(a, cx[i], -107, n, C.ink, 'middle'));
+  return a.svg();
+}
+
+/* The worked example: received power against distance at 5.8 GHz with
+   P_t = 20 dBm and two 12 dBi antennas, against each scheme's sensitivity
+   plus the 15 dB margin. Where they cross is the range. */
+const EXL = {f:5.8e9, top:44, m:15, s:[['\\text{QPSK}', -81.4], ['16\\text{-QAM}', -74.6]]};
+const EXL_PR = x => EXL.top-lossDb(1000*Math.pow(10, x), EXL.f);
+const kmTick = x => { const d = Math.pow(10, x); return d < 1 ? d.toFixed(1) : String(Math.round(d)); };
+function figExLink(v){
+  const f = frameOf(v, 2), op = k => clamp01(f-k+1), big = P.labelScale() > 1;
+  const a = TAx(SZ({w:big ? 660 : 560, h:big ? 448 : 380, xr:[-1,1], yr:[-92,-40], xlabel:'d\\;(\\text{km})', ylabel:'P_r\\;(\\text{dBm})',
+    xt:[-1,Math.log10(0.2),Math.log10(0.5),0,Math.log10(2),Math.log10(5),1], xfmt:kmTick, yticksOverride:[], grid:false, zeroAxes:false}));
+  leftTicks(a, [-90,-80,-70,-60,-50,-40]);
+  EXL.s.forEach(([n, pm], i)=>{ const o = op(i+1); if(o < 0.02) return;
+    const th = pm+EXL.m, x = (EXL.top-th-lossDb(1000, EXL.f))/20;
+    seg(a, [[-1,th],[1,th]], {color:C.ink, width:1.4, dash:'6 4', opacity:o});
+    seg(a, [[x,-92],[x,th]], {color:C.muted, width:1.2, dash:'3 4', opacity:o});
+    dot(a, x, th, {color:C.out, r:6, opacity:o});
+    if(o > 0.5){ lbl(a, 0.97, th+1.6, n, C.ink, 'end', 14);
+      lbl(a, i ? x-0.03 : x+0.03, -88, 'd='+num(Math.pow(10, x), 2)+'\\text{ km}', C.out, i ? 'end' : 'start', 14); } });
+  a.curve(EXL_PR, {color:C.out, width:2.6});
+  lbl(a, 0.97, -45, '\\text{received power }P_r(d)', C.out, 'end');
+  return a.svg();
+}
+
 /* 5.5. Satellite, Bluetooth, GSM against QAM, and adaptive mobile links. */
 const APSK = PSKpts(4, 1, Math.PI/4).concat(PSKpts(12, 2.7, Math.PI/12));
 const Q16E = (()=>{ const r = rng(5501), s = []; for(let i=0;i<14;i++){ const p = QAM16[Math.floor(r()*16)]; s.push(Math.hypot(p[0], p[1])/Math.sqrt(10)); } return s; })();
@@ -2134,6 +2220,81 @@ codeScene('m5-code-fsk', 'Frequency-shift keying', 'FSK in code',
       {t:'note', kind:'def', head:'Given', html:'The channel gives $E_s/N_0=22$ dB.<div class="nsep"></div>Which set does the link choose?',
         ask:{key:'m5-adaptive', choices:['QPSK','16-QAM','64-QAM'], answer:1,
           why:'$22$ dB clears the 16-QAM step at $19.5$ dB but not 64-QAM at $25.6$ dB.'}}]}
+  ]}
+]},
+
+{ id:'m5-noise-floor', module:'M5', nav:'The receiver noise floor', title:'The receiver noise floor',
+  objective:'Turn the thermal noise density and a noise figure into the noise power in a band, in dBm.',
+  keywords:'noise floor thermal noise kT boltzmann 290 K -174 dBm/Hz noise figure NF dB dBm noise power bandwidth one-sided N0 two-sided slider',
+  slide:true, steps:3, blocks:[
+  {t:'eyebrow', text:'Module 5 · Bandwidth and the choice of scheme'},
+  {t:'title', text:'The receiver noise floor'},
+  {t:'cols', ratio:'c-5-7', fill:true, left:[
+    {t:'fig', frame:true, grow:true,
+      live:{controls:[{k:'nf', label:'$\\text{NF}$', min:0, max:12, step:1, v:5, show:v=>'$'+v+'$ dB'}]},
+      svg:figNoise,
+      caption:'Noise power against the band. Dashed: thermal noise alone. Solid: a receiver with noise figure $\\text{NF}$. Drag $\\text{NF}$: the line moves up by the same number of decibels.'}
+  ], right:[
+    {t:'eq', label:'Thermal noise', tex:'N_0=kT_0F,\\qquad kT_0=4.00\\times10^{-21}\\ \\text{W/Hz}=-174\\ \\text{dBm/Hz}',
+      note:'Here $k=1.38\\times10^{-23}$ J/K and $T_0=290$ K. The noise figure $F\\ge1$, or $\\text{NF}=10\\log_{10}F$ in dB, counts the noise the receiver adds.'},
+    {t:'reveal', at:1, items:[
+      {t:'eq', label:'Noise power in a band', tex:'N=N_0B,\\qquad N_{\\text{dBm}}=-174+\\text{NF}+10\\log_{10}B',
+        note:'A power in dBm is in decibels above $1$ mW, and a ratio in dB adds to it. $B=10$ MHz and $\\text{NF}=5$ dB give $-174+5+70=-99$ dBm.'}]},
+    {t:'reveal', at:2, items:[
+      {t:'note', kind:'warn', head:'One-sided density', html:'$kT_0F$ is $N_0$, not $N_0/2$. The two-sided density $N_0/2$ is $3$ dB lower but covers both signs of $f$, so both give $N=N_0B$.'}]},
+    {t:'reveal', at:3, items:[
+      {t:'note', kind:'def', head:'Given', html:'A receiver widens its band from $1$ MHz to $10$ MHz.<div class="nsep"></div>How much does its noise floor rise?',
+        ask:{key:'m5-noise-floor', choices:['$1$ dB','$10$ dB','$20$ dB'], answer:1,
+          why:'$N$ grows as $10\\log_{10}B$, and $10\\log_{10}10=10$ dB.'}}]}
+  ]}
+]},
+
+{ id:'m5-budget', module:'M5', nav:'Sensitivity and the link budget', title:'Sensitivity and the link budget',
+  objective:'Find the least received power a scheme needs, and add up a free-space link in decibels.',
+  keywords:'link budget sensitivity required Eb/N0 bit rate dBm friis free space path loss antenna gain dBi margin range distance slider',
+  slide:true, steps:3, blocks:[
+  {t:'eyebrow', text:'Module 5 · Bandwidth and the choice of scheme'},
+  {t:'title', text:'Sensitivity and the link budget'},
+  {t:'cols', ratio:'c-5-7', fill:true, left:[
+    {t:'fig', frame:true, grow:true,
+      live:{controls:[{k:'k', label:'$d$', min:-2, max:4, step:1, v:0, show:kmShow}]},
+      svg:figBudget,
+      caption:'$P_t=20$ dBm and two $10$ dBi antennas at $2.4$ GHz, against the sensitivity of QPSK at $10$ Mb/s. The bracket is the margin. Drag $d$: each doubling costs $6$ dB.'}
+  ], right:[
+    {t:'eq', label:'Sensitivity', tex:'P_{\\min}=-174+\\text{NF}+10\\log_{10}R_b+\\Big(\\frac{E_b}{N_0}\\Big)_{\\text{req,dB}}\\ \\text{dBm}',
+      note:'Solve $E_b/N_0=P_r/(R_bN_0)$ for $P_r$, in dB. The band cancels. QPSK at $10$ Mb/s with $\\text{NF}=5$ dB needs $-174+5+70+9.6=-89.4$ dBm.'},
+    {t:'reveal', at:1, items:[
+      {t:'eq', label:'Free-space budget', tex:'P_r=P_t+G_t+G_r-L_p,\\qquad L_p=20\\log_{10}\\frac{4\\pi d}{\\lambda}',
+        note:'Powers in dBm, antenna gains in dBi, $\\lambda=c/f_c$. At $2.4$ GHz, $\\lambda=12.5$ cm and $L_p=100.0$ dB at $1$ km.'}]},
+    {t:'reveal', at:2, items:[
+      {t:'note', kind:'def', head:'Margin', html:'The margin $P_r-P_{\\min}$ covers fading and losses the model leaves out. Keeping $10$ dB, this link reaches $9.3$ km.'}]},
+    {t:'reveal', at:3, items:[
+      {t:'note', kind:'def', head:'Given', html:'A free-space link doubles its range.<div class="nsep"></div>By how much does $P_r$ fall?',
+        ask:{key:'m5-budget', choices:['$3$ dB','$6$ dB','$12$ dB'], answer:1,
+          why:'$L_p$ grows with $d^{2}$, so the loss rises by $20\\log_{10}2=6$ dB.'}}]}
+  ]}
+]},
+
+{ id:'m5-ex-link', module:'M5', nav:'Worked example · a link budget', title:'Worked example: a link budget',
+  objective:'Compare the bit rate and the range of two schemes on one free-space link.',
+  keywords:'worked example link budget 5.8 GHz qpsk 16-qam sensitivity path loss range margin 20 log frames',
+  slide:true, steps:3, blocks:[
+  {t:'eyebrow', text:'Module 5 · Worked example'},
+  {t:'title', text:'Worked example: a link budget'},
+  {t:'cols', ratio:'c-5-7', fill:true, left:[
+    {t:'fig', frame:true, grow:true, frames:{labels:['$P_r(d)$','QPSK','16-QAM']}, svg:figExLink,
+      caption:'Received power against distance, with each sensitivity plus the $15$ dB margin. Where they cross is the range.'}
+  ], right:[
+    {t:'note', kind:'def', head:'Given', html:'At $5.8$ GHz: $B=25$ MHz, $\\alpha=0.25$, $P_t=20$ dBm, $G_t=G_r=12$ dBi, $\\text{NF}=7$ dB, margin $15$ dB. For $P_b=10^{-5}$, QPSK needs $E_b/N_0=9.6$ dB and 16-QAM $13.4$ dB.<div class="nsep"></div>Find the range of each. Which reaches farther?',
+      ask:{key:'m5-ex-link', choices:['QPSK','16-QAM','the same'], answer:0,
+        why:'16-QAM needs $3.8$ dB more $E_b/N_0$ and twice the bit rate, $3.0$ dB more: $6.8$ dB in all.'}},
+    {t:'reveal', at:1, items:[
+      {t:'eq', label:'Method', tex:'R_s=\\frac{B}{1+\\alpha}=20\\ \\text{Msym/s},\\qquad L_p=P_t+G_t+G_r-P_{\\min}-\\text{margin}',
+        note:'QPSK carries $40$ Mb/s, 16-QAM $80$ Mb/s. $-174+\\text{NF}=-167$.'}]},
+    {t:'reveal', at:2, items:[
+      {t:'eq', label:'Solution', tex:'\\begin{aligned}\\text{QPSK:}\\quad P_{\\min}&=-167+76.0+9.6=-81.4\\ \\text{dBm},\\quad L_p=110.4\\ \\text{dB}\\\\\\text{16-QAM:}\\quad P_{\\min}&=-167+79.0+13.4=-74.6\\ \\text{dBm},\\quad L_p=103.6\\ \\text{dB}\\\\d&=(\\lambda/4\\pi)\\,10^{L_p/20}=1.36\\ \\text{and}\\ 0.62\\ \\text{km},\\quad\\lambda=5.17\\ \\text{cm}\\end{aligned}'}]},
+    {t:'reveal', at:3, items:[
+      {t:'note', kind:'err', head:'Common error', html:'Use $20\\log_{10}$, not $10\\log_{10}$, for range: $6.8$ dB is a factor $2.2$ in $d$, not $4.8$.'}]}
   ]}
 ]},
 

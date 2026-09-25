@@ -1,7 +1,7 @@
 """Re-derives every number stated in the Module 5 practice questions (D5-01 ... D5-30).
 
-Four questions (D5-09, D5-14, D5-16, D5-17) take their shape from textbook
-problems. Their checks sit in their own section below and use the same idea:
+Six questions (D5-09, D5-14, D5-15, D5-16, D5-17, D5-20) take their shape from
+textbook problems. Their checks sit in their own section below and use the same idea:
 a sampled spectrum, a Simpson integral of the full tone product, a distance
 table and label table, a projection of the sampled received waveform, and a
 Monte Carlo run, never the closed form the solution writes down.
@@ -137,10 +137,8 @@ S11 = WaveSet([lambda t: 0 * t, lambda t: math.sqrt(2) * np.cos(4 * PI * t),
                lambda t: -math.sqrt(2) * np.sin(4 * PI * t), lambda t: 2 * np.cos(4 * PI * t + PI / 4)], 1, 2)
 S12 = WaveSet([cosw(2 * math.sqrt(3), 1000, PI / 6 + (k - 1) * PI / 2) for k in range(1, 5)], 1, 1000)
 S13 = WaveSet([cosw(math.sqrt(2) * (2 * k - 9), 1000) for k in range(1, 9)], 1, 1000)
-S15 = WaveSet([lambda t: 0 * t] + [cosw(2, 1000, (k - 2) * PI / 3) for k in range(2, 8)], 1, 1000)
 S18 = WaveSet([cosw(2, 1000), cosw(-2, 1000), cosw(2, 1500), cosw(-2, 1500)], 1, 1500)
 S19 = WaveSet([lambda t: 0 * t, cosw(3, 2000), cosw(3, 2500)], 2, 2500)
-S20 = WaveSet([qam_wave(2 * (m - 2), 2 * n - 3, 1000) for n in (1, 2) for m in range(1, 4)], 1, 1000)
 S21 = WaveSet([cosw(2, 1000, (k - 1) * PI / 2) for k in range(1, 4)] + [cosw(4, 1000, 3 * PI / 2)], 1, 1000)
 S22 = WaveSet([cosw(math.sqrt(2), 1500), cosw(-math.sqrt(2), 1500),
                cosw(2 * math.sqrt(2), 1500, PI / 2), cosw(2 * math.sqrt(2), 1500, -PI / 2)], 1, 1500)
@@ -470,6 +468,81 @@ def _d17_loss(deg):
     return db(k)
 
 
+# D5-15 and D5-20. The budget is computed in watts and metres and taken to
+# decibels once: N0 = kT0 F with kT0 at the -174 dBm/Hz the questions state,
+# the received power from the linear Friis formula, the range by bisection on
+# it, the required E_b/N_0 by root finding on a neighbour count and distance
+# taken from each point set, never from the closed forms the solutions use.
+
+KT0_W = 1e-3 * 10 ** (-17.4)
+
+
+def _dbm(w):
+    return 10 * math.log10(w / 1e-3)
+
+
+def _n0(nf_db):
+    return KT0_W * 10 ** (nf_db / 10)
+
+
+def _sens(ebn0_db, rb, nf_db):
+    return _dbm(10 ** (ebn0_db / 10) * rb * _n0(nf_db))
+
+
+def _friis(pt_dbm, gt_dbi, gr_dbi, f, d):
+    lam = 3e8 / f
+    return _dbm(1e-3 * 10 ** ((pt_dbm + gt_dbi + gr_dbi) / 10) * (lam / (4 * PI * d)) ** 2)
+
+
+def _d15_margin():
+    return _friis(20, 10, 10, 1.5e9, 5000) - _sens(9.6, 8e6, 4)
+
+
+def _d15_range(f, g_dbi, rb):
+    """Range (km) that keeps the designed margin, by bisection on Friis."""
+    need = _sens(9.6, rb, 4) + _d15_margin()
+    lo, hi = 1.0, 1e7
+    for _ in range(200):
+        mid = math.sqrt(lo * hi)
+        if _friis(20, g_dbi, g_dbi, f, mid) > need:
+            lo = mid
+        else:
+            hi = mid
+    return lo / 1000
+
+
+def _rs_from_band(b_mhz, alpha):
+    """Symbol rate (Msym/s) whose raised-cosine spectrum is b_mhz wide."""
+    from scipy.optimize import brentq
+    return brentq(lambda rs: _rc_band(rs, alpha) - b_mhz, 0.5, 20, xtol=1e-9)
+
+
+def _need(pb, target):
+    from scipy.optimize import brentq
+    return db(brentq(lambda g: pb(g) - target, 1e-3, 1e4, xtol=1e-12))
+
+
+def _d20_set(name):
+    """(d_min^2 / E_b, N_min) of the point set, from its points at E_b = 1."""
+    if name == "qpsk":
+        P, k = [(math.cos(PI / 4 + j * PI / 2), math.sin(PI / 4 + j * PI / 2)) for j in range(4)], 2
+    elif name == "8psk":
+        P, k = [(math.cos(j * PI / 4), math.sin(j * PI / 4)) for j in range(8)], 3
+    else:
+        P, k = [(x, y) for x in (-3, -1, 1, 3) for y in (-3, -1, 1, 3)], 4
+    P = _scaled(P, es=float(k))
+    d, pr = _pairs(P)
+    return d * d, 2 * len(pr) / len(P)
+
+
+def _d20_need(name):
+    """E_b/N_0 (ratio) for P_b = 1e-6 from (N_min / k) Q(sqrt(d^2 E_b / 2N_0))."""
+    from scipy.optimize import brentq
+    d2, nm = _d20_set(name)
+    k = {"qpsk": 2, "8psk": 3, "16qam": 4}[name]
+    return brentq(lambda g: nm / k * Q(math.sqrt(d2 * g / 2)) - 1e-6, 1.0, 1e3, xtol=1e-12)
+
+
 # ── the checks ─────────────────────────────────────────────────────────────
 
 T2 = 0.02   # a value the solution reads from a Q table at two decimals
@@ -597,15 +670,39 @@ CHECKS = [
     {"name": "D5-14 coherent band", "stated": 2000, "derive": lambda: 8 * _d14_first_zero(lambda f: _d14_rho(f, 0.0)), "tol": 1e-2},
     {"name": "D5-14 noncoherent band", "stated": 4000, "derive": lambda: 8 * _d14_all_phase_spacing(), "tol": 1e-2},
     {"name": "D5-14 orthogonal band formula", "stated": 2000, "derive": lambda: 8 * 1500 / (2 * math.log2(8))},
-    # D5-15
-    {"name": "D5-15 E_s,avg", "stated": 1.714, "derive": S15.e_avg},
-    {"name": "D5-15 d_min", "stated": math.sqrt(2), "derive": S15.dmin},
-    {"name": "D5-15 N_min", "stated": 3.429, "derive": S15.nmin},
-    {"name": "D5-15 argument at 12", "stated": 2.646, "derive": lambda: math.sqrt(S15.coef() / 2 * 12)},
-    {"name": "D5-15 table Q(2.65)", "stated": 0.004025, "derive": lambda: Q(2.65)},
-    {"name": "D5-15 centre conditional", "stated": 0.0242, "derive": lambda: 6 * Q(math.sqrt(S15.coef() / 2 * 12)), "tol": T2},
-    {"name": "D5-15 ring conditional", "stated": 0.0121, "derive": lambda: 3 * Q(math.sqrt(S15.coef() / 2 * 12)), "tol": T2},
-    {"name": "D5-15 average", "stated": 0.0138, "derive": lambda: nn_pe(S15, 12), "tol": T2},
+    # D5-15 (Madhow P6.38)
+    {"name": "D5-15 band (MHz)", "stated": 5, "derive": lambda: _rc_band(8 / 2, 0.25)},
+    {"name": "D5-15 noise in 5 MHz (dBm)", "stated": -103.01, "derive": lambda: _dbm(_n0(4) * 5e6), "tol": 1e-4},
+    {"name": "D5-15 10 log10 5e6", "stated": 66.99, "derive": lambda: 10 * math.log10(5e6), "tol": 1e-4},
+    {"name": "D5-15 10 log10 8e6", "stated": 69.03, "derive": lambda: 10 * math.log10(8e6), "tol": 1e-4},
+    {"name": "D5-15 sensitivity (dBm)", "stated": -91.37, "derive": lambda: _sens(9.6, 8e6, 4), "tol": 1e-4},
+    {"name": "D5-15 BPSK/QPSK needs 9.6 dB", "stated": 9.6, "derive": lambda: _need(lambda g: Q(math.sqrt(2 * g)), 1e-5), "tol": 5e-3},
+    {"name": "D5-15 4 pi d0 / lambda", "stated": 3.142e5, "derive": lambda: 4 * PI * 5000 / 0.2, "tol": 1e-3},
+    {"name": "D5-15 path loss at d0 (dB)", "stated": 109.94, "derive": lambda: 40 - _friis(20, 10, 10, 1.5e9, 5000), "tol": 1e-4},
+    {"name": "D5-15 P_r at d0 (dBm)", "stated": -69.94, "derive": lambda: _friis(20, 10, 10, 1.5e9, 5000), "tol": 1e-4},
+    {"name": "D5-15 margin (dB)", "stated": 21.43, "derive": lambda: _friis(20, 10, 10, 1.5e9, 5000) - _sens(9.6, 8e6, 4), "tol": 5e-4},
+    {"name": "D5-15 6 GHz extra loss (dB)", "stated": 12.04,
+     "derive": lambda: _friis(20, 10, 10, 1.5e9, 5000) - _friis(20, 10, 10, 6e9, 5000), "tol": 1e-3},
+    {"name": "D5-15 6 GHz same gains, range (km)", "stated": 1.25, "derive": lambda: _d15_range(6e9, 10, 8e6), "tol": 1e-3},
+    {"name": "D5-15 same size, each gain (dBi)", "stated": 22.04, "derive": lambda: 10 + 10 * math.log10((6e9 / 1.5e9) ** 2), "tol": 1e-3},
+    {"name": "D5-15 same size, allowed loss (dB)", "stated": 134.02,
+     "derive": lambda: 20 + 2 * (10 + 10 * math.log10(16)) - _sens(9.6, 8e6, 4) - _d15_margin(), "tol": 1e-4},
+    {"name": "D5-15 lambda'/4pi (m)", "stated": 3.979e-3, "derive": lambda: 0.05 / (4 * PI), "tol": 1e-3},
+    {"name": "D5-15 10^6.701", "stated": 5.023e6, "derive": lambda: 10 ** 6.701, "tol": 1e-3},
+    {"name": "D5-15 same size, range (km)", "stated": 20.0, "derive": lambda: _d15_range(6e9, 10 + 10 * math.log10(16), 8e6), "tol": 1e-3},
+    {"name": "D5-15 net gain 24.08 - 12.04 -> factor", "stated": 4, "derive": lambda: 10 ** ((24.08 - 12.04) / 20), "tol": 1e-3},
+    {"name": "D5-15 32 Mb/s band (MHz)", "stated": 20, "derive": lambda: _rc_band(32 / 2, 0.25)},
+    {"name": "D5-15 32 Mb/s rise (dB)", "stated": 6.02, "derive": lambda: _sens(9.6, 32e6, 4) - _sens(9.6, 8e6, 4), "tol": 1e-3},
+    {"name": "D5-15 10 log10 3.2e7", "stated": 75.05, "derive": lambda: 10 * math.log10(3.2e7), "tol": 1e-4},
+    {"name": "D5-15 32 Mb/s sensitivity (dBm)", "stated": -85.35, "derive": lambda: _sens(9.6, 32e6, 4), "tol": 1e-4},
+    {"name": "D5-15 32 Mb/s allowed loss (dB)", "stated": 103.92, "derive": lambda: 40 - _sens(9.6, 32e6, 4) - _d15_margin(), "tol": 1e-4},
+    {"name": "D5-15 0.2/4pi", "stated": 1.592e-2, "derive": lambda: 0.2 / (4 * PI), "tol": 1e-3},
+    {"name": "D5-15 10^(103.92/20)", "stated": 1.570e5, "derive": lambda: 10 ** (103.92 / 20), "tol": 1e-3},
+    {"name": "D5-15 32 Mb/s range (km)", "stated": 2.50, "derive": lambda: _d15_range(1.5e9, 10, 32e6), "tol": 1e-3},
+    {"name": "D5-15 noise in 20 MHz (dBm)", "stated": -96.99, "derive": lambda: _dbm(_n0(4) * 20e6), "tol": 1e-4},
+    {"name": "D5-15 SNR in band at 8 Mb/s (dB)", "stated": 11.64, "derive": lambda: _sens(9.6, 8e6, 4) - _dbm(_n0(4) * 5e6), "tol": 1e-3},
+    {"name": "D5-15 SNR in band at 32 Mb/s (dB)", "stated": 11.64, "derive": lambda: _sens(9.6, 32e6, 4) - _dbm(_n0(4) * 20e6), "tol": 1e-3},
+    {"name": "D5-15 wrong 10 log factor", "stated": 16, "derive": lambda: 10 ** (12.04 / 10), "tol": 2e-3},
     # D5-16 (Madhow P6.19)
     {"name": "D5-16 c", "stated": 2.449, "derive": lambda: D16A[0, 0]},
     {"name": "D5-16 b", "stated": 2.828, "derive": lambda: D16B[2, 0]},
@@ -664,12 +761,48 @@ CHECKS = [
     {"name": "D5-19 d23^2", "stated": 18, "derive": lambda: S19.dist(1, 2) ** 2},
     {"name": "D5-19 N_min", "stated": 4 / 3, "derive": S19.nmin},
     {"name": "D5-19 P_e at 12", "stated": 1.80e-3, "derive": lambda: nn_pe(S19, 12)},
-    # D5-20
-    {"name": "D5-20 E_s,avg", "stated": 3.667, "derive": S20.e_avg},
-    {"name": "D5-20 d_min", "stated": 2, "derive": S20.dmin},
-    {"name": "D5-20 N_min", "stated": 7 / 3, "derive": S20.nmin},
-    {"name": "D5-20 bits", "stated": 2.585, "derive": lambda: math.log2(6)},
-    {"name": "D5-20 P_e at 16.5", "stated": 3.15e-3, "derive": lambda: nn_pe(S20, 16.5)},
+    # D5-20 (Madhow P6.35)
+    {"name": "D5-20 R_s (Msym/s)", "stated": 5, "derive": lambda: _rs_from_band(6.0, 0.2), "tol": 1e-4},
+    {"name": "D5-20 QPSK R_b (Mb/s)", "stated": 10, "derive": lambda: _rs_from_band(6.0, 0.2) * 2, "tol": 1e-4},
+    {"name": "D5-20 8-PSK R_b (Mb/s)", "stated": 15, "derive": lambda: _rs_from_band(6.0, 0.2) * 3, "tol": 1e-4},
+    {"name": "D5-20 16-QAM R_b (Mb/s)", "stated": 20, "derive": lambda: _rs_from_band(6.0, 0.2) * 4, "tol": 1e-4},
+    {"name": "D5-20 QPSK d^2/E_b", "stated": 4, "derive": lambda: _d20_set("qpsk")[0]},
+    {"name": "D5-20 8-PSK d^2/E_b", "stated": 1.757, "derive": lambda: _d20_set("8psk")[0]},
+    {"name": "D5-20 8-PSK sin^2(pi/8)", "stated": 0.1464, "derive": lambda: math.sin(PI / 8) ** 2, "tol": 1e-3},
+    {"name": "D5-20 16-QAM d^2/E_b", "stated": 1.6, "derive": lambda: _d20_set("16qam")[0]},
+    {"name": "D5-20 QPSK N_min", "stated": 2, "derive": lambda: _d20_set("qpsk")[1]},
+    {"name": "D5-20 8-PSK N_min", "stated": 2, "derive": lambda: _d20_set("8psk")[1]},
+    {"name": "D5-20 16-QAM N_min", "stated": 3, "derive": lambda: _d20_set("16qam")[1]},
+    {"name": "D5-20 Q(4.753)", "stated": 1.00e-6, "derive": lambda: Q(4.753), "tol": 3e-3},
+    {"name": "D5-20 Q(4.695)", "stated": 1.33e-6, "derive": lambda: Q(4.695), "tol": 3e-3},
+    {"name": "D5-20 Q(4.671)", "stated": 1.50e-6, "derive": lambda: Q(4.671), "tol": 3e-3},
+    {"name": "D5-20 4.753^2", "stated": 22.59, "derive": lambda: 4.753 ** 2, "tol": 1e-3},
+    {"name": "D5-20 4.671^2", "stated": 21.82, "derive": lambda: 4.671 ** 2, "tol": 1e-3},
+    {"name": "D5-20 4.695^2", "stated": 22.04, "derive": lambda: 4.695 ** 2, "tol": 1e-3},
+    {"name": "D5-20 QPSK Eb/N0", "stated": 11.30, "derive": lambda: _d20_need("qpsk"), "tol": 1e-3},
+    {"name": "D5-20 QPSK Eb/N0 dB", "stated": 10.53, "derive": lambda: db(_d20_need("qpsk")), "tol": 5e-4},
+    {"name": "D5-20 8-PSK Eb/N0", "stated": 24.83, "derive": lambda: _d20_need("8psk"), "tol": 1e-3},
+    {"name": "D5-20 8-PSK Eb/N0 dB", "stated": 13.95, "derive": lambda: db(_d20_need("8psk")), "tol": 5e-4},
+    {"name": "D5-20 16-QAM Eb/N0", "stated": 27.55, "derive": lambda: _d20_need("16qam"), "tol": 1e-3},
+    {"name": "D5-20 16-QAM Eb/N0 dB", "stated": 14.40, "derive": lambda: db(_d20_need("16qam")), "tol": 5e-4},
+    {"name": "D5-20 10 log10 1.5e7", "stated": 71.76, "derive": lambda: 10 * math.log10(1.5e7), "tol": 1e-4},
+    {"name": "D5-20 10 log10 2e7", "stated": 73.01, "derive": lambda: 10 * math.log10(2e7), "tol": 1e-4},
+    {"name": "D5-20 QPSK sensitivity (dBm)", "stated": -87.47, "derive": lambda: _sens(db(_d20_need("qpsk")), 10e6, 6), "tol": 1e-4},
+    {"name": "D5-20 8-PSK sensitivity (dBm)", "stated": -82.29, "derive": lambda: _sens(db(_d20_need("8psk")), 15e6, 6), "tol": 1e-4},
+    {"name": "D5-20 16-QAM sensitivity (dBm)", "stated": -80.59, "derive": lambda: _sens(db(_d20_need("16qam")), 20e6, 6), "tol": 1e-4},
+    {"name": "D5-20 16-QAM over 8-PSK (dB)", "stated": 1.70,
+     "derive": lambda: _sens(db(_d20_need("16qam")), 20e6, 6) - _sens(db(_d20_need("8psk")), 15e6, 6), "tol": 5e-3},
+    {"name": "D5-20 10 log10 6e6", "stated": 67.78, "derive": lambda: 10 * math.log10(6e6), "tol": 1e-4},
+    {"name": "D5-20 noise in 6 MHz (dBm)", "stated": -100.22, "derive": lambda: _dbm(_n0(6) * 6e6), "tol": 1e-4},
+    {"name": "D5-20 QPSK SNR in band (dB)", "stated": 12.75,
+     "derive": lambda: _sens(db(_d20_need("qpsk")), 10e6, 6) - _dbm(_n0(6) * 6e6), "tol": 1e-3},
+    {"name": "D5-20 10 log10(10/6)", "stated": 2.22, "derive": lambda: db(10 / 6), "tol": 2e-3},
+    {"name": "D5-20 bits a second per hertz", "stated": 1.67, "derive": lambda: 10 / 6, "tol": 2e-3},
+    {"name": "D5-20 8-PSK SNR in band (dB)", "stated": 17.93,
+     "derive": lambda: _sens(db(_d20_need("8psk")), 15e6, 6) - _dbm(_n0(6) * 6e6), "tol": 1e-3},
+    {"name": "D5-20 10 log10(15/6)", "stated": 3.98, "derive": lambda: db(15 / 6), "tol": 2e-3},
+    {"name": "D5-20 band-for-bit-rate error (dB)", "stated": 2.22,
+     "derive": lambda: _sens(10.53, 10e6, 6) - _sens(10.53, 6e6, 6), "tol": 2e-3},
     # D5-21
     {"name": "D5-21 E_s,avg", "stated": 3.5, "derive": S21.e_avg},
     {"name": "D5-21 d_min", "stated": 2, "derive": S21.dmin},

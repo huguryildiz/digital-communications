@@ -22,7 +22,7 @@ const CODE_BANKS_M5 = {
   'm5-code-psk':     ['m5-psk-dmin', 'm5-psk-gray', 'm5-psk-mc', 'm5-psk-dpsk'],
   'm5-code-qam':     ['m5-qam-energy', 'm5-qam-exact', 'm5-qam-mc', 'm5-qam-vs-psk'],
   'm5-code-fsk':     ['m5-fsk-rho', 'm5-fsk-bank', 'm5-fsk-orth', 'm5-fsk-noncoh'],
-  'm5-code-compare': ['m5-cmp-bw', 'm5-cmp-plane', 'm5-cmp-psd', 'm5-cmp-adaptive']
+  'm5-code-compare': ['m5-cmp-bw', 'm5-cmp-plane', 'm5-cmp-psd', 'm5-cmp-adaptive', 'm5-cmp-link']
 };
 
 const CODE_M5 = {
@@ -803,6 +803,51 @@ for i in range(len(db)):
     bits[i] = k[np.sum(Pb(10**(db[i]/10)) <= 1e-5)]
 plt.plot(db, bits, linewidth=2); plt.grid(True)
 plt.xlabel(r'$E_s/N_0$ (dB)'); plt.ylabel('bits a symbol')
+plt.show()`},
+
+'m5-cmp-link': {
+  title:'A link budget',
+  what:'Finds the sensitivity and the free-space range of QPSK and 16-QAM on the $5.8$ GHz link of the worked example. It draws $P_r$ against $d$ with each sensitivity plus the $15$ dB margin.',
+  try:'Raise both antenna gains to $15$ dBi. Predict how far QPSK reaches before you run it.',
+  out:'scheme    Rb (Mb/s)   Pmin (dBm)   range (km)\nQPSK          40        -81.4        1.36\n16-QAM        80        -74.6        0.62',
+  m:`% Link budget at 5.8 GHz: sensitivity and range of QPSK and 16-QAM
+Pt = 20; G = 12; NF = 7; margin = 15;             % dBm, dBi, dB, dB
+lambda = 3e8/5.8e9;                               % wavelength (m)
+Rs = 25e6/1.25;                                   % symbol rate in 25 MHz, roll-off 0.25
+k = [2 4]; EbN0 = [9.6 13.4];                     % bits a symbol, Eb/N0 for Pb = 1e-5 (dB)
+name = {'QPSK', '16-QAM'};
+Rb = k*Rs;                                        % bit rate (b/s)
+Pmin = -174 + NF + 10*log10(Rb) + EbN0;           % sensitivity (dBm)
+Lp = Pt + 2*G - Pmin - margin;                    % largest path loss (dB)
+d = lambda/(4*pi) * 10.^(Lp/20);                  % range (m)
+fprintf('scheme    Rb (Mb/s)   Pmin (dBm)   range (km)\\n')
+for i = 1:2
+    fprintf('%-8s  %6.0f      %7.1f      %6.2f\\n', name{i}, Rb(i)/1e6, Pmin(i), d(i)/1000)
+end
+dk = logspace(-1, 1, 200);                        % distance (km)
+Pr = Pt + 2*G - 20*log10(4*pi*dk*1000/lambda);    % Friis in dBm
+semilogx(dk, Pr, 'LineWidth', 2), hold on, grid on
+semilogx(dk([1 end]), [1; 1]*(Pmin + margin), '--')
+xlabel('d (km)'), ylabel('P_r (dBm)')`,
+  py:`import numpy as np, matplotlib.pyplot as plt
+# Link budget at 5.8 GHz: sensitivity and range of QPSK and 16-QAM
+Pt, G, NF, margin = 20, 12, 7, 15                 # dBm, dBi, dB, dB
+lam = 3e8/5.8e9                                   # wavelength (m)
+Rs = 25e6/1.25                                    # symbol rate in 25 MHz, roll-off 0.25
+k = np.array([2, 4]); EbN0 = np.array([9.6, 13.4])  # bits a symbol, Eb/N0 for Pb = 1e-5 (dB)
+name = ['QPSK', '16-QAM']
+Rb = k*Rs                                         # bit rate (b/s)
+Pmin = -174 + NF + 10*np.log10(Rb) + EbN0         # sensitivity (dBm)
+Lp = Pt + 2*G - Pmin - margin                     # largest path loss (dB)
+d = lam/(4*np.pi) * 10**(Lp/20)                   # range (m)
+print('scheme    Rb (Mb/s)   Pmin (dBm)   range (km)')
+for i in range(2):
+    print(f'{name[i]:8s}  {Rb[i]/1e6:6.0f}      {Pmin[i]:7.1f}      {d[i]/1000:6.2f}')
+dk = np.logspace(-1, 1, 200)                      # distance (km)
+Pr = Pt + 2*G - 20*np.log10(4*np.pi*dk*1000/lam)  # Friis in dBm
+plt.semilogx(dk, Pr, linewidth=2); plt.grid(True)
+for p in Pmin + margin: plt.axhline(p, linestyle='--')
+plt.xlabel('$d$ (km)'); plt.ylabel('$P_r$ (dBm)')
 plt.show()`}
 
 };

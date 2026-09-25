@@ -124,8 +124,8 @@ CONTENT.SECTIONS = {
     { n:'5.4', title:'Frequency-shift keying and orthogonal signals', ids:[
         'm5-mfsk','m5-orth-m','m5-noncoh','m5-real-fsk','m5-lab-fsk','m5-code-fsk'] },
     { n:'5.5', title:'Bandwidth and the choice of scheme', ids:[
-        'm5-spectrum','m5-msk','m5-plane','m5-compare','m5-adaptive','m5-real-choice',
-        'm5-lab-plane','m5-code-compare'] },
+        'm5-spectrum','m5-msk','m5-plane','m5-compare','m5-adaptive','m5-noise-floor','m5-budget',
+        'm5-ex-link','m5-real-choice','m5-lab-plane','m5-code-compare'] },
     { n:'5.6', title:'Summary',                        ids:['m5-chain','m5-quick','m5-synth','m5-projects'] }
   ],
 
@@ -253,7 +253,11 @@ CONTENT.BOOK = {
      phase-shift keying, 8.7 for quadrature amplitude modulation, 8.3.3 for the
      binary comparison, 9.1 and 9.5 to 9.7 for orthogonal signals, FSK, MSK and
      the bandwidth-efficiency plane, and 10.2 for the spectrum of a carrier
-     modulated signal. Adaptive modulation and the code pages carry no anchor. */
+     modulated signal. The link budget was read in three places: 6.4.1 and 6.4.2
+     (thermal noise, effective noise temperature and noise figure, p. 279-280),
+     6.4.3 (transmission losses and the free-space path loss, p. 283) and 14.5
+     (link budget analysis for radio channels, p. 810). Adaptive modulation and
+     the code pages carry no anchor. */
   'm5-open':'8.5', 'm5-carrier':'8.5.1', 'm5-iq':'8.6, 8.7', 'm5-bpsk':'8.6.1',
   'm5-bfsk':'9.5', 'm5-bask':'8.5.1', 'm5-binary-pe':'8.3.3', 'm5-ex-binary':'8.3.3',
   'm5-real-binary':'8.5.1, 8.6.1', 'm5-lab-iq':'8.6, 8.7',
@@ -267,6 +271,7 @@ CONTENT.BOOK = {
   'm5-mfsk':'9.5, 9.1.2', 'm5-orth-m':'9.1.1, 9.1.2', 'm5-noncoh':'9.5.2, 9.5.3',
   'm5-real-fsk':'9.5, 9.6.1', 'm5-lab-fsk':'9.1, 9.5',
   'm5-spectrum':'10.2, 9.7', 'm5-msk':'9.6.1, 9.6.2', 'm5-plane':'9.7', 'm5-compare':'9.7',
+  'm5-noise-floor':'6.4.1, 6.4.2', 'm5-budget':'14.5, 6.4.3', 'm5-ex-link':'14.5',
   'm5-real-choice':'9.7', 'm5-lab-plane':'9.7',
   'm5-chain':'8.6, 8.7', 'm5-quick':'8.5, 8.6, 8.7, 9.7',
   'm5-synth':'8.5, 8.6, 8.7, 9.1, 9.5, 9.7', 'm5-projects':'8.6, 9.7',

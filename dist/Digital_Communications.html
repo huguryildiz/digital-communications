@@ -10633,7 +10633,7 @@ const CODE_BANKS_M5 = {
   'm5-code-psk':     ['m5-psk-dmin', 'm5-psk-gray', 'm5-psk-mc', 'm5-psk-dpsk'],
   'm5-code-qam':     ['m5-qam-energy', 'm5-qam-exact', 'm5-qam-mc', 'm5-qam-vs-psk'],
   'm5-code-fsk':     ['m5-fsk-rho', 'm5-fsk-bank', 'm5-fsk-orth', 'm5-fsk-noncoh'],
-  'm5-code-compare': ['m5-cmp-bw', 'm5-cmp-plane', 'm5-cmp-psd', 'm5-cmp-adaptive']
+  'm5-code-compare': ['m5-cmp-bw', 'm5-cmp-plane', 'm5-cmp-psd', 'm5-cmp-adaptive', 'm5-cmp-link']
 };
 
 const CODE_M5 = {
@@ -11414,6 +11414,51 @@ for i in range(len(db)):
     bits[i] = k[np.sum(Pb(10**(db[i]/10)) <= 1e-5)]
 plt.plot(db, bits, linewidth=2); plt.grid(True)
 plt.xlabel(r'$E_s/N_0$ (dB)'); plt.ylabel('bits a symbol')
+plt.show()`},
+
+'m5-cmp-link': {
+  title:'A link budget',
+  what:'Finds the sensitivity and the free-space range of QPSK and 16-QAM on the $5.8$ GHz link of the worked example. It draws $P_r$ against $d$ with each sensitivity plus the $15$ dB margin.',
+  try:'Raise both antenna gains to $15$ dBi. Predict how far QPSK reaches before you run it.',
+  out:'scheme    Rb (Mb/s)   Pmin (dBm)   range (km)\nQPSK          40        -81.4        1.36\n16-QAM        80        -74.6        0.62',
+  m:`% Link budget at 5.8 GHz: sensitivity and range of QPSK and 16-QAM
+Pt = 20; G = 12; NF = 7; margin = 15;             % dBm, dBi, dB, dB
+lambda = 3e8/5.8e9;                               % wavelength (m)
+Rs = 25e6/1.25;                                   % symbol rate in 25 MHz, roll-off 0.25
+k = [2 4]; EbN0 = [9.6 13.4];                     % bits a symbol, Eb/N0 for Pb = 1e-5 (dB)
+name = {'QPSK', '16-QAM'};
+Rb = k*Rs;                                        % bit rate (b/s)
+Pmin = -174 + NF + 10*log10(Rb) + EbN0;           % sensitivity (dBm)
+Lp = Pt + 2*G - Pmin - margin;                    % largest path loss (dB)
+d = lambda/(4*pi) * 10.^(Lp/20);                  % range (m)
+fprintf('scheme    Rb (Mb/s)   Pmin (dBm)   range (km)\\n')
+for i = 1:2
+    fprintf('%-8s  %6.0f      %7.1f      %6.2f\\n', name{i}, Rb(i)/1e6, Pmin(i), d(i)/1000)
+end
+dk = logspace(-1, 1, 200);                        % distance (km)
+Pr = Pt + 2*G - 20*log10(4*pi*dk*1000/lambda);    % Friis in dBm
+semilogx(dk, Pr, 'LineWidth', 2), hold on, grid on
+semilogx(dk([1 end]), [1; 1]*(Pmin + margin), '--')
+xlabel('d (km)'), ylabel('P_r (dBm)')`,
+  py:`import numpy as np, matplotlib.pyplot as plt
+# Link budget at 5.8 GHz: sensitivity and range of QPSK and 16-QAM
+Pt, G, NF, margin = 20, 12, 7, 15                 # dBm, dBi, dB, dB
+lam = 3e8/5.8e9                                   # wavelength (m)
+Rs = 25e6/1.25                                    # symbol rate in 25 MHz, roll-off 0.25
+k = np.array([2, 4]); EbN0 = np.array([9.6, 13.4])  # bits a symbol, Eb/N0 for Pb = 1e-5 (dB)
+name = ['QPSK', '16-QAM']
+Rb = k*Rs                                         # bit rate (b/s)
+Pmin = -174 + NF + 10*np.log10(Rb) + EbN0         # sensitivity (dBm)
+Lp = Pt + 2*G - Pmin - margin                     # largest path loss (dB)
+d = lam/(4*np.pi) * 10**(Lp/20)                   # range (m)
+print('scheme    Rb (Mb/s)   Pmin (dBm)   range (km)')
+for i in range(2):
+    print(f'{name[i]:8s}  {Rb[i]/1e6:6.0f}      {Pmin[i]:7.1f}      {d[i]/1000:6.2f}')
+dk = np.logspace(-1, 1, 200)                      # distance (km)
+Pr = Pt + 2*G - 20*np.log10(4*np.pi*dk*1000/lam)  # Friis in dBm
+plt.semilogx(dk, Pr, linewidth=2); plt.grid(True)
+for p in Pmin + margin: plt.axhline(p, linestyle='--')
+plt.xlabel('$d$ (km)'); plt.ylabel('$P_r$ (dBm)')
 plt.show()`}
 
 };
@@ -20293,6 +20338,92 @@ function figAdaptive(v){
   return a.svg();
 }
 
+/* ---- the link budget --------------------------------------------------------
+   Every quantity in decibels: powers in dBm (decibels above 1 mW), antenna
+   gains in dBi, losses and ratios in dB. Thermal noise at T_0 = 290 K is
+   kT_0 = 4.00e-21 W/Hz, -174 dBm/Hz: the one-sided density N_0 of a receiver
+   that adds no noise of its own. Noise takes no colour, so the noise levels are
+   drawn in the ink and the muted tone. */
+const KT0 = -174;
+const lossDb = (d, f) => 20*Math.log10(4*Math.PI*d*f/3e8);
+
+const kT0lab = '\\text{thermal only, }kT_0';
+/* The noise floor N = -174 + NF + 10 log10 B dBm against the band, on a
+   logarithmic axis of B. Dashed: thermal noise alone. Solid: the receiver with
+   noise figure NF. The guides read the floor at B = 10 MHz. */
+function figNoise(v){
+  const nf = v ? v.nf : 5, y7 = KT0+nf+70, big = P.labelScale() > 1;
+  const a = TAx(SZ({w:big ? 660 : 560, h:big ? 448 : 380, xr:[-0.3,8.3], yr:[-190,-64], xlabel:'B\\;(\\text{Hz})', ylabel:'N\\;(\\text{dBm})',
+    xt:[0,2,4,6,8], xfmt:P.decade, yticksOverride:[], grid:false, zeroAxes:false}));
+  leftTicks(a, [-170,-150,-130,-110,-90,-70]);
+  seg(a, [[-0.3,y7],[7,y7]], {color:C.muted, width:1.2, dash:'3 4'});
+  seg(a, [[7,-190],[7,y7]], {color:C.muted, width:1.2, dash:'3 4'});
+  a.curve(x=>KT0+10*x, {color:C.muted, width:1.8, dash:'7 5'});
+  a.curve(x=>KT0+nf+10*x, {color:C.ink, width:2.6});
+  dot(a, 0, KT0, {color:C.muted, r:5});
+  dot(a, 7, y7, {color:C.ink, r:6});
+  lbl(a, 0.3, -186, '-174\\text{ dBm at }1\\text{ Hz}', C.muted, 'start', 14);
+  lbl(a, -0.15, -80, 'B=10\\text{ MHz: }N='+num(y7,1)+'\\text{ dBm}', C.ink, 'start');
+  lbl(a, 2.6, KT0+nf+26+12, '\\text{NF}='+num(nf,0)+'\\text{ dB}', C.ink, 'end', 14);
+  lbl(a, 4.2, -152, kT0lab, C.muted, 'start', 14);
+  return a.svg();
+}
+
+/* A budget in decibels, drawn as a waterfall: the transmit power, the two
+   antenna gains and the path loss as arrows, the received power against the
+   sensitivity line, and the margin between them. QPSK at 10 Mb/s with
+   NF = 5 dB needs 9.6 + 70 - 174 + 5 = -89.4 dBm. The slider moves d. */
+const LB = {pt:20, g:10, f:2.4e9, pmin:-89.4, keep:10};
+const kmShow = v => '$'+String(Math.pow(2, v))+'$ km';
+function figBudget(v){
+  const d = 1000*Math.pow(2, v ? v.k : 0), lp = lossDb(d, LB.f);
+  const lv = [LB.pt, LB.pt+LB.g, LB.pt+LB.g-lp, LB.pt+2*LB.g-lp], pr = lv[3], mg = pr-LB.pmin;
+  const cx = [0.5, 1.7, 2.9, 4.1, 5.4], big = P.labelScale() > 1;
+  const a = TAx(SZ({w:big ? 680 : 560, h:big ? 462 : 380, xr:[0,7], yr:[-112,44], xlabel:'', ylabel:'\\text{power}\\;(\\text{dBm})', xt:[], yticksOverride:[], grid:false, zeroAxes:false}));
+  leftTicks(a, [-100,-80,-60,-40,-20,0,20,40]);
+  a.hline(LB.pmin, {color:C.ink, dash:'6 4', width:1.4, opacity:0.9});
+  lbl(a, 0.12, LB.pmin+4.5, 'P_{\\min}='+num(LB.pmin,1)+'\\text{ dBm}', C.ink, 'start');
+  seg(a, [[cx[0]-0.3,lv[0]],[cx[0]+0.3,lv[0]]], {color:C.in, width:4});
+  lbl(a, 0.2, lv[0]+6, num(lv[0],0)+'\\text{ dBm}', C.in, 'start');
+  arrow(a, cx[1], lv[0], cx[1], lv[1], {color:C.h, width:2.4, head:0.7});
+  lbl(a, cx[1]+0.12, (lv[0]+lv[1])/2-2, '+'+LB.g+'\\text{ dB}', C.h, 'start');
+  arrow(a, cx[2], lv[1], cx[2], lv[2], {color:C.h, width:2.4, head:0.8});
+  lbl(a, cx[2]+0.12, (lv[1]+lv[2])/2, '-'+num(lp,1)+'\\text{ dB}', C.h, 'start');
+  arrow(a, cx[3], lv[2], cx[3], lv[3], {color:C.h, width:2.4, head:0.7});
+  lbl(a, cx[3]-0.12, (lv[2]+lv[3])/2-2, '+'+LB.g+'\\text{ dB}', C.h, 'end');
+  seg(a, [[cx[4]-0.3,pr],[cx[4]+0.3,pr]], {color:C.out, width:4});
+  lbl(a, cx[4], pr+5, num(pr,1)+'\\text{ dBm}', C.out, 'middle');
+  const mc = mg >= LB.keep ? C.mid : C.err;
+  seg(a, [[cx[4],LB.pmin],[cx[4],pr]], {color:mc, width:2.2});
+  seg(a, [[cx[4]-0.1,LB.pmin],[cx[4]+0.1,LB.pmin]], {color:mc, width:2.2});
+  lbl(a, cx[4]+0.18, (pr+LB.pmin)/2-2, num(mg,1)+'\\text{ dB}', mc, 'start');
+  ['P_t','G_t','L_p','G_r','P_r'].forEach((n,i)=>lbl(a, cx[i], -107, n, C.ink, 'middle'));
+  return a.svg();
+}
+
+/* The worked example: received power against distance at 5.8 GHz with
+   P_t = 20 dBm and two 12 dBi antennas, against each scheme's sensitivity
+   plus the 15 dB margin. Where they cross is the range. */
+const EXL = {f:5.8e9, top:44, m:15, s:[['\\text{QPSK}', -81.4], ['16\\text{-QAM}', -74.6]]};
+const EXL_PR = x => EXL.top-lossDb(1000*Math.pow(10, x), EXL.f);
+const kmTick = x => { const d = Math.pow(10, x); return d < 1 ? d.toFixed(1) : String(Math.round(d)); };
+function figExLink(v){
+  const f = frameOf(v, 2), op = k => clamp01(f-k+1), big = P.labelScale() > 1;
+  const a = TAx(SZ({w:big ? 660 : 560, h:big ? 448 : 380, xr:[-1,1], yr:[-92,-40], xlabel:'d\\;(\\text{km})', ylabel:'P_r\\;(\\text{dBm})',
+    xt:[-1,Math.log10(0.2),Math.log10(0.5),0,Math.log10(2),Math.log10(5),1], xfmt:kmTick, yticksOverride:[], grid:false, zeroAxes:false}));
+  leftTicks(a, [-90,-80,-70,-60,-50,-40]);
+  EXL.s.forEach(([n, pm], i)=>{ const o = op(i+1); if(o < 0.02) return;
+    const th = pm+EXL.m, x = (EXL.top-th-lossDb(1000, EXL.f))/20;
+    seg(a, [[-1,th],[1,th]], {color:C.ink, width:1.4, dash:'6 4', opacity:o});
+    seg(a, [[x,-92],[x,th]], {color:C.muted, width:1.2, dash:'3 4', opacity:o});
+    dot(a, x, th, {color:C.out, r:6, opacity:o});
+    if(o > 0.5){ lbl(a, 0.97, th+1.6, n, C.ink, 'end', 14);
+      lbl(a, i ? x-0.03 : x+0.03, -88, 'd='+num(Math.pow(10, x), 2)+'\\text{ km}', C.out, i ? 'end' : 'start', 14); } });
+  a.curve(EXL_PR, {color:C.out, width:2.6});
+  lbl(a, 0.97, -45, '\\text{received power }P_r(d)', C.out, 'end');
+  return a.svg();
+}
+
 /* 5.5. Satellite, Bluetooth, GSM against QAM, and adaptive mobile links. */
 const APSK = PSKpts(4, 1, Math.PI/4).concat(PSKpts(12, 2.7, Math.PI/12));
 const Q16E = (()=>{ const r = rng(5501), s = []; for(let i=0;i<14;i++){ const p = QAM16[Math.floor(r()*16)]; s.push(Math.hypot(p[0], p[1])/Math.sqrt(10)); } return s; })();
@@ -21244,6 +21375,81 @@ codeScene('m5-code-fsk', 'Frequency-shift keying', 'FSK in code',
       {t:'note', kind:'def', head:'Given', html:'The channel gives $E_s/N_0=22$ dB.<div class="nsep"></div>Which set does the link choose?',
         ask:{key:'m5-adaptive', choices:['QPSK','16-QAM','64-QAM'], answer:1,
           why:'$22$ dB clears the 16-QAM step at $19.5$ dB but not 64-QAM at $25.6$ dB.'}}]}
+  ]}
+]},
+
+{ id:'m5-noise-floor', module:'M5', nav:'The receiver noise floor', title:'The receiver noise floor',
+  objective:'Turn the thermal noise density and a noise figure into the noise power in a band, in dBm.',
+  keywords:'noise floor thermal noise kT boltzmann 290 K -174 dBm/Hz noise figure NF dB dBm noise power bandwidth one-sided N0 two-sided slider',
+  slide:true, steps:3, blocks:[
+  {t:'eyebrow', text:'Module 5 · Bandwidth and the choice of scheme'},
+  {t:'title', text:'The receiver noise floor'},
+  {t:'cols', ratio:'c-5-7', fill:true, left:[
+    {t:'fig', frame:true, grow:true,
+      live:{controls:[{k:'nf', label:'$\\text{NF}$', min:0, max:12, step:1, v:5, show:v=>'$'+v+'$ dB'}]},
+      svg:figNoise,
+      caption:'Noise power against the band. Dashed: thermal noise alone. Solid: a receiver with noise figure $\\text{NF}$. Drag $\\text{NF}$: the line moves up by the same number of decibels.'}
+  ], right:[
+    {t:'eq', label:'Thermal noise', tex:'N_0=kT_0F,\\qquad kT_0=4.00\\times10^{-21}\\ \\text{W/Hz}=-174\\ \\text{dBm/Hz}',
+      note:'Here $k=1.38\\times10^{-23}$ J/K and $T_0=290$ K. The noise figure $F\\ge1$, or $\\text{NF}=10\\log_{10}F$ in dB, counts the noise the receiver adds.'},
+    {t:'reveal', at:1, items:[
+      {t:'eq', label:'Noise power in a band', tex:'N=N_0B,\\qquad N_{\\text{dBm}}=-174+\\text{NF}+10\\log_{10}B',
+        note:'A power in dBm is in decibels above $1$ mW, and a ratio in dB adds to it. $B=10$ MHz and $\\text{NF}=5$ dB give $-174+5+70=-99$ dBm.'}]},
+    {t:'reveal', at:2, items:[
+      {t:'note', kind:'warn', head:'One-sided density', html:'$kT_0F$ is $N_0$, not $N_0/2$. The two-sided density $N_0/2$ is $3$ dB lower but covers both signs of $f$, so both give $N=N_0B$.'}]},
+    {t:'reveal', at:3, items:[
+      {t:'note', kind:'def', head:'Given', html:'A receiver widens its band from $1$ MHz to $10$ MHz.<div class="nsep"></div>How much does its noise floor rise?',
+        ask:{key:'m5-noise-floor', choices:['$1$ dB','$10$ dB','$20$ dB'], answer:1,
+          why:'$N$ grows as $10\\log_{10}B$, and $10\\log_{10}10=10$ dB.'}}]}
+  ]}
+]},
+
+{ id:'m5-budget', module:'M5', nav:'Sensitivity and the link budget', title:'Sensitivity and the link budget',
+  objective:'Find the least received power a scheme needs, and add up a free-space link in decibels.',
+  keywords:'link budget sensitivity required Eb/N0 bit rate dBm friis free space path loss antenna gain dBi margin range distance slider',
+  slide:true, steps:3, blocks:[
+  {t:'eyebrow', text:'Module 5 · Bandwidth and the choice of scheme'},
+  {t:'title', text:'Sensitivity and the link budget'},
+  {t:'cols', ratio:'c-5-7', fill:true, left:[
+    {t:'fig', frame:true, grow:true,
+      live:{controls:[{k:'k', label:'$d$', min:-2, max:4, step:1, v:0, show:kmShow}]},
+      svg:figBudget,
+      caption:'$P_t=20$ dBm and two $10$ dBi antennas at $2.4$ GHz, against the sensitivity of QPSK at $10$ Mb/s. The bracket is the margin. Drag $d$: each doubling costs $6$ dB.'}
+  ], right:[
+    {t:'eq', label:'Sensitivity', tex:'P_{\\min}=-174+\\text{NF}+10\\log_{10}R_b+\\Big(\\frac{E_b}{N_0}\\Big)_{\\text{req,dB}}\\ \\text{dBm}',
+      note:'Solve $E_b/N_0=P_r/(R_bN_0)$ for $P_r$, in dB. The band cancels. QPSK at $10$ Mb/s with $\\text{NF}=5$ dB needs $-174+5+70+9.6=-89.4$ dBm.'},
+    {t:'reveal', at:1, items:[
+      {t:'eq', label:'Free-space budget', tex:'P_r=P_t+G_t+G_r-L_p,\\qquad L_p=20\\log_{10}\\frac{4\\pi d}{\\lambda}',
+        note:'Powers in dBm, antenna gains in dBi, $\\lambda=c/f_c$. At $2.4$ GHz, $\\lambda=12.5$ cm and $L_p=100.0$ dB at $1$ km.'}]},
+    {t:'reveal', at:2, items:[
+      {t:'note', kind:'def', head:'Margin', html:'The margin $P_r-P_{\\min}$ covers fading and losses the model leaves out. Keeping $10$ dB, this link reaches $9.3$ km.'}]},
+    {t:'reveal', at:3, items:[
+      {t:'note', kind:'def', head:'Given', html:'A free-space link doubles its range.<div class="nsep"></div>By how much does $P_r$ fall?',
+        ask:{key:'m5-budget', choices:['$3$ dB','$6$ dB','$12$ dB'], answer:1,
+          why:'$L_p$ grows with $d^{2}$, so the loss rises by $20\\log_{10}2=6$ dB.'}}]}
+  ]}
+]},
+
+{ id:'m5-ex-link', module:'M5', nav:'Worked example · a link budget', title:'Worked example: a link budget',
+  objective:'Compare the bit rate and the range of two schemes on one free-space link.',
+  keywords:'worked example link budget 5.8 GHz qpsk 16-qam sensitivity path loss range margin 20 log frames',
+  slide:true, steps:3, blocks:[
+  {t:'eyebrow', text:'Module 5 · Worked example'},
+  {t:'title', text:'Worked example: a link budget'},
+  {t:'cols', ratio:'c-5-7', fill:true, left:[
+    {t:'fig', frame:true, grow:true, frames:{labels:['$P_r(d)$','QPSK','16-QAM']}, svg:figExLink,
+      caption:'Received power against distance, with each sensitivity plus the $15$ dB margin. Where they cross is the range.'}
+  ], right:[
+    {t:'note', kind:'def', head:'Given', html:'At $5.8$ GHz: $B=25$ MHz, $\\alpha=0.25$, $P_t=20$ dBm, $G_t=G_r=12$ dBi, $\\text{NF}=7$ dB, margin $15$ dB. For $P_b=10^{-5}$, QPSK needs $E_b/N_0=9.6$ dB and 16-QAM $13.4$ dB.<div class="nsep"></div>Find the range of each. Which reaches farther?',
+      ask:{key:'m5-ex-link', choices:['QPSK','16-QAM','the same'], answer:0,
+        why:'16-QAM needs $3.8$ dB more $E_b/N_0$ and twice the bit rate, $3.0$ dB more: $6.8$ dB in all.'}},
+    {t:'reveal', at:1, items:[
+      {t:'eq', label:'Method', tex:'R_s=\\frac{B}{1+\\alpha}=20\\ \\text{Msym/s},\\qquad L_p=P_t+G_t+G_r-P_{\\min}-\\text{margin}',
+        note:'QPSK carries $40$ Mb/s, 16-QAM $80$ Mb/s. $-174+\\text{NF}=-167$.'}]},
+    {t:'reveal', at:2, items:[
+      {t:'eq', label:'Solution', tex:'\\begin{aligned}\\text{QPSK:}\\quad P_{\\min}&=-167+76.0+9.6=-81.4\\ \\text{dBm},\\quad L_p=110.4\\ \\text{dB}\\\\\\text{16-QAM:}\\quad P_{\\min}&=-167+79.0+13.4=-74.6\\ \\text{dBm},\\quad L_p=103.6\\ \\text{dB}\\\\d&=(\\lambda/4\\pi)\\,10^{L_p/20}=1.36\\ \\text{and}\\ 0.62\\ \\text{km},\\quad\\lambda=5.17\\ \\text{cm}\\end{aligned}'}]},
+    {t:'reveal', at:3, items:[
+      {t:'note', kind:'err', head:'Common error', html:'Use $20\\log_{10}$, not $10\\log_{10}$, for range: $6.8$ dB is a factor $2.2$ in $d$, not $4.8$.'}]}
   ]}
 ]},
 
@@ -23058,8 +23264,8 @@ CONTENT.SECTIONS = {
     { n:'5.4', title:'Frequency-shift keying and orthogonal signals', ids:[
         'm5-mfsk','m5-orth-m','m5-noncoh','m5-real-fsk','m5-lab-fsk','m5-code-fsk'] },
     { n:'5.5', title:'Bandwidth and the choice of scheme', ids:[
-        'm5-spectrum','m5-msk','m5-plane','m5-compare','m5-adaptive','m5-real-choice',
-        'm5-lab-plane','m5-code-compare'] },
+        'm5-spectrum','m5-msk','m5-plane','m5-compare','m5-adaptive','m5-noise-floor','m5-budget',
+        'm5-ex-link','m5-real-choice','m5-lab-plane','m5-code-compare'] },
     { n:'5.6', title:'Summary',                        ids:['m5-chain','m5-quick','m5-synth','m5-projects'] }
   ],
 
@@ -23187,7 +23393,11 @@ CONTENT.BOOK = {
      phase-shift keying, 8.7 for quadrature amplitude modulation, 8.3.3 for the
      binary comparison, 9.1 and 9.5 to 9.7 for orthogonal signals, FSK, MSK and
      the bandwidth-efficiency plane, and 10.2 for the spectrum of a carrier
-     modulated signal. Adaptive modulation and the code pages carry no anchor. */
+     modulated signal. The link budget was read in three places: 6.4.1 and 6.4.2
+     (thermal noise, effective noise temperature and noise figure, p. 279-280),
+     6.4.3 (transmission losses and the free-space path loss, p. 283) and 14.5
+     (link budget analysis for radio channels, p. 810). Adaptive modulation and
+     the code pages carry no anchor. */
   'm5-open':'8.5', 'm5-carrier':'8.5.1', 'm5-iq':'8.6, 8.7', 'm5-bpsk':'8.6.1',
   'm5-bfsk':'9.5', 'm5-bask':'8.5.1', 'm5-binary-pe':'8.3.3', 'm5-ex-binary':'8.3.3',
   'm5-real-binary':'8.5.1, 8.6.1', 'm5-lab-iq':'8.6, 8.7',
@@ -23201,6 +23411,7 @@ CONTENT.BOOK = {
   'm5-mfsk':'9.5, 9.1.2', 'm5-orth-m':'9.1.1, 9.1.2', 'm5-noncoh':'9.5.2, 9.5.3',
   'm5-real-fsk':'9.5, 9.6.1', 'm5-lab-fsk':'9.1, 9.5',
   'm5-spectrum':'10.2, 9.7', 'm5-msk':'9.6.1, 9.6.2', 'm5-plane':'9.7', 'm5-compare':'9.7',
+  'm5-noise-floor':'6.4.1, 6.4.2', 'm5-budget':'14.5, 6.4.3', 'm5-ex-link':'14.5',
   'm5-real-choice':'9.7', 'm5-lab-plane':'9.7',
   'm5-chain':'8.6, 8.7', 'm5-quick':'8.5, 8.6, 8.7, 9.7',
   'm5-synth':'8.5, 8.6, 8.7, 9.1, 9.5, 9.7', 'm5-projects':'8.6, 9.7',
@@ -27439,18 +27650,18 @@ window.DRILL_M4 = [
 /* ==========================================================================
    Practice questions — Module 5.
 
-   Thirty questions. Twenty-six are in the shape of the final examination's
+   Thirty questions. Twenty-four are in the shape of the final examination's
    modulation question: a set of equally likely carrier waveforms is given,
    the student draws the constellation with its optimal decision regions, and
    then writes the nearest-neighbour approximation of the symbol error
-   probability as a function of E_s,avg/N0. Eighteen keep that shape with new
+   probability as a function of E_s,avg/N0. Sixteen keep that shape with new
    sets (offset and odd-M PSK, PAM with a zero or asymmetric point, QAM,
    rings, a zero signal, a point off the circle, two-frequency sets). Eight
    turn it round: the regions are given and the waveforms are asked for, the
    error expression is given and the set is asked for, or two sets are
    compared at equal energy.
 
-   Four take their shape from a textbook problem (src 'Madhow P...') and keep
+   Six take their shape from a textbook problem (src 'Madhow P...') and keep
    the id of the question they replaced, the closest duplicate of one that
    stays. D5-09 (band) puts 16-QAM, QPSK and 64-QAM in one band or at one bit
    rate and prices each in power; it replaced a 16-QAM grid that D5-26 and
@@ -27460,6 +27671,10 @@ window.DRILL_M4 = [
    a Gray labelling and gives their bit errors; it replaced two aligned
    rings, the set D5-28 optimises. D5-17 (phase) is BPSK with a carrier phase
    error; it replaced a two-point set with a 120 degree phase difference.
+   D5-15 (link) takes a designed free-space link through a change of carrier
+   and of bit rate; it replaced a hexagon with a centre point, the shape of
+   D5-30. D5-20 (sens) goes from a band to the sensitivity of three schemes;
+   it replaced a 3 x 2 grid, the rectangular set D5-08 keeps.
 
    Every constellation figure is drawn by cfig(): exact minimum-distance regions
    (half-plane clipping, not a raster), each filled at low opacity in the
@@ -27850,6 +28065,98 @@ function figCorr(){
   return a.svg();
 }
 
+/* ---- figures for the two link-budget questions (D5-15, D5-20) --------- */
+
+const tx = (a, x, y, s, col, anchor) => a.note(x, y, s, {tex:true, fs:13, color:col||C.ink, anchor:anchor||'start'});
+const lg = v => Math.log10(Math.max(v, 1e-14));
+/* a vertical arrow in data coordinates, for a gain or a loss in dB */
+function varrow(a, x, y0, y1, col){
+  const X = a.sx(x), Y0 = a.sy(y0), Y1 = a.sy(y1), s = Y1 < Y0 ? 1 : -1, h = 8;
+  a.raw(`<line x1="${X.toFixed(2)}" y1="${Y0.toFixed(2)}" x2="${X.toFixed(2)}" y2="${(Y1+s*h*0.8).toFixed(2)}" stroke="${col}" stroke-width="2.2"/>`
+      + `<path d="M${X.toFixed(2)},${Y1.toFixed(2)} l-4.4,${(s*h).toFixed(2)} h8.8 Z" fill="${col}"/>`);
+}
+const Qd = x => { const z = Math.abs(x)/Math.SQRT2, t = 1/(1+0.5*z);
+  const r = t*Math.exp(-z*z-1.26551223+t*(1.00002368+t*(0.37409196+t*(0.09678418+t*(-0.18628806+
+    t*(0.27886807+t*(-1.13520398+t*(1.48851587+t*(-0.82215223+t*0.17087277)))))))));
+  return x >= 0 ? r/2 : 1-r/2; };
+
+/* D5-20: the nearest-neighbour bit error of the three schemes against
+   E_b/N_0, the target 1e-6, and where each curve meets it. */
+function figPb35(){
+  const S = [['\\text{QPSK}', g=>Qd(Math.sqrt(2*g)), 10.53, null],
+             ['8\\text{-PSK}', g=>2/3*Qd(Math.sqrt(0.8787*g)), 13.95, '7 5'],
+             ['16\\text{-QAM}', g=>0.75*Qd(Math.sqrt(0.8*g)), 14.40, '2 4']];
+  const a = P.Axes({w:460, h:290, xr:[4,18], yr:[-8,-1], xlabel:'E_b/N_0\\;(\\mathrm{dB})', ylabel:'P_b',
+    pad:{l:52,r:22,t:22,b:44}, xticksOverride:[4,8,12,16], yticksOverride:[-8,-6,-4,-2], ytickfmt:P.decade, zeroAxes:false});
+  a.hline(-6, {color:C.ink, dash:'6 4', width:1.2});
+  S.forEach(([n, f, x, dash])=>a.curve(d=>lg(f(Math.pow(10, d/10))), {color:C.err, width:2.2, dash}));
+  S.forEach(([n, f, x])=>a.point(x, -6, {color:C.err, r:4.6, ring:C.plate}));
+  ['\\text{solid: QPSK, }10.53\\text{ dB}', '\\text{dashed: 8-PSK, }13.95\\text{ dB}', '\\text{dotted: 16-QAM, }14.40\\text{ dB}']
+    .forEach((s,i)=>tx(a, 17.7, -1.55-0.55*i, s, C.err, 'end'));
+  return a.svg();
+}
+
+/* D5-20: the three sensitivities against the bit rate, above the noise in
+   the 6 MHz band. The bracket is the SNR at the QPSK sensitivity. */
+function figSens35(){
+  const a = P.Axes({w:460, h:290, xr:[7,23], yr:[-104,-76], xlabel:'R_b\\;(\\mathrm{Mb/s})', ylabel:'P_{\\min}\\;(\\mathrm{dBm})',
+    pad:{l:52,r:22,t:22,b:44}, xticksOverride:[10,15,20], yticksOverride:[-100,-90,-80], zeroAxes:false});
+  a.hline(-100.22, {color:C.muted, dash:'6 4', width:1.3});
+  tx(a, 22.7, -102.6, 'N=-100.22\\text{ dBm in }6\\text{ MHz}', C.muted, 'end');
+  a.poly([[10,-100.22],[10,-87.47]], {color:C.mid, width:2});
+  tx(a, 9.6, -94.5, '12.75\\text{ dB}', C.mid, 'end');
+  [[10,-87.47,'\\text{QPSK: }{-}87.47',10.5,-88.4,'start'],[15,-82.29,'8\\text{-PSK: }{-}82.29',15.5,-83.2,'start'],
+   [20,-80.59,'16\\text{-QAM: }{-}80.59',20.3,-78.4,'end']].forEach(([x,y,s,lx,ly,an])=>{
+    a.point(x, y, {color:C.out, r:5, ring:C.plate}); tx(a, lx, ly, s, C.out, an); });
+  return a.svg();
+}
+
+/* D5-15: the designed link as a waterfall in decibels, from the transmit
+   power through the two gains and the path loss to the received power,
+   against the sensitivity and the noise in the band. */
+function figWater38(){
+  const lv = [20, 30, 30-109.94, 40-109.94], pr = lv[3], pm = -91.37, cx = [0.6, 1.8, 3.0, 4.2, 5.5];
+  const a = P.Axes({w:460, h:320, xr:[0.2,7.4], yr:[-128,36], xlabel:'', ylabel:'\\text{power}\\;(\\mathrm{dBm})',
+    pad:{l:52,r:22,t:22,b:30}, xticksOverride:[], yticksOverride:[-100,-80,-60,-40,-20,0,20], grid:false, zeroAxes:false});
+  a.hline(pm, {color:C.ink, dash:'6 4', width:1.3});
+  a.hline(-103.01, {color:C.muted, dash:'2 4', width:1.2});
+  tx(a, 0.3, pm+5.5, 'P_{\\min}=-91.37', C.ink);
+  tx(a, 7.25, -112, 'N=-103.01', C.muted, 'end');
+  a.poly([[cx[0]-0.3,lv[0]],[cx[0]+0.3,lv[0]]], {color:C.in, width:4});
+  tx(a, 0.35, lv[0]+5, '20', C.in);
+  varrow(a, cx[1], lv[0], lv[1], C.h); tx(a, cx[1]+0.12, 23, '+10', C.h);
+  varrow(a, cx[2], lv[1], lv[2], C.h); tx(a, cx[2]+0.12, -30, '-109.94', C.h);
+  varrow(a, cx[3], lv[2], lv[3], C.h); tx(a, cx[3]-0.12, (lv[2]+lv[3])/2-2, '+10', C.h, 'end');
+  a.poly([[cx[4]-0.3,pr],[cx[4]+0.3,pr]], {color:C.out, width:4});
+  tx(a, cx[4], pr+6, '-69.94', C.out, 'middle');
+  a.poly([[cx[4],pm],[cx[4],pr]], {color:C.mid, width:2});
+  tx(a, cx[4]+0.15, (pm+pr)/2-2, '21.43\\text{ dB}', C.mid);
+  ['P_t','G_t','L_p','G_r','P_r'].forEach((n,i)=>tx(a, cx[i], -123, n, C.ink, 'middle'));
+  return a.svg();
+}
+
+/* D5-15: received power against distance for the designed link (solid),
+   at 6 GHz with the same gains (dashed) and with antennas of the same size
+   (dotted), against the power the designed margin needs at 8 and 32 Mb/s. */
+function figRange38(){
+  const Lp = (x, f) => 20*Math.log10(4*Math.PI*Math.pow(10, x)*f/3e8);
+  const T = [[x=>40-Lp(x,1.5e9), null], [x=>40-Lp(x,6e9), '7 5'], [x=>40+24.08-Lp(x,6e9), '2 4']];
+  const km = [0.5,1.25,2.5,5,10,20,50];
+  const a = P.Axes({w:460, h:320, xr:[2.6,4.8], yr:[-106,-32], xlabel:'d\\;(\\mathrm{km})', ylabel:'P_r\\;(\\mathrm{dBm})',
+    pad:{l:52,r:22,t:22,b:44}, xticksOverride:km.map(k=>3+Math.log10(k)), xtickfmt:x=>String(+Math.pow(10,x-3).toFixed(2)),
+    yticksOverride:[-100,-80,-60,-40], zeroAxes:false});
+  a.hline(-69.94, {color:C.ink, dash:'6 4', width:1.2});
+  a.hline(-63.92, {color:C.ink, dash:'10 3 2 3', width:1.2});
+  tx(a, 2.63, -77, '8\\text{ Mb/s}', C.ink, 'start');
+  tx(a, 4.78, -61.0, '32\\text{ Mb/s}', C.ink, 'end');
+  T.forEach(([f, dash])=>a.curve(f, {color:C.out, width:2.2, dash}));
+  [[1.25,-69.94],[5,-69.94],[20,-69.94],[2.5,-63.92]].forEach(([d,y])=>{ const x = 3+Math.log10(d);
+    a.poly([[x,-106],[x,y]], {color:C.muted, width:1, dash:'3 4'}); a.point(x, y, {color:C.out, r:4.6, ring:C.plate}); });
+  ['\\text{solid: }1.5\\text{ GHz}', '\\text{dashed: }6\\text{ GHz, same gains}', '\\text{dotted: }6\\text{ GHz, same size}']
+    .forEach((s,i)=>tx(a, 4.78, -38-6.5*i, s, C.out, 'end'));
+  return a.svg();
+}
+
 /* the examination wording, shared by the questions that keep it */
 const OPEN = 'Consider an $M$-ary modulation scheme where the equally probable symbols have the following waveforms: ';
 const AWGN = ' These signals are planned to be transmitted over a standard AWGN channel with $\\mathcal{N}(0,N_0/2)$.';
@@ -27927,7 +28234,21 @@ CONTENT.DRILLTYPES.M5 = [
     method:['Write the product of two cosines as half a difference-frequency cosine plus half a sum-frequency cosine. Drop the sum-frequency term and integrate.',
             'With equal phases $\\rho=\\sin(2\\pi\\Delta fT)/(2\\pi\\Delta fT)$, which is zero first at $\\Delta f=1/(2T)$.',
             'For every phase the difference term must run whole periods, so $\\Delta f=1/T$. $M$ tones take a band of about $M\\Delta f$.'],
-    go:'m5-noncoh' }
+    go:'m5-noncoh' },
+
+  { k:'sens', name:'Sensitivity of several schemes',
+    asks:'A band, a roll-off, a target bit error and a noise figure are given for several schemes. Find each bit rate, the $E_b/N_0$ each needs and the least received power in dBm.',
+    method:['The band fixes $R_s=B/(1+\\alpha)$, and each scheme carries $R_b=R_s\\log_2M$.',
+            'Write $d_{\\min}^{2}$ as a multiple of $E_b$ and set $P_b\\approx(\\bar N_{\\min}/\\log_2M)\\,Q\\big(\\sqrt{d_{\\min}^{2}/2N_0}\\big)$ equal to the target. Read the argument of $Q$ from the table.',
+            'The sensitivity is $-174+\\text{NF}+10\\log_{10}R_b+(E_b/N_0)_{\\text{dB}}$ dBm. The band does not enter it.'],
+    go:'m5-budget' },
+
+  { k:'link', name:'Link budget what-ifs',
+    asks:'A designed link with its power, antennas, range and receiver. Find the noise, the sensitivity and the margin, then the new range when the carrier or the bit rate changes.',
+    method:['Work in decibels: powers in dBm, gains in dBi, losses in dB. The margin is $P_t+G_t+G_r-L_p-P_{\\min}$.',
+            'The free-space loss is $20\\log_{10}(4\\pi d/\\lambda)$. A factor $a$ in $d$ or in $f_c$ adds $20\\log_{10}a$ dB.',
+            'A change that costs $x$ dB at the same margin divides the range by $10^{x/20}$.'],
+    go:'m5-ex-link' }
 ];
 
 /* ======================================================================
@@ -28282,27 +28603,46 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   teach:'Tone spacing from one integral. The equal-phase zeros sit at every multiple of $1/(2T)$, but only every second one survives an arbitrary phase. That is why noncoherent FSK needs twice the band.',
   figSol:()=>figCorr() },
 
-{ id:'D5-15', module:'M5', type:'qam', src:'Final Q3',
-  stem:OPEN+'$$\\begin{aligned}s_1(t)&=0,\\\\s_k(t)&=2\\cos\\!\\Big(2000\\pi t+\\frac{(k-2)\\pi}{3}\\Big),\\quad k\\in\\{2,\\ldots,7\\},\\end{aligned}$$ all on $0\\le t\\le1$.'+AWGN,
-  parts:[PDRAW(10), PNN(10), '[5 pts] At $E_{s,\\text{avg}}/N_0=12$, compare the conditional error probability of $s_1$ with that of an outer symbol.'],
-  sol:'<b>Given.</b> A zero signal and six waveforms of amplitude $2$ at $1000$ Hz, $60^{\\circ}$ apart in phase, starting at $0^{\\circ}$.<br>'
-     +'<b>Find.</b> The constellation and regions, $P_e$ against $E_{s,\\text{avg}}/N_0$, and the two conditional error probabilities at $12$.<br>'
-     +'<b>Method.</b> Use $\\psi_1(t)=\\sqrt2\\cos(2000\\pi t)$ and $\\psi_2(t)=-\\sqrt2\\sin(2000\\pi t)$. The outer radius is $2/\\sqrt2=\\sqrt2$.<br>'
-     +'<b>Solution — (a).</b> $\\mathbf{s}_1$ is the origin. $\\mathbf{s}_2,\\ldots,\\mathbf{s}_7$ sit on a circle of radius $\\sqrt2$ at $0^{\\circ},60^{\\circ},\\ldots,300^{\\circ}$. '
-     +'The bisectors between the centre and the six outer points form a regular hexagon at distance $\\sqrt2/2=0.707$ from the origin. That hexagon is $D_1$. The outer regions are separated by the rays at $30^{\\circ},90^{\\circ},\\ldots$ from the hexagon corners.<br>'
-     +'<b>Solution — (b).</b> Average the energies:'
-     +'$$E_{s,\\text{avg}}=\\frac{0+6(2)}{7}=\\frac{12}{7}=1.714.$$'
-     +'An outer point is $\\sqrt2$ from the centre. Its outer neighbours are $2\\sqrt2\\sin30^{\\circ}=\\sqrt2$ away as well. So $d_{\\min}=\\sqrt2$ and $d_{\\min}^{2}=2=\\frac76E_{s,\\text{avg}}$. '
-     +'The centre has six neighbours at $d_{\\min}$ and each outer point three:'
-     +'$$N_{\\min}=\\frac{6+6(3)}{7}=\\frac{24}{7}=3.429.$$'
-     +'Then'
-     +'$$\\begin{aligned}P_e&\\approx\\frac{24}{7}\\,Q\\Big(\\sqrt{\\frac{7E_{s,\\text{avg}}/6}{2N_0}}\\Big)\\\\&=\\frac{24}{7}\\,Q\\Big(\\sqrt{\\frac{7E_{s,\\text{avg}}}{12N_0}}\\Big).\\end{aligned}$$<br>'
-     +'<b>Solution — (c).</b> At $12$ the argument is $\\sqrt{7}=2.646$, read as $Q(2.65)=0.004025$. The centre can be mistaken six ways, so its conditional error is about $6(0.004025)=0.0242$. '
-     +'An outer point can be mistaken three ways, about $3(0.004025)=0.0121$. The average is $\\frac{24}{7}(0.004025)=0.0138$.<br>'
-     +'<b>Check.</b> Average the two conditional values with their weights: $\\frac17(0.0242)+\\frac67(0.0121)=0.00345+0.01035=0.0138$. This matches the average in part (c).',
-  err:'Missing the ring neighbours. On a hexagon the chord between neighbours equals the radius, so each outer point has two ring neighbours as well as the centre.',
-  teach:'The hexagonal set with a centre point. It shows that the inner point carries the largest error, which the average hides.',
-  figSol:()=>cfig([[0,0]].concat(onCircle(R2, range(2,7).map(k=>(k-2)*Math.PI/3))), {dTex:'\\sqrt{2}', tick:1, margin:1.25}) },
+{ id:'D5-15', module:'M5', type:'link', src:'Madhow P6.38',
+  stem:'A line-of-sight radio link is designed for a range $d_0=5$ km at a carrier frequency $f_c=1.5$ GHz. It sends QPSK with Gray labels at $R_b=8$ Mb/s. The pulses are raised cosines with roll-off $\\alpha=0.25$, so the occupied band is $B=(1+\\alpha)R_s$, where $R_s$ is the symbol rate. The target $P_b=10^{-5}$ needs $E_b/N_0=9.6$ dB. The transmit power is $P_t=20$ dBm, each antenna has a gain of $10$ dBi, and the receiver noise figure is $\\text{NF}=4$ dB. Take $kT_0=-174$ dBm/Hz, $c=3\\times10^{8}$ m/s and the free-space loss $L_p=20\\log_{10}(4\\pi d/\\lambda)$ dB. Give powers in dBm and decibel values to two decimals.',
+  parts:['[7 pts] Find the occupied band, the noise power in that band and the receiver sensitivity $P_{\\min}$.',
+         '[5 pts] Find the path loss at $d_0$, the received power and the link margin.',
+         '[7 pts] The carrier moves to $6$ GHz and the antenna gains stay at $10$ dBi. Find the range that keeps the margin of part (b). Then find that range if instead the antennas keep their size, so that each gain grows in proportion to $f_c^{2}$.',
+         '[6 pts] Back at $1.5$ GHz, the bit rate rises to $32$ Mb/s with the same scheme and roll-off. Find the new band, the new sensitivity and the range that keeps the same margin.'],
+  sol:'<b>Given.</b> QPSK at $R_b=8$ Mb/s, roll-off $0.25$, $f_c=1.5$ GHz, $d_0=5$ km, $P_t=20$ dBm, $G_t=G_r=10$ dBi, $\\text{NF}=4$ dB, $(E_b/N_0)_{\\text{req}}=9.6$ dB, $kT_0=-174$ dBm/Hz.<br>'
+     +'<b>Find.</b> The band, the noise power and $P_{\\min}$. The path loss, $P_r$ and the margin at $d_0$. The range at $6$ GHz with fixed gains and with fixed antenna size. The band, $P_{\\min}$ and the range at $32$ Mb/s.<br>'
+     +'<b>Method.</b> Work in decibels: powers in dBm, gains in dBi, losses and ratios in dB. The noise in a band is $N=-174+\\text{NF}+10\\log_{10}B$. The sensitivity comes from $E_b=P_r/R_b$, so it takes the bit rate: $P_{\\min}=-174+\\text{NF}+10\\log_{10}R_b+(E_b/N_0)_{\\text{dB}}$. '
+     +'The received power is $P_r=P_t+G_t+G_r-L_p$ and the margin is $M=P_r-P_{\\min}$. A range that keeps $M$ is found from the largest allowed loss, $L_p=P_t+G_t+G_r-P_{\\min}-M$.<br>'
+     +'<b>Solution — (a).</b> A QPSK symbol carries $2$ bits, so'
+     +'$$R_s=\\frac{R_b}{2}=\\frac{8}{2}=4\\ \\text{Msym/s},\\qquad B=(1+\\alpha)R_s=1.25(4)=5\\ \\text{MHz}.$$'
+     +'The noise in this band is'
+     +'$$\\begin{aligned}N&=-174+\\text{NF}+10\\log_{10}B\\\\&=-174+4+10\\log_{10}(5\\times10^{6})\\\\&=-174+4+66.99=-103.01\\ \\text{dBm}.\\end{aligned}$$'
+     +'The sensitivity takes the bit rate, not the band:'
+     +'$$\\begin{aligned}P_{\\min}&=-174+\\text{NF}+10\\log_{10}R_b+9.6\\\\&=-174+4+10\\log_{10}(8\\times10^{6})+9.6\\\\&=-174+4+69.03+9.6=-91.37\\ \\text{dBm}.\\end{aligned}$$<br>'
+     +'<b>Solution — (b).</b> The wavelength is $\\lambda=c/f_c=3\\times10^{8}/1.5\\times10^{9}=0.2$ m. So'
+     +'$$\\begin{aligned}L_p&=20\\log_{10}\\frac{4\\pi(5000)}{0.2}\\\\&=20\\log_{10}(3.142\\times10^{5})=109.94\\ \\text{dB}.\\end{aligned}$$'
+     +'Add the budget and subtract the sensitivity:'
+     +'$$\\begin{aligned}P_r&=20+10+10-109.94=-69.94\\ \\text{dBm},\\\\M&=P_r-P_{\\min}=-69.94-(-91.37)=21.43\\ \\text{dB}.\\end{aligned}$$<br>'
+     +'<b>Solution — (c).</b> At $6$ GHz the wavelength is $\\lambda\'=3\\times10^{8}/6\\times10^{9}=0.05$ m. With the same gains and the same $P_{\\min}$, the same margin needs the same loss, $109.94$ dB:'
+     +'$$\\begin{aligned}20\\log_{10}\\frac{4\\pi d}{0.05}&=20\\log_{10}\\frac{4\\pi(5000)}{0.2}\\\\d&=5000\\cdot\\frac{0.05}{0.2}=1250\\ \\text{m}=1.25\\ \\text{km}.\\end{aligned}$$'
+     +'At a fixed $d$ the loss is $20\\log_{10}(0.2/0.05)=20\\log_{10}4=12.04$ dB higher, so the range falls by $4$. '
+     +'With antennas of the same size, each gain grows by $10\\log_{10}(4^{2})=12.04$ dB, to $22.04$ dBi. The allowed loss is'
+     +'$$\\begin{aligned}L_p&=P_t+G_t+G_r-P_{\\min}-M\\\\&=20+22.04+22.04+91.37-21.43=134.02\\ \\text{dB}.\\end{aligned}$$'
+     +'Invert the loss with $\\lambda\'=0.05$ m:'
+     +'$$\\begin{aligned}d&=\\frac{\\lambda\'}{4\\pi}\\,10^{L_p/20}=\\frac{0.05}{4\\pi}\\,10^{6.701}\\\\&=(3.979\\times10^{-3})(5.023\\times10^{6})=2.00\\times10^{4}\\ \\text{m}=20.0\\ \\text{km}.\\end{aligned}$$'
+     +'The two gains add $24.08$ dB and the path takes back $12.04$ dB, so the range grows by $10^{12.04/20}=4$.<br>'
+     +'<b>Solution — (d).</b> The symbol rate and the band grow with the bit rate:'
+     +'$$R_s=\\frac{32}{2}=16\\ \\text{Msym/s},\\qquad B=1.25(16)=20\\ \\text{MHz}.$$'
+     +'The sensitivity rises by $10\\log_{10}4=6.02$ dB:'
+     +'$$\\begin{aligned}P_{\\min}&=-174+4+10\\log_{10}(3.2\\times10^{7})+9.6\\\\&=-174+4+75.05+9.6=-85.35\\ \\text{dBm}.\\end{aligned}$$'
+     +'The allowed loss and the range, with $\\lambda=0.2$ m, are'
+     +'$$\\begin{aligned}L_p&=20+10+10+85.35-21.43=103.92\\ \\text{dB},\\\\d&=\\frac{0.2}{4\\pi}\\,10^{103.92/20}=(1.592\\times10^{-2})(1.570\\times10^{5})=2.50\\ \\text{km}.\\end{aligned}$$'
+     +'Four times the bit rate costs $6.02$ dB, which halves the range. The figure shows the budget of the designed link and the four ranges.<br>'
+     +'<b>Check.</b> The signal-to-noise ratio in the band at the sensitivity is $-91.37-(-103.01)=11.64$ dB at $8$ Mb/s. At $32$ Mb/s the noise in $20$ MHz is $-174+4+73.01=-96.99$ dBm, and $-85.35-(-96.99)=11.64$ dB again. '
+     +'It is unchanged because $R_b/B=1.6$ in both cases. The ranges scale as $5/4=1.25$, $5\\times4=20$ and $5/2=2.5$ km, which match parts (c) and (d).',
+  err:'Scaling the range with $10\\log_{10}$. The free-space loss grows as $d^{2}$, so $12.04$ dB is a factor $4$ in range, not $16$.',
+  teach:'Link what-ifs on one designed link. Part (c) shows the two readings of the free-space formula: with fixed gains a higher carrier loses range, with fixed antenna size it gains range.',
+  figSol:()=>pair(figWater38(), figRange38()) },
 
 { id:'D5-16', module:'M5', type:'gray', src:'Madhow P6.19',
   stem:'Three sets of eight equally likely points on the signal plane $(\\psi_1,\\psi_2)$ are compared. Each point carries $3$ bits, and the channel is AWGN with $\\mathcal{N}(0,N_0/2)$. '
@@ -28443,22 +28783,43 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   teach:'On-off keying and frequency keying in one set. The zero signal has two neighbours, so its region is the corner square.',
   figSol:()=>cfig([[0,0],[3,0],[0,3]], {dTex:'3', tick:1, margin:1.6}) },
 
-{ id:'D5-20', module:'M5', type:'qam', src:'Final Q3',
-  stem:OPEN+'$$s_{mn}(t)=\\sqrt2\\big[2(m-2)\\cos(2000\\pi t)-(2n-3)\\sin(2000\\pi t)\\big],$$ with $m\\in\\{1,2,3\\}$, $n\\in\\{1,2\\}$ and $0\\le t\\le1$.'+AWGN,
-  parts:[PDRAW(10), PNN(10), '[5 pts] How many bits does one symbol carry? Evaluate the approximation at $E_{s,\\text{avg}}/N_0=16.5$.'],
-  sol:'<b>Given.</b> Six equally likely waveforms. The cosine carries $2(m-2)\\in\\{-2,0,2\\}$ and the sine carries $2n-3\\in\\{-1,1\\}$.<br>'
-     +'<b>Find.</b> The constellation and regions, $P_e$ against $E_{s,\\text{avg}}/N_0$, the bits per symbol and the value at $16.5$.<br>'
-     +'<b>Method.</b> With $\\psi_1(t)=\\sqrt2\\cos(2000\\pi t)$ and $\\psi_2(t)=-\\sqrt2\\sin(2000\\pi t)$, $\\mathbf{s}_{mn}=(2(m-2),\\,2n-3)$.<br>'
-     +'<b>Solution — (a).</b> The points form a $3\\times2$ grid: $\\psi_1\\in\\{-2,0,2\\}$, $\\psi_2\\in\\{-1,1\\}$. The boundaries are $\\psi_1=\\pm1$ and $\\psi_2=0$. The middle regions are half-strips and the side regions quarter-planes.<br>'
-     +'<b>Solution — (b).</b> Average the energies. Four points have $4+1=5$ and two have $0+1=1$:'
-     +'$$E_{s,\\text{avg}}=\\frac{4(5)+2(1)}{6}=\\frac{22}{6}=3.667.$$'
-     +'Horizontal and vertical neighbours are both $2$ apart, so $d_{\\min}^{2}=4=\\frac{12}{11}E_{s,\\text{avg}}$. The four side points have two neighbours and the two middle points three: $N_{\\min}=14/6=7/3$. Then'
-     +'$$\\begin{aligned}P_e&\\approx\\frac73\\,Q\\Big(\\sqrt{\\frac{12E_{s,\\text{avg}}/11}{2N_0}}\\Big)\\\\&=\\frac73\\,Q\\Big(\\sqrt{\\frac{6E_{s,\\text{avg}}}{11N_0}}\\Big).\\end{aligned}$$<br>'
-     +'<b>Solution — (c).</b> One symbol carries $\\log_2 6=2.585$ bits. At $16.5$ the argument is $\\sqrt{6(16.5)/11}=\\sqrt9=3.00$, so $P_e\\approx\\frac73(0.001350)=3.15\\times10^{-3}$.<br>'
-     +'<b>Check.</b> Count pairs: four horizontal pairs and three vertical pairs sit at $d_{\\min}$. So $N_{\\min}=2\\times7/6=7/3$.',
-  err:'Taking the vertical spacing as $1$. The sine coefficients are $\\pm1$, so the two rows are $2$ apart, the same as the columns.',
-  teach:'A six-point rectangle: not a power of two, with two kinds of point. The bit count is fractional, which students rarely meet.',
-  figSol:()=>cfig(grid([-2,0,2],[1,-1]), {names:gridNames(3,2), dTex:'2', tick:1, margin:1.5}) },
+{ id:'D5-20', module:'M5', type:'sens', src:'Madhow P6.35',
+  stem:'A receiver is given a carrier channel of bandwidth $B=6$ MHz. The pulses are raised cosines with roll-off $\\alpha=0.2$, so $B=(1+\\alpha)R_s$, where $R_s$ is the symbol rate. The receiver noise figure is $\\text{NF}=6$ dB, and thermal noise at room temperature is $kT_0=-174$ dBm/Hz. The target bit error probability is $P_b=10^{-6}$. Three schemes with Gray labels are compared: QPSK, 8-PSK and 16-QAM. Use the nearest-neighbour form $$P_b\\approx\\frac{\\bar N_{\\min}}{\\log_2M}\\,Q\\Big(\\sqrt{\\frac{d_{\\min}^{2}}{2N_0}}\\Big)$$ and the values $Q(4.753)=1.00\\times10^{-6}$, $Q(4.695)=1.33\\times10^{-6}$ and $Q(4.671)=1.50\\times10^{-6}$.',
+  parts:['[5 pts] Find the symbol rate and the bit rate of each scheme.',
+         '[10 pts] Write $d_{\\min}^{2}$ of each scheme in terms of $E_b$, and its $P_b$ as a function of $E_b/N_0$. Find the $E_b/N_0$ in dB that each needs for $P_b=10^{-6}$.',
+         '[6 pts] Find the sensitivity of each scheme in dBm.',
+         '[4 pts] Find the noise power in the $6$ MHz band. Find the signal-to-noise ratio $P_{\\min}/N$ at the QPSK sensitivity, and explain why it differs from the $E_b/N_0$ of part (b).'],
+  sol:'<b>Given.</b> A band $B=6$ MHz with roll-off $0.2$, $\\text{NF}=6$ dB, $kT_0=-174$ dBm/Hz and the target $P_b=10^{-6}$. QPSK, 8-PSK and 16-QAM with Gray labels, and three values of $Q$.<br>'
+     +'<b>Find.</b> $R_s$ and each $R_b$. Each $d_{\\min}^{2}$, $P_b$ and required $E_b/N_0$. Each sensitivity. The noise in the band and the SNR at the QPSK sensitivity.<br>'
+     +'<b>Method.</b> The band fixes the symbol rate $R_s=B/(1+\\alpha)$, and $R_b=R_s\\log_2M$. Write $E_s=E_b\\log_2M$ so each $d_{\\min}^{2}$ is a multiple of $E_b$. Then set $P_b$ equal to the target and read the argument of $Q$ from the table. '
+     +'The sensitivity comes from $E_b=P_r/R_b$, so $P_{\\min}=-174+\\text{NF}+10\\log_{10}R_b+(E_b/N_0)_{\\text{dB}}$.<br>'
+     +'<b>Solution — (a).</b> The symbol rate is the same for all three:'
+     +'$$R_s=\\frac{B}{1+\\alpha}=\\frac{6}{1.2}=5\\ \\text{Msym/s}.$$'
+     +'QPSK carries $2$ bits a symbol, $R_b=10$ Mb/s. 8-PSK carries $3$, $R_b=15$ Mb/s. 16-QAM carries $4$, $R_b=20$ Mb/s.<br>'
+     +'<b>Solution — (b).</b> QPSK has four points at radius $\\sqrt{E_s}$, $90^{\\circ}$ apart, so $d_{\\min}^{2}=2E_s=4E_b$. Each point has $\\bar N_{\\min}=2$ neighbours and carries $2$ bits:'
+     +'$$P_b\\approx\\frac22\\,Q\\Big(\\sqrt{\\frac{4E_b}{2N_0}}\\Big)=Q\\Big(\\sqrt{\\frac{2E_b}{N_0}}\\Big).$$'
+     +'Set the argument to $4.753$:'
+     +'$$\\begin{aligned}\\frac{E_b}{N_0}&=\\frac{4.753^{2}}{2}=\\frac{22.59}{2}=11.30,\\\\10\\log_{10}11.30&=10.53\\ \\text{dB}.\\end{aligned}$$'
+     +'8-PSK has neighbours $45^{\\circ}$ apart, so $d_{\\min}^{2}=4E_s\\sin^{2}(\\pi/8)=4(3E_b)(0.1464)=1.757E_b$. With $\\bar N_{\\min}=2$ and $3$ bits a symbol,'
+     +'$$P_b\\approx\\frac23\\,Q\\Big(\\sqrt{\\frac{1.757E_b}{2N_0}}\\Big)=\\frac23\\,Q\\Big(\\sqrt{\\frac{0.8787E_b}{N_0}}\\Big).$$'
+     +'The target needs $Q(\\cdot)=\\tfrac32\\times10^{-6}=1.50\\times10^{-6}$, an argument of $4.671$:'
+     +'$$\\begin{aligned}\\frac{E_b}{N_0}&=\\frac{4.671^{2}}{0.8787}=\\frac{21.82}{0.8787}=24.83,\\\\10\\log_{10}24.83&=13.95\\ \\text{dB}.\\end{aligned}$$'
+     +'16-QAM has $d_{\\min}^{2}=6E_s/(M-1)=0.4E_s=1.6E_b$ and $\\bar N_{\\min}=3$, with $4$ bits a symbol:'
+     +'$$P_b\\approx\\frac34\\,Q\\Big(\\sqrt{\\frac{1.6E_b}{2N_0}}\\Big)=\\frac34\\,Q\\Big(\\sqrt{\\frac{0.8E_b}{N_0}}\\Big).$$'
+     +'The target needs $Q(\\cdot)=\\tfrac43\\times10^{-6}=1.33\\times10^{-6}$, an argument of $4.695$:'
+     +'$$\\begin{aligned}\\frac{E_b}{N_0}&=\\frac{4.695^{2}}{0.8}=\\frac{22.04}{0.8}=27.55,\\\\10\\log_{10}27.55&=14.40\\ \\text{dB}.\\end{aligned}$$<br>'
+     +'<b>Solution — (c).</b> Add the noise density, the noise figure, the bit rate in decibels and the required ratio:'
+     +'$$\\begin{aligned}\\text{QPSK:}\\quad P_{\\min}&=-174+6+10\\log_{10}(10^{7})+10.53\\\\&=-174+6+70.00+10.53=-87.47\\ \\text{dBm},\\\\\\text{8-PSK:}\\quad P_{\\min}&=-174+6+71.76+13.95=-82.29\\ \\text{dBm},\\\\\\text{16-QAM:}\\quad P_{\\min}&=-174+6+73.01+14.40=-80.59\\ \\text{dBm}.\\end{aligned}$$'
+     +'16-QAM carries a third more bits than 8-PSK for only $1.70$ dB more power.<br>'
+     +'<b>Solution — (d).</b> The noise in the band is'
+     +'$$\\begin{aligned}N&=-174+6+10\\log_{10}(6\\times10^{6})\\\\&=-174+6+67.78=-100.22\\ \\text{dBm}.\\end{aligned}$$'
+     +'At the QPSK sensitivity the ratio is $-87.47-(-100.22)=12.75$ dB. It is not $10.53$ dB because $P=E_bR_b$ and $N=N_0B$, so'
+     +'$$\\frac{P}{N}=\\frac{E_b}{N_0}\\cdot\\frac{R_b}{B},\\qquad10.53+10\\log_{10}\\frac{10}{6}=10.53+2.22=12.75\\ \\text{dB}.$$'
+     +'QPSK here sends $10/6=1.67$ bits a second per hertz, so the band holds $2.22$ dB less noise than a band of $R_b$ hertz. The figure shows the three curves at the target and the three sensitivities above the noise.<br>'
+     +'<b>Check.</b> Rebuild the 8-PSK sensitivity from the band. Its SNR is $13.95+10\\log_{10}(15/6)=13.95+3.98=17.93$ dB, and $-100.22+17.93=-82.29$ dBm, as in part (c).',
+  err:'Putting the band $B$ in place of $R_b$ in the sensitivity. $E_b/N_0$ is energy a bit, so the sum takes $10\\log_{10}R_b$. With $10\\log_{10}B$ the QPSK answer comes out $2.22$ dB too low.',
+  teach:'From a band to a sensitivity for three schemes. Part (d) separates $E_b/N_0$ from the signal-to-noise ratio in the band.',
+  figSol:()=>pair(figPb35(), figSens35()) },
 
 { id:'D5-21', module:'M5', type:'qam', src:'Final Q3',
   stem:OPEN+'$$\\begin{aligned}s_k(t)&=2\\cos\\!\\Big(2000\\pi t+\\frac{(k-1)\\pi}{2}\\Big),\\quad k\\in\\{1,2,3\\},\\\\s_4(t)&=4\\cos\\!\\Big(2000\\pi t+\\frac{3\\pi}{2}\\Big),\\end{aligned}$$ all on $0\\le t\\le1$.'+AWGN,

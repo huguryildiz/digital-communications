@@ -232,6 +232,52 @@ window.C5 = [
 ]},
 {t:'p', text:'At $E_s/N_0=22$ dB the link chooses 16-QAM. Each step of two bits costs about $6$ dB.'},
 
+{t:'h3', text:'The link budget'},
+{t:'p', text:'The error rate of a scheme is set by $E_b/N_0$. A link budget turns that ratio into watts, antennas and kilometres. It works in decibels, so products become sums.'},
+{t:'p', text:'A power in dBm is in decibels above $1$ mW, $P_{\\text{dBm}}=10\\log_{10}(P/1\\ \\text{mW})$. A gain or a loss in dB adds to a power in dBm. Two powers in dBm are never added.'},
+{t:'p', text:'Every receiver hears thermal noise. At the reference temperature $T_0=290$ K its density is $kT_0$, where $k$ is Boltzmann\'s constant. The receiver adds noise of its own, counted by the noise figure $F\\ge1$.'},
+{t:'eqbox', cap:'Thermal noise and the noise figure', tex:[
+  'N_0=kT_0F,\\qquad kT_0=(1.38\\times10^{-23})(290)=4.00\\times10^{-21}\\ \\text{W/Hz}',
+  '10\\log_{10}\\frac{4.00\\times10^{-21}\\ \\text{W/Hz}}{10^{-3}\\ \\text{W}}=-174\\ \\text{dBm/Hz},\\qquad \\text{NF}=10\\log_{10}F'],
+ after:'A receiver that adds no noise has $F=1$, or $\\text{NF}=0$ dB. A typical radio receiver has $\\text{NF}$ between $3$ and $8$ dB.'},
+{t:'p', text:'Here $kT_0F$ is the one-sided density $N_0$. This course writes white noise with the two-sided PSD $N_0/2$, which is $3$ dB lower, $-177$ dBm/Hz with $F=1$. It covers negative as well as positive frequencies, so a band of width $B$ collects $N_0B$ either way.'},
+{t:'eqbox', cap:'Noise power in a band', tex:[
+  'N=N_0B=kT_0FB',
+  'N_{\\text{dBm}}=-174+\\text{NF}+10\\log_{10}B'],
+ after:'For $B=10$ MHz, $10\\log_{10}10^{7}=70$. With $\\text{NF}=5$ dB the noise floor is $N=-174+5+70=-99$ dBm. Ten times the band raises it by $10$ dB.'},
+{t:'p', text:'The sensitivity $P_{\\min}$ is the least received power that meets the target error. The energy a bit is the received power times the bit time, $E_b=P_r/R_b$. So $E_b/N_0=P_r/(R_bN_0)$, and solving for $P_r$ at the required ratio gives the sensitivity.'},
+{t:'eqbox', cap:'Receiver sensitivity', tex:[
+  'P_{\\min}=\\Big(\\frac{E_b}{N_0}\\Big)_{\\text{req}}R_bN_0=\\Big(\\frac{E_b}{N_0}\\Big)_{\\text{req}}R_bkT_0F',
+  'P_{\\min,\\text{dBm}}=-174+\\text{NF}+10\\log_{10}R_b+\\Big(\\frac{E_b}{N_0}\\Big)_{\\text{req,dB}}'],
+ after:'The band does not appear. QPSK at $10$ Mb/s needs $E_b/N_0=9.6$ dB for $P_b=10^{-5}$, so with $\\text{NF}=5$ dB it needs $-174+5+70+9.6=-89.4$ dBm.'},
+{t:'p', text:'The received power comes from the transmit power, the two antennas and the path. In free space the Friis formula gives it. The antenna gains $G_t$ and $G_r$ are measured against an antenna that radiates equally in every direction, and $\\lambda=c/f_c$ is the wavelength.'},
+{t:'eqbox', cap:'The Friis formula', tex:[
+  'P_r=P_tG_tG_r\\Big(\\frac{\\lambda}{4\\pi d}\\Big)^{2}',
+  'P_{r,\\text{dBm}}=P_{t,\\text{dBm}}+G_{t,\\text{dBi}}+G_{r,\\text{dBi}}-L_p,\\qquad L_p=20\\log_{10}\\frac{4\\pi d}{\\lambda}'],
+ after:'The loss $L_p$ grows with $d^{2}$, so each doubling of $d$ costs $20\\log_{10}2=6$ dB. At $2.4$ GHz, $\\lambda=0.125$ m and $L_p=20\\log_{10}(4\\pi\\cdot1000/0.125)=100.0$ dB at $1$ km.'},
+{t:'p', text:'The link margin is $P_r-P_{\\min}$. It is kept for fading, walls, rain and ageing, which the free-space model leaves out. The range of a link is the largest $d$ at which the margin is still met.'},
+{t:'p', text:'Take $P_t=20$ dBm and two $10$ dBi antennas at $2.4$ GHz. At $1$ km, $P_r=20+10+10-100.0=-60.0$ dBm, which is $29.4$ dB above the QPSK sensitivity of $-89.4$ dBm. Keeping a $10$ dB margin allows $L_p=119.4$ dB, a range of $9.3$ km.'},
+{t:'fig', svg:()=>{ const top=44, lam=3e8/5.8e9, pr=x=>top-20*Math.log10(4*Math.PI*Math.pow(10,x)/lam);
+  const a=ax({w:560,h:240,xr:[2,4],yr:[-92,-40],xlabel:'d\\;(\\text{km})',ylabel:'P_r\\;(\\text{dBm})',
+    xticksOverride:[2,2+Math.log10(2),2+Math.log10(5),3,3+Math.log10(2),3+Math.log10(5),4],
+    xtickfmt:x=>{ const d=Math.pow(10,x-3); return d<1?d.toFixed(1):String(Math.round(d)); },
+    yticksOverride:[-90,-80,-70,-60,-50,-40],zeroAxes:false});
+  [['\\text{QPSK}',-81.4],['16\\text{-QAM}',-74.6]].forEach(([n,pm],i)=>{ const th=pm+15, x=(top-th-20*Math.log10(4*Math.PI/lam))/20;
+    a.hline(th,{color:C.ink,dash:'6 4',width:1.2}); a.poly([[x,-92],[x,th]],{color:C.muted,width:1,dash:'3 4'});
+    a.point(x,th,{color:C.out,r:4.5}); lab(a,3.97,th+1.8,n,C.ink,'end');
+    lab(a,i?x-0.03:x+0.03,-88,'d='+Math.pow(10,x-3).toFixed(2)+'\\text{ km}',C.out,i?'end':'start'); });
+  a.curve(pr,{color:C.out,width:2.3});
+  lab(a,3.97,-46,'P_r(d)',C.out,'end'); return a.svg(); },
+ cap:'Received power against distance for Example 5.5, with each sensitivity plus the $15$ dB margin. The crossings give the ranges.', short:'The link budget of Example 5.5 against distance.'},
+{t:'ex', hd:'Example 5.5 — a link budget', rows:[
+ ['Given','A $5.8$ GHz link has a band $B=25$ MHz with roll-off $\\alpha=0.25$. It has $P_t=20$ dBm, $G_t=G_r=12$ dBi, $\\text{NF}=7$ dB and needs a $15$ dB margin. For $P_b=10^{-5}$, QPSK needs $E_b/N_0=9.6$ dB and 16-QAM $13.4$ dB.'],
+ ['Find','The bit rate, the sensitivity and the range of each scheme.'],
+ ['Method','The band fixes the symbol rate $R_s=B/(1+\\alpha)$. The sensitivity follows from $R_b$ and $\\text{NF}$. The allowed loss is $L_p=P_t+G_t+G_r-P_{\\min}-\\text{margin}$, and inverting $L_p=20\\log_{10}(4\\pi d/\\lambda)$ gives $d=(\\lambda/4\\pi)\\,10^{L_p/20}$.'],
+ ['Solution','$R_s=25/1.25=20$ Msym/s, so QPSK carries $40$ Mb/s and 16-QAM $80$ Mb/s. Then $10\\log_{10}(40\\times10^{6})=76.0$ and $10\\log_{10}(80\\times10^{6})=79.0$. QPSK: $P_{\\min}=-174+7+76.0+9.6=-81.4$ dBm and $L_p=20+24+81.4-15=110.4$ dB. 16-QAM: $P_{\\min}=-174+7+79.0+13.4=-74.6$ dBm and $L_p=20+24+74.6-15=103.6$ dB. With $\\lambda=3\\times10^{8}/5.8\\times10^{9}=0.0517$ m, $\\lambda/4\\pi=4.12\\times10^{-3}$ m. So QPSK reaches $d=4.12\\times10^{-3}\\cdot10^{110.4/20}=1.36$ km and 16-QAM $d=4.12\\times10^{-3}\\cdot10^{103.6/20}=0.62$ km.'],
+ ['Check','The two sensitivities differ by $-74.6-(-81.4)=6.8$ dB: $3.8$ dB of $E_b/N_0$ and $3.0$ dB of bit rate. A loss $6.8$ dB smaller is a range $10^{6.8/20}=2.19$ times longer, and $1.36/0.62=2.19$.']
+]},
+{t:'box', kind:'err', hd:'Common error', html:'Use $20\\log_{10}$, not $10\\log_{10}$, to turn a loss into range. A loss $6.8$ dB smaller is a factor $2.2$ in range, not $4.8$, because $L_p$ grows with $d^{2}$.'},
+
 {t:'h2', num:'5.6', text:'Summary'},
 {t:'table', cap:'Summary of Chapter 5: digital modulation methods.', head:['Scheme','${d_{\\min}^{2}}$','${\\bar N_{\\min}}$','Error probability','Anchor'], rows:[
  ['BPSK, QPSK','${4E_b}$','${1}$','${P_b=Q\\bigl(\\sqrt{2E_b/N_0}\\bigr)}$','PS CH8.6.1, 8.6.3'],
