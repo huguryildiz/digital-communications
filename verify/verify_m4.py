@@ -167,6 +167,7 @@ check("m4-optimal/m4-ex-map P_e(0) = Q(2)", pe_tau(0), 0.0228, 0.00005)
 check("m4-ex-map Q argument (1 - tau)/0.5", (1 - tau_star) / sg, 1.73, 0.005)
 check("m4-ex-map Q argument (1 + tau)/0.5", (1 + tau_star) / sg, 2.27, 0.005)
 check("m4-ex-map MAP saves 16%", (pe_tau(0) - pe_tau(tau_star)) / pe_tau(0), 0.16, 0.005)
+check("m4-ex-map common error: the inverse ratio gives tau = -0.137", N0 / 4 * math.log(p1 / (1 - p1)), -0.137, 0.0005)
 
 rv = np.array([1.2, 0.3])
 RX = [np.array(p) for p in ([2, 0], [1, 1], [-1, 1], [-1, -1])]
@@ -240,7 +241,7 @@ check("m4-ex-union d_min bound", 3 * Q(3), 4.05e-3, 0.005e-3)
 check("m4-ex-union exact", 1 - (1 - Q(3)) ** 2, 2.70e-3, 0.005e-3)
 check("m4-ex-union diagonal share", Q(xd) / (2 * Q(3)), 0.004, 0.0005)
 check("notes 4.5 common error: 3Q/2Q is 50% too high", 3 * Q(3) / (2 * Q(3)) - 1, 0.5, 1e-12)
-check("notes 4.1 common error: N0 as variance is sqrt2 too wide", math.sqrt(0.1) / math.sqrt(0.05), math.sqrt(2), 1e-12)
+check("m4-ex-pam4 common error: N0 as variance is sqrt2 too wide", math.sqrt(0.1) / math.sqrt(0.05), math.sqrt(2), 1e-12)
 check("notes binary figure P_e = Q(sqrt2) at d=2, N0=1", Q(math.sqrt(4 / 2)), Q(math.sqrt(2)), 1e-15)
 
 # ex-union-b: rectangle (+-1.5,+-1), N0 = 0.4

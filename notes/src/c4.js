@@ -945,6 +945,7 @@ window.C4 = [
  ['Solution','Put $\\sigma^{2}=N_0/2$ into the Gaussian density. $$f(r\\mid s_m)=\\frac{1}{\\sqrt{2\\pi\\sigma^{2}}}\\,e^{-(r-s_m)^{2}/2\\sigma^{2}}=\\frac{1}{\\sqrt{\\pi N_0}}\\,e^{-(r-s_m)^{2}/N_0}$$ Here $\\sigma^{2}=0.05$. The peak is $1/\\sqrt{\\pi N_0}=1/\\sqrt{0.1\\pi}=1.78$. The four bells have one shape, each centred on its level.'],
  ['Check','Each bell has $\\sigma=\\sqrt{0.05}=0.22$, well inside half the spacing between levels, $0.5$. At $N_0=0.6$, $\\sigma=0.55$ and neighbouring bells overlap.']
 ]},
+{t:'box', kind:'err', hd:'Common error', html:'Use $N_0/2$, not $N_0$, as the variance. $N_0$ makes each bell $\\sqrt2$ times too wide.'},
 {t:'p', text:'The figure below draws the four densities of Example 4.1.'},
 {t:'fig', svg:figPam4,
  cap:'The four conditional densities of Example 4.1, drawn for $N_0=0.1$. Each bell sits on one level, and its width grows with $\\sqrt{N_0}$.'},
@@ -956,6 +957,7 @@ window.C4 = [
  ['Solution','Each $n_k$ is Gaussian with variance $N_0/2=0.5$, so $2\\sigma^{2}=1$. $$f(r_1\\mid\\mathbf s_1)=\\frac{e^{-(r_1-2)^{2}}}{\\sqrt{\\pi}},\\qquad f(r_k\\mid\\mathbf s_1)=\\frac{e^{-r_k^{2}}}{\\sqrt{\\pi}}$$ The mean of $r_1$ is $\\sqrt E=2$. Each density has peak $1/\\sqrt\\pi=0.56$, and the four outputs are independent.'],
  ['Check','The means $(2,0,0,0)$ have squared length $2^{2}=4=E$, as they must.']
 ]},
+{t:'box', kind:'err', hd:'Common error', html:'Use $\\sqrt E=2$, not $E=4$, as the mean of $r_1$. The coordinate of $\\mathbf s_1$ is its length, and $E$ is its squared length.'},
 {t:'p', text:'The figure below draws the four densities of Example 4.2.'},
 {t:'fig', svg:figOrth,
  cap:'The four correlator outputs of Example 4.2 when $\\mathbf s_1$ is sent. Only $r_1$ is centred away from zero.'},
@@ -1045,6 +1047,7 @@ window.C4 = [
  ['Solution','$\\tau=\\tfrac{0.5}{4}\\ln\\tfrac{0.75}{0.25}=0.125\\ln3=0.137$. It is positive, so it moves toward $+1$, the less likely signal. Each $Q$ argument is the distance from a point to $\\tau$, over $\\sigma=\\sqrt{N_0/2}=0.5$. $$\\begin{aligned}P_e&=0.25\\,Q\\!\\left(\\frac{1-0.137}{0.5}\\right)+0.75\\,Q\\!\\left(\\frac{1+0.137}{0.5}\\right)\\\\&=0.25\\,Q(1.73)+0.75\\,Q(2.27)\\\\&=0.25(0.0422)+0.75(0.0115)=0.0192\\end{aligned}$$'],
  ['Check','ML keeps $\\tau=0$ and gets $Q(1/0.5)=Q(2)=0.0228$. MAP is about $16\\%$ better.']
 ]},
+{t:'box', kind:'err', hd:'Common error', html:'Use $\\ln\\bigl(P(s_2)/P(s_1)\\bigr)$, not its inverse. The inverse gives $\\tau=-0.137$.'},
 {t:'p', text:'The figure below marks the threshold and the two error areas of Example 4.3.'},
 {t:'fig', svg:figExMap,
  cap:'Example 4.3. Solid: $0.25\\,f(r\\mid s_1)$ at $+1$. Dashed: $0.75\\,f(r\\mid s_2)$ at $-1$. The two red areas are the two ways to be wrong, and their sum is $P_e=0.0192$.'},
@@ -1053,9 +1056,10 @@ window.C4 = [
  ['Given','Four equally likely waveforms on $[0,2)$. $s_1(t)=2$ on $[0,1)$ and $s_2(t)=1$ on $[0,2)$. $s_3(t)$ is $-1$ on $[0,1)$ and $1$ on $[1,2)$, and $s_4(t)=-1$ on $[0,2)$. $\\mathbf r=(1.2,0.3)$ arrives.'],
  ['Find','The receiver and its decision for $\\mathbf r$.'],
  ['Method','Every waveform is constant on each half, so two unit pulses form an orthonormal basis: $\\psi_1=1$ on $[0,1)$ and $\\psi_2=1$ on $[1,2)$. Read each point from the heights on the two halves. $$\\mathbf s_1=(2,0),\\quad \\mathbf s_2=(1,1),\\quad \\mathbf s_3=(-1,1),\\quad \\mathbf s_4=(-1,-1)$$ The energies $E_i=\\|\\mathbf s_i\\|^{2}$ are $4,2,2,2$. They differ, so the metric keeps $-E_i/2$.'],
- ['Solution','With equal priors the metric is $\\mathbf r\\cdot\\mathbf s_i-E_i/2$. $$\\begin{aligned}\\mathbf s_1:&\\quad 1.2(2)+0.3(0)-2=0.4\\\\ \\mathbf s_2:&\\quad 1.2(1)+0.3(1)-1=0.5\\\\ \\mathbf s_3:&\\quad 1.2(-1)+0.3(1)-1=-1.9\\\\ \\mathbf s_4:&\\quad 1.2(-1)+0.3(-1)-1=-2.5\\end{aligned}$$ The largest is $0.5$, so $\\hat s=s_2$. The correlation alone picks $s_1$.'],
+ ['Solution','With equal priors the metric is $\\mathbf r\\cdot\\mathbf s_i-E_i/2$. $$\\begin{aligned}\\mathbf s_1:&\\quad 1.2(2)+0.3(0)-2=0.4\\\\ \\mathbf s_2:&\\quad 1.2(1)+0.3(1)-1=0.5\\\\ \\mathbf s_3:&\\quad 1.2(-1)+0.3(1)-1=-1.9\\\\ \\mathbf s_4:&\\quad 1.2(-1)+0.3(-1)-1=-2.5\\end{aligned}$$ The largest is $0.5$, so $\\hat s=s_2$.'],
  ['Check','$\\|\\mathbf r-\\mathbf s_1\\|^{2}=0.8^{2}+0.3^{2}=0.73$ and $\\|\\mathbf r-\\mathbf s_2\\|^{2}=0.2^{2}+0.7^{2}=0.53$. So $\\mathbf s_2$ is also the nearest point, and $\\mathbf r$ lies in its region.']
 ]},
+{t:'box', kind:'err', hd:'Common error', html:'Use $\\mathbf r\\cdot\\mathbf s_i-E_i/2$, not $\\mathbf r\\cdot\\mathbf s_i$, if the energies differ. Correlation alone picks $s_1$.'},
 {t:'p', text:'The figure below draws the waveforms, the basis and the regions of Example 4.4.'},
 {t:'fig', svg:figExReceiver,
  cap:'Example 4.4. Top: the four waveforms, with the two unit pulses dashed in amber. Bottom: the four points, the regions of the minimum-distance receiver, and $\\mathbf r=(1.2,0.3)$ in the region of $\\mathbf s_2$.'},
@@ -1184,7 +1188,7 @@ window.C4 = [
  cap:'Solid: $Q(x)$. Dashed: $\\tfrac12e^{-x^{2}/2}$, marked at $x=3$. The bound stays above $Q(x)$, and both fall with the same exponent.'},
 
 {t:'h3', text:'The intelligent union bound'},
-{t:'p', text:'To leave $R_i$, the point $\\mathbf r$ must cross one of the faces of $R_i$. So the union needs only the points that share a face with $R_i$. This set is written $F_i$.'},
+{t:'p', text:'To leave $R_i$, the point $\\mathbf r$ must cross one of the faces of $R_i$. So keep the terms for the points that share a face with $R_i$, a set written $F_i$. Drop the others.'},
 {t:'eqbox', cap:'Intelligent union bound', tex:'P(\\text{error}\\mid\\mathbf s_i)\\le\\sum_{j\\in F_i}Q\\!\\left(\\sqrt{\\frac{d_{ij}^{2}}{2N_0}}\\right)',
  after:'The bound is tighter than the general union bound, and still a bound.'},
 {t:'p', text:'In the square, the region of $\\mathbf s_1$ is the first quadrant. The figure below marks its two faces, shared with $\\mathbf s_2$ and $\\mathbf s_4$. So the bound keeps two terms and drops the term for $\\mathbf s_3$.'},
@@ -1210,6 +1214,7 @@ window.C4 = [
  ['Solution','$$\\begin{aligned}\\text{general}&=2Q(3)+Q(4.24)=2.71\\times10^{-3}\\\\ \\text{intelligent}=\\text{nearest}&=2Q(3)=2.70\\times10^{-3}\\\\ d_{\\min}\\text{ bound}&=3Q(3)=4.05\\times10^{-3}\\end{aligned}$$ The minimum-distance bound is the largest. It counts three terms at $Q(3)$, and the others count two plus a tiny diagonal term.'],
  ['Check','The regions are quadrants, so each noise component acts on its own. The exact value is $1-\\bigl(1-Q(3)\\bigr)^{2}=2.70\\times10^{-3}$. The diagonal term adds only $0.4\\%$.']
 ]},
+{t:'box', kind:'err', hd:'Common error', html:'Use $\\bar N_{\\min}=2$, not $3$. The diagonal point is at $2\\sqrt2$, not at $d_{\\min}=2$.'},
 {t:'p', text:'The figure below shows the nearest neighbours of $\\mathbf s_1$ in Example 4.5.'},
 {t:'fig', svg:figExUnion,
  cap:'Example 4.5 from $\\mathbf s_1$. The dashed circle of radius $d_{\\min}$ passes through the two nearest neighbours. The minimum-distance bound moves the diagonal point in to $d_{\\min}$, ringed.'},
@@ -1221,6 +1226,7 @@ window.C4 = [
  ['Solution','$$\\begin{aligned}\\text{intelligent}&=Q(2.24)+Q(3.35)=1.31\\times10^{-2}\\\\ \\text{nearest}&=\\bar N_{\\min}\\,Q(2.24)=1.27\\times10^{-2}\\end{aligned}$$ Each point has one neighbour at $d_{\\min}=2$, so $\\bar N_{\\min}=1$. The point $(-1.5,1)$ shares the face $r_1=0$ but sits at $3$, more than $d_{\\min}$.'],
  ['Check','The regions are quadrants, so the exact value is $1-\\bigl(1-Q(3.35)\\bigr)\\bigl(1-Q(2.24)\\bigr)=1.31\\times10^{-2}$. The nearest-neighbour form is $3\\%$ below it, so it is not a bound.']
 ]},
+{t:'box', kind:'err', hd:'Common error', html:'Use $Q(2.24)+Q(3.35)$ for both faces, not only $Q(2.24)$ for the nearest neighbour.'},
 {t:'p', text:'The figure below marks the faces and the nearest neighbour of $\\mathbf s_1$ in Example 4.6.'},
 {t:'fig', svg:figExUnionB,
  cap:'Example 4.6. The two red faces of $R_1$ are shared with the points at $3$ and $2$. The dashed circle of radius $d_{\\min}=2$ passes through one nearest neighbour, ringed.'},

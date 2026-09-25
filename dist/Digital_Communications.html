@@ -19154,9 +19154,9 @@ const SC = [
         note:'One basis function, so one correlator and one number. The noise shifts it by a Gaussian amount.'}]},
     {t:'reveal', at:2, items:[
       {t:'eq', label:'Solution', tex:'f(r\\mid s_m)=\\frac{1}{\\sqrt{\\pi N_0}}\\,e^{-(r-s_m)^{2}/N_0},\\qquad \\sigma^{2}=\\frac{N_0}{2}=0.05',
-        note:'Four bells of one shape, each centred on its level.'}]},
+        note:'Check: $\\sigma=0.22$, well inside half the spacing, $0.5$.'}]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'ok', head:'Check', html:'Each bell has $\\sigma=0.22$, well inside half the spacing, $0.5$. Drag $N_0$ to $0.6$ and neighbours overlap.'}]}
+      {t:'note', kind:'err', head:'Common error', html:'Use $N_0/2$, not $N_0$, as the variance. $N_0$ makes each bell $\\sqrt2$ times too wide.'}]}
   ]}
 ]},
 
@@ -19178,9 +19178,9 @@ const SC = [
         note:'Only the first correlator sees the signal. The other three see noise alone.'}]},
     {t:'reveal', at:2, items:[
       {t:'eq', label:'Solution', tex:'f(r_1\\mid\\mathbf s_1)=\\frac{e^{-(r_1-2)^{2}}}{\\sqrt{\\pi}},\\qquad f(r_k\\mid\\mathbf s_1)=\\frac{e^{-r_k^{2}}}{\\sqrt{\\pi}}',
-        note:'Each has variance $N_0/2=0.5$ and peak $1/\\sqrt\\pi=0.56$. The four are independent.'}]},
+        note:'Each has variance $N_0/2=0.5$ and peak $1/\\sqrt\\pi=0.56$. The four are independent. Check: the means $(2,0,0,0)$ have squared length $4=E$.'}]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'ok', head:'Check', html:'The means $(2,0,0,0)$ have squared length $4=E$, as they must.'}]}
+      {t:'note', kind:'err', head:'Common error', html:'Use $\\sqrt E=2$, not $E=4$, as the mean of $r_1$. The coordinate of $\\mathbf s_1$ is its length, and $E$ is its squared length.'}]}
   ]}
 ]},
 
@@ -19341,9 +19341,9 @@ REAL_OBSERVE,
         note:'Set the two weighted densities equal at $r=\\tau$ and take logarithms. The squares cancel.'}]},
     {t:'reveal', at:2, items:[
       {t:'eq', label:'Solution', tex:'\\tau=\\tfrac{0.5}{4}\\ln3=0.137,\\qquad P_e=0.25\\,Q(1.73)+0.75\\,Q(2.27)=0.0192',
-        note:'Each $Q$ argument is the distance from a point to $\\tau$, over $\\sigma=\\sqrt{N_0/2}=0.5$.'}]},
+        note:'Each $Q$ argument is the distance from a point to $\\tau$, over $\\sigma=\\sqrt{N_0/2}=0.5$. Check: ML keeps $\\tau=0$ and gets $Q(2)=0.0228$, so MAP is about $16\\%$ better.'}]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'ok', head:'Check', html:'ML keeps $\\tau=0$ and gets $Q(2)=0.0228$. MAP is about $16\\%$ better.'}]}
+      {t:'note', kind:'err', head:'Common error', html:'Use $\\ln\\bigl(P(s_2)/P(s_1)\\bigr)$, not its inverse. The inverse gives $\\tau=-0.137$.'}]}
   ]}
 ]},
 
@@ -19365,9 +19365,9 @@ REAL_OBSERVE,
         note:'Read the height on each half. The energies are $4,2,2,2$.'}]},
     {t:'reveal', at:2, items:[
       {t:'eq', label:'Solution', tex:'\\begin{aligned}\\mathbf r\\cdot\\mathbf s_i-\\tfrac{E_i}{2}:&\\quad 2.4-2=0.4,\\quad 1.5-1=0.5,\\\\&\\quad {-0.9}-1=-1.9,\\quad -1.5-1=-2.5\\end{aligned}',
-        note:'The largest is $0.5$, so $\\hat s=s_2$. The correlation alone picks $s_1$.'}]},
+        note:'The largest is $0.5$, so $\\hat s=s_2$. Check: the squared distances are $0.53$ to $\\mathbf s_2$ and $0.73$ to $\\mathbf s_1$.'}]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'ok', head:'Check', html:'Distances: $\\|\\mathbf r-\\mathbf s_1\\|^{2}=0.73$ and $\\|\\mathbf r-\\mathbf s_2\\|^{2}=0.53$. $\\mathbf r$ lies in the region of $\\mathbf s_2$.'}]}
+      {t:'note', kind:'err', head:'Common error', html:'Use $\\mathbf r\\cdot\\mathbf s_i-E_i/2$, not $\\mathbf r\\cdot\\mathbf s_i$, if the energies differ. Correlation alone picks $s_1$.'}]}
   ]}
 ]},
 
@@ -19612,7 +19612,7 @@ REAL_REGIONS,
     {t:'fig', frame:true, grow:true, svg:figIntel,
       caption:'The region of $\\mathbf s_1$ is the first quadrant. Its two faces, in red, are shared with $\\mathbf s_2$ and $\\mathbf s_4$. The bisector with $\\mathbf s_3$, dashed, only touches the corner.'}
   ], right:[
-    {t:'note', kind:'def', head:'Only the faces', html:'To leave $R_i$, $\\mathbf r$ must cross one of its faces. Keep the terms for points that share a face; drop the others.'},
+    {t:'note', kind:'def', head:'Only the faces', html:'To leave $R_i$, $\\mathbf r$ must cross one of its faces. Keep the terms for points that share a face. Drop the others.'},
     {t:'reveal', at:1, items:[
       {t:'eq', label:'Intelligent union bound', tex:'P(\\text{error}\\mid\\mathbf s_i)\\le\\sum_{j\\in F_i}Q\\!\\left(\\sqrt{\\frac{d_{ij}^{2}}{2N_0}}\\right)',
         note:'$F_i$ holds the points that share a face with $R_i$. The bound is tighter, and still a bound.'}]},
@@ -19661,9 +19661,10 @@ REAL_REGIONS,
       {t:'eq', label:'Method', tex:'Q(3)=1.35\\times10^{-3},\\qquad Q(\\sqrt{18})=Q(4.24)=1.1\\times10^{-5}',
         note:'Neighbours at $d=2$ give $x=3$. The diagonal at $2\\sqrt2$ gives $x=\\sqrt{18}$.'}]},
     {t:'reveal', at:2, items:[
-      {t:'eq', label:'Solution', tex:'\\begin{aligned}\\text{general}&=2Q(3)+Q(4.24)=2.71\\times10^{-3}\\\\\\text{intelligent}=\\text{nearest}&=2Q(3)=2.70\\times10^{-3}\\\\d_{\\min}\\text{ bound}&=3Q(3)=4.05\\times10^{-3}\\end{aligned}'}]},
+      {t:'eq', label:'Solution', tex:'\\begin{aligned}\\text{general}&=2Q(3)+Q(4.24)=2.71\\times10^{-3}\\\\\\text{intelligent}=\\text{nearest}&=2Q(3)=2.70\\times10^{-3}\\\\d_{\\min}\\text{ bound}&=3Q(3)=4.05\\times10^{-3}\\end{aligned}',
+        note:'Check: the exact value is $1-\\bigl(1-Q(3)\\bigr)^{2}=2.70\\times10^{-3}$.'}]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'ok', head:'Check', html:'The exact value is $1-\\bigl(1-Q(3)\\bigr)^{2}=2.70\\times10^{-3}$. The diagonal term adds only $0.4\\%$.'}]}
+      {t:'note', kind:'err', head:'Common error', html:'Use $\\bar N_{\\min}=2$, not $3$. The diagonal point is at $2\\sqrt2$, not at $d_{\\min}=2$.'}]}
   ]}
 ]},
 
@@ -19685,9 +19686,9 @@ REAL_REGIONS,
         note:'Each argument is $d/\\sqrt{2N_0}=d/\\sqrt{0.8}$. All four points are alike.'}]},
     {t:'reveal', at:2, items:[
       {t:'eq', label:'Solution', tex:'\\begin{aligned}\\text{intelligent}&=Q(2.24)+Q(3.35)=1.31\\times10^{-2}\\\\\\text{nearest}&=\\bar N_{\\min}\\,Q(2.24)=1.27\\times10^{-2}\\end{aligned}',
-        note:'$\\bar N_{\\min}=1$: each point has one neighbour at $d_{\\min}=2$.'}]},
+        note:'Check: exact $1.31\\times10^{-2}$. The nearest-neighbour form is $3\\%$ low, not a bound.'}]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'ok', head:'Check', html:'The exact value is $1.31\\times10^{-2}$. The nearest-neighbour form is $3\\%$ below it, so it is not a bound.'}]}
+      {t:'note', kind:'err', head:'Common error', html:'Use $Q(2.24)+Q(3.35)$ for both faces, not only $Q(2.24)$ for the nearest neighbour.'}]}
   ]}
 ]},
 
