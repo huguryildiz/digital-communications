@@ -19,8 +19,10 @@ here by a route the solution does not take:
 A last check per question confirms that every stated text occurs inside that
 question's block of the JS file, so the table below cannot drift from the page.
 
-Four questions are on the channel side (D6-06, D6-07, D6-14, D6-22). Their
-numbers are in the CHANNEL table further down, with the routes listed there.
+Six questions are on the channel side (D6-01, D6-06, D6-07, D6-10, D6-14,
+D6-22). Their numbers are in the CHANNEL table further down, with the routes
+listed there, and a last check per channel question confirms it writes the
+bandwidth W and the units Mb/s and b/s/Hz as the slides do.
 
 The runner is the one in verify_drills.py: a CHECKS list of dicts with
 "name", "stated", "derive" and "tol", and main() prints N passed, M failed.
@@ -64,14 +66,12 @@ def geo(zs, base, c=None):
 
 
 SOURCES = {
-    'D6-01': ([U(range(-4, 5))], lambda x: (x**3) % 5),
     'D6-02': ([U(range(0, 10))], lambda x: (x*x) % 10),
     'D6-03': ([U(range(1, 13))], lambda x: math.floor(12/x)),
     'D6-04': ([U(range(16))], lambda x: sum((x >> i) & 1 for i in range(4))),
     'D6-05': ([U(range(-5, 6))], lambda x: math.ceil(abs(x)/2)),
     'D6-08': ([U(range(-7, 8))], lambda x: max(x, 0)),
     'D6-09': ([U([1, 2, 3]), geo([-1, 0, 1], '1/3')], lambda x, z: x*z),
-    'D6-10': ([U([-1, 0, 1]), {z: _c_normalised([sp.Rational(1, k) for k in (1, 2, 3)])/z for z in (1, 2, 3)}], lambda x, z: x*z),
     'D6-11': ([U(range(4)), geo([0, 1, 2], '1/2')], lambda x, z: max(x, z)),
     'D6-12': ([U(range(4)), {z: _c_normalised([sp.Rational(1, 2), 1, sp.Rational(1, 2)])*2.0**(-abs(z)) for z in (-1, 0, 1)}], lambda x, z: x+z),
     'D6-13': ([U(range(6)), {z: _c_normalised([1, 3])*z for z in (1, 3)}], lambda x, z: math.floor(x/z)),
@@ -93,8 +93,8 @@ SOURCES = {
 }
 
 # the common denominator each solution writes its probabilities over
-DEN = {'D6-01': 9, 'D6-02': 10, 'D6-03': 12, 'D6-04': 16, 'D6-05': 11,
-       'D6-08': 15, 'D6-09': 39, 'D6-10': 33, 'D6-11': 28, 'D6-12': 16,
+DEN = {'D6-02': 10, 'D6-03': 12, 'D6-04': 16, 'D6-05': 11,
+       'D6-08': 15, 'D6-09': 39, 'D6-11': 28, 'D6-12': 16,
        'D6-13': 24, 'D6-15': 60, 'D6-16': 28, 'D6-17': 12, 'D6-18': 24,
        'D6-19': 25, 'D6-20': 28, 'D6-21': 30, 'D6-23': 16, 'D6-24': 16,
        'D6-25': 4, 'D6-26': 8, 'D6-27': 16, 'D6-28': 9, 'D6-29': 12, 'D6-30': 52}
@@ -289,7 +289,7 @@ def derive(q, kind, args, text):
             return solve_a30()[0]
         zp = SOURCES[q][0][1]
         # the constant is p_Z at the point where the shape equals one
-        shape = {'D6-09': 0, 'D6-10': 1, 'D6-11': 0, 'D6-12': 0, 'D6-13': 1, 'D6-15': 0}[q]
+        shape = {'D6-09': 0, 'D6-11': 0, 'D6-12': 0, 'D6-13': 1, 'D6-15': 0}[q]
         return zp[shape]
     if kind == 'a':
         return solve_a30()[1]
@@ -392,26 +392,6 @@ def text_present(q):
 
 
 STATED = {
-    'D6-01': [
-        ('pmf', ['0'], 0.1111111111111111, '\\frac{1}{9}'),
-        ('pmf', ['1'], 0.2222222222222222, '\\frac{2}{9}'),
-        ('pmf', ['2'], 0.2222222222222222, '\\frac{2}{9}'),
-        ('pmf', ['3'], 0.2222222222222222, '\\frac{2}{9}'),
-        ('pmf', ['4'], 0.2222222222222222, '\\frac{2}{9}'),
-        ('term', ['2'], 0.48220555587606934, '0.4822'),
-        ('term', ['1'], 0.3522138890491458, '0.3522'),
-        ('H', [], 2.2810361125534238, '2.2810'),
-        ('codes', ['{"4": "000", "0": "001", "1": "01", "2": "10", "3": "11"}'], 1.0, ''),
-        ('L', [], 2.3333333333333335, '2.3333'),
-        ('Lfrac', [], 2.3333333333333335, '\\frac{21}{9}'),
-        ('eta', [], 0.9775869053800387, '0.9776'),
-        ('pct', [], 0.9775869053800387, '97.76'),
-        ('msum', [], 2.3333333333333335, '\\frac{21}{9}'),
-        ('log2D', [], 3.169925001442312, '3.1699'),
-        ('nlogn', [], 0.8888888888888888, '0.8889'),
-        ('kraft', [], 1.0, '1'),
-        ('Hp1', [], 3.2810361125534238, '3.2810'),
-    ],
     'D6-02': [
         ('pmf', ['0'], 0.1, '\\frac{1}{10}'),
         ('pmf', ['1'], 0.2, '\\frac{2}{10}'),
@@ -541,31 +521,6 @@ STATED = {
         ('nlogn', [], 2.9260846167159804, '2.9261'),
         ('kraft', [], 1.0, '1'),
         ('Hp1', [], 3.359317602146268, '3.3593'),
-    ],
-    'D6-10': [
-        ('pmf', ['-3'], 0.06060606060606061, '\\frac{2}{33}'),
-        ('pmf', ['-2'], 0.09090909090909091, '\\frac{3}{33}'),
-        ('pmf', ['-1'], 0.18181818181818182, '\\frac{6}{33}'),
-        ('pmf', ['0'], 0.3333333333333333, '\\frac{11}{33}'),
-        ('pmf', ['1'], 0.18181818181818182, '\\frac{6}{33}'),
-        ('pmf', ['2'], 0.09090909090909091, '\\frac{3}{33}'),
-        ('pmf', ['3'], 0.06060606060606061, '\\frac{2}{33}'),
-        ('term', ['11'], 0.5283208335737186, '0.5283'),
-        ('term', ['6'], 0.44716938520678134, '0.4472'),
-        ('term', ['3'], 0.3144937835124816, '0.3145'),
-        ('term', ['2'], 0.24511479511263354, '0.2451'),
-        ('H', [], 2.5418767612375115, '2.5419'),
-        ('codes', ['{"0": "00", "1": "010", "-3": "0110", "3": "0111", "-2": "100", "2": "101", "-1": "11"}'], 1.0, ''),
-        ('L', [], 2.606060606060606, '2.6061'),
-        ('Lfrac', [], 2.606060606060606, '\\frac{86}{33}'),
-        ('eta', [], 0.97537131535858, '0.9754'),
-        ('pct', [], 0.97537131535858, '97.54'),
-        ('c', [], 0.5454545454545454, 'c=\\tfrac{6}{11}'),
-        ('msum', [], 2.606060606060606, '\\frac{86}{33}'),
-        ('log2D', [], 5.044394119358453, '5.0444'),
-        ('nlogn', [], 2.502517358120942, '2.5025'),
-        ('kraft', [], 1.0, '1'),
-        ('Hp1', [], 3.5418767612375115, '3.5419'),
     ],
     'D6-11': [
         ('pmf', ['0'], 0.14285714285714285, '\\frac{4}{28}'),
@@ -990,7 +945,7 @@ STATED = {
     ],
 }
 
-# ── the four channel-side questions (D6-06, D6-07, D6-14, D6-22) ─────────────
+# ── the channel-side questions D6-06, D6-07, D6-14 and D6-22 ─────────────────
 #
 # These state probabilities of a binary symmetric channel and energies per bit
 # of the bandlimited channel, not pmfs of a derived source, so they have their
@@ -1023,7 +978,7 @@ def dB(x):
 
 
 def limit_lin(r):
-    """smallest E_b/N_0 (linear) at which the bandlimited channel carries r bit/s/Hz"""
+    """smallest E_b/N_0 (linear) at which the bandlimited channel carries r b/s/Hz"""
     return brentq(lambda g: math.log2(1 + r*g) - r, 1e-6, 1e6, xtol=1e-14)
 
 
@@ -1122,7 +1077,7 @@ CHANNEL = {
         ('Monte Carlo P_3', 7.25e-3, lambda: mc_majority(3, p06), 3e-4),
     ],
     'D6-07': [
-        ('=6\\ \\text{bit/s/Hz}', 6.0, lambda: R07/B07, 1e-12),
+        ('=6\\ \\text{b/s/Hz}', 6.0, lambda: R07/B07, 1e-12),
         ('=10.5', 10.5, lambda: limit_lin(R07/B07), 1e-6),
         ('10.21\\ \\text{dB}', 10.21, lambda: dB(limit_lin(R07/B07)), 0.006),
         ('3.0\\times10^{-19}\\ \\text{J}', 3.0e-19, lambda: P07/R07, 1e-24),
@@ -1132,15 +1087,15 @@ CHANNEL = {
         ('&=45', 45.0, lambda: P07/(N007*B07), 1e-9),
         ('\\log_2 46', 46.0, lambda: 1 + P07/(N007*B07), 1e-9),
         ('5.5236', 5.5236, lambda: math.log2(46), 6e-5),
-        ('55.24\\ \\text{Mbit/s}', 55.24, lambda: B07*math.log2(1 + P07/(N007*B07))/1e6, 6e-3),
+        ('55.24\\ \\text{Mb/s}', 55.24, lambda: B07*math.log2(1 + P07/(N007*B07))/1e6, 6e-3),
         ('0.9\\times10^{-11}', 0.9e-11, lambda: P07/2, 1e-20),
-        ('=3\\ \\text{bit/s/Hz}', 3.0, lambda: (R07/2)/B07, 1e-12),
+        ('=3\\ \\text{b/s/Hz}', 3.0, lambda: (R07/2)/B07, 1e-12),
         ('=2.333', 2.333, lambda: limit_lin(3), 6e-4),
         ('3.68\\ \\text{dB}', 3.68, lambda: dB(limit_lin(3)), 0.006),
         ('8.75-3.68=5.07', 5.07, lambda: dB(P07/R07/N007) - dB(limit_lin(3)), 0.006),
         ('3(7.5)=22.5', 22.5, lambda: (P07/2)/(N007*B07), 1e-9),
         ('4.5546', 4.5546, lambda: math.log2(23.5), 6e-5),
-        ('45.55\\ \\text{Mbit/s}', 45.55, lambda: B07*math.log2(1 + (P07/2)/(N007*B07))/1e6, 6e-3),
+        ('45.55\\ \\text{Mb/s}', 45.55, lambda: B07*math.log2(1 + (P07/2)/(N007*B07))/1e6, 6e-3),
     ],
     'D6-14': [
         # the table printed in the statement
@@ -1179,9 +1134,9 @@ CHANNEL = {
         ('=4.431', 4.431, lambda: ebn0_needed(0.75, 0.8)/limit_lin(4), 4e-3),
     ],
     'D6-22': [
-        ('=6\\ \\text{Mbit/s},\\quad r=1', 6.0, lambda: 6e6*0.5*math.log2(4)/1e6, 1e-12),
-        ('=12\\ \\text{Mbit/s},\\quad r=2', 12.0, lambda: 6e6*0.5*math.log2(16)/1e6, 1e-12),
-        ('=18\\ \\text{Mbit/s},\\quad r=3', 18.0, lambda: 6e6*0.5*math.log2(64)/1e6, 1e-12),
+        ('=6\\ \\text{Mb/s},\\quad r=1', 6.0, lambda: 6e6*0.5*math.log2(4)/1e6, 1e-12),
+        ('=12\\ \\text{Mb/s},\\quad r=2', 12.0, lambda: 6e6*0.5*math.log2(16)/1e6, 1e-12),
+        ('=18\\ \\text{Mb/s},\\quad r=3', 18.0, lambda: 6e6*0.5*math.log2(64)/1e6, 1e-12),
         ('=1=0\\ \\text{dB}', 1.0, lambda: limit_lin(1), 1e-6),
         ('=1.5=1.76\\ \\text{dB}', 1.76, lambda: dB(limit_lin(2)), 0.006),
         ('=2.333=3.68\\ \\text{dB}', 3.68, lambda: dB(limit_lin(3)), 0.006),
@@ -1207,6 +1162,232 @@ CHANNEL = {
     ],
 }
 
+
+# ── D6-01: soft against hard decisions for a rate-3/5 code on Gray QPSK ──────
+#
+#   soft limit   brentq on the capacity itself (limit_lin above)
+#   hard limit   brentq on 1 - H_b(Q(sqrt(2 R x))) = R with scipy's Q and
+#                scipy.stats.entropy, not through the two table entries the
+#                solution reads, so the stated values carry the table's
+#                rounding (a tolerance of 1e-3 linear, 0.008 dB)
+#   crossover    one seeded Monte Carlo run of BPSK with hard decisions
+
+R01 = 0.6
+EB01 = 10**(1.5/10)
+
+
+def Hbin(p):
+    return float(sp_entropy([p, 1 - p], base=2))
+
+
+def hard_lin(R):
+    """least E_b/N_0 (linear) at which the BSC from hard-decided coded bits carries rate R"""
+    return brentq(lambda g: 1 - Hbin(Qf(math.sqrt(2*R*g))) - R, 1e-3, 1e3, xtol=1e-14)
+
+
+def mc_hard(ebn0, R, n=2_000_000, seed=601):
+    """BPSK amplitude sqrt(E_c) = sqrt(R E_b) in noise of variance N_0/2 (N_0 = 1),
+    decided by its sign: the fraction of flipped coded bits"""
+    rng = np.random.default_rng(seed)
+    y = math.sqrt(R*ebn0) + rng.normal(0.0, math.sqrt(0.5), n)
+    return float(np.mean(y < 0))
+
+
+CHANNEL['D6-01'] = [
+    # the table printed in the statement
+    ('Q(1.302)=0.0965', 0.0965, lambda: Qf(1.302), 6e-5),
+    ('Q(1.409)=0.0794', 0.0794, lambda: Qf(1.409), 6e-5),
+    ('H_b(p)=0.4$ at $p=0.0794', 0.0794, lambda: brentq(lambda p: Hbin(p) - (1 - R01), 1e-6, 0.5), 6e-5),
+    ('H_b(0.0965)=0.4578', 0.4578, lambda: Hbin(0.0965), 6e-5),
+    ('the condition is $p\\le0.0794$', 0.0794, lambda: brentq(lambda p: Hbin(p) - (1 - R01), 1e-6, 0.5), 6e-5),
+    # part (a)
+    ('&=0.6\\,E_b', 0.6, lambda: float(Fraction(3, 5)), 1e-12),
+    ('&=1.2\\,E_b', 1.2, lambda: 2*float(Fraction(3, 5)), 1e-12),
+    ('10\\log_{10}1.2=0.79', 0.79, lambda: dB(1.2), 0.006),
+    ('&=1.2\\,W', 1.2, lambda: math.log2(4)*float(Fraction(3, 5)), 1e-12),
+    ('&=1.2\\ \\text{b/s/Hz}', 1.2, lambda: 2*float(Fraction(3, 5)), 1e-12),
+    # part (b)
+    ('2^{1.2}=2.2974', 2.2974, lambda: 2**1.2, 6e-5),
+    ('\\frac{1.2974}{1.2}', 1.2974, lambda: 2**1.2 - 1, 6e-5),
+    ('&=1.0812', 1.0812, lambda: limit_lin(1.2), 6e-5),
+    ('&=0.34\\ \\text{dB}', 0.34, lambda: dB(limit_lin(1.2)), 0.006),
+    # part (c)
+    ('\\frac{1.9853}{2}', 1.9853, lambda: 1.409**2, 6e-5),
+    ('&=0.9926', 0.9926, lambda: R01*hard_lin(R01), 1e-3),
+    ('&=1.6544', 1.6544, lambda: hard_lin(R01), 1e-3),
+    ('&=2.19\\ \\text{dB}', 2.19, lambda: dB(hard_lin(R01)), DB2),
+    ('2.19-0.34=1.85', 1.85, lambda: dB(hard_lin(R01)) - dB(limit_lin(1.2)), DB2),
+    # part (d)
+    ('10^{1.5/10}=1.4125', 1.4125, lambda: EB01, 6e-5),
+    ('&=0.8475', 0.8475, lambda: R01*EB01, 6e-5),
+    ('Q\\big(\\sqrt{1.6950}\\big)', 1.6950, lambda: 2*R01*EB01, 6e-5),
+    ('&=Q(1.302)', 1.302, lambda: math.sqrt(2*R01*EB01), 6e-4),
+    ('&=0.0965', 0.0965, lambda: Qf(math.sqrt(2*R01*EB01)), 6e-5),
+    ('&=0.5422\\ \\text{bits per use}', 0.5422, lambda: 1 - Hbin(Qf(math.sqrt(2*R01*EB01))), 3e-4),
+    ('2.19-1.50=0.69', 0.69, lambda: dB(hard_lin(R01)) - 1.5, DB2),
+    ('1.50-0.34=1.16', 1.16, lambda: 1.5 - dB(limit_lin(1.2)), DB2),
+    # the Check: a soft coded bit is one use of the Gaussian channel
+    ('2(0.6)(1.0812)=1.2974', 1.2974, lambda: 2*R01*limit_lin(1.2), 6e-5),
+    ('&=\\tfrac12(1.2)', 0.6, lambda: 0.5*math.log2(1 + 2*R01*limit_lin(1.2)), 1e-9),
+    ('&=\\tfrac12(1.4303)', 1.4303, lambda: math.log2(1 + 2*R01*EB01), 6e-5),
+    ('&=0.7152', 0.7152, lambda: 0.5*math.log2(1 + 2*R01*EB01), 6e-5),
+    ('$2.22$ dB less', 2.22, lambda: -dB(R01), 0.006),
+    # the labels on the solution figure
+    ("loss:'1.85\\ \\mathrm{dB}'", 1.85, lambda: dB(hard_lin(R01)) - dB(limit_lin(1.2)), DB2),
+    ("softLab:'0.34'", 0.34, lambda: dB(limit_lin(1.2)), 0.006),
+    ("hardLab:'2.19'", 2.19, lambda: dB(hard_lin(R01)), DB2),
+    ("cs:'0.7152'", 0.7152, lambda: 0.5*math.log2(1 + 2*R01*EB01), 6e-5),
+    ("ch:'0.5422'", 0.5422, lambda: 1 - Hbin(Qf(math.sqrt(2*R01*EB01))), 3e-4),
+    # 2e6 decisions: the standard error of p near 0.0965 is 2.1e-4
+    ('Monte Carlo p at 1.5 dB', 0.0965, lambda: mc_hard(EB01, R01), 1e-3),
+]
+
+# ── D6-10: the (7,4) Hamming code of the statement ───────────────────────────
+#
+#   codewords    all 128 words of seven bits, kept when H w = 0 modulo 2
+#   encoding     the codeword whose first four bits are the data, by lookup
+#   d_min        the least distance over all pairs of codewords
+#   decoding     the nearest codeword by brute force, not the syndrome table
+#   P_c, P_E     every one of the 128 error patterns on every codeword, with
+#                its binomial weight, decoded by nearest codeword; and one
+#                seeded Monte Carlo run of the whole link
+
+H10 = np.array([[1, 1, 1, 0, 1, 0, 0],
+                [0, 1, 1, 1, 0, 1, 0],
+                [1, 0, 1, 1, 0, 0, 1]])
+P10 = 0.02
+WORDS10 = [''.join(t) for t in itertools.product('01', repeat=7)]
+
+
+def vec(w):
+    return np.array([int(b) for b in w])
+
+
+def syn10(w):
+    return ''.join(str(int(v)) for v in H10.dot(vec(w)) % 2)
+
+
+CODE10 = [w for w in WORDS10 if syn10(w) == '000']
+
+
+def enc10(d):
+    hits = [c for c in CODE10 if c[:4] == d]
+    return hits[0] if len(hits) == 1 else None
+
+
+def dist(a, b):
+    return sum(x != y for x, y in zip(a, b))
+
+
+def dec10(r):
+    best = min(dist(r, c) for c in CODE10)
+    hits = [c for c in CODE10 if dist(r, c) == best]
+    return hits[0] if len(hits) == 1 else None
+
+
+def dmin10():
+    return min(dist(a, b) for a, b in itertools.combinations(CODE10, 2))
+
+
+def unit(i):
+    return ''.join('1' if k == i else '0' for k in range(1, 8))
+
+
+def pc10():
+    tot = 0.0
+    for c in CODE10:
+        for e in WORDS10:
+            k = e.count('1')
+            r = ''.join(str(int(x) ^ int(y)) for x, y in zip(c, e))
+            if dec10(r) == c:
+                tot += P10**k*(1 - P10)**(7 - k)
+    return tot/len(CODE10)
+
+
+def fail10():
+    """fraction of the 8 syndrome patterns no entry of the single-error table fits"""
+    table = {'000'} | {syn10(unit(i)) for i in range(1, 8)}
+    seen = {syn10(w) for w in WORDS10}
+    return len(seen - table)/len(seen)
+
+
+def mc10(n=400_000, seed=610):
+    rng = np.random.default_rng(seed)
+    cw = np.array([vec(c) for c in CODE10])
+    pick = cw[rng.integers(0, 16, n)]
+    rx = (pick + (rng.random((n, 7)) < P10)) % 2
+    d = (rx[:, None, :] != cw[None, :, :]).sum(axis=2)
+    out = cw[d.argmin(axis=1)]
+    return float(np.mean(np.any(out != pick, axis=1)))
+
+
+BS = chr(92)
+H10_TEX = BS + 'begin{bmatrix}' + (BS*2).join('&'.join(str(v) for v in row) for row in H10) + BS + 'end{bmatrix}'
+
+CHANNEL['D6-10'] = [
+    (H10_TEX, 1.0, lambda: float(len(CODE10) == 16), 1e-12),
+    # part (a)
+    ('The codeword is $\\mathtt{1010010}$', 1.0, lambda: float(enc10('1010') == '1010010'), 1e-12),
+    ('The codeword is $\\mathtt{0111010}$', 1.0, lambda: float(enc10('0111') == '0111010'), 1e-12),
+    ('so $\\mathtt{1100011}$ is a codeword', 1.0, lambda: float('1100011' in CODE10), 1e-12),
+    ('so $\\mathtt{0101100}$ is not a codeword', 1.0, lambda: float('0101100' not in CODE10), 1e-12),
+    ('Check $3$ fails', 1.0, lambda: float(syn10('0101100') == '001'), 1e-12),
+    # part (b)
+    ('so $d_{\\min}=3$', 3.0, dmin10, 1e-12),
+    ('holds exactly three', 3.0, lambda: float('1010010'.count('1')), 1e-12),
+    ('\\Bigl\\lfloor\\frac{3-1}{2}\\Bigr\\rfloor', 1.0, lambda: float((dmin10() - 1)//2), 1e-12),
+    # part (c): the syndrome table, one row a position
+    ('\\text{none}&\\mathtt{000}', 1.0, lambda: float(syn10('0000000') == '000'), 1e-12),
+] + [
+    (f'{i}&\\mathtt{{{s}}}', 1.0, (lambda i=i, s=s: float(syn10(unit(i)) == s)), 1e-12)
+    for i, s in zip(range(1, 8), ['101', '110', '111', '011', '100', '010', '001'])
+] + [
+    ('The syndrome $\\mathtt{110}$ is column $2$', 1.0, lambda: float(syn10('1101110') == '110' == syn10(unit(2))), 1e-12),
+    ('\\hat{c}=\\mathtt{1001110}', 1.0, lambda: float(dec10('1101110') == '1001110'), 1e-12),
+    ('the data $\\mathtt{1001}$', 1.0, lambda: float(enc10('1001') == '1001110'), 1e-12),
+    # part (d)
+    ('all $2^{3}=8$ syndromes', 8.0, lambda: float(len({syn10(w) for w in WORDS10})), 1e-12),
+    ('no entry fits is $0$', 0.0, fail10, 1e-12),
+    ('&=0.86813+0.14\\,(0.88584)', 0.88584, lambda: (1 - P10)**6, 6e-6),
+    ('0.86813+0.12402', 0.86813, lambda: binom.pmf(0, 7, P10), 6e-6),
+    ('&=0.86813+0.12402', 0.12402, lambda: binom.pmf(1, 7, P10), 6e-6),
+    ('&=0.99214', 0.99214, pc10, 6e-6),
+    ('&=7.86\\times10^{-3}', 7.86e-3, lambda: 1 - pc10(), 6e-6),
+    # the Check
+    ('21(0.0004)(0.90392)', 0.90392, lambda: (1 - P10)**5, 6e-6),
+    ('&=7.59\\times10^{-3}', 7.59e-3, lambda: binom.pmf(2, 7, P10), 6e-6),
+    ('35p^{3}(1-p)^{4}=2.58\\times10^{-4}', 2.58e-4, lambda: binom.pmf(3, 7, P10), 6e-7),
+    ('the sum to $7.85\\times10^{-3}$', 7.85e-3, lambda: binom.pmf(2, 7, P10) + binom.pmf(3, 7, P10), 6e-6),
+    ('The other terms add less than $10^{-5}$', 1.0, lambda: float(binom.sf(3, 7, P10) < 1e-5), 1e-12),
+    ('(0.98)^{4}=0.92237', 0.92237, lambda: binom.pmf(0, 4, P10), 6e-6),
+    ('probability $0.07763$', 0.07763, lambda: binom.sf(0, 4, P10), 6e-6),
+    ('ten times as often', 10.0, lambda: binom.sf(0, 4, P10)/(1 - pc10()), 0.5),
+    # the two solution figures
+    ("r:'1101110', err:2", 1.0, lambda: float(dist('1101110', dec10('1101110')) == 1 and '1101110'[1] != dec10('1101110')[1]), 1e-12),
+    ("H:['1110100','0111010','1011001']", 1.0, lambda: float([''.join(map(str, row)) for row in H10] == ['1110100', '0111010', '1011001']), 1e-12),
+    ("s:'110', c:'1001110'", 1.0, lambda: float(syn10('1101110') == '110' and dec10('1101110') == '1001110'), 1e-12),
+    ("'0.868'", 0.868, lambda: binom.pmf(0, 7, P10), 6e-4),
+    ("'0.124'", 0.124, lambda: binom.pmf(1, 7, P10), 6e-4),
+    ("'7.59\\times10^{-3}'", 7.59e-3, lambda: binom.pmf(2, 7, P10), 6e-6),
+    ("'2.58\\times10^{-4}'", 2.58e-4, lambda: binom.pmf(3, 7, P10), 6e-7),
+    ("'5.27\\times10^{-6}'", 5.27e-6, lambda: binom.pmf(4, 7, P10), 6e-9),
+    ("'6.45\\times10^{-8}'", 6.45e-8, lambda: binom.pmf(5, 7, P10), 6e-11),
+    ("'4.39\\times10^{-10}'", 4.39e-10, lambda: binom.pmf(6, 7, P10), 6e-13),
+    ("'1.28\\times10^{-12}'", 1.28e-12, lambda: binom.pmf(7, 7, P10), 6e-15),
+    ("fail:'P_E=7.86\\times10^{-3}'", 7.86e-3, lambda: binom.sf(1, 7, P10), 6e-6),
+    # 4e5 words: the standard error of P_E near 7.9e-3 is 1.4e-4
+    ('Monte Carlo P_E', 7.86e-3, mc10, 6e-4),
+]
+
+
+# One item, one name (R10): the slides write the bandwidth W and the units
+# b/s, Mb/s and b/s/Hz. No channel-side question may write it B or Mbit/s.
+def old_notation(q):
+    block = js_blocks()[q].replace('\\\\', '\\')
+    return float(len(re.findall(r'\$B[=$]|R_b/B|N_0B|\{R_b\}\{B\}|C&?=B\\|Mbit/s|bit/s/Hz', block)))
+
+
+NOTATION = {q: (lambda q=q: old_notation(q)) for q in ('D6-01', 'D6-06', 'D6-07', 'D6-10', 'D6-14', 'D6-22')}
 
 def channel_text_present(q):
     block = js_blocks()[q].replace('\\\\', '\\')
@@ -1253,6 +1434,10 @@ for q, items in CHANNEL.items():
                        "tol": atol if value == 0 else atol/abs(value)})
     CHECKS.append({"name": f"{q} every stated number is printed in the question",
                    "stated": 1.0, "derive": (lambda q=q: channel_text_present(q)), "tol": 1e-12})
+
+for q, fn_ in NOTATION.items():
+    CHECKS.append({"name": f"{q} writes the bandwidth W and the units Mb/s and b/s/Hz",
+                   "stated": 0.0, "derive": fn_, "tol": 1e-12})
 
 
 def main() -> int:
