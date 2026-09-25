@@ -1,8 +1,8 @@
 /* ==========================================================================
    web/build-site.js — assemble the public site in `site/`.
 
-   The published site is not the same set of files as the working tree. Three
-   of the four documents are gitignored intermediates, so they are built here
+   The published site is not the same set of files as the working tree. The
+   HTML files of the five documents are gitignored intermediates, so they are built here
    rather than committed; the instructor solutions are built by the same
    command and deliberately left behind; and the artifact is published with
    its instructor edition removed.
@@ -48,7 +48,7 @@ function run(cwd, script) {
 log('Building the pipeline');
 run(path.join(ROOT, 'build'), 'build.js');      /* → dist/Digital_Communications.html */
 run(path.join(ROOT, 'notes'), 'build.js');      /* → dist/Lecture_Notes.html       */
-run(path.join(ROOT, 'notes'), 'editions.js');   /* → the three printed editions    */
+run(path.join(ROOT, 'notes'), 'editions.js');   /* → the four printed editions     */
 
 /* ------------------------------------------------- 2. scanning primitives */
 
@@ -289,12 +289,15 @@ log('  · Digital_Communications.html  ' + (art.length / 1048576).toFixed(2) + '
 copy(path.join(DIST, 'Lecture_Notes.html'), 'Lecture_Notes.html');
 copy(path.join(DIST, 'Student_Workbook.html'), 'Student_Workbook.html');
 copy(path.join(DIST, 'Formula_Reference.html'), 'Formula_Reference.html');
+copy(path.join(DIST, 'Laboratory_Sheets.html'), 'Laboratory_Sheets.html');
 
-/* The lecture notes, student workbook and formula reference PDFs are published
-   as tracked deliverables. The instructor edition remains local. */
+/* The lecture notes, student workbook, formula reference and laboratory sheets
+   PDFs are published as tracked deliverables. The instructor edition remains
+   local. */
 copy(path.join(DIST, 'Lecture_Notes.pdf'), 'Lecture_Notes.pdf');
 copy(path.join(DIST, 'Student_Workbook.pdf'), 'Student_Workbook.pdf');
 copy(path.join(DIST, 'Formula_Reference.pdf'), 'Formula_Reference.pdf');
+copy(path.join(DIST, 'Laboratory_Sheets.pdf'), 'Laboratory_Sheets.pdf');
 
 /* The cover page, the hero background, Figure 1, and the cover and inside
    page of each PDF, rendered from the PDFs themselves. */

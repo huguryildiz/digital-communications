@@ -1072,7 +1072,7 @@ window.C1 = [
 
 /* ---------------- cover and contents ---------------- */
 {t:'cover', kicker:'Sampling &middot; Detection &middot; Modulation &middot; Coding', text:'Digital Communications',
- sub:'Lecture Notes', foot:'Chapters 1&ndash;6 &middot; Appendices A&ndash;B'},
+ sub:'Lecture Notes', foot:'Chapters 1&ndash;6 &middot; Appendix A'},
 {t:'page'},
 
 {t:'h1', text:'Contents', rule:false},
@@ -1083,8 +1083,7 @@ window.C1 = [
  ['4','The optimal receiver in additive white Gaussian noise','The observation vector and the noise outside the signal space. The MAP and ML rules, minimum-distance detection and the correlation metric. Decision regions and the binary error probability. The union bound, its intelligent form and the nearest-neighbour approximation.','PS CH8.3.3, 8.4'],
  ['5','Digital modulation methods','Bits on a carrier and the IQ modulator. BPSK, BFSK and BASK compared. M-ary phase-shift keying, QPSK as two BPSK links, Gray labels, carrier phase error and differential PSK. M-ary amplitude-shift keying, quadrature amplitude modulation, eight-point constellations and QAM against PSK. M-ary frequency-shift keying, orthogonal signals and noncoherent detection. Bandwidth, offset QPSK and MSK, and the bandwidth-efficiency plane. Adaptive modulation, the receiver noise floor and the link budget.','PS CH6.4, 8.5&ndash;8.7, 9.1, 9.5&ndash;9.7, 10.2, 14.5'],
  ['6','An introduction to information theory','Self-information, entropy and extended sources. Typical sequences, the source coding theorem, prefix codes, the Kraft inequality, and rate and distortion. Huffman, arithmetic and Lempel&ndash;Ziv coding. The discrete memoryless channel, joint and conditional entropy, and mutual information. Channel capacity, the binary symmetric and erasure channels, repetition codes, the channel coding theorem and the Hamming code. The Gaussian channel, the Shannon limit and water-filling.','PS CH12.1&ndash;12.6'],
- ['A','Summary of formulas','The results each chapter carries forward, as question and answer, one table a chapter, in course order and without derivations.','&mdash;'],
- ['B','The laboratories','Four laboratories on quantization, matched filtering, quadrature amplitude modulation, and Huffman coding.','&mdash;']
+ ['A','Summary of formulas','The results each chapter carries forward, as question and answer, one table a chapter, in course order and without derivations.','&mdash;']
 ]},
 
 {t:'h3', text:'Course conventions'},

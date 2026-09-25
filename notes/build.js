@@ -16,9 +16,11 @@ const chapters = fs.readdirSync(path.join(__dirname,'src'))
   .sort((a,b)=>parseInt(a.slice(1),10)-parseInt(b.slice(1),10))
   /* The appendices follow the numbered chapters, in letter order. `editions.js`
      slices the formula summary out of `ca.js`, so it has to be the same file
-     the notes carry rather than a second copy. */
+     the notes carry rather than a second copy. `cb.js` is not one of them: the
+     laboratories have no slide counterpart, so `editions.js` prints them as
+     the Laboratory Sheets and the notes stay one to one with the slides. */
   .concat(fs.readdirSync(path.join(__dirname,'src'))
-    .filter(f=>/^c[a-z]\.js$/.test(f)).sort());
+    .filter(f=>/^c[a-z]\.js$/.test(f) && f!=='cb.js').sort());
 const globals = chapters.map(f=>f.replace(/\.js$/,'').toUpperCase());
 
 /* The mark is `assets/icon.svg` and nothing else. It is read here, given

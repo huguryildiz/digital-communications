@@ -1,6 +1,6 @@
 # PDF version history
 
-Applies to Lecture_Notes.pdf, Student_Workbook.pdf, Instructor_Solutions.pdf and Formula_Reference.pdf. Newest first.
+Applies to Lecture_Notes.pdf, Student_Workbook.pdf, Instructor_Solutions.pdf, Formula_Reference.pdf and Laboratory_Sheets.pdf. Newest first.
 
 | Version | Date | Description |
 | --- | --- | --- |

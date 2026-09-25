@@ -1,17 +1,20 @@
-/* Builds the three document editions that sit beside the lecture notes.
+/* Builds the four document editions that sit beside the lecture notes.
 
-   All three are generated from the content the artifact already carries — the
-   exam drills, the glossary and the conventions manifest — so a question id
+   The first three are generated from the content the artifact already carries —
+   the exam drills, the glossary and the conventions manifest — so a question id
    means the same thing in every edition, and nothing here is a second copy of
-   anything that would have to be kept in step by hand.
+   anything that would have to be kept in step by hand. The fourth prints
+   `src/cb.js`, the four laboratories, which have no slide counterpart and so
+   are not part of the lecture notes.
 
      Student_Workbook.html    every question, no answers and no solutions
      Instructor_Solutions.html every question with its full solution, plus provenance
      Formula_Reference.html   the conventions, the summary of formulas, the glossary
+     Laboratory_Sheets.html   the four laboratories, each run and measured
      PDF_VERSIONS.md          the version history of the PDFs, as a table
 
    The renderer, the stylesheet and the KaTeX build are the ones the lecture notes
-   use, so the four documents are one typographic family.
+   use, so the five documents are one typographic family.
 
      cd notes && node editions.js     ->  ../dist/*.html
      cd build && node pw.js ../notes/topdf.js   renders every one of them to PDF   */
@@ -186,6 +189,17 @@ B.push({t:'raw', html:'<dl class="gloss">' + Object.keys(CONTENT.GLOSS).map(k=>{
 B.push({t:'colophon', doc:'Formula and Notation Reference'});
 renderNotes(B, document.getElementById('doc'));`;
 
+/* -------------------------------------------------------- laboratory sheets */
+/* The contents page, the four laboratories and every figure are `src/cb.js`;
+   this adds the cover and the colophon. With captions on, the figures and the
+   table are numbered by laboratory and listed after the contents, as they are
+   in the lecture notes. */
+const labsheets = `
+renderNotes([
+ {t:'cover', kicker:'Sampling &middot; Detection &middot; Modulation &middot; Coding', text:'Digital Communications', sub:'Laboratory Sheets', foot:'Laboratories 1&ndash;4'},
+ {t:'page'}
+].concat(CB, [{t:'colophon', doc:'Laboratory Sheets'}]), document.getElementById('doc'), {captions:true});`;
+
 const OUT = path.join(__dirname, '..', 'dist');
 fs.mkdirSync(OUT, { recursive: true });
 const write = (name, html) => {
@@ -196,6 +210,8 @@ write('Student_Workbook.html', doc('Digital Communications — Student Workbook'
 write('Instructor_Solutions.html', doc('Digital Communications — Instructor Solutions', solutions));
 write('Formula_Reference.html', doc('Digital Communications — Formula and Notation Reference', reference,
   `<script>${g(S('src/ca.js'))}</script>`));
+write('Laboratory_Sheets.html', doc('Digital Communications — Laboratory Sheets', labsheets,
+  `<script>${g(S('src/cb.js'))}</script>`));
 
 /* The version history of the PDFs, as a table beside them. The rows are read
    from DOC_HISTORY in render.js, the list each PDF prints on its last page, so
@@ -203,6 +219,6 @@ write('Formula_Reference.html', doc('Digital Communications — Formula and Nota
 const HIST = require('vm').runInNewContext(
   S('src/render.js').match(/window\.DOC_HISTORY\s*=\s*(\[[\s\S]*?\]);/)[1]);
 write('PDF_VERSIONS.md', '# PDF version history\n\n' +
-  'Applies to Lecture_Notes.pdf, Student_Workbook.pdf, Instructor_Solutions.pdf and Formula_Reference.pdf. Newest first.\n\n' +
+  'Applies to Lecture_Notes.pdf, Student_Workbook.pdf, Instructor_Solutions.pdf, Formula_Reference.pdf and Laboratory_Sheets.pdf. Newest first.\n\n' +
   '| Version | Date | Description |\n| --- | --- | --- |\n' +
   HIST.map(r => '| ' + r.join(' | ') + ' |').join('\n') + '\n');

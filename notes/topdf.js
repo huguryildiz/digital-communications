@@ -12,7 +12,8 @@ const EDITIONS = [
   ['Lecture_Notes',        'Lecture Notes'],
   ['Student_Workbook',     'Student Workbook'],
   ['Instructor_Solutions', 'Instructor Solutions'],
-  ['Formula_Reference',    'Formula and Notation Reference']
+  ['Formula_Reference',    'Formula and Notation Reference'],
+  ['Laboratory_Sheets',    'Laboratory Sheets']
 ];
 
 /* The page size, the margins and the footer are the stylesheet's @page rules,

@@ -1,7 +1,9 @@
-/* Course notes — Appendix B.
+/* Laboratory Sheets.
 
    The four laboratories of the course, each one run here rather than described.
-   Every figure in this appendix is computed when the page is drawn: the noise is
+   They were Appendix B of the lecture notes; the notes now follow the slides one
+   to one, so `editions.js` prints this file as a document of its own, with its
+   own cover, contents and colophon. Every figure here is computed when the page is drawn: the noise is
    generated, the filter is applied, the errors are counted. Nothing is a picture
    of a result obtained elsewhere, so a number in the text and the curve beside
    it cannot drift apart.
@@ -38,7 +40,7 @@ const dB=v=>10*Math.log10(v);
 const L10=v=>Math.log10(Math.max(1e-12,v));
 
 /* ======================================================================= */
-/* B.1 — quantization                                                       */
+/* Laboratory 1 — quantization                                                       */
 /* ======================================================================= */
 
 /* The waveform of the first laboratory. Each group is given two whole numbers;
@@ -70,7 +72,7 @@ function sqnrOf(x,L){
 }
 
 /* ======================================================================= */
-/* B.2 — the matched filter                                                 */
+/* Laboratory 2 — the matched filter                                                 */
 /* ======================================================================= */
 
 const TB=16, AMP=1, EB=AMP*AMP*TB;
@@ -111,7 +113,7 @@ const B2SWEEP=(()=>{ const d=[],p=[];
   return {d,p}; })();
 
 /* ======================================================================= */
-/* B.3 — 16-QAM                                                             */
+/* Laboratory 3 — 16-QAM                                                             */
 /* ======================================================================= */
 
 const LEV=[-3,-1,1,3];
@@ -146,7 +148,7 @@ const QAMSWEEP=(()=>{ const d=[],p=[],n=[];
   return {d,p,n}; })();
 
 /* ======================================================================= */
-/* B.4 — Huffman                                                            */
+/* Laboratory 4 — Huffman                                                            */
 /* ======================================================================= */
 
 /* Merge the two least likely symbols, over and over, and read the codewords off
@@ -252,15 +254,22 @@ function codeTree(codes,names,opts){
 
 window.CB = [
 
-{t:'h1', num:'APPENDIX B', text:'The laboratories'},
-{t:'p', lead:true, text:'The course has four laboratories, and each one takes a result the chapters derive on paper and asks you to measure it instead. This appendix runs all four. Every curve, cloud and staircase on the pages that follow was computed when this page was drawn. The noise was generated, the filter was applied, the errors were counted. So what you see is the outcome of a run and not a drawing of one.'},
-{t:'p', text:'That matters for one reason above all. A formula tells you what should happen. A measurement tells you what did. Where the two agree you have learnt that the derivation is sound. Where they disagree you have learnt something better: which assumption in the derivation the experiment broke. Each of the four sections below ends on that disagreement, because it is the part of the laboratory worth carrying away.'},
+{t:'h1', text:'Contents', rule:false},
+{t:'p', lead:true, text:'The course has four laboratories, and each one takes a result the chapters derive on paper and asks you to measure it instead. These sheets run all four. Every curve, cloud and staircase on the pages that follow was computed when this page was drawn. The noise was generated, the filter was applied, the errors were counted. So what you see is the outcome of a run and not a drawing of one.'},
+{t:'p', text:'That matters for one reason above all. A formula tells you what should happen. A measurement tells you what did. Where the two agree you have learnt that the derivation is sound. Where they disagree you have learnt something better: which assumption in the derivation the experiment broke. Each of the four laboratories below ends on that disagreement, because it is the part of the laboratory worth carrying away.'},
+{t:'toc', items:[
+ ['1','Quantization, the signal-to-quantization-noise ratio and PCM','Build a uniform quantizer, measure the SQNR, and encode the samples as a polar-NRZ waveform.',''],
+ ['2','The matched filter and the bit error rate','Measure the bit error rate of a matched-filter receiver and compare it with the Chapter 2 formula.',''],
+ ['3','Sixteen-point QAM and the union bound','Measure the symbol error rate of sixteen-point QAM and compare it with the Chapter 4 bound.',''],
+ ['4','Huffman coding and how much it compresses','Build a Huffman code and measure its compression.','']
+]},
+{t:'h3', text:'How to use the sheets'},
 {t:'p', text:'Your numerical results will differ from these examples. Each group receives a different input number, so its waveform, bit pattern, and source statistics differ. Random noise also changes between runs. Compare curve shapes, gaps, trends, and expected directions instead of individual sample values.'},
+{t:'p', text:'Chapter and section numbers, such as Chapter 2 or Section 1.4, refer to the Lecture Notes.'},
+{t:'page'},
 
-{t:'box', kind:'ok', hd:'Laboratory summary', html:'<b>B.1</b> builds a uniform quantizer, measures SQNR, and encodes the samples as a polar-NRZ waveform. <b>B.2</b> measures the bit error rate of a matched-filter receiver and compares it with the Chapter 2 formula. <b>B.3</b> measures the symbol error rate of sixteen-point QAM and compares it with the Chapter 4 bound. <b>B.4</b> builds a Huffman code and measures its compression.'},
-
-/* ==================================================================== B.1 */
-{t:'h2', num:'B.1', text:'Quantization, the signal-to-quantization-noise ratio and PCM'},
+/* ============================================================ LABORATORY 1 */
+{t:'h1', num:'LABORATORY 1', text:'Quantization, the signal-to-quantization-noise ratio and PCM'},
 {t:'p', text:'The first laboratory applies the complete Chapter 1 chain. Start with a continuous waveform and sample it at the Nyquist rate. Quantize the samples with a uniform quantizer. Measure the ratio of signal power to quantization-error power. Encode each sample as a binary word and draw the polar-NRZ waveform. Then double the number of levels and repeat the measurements.'},
 {t:'p', text:'The waveform is $x(t)=f_1\\sin(2\\pi f_1 t)+f_2\\cos(2\\pi f_2 t)$. Each group receives integer values for $f_1$ and $f_2$. Here, $f_1=3$ and $f_2=4$, so the Nyquist rate is $8$ samples per second. A two-second interval then contains only seventeen samples.'},
 
@@ -326,8 +335,8 @@ window.CB = [
 
 {t:'box', kind:'warn', hd:'Sampling exactly at the Nyquist rate', html:'The waveform here has a $4$ Hz component and the laboratory samples at exactly $8$ Hz. This is the boundary the sampling theorem is stated at rather than inside. At exactly twice its frequency, a cosine is sampled at the same two points of every cycle. Therefore, that component contributes the same alternating $\\pm 4$ to every sample and none of its shape survives. The reconstruction is still correct here because the component is a cosine and lands on its peaks. Move the phase and it would not be. Chapter 1 asks for $f_s>2W$ and means the strict inequality.'},
 
-/* ==================================================================== B.2 */
-{t:'h2', num:'B.2', text:'The matched filter and the bit error rate'},
+/* ============================================================ LABORATORY 2 */
+{t:'h1', num:'LABORATORY 2', text:'The matched filter and the bit error rate'},
 {t:'p', text:'The second laboratory builds the Chapter 2 receiver. Convert a bit stream into a waveform and add white Gaussian noise. Apply the matched filter and sample its output once per bit. Compare each sample with the decision threshold. Then compare the measured error rate with $Q\\bigl(\\sqrt{2E_b/N_0}\\bigr)$.'},
 {t:'p', text:'The signaling is antipodal. The pulse $\\psi(t)=1/\\sqrt{T_b}$ has unit energy over one bit interval. A bit scales this pulse by $\\pm A\\sqrt{T_b}$. Thus, the transmitted waveform is constant at $+A$ or $-A$ during each interval. Its bit energy is $E_b=A^{2}T_b$. Add sample noise with variance $N_0/2$ and use $10\\log_{10}(E_b/N_0)$.'},
 
@@ -370,10 +379,10 @@ window.CB = [
 
 {t:'box', kind:'err', hd:'Three-decibel convention errors', html:'Two convention errors each give a factor of two. First, the sample-noise variance is $N_0/2$ for a two-sided density $N_0/2$. Using $N_0$ shifts the measured curve by $3$ dB. Second, the formula $Q\\bigl(\\sqrt{2E_b/N_0}\\bigr)$ requires antipodal signaling. On-off signaling instead uses $Q\\bigl(\\sqrt{E_b/N_0}\\bigr)$. A parallel $3$ dB shift usually indicates one of these errors.'},
 
-/* ==================================================================== B.3 */
-{t:'h2', num:'B.3', text:'Sixteen-point QAM and the union bound'},
+/* ============================================================ LABORATORY 3 */
+{t:'h1', num:'LABORATORY 3', text:'Sixteen-point QAM and the union bound'},
 {t:'p', text:'The third laboratory uses a two-dimensional sixteen-point square constellation. Add independent noise on each axis. The receiver selects the nearest point. Compare the measured symbol error rate with the nearest-neighbor approximation from Section 4.4.'},
-{t:'p', text:'Write each point as $s_I+js_Q$, with coordinates from $\\{-3,-1,1,3\\}$. These units give $E_s=10$ and $d_{\\min}=2$. Each symbol carries four bits, so $E_b=E_s/4=2.5$. Section 5.4 gives $d_{\\min}^{2}=6E_s/(M-1)=4$. This result agrees with the point spacing.'},
+{t:'p', text:'Write each point as $s_I+js_Q$, with coordinates from $\\{-3,-1,1,3\\}$. These units give $E_s=10$ and $d_{\\min}=2$. Each symbol carries four bits, so $E_b=E_s/4=2.5$. Section 5.3 gives $d_{\\min}^{2}=6E_s/(M-1)=4$. This result agrees with the point spacing.'},
 {t:'p', text:'The same constellation gives the optimal thresholds. Independent axes and equal level spacing produce three vertical and three horizontal boundaries. Each axis uses $\\lambda\\in\\{-2,0,2\\}$. Thus, nearest-point detection reduces to nearest-level detection on each axis.'},
 
 {t:'figrow', n:2, items:[
@@ -399,7 +408,7 @@ window.CB = [
  }, cap:'$E_b/N_0=11$ dB. Five decibels more energy a bit, and the clouds have pulled apart into sixteen separate blobs. The measured rate falls to $0.0022$, about fifty times better.'}
 ]},
 
-{t:'p', text:'Twelve hundred received symbols are drawn in each picture so that the clouds can be seen. The rates quoted beneath them do not come from those twelve hundred. A rate of $0.0022$ measured on twelve hundred symbols would be three errors, and three is not a measurement. They come from the sweep below. This uses fifty thousand symbols at $6$ dB and a quarter of a million at $11$ dB. Choosing how many symbols to run is part of the experiment, and Section B.2 said why.'},
+{t:'p', text:'Twelve hundred received symbols are drawn in each picture so that the clouds can be seen. The rates quoted beneath them do not come from those twelve hundred. A rate of $0.0022$ measured on twelve hundred symbols would be three errors, and three is not a measurement. They come from the sweep below. This uses fifty thousand symbols at $6$ dB and a quarter of a million at $11$ dB. Choosing how many symbols to run is part of the experiment, and Laboratory 2 said why.'},
 
 {t:'eqbox', cap:'What the bound predicts', tex:[
  'P_e\\;\\approx\\;N_{\\min}\\,Q\\!\\left(\\sqrt{\\frac{d_{\\min}^{2}}{2N_0}}\\right),\\qquad N_{\\min}=3,\\quad d_{\\min}^{2}=4'],
@@ -419,8 +428,8 @@ window.CB = [
 
 {t:'box', kind:'err', hd:'Symbol and bit energy', html:'For sixteen-point QAM, $E_s=4E_b$. Convert between these energies once when calculating $N_0$. Do not calculate $N_0$ from one energy and use the other in the $Q$ function. This error shifts the complete curve by $10\\log_{10}4=6.02$ dB.'},
 
-/* ==================================================================== B.4 */
-{t:'h2', num:'B.4', text:'Huffman coding and how much it compresses'},
+/* ============================================================ LABORATORY 4 */
+{t:'h1', num:'LABORATORY 4', text:'Huffman coding and how much it compresses'},
 {t:'p', text:'The fourth laboratory studies lossless source coding. A source emits symbols with known probabilities. Entropy gives the minimum average bits per symbol. Huffman coding gives the best single-symbol prefix code. The laboratory measures both values.'},
 {t:'p', text:'The source alphabet is the ten digits. Your group counts how often each digit occurs in a number it is given and divides by how many digits there are. This gives a probability for each. The case run here uses the eleven digits $1\\,2\\,3\\,4\\,5\\,6\\,5\\,4\\,3\\,2\\,1$. Five digits occur twice and one occurs once. Therefore, five symbols have probability $2/11$, one has $1/11$, and four have probability zero and take no codeword at all.'},
 
@@ -435,9 +444,9 @@ window.CB = [
  }, cap:'The code the algorithm builds. Reading a path from the root, left is a $0$ and right a $1$. The digit at each leaf is the symbol that path spells.'}
 ]},
 
-{t:'p', text:'This source has entropy $H=2.550$ bits per symbol. Its Huffman code has average length $\\bar{L}=2.636$, so $\\eta=96.7\\%$. First, check the Section 6.6 bound $H\\le\\bar{L}<H+1$. Here, $2.550\\le2.636<3.550$. Second, compare $\\bar{L}$ with the three-bit fixed length for six symbols and the four-bit length for ten symbols.'},
+{t:'p', text:'This source has entropy $H=2.550$ bits per symbol. Its Huffman code has average length $\\bar{L}=2.636$, so $\\eta=96.7\\%$. First, check the Section 6.2 bound $H\\le\\bar{L}<H+1$. Here, $2.550\\le2.636<3.550$. Second, compare $\\bar{L}$ with the three-bit fixed length for six symbols and the four-bit length for ten symbols.'},
 
-{t:'box', kind:'warn', hd:'A tie in the algorithm is not a mistake', html:'Whenever two nodes have the same probability, the algorithm may merge either, and different choices give different codebooks with the same average length. Your codewords will not match the ones drawn above and need not. What must match is $\\bar{L}$, because Huffman is optimal and the optimal average length is unique even when the code is not. If two groups get different average lengths for the same statistics, one of them has an error. If they get different codebooks, neither of them does. Section 6.7 develops the tie-breaking rule that also minimises the variance of the codeword length.'},
+{t:'box', kind:'warn', hd:'A tie in the algorithm is not a mistake', html:'Whenever two nodes have the same probability, the algorithm may merge either, and different choices give different codebooks with the same average length. Your codewords will not match the ones drawn above and need not. What must match is $\\bar{L}$, because Huffman is optimal and the optimal average length is unique even when the code is not. If two groups get different average lengths for the same statistics, one of them has an error. If they get different codebooks, neither of them does. Section 6.3 develops the tie-breaking rule that also minimises the variance of the codeword length.'},
 
 {t:'p', text:'The second part encodes one thousand symbols from the same distribution. Four-bit fixed-length coding uses $4000$ bits. Huffman coding uses $2621$ bits, so the measured compression is $34.5\\%$. The average length predicts $1-\\bar{L}/4=34.1\\%$. These values need not match exactly because the finite sequence is one random sample. A large difference can indicate an incorrect codebook.'},
 

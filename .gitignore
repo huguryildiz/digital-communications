@@ -27,8 +27,9 @@ dist/Lecture_Notes.html
 dist/Student_Workbook.html
 dist/Instructor_Solutions.html
 dist/Formula_Reference.html
-# The lecture notes, student workbook and formula reference PDFs are published
-# deliverables and stay tracked. The instructor PDF remains a local build product
+dist/Laboratory_Sheets.html
+# The lecture notes, student workbook, formula reference and laboratory sheets
+# PDFs are published deliverables and stay tracked. The instructor PDF remains a local build product
 # and is never published.
 dist/Instructor_Solutions.pdf
 # build/qa.js screenshot dump and build/textclash.js report.
