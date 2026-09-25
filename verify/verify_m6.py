@@ -125,6 +125,7 @@ K = len(cnt)
 HL = H([v / len(SPEECH) for v in cnt.values()])
 print(f"INFO  speech: {len(SPEECH)} characters, {K} symbols, H = {HL:.4f}")
 check("m6-real-entropy symbol count", K, 24, 0)
+check("m6-real-entropy H of the speech with its spaces (bits)", HL, 3.97, 0.005)
 check("m6-real-entropy log2 K", L2(K), 4.58, 0.005)
 truth("m6-real-entropy H below log2 K", HL < L2(K))
 letters = {c: v for c, v in cnt.items() if c != " "}

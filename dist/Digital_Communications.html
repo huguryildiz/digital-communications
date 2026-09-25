@@ -23989,7 +23989,7 @@ const REAL_CODES = realGallery({ id:'m6-real-codes', nav:'Codes around us',
   notes:[
     {t:'note', kind:'def', head:'Short for common', html:'Morse and UTF-8 give frequent symbols short codewords. That is the idea of every variable-length code.'},
     {t:'note', kind:'ok', head:'Prefix codes', html:'UTF-8 and the country codes need no separators. A reader knows where each codeword ends.'},
-    {t:'note', kind:'warn', head:'Fixed length', html:'Braille spends $6$ bits a letter. The letters of the speech in 6.1 carry $4.04$ bits each.'}
+    {t:'note', kind:'warn', head:'Fixed length', html:'Braille spends $6$ bits a letter. Without its spaces, the speech in 6.1 carries $4.04$ bits a letter.'}
   ]});
 
 /* ---- 6.3 Huffman and Lempel–Ziv coding -------------------------------------
@@ -25341,7 +25341,7 @@ codeScene('m6-code-huffman', 'Huffman and Lempel–Ziv', 'Huffman and Lempel–Z
       {t:'eq', label:'From BPSK', tex:'p=Q\\Bigl(\\sqrt{2E_b/N_0}\\Bigr)',
         note:'The matched-filter receiver of Module 4 decides each BPSK bit of Module 5. What it hands on is a BSC.'}]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'warn', head:'Hard decisions', html:'Deciding each bit throws away how sure the receiver was. Later slides count what that costs.'}]},
+      {t:'note', kind:'warn', head:'Hard decisions', html:'Deciding each bit throws away how sure the receiver was. The gallery at the end of 6.5 plots the capacity left after that decision.'}]},
     {t:'reveal', at:3, items:[
       given('m6-bsc', 'BPSK at $E_b/N_0=4$ dB, decided bit by bit.<div class="nsep"></div>What is the crossover $p$?',
         ['$0.0024$','$0.0125$','$0.0786$'], 1, '$4$ dB is $2.512$, and $Q\\bigl(\\sqrt{5.024}\\bigr)=Q(2.241)=0.0125$.')]}
@@ -25956,7 +25956,7 @@ codeScene('m6-code-gauss', 'The Gaussian channel', 'The Gaussian channel in code
      a:'$E_b/N_0>\\ln2=-1.59$ dB. Uncoded BPSK sits $11.2$ dB above it.'}
   ], {cols:2})},
   {t:'reveal', at:1, items:[
-    {t:'note', kind:'ok', head:'Method', html:'<span style="color:var(--graphite)">Compress the source to its entropy, then code it for the channel below capacity. Module 7 builds those channel codes.</span>'}]}
+    {t:'note', kind:'ok', head:'Method', html:'<span style="color:var(--graphite)">Compress the source to its entropy, then code it for the channel below capacity. The Hamming code of 6.5 is a first such channel code.</span>'}]}
 ]},
 
 /* Four optional projects for students who want to try the module on their own
