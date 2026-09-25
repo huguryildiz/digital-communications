@@ -1590,6 +1590,17 @@ window.C1 = [
 {t:'box', kind:'ok', hd:'Quantization error', html:'Filtering and sampling at $f_s\\ge2W$ keep everything inside the band. Only the quantizer adds an error that no receiver can remove.'},
 {t:'p', text:'For example, a recording sampled at $16$ kHz with $12$ bits a sample has $R_b=R\\,f_s=12(16\\,000)=192$ kb/s.'},
 
+{t:'h3', text:'Quick check'},
+{t:'p', text:'Each question needs no calculation on paper. The answer and its reason follow the question.'},
+{t:'q', n:'1', text:'Aliasing. A $7$ kHz tone sampled at $10$ kHz appears at what frequency?', ans:'$3$ kHz. Since $7>f_s/2=5$, it folds to $|7-10|=3$ kHz.'},
+{t:'q', n:'2', text:'Nyquist rate. What is the Nyquist rate of audio bandlimited to $20$ kHz?', ans:'$2W=40$ kHz. CD audio samples a little above it.'},
+{t:'q', n:'3', text:'The sinc convention. What is $\\operatorname{sinc}(2)$?', ans:'$0$. Since $\\sin(2\\pi)/(2\\pi)=0$, sinc vanishes at every non-zero integer.'},
+{t:'q', n:'4', text:'Bits and SQNR. By about how much do two more bits a sample raise the SQNR?', ans:'$12$ dB. At $6.02$ dB a bit, two bits give $12.04$ dB.'},
+{t:'q', n:'5', text:'Step size. Doubling $\\Delta$ multiplies $E[Q^{2}]$ by what factor?', ans:'$4$. $E[Q^{2}]=\\Delta^{2}/12$ grows with the square of the step.'},
+{t:'q', n:'6', text:'Companding. Does $\\mu$-law companding give finer steps to small or to large amplitudes?', ans:'Small amplitudes. The compressor is steep near zero, so small inputs spread over many levels.'},
+{t:'q', n:'7', text:'Gray code. In how many bits do two adjacent Gray code words differ?', ans:'One bit. That is the rule that defines the code.'},
+{t:'q', n:'8', text:'Levels. How many levels does a $16$-bit quantizer have?', ans:'$L=2^{16}=65\\,536$.'},
+
 {t:'h3', text:'Summary of results'},
 {t:'table', cap:'Summary of Chapter 1: from an analog signal to bits.', head:['Question','Result','Anchor'], rows:[
  ['What does sampling do to the spectrum?','$G_\\delta(f)=f_s\\sum_n G(f-nf_s)$: a copy at every multiple of $f_s$, scaled by $f_s$.','PS CH7.1.1'],
@@ -1606,17 +1617,6 @@ window.C1 = [
  ['What do DPCM and delta modulation send?','The difference from a prediction. Delta modulation sends one bit a sample and needs $\\Delta f_s$ above the largest slope.','PS CH7.4.2&ndash;7.4.3']
 ]},
 {t:'box', kind:'ok', hd:'Method', html:'Check a rate against $2W$ before sampling. Take $\\Delta$ from the full range $2m_{\\max}$. Compute the SQNR from the two powers and compare it with $\\alpha+6.02R$. Chapter 2 sends the resulting bits over a channel.'},
-
-{t:'h3', text:'Quick check'},
-{t:'p', text:'Each question needs no calculation on paper. The answer and its reason follow the question.'},
-{t:'q', n:'1', text:'Aliasing. A $7$ kHz tone sampled at $10$ kHz appears at what frequency?', ans:'$3$ kHz. Since $7>f_s/2=5$, it folds to $|7-10|=3$ kHz.'},
-{t:'q', n:'2', text:'Nyquist rate. What is the Nyquist rate of audio bandlimited to $20$ kHz?', ans:'$2W=40$ kHz. CD audio samples a little above it.'},
-{t:'q', n:'3', text:'The sinc convention. What is $\\operatorname{sinc}(2)$?', ans:'$0$. Since $\\sin(2\\pi)/(2\\pi)=0$, sinc vanishes at every non-zero integer.'},
-{t:'q', n:'4', text:'Bits and SQNR. By about how much do two more bits a sample raise the SQNR?', ans:'$12$ dB. At $6.02$ dB a bit, two bits give $12.04$ dB.'},
-{t:'q', n:'5', text:'Step size. Doubling $\\Delta$ multiplies $E[Q^{2}]$ by what factor?', ans:'$4$. $E[Q^{2}]=\\Delta^{2}/12$ grows with the square of the step.'},
-{t:'q', n:'6', text:'Companding. Does $\\mu$-law companding give finer steps to small or to large amplitudes?', ans:'Small amplitudes. The compressor is steep near zero, so small inputs spread over many levels.'},
-{t:'q', n:'7', text:'Gray code. In how many bits do two adjacent Gray code words differ?', ans:'One bit. That is the rule that defines the code.'},
-{t:'q', n:'8', text:'Levels. How many levels does a $16$-bit quantizer have?', ans:'$L=2^{16}=65\\,536$.'},
 
 {t:'h3', text:'Projects to try'},
 {t:'p', text:'Four optional projects use the chapter on real and computed signals. Each gives an aim, what it practises, a few steps and what to look for.'},
