@@ -208,6 +208,9 @@ html,body{
   font-family:var(--sans);
   -webkit-font-smoothing:antialiased;
   text-rendering:optimizeLegibility;
+  /* a mobile browser otherwise enlarges the text of any wide block on its own
+     judgement, block by block, and the type scale stops being one scale */
+  -webkit-text-size-adjust:100%; text-size-adjust:100%;
   overflow:hidden;
 }
 

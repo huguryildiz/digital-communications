@@ -118,6 +118,11 @@ change that skips it leaves the gate measuring nothing while still reporting a p
   in their scope a full-width block, and KaTeX draws a tall square root as a surd whose tail is a
   small SVG. Giving those pieces any geometry other than KaTeX's own collapses the surd onto the
   expression under it. If either rule is touched, look at an equation with a root in it.
+- Safari and every browser on an iPad paint a positioned element inside a `foreignObject` as if the
+  svg were unscaled. Every figure label goes through `flatTeX()` in `60_plot.js`, which lays it out
+  without positioned elements. The soft edge of a label's halo (`FEATHER`) is on screen only; the
+  printed notes leave it off, since a PDF stores each blurred edge as its own raster mask. These rules
+  are shared with `signals-and-systems`.
 - A grid track written `1fr` is `minmax(auto,1fr)`. In the phone layout that lets one wide figure or
   one long formula push its track past the edge of the screen. Every single-column track there is
   `minmax(0,1fr)`.
