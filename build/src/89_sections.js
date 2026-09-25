@@ -102,12 +102,18 @@ CONTENT.SECTIONS = {
 
   M4: [
     { n:'4.0', title:'Opening',                        ids:['m4-open'] },
-    { n:'4.1', title:'The observation',                ids:['m4-observe','m4-noise'] },
-    { n:'4.2', title:'The decision rule',              ids:['m4-map','m4-mindist','m4-metric'] },
-    { n:'4.3', title:'Decision regions',               ids:['m4-regions','m4-binary','m4-lab-g'] },
-    { n:'4.4', title:'The union bound',                ids:[
-        'm4-pe','m4-union','m4-dmin','m4-intel','m4-ex-union','m4-ex-union-b'] },
-    { n:'4.5', title:'Summary',                        ids:['m4-synth'] }
+    { n:'4.1', title:'The observation',                ids:[
+        'm4-mary','m4-observe','m4-mfbank','m4-irrelevant','m4-noise','m4-ex-pam4','m4-ex-orth',
+        'm4-real-observe','m4-lab-u','m4-code-observe'] },
+    { n:'4.2', title:'The decision rule',              ids:[
+        'm4-map','m4-mindist','m4-metric','m4-receiver','m4-optimal','m4-ex-map','m4-ex-receiver',
+        'm4-real-rule','m4-lab-v','m4-code-rule'] },
+    { n:'4.3', title:'Decision regions',               ids:[
+        'm4-regions','m4-regions-priors','m4-binary','m4-binary-priors','m4-real-regions','m4-lab-g','m4-code-regions'] },
+    { n:'4.4', title:'Error probability and the union bound', ids:[
+        'm4-pe','m4-union','m4-dmin','m4-chernoff','m4-intel','m4-nn','m4-ex-union','m4-ex-union-b',
+        'm4-tightness','m4-real-union','m4-lab-w','m4-code-union'] },
+    { n:'4.5', title:'Summary',                        ids:['m4-chain','m4-quick','m4-synth','m4-projects'] }
   ],
 
   M5: [
@@ -244,15 +250,27 @@ CONTENT.BOOK = {
   'm3-gs':'8.1', 'm3-ex-gs':'8.1', 'm3-ex-gs-b':'8.1', 'm3-basis-change':'8.1', 'm3-real-gs':'8.1', 'm3-lab-f':'8.1',
   'm3-chain':'8.1', 'm3-quick':'8.1', 'm3-synth':'8.1', 'm3-projects':'8.1',
 
-  /* Module 4 is section 8.4 of the book, "M-ary Digital Modulation": 8.4.1 is
-     the optimum receiver for M-ary signals in AWGN and 8.4.2 is the union
-     bound. Both were read there. */
-  'm4-open':'8.4', 'm4-observe':'8.4.1', 'm4-noise':'8.4.1',
-  'm4-map':'8.4.1', 'm4-mindist':'8.4.1', 'm4-metric':'8.4.1',
-  'm4-regions':'8.4.1', 'm4-binary':'8.3.3', 'm4-lab-g':'8.4.1',
-  'm4-pe':'8.4.1', 'm4-union':'8.4.2', 'm4-dmin':'8.4.2', 'm4-intel':'8.4.2',
-  'm4-ex-union':'8.4.2', 'm4-ex-union-b':'8.4.2',
-  'm4-synth':'8.4',
+  /* Module 4 is section 8.4 of the book, "M-ary Digital Modulation": the
+     opening of 8.4 relates bits, symbols and rates; 8.4.1 is the optimum
+     receiver for M-ary signals in AWGN (the correlator and matched-filter
+     demodulators, the noise outside the signal space, the MAP and ML rules,
+     the distance and correlation metrics, and the proof that the MAP regions
+     are optimal); 8.4.2 is the union bound, the minimum-distance bound and
+     its exponential form. The binary error from a distance and the binary
+     threshold with unequal priors are 8.3.3. All were read there. The
+     intelligent union bound and the nearest-neighbour form come from the
+     course slides and are not in the book, so those two scenes carry no
+     anchor. The code pages carry none, as in Module 1. */
+  'm4-open':'8.4', 'm4-mary':'8.4',
+  'm4-observe':'8.4.1', 'm4-mfbank':'8.4.1', 'm4-irrelevant':'8.4.1', 'm4-noise':'8.4.1',
+  'm4-ex-pam4':'8.4.1', 'm4-ex-orth':'8.4.1', 'm4-real-observe':'8.4.1', 'm4-lab-u':'8.4.1',
+  'm4-map':'8.4.1', 'm4-mindist':'8.4.1', 'm4-metric':'8.4.1', 'm4-receiver':'8.4.1', 'm4-optimal':'8.4.1',
+  'm4-ex-map':'8.4.1', 'm4-ex-receiver':'8.4.1', 'm4-real-rule':'8.4.1', 'm4-lab-v':'8.4.1',
+  'm4-regions':'8.4.1', 'm4-regions-priors':'8.4.1', 'm4-binary':'8.3.3, 8.4.2', 'm4-binary-priors':'8.3.3',
+  'm4-real-regions':'8.4.1', 'm4-lab-g':'8.4.1',
+  'm4-pe':'8.4.1, 8.4.2', 'm4-union':'8.4.2', 'm4-dmin':'8.4.2', 'm4-chernoff':'8.4.2',
+  'm4-ex-union':'8.4.2', 'm4-ex-union-b':'8.4.2', 'm4-tightness':'8.4.2', 'm4-real-union':'8.4.2', 'm4-lab-w':'8.4.2',
+  'm4-chain':'8.4', 'm4-quick':'8.4', 'm4-synth':'8.4', 'm4-projects':'8.4',
 
   /* Module 5 spans three chapters of the book: 8.5 for M-ary PAM, 8.6 for
      phase-shift keying, 8.7 for quadrature amplitude modulation, 8.3.3 for the

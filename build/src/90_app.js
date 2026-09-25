@@ -359,6 +359,8 @@ const RENDER = (() => {
     if(typeof CODE_BANKS_M2!=='undefined') Object.assign(CODE_BANKS, CODE_BANKS_M2);
     if(typeof CODE_M3!=='undefined') Object.assign(CODE_LIB, CODE_M3);
     if(typeof CODE_BANKS_M3!=='undefined') Object.assign(CODE_BANKS, CODE_BANKS_M3);
+    if(typeof CODE_M4!=='undefined') Object.assign(CODE_LIB, CODE_M4);
+    if(typeof CODE_BANKS_M4!=='undefined') Object.assign(CODE_BANKS, CODE_BANKS_M4);
     if(typeof CODE_M5!=='undefined') Object.assign(CODE_LIB, CODE_M5);
     if(typeof CODE_BANKS_M5!=='undefined') Object.assign(CODE_BANKS, CODE_BANKS_M5);
     if(typeof CODE_M6!=='undefined') Object.assign(CODE_LIB, CODE_M6);

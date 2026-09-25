@@ -5,8 +5,6 @@
    in the module's order, with the card's question and its result in the
    notation of the slide and of the chapter. Each row names its chapter and the
    PS anchor the chapter's own summary table gives it. No derivations.
-   Module 4 still has its older four-card summary, so A.4 holds those four
-   results until the converted module replaces them.
 
    `editions.js` slices this file at the APPENDIX heading and makes it Part 2
    of the Formula and Notation Reference, so the appendix and that part are one
@@ -71,11 +69,19 @@ window.CA = [
 
 /* ---------------------------------------------------------------- 4 ------ */
 {t:'h2', num:'A.4', text:'The optimal receiver in additive white Gaussian noise — Chapter 4'},
-{t:'table', cap:'The results of Chapter 4.', head:['Result','Statement','Source'], rows:[
- ['The receiver','$\\hat{s}=\\arg\\max_i\\Bigl\\{\\mathbf{r}\\!\\cdot\\!\\mathbf{s}_i-\\tfrac{E_i}{2}+\\tfrac{N_0}{2}\\ln P(\\mathbf{s}_i)\\Bigr\\}$. Correlate with each signal. Correct for energy and prior. Select the largest metric.','Ch. 4 &middot; PS CH8.4.1'],
- ['The picture','$\\hat{s}=\\arg\\min_i\\|\\mathbf{r}-\\mathbf{s}_i\\|^{2}$. Nearest-point boundaries are perpendicular bisectors. Unequal priors change the region sizes.','Ch. 4 &middot; PS CH8.4.1'],
- ['Binary','$P_e=Q\\!\\left(\\sqrt{d^{2}/2N_0}\\right)$. For two points, the distance gives the exact error probability.','Ch. 4 &middot; PS CH8.3.3'],
- ['M-ary','$P_e\\approx N_{\\min}Q\\!\\left(\\sqrt{d_{\\min}^{2}/2N_0}\\right)$. For larger constellations, nearest neighbours give the dominant error terms.','Ch. 4 &middot; PS CH8.4.2']
+{t:'table', cap:'The results of Chapter 4.', head:['Question','Result','Source'], rows:[
+ ['How many bits does one of $M$ waveforms carry?','$k=\\log_2M$, so $R_b=kR_s$ and $T_b=T/k$.','Ch. 4 &middot; PS CH8.4'],
+ ['What does the correlator bank give?','$\\mathbf r=\\mathbf s_i+\\mathbf n$, with $r_j=\\int_0^{T}r(t)\\,\\psi_j(t)\\,dt$.','Ch. 4 &middot; PS CH8.4.1'],
+ ['When does a matched filter give the same number?','At the sampling time $t=T$. Its impulse response is $\\psi_j(T-t)$.','Ch. 4 &middot; PS CH8.4.1'],
+ ['Why can the noise outside the signal space be dropped?','It does not depend on the signal and adds the same $\\|n\'\\|^{2}$ to every distance.','Ch. 4 &middot; PS CH8.4.1'],
+ ['What are the noise components?','Independent Gaussians with mean $0$ and variance $N_0/2$. The cloud is round.','Ch. 4 &middot; PS CH8.4.1'],
+ ['What does MAP maximise?','$P(\\mathbf s_i)\\,f(\\mathbf r\\mid\\mathbf s_i)$. With equal priors it is ML.','Ch. 4 &middot; PS CH8.4.1'],
+ ['What is ML in Gaussian noise?','Minimum distance. MAP subtracts $N_0\\ln P(\\mathbf s_i)$ from each squared distance.','Ch. 4 &middot; PS CH8.4.1'],
+ ['What is the correlation metric?','$\\mathbf r\\cdot\\mathbf s_i-E_i/2+\\frac{N_0}{2}\\ln P(\\mathbf s_i)$. Keep the largest.','Ch. 4 &middot; PS CH8.4.1'],
+ ['What shape are the decision regions?','Convex polygons cut by bisectors. Unequal priors shift each line toward the less likely point.','Ch. 4 &middot; PS CH8.4.1'],
+ ['What is the binary error probability?','$Q\\bigl(\\sqrt{d^{2}/2N_0}\\bigr)$ for equal priors.','Ch. 4 &middot; PS CH8.3.3, 8.4.2'],
+ ['What is the union bound?','$P_e\\le\\frac1M\\sum_i\\sum_{j\\ne i}Q\\bigl(\\sqrt{d_{ij}^{2}/2N_0}\\bigr)$. The intelligent bound keeps only faces.','Ch. 4 &middot; PS CH8.4.2'],
+ ['What is the nearest-neighbour form?','$\\bar N_{\\min}Q\\bigl(\\sqrt{d_{\\min}^{2}/2N_0}\\bigr)$. Close at high SNR, but not a bound.','Ch. 4 &middot; PS CH8.4.2']
 ]},
 
 /* ---------------------------------------------------------------- 5 ------ */
