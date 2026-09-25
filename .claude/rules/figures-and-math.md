@@ -79,6 +79,18 @@ must not push anything past the edge of a 320 px screen; loosen it under `body[d
 never in scene data. After any change to a scene, laboratory or style, the phone sweeps in
 `build-pipeline.md` report none on every line.
 
+**Pencil and finger on a touch screen.** In projector mode with the laser on, an Apple Pencil
+(pointer type `pen`, touch type `stylus`) draws the trail and a finger never does; a finger still
+scrolls. A quick one-finger sideways swipe on the slide is Next or Previous, as the arrow keys are
+(`bindSwipe()` in `build/src/40_core.js`); a pencil never swipes, and a vertical finger movement stays
+a scroll. The swipe is left alone when it starts on an input, a sketch figure, anything that really
+scrolls sideways (a panning figure or equation on the phone), within 24 px of the screen edge (the
+browser's back gesture), on a zoomed page, or when an overlay is open. A laboratory that takes a
+finger drag (a draggable point, as in `74_labs_m4.js` and `75_labs_m5.js`) must call
+`preventDefault()` on that `pointerdown`, which is how the swipe knows the touch is taken. After a
+change to pointer, touch, or laser handling, check on a real iPad in both orientations that the pencil
+draws, a finger swipe turns the slide, a vertical swipe scrolls, and a slider or drag does not turn it.
+
 Keep the KaTeX macro lists in `60_plot.js`, `90_app.js`, and `notes/src/render.js` in step. `PLOT` and
 `APP` are top-level `const`, not `window` properties; use their bare identifiers in Playwright
 `page.evaluate`, and remember a probe reading `window.LABS` finds nothing even when `LABS` exists.
