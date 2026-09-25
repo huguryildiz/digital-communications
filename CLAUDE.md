@@ -68,5 +68,12 @@ those details; do not duplicate their full text here.
 - Commit rebuilt tracked `dist/` files with the sources that produced them. For implementation work,
   commit and push to `main` unless the current task or active plan explicitly holds publication for
   review. No pull requests or AI attribution in commits.
+- This repository and `signals-and-systems` share one engine. `build/src/40_core.js` is kept
+  byte-identical in both; `60_plot.js`, `90_app.js`, `10_style.css`, `notes/src/notes.css`,
+  `notes/src/render.js`, `notes/topdf.js`, and `web/` share their machinery but carry course-specific
+  parts (noise, decision regions, and error-probability axes here; π-form frequency axes there). A fix
+  to shared machinery (a browser bug, a layout or print fix, touch handling, a guard) goes into both
+  repositories in the same working session, each rebuilt and checked, and each commit message names the
+  sync. Course-specific additions stay in their own repository. Do not align the two files wholesale.
 - If work spans hours or is interrupted, update `TODO.md` and append durable context to
   `.claude/reference/history.md` before ending.

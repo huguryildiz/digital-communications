@@ -2521,12 +2521,13 @@ const PLOT = (() => {
       stem(pairs, opts={}){
         const col=opts.color||COL.in, r=(opts.r||(EMPH?4:3.6))*STRW;
         /* opts.anim {delay, step, tip}: stem i rises at delay + i*step seconds;
-           tip makes a pop run along the tips on the 7 s cycle */
+           tip makes a pop run along the tips on the 7 s cycle. --i must be set:
+           the .mtf-stem rule uses it, and an undefined var drops the animation */
         const an=opts.anim; let i=0;
         pairs.forEach(([n,v])=>{
           if(n<xa-1e-9||n>xb+1e-9) return;
           const X=sx(n).toFixed(2);
-          if(an) parts.push(`<g class="mtf-stem" style="transform-origin:${X}px ${sy(0).toFixed(2)}px;animation-delay:${((an.delay||0)+i*(an.step??.085)).toFixed(3)}s">`);
+          if(an) parts.push(`<g class="mtf-stem" style="--i:0;transform-origin:${X}px ${sy(0).toFixed(2)}px;animation-delay:${((an.delay||0)+i*(an.step??.085)).toFixed(3)}s">`);
           const tip=an&&an.tip?` class="mtf-tip" style="animation-delay:${(2.1+i*(an.step??.085)).toFixed(3)}s"`:'';
           parts.push(`<line x1="${X}" y1="${sy(0).toFixed(2)}" x2="${X}" y2="${sy(v).toFixed(2)}"
             stroke="${col}" stroke-width="${(opts.width||(EMPH?2:1.8))*STRW}"/>`);
@@ -2604,7 +2605,7 @@ const PLOT = (() => {
       svg(){
         const g=[];
         g.push(`<clipPath id="${clipId}"><rect x="${(x0-CLIP_PAD).toFixed(2)}" y="${(y1-CLIP_PAD).toFixed(2)}"
-          width="${(x1-x0+2*CLIP_PAD).toFixed(2)}" height="${(y0-y1+2*CLIP_PAD).toFixed(2)}"/></clipPath>`);
+          width="${Math.max(0,x1-x0+2*CLIP_PAD).toFixed(2)}" height="${Math.max(0,y0-y1+2*CLIP_PAD).toFixed(2)}"/></clipPath>`);
         /* grid */
         const xt = o.xticksOverride || ticks(xa,xb,o.xtarget,o.xstep);
         const yt = o.yticksOverride || ticks(ya,yb,o.ytarget,o.ystep);
@@ -2624,7 +2625,7 @@ const PLOT = (() => {
         }
         /* frame when zero axes are outside the view */
         if(yz==null||xz==null)
-          g.push(`<rect x="${x0}" y="${y1}" width="${x1-x0}" height="${y0-y1}" fill="none" stroke="${CH.axis}" stroke-width="1"/>`);
+          g.push(`<rect x="${x0}" y="${y1}" width="${Math.max(0,x1-x0)}" height="${Math.max(0,y0-y1)}" fill="none" stroke="${CH.axis}" stroke-width="1"/>`);
         /* Tick labels on compact two-up plots stay at the established size.
            A full-width signal plot gets the larger lecture-slide size. */
         const TICK_SIZE = (EMPH ? (W < 500 ? 12.5 : 13.5) : 13) * LBLS;
