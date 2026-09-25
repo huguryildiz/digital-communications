@@ -4,36 +4,45 @@ const P=PLOT, C=P.COL;
 const ax=o=>P.Axes(Object.assign({w:700,h:200,pad:{l:50,r:20,t:18,b:34},xtarget:6,ytarget:3},o));
 const lg=x=>Math.log(x)/Math.LN2;
 const H=ps=>-ps.filter(p=>p>0).reduce((s,p)=>s+p*lg(p),0);
+const hbin=p=>(p<=0||p>=1)?0:-(p*lg(p)+(1-p)*lg(1-p));
+const lab=(a,x,y,s,col,anchor)=>a.note(x,y,s,{tex:true,fs:12,color:col||C.ink,anchor:anchor||'start'});
 
-/* The binary entropy function. */
-function hb(){
-  const a=ax({w:420,h:240,xr:[0,1],yr:[0,1.18],xlabel:'p',ylabel:'H(S)\\;\\text{bits}',
-    pad:{l:54,r:20,t:20,b:40},xtarget:5,ytarget:4});
-  a.curve(p=>(p<=0||p>=1)?0:-(p*lg(p)+(1-p)*lg(1-p)),{color:C.in,width:2.1});
-  a.point(0.5,1,{color:C.err,r:4});
-  a.note(0.5,1.10,'H=1',{tex:true,fs:12,color:C.err,anchor:'middle'});
+/* Colour, as in the slides: cyan a source symbol or the entropy it carries,
+   amber the channel, violet a codeword or a quantity being built, green what
+   gets through (mutual information, capacity), red what is lost or impossible.
+   Every figure is computed from the definitions in the text, so a change to
+   the text that a figure contradicts shows up as a figure that has moved. */
+
+/* The binary entropy function, with the point p = 0.11 of the text. */
+function hbfig(){
+  const a=ax({w:420,h:240,xr:[0,1],yr:[0,1.2],xlabel:'p',ylabel:'H_b(p)\\;(\\text{bits})',
+    pad:{l:58,r:20,t:20,b:40},xtarget:5,ytarget:4});
+  a.curve(hbin,{color:C.in,width:2.2});
+  a.point(0.5,1,{color:C.in,r:4});
+  a.point(0.11,hbin(0.11),{color:C.in,r:4});
+  lab(a,0.5,1.1,'H_b=1',C.in,'middle');
+  lab(a,0.15,0.46,'H_b(0.11)=0.500',C.in);
   return a.svg();
 }
 
 /* A bar for each symbol: what it carries, and that weighted by how often. */
 function bars(ps,labels){
   const n=ps.length, top=Math.max(1.05,...ps.map(p=>-lg(p)))*1.16;
-  const a=ax({w:420,h:220,xr:[0,n+0.7],yr:[-top*0.28,top],ylabel:'\\text{bits}',
+  const a=ax({w:420,h:240,xr:[0,n+0.9],yr:[-top*0.28,top],ylabel:'\\text{bits}',
     pad:{l:54,r:20,t:20,b:32},xticksOverride:[],zeroAxes:false,
-    yticksOverride:[0,1,2,3,4,5,6].filter(v=>v<=top&&(top<=4.5||v%2===0))});
+    yticksOverride:[0,1,2,3].filter(v=>v<=top)});
   ps.forEach((p,i)=>{
     a.rect(i+0.12,0,i+0.48,-lg(p),{fill:C.dec.in,stroke:C.in});
-    a.rect(i+0.52,0,i+0.88,p*-lg(p),{fill:C.dec.out,stroke:C.out});
-    if(labels[i]) a.note(i+0.5,-top*0.16,labels[i],{tex:true,fs:11,color:C.dim,anchor:'middle'});
+    a.rect(i+0.52,0,i+0.88,p*-lg(p),{fill:C.dec.mid,stroke:C.mid});
+    lab(a,i+0.5,-top*0.16,labels[i],C.ink,'middle');
   });
-  a.hline(H(ps),{color:C.err,dash:'5 3'});
-  a.note(n+0.66,H(ps)+top*0.06,'H(S)',{tex:true,fs:12,color:C.err,anchor:'end'});
+  a.hline(H(ps),{color:C.ink,dash:'5 3'});
+  lab(a,n+0.85,H(ps)+top*0.05,'H(S)=1.157',C.ink,'end');
   return a.svg();
 }
 
 /* A binary code tree: leaves evenly spaced, each parent at the mean of its
-   children. Placing nodes at their binary position instead puts the deepest
-   siblings a pixel apart. */
+   children. A leaf is a codeword (violet) and carries its symbol. */
 function tree(codes,labels,opts){
   opts=opts||{};
   const depth=Math.max(...codes.map(c=>c.length));
@@ -42,7 +51,7 @@ function tree(codes,labels,opts){
   const kids=n=>Array.from(nodes).filter(m=>m.length===n.length+1&&m.slice(0,-1)===n);
   const order=Array.from(nodes).sort((a,b)=>b.length-a.length||(a<b?-1:1));
   const row={}; let k=0;
-  order.filter(n=>kids(n).length===0).forEach(n=>{ row[n]=k++; });
+  order.filter(n=>kids(n).length===0).sort().forEach(n=>{ row[n]=k++; });
   order.forEach(n=>{ const c=kids(n); if(c.length) row[n]=c.reduce((s,m)=>s+row[m],0)/c.length; });
   const span=Math.max(1,k-1);
   const a=ax({w:opts.w||420,h:opts.h||150,xr:[-0.35,depth+0.95],yr:[-0.5,span+0.5],
@@ -52,255 +61,451 @@ function tree(codes,labels,opts){
   Array.from(nodes).forEach(n=>{
     if(n==='') return;
     const par=n.slice(0,-1);
-    a.poly([[par.length,Y(par)],[n.length,Y(n)]],{color:C.grid,width:1.4});
-    a.note((par.length+n.length)/2,(Y(par)+Y(n))/2+span*0.055,n.slice(-1),
-      {fs:11,color:C.dim,anchor:'middle'});
+    a.poly([[par.length,Y(par)],[n.length,Y(n)]],{color:C.muted,width:1.3});
+    a.note((par.length+n.length)/2,(Y(par)+Y(n))/2+(Y(n)>=Y(par)?1:-1.6)*(span+1)*0.07,n.slice(-1),
+      {tex:true,fs:11,color:C.muted,anchor:'middle'});
   });
   Array.from(nodes).forEach(n=>{
     const leaf=codes.indexOf(n);
-    a.point(n.length,Y(n),{color:leaf>=0?C.ink:C.grid,r:leaf>=0?5:2.6});
-    if(leaf>=0) a.note(n.length+0.14,Y(n),labels[leaf],{tex:true,fs:12,color:C.ink});
+    a.point(n.length,Y(n),{color:leaf>=0?C.mid:C.muted,r:leaf>=0?5:2.6});
+    if(leaf>=0&&kids(n).length) lab(a,n.length,Y(n)-(span+1)*0.16,labels[leaf],C.in,'middle');
+    else if(leaf>=0) lab(a,n.length+0.14,Y(n),labels[leaf],C.in);
   });
   return a.svg();
 }
 
-/* ---- the channel half ----------------------------------------------------
-   The three figures below are computed from the definitions in the text, not
-   from tabulated points, so a change to the text that the figure contradicts
-   shows up as a figure that has moved. */
-const hbin=p=>(p<=0||p>=1)?0:-(p*lg(p)+(1-p)*lg(1-p));
-
 /* Capacity of the binary symmetric channel against its crossover. */
 function capfig(){
-  const a=ax({w:420,h:230,xr:[0,1],yr:[0,1.14],xlabel:'p',ylabel:'C\\;\\text{bits per use}',
+  const a=ax({w:420,h:240,xr:[0,1],yr:[0,1.14],xlabel:'p',ylabel:'C\\;(\\text{bits per use})',
     pad:{l:58,r:20,t:20,b:40},xtarget:5,ytarget:4});
-  a.curve(p=>1-hbin(p),{color:C.in,width:2.2});
+  a.curve(p=>1-hbin(p),{color:C.out,width:2.2});
   a.point(0.5,0,{color:C.err,r:4});
   a.point(0.1,1-hbin(0.1),{color:C.out,r:4});
-  a.note(0.14,0.62,'C=0.531',{tex:true,fs:11,color:C.out});
+  lab(a,0.14,0.6,'C=0.531',C.out);
+  lab(a,0.5,0.08,'C=0',C.err,'middle');
   return a.svg();
 }
 
 /* Mutual information of the Z-channel against its input distribution. */
 function zfig(){
-  const I=q=>{
-    const py=[q+0.5*(1-q), 0.5*(1-q)];
-    return H(py)-(1-q);
-  };
-  const a=ax({w:420,h:230,xr:[0,1],yr:[0,0.40],xlabel:'q=P(X=0)',
-    ylabel:'I(X;Y)\\;\\text{bits}',pad:{l:58,r:20,t:20,b:40},xtarget:5,ytarget:4});
-  a.curve(I,{color:C.h,width:2.2});
-  a.vline(0.6,{color:C.err,dash:'4 3'});
-  a.point(0.6,I(0.6),{color:C.err,r:4});
-  a.note(0.63,0.10,'q^{*}=0.6',{tex:true,fs:11,color:C.err});
+  const I=q=>hbin((1-q)/2)-(1-q);
+  const a=ax({w:420,h:240,xr:[0,1],yr:[0,0.42],xlabel:'q=P(X=0)',
+    ylabel:'I(X;Y)\\;(\\text{bits})',pad:{l:58,r:20,t:20,b:40},xtarget:5,ytarget:4});
+  a.curve(I,{color:C.out,width:2.2});
+  a.vline(0.6,{color:C.out,dash:'4 3'});
+  a.point(0.6,I(0.6),{color:C.out,r:4});
+  a.point(0.5,I(0.5),{color:C.muted,r:3.5});
+  lab(a,0.63,0.37,'q^{*}=0.6,\\ C=0.3219',C.out);
+  lab(a,0.5,0.24,'0.3113',C.muted,'middle');
   return a.svg();
 }
 
-/* Bandwidth efficiency against energy per bit, and the floor it never crosses.
-   Drawn from the closed form for the ratio each efficiency needs, so no solver
-   is involved and the asymptote is exact. */
+/* The least energy a bit for each spectral efficiency, and the floor it never
+   crosses. Drawn from the closed form (2^r - 1)/r, so no solver is involved. */
 function shannonfig(){
-  const a=ax({w:700,h:280,xr:[-4,16],yr:[0,6.4],
-    xlabel:'E_b/N_0\\;(\\mathrm{dB})',ylabel:'C/B\\;(\\mathrm{bit/s/Hz})',
-    pad:{l:66,r:22,t:22,b:44},xtarget:6,ytarget:6});
+  const a=ax({w:700,h:280,xr:[-5,16],yr:[0,6.4],
+    xlabel:'E_b/N_0\\;(\\text{dB})',ylabel:'r=R_b/W\\;(\\text{b/s/Hz})',
+    pad:{l:66,r:22,t:22,b:44},xtarget:6,ytarget:6,zeroAxes:false});
   const pts=[];
-  for(let e=0.004;e<=6.4;e+=0.004){
-    const db=10*Math.log10((Math.pow(2,e)-1)/e);
-    if(db>=-4&&db<=16) pts.push([db,e]);
+  for(let r=0.004;r<=6.4;r+=0.004){
+    const db=10*Math.log10((Math.pow(2,r)-1)/r);
+    if(db>=-5&&db<=16) pts.push([db,r]);
   }
-  a.area(()=>6.4,-4,10*Math.log10(Math.LN2),{fill:C.dec.err});
-  a.poly(pts,{color:C.in,width:2.2});
-  a.vline(10*Math.log10(Math.LN2),{color:C.err,width:2});
-  a.note(1.0,5.8,'-1.59\\ \\mathrm{dB}\\quad\\text{: no system to the left}',{tex:true,fs:11,color:C.err});
+  const lim=10*Math.log10(Math.LN2);
+  a.area(()=>6.4,-5,lim,{color:C.dec.err});
+  a.poly(pts,{color:C.out,width:2.2});
+  a.vline(lim,{color:C.err,width:2});
+  a.point(10*Math.log10(1.5),2,{color:C.out,r:4});
+  a.point(9.59,1,{color:C.in,r:4.5});
+  lab(a,-4.8,5.8,'\\text{impossible}',C.err);
+  lab(a,-1.75,3.0,'-1.59\\ \\text{dB}',C.err,'end');
+  lab(a,2.4,1.55,'r=2:\\ 1.76\\ \\text{dB}',C.out);
+  lab(a,9.9,1.2,'\\text{BPSK},\\ P_b=10^{-5}',C.in);
+  return a.svg();
+}
+
+/* Water-filling over six subchannels at P = 1: noise is the floor, power is
+   poured up to one level. */
+function waterfig(){
+  const N=[0.1,0.2,0.4,0.8,1.6,3.2], mu=1.7/3;
+  const a=ax({w:560,h:240,xr:[-0.3,6.3],yr:[-0.55,3.5],ylabel:'\\text{noise, power}',
+    pad:{l:58,r:20,t:20,b:24},xticksOverride:[],yticksOverride:[0,1,2,3],zeroAxes:false});
+  N.forEach((n,i)=>{
+    a.rect(i+0.1,0,i+0.9,n,{fill:C.noiseSoft,stroke:C.noise,width:1.2});
+    if(mu>n) a.rect(i+0.1,n,i+0.9,mu,{fill:C.dec.in,stroke:C.in,width:1.5});
+    lab(a,i+0.5,-0.4,'N_'+(i+1),C.muted,'middle');
+  });
+  a.hline(mu,{color:C.ink,dash:'6 4'});
+  lab(a,0.12,0.78,'\\mu=0.567',C.ink);
   return a.svg();
 }
 
 window.C6 = [
 
 {t:'h1', num:'CHAPTER 6', text:'An introduction to information theory'},
-{t:'p', lead:true, text:'The previous chapters started with a given bit stream and transmitted it through a channel. This chapter studies the source of those bits. Entropy measures the average information from the source. It also gives the minimum average rate for lossless source coding.'},
+{t:'p', lead:true, text:'Two numbers set what any code can do. A source has an entropy, the fewest bits a symbol that any lossless code can reach. A channel has a capacity, the most bits a use that any code can carry reliably. The first half of this chapter measures the entropy and builds codes that reach it. The second half measures the capacity and shows how codes approach it.'},
 
-{t:'h2', num:'6.1', text:'The information in one symbol'},
-{t:'p', text:'A <b>discrete memoryless source</b> emits one of $K$ symbols each time, with fixed probabilities $p_1,\\ldots,p_K$, chosen independently of what came before. How much is learnt when one arrives? If it was certain, nothing. If it was almost impossible, a great deal.'},
-{t:'eqbox', cap:'Self-information', tex:[
- 'I(s_k)=\\log_a\\frac{1}{p_k}=-\\log_a p_k'],
- after:'The base sets the unit: $a=2$ gives <b>bits</b>, $a=e$ gives <b>nats</b>, $a=10$ gives <b>Hartleys</b>. This course uses base two throughout.'},
-{t:'box', kind:'def', hd:'Three properties, and what forces the logarithm', html:'<b>$I(s_k)\\ge0$</b>, because a probability is at most one and its logarithm at most zero.<br><b>$I(s_k)\\ge I(s_j)$ when $p_k\\le p_j$</b>: rarer means more informative.<br><b>$I(s_ks_j)=I(s_k)+I(s_j)$ for independent symbols</b>, because their probabilities multiply and the logarithm turns a product into a sum. That third property is the one that rules out every function except a logarithm.'},
-{t:'box', kind:'ok', hd:'One halving is one bit', html:'$-\\log_2\\frac12=1$, so every halving of a probability adds exactly one bit. A symbol of probability $1/1000$ is about ten halvings away from certainty, so it carries about $10$ bits. Most estimates in this chapter can be done that way, without a calculator.'},
-
-{t:'h2', num:'6.2', text:'Entropy'},
-{t:'p', text:'Self-information describes one symbol. Average it over the alphabet, weighting each symbol by how often it happens, and the result describes the source.'},
-{t:'eqbox', cap:'Entropy', tex:[
- 'H(S)=E\\bigl[I(s_k)\\bigr]=-\\sum_{k=1}^{K}p_k\\log_2 p_k\\quad\\text{bits a symbol}',
- '0\\le H(S)\\le\\log_2 K'],
- after:'Zero when one symbol has probability one — nothing is ever in doubt. At the top, $\\log_2 K$, when all $K$ are equally likely: putting $p_k=1/K$ into the sum gives $\\sum\\frac1K\\log_2 K=\\log_2 K$.'},
+{t:'h2', num:'6.1', text:'Information and entropy'},
+{t:'p', text:'A <b>discrete memoryless source</b> emits one symbol at a time from an alphabet $s_1,\\ldots,s_K$. Symbol $s_k$ appears with probability $p_k$, independently of the symbols before it. A likely symbol tells the receiver little when it arrives. A rare one tells it a lot.'},
+{t:'p', text:'The <b>self-information</b> of a symbol turns this into a number. It is minus the logarithm of the probability.'},
+{t:'eqbox', cap:'Self-information', tex:'I(s_k)=\\log_2\\frac{1}{p_k}=-\\log_2p_k\\quad\\text{bits}',
+ after:'Base $2$ gives bits, and base $e$ gives nats. This chapter uses base $2$ throughout. A symbol of probability $1/8$ carries $-\\log_2\\tfrac18=\\log_28=3$ bits. Each halving of the probability adds one bit.'},
+{t:'box', kind:'note', hd:'Three properties', html:'$I(s_k)\\ge0$, and $I(s_k)=0$ when $p_k=1$. A certain symbol tells nothing.<br>Rarer symbols carry more: $I(s_k)>I(s_j)$ when $p_k<p_j$.<br>Independent symbols add. Their probabilities multiply, and the logarithm turns the product into a sum: $I(s_js_k)=I(s_j)+I(s_k)$.'},
+{t:'box', kind:'err', hd:'Common error', html:'Write $-\\log_2p_k$, not $\\log_2p_k$. The logarithm of a probability is negative, and information is not.'},
+{t:'p', text:'A bit has a plain reading as one yes/no question. A question whose two answers are equally likely halves the candidates. One such answer gives one bit.'},
+{t:'eqbox', cap:'Equally likely cases', tex:'K=2^{m}\\ \\text{cases}\\;\\Longrightarrow\\;m=\\log_2K\\ \\text{questions}',
+ after:'Eight equally likely cards take $\\log_28=3$ questions: the answers cut $8$ to $4$, $4$ to $2$ and $2$ to $1$. Sixteen outcomes take $\\log_216=4$ questions.'},
+{t:'p', text:'A skewed source is searched faster on average by asking about the likely symbol first. Take four symbols with probabilities $\\tfrac12,\\tfrac14,\\tfrac18,\\tfrac18$. The first question asks for $s_1$. The second asks for $s_2$, and the third separates $s_3$ from $s_4$.'},
+{t:'eqbox', cap:'Average number of questions', tex:'\\bar{L}=\\tfrac12(1)+\\tfrac14(2)+\\tfrac18(3)+\\tfrac18(3)=0.5+0.5+0.375+0.375=1.75',
+ after:'Symbol $s_k$ is found after $-\\log_2p_k$ questions. So the average number of questions is the average self-information of the source, which is its entropy.'},
+{t:'p', text:'The <b>entropy</b> of a source is the average self-information of its symbols. Each symbol\'s information is weighted by how often the symbol occurs.'},
+{t:'eqbox', cap:'Entropy', tex:'H(S)=\\sum_{k=1}^{K}p_kI(s_k)=-\\sum_{k=1}^{K}p_k\\log_2p_k\\quad\\text{bits a symbol}',
+ after:'A symbol with $p_k=0$ adds nothing, since $p\\log_2p\\to0$ as $p\\to0$.'},
+{t:'p', text:'For the source $0.7,0.2,0.1$, write out the three terms and add them.'},
+{t:'eqbox', cap:'Entropy of a three-symbol source', tex:'\\begin{aligned}H(S)&=-0.7\\log_20.7-0.2\\log_20.2-0.1\\log_20.1\\\\&=0.3602+0.4644+0.3322\\\\&=1.1568\\ \\text{bits}\\end{aligned}',
+ after:'The rarest symbol carries the most bits, $-\\log_20.1=3.32$. It adds the least to the average, because it seldom occurs.'},
+{t:'p', text:'The entropy lies between two bounds.'},
+{t:'eqbox', cap:'Entropy bounds', tex:'0\\le H(S)\\le\\log_2K',
+ after:'The lower bound holds when one symbol has probability $1$ and nothing is in doubt. The upper bound holds when all $K$ symbols are equally likely. With $p_k=1/K$ the sum is $\\sum_k\\tfrac1K\\log_2K=\\log_2K$. Three equal symbols give $\\log_23=1.585$ bits, more than the $1.157$ of the skewed source.'},
+{t:'p', text:'A source of two symbols with probabilities $p$ and $1-p$ has the <b>binary entropy function</b>.'},
+{t:'eqbox', cap:'Binary entropy', tex:'H_b(p)=-p\\log_2p-(1-p)\\log_2(1-p)',
+ after:'It is symmetric about $p=\\tfrac12$, where $H_b=1$ bit. It is $0$ only at $p=0$ and $p=1$.'},
+{t:'p', text:'The top of the curve is flat. At $p=0.11$ the two terms are $-0.11\\log_20.11=0.350$ and $-0.89\\log_20.89=0.150$. So $H_b(0.11)=0.500$ bit, and a strongly skewed coin still carries half a bit a toss.'},
 {t:'figrow', items:[
- {svg:()=>hb(), cap:'The entropy of a binary source. One bit at $p=\\tfrac12$, nothing at either end, and flat near the top — a slightly unfair coin is almost as informative as a fair one.'},
- {svg:()=>bars([0.7,0.2,0.1],['s_1','s_2','s_3']), cap:'The standard example. The left bar of each pair is what the symbol carries. The right bar is that weighted by how often it happens. The three right bars add to $H(S)$.'}
+ {svg:()=>bars([0.7,0.2,0.1],['s_1\\;(0.7)','s_2\\;(0.2)','s_3\\;(0.1)']), cap:'Entropy of the source $0.7,0.2,0.1$. For each symbol, the left bar is $I(s_k)$ and the right bar is $p_kI(s_k)$. The right bars add to $H(S)=1.157$.'},
+ {svg:()=>hbfig(), cap:'The binary entropy function. It is $1$ bit at $p=\\tfrac12$ and still $0.500$ bit at $p=0.11$.'}
 ]},
-{t:'ex', hd:'Example 6.1 — the entropy of a three-symbol source', rows:[
- ['Given','$S=\\{s_1,s_2,s_3\\}$ with probabilities $0.7,\\;0.2,\\;0.1$.'],
- ['Find','The entropy.'],
- ['Solution','$H(S)=-0.7\\log_2 0.7-0.2\\log_2 0.2-0.1\\log_2 0.1=0.3602+0.4644+0.3322=1.1568$ bits a symbol.'],
- ['Check','$\\log_2 3=1.585$, and $1.1568$ is below it, as it must be for a source that is not uniform. Numbering the three symbols would cost $2$ bits each, so plain numbering wastes almost $0.85$ bits every symbol. Recovering that is the whole of source coding.']
+{t:'p', text:'A <b>binary symmetric source</b> emits equally likely, independent bits. Each bit carries one bit of information, and no lossless code can shorten the stream.'},
+{t:'p', text:'A sampled source produces symbols at a fixed rate. Its <b>information rate</b> is the entropy of a sample times the number of samples a second.'},
+{t:'ex', hd:'Example 6.1 — the information rate of a source', rows:[
+ ['Given','A source band-limited to $W=3$ kHz is sampled at the Nyquist rate. Each sample takes one of four levels with probabilities $0.4,0.3,0.2,0.1$.'],
+ ['Find','The information rate $R$ in bits a second.'],
+ ['Method','The rate is bits a sample times samples a second, $R=H(S)\\,f_s$. The Nyquist rate of Chapter 1 is $f_s=2W=6000$ samples a second.'],
+ ['Solution','$H(S)=-\\sum_kp_k\\log_2p_k=0.529+0.521+0.464+0.332=1.846$ bits a sample. Then $R=1.846\\times6000=11\\,079$ b/s.'],
+ ['Check','Four levels carry at most $\\log_24=2$ bits a sample, or $12\\,000$ b/s. The skewed levels carry less, as the entropy bound requires.']
 ]},
-{t:'p', text:'Two numbers get confused here and should not be. $\\log_2 K$ is the most a source of this size <em>could</em> carry. $\\lceil\\log_2 K\\rceil$ is what a fixed-length code <em>costs</em>. The first gap is the source being uneven; the second is rounding.'},
+{t:'box', kind:'err', hd:'Common error', html:'Multiply by the sample rate $2W$, not by the bandwidth $W$. Using $3000$ samples a second gives half the rate, $5539$ b/s.'},
+{t:'p', text:'A coder can also take the symbols in blocks of $n$. Each block is one symbol of a new source, the <b>$n$-th extension</b> $S^n$, whose alphabet has $K^n$ symbols.'},
+{t:'p', text:'The entropy of a block follows from the additive property. Write the entropy of a pair, split the logarithm of the product, and sum out the other symbol.'},
+{t:'eqbox', cap:'Entropy of a pair', tex:'\\begin{aligned}H(S^2)&=-\\sum_{i,j}p_ip_j\\log_2(p_ip_j)\\\\&=-\\sum_{i,j}p_ip_j\\bigl(\\log_2p_i+\\log_2p_j\\bigr)\\\\&=-\\sum_ip_i\\log_2p_i\\sum_jp_j-\\sum_jp_j\\log_2p_j\\sum_ip_i\\\\&=H(S)+H(S)\\end{aligned}',
+ after:'Each inner sum of probabilities is $1$. Repeating the step for $n$ symbols gives the general rule.'},
+{t:'eqbox', cap:'Extension', tex:'H(S^{n})=n\\,H(S)',
+ after:'For $0.7,0.2,0.1$ the nine pair probabilities are $0.49,0.14,0.07,0.14,0.04,0.02,0.07,0.02,0.01$. Summed the long way they give $H(S^2)=2.3136=2\\times1.1568$ bits. Triples give $H(S^3)=3\\times1.1568=3.470$ bits.'},
+{t:'box', kind:'warn', hd:'Memory', html:'The rule needs a memoryless source. With memory, as in English where $q$ is followed by $u$, a block carries less than $nH(S)$. Text compressors rely on that surplus.'},
 
-{t:'h2', num:'6.3', text:'Extended sources'},
-{t:'p', text:'Nothing forces a coder to work one symbol at a time. Group them in $n$s and treat each block as one symbol of a new alphabet. That is the <b>$n$-th extension</b>, written $S^n$, and it has $K^n$ symbols.'},
-{t:'eqbox', cap:'Extension', tex:['H(S^{n})=n\\,H(S)'],
- after:'The source is memoryless, so the symbols in a block are independent and their information adds. This is the third property of self-information, applied $n$ times.'},
-{t:'ex', hd:'Example 6.2 — the same source, two at a time', rows:[
- ['Given','The source of Example 6.1, extended by two.'],
- ['Find','$H(S^2)$.'],
- ['Method','$S^2$ has $3^2=9$ symbols with probabilities $0.49, 0.14, 0.07, 0.14, 0.04, 0.02, 0.07, 0.02, 0.01$.'],
- ['Solution','Summing $-p\\log_2 p$ over all nine gives $2.3136$ bits a block.'],
- ['Check','$2\\times1.1568=2.3136$. The long way and the short way agree, and per symbol nothing has changed — $2.3136$ over two symbols is $1.1568$ each. What changes is how much of a whole bit gets wasted in rounding, and section 6.6 turns that into a bound.']
+{t:'h2', num:'6.2', text:'The limits of compression'},
+{t:'p', text:'A <b>source encoder</b> maps each symbol $s_k$ to a string of bits, its <b>codeword</b>, of length $l_k$. Common symbols should get short codewords and rare symbols long ones.'},
+{t:'eqbox', cap:'Average length and efficiency', tex:'\\bar{L}=\\sum_{k=1}^{K}p_kl_k,\\qquad\\eta=\\frac{H(S)}{\\bar{L}}\\le1',
+ after:'The code for $\\tfrac12,\\tfrac14,\\tfrac18,\\tfrac18$ with lengths $1,2,3,3$ has $\\bar{L}=1.75$. That equals $H$, so $\\eta=1$. Each length equals the information of its symbol.'},
+{t:'box', kind:'note', hd:'Source coding theorem', html:'Every uniquely decodable code has $\\bar{L}\\ge H(S)$. The entropy is the fewest bits a symbol that a lossless code can reach.'},
+{t:'p', text:'English shows how far a simple code can sit from this limit. With its memory, English carries about $1.3$ bits a letter. A letter-by-letter code needs $4.22$ bits, so $\\eta=1.3/4.22=0.31$.'},
+{t:'p', text:'Long sequences show where the limit comes from. Take $n$ bits from a binary source with $P(1)=p$. A long sequence has about $np$ ones and $n(1-p)$ zeros.'},
+{t:'p', text:'The probability of such a sequence follows from these counts. Take its logarithm and divide by $-n$.'},
+{t:'eqbox', cap:'Probability of a typical sequence', tex:'\\begin{aligned}P(\\mathbf{x})&=p^{np}(1-p)^{n(1-p)}\\\\-\\tfrac1n\\log_2P(\\mathbf{x})&=-p\\log_2p-(1-p)\\log_2(1-p)=H\\\\P(\\mathbf{x})&=2^{-nH}\\end{aligned}',
+ after:'All such sequences have nearly the same probability, $2^{-nH}$. They are the <b>typical sequences</b>.'},
+{t:'p', text:'A sequence counts as typical when its value of $-\\tfrac1n\\log_2P$ lies within $\\epsilon$ of $H$. For large $n$ the typical sequences hold almost all the probability. Their probabilities then add to about one, so there are about $2^{nH}$ of them.'},
+{t:'eqbox', cap:'The typical set', tex:'P(\\mathbf{x})\\approx2^{-nH},\\qquad|A|\\approx2^{nH}\\ \\text{of}\\ 2^{n}\\ \\text{sequences}',
+ after:'With $p=0.2$, $H=0.722$. At $n=100$ there are about $2^{100\\times0.722}=2^{72.2}$ typical sequences, a tiny fraction of the $2^{100}$.'},
+{t:'p', text:'Ten bits show the count in full. Take $p=0.2$ and $\\epsilon=0.1$, so the band runs from $0.622$ to $0.822$. A sequence on the edge of the band counts as typical.'},
+{t:'eqbox', cap:'The typical sequences of ten bits', tex:['k=2:\\quad-\\tfrac{1}{10}\\log_2\\bigl(0.2^{2}\\,0.8^{8}\\bigr)=0.722', 'k=1:\\ 0.522,\\qquad k=3:\\ 0.922'],
+ after:'Here $k$ is the number of ones. Only the sequences with two ones fall inside the band. There are $\\binom{10}{2}=45$ of them, each of probability $0.2^{2}\\,0.8^{8}=0.00671$. Together they hold $45\\times0.00671=0.3020$ of the probability. An index of $6$ bits names them, since $2^{6}=64\\ge45$.'},
+{t:'table', cap:'Probability held by the typical set, for $p=0.2$ and $\\epsilon=0.1$.', head:['$n$','$P(\\text{typical})$'], rows:[
+ ['$10$','$0.3020$'],
+ ['$100$','$0.8321$'],
+ ['$1000$','$0.9999$']
 ]},
-{t:'box', kind:'warn', hd:'Only because it is memoryless', html:'If the source had memory. As English does, where $q$ is followed by $u$. The block probabilities would not be products, and $H(S^n)$ would be <em>less</em> than $nH(S)$. That difference is exactly the redundancy real compressors live on, and it is outside this course.'},
-
-{t:'h2', num:'6.4', text:'What a code costs'},
-{t:'p', text:'A source encoder turns each symbol into a string of bits, its <b>codeword</b>. The codewords need not all be the same length, and the good idea of this chapter is that they should not be. Short ones for common symbols, long ones for rare.'},
-{t:'eqbox', cap:'Average length and efficiency', tex:[
- '\\bar{L}=\\sum_{k=1}^{K}p_k\\,l_k,\\qquad \\eta=\\frac{L_{\\min}}{\\bar{L}}=\\frac{H(S)}{\\bar{L}}\\le 1'],
- after:'The <b>source-coding theorem</b> says $\\bar{L}\\ge H(S)$ for any code from which the symbols can be recovered exactly. So $L_{\\min}=H(S)$: the entropy is not merely a measure of information, it is a limit on how few bits will carry it.'},
-{t:'box', kind:'def', hd:'Source coding is not channel coding', html:'Source coding removes bits the message does not need. Channel coding adds bits back so that errors can be found and fixed. They pull in opposite directions, they are done in that order, and this course covers only the first.'},
-{t:'p', text:'Written English gives a concrete case. Its entropy is estimated at about $1.3$ bits a letter, while a typical letter-by-letter variable-length code reaches $\\bar{L}=4.22$, so $\\eta=0.31$. Morse code is the same idea by hand: one dot for $e$, four symbols for $z$.'},
-
-{t:'h2', num:'6.5', text:'Codes that can be read back'},
-{t:'p', text:'Short codewords are useful only when the receiver can separate them. A code is <b>uniquely decodable</b> if each coded bit string has one source-symbol sequence. A <b>prefix code</b> has no codeword that begins another codeword. This stronger condition permits immediate decoding when the last codeword bit arrives. A prefix code is also <b>instantaneous</b>.'},
+{t:'p', text:'A code can name each typical sequence by its index and give up on the rare rest. About $nH$ bits name a typical sequence, which is $H$ bits a symbol. The chance of meeting a rare sequence falls to zero as $n$ grows.'},
+{t:'eqbox', cap:'Source coding theorem as a rate', tex:'R>H:\\ P_{\\text{error}}\\to0,\\qquad R<H:\\ P_{\\text{error}}\\not\\to0',
+ after:'A code of $R$ bits a symbol can be made reliable when $R$ exceeds $H$, and never when $R$ falls below it. A source with $H=0.5$ bit a symbol, in blocks of $n=1000$, needs about $nH=500$ bits a block.'},
+{t:'box', kind:'warn', hd:'Uniform source', html:'At $p=\\tfrac12$, $H=1$ and every one of the $2^{n}$ sequences is typical. There is nothing to compress.'},
+{t:'p', text:'Short codewords help only if the receiver can split the bit stream back into codewords. A code is <b>uniquely decodable</b> when every bit string of the code comes from one symbol string only.'},
+{t:'p', text:'A <b>prefix code</b> is one in which no codeword starts another. The decoder names a symbol as soon as its last bit arrives, so a prefix code is also called <b>instantaneous</b>.'},
 {t:'table', cap:'Three codes for the same four symbols.', head:['Symbol','Code I','Code II','Code III'], rows:[
- ['$s_1$','0','0','0'],
- ['$s_2$','1','10','01'],
- ['$s_3$','00','110','011'],
- ['$s_4$','11','111','0111']
+ ['$s_1$','$\\mathtt{0}$','$\\mathtt{0}$','$\\mathtt{0}$'],
+ ['$s_2$','$\\mathtt{1}$','$\\mathtt{10}$','$\\mathtt{01}$'],
+ ['$s_3$','$\\mathtt{00}$','$\\mathtt{110}$','$\\mathtt{011}$'],
+ ['$s_4$','$\\mathtt{11}$','$\\mathtt{111}$','$\\mathtt{0111}$']
 ]},
-{t:'p', text:'Code I is not a prefix code and is not uniquely decodable either: the string $00$ is both $s_3$ and $s_1s_1$. Code II is a prefix code. Code III is not a prefix code, since $0$ begins all three of the others.'},
-{t:'box', kind:'warn', hd:'Code III', html:'Code III is uniquely decodable because each codeword starts with $0$ and then contains only $1$s. However, it is not instantaneous. After $011$, the decoder must wait for the next bit to distinguish $s_3$ from the start of $s_4$.'},
+{t:'p', text:'Code I is not uniquely decodable: $\\mathtt{00}$ is $s_3$ or $s_1s_1$. Code II is a prefix code. It splits the bits $\\mathtt{0101100111}$ as $\\mathtt{0\\,10\\,110\\,0\\,111}$, which is $s_1s_2s_3s_1s_4$.'},
+{t:'p', text:'Code III is uniquely decodable, because every codeword starts with $\\mathtt{0}$. It is not instantaneous. After $\\mathtt{01}$ the decoder must wait: a $\\mathtt{1}$ next means a longer word, and a $\\mathtt{0}$ means $s_2$. The same bits read as $\\mathtt{01\\,011\\,0\\,0111}$, which is $s_2s_3s_1s_4$.'},
 {t:'figrow', items:[
  {svg:()=>tree(['0','10','110','111'],['s_1','s_2','s_3','s_4']),
-  cap:'<b>Code II.</b> Every symbol is at a leaf, so no path to one passes through another. That is what the prefix property looks like.'},
+  cap:'Code II as a tree. Every codeword is a leaf, so no path to one codeword passes through another.'},
  {svg:()=>tree(['0','01','011','0111'],['s_1','s_2','s_3','s_4']),
-  cap:'<b>Code III.</b> Every symbol sits on one path, each hanging off the node before it. Nothing is at a leaf but the last, and that is why the decoder must wait.'}
+  cap:'Code III as a tree. Each codeword lies on the path to the next, so the decoder must wait for the following bit.'}
 ]},
+{t:'p', text:'Codeword lengths can be tested before the codewords are chosen. A codeword of length $l$ owns the fraction $2^{-l}$ of all long bit strings, the ones that start with it. In a prefix code these fractions do not overlap, so they add to at most one.'},
+{t:'eqbox', cap:'Kraft inequality', tex:'\\sum_{k=1}^{K}2^{-l_k}\\le1',
+ after:'A prefix code with lengths $l_k$ exists exactly when the sum is at most one.'},
+{t:'eqbox', cap:'Kraft sums of the three codes', tex:'\\begin{aligned}\\text{I}:&\\ \\tfrac12+\\tfrac12+\\tfrac14+\\tfrac14=1.5\\\\\\text{II}:&\\ \\tfrac12+\\tfrac14+\\tfrac18+\\tfrac18=1\\\\\\text{III}:&\\ \\tfrac12+\\tfrac14+\\tfrac18+\\tfrac1{16}=0.9375\\end{aligned}',
+ after:'Code I fails, so no prefix code has its lengths. Code II uses the whole interval. Lengths $1,2,2,3$ give $1.125>1$ and allow no prefix code either.'},
+{t:'box', kind:'warn', hd:'Lengths, not codewords', html:'Code III passes the test and is still not a prefix code. The inequality tests lengths only. The lengths $1,2,3,4$ of Code III allow the prefix code $\\mathtt{0},\\mathtt{10},\\mathtt{110},\\mathtt{1110}$.'},
+{t:'p', text:'The ideal length of a codeword is $-\\log_2p_k$, the information of its symbol. It is rarely a whole number, so round it up.'},
+{t:'eqbox', cap:'Rounded lengths', tex:['l_k=\\lceil-\\log_2p_k\\rceil\\;\\Longrightarrow\\;-\\log_2p_k\\le l_k<-\\log_2p_k+1', '2^{-l_k}\\le p_k\\;\\Longrightarrow\\;\\sum_k2^{-l_k}\\le\\sum_kp_k=1'],
+ after:'The second line shows that the rounded lengths pass the Kraft test. So a prefix code with these lengths exists.'},
+{t:'p', text:'Multiply the first line by $p_k$ and sum over $k$. The left side becomes $H(S)$, and the middle becomes $\\bar{L}$.'},
+{t:'eqbox', cap:'Source-coding bound', tex:'H(S)\\le\\bar{L}<H(S)+1',
+ after:'The rounding costs less than one bit a symbol. If every $p_k=2^{-l_k}$, the source is <b>dyadic</b>. Then no length is rounded, and $\\bar{L}=H(S)$.'},
+{t:'p', text:'The lost bit can be spread over a block. Apply the bound to the extension $S^n$, whose entropy is $nH(S)$, and divide by $n$.'},
+{t:'eqbox', cap:'Blocks of $n$ symbols', tex:'nH(S)\\le L_n<nH(S)+1\\;\\Longrightarrow\\;H(S)\\le\\frac{L_n}{n}<H(S)+\\frac1n',
+ after:'Blocks of $n=10$ symbols sit at most $1/10=0.1$ bit a symbol above $H$. The price is the codebook, which grows as $K^n$. For three symbols that is $3^{10}=59\\,049$ words.'},
+{t:'p', text:'Lossless coding cannot go below $H$. When some error is allowed, fewer bits suffice. The <b>rate–distortion function</b> gives the fewest bits a sample for a mean-square error $D$.'},
+{t:'p', text:'For a Gaussian source of variance $\\sigma^2$ the function has a closed form.'},
+{t:'eqbox', cap:'Gaussian source', tex:'D(R)=\\sigma^{2}\\,2^{-2R}\\quad\\Longleftrightarrow\\quad R(D)=\\tfrac12\\log_2\\frac{\\sigma^{2}}{D}',
+ after:'One more bit multiplies $D$ by $2^{-2}=\\tfrac14$. In decibels that is $10\\log_{10}4=6.02$ dB a bit, the same rule as the quantizers of Chapter 1.'},
+{t:'box', kind:'warn', hd:'Quantizers', html:'The Lloyd–Max quantizer of Chapter 1 codes one sample at a time. It sits $1.62$ dB above $D(R)$ at $1$ bit and $2.74$ dB above it at $2$ bits. Coding blocks of samples closes the gap.'},
 
-{t:'h2', num:'6.6', text:'The Kraft inequality, and how close a code can get'},
-{t:'p', text:'Before selecting codewords, determine whether their lengths can satisfy the prefix condition. Treat the binary tree as one unit. A codeword of length $l$ uses a fraction $2^{-l}$ of the tree. These fractions cannot sum to more than one.'},
-{t:'eqbox', cap:'Kraft inequality', tex:['\\sum_{k=1}^{K}2^{-l_k}\\le 1'],
- after:'The three Kraft sums are $1.5$, $1$, and $0.9375$. Code I fails, so no prefix code has its lengths. Code II uses the tree completely. Code III satisfies the inequality but is not itself a prefix code. Thus, the inequality is necessary but not sufficient for given codewords.'},
-{t:'eqbox', cap:'How close a prefix code gets', tex:[
- 'H(S)\\le\\bar{L}< H(S)+1',
- 'H(S)\\le\\frac{L_n}{n}< H(S)+\\frac{1}{n}\\quad\\Longrightarrow\\quad \\lim_{n\\to\\infty}\\frac{L_n}{n}=H(S)'],
- after:'The ideal length for symbol $k$ is $-\\log_2 p_k$, almost never a whole number. Therefore, each length is rounded up and the rounding costs under one bit. Applying the same bound to the $n$-th extension spreads that one bit over $n$ symbols.'},
-{t:'box', kind:'ok', hd:'Dyadic probabilities', html:'If every probability has the form $p_k=2^{-l_k}$, the distribution is <b>dyadic</b>. No codeword length requires rounding. Then $\\bar{L}$ and $H(S)$ equal the same sum. Therefore, $\\bar{L}=H(S)$.'},
-{t:'box', kind:'warn', hd:'Block-code size', html:'The coding gap decreases as $1/n$, but the block alphabet grows as $K^n$. A gap of $0.05$ bit per symbol needs $n=20$. For a three-symbol source, this block contains $3^{20}=3.5\\times10^9$ possible messages.'},
-
-{t:'h2', num:'6.7', text:'Huffman coding'},
-{t:'p', text:'The bound says a good code exists. Huffman coding builds one, and it builds the best one: no prefix code on single symbols has a smaller average length.'},
-{t:'box', kind:'def', hd:'The algorithm', html:'<b>1.</b> List the symbols in order of decreasing probability.<br><b>2.</b> Take the two least likely, label one $0$ and the other $1$, and merge them into one symbol whose probability is their sum. Re-sort.<br><b>3.</b> Repeat until two symbols remain, and label those $0$ and $1$.<br>Each codeword is the labels along the path back to its symbol.'},
-{t:'ex', hd:'Example 6.3 — the standard five-symbol source', rows:[
- ['Given','$p=0.4,\\;0.2,\\;0.2,\\;0.1,\\;0.1$.'],
- ['Merging','$0.1+0.1=0.2$. Then the two smallest are $0.2$ and $0.2$, giving $0.4$. Then $0.2$ and $0.4$ give $0.6$. Then $0.4$ and $0.6$ finish it.'],
- ['Solution','Lengths $2,2,2,3,3$, so $\\bar{L}=0.4(2)+0.2(2)+0.2(2)+0.1(3)+0.1(3)=2.2$ bits a symbol.'],
- ['Efficiency','$H(S)=2.1219$ bits, so $\\eta=2.1219/2.2=0.9645$ — the code spends $3.68\\%$ more than the source strictly needs.'],
- ['Check','$2.1219\\le2.2<3.1219$: the two-sided bound holds. A fixed-length code would have cost $\\lceil\\log_2 5\\rceil=3$ bits, so Huffman saved $0.8$ bits a symbol.']
+{t:'h2', num:'6.3', text:'Huffman and Lempel–Ziv coding'},
+{t:'p', text:'The source-coding bound says a good prefix code exists. Huffman coding builds the best one: no prefix code for single symbols has a smaller average length.'},
+{t:'box', kind:'note', hd:'Huffman algorithm', html:'<b>1.</b> Sort the probabilities in decreasing order.<br><b>2.</b> Merge the two smallest into one entry whose probability is their sum. Label the pair $0$ and $1$, and sort again.<br><b>3.</b> Repeat until one entry is left. Read each codeword from the last merge back to its symbol.'},
+{t:'ex', hd:'Example 6.2 — a Huffman code', rows:[
+ ['Given','A source with probabilities $0.4,0.2,0.2,0.1,0.1$ for $s_1,\\ldots,s_5$.'],
+ ['Find','A Huffman code, its average length and its efficiency.'],
+ ['Method','Huffman coding gives the least average length of any prefix code for single symbols. Merge the two smallest entries until one is left. Place a merged entry above any entry it ties with.'],
+ ['Solution','The merges are $0.1+0.1=0.2$, then $0.2+0.2=0.4$, then $0.4+0.2=0.6$, then $0.6+0.4=1$. Reading back gives $\\mathtt{00},\\mathtt{10},\\mathtt{11},\\mathtt{010},\\mathtt{011}$. The average length is $\\bar{L}=0.4(2)+0.2(2)+0.2(2)+0.1(3)+0.1(3)=2.2$ bits.'],
+ ['Check','$H(S)=2.1219$ bits, so $\\eta=2.1219/2.2=0.9645$. The bound holds: $2.1219\\le2.2<3.1219$. A fixed-length code would need $\\lceil\\log_25\\rceil=3$ bits.']
 ]},
-{t:'p', text:'Two Huffman choices are free. Either symbol in a merged pair can receive $0$. A merged symbol can also occupy different positions during a probability tie. These choices give different codes with the same minimum average length. Their codeword-length variances can differ.'},
-{t:'eqbox', cap:'Variance of the codeword length', tex:[
- '\\sigma^{2}=\\sum_{k=1}^{K}p_k\\bigl(l_k-\\bar{L}\\bigr)^{2}'],
- after:'For the example: placing the merged symbol high gives lengths $2,2,2,3,3$ and $\\sigma^{2}=0.16$. Placing it low gives $1,2,3,4,4$, the same $\\bar{L}=2.2$, and $\\sigma^{2}=1.36$.'},
+{t:'p', text:'A merged entry often ties with other entries of the same probability. It may be placed above them or below them. Both choices give a Huffman code with the same average length.'},
+{t:'eqbox', cap:'Two Huffman codes for $0.4,0.2,0.2,0.1,0.1$', tex:['\\text{high: }l_k=2,2,2,3,3,\\qquad\\bar{L}=2.2', '\\text{low: }l_k=1,2,3,4,4,\\qquad\\bar{L}=0.4+0.4+0.6+0.4+0.4=2.2'],
+ after:'Placed high, the codewords are $\\mathtt{00},\\mathtt{10},\\mathtt{11},\\mathtt{010},\\mathtt{011}$. Placed low, they are $\\mathtt{1},\\mathtt{01},\\mathtt{000},\\mathtt{0010},\\mathtt{0011}$.'},
+{t:'p', text:'The two codes differ in how far the lengths spread around $\\bar{L}$. The <b>variance</b> of the codeword length measures that spread.'},
+{t:'eqbox', cap:'Variance of the codeword length', tex:['\\sigma^{2}=\\sum_kp_k\\bigl(l_k-\\bar{L}\\bigr)^{2}', '\\begin{aligned}\\sigma^2_{\\text{high}}&=0.8(0.2)^{2}+0.2(0.8)^{2}=0.032+0.128=0.16\\\\\\sigma^2_{\\text{low}}&=0.4(1.2)^{2}+0.2(0.2)^{2}+0.2(0.8)^{2}+0.2(1.8)^{2}\\\\&=0.576+0.008+0.128+0.648=1.36\\end{aligned}'],
+ after:'Placing the merged entry high gives the least variance. Lengths near $\\bar{L}$ keep the bit rate steady, so a transmitter buffer fills and empties less.'},
 {t:'figrow', items:[
- {svg:()=>tree(['00','10','11','010','011'],['s_1','s_2','s_3','s_4','s_5'],{w:440,h:160}),
-  cap:'<b>Merged symbol placed high.</b> Lengths $2,2,2,3,3$, average $2.2$, variance $0.16$. The tree is nearly balanced.'},
- {svg:()=>tree(['0','10','110','1110','1111'],['s_1','s_2','s_3','s_4','s_5'],{w:440,h:160}),
-  cap:'<b>Merged symbol placed low.</b> Lengths $1,2,3,4,4$, the same average $2.2$, variance $1.36$. The tree is a ladder.'}
+ {svg:()=>tree(['00','10','11','010','011'],['s_1','s_2','s_3','s_4','s_5'],{w:440,h:170}),
+  cap:'The Huffman code with ties placed high. Lengths $2,2,2,3,3$ and variance $0.16$.'},
+ {svg:()=>tree(['1','01','000','0010','0011'],['s_1','s_2','s_3','s_4','s_5'],{w:440,h:170}),
+  cap:'The Huffman code with ties placed low. Lengths $1,2,3,4,4$ and variance $1.36$.'}
 ]},
-{t:'box', kind:'ok', hd:'Minimum length variance', html:'Variable codeword lengths make a buffer fill and empty at changing rates. Smaller length variance reduces these changes. During a probability tie, place the merged symbol as high as possible. This rule gives the minimum-variance Huffman code.'},
-
-{t:'h2', num:'6.8', text:'Lempel–Ziv coding'},
-{t:'p', text:'Huffman coding has one practical weakness, and it is not its length. It needs the probabilities <em>before</em> it can build the tree, and for a stream arriving over a wire nobody knows them in advance. A <b>universal</b> code is one that reaches the entropy without being told the source, and the Lempel–Ziv algorithm is the one in use everywhere.'},
-{t:'box', kind:'def', hd:'The algorithm', html:'Read the stream once. Each time, take the <b>shortest run of bits not seen before</b> and store it in a dictionary. Because it is the shortest new one, everything but its last bit is already stored. So it is sent as a <b>pointer</b> to that earlier entry followed by the one new bit, the <b>innovation</b>. The decoder builds the same dictionary from the same blocks in the same order. Therefore, the dictionary is never transmitted.'},
-{t:'ex', hd:'Example 6.4 — parsing and sending a stream', rows:[
- ['Given','The stream $0\\;1\\;00\\;011\\;1\\ldots$, with $0$ and $1$ held in the dictionary at positions $1$ and $2$.'],
- ['Method','Parse left to right into pieces not seen before, then send each piece as (position of its start, new bit).'],
- ['Solution','$00$ takes position $3$: its start $0$ is at position $1$ and its new bit is $0$, so with four-bit blocks it goes as $001\\,0$. Next $011$ takes position $4$: its start $01$ is at position $4$… so it is sent as $100\\,1$.'],
- ['Decoding','Receive $1101$. The last bit is the innovation $1$. The first three bits, $110$, give pointer $6$. Therefore, append $1$ to dictionary entry $6$. The decoder already contains this entry.'],
- ['Check','Seven pieces at four bits each cost $28$ bits where the raw stream was $18$. The method <em>loses</em> on a short stream, and that is not a fault: the dictionary has to be paid for before it can pay back. In practice the block is $12$ bits, giving $2^{12}=4096$ entries, and a long file compresses to roughly two thirds of its size.']
+{t:'p', text:'Huffman coding of the single symbols $0.7,0.2,0.1$ gives the codewords $\\mathtt{0},\\mathtt{10},\\mathtt{11}$. Their average length is $0.7(1)+0.2(2)+0.1(2)=1.3$ bits, against $H=1.1568$.'},
+{t:'p', text:'Coding blocks spreads the rounding loss. Build a Huffman code for the $K^n$ blocks of $n$ symbols, and divide its average length by $n$.'},
+{t:'table', cap:'Huffman codes for single symbols, pairs and triples of $0.7,0.2,0.1$, against $H=1.1568$.', head:['$n$','Blocks','$\\bar{L}_n/n$ (bits a symbol)','Bound $H+1/n$','Efficiency $\\eta$'], rows:[
+ ['$1$','$3$','$1.3$','$2.1568$','$0.8898$'],
+ ['$2$','$9$','$1.165$','$1.6568$','$0.9929$'],
+ ['$3$','$27$','$1.1753$','$1.4901$','$0.9842$']
 ]},
-{t:'box', kind:'ok', hd:'Optimal against universal', html:'Huffman is optimal but not universal: no prefix code on single symbols beats it, and it cannot start until the probabilities are known. Lempel–Ziv is universal but reaches the limit only in the long run. That trade is the whole difference between them, and it is why the second is what compresses an archive.'},
-
-{t:'h2', num:'6.9', text:'The discrete memoryless channel'},
-{t:'p', text:'The first part of this chapter studied the source. The second part studies the channel. A <b>discrete memoryless channel</b> maps one symbol from a finite input alphabet to a finite output alphabet. The current output depends only on the current input.'},
-{t:'eqbox', cap:'The channel, and what the transmitter adds', tex:[
- 'p(y_k\\mid x_j)=P\\bigl(Y=y_k\\mid X=x_j\\bigr),\\qquad\\sum_{k=0}^{K-1}p(y_k\\mid x_j)=1\\ \\ \\text{for every }j',
- 'p(x_j,y_k)=p(y_k\\mid x_j)\\,p(x_j),\\qquad p(y_k)=\\sum_{j=0}^{J-1}p(y_k\\mid x_j)\\,p(x_j)'],
- after:'The transition probabilities collected into a matrix, one row per input, are the <b>channel matrix</b>. Every <em>row</em> sums to one, because something must come out when a symbol goes in. The columns do not, and expecting them to is the usual first mistake. The <b>input distribution</b> $p(x_j)$ is not part of the channel — it belongs to the transmitter, and it is chosen.'},
-{t:'box', kind:'def', hd:'The binary symmetric channel', html:'Two inputs, two outputs, and one number. The probability $p$ that a bit is flipped, called the <b>crossover probability</b>. Its matrix is $\\begin{bmatrix}1-p&p\\\\ p&1-p\\end{bmatrix}$. It is not an abstraction invented for this chapter. The binary receiver of chapter 2, seen from outside, <em>is</em> a binary symmetric channel with $p=Q\\!\\left(\\sqrt{2E_b/N_0}\\right)$. With equally likely inputs the output is equally likely whatever $p$ is, even at $p=\\tfrac12$ where the channel is destroying everything. Therefore, a balanced output is no evidence that anything survived.'},
-
-{t:'h2', num:'6.10', text:'Mutual information'},
-{t:'p', text:'Before anything arrives, the uncertainty about the input is $H(X)$. Then one output symbol arrives, and it rarely settles the question but it does change the odds. What remains is an entropy like any other, averaged over which output actually came.'},
-{t:'eqbox', cap:'Conditional entropy, and the information that got through', tex:[
- 'H(X\\mid Y)=\\sum_{k}H(X\\mid Y=y_k)\\,p(y_k)=-\\sum_{k}\\sum_{j}p(x_j,y_k)\\log_2 p(x_j\\mid y_k)',
- 'I(X;Y)=H(X)-H(X\\mid Y)=H(Y)-H(Y\\mid X)',
- 'H(X,Y)=H(X)+H(Y)-I(X;Y)'],
- after:'Read the middle line in words: <b>how much doubt the arrival removed</b>, in bits, per use of the channel. The second form is the one used, because $H(Y\\mid X)$ comes straight off the channel matrix while $H(X\\mid Y)$ needs Bayes\' rule first.'},
-{t:'box', kind:'def', hd:'Three properties', html:'<b>Symmetry.</b> $I(X;Y)=I(Y;X)$. Bayes\' rule gives $p(x_j\\mid y_k)/p(x_j)=p(y_k\\mid x_j)/p(y_k)$, and substituting turns one sum into the other. What the output says about the input equals what the input says about the output — which is why the quantity is called <em>mutual</em>.<br><b>Non-negativity.</b> $I(X;Y)\\ge0$, with equality exactly when $X$ and $Y$ are independent. An observation never leaves you knowing less than before.<br><b>Joint entropy.</b> Adding $H(X)$ and $H(Y)$ counts the shared part twice, so it is subtracted once. That is the whole content of the third line.'},
-{t:'ex', hd:'Example 6.5 — the binary symmetric channel at $p=0.1$', rows:[
- ['Given','A BSC with $p=0.1$ and equally likely inputs.'],
- ['Find','$H(X)$, $H(Y\\mid X)$, $H(Y)$ and $I(X;Y)$.'],
- ['Method','$H(Y\\mid X)$ comes off the matrix: whichever symbol goes in, the output distribution is $(0.9,0.1)$ in some order. $H(Y)$ needs the output distribution first.'],
- ['Solution','$H(X)=1$ bit. $H(Y\\mid X)=H(0.1)=-0.1\\log_2 0.1-0.9\\log_2 0.9=0.4690$ bits. The output is equally likely, so $H(Y)=1$ bit, and $I(X;Y)=1-0.4690=0.5310$ bits per use.'],
- ['Check','One bit was offered and just over half a bit arrived. The missing $0.4690$ bits were not delayed or corrupted. They were destroyed, and no receiver however clever recovers them. The joint entropy is $1+1-0.5310=1.4690$ bits, and at $p=0.25$ the shared part falls to $0.1887$ while the total rises to $1.8113$. A noisier channel does not destroy uncertainty, it moves it out of the shared part.']
+{t:'p', text:'Pairs cost $\\bar{L}_2=2.33$ bits a pair, or $2.33/2=1.165$ bits a symbol. Triples cost $1.1753$ bits a symbol, a little more than pairs.'},
+{t:'box', kind:'err', hd:'Common error', html:'Expect the bound $H+1/n$ to fall with $n$, not the cost of every block code. Triples give $1.1753$ bits a symbol, worse than the $1.165$ of pairs.'},
+{t:'p', text:'<b>Arithmetic coding</b> codes a whole message at once. It starts with the interval $[0,1)$. Each symbol keeps the part of the current interval that its probability owns.'},
+{t:'ex', hd:'Example 6.3 — arithmetic coding', rows:[
+ ['Given','The message $s_1s_1s_2$ from a source with $P(s_1)=0.7$, $P(s_2)=0.2$ and $P(s_3)=0.1$. The symbols own the first $70\\%$, the next $20\\%$ and the last $10\\%$ of each interval.'],
+ ['Find','The final interval and a binary tag that names it.'],
+ ['Method','Each symbol scales the interval by its probability, so the final width is the probability of the message. About $-\\log_2w$ bits name an interval of width $w$.'],
+ ['Solution','The first $s_1$ keeps $[0,0.7)$, and the second keeps $[0,0.49)$. Then $s_2$ keeps the part from $70\\%$ to $90\\%$ of that, $[0.343,0.441)$. The width is $w=0.7\\times0.7\\times0.2=0.098$. The tag has $l=\\lceil-\\log_2w\\rceil+1=\\lceil3.35\\rceil+1=5$ bits, and it is $0.\\mathtt{01100}_2=0.375$.'],
+ ['Check','Every binary fraction that starts with $0.\\mathtt{01100}$ lies in $[0.375,0.40625)$. That stretch sits inside $[0.343,0.441)$, so the tag names the message whatever bits follow. The extra bit in $l$ is paid once a message.']
 ]},
-{t:'box', kind:'warn', hd:'The two conditional entropies are not the same thing', html:'$H(Y\\mid X)$ is the uncertainty about the <em>output</em> given the input, and for the BSC it is $H(p)$ whatever the transmitter does. A property of the channel alone. $H(X\\mid Y)$ is the uncertainty about the <em>input</em> given the output, and it depends on the input distribution too. $I(X;Y)=I(Y;X)$ is a statement about one number. It does not make the two ends interchangeable.'},
-
-{t:'h2', num:'6.11', text:'Channel capacity'},
-{t:'p', text:'Mutual information measures one transmitter on one channel. Change how often each symbol is sent and the number moves. The channel is fixed and the input distribution is the engineer\'s to choose. Therefore, take the best choice. What comes out then depends on the channel matrix alone. This occurs because the one free thing has been optimised away. <b>capacity is a property of the channel, and mutual information is not.</b>'},
-{t:'eqbox', cap:'Capacity, and the capacity of the BSC', tex:[
- 'C=\\max_{\\{p(x_j)\\}}I(X;Y)\\quad\\text{bits per channel use}',
- 'C_{\\text{BSC}}=1-H(p),\\qquad H(p)=-p\\log_2 p-(1-p)\\log_2(1-p)'],
- after:'For the BSC, $H(Y\\mid X)=H(p)$ whatever the transmitter does, and $H(Y)\\le1$ bit with equality when the output is equally likely — which equally likely inputs deliver. So the maximum sits at $p(x_0)=\\tfrac12$ and the two pieces subtract. The unit is bits per <em>use</em> of the channel, not bits per second. Multiply by the number of uses a second to reach a rate.'},
-{t:'figrow', items:[
- {svg:()=>capfig(), cap:'Capacity of the binary symmetric channel. The capacity is one bit at $p=0$ and $p=1$. At $p=1$, the receiver restores every bit by inversion. Capacity is zero at $p=\\tfrac12$, where the output is independent of the input.'},
- {svg:()=>zfig(), cap:'The Z-channel of Example 6.6. Its mutual information peaks at $q=0.6$, not at a half, which is what an asymmetric channel does: the transmitter should favour the symbol that survives.'}
+{t:'p', text:'Huffman and arithmetic coding need the probabilities before they start. <b>Lempel–Ziv coding</b> needs none. It is a <b>universal</b> code: it learns the frequent strings from the stream itself.'},
+{t:'box', kind:'note', hd:'Lempel–Ziv parsing', html:'Read the stream from the left. Cut off the shortest string that is not yet in the dictionary, and add it as a new entry. Each new phrase is an earlier phrase plus one new bit. Send it as the pair (pointer to the earlier phrase, new bit). The decoder builds the same dictionary from the pairs, so the dictionary is never sent.'},
+{t:'ex', hd:'Example 6.4 — Lempel–Ziv parsing', rows:[
+ ['Given','The $18$-bit stream $\\mathtt{000101110010100101}$. The dictionary starts with the empty phrase as entry $0$.'],
+ ['Find','The phrases, the pair sent for each, and the number of bits sent.'],
+ ['Method','Cut off the shortest new string each time. Phrase $i$ can point to any of the $i$ entries $0$ to $i-1$, so its pointer needs $\\lceil\\log_2i\\rceil$ bits. One more bit carries the new bit.'],
+ ['Solution','The phrases are $\\mathtt{0},\\mathtt{00},\\mathtt{1},\\mathtt{01},\\mathtt{11},\\mathtt{001},\\mathtt{010},\\mathtt{0101}$, listed with their pairs in the table below. Phrase $7$, $\\mathtt{010}$, is phrase $4$ plus a $\\mathtt{0}$, so it is sent as $(4,\\mathtt{0})$. The costs add to $1+2+3+3+4+4+4+4=25$ bits.'],
+ ['Check','The phrase lengths add to $1+2+1+2+2+3+3+4=18$, the whole stream. With a fixed $3$-bit pointer each phrase costs $4$ bits, and eight phrases take $32$ bits.']
 ]},
-{t:'p', text:'The curve is flat near $p=0$: a channel with one error in a thousand has capacity $0.9886$ bits, so the first errors cost almost nothing. It then falls away steeply — at $p=0.11$ the capacity is already $0.500$. Halving the error probability of an already-good channel buys very little, and the effort belongs where the curve is steep.'},
-{t:'ex', hd:'Example 6.6 — the capacity of the Z-channel', rows:[
- ['Given','A $0$ always arrives as a $0$. A $1$ arrives correctly half the time and as a $0$ otherwise. Write $P(X=0)=q$.'],
- ['Find','The capacity, and the input distribution that achieves it.'],
- ['Method','Nothing is symmetric, so the equally likely input is no longer the right guess. Form $I(X;Y)$ as a function of $q$ and maximise it.'],
- ['Solution','$P(Y=0)=q+\\tfrac12(1-q)=\\tfrac12(1+q)$, and $H(Y\\mid X)=q(0)+(1-q)(1)=1-q$ because a transmitted $0$ leaves nothing in doubt. Subtracting gives $I(X;Y)=q-\\tfrac12(1+q)\\log_2(1+q)-\\tfrac12(1-q)\\log_2(1-q)$. Setting the derivative to zero collapses the logarithmic terms to $\\tfrac12\\log_2\\frac{1-q}{1+q}=-1$, so $\\frac{1-q}{1+q}=\\frac14$ and $q^{*}=0.6$.'],
- ['Check','$C=0.3219$ bits per channel use, and $0.3219=\\log_2\\tfrac54$ exactly — a check on the arithmetic that costs nothing. The optimum is not the balanced input: the transmitter should send the reliable symbol three times in five. A transmitter that guesses $q=0.5$ still gets $0.3113$ bits, losing about $3\\%$.']
+{t:'table', cap:'Lempel–Ziv parsing of the stream $\\mathtt{000101110010100101}$.', head:['Entry $i$','Phrase','Pair sent','Bits $\\lceil\\log_2i\\rceil+1$'], rows:[
+ ['$1$','$\\mathtt{0}$','$(0,\\mathtt{0})$','$1$'],
+ ['$2$','$\\mathtt{00}$','$(1,\\mathtt{0})$','$2$'],
+ ['$3$','$\\mathtt{1}$','$(0,\\mathtt{1})$','$3$'],
+ ['$4$','$\\mathtt{01}$','$(1,\\mathtt{1})$','$3$'],
+ ['$5$','$\\mathtt{11}$','$(3,\\mathtt{1})$','$4$'],
+ ['$6$','$\\mathtt{001}$','$(2,\\mathtt{1})$','$4$'],
+ ['$7$','$\\mathtt{010}$','$(4,\\mathtt{0})$','$4$'],
+ ['$8$','$\\mathtt{0101}$','$(7,\\mathtt{1})$','$4$']
 ]},
-{t:'box', kind:'ok', hd:'The channel coding theorem', html:'If the transmission rate satisfies $R_b<C$, there is a coding scheme whose probability of error is as small as required. If $R_b>C$, there is not — no scheme, however long or however clever. <b>An error-free data rate can never exceed the capacity.</b> The theorem says a code exists. It does not say what the code is, how long its blocks must be, or what the decoder costs. Finding codes that come close and can also be decoded took the fifty years after it was proved.'},
+{t:'box', kind:'warn', hd:'Short streams', html:'On a short stream Lempel–Ziv costs more than it saves: $25$ bits for $18$. The dictionary must be built before it pays back.'},
+{t:'p', text:'On a long stream the phrases grow long, and each pointer stands for many source bits. For $c$ phrases the cost is a sum over the phrases.'},
+{t:'eqbox', cap:'Cost of $c$ phrases', tex:'L=\\sum_{i=1}^{c}\\bigl(\\lceil\\log_2i\\rceil+1\\bigr)\\ \\text{bits}',
+ after:'Take a binary source with $P(1)=0.1$, so $H_b(0.1)=0.469$ bit a symbol. One stream costs $0.689$ bits a source bit after $10^{3}$ bits, $0.625$ after $10^{4}$ and $0.557$ after $10^{6}$.'},
+{t:'box', kind:'warn', hd:'Slow approach', html:'The cost falls toward $H$ only as the phrases grow long, and it never falls below $H$. Any code for single binary symbols costs $1$ bit a symbol here.'},
 
-{t:'h2', num:'6.12', text:'The bandlimited channel'},
-{t:'p', text:'Everything above counted symbols. A real channel is given instead as a bandwidth in hertz, an average transmitted power and a noise density. Its capacity is one of the most quoted results in engineering.'},
-{t:'eqbox', cap:'The information capacity law', tex:[
- 'C=B\\log_2\\!\\left(1+\\frac{P}{N_0B}\\right)\\quad\\text{bits per second}',
- '\\frac{C}{B}=\\log_2\\!\\left(1+\\frac{E_b}{N_0}\\frac{C}{B}\\right)\\quad\\Longrightarrow\\quad\\frac{E_b}{N_0}=\\frac{2^{C/B}-1}{C/B}'],
- after:'$B$ is bandwidth, $P$ is average transmitted power, and $N_0B$ is in-band noise power. Use $P=E_bC$, where power equals energy per bit times bit rate. Divide by $B$ to obtain the bandwidth efficiency $C/B$.'},
-{t:'box', kind:'def', hd:'Read the two knobs', html:'$C$ grows <b>linearly</b> with bandwidth and only <b>logarithmically</b> with power. Doubling the bandwidth at fixed noise density roughly doubles the rate. Doubling the power adds one bit per second per hertz at best and much less when the ratio is already large. Bandwidth is the better buy, and it is the one that is scarce and regulated. At $C/B=1$ the requirement is $E_b/N_0=1$, which is $0$ dB. At $C/B=2$ it is $1.5$, which is $1.76$ dB.'},
-{t:'eqbox', cap:'The Shannon limit', tex:[
- '\\lim_{x\\to0}\\frac{2^{x}-1}{x}=\\ln 2,\\qquad \\frac{E_b}{N_0}\\bigg|_{\\min}=\\ln 2=0.693=-1.59\\ \\mathrm{dB}'],
- after:'Spend bandwidth freely — let $C/B\\to0$ — and the energy per bit a system needs falls, but not to nothing. No system of any kind communicates reliably below $-1.59$ dB: not a better code, not a better modulation, not a better receiver.'},
+{t:'h2', num:'6.4', text:'Channels and mutual information'},
+{t:'p', text:'The second half of the chapter turns from the source to the channel. A <b>discrete memoryless channel</b> takes an input symbol $x_j$ and returns an output symbol $y_k$ with probability $p(y_k\\mid x_j)$. Memoryless means each use ignores the others.'},
+{t:'p', text:'The transition probabilities form the <b>channel matrix</b>, with one row for each input.'},
+{t:'eqbox', cap:'Channel matrix', tex:'\\mathbf{P}=\\begin{bmatrix}p(y_0\\mid x_0)&p(y_1\\mid x_0)\\\\p(y_0\\mid x_1)&p(y_1\\mid x_1)\\end{bmatrix}=\\begin{bmatrix}0.8&0.2\\\\0.3&0.7\\end{bmatrix}',
+ after:'Row $j$ is the output distribution of input $x_j$, so it sums to one: $0.8+0.2=0.3+0.7=1$. The columns need not sum to one. Here they give $1.1$ and $0.9$.'},
+{t:'p', text:'The channel fixes $p(y\\mid x)$. The transmitter chooses the <b>input distribution</b> $p(x)$. Together they give the joint and the output distributions.'},
+{t:'eqbox', cap:'Joint and output distributions', tex:['p(x_j,y_k)=p(y_k\\mid x_j)\\,p(x_j)', 'p(y_k)=\\sum_jp(y_k\\mid x_j)\\,p(x_j)'],
+ after:'The output probability adds the joint probabilities of every path that ends at $y_k$.'},
+{t:'p', text:'With $p(x_0)=0.75$, the output $y_0$ can come from either input. Add the two paths.'},
+{t:'eqbox', cap:'Output distribution for $p(x_0)=0.75$', tex:'\\begin{aligned}p(y_0)&=0.8\\times0.75+0.3\\times0.25\\\\&=0.6+0.075=0.675\\\\p(y_1)&=1-0.675=0.325\\end{aligned}'},
+{t:'p', text:'The <b>binary symmetric channel</b> (BSC) has two inputs and two outputs. Each bit arrives flipped with probability $p$, the <b>crossover probability</b>, and intact with probability $1-p$.'},
+{t:'eqbox', cap:'Binary symmetric channel', tex:'\\mathbf{P}=\\begin{bmatrix}1-p&p\\\\p&1-p\\end{bmatrix}'},
+{t:'p', text:'The matched-filter receiver of Chapter 4, deciding each BPSK bit of Chapter 5, hands on a BSC. Its crossover is the BPSK bit error. Here $Q(x)=\\tfrac12\\operatorname{erfc}(x/\\sqrt2)$ is the Gaussian tail.'},
+{t:'eqbox', cap:'BSC from hard-decision BPSK', tex:['p=Q\\Bigl(\\sqrt{2E_b/N_0}\\Bigr)', '\\begin{aligned}4\\ \\text{dB}&\\to10^{0.4}=2.512\\\\p&=Q\\bigl(\\sqrt{2\\times2.512}\\bigr)=Q(2.241)=0.0125\\end{aligned}']},
+{t:'box', kind:'warn', hd:'Hard decisions', html:'Deciding each bit throws away how sure the receiver was. The Gaussian channel of Section 6.6 keeps that information.'},
+{t:'p', text:'The <b>joint entropy</b> of two variables is the entropy of the pair, treated as one symbol.'},
+{t:'eqbox', cap:'Joint entropy', tex:'H(X,Y)=-\\sum_{j,k}p(x_j,y_k)\\log_2p(x_j,y_k)'},
+{t:'p', text:'The uncertainty about $Y$ left once $X$ is known is the conditional entropy $H(Y\\mid X)=-\\sum_{j,k}p(x_j,y_k)\\log_2p(y_k\\mid x_j)$. The joint probability splits as $p(x,y)=p(x)\\,p(y\\mid x)$. Its logarithm is a sum, and averaging each term gives the <b>chain rule</b>.'},
+{t:'eqbox', cap:'Chain rule', tex:['\\begin{aligned}H(X,Y)&=-\\sum_{j,k}p(x_j,y_k)\\bigl[\\log_2p(x_j)+\\log_2p(y_k\\mid x_j)\\bigr]\\\\&=H(X)+H(Y\\mid X)\\end{aligned}', 'H(X,Y)=H(X)+H(Y\\mid X)=H(Y)+H(X\\mid Y)'],
+ after:'Learn $X$ first, then what is left of $Y$. The second form follows the same way with the roles of $X$ and $Y$ swapped.'},
+{t:'p', text:'Take the joint pmf $p(x_0,y_0)=p(x_1,y_1)=0.4$ and $p(x_0,y_1)=p(x_1,y_0)=0.1$.'},
+{t:'eqbox', cap:'Chain rule for one pmf', tex:['H(X,Y)=-2(0.4)\\log_20.4-2(0.1)\\log_20.1=1.7219', 'H(X)=1,\\qquad H(Y\\mid X)=H_b(0.2)=0.7219'],
+ after:'Each input has probability $0.5$, so $H(X)=1$. Given either input, $Y$ agrees with probability $0.4/0.5=0.8$, so $H(Y\\mid X)=H_b(0.2)$. The two parts add to $1.7219$, as the chain rule says.'},
+{t:'p', text:'The receiver sees $Y$ and wants $X$. The <b>conditional entropy</b> $H(X\\mid Y)$ is the uncertainty about the input left after the output is seen, averaged over the outputs.'},
+{t:'eqbox', cap:'Conditional entropy', tex:'H(X\\mid Y)=\\sum_kp(y_k)\\,H(X\\mid Y=y_k)'},
+{t:'p', text:'Return to the channel $0.8/0.2$, $0.3/0.7$ with $p(x_0)=0.75$. Bayes\' rule gives the input probabilities after each output.'},
+{t:'eqbox', cap:'After each output', tex:['P(x_0\\mid y_0)=\\frac{0.8\\times0.75}{0.675}=0.889,\\qquad H_b(0.889)=0.503', 'P(x_0\\mid y_1)=\\frac{0.2\\times0.75}{0.325}=0.462,\\qquad H_b(0.462)=0.996', 'H(X\\mid Y)=0.675(0.503)+0.325(0.996)=0.663'],
+ after:'Before the output, $H(X)=H_b(0.75)=0.811$ bit. Output $y_0$ removes much of the doubt. Output $y_1$ leaves the input almost a coin toss.'},
+{t:'box', kind:'err', hd:'Common error', html:'Keep $H(X\\mid Y)$ apart from $H(Y\\mid X)$. Here $H(Y\\mid X)=0.75H_b(0.2)+0.25H_b(0.3)=0.762$, but $H(X\\mid Y)=0.663$.'},
+{t:'p', text:'<b>Mutual information</b> is the uncertainty about the input that the output removes. It is the uncertainty before the output, less the uncertainty after it.'},
+{t:'eqbox', cap:'Mutual information', tex:'I(X;Y)=H(X)-H(X\\mid Y)',
+ after:'For the channel above, $I(X;Y)=0.811-0.663=0.148$ bit a use.'},
+{t:'p', text:'In a BSC with equally likely inputs, either output leaves the input wrong with probability $p$. So $H(X\\mid Y)=H_b(p)$, and $H(X)=1$.'},
+{t:'eqbox', cap:'BSC with equal inputs', tex:'I(X;Y)=1-H_b(p)',
+ after:'At $p=0$ the full bit gets through. At $p=\\tfrac12$ the output is a coin toss and $I=0$. At $p=0.1$, $I=1-0.469=0.531$ bit a use.'},
+{t:'p', text:'Mutual information is symmetric. The chain rule gives $H(X\\mid Y)=H(X,Y)-H(Y)$ and $H(Y\\mid X)=H(X,Y)-H(X)$. Substitute either one into the definition.'},
+{t:'eqbox', cap:'Symmetry and the joint entropy', tex:['I(X;Y)=H(X)-H(X\\mid Y)=H(Y)-H(Y\\mid X)=I(Y;X)', 'I(X;Y)=H(X)+H(Y)-H(X,Y)\\ge0'],
+ after:'Adding $H(X)$ and $H(Y)$ counts the shared part twice, so the joint entropy is subtracted once.'},
+{t:'p', text:'The channel above shows the symmetry in numbers. The outputs $0.675,0.325$ give $H(Y)=0.910$. Then $H(Y)-H(Y\\mid X)=0.910-0.762=0.148$, the same value as from the input side.'},
+{t:'p', text:'A BSC with $p=0.25$ and equal inputs has $H(X)=H(Y)=1$ and $H(X,Y)=1.811$. So $I(X;Y)=1+1-1.811=0.189$ bit.'},
+{t:'box', kind:'ok', hd:'Never negative', html:'Seeing $Y$ never adds to the uncertainty about $X$ on average: $H(X\\mid Y)\\le H(X)$. Equality holds when $X$ and $Y$ are independent, and then $I(X;Y)=0$.'},
+
+{t:'h2', num:'6.5', text:'Channel capacity'},
+{t:'p', text:'Mutual information depends on the channel and on the input distribution. The channel is fixed, and the transmitter picks the input distribution. The best choice gives the <b>capacity</b>.'},
+{t:'eqbox', cap:'Channel capacity', tex:'C=\\max_{p(x)}I(X;Y)\\quad\\text{bits per use}',
+ after:'The maximum removes the input distribution, so $C$ is a property of the channel alone. Its unit is bits a use of the channel. Multiplied by the uses a second, it becomes a rate.'},
+{t:'p', text:'The BSC is symmetric in its two inputs. So $I(X;Y)$ is symmetric about $q=P(X=0)=\\tfrac12$, and its peak sits there.'},
+{t:'eqbox', cap:'Capacity of the BSC', tex:['\\begin{aligned}I(X;Y)&=H(Y)-H(Y\\mid X)\\\\&=H(Y)-H_b(p)\\\\&\\le1-H_b(p)\\end{aligned}', 'C=1-H_b(p)'],
+ after:'Whatever the input, each output is wrong with probability $p$, so $H(Y\\mid X)=H_b(p)$. A binary output has $H(Y)\\le1$. Equality holds when equal inputs give equal outputs.'},
+{t:'fig', svg:()=>capfig(),
+ cap:'Capacity of the binary symmetric channel against its crossover $p$. It is $0$ at $p=\\tfrac12$ and $0.531$ at $p=0.1$.'},
+{t:'p', text:'The capacity is $0$ at $p=\\tfrac12$, where the output ignores the input. At $p=1$ every bit flips, the receiver flips it back, and $C=1$. At $p=0.11$, $H_b=0.500$ and $C=0.500$ bit a use.'},
+{t:'p', text:'The <b>binary erasure channel</b> (BEC) never flips a bit. Each bit arrives intact with probability $1-\\epsilon$, or as a flagged erasure $e$ with probability $\\epsilon$.'},
+{t:'p', text:'An intact bit leaves no doubt about the input. An erasure leaves the input as uncertain as before. So $H(X\\mid Y)=\\epsilon H(X)$, and the mutual information follows.'},
+{t:'eqbox', cap:'Capacity of the BEC', tex:['I(X;Y)=H(X)-\\epsilon H(X)=(1-\\epsilon)H(X)', 'C=1-\\epsilon'],
+ after:'Equal inputs give $H(X)=1$ and reach the capacity. At $\\epsilon=0.1$ the BEC carries $0.9$ bit a use, and a BSC with $p=0.1$ carries $0.531$.'},
+{t:'box', kind:'warn', hd:'Flagged against hidden', html:'The BSC hides its errors among good bits, so it loses $H_b(\\epsilon)$ bits a use. That is more than $\\epsilon$ for $\\epsilon<\\tfrac12$.'},
+{t:'ex', hd:'Example 6.5 — the Z-channel', rows:[
+ ['Given','A $0$ is always received as $0$. A $1$ is received as $0$ or $1$ with probability $\\tfrac12$ each. Let $q=P(X=0)$.'],
+ ['Find','The capacity $C$ and the input distribution that reaches it.'],
+ ['Method','The channel is not symmetric, so equal inputs need not be best. Write $I(X;Y)=H(Y)-H(Y\\mid X)$ as a function of $q$, and set its derivative to zero.'],
+ ['Solution','Only $X=1$ leaves the output uncertain, with $H_b(\\tfrac12)=1$ bit, so $H(Y\\mid X)=1-q$. The output is $1$ with probability $(1-q)/2$, so $I(q)=H_b\\bigl(\\tfrac{1-q}{2}\\bigr)-(1-q)$. The derivative of $H_b(x)$ is $\\log_2\\frac{1-x}{x}$, and $x=\\tfrac{1-q}{2}$ has $\\mathrm{d}x/\\mathrm{d}q=-\\tfrac12$. So $\\mathrm{d}I/\\mathrm{d}q=1-\\tfrac12\\log_2\\frac{1+q}{1-q}$. Setting it to zero gives $\\frac{1+q}{1-q}=4$, so $q^{*}=0.6$. Then $x=0.2$ and $C=H_b(0.2)-0.4=0.7219-0.4=0.3219$ bit a use.'],
+ ['Check','Write $H_b(0.2)=0.2\\log_25+0.8\\log_2\\tfrac54=\\log_25-1.6$. Then $C=\\log_25-2=\\log_2\\tfrac54=0.3219$, the same value. The best input sends the reliable $0$ three times in five.']
+]},
+{t:'box', kind:'err', hd:'Common error', html:'Use the maximum over $q$, not equal inputs. At $q=\\tfrac12$, $I=H_b(0.25)-0.5=0.3113$, below $C$. On an asymmetric channel the best input is not uniform.'},
+{t:'fig', svg:()=>zfig(),
+ cap:'Mutual information of the Z-channel against $q=P(X=0)$. The peak is at $q^{*}=0.6$, and equal inputs give $0.3113$.'},
+{t:'ex', hd:'Example 6.6 — a symmetric three-output channel', rows:[
+ ['Given','Three inputs and three outputs. Each row of the channel matrix is a shift of $0.6,0.2,0.2$, so each column is too.'],
+ ['Find','The capacity, and the input distribution that reaches it.'],
+ ['Method','Every row has the same entropy, so $H(Y\\mid X)=H(0.6,0.2,0.2)$ for any input. Inputs of $\\tfrac13$ each make the outputs equal, because every column holds $0.6,0.2,0.2$. Then $H(Y)=\\log_23$, its largest value, and $C=\\log_2K-H(\\text{row})$.'],
+ ['Solution','$H(0.6,0.2,0.2)=0.442+0.464+0.464=1.371$ bits. So $C=\\log_23-1.371=1.585-1.371=0.2140$ bit a use.'],
+ ['Check','One bit needs at least $1/0.214=4.67$ uses of this channel. The uniform input reaches $C$, as the symmetry of the rows requires.']
+]},
+{t:'box', kind:'err', hd:'Common error', html:'Use $\\log_23-H(\\text{row})$, not $\\log_23$, for the capacity. The value $\\log_23=1.585$ is the most any three-output channel carries.'},
+{t:'p', text:'Capacity also counts the messages a channel keeps apart. Take a channel with four inputs, where each input reaches two of four outputs with probability $\\tfrac12$ each. Every output can then come from two inputs.'},
+{t:'p', text:'Use only $x_0$ and $x_2$, whose outputs do not overlap. The receiver never confuses them, so the channel carries one bit a use with no errors.'},
+{t:'p', text:'Long blocks do the same for a BSC. A word of $n$ bits almost surely lands among about $2^{nH_b(p)}$ likely outputs, its cloud. Codewords whose clouds do not overlap can be told apart.'},
+{t:'eqbox', cap:'Counting codewords', tex:'M\\approx\\frac{2^{n}}{2^{nH_b(p)}}=2^{n(1-H_b(p))}=2^{nC}',
+ after:'There are $2^{n}$ output words in all. So about $2^{nC}$ codewords fit, which is $C$ bits a use. At $n=100$ and $p=0.11$, $C=0.5$ and about $2^{50}$ codewords fit.'},
+{t:'p', text:'The simplest channel code sends each bit $n$ times, with $n$ odd, and decides by majority. It is a <b>repetition code</b> of rate $R=1/n$. The vote fails when more than half the copies flip.'},
+{t:'eqbox', cap:'Error of a repetition code', tex:'P_e=\\sum_{k>n/2}\\binom{n}{k}p^{k}(1-p)^{n-k}'},
+{t:'p', text:'On a BSC with $p=0.1$, one copy fails with $P_e=0.1$. Three and five copies need two and three flips to fail.'},
+{t:'eqbox', cap:'Repetition on a BSC with $p=0.1$', tex:'\\begin{aligned}n=3:\\quad P_e&=3p^{2}(1-p)+p^{3}\\\\&=0.027+0.001=0.028\\\\n=5:\\quad P_e&=10p^{3}(1-p)^{2}+5p^{4}(1-p)+p^{5}\\\\&=0.0081+0.00045+0.00001=0.00856\\end{aligned}',
+ after:'At $n=15$, $P_e=3.36\\times10^{-5}$, but the rate has fallen to $1/15$.'},
+{t:'box', kind:'warn', hd:'Rate falls too', html:'Repetition drives the error to zero only as the rate $1/n$ goes to zero. The channel coding theorem promises far better: any rate below $C=0.531$.'},
+{t:'p', text:'The <b>channel coding theorem</b> states which rates can be made reliable. Here $R$ is in bits a channel use.'},
+{t:'eqbox', cap:'Channel coding theorem', tex:'R<C:\\ P_e\\to0\\ \\text{is possible},\\qquad R>C:\\ \\text{it is not}',
+ after:'For $R<C$, codes exist with rate $R$ and error as small as asked. They need long blocks, and the theorem does not build them. For $R>C$, no code of any length is reliable.'},
+{t:'p', text:'A code of rate $R=0.5$ over a BSC needs $1-H_b(p)>0.5$. That holds for $p<0.11$, where $H_b=0.5$. The repetition codes sit far below the limit, because their rate falls with their error.'},
+{t:'p', text:'Real codes add structure. A single <b>parity bit</b> makes the number of ones in a word even. One error makes it odd, so the error is detected, but its position is not known.'},
+{t:'p', text:'The <b>$(7,4)$ Hamming code</b> sends four data bits and three parity bits, a rate of $4/7$. Its $16$ codewords differ pairwise in at least $d_{\\min}=3$ places.'},
+{t:'eqbox', cap:'Errors corrected', tex:'t=\\Bigl\\lfloor\\frac{d_{\\min}-1}{2}\\Bigr\\rfloor=\\Bigl\\lfloor\\frac{3-1}{2}\\Bigr\\rfloor=1',
+ after:'A word with one error is still nearer its own codeword than any other. So one error can be corrected.'},
+{t:'p', text:'The bits sit at positions $1$ to $7$. Check $s_1$ covers the positions with a $1$ in the units place of their binary index: $1,3,5,7$. Check $s_2$ covers $2,3,6,7$, and check $s_4$ covers $4,5,6,7$.'},
+{t:'ex', hd:'Example 6.7 — correcting one error', rows:[
+ ['Given','The codeword $\\mathtt{0110011}$ of the $(7,4)$ Hamming code is sent. Bit $5$ flips, so $\\mathtt{0110111}$ is received.'],
+ ['Find','The syndrome and the corrected word.'],
+ ['Method','Recompute each parity check on the received bits $r_1,\\ldots,r_7$. The checks that fail form the <b>syndrome</b> $s_4s_2s_1$, a binary number that names the flipped position.'],
+ ['Solution','$s_1=r_1\\oplus r_3\\oplus r_5\\oplus r_7=0\\oplus1\\oplus1\\oplus1=1$. $s_2=r_2\\oplus r_3\\oplus r_6\\oplus r_7=1\\oplus1\\oplus1\\oplus1=0$. $s_4=r_4\\oplus r_5\\oplus r_6\\oplus r_7=0\\oplus1\\oplus1\\oplus1=1$. So $s_4s_2s_1=101$, which is $5$ in binary. Flipping bit $5$ back gives $\\mathtt{0110011}$.'],
+ ['Check','The sent word passes all three checks: $0\\oplus1\\oplus0\\oplus1=0$, $1\\oplus1\\oplus1\\oplus1=0$ and $0\\oplus0\\oplus1\\oplus1=0$. Its data bits, at positions $3,5,6,7$, are $\\mathtt{1011}$.']
+]},
+{t:'p', text:'A source and a channel can now be joined. Compress the source to $H(U)$ bits a symbol, then code those bits for the channel. Both steps can be made reliable when a channel use carries more than the entropy of the symbol it sends.'},
+{t:'eqbox', cap:'Source over a channel', tex:'H(U)<C\\quad\\text{bits per channel use}',
+ after:'With $R_s$ symbols a second and $R_c$ channel uses a second, compare $H(U)R_s$ with $CR_c$.'},
+{t:'p', text:'Take a binary source that emits a $1$ with probability $0.1$, sent over a BSC once a symbol.'},
+{t:'eqbox', cap:'A binary source over a BSC', tex:'H_b(0.1)=0.469<1-H_b(\\epsilon)\\iff\\epsilon<0.1206\\ \\text{or}\\ \\epsilon>0.8794',
+ after:'At $\\epsilon=0.2$, $C=1-H_b(0.2)=0.278<0.469$, so the link cannot be made reliable.'},
+
+{t:'h2', num:'6.6', text:'The Gaussian channel'},
+{t:'p', text:'The Gaussian channel adds noise to a real-valued input. The input power is limited to $P$, and the noise $Z$ is Gaussian with power $P_N$.'},
+{t:'eqbox', cap:'Gaussian channel', tex:'Y=X+Z,\\qquad Z\\sim\\mathcal{N}(0,P_N),\\qquad\\mathrm{E}[X^{2}]\\le P'},
+{t:'p', text:'Count the codewords that fit, as for the BSC. Over $n$ uses, a received word lies near its codeword, inside a ball of radius $\\sqrt{nP_N}$. All received words lie inside a ball of radius $\\sqrt{n(P+P_N)}$. Divide the two volumes.'},
+{t:'eqbox', cap:'Sphere count', tex:['M\\approx\\frac{\\bigl(\\sqrt{n(P+P_N)}\\bigr)^{n}}{\\bigl(\\sqrt{nP_N}\\bigr)^{n}}=\\Bigl(1+\\frac{P}{P_N}\\Bigr)^{n/2}', 'C=\\frac1n\\log_2M=\\tfrac12\\log_2\\Bigl(1+\\frac{P}{P_N}\\Bigr)\\quad\\text{bits per use}'],
+ after:'The volume of a ball in $n$ dimensions grows as its radius to the power $n$, and the constant cancels. At $P/P_N=15$, $C=\\tfrac12\\log_216=2$ bits a use.'},
+{t:'p', text:'A channel of band $W$ carries $2W$ independent samples a second, as in Chapter 1. Each sample is one use of the Gaussian channel. The noise has two-sided density $N_0/2$, so its power in the band is $2W\\cdot N_0/2=N_0W$.'},
+{t:'eqbox', cap:'Capacity of the bandlimited channel', tex:'\\begin{aligned}C&=2W\\cdot\\tfrac12\\log_2\\Bigl(1+\\frac{P}{N_0W}\\Bigr)\\\\&=W\\log_2(1+\\text{SNR})\\quad\\text{b/s}\\end{aligned}',
+ after:'Here $\\text{SNR}=P/N_0W$ is a ratio, not a value in decibels. A band of $W=1$ MHz at $\\text{SNR}=15$ gives $C=10^{6}\\log_216=4$ Mb/s.'},
+{t:'p', text:'At high SNR, $\\log_2(1+\\text{SNR})\\approx\\log_2\\text{SNR}$. So each doubling of the SNR, or $3$ dB, adds one bit a second per hertz.'},
+{t:'ex', hd:'Example 6.8 — a telephone line', rows:[
+ ['Given','A telephone line passes $300$ Hz to $3.4$ kHz at an SNR of $30$ dB.'],
+ ['Find','The capacity $C$.'],
+ ['Method','The band is $W=3400-300=3100$ Hz. The formula $C=W\\log_2(1+\\text{SNR})$ takes the SNR as a ratio, so convert it first: $\\text{SNR}=10^{30/10}=1000$.'],
+ ['Solution','$C=3100\\log_2(1001)=3100\\times9.967=30.9$ kb/s.'],
+ ['Check','At $30$ dB, $\\log_21001$ is close to $10$, so each hertz carries about $10$ bits a second. Then $3.1$ kHz carries about $31$ kb/s.']
+]},
+{t:'box', kind:'err', hd:'Common error', html:'Use $\\text{SNR}=1000$, not $30$, inside the logarithm. With $30$ the answer comes out as $3100\\log_2(31)=15.4$ kb/s.'},
+{t:'p', text:'A wider band lets more samples through, but it spreads the same power thinner. The SNR $P/N_0W$ falls as $W$ grows, and the two effects nearly cancel.'},
+{t:'p', text:'For small $x$, $\\ln(1+x)\\approx x$, so $\\log_2(1+x)\\approx x/\\ln2$. Put $x=P/N_0W$ and let $W$ grow.'},
+{t:'eqbox', cap:'Infinite band', tex:'\\begin{aligned}\\lim_{W\\to\\infty}W\\log_2\\Bigl(1+\\frac{P}{N_0W}\\Bigr)&=\\lim_{W\\to\\infty}W\\cdot\\frac{P}{N_0W\\ln2}\\\\&=\\frac{P}{N_0\\ln2}=1.4427\\,\\frac{P}{N_0}\\end{aligned}',
+ after:'At a fixed power, capacity levels off however wide the band. At a fixed band it keeps growing with power, but only as the logarithm of the power.'},
+{t:'p', text:'The <b>spectral efficiency</b> $r=R_b/W$ is the bit rate carried by each hertz of band. The power is energy a bit times bits a second, $P=E_bR_b$. Put both into $R_b<C$.'},
+{t:'eqbox', cap:'Least $E_b/N_0$ for a spectral efficiency', tex:'\\begin{aligned}R_b&<W\\log_2\\Bigl(1+\\frac{E_bR_b}{N_0W}\\Bigr)\\\\r&<\\log_2\\Bigl(1+r\\,\\frac{E_b}{N_0}\\Bigr)\\\\\\frac{E_b}{N_0}&>\\frac{2^{r}-1}{r}\\end{aligned}',
+ after:'Divide the first line by $W$ to get the second. Raise $2$ to the power of each side and solve for $E_b/N_0$ to get the third. At $r=2$, $E_b/N_0>(2^{2}-1)/2=1.5$, which is $10\\log_{10}1.5=1.76$ dB.'},
+{t:'p', text:'The curve splits the plane into two regions. Above $r=1$ the band is scarce, and a link is <b>bandwidth-limited</b>. Below it power is scarce, and a link is <b>power-limited</b>. No link works to the left of the curve.'},
 {t:'fig', svg:()=>shannonfig(),
- cap:'Bandwidth efficiency against energy per bit. Every working system sits below the curve and to the right of the line. The region to the left of $-1.59$ dB has never been occupied and never will be. Climbing from one bit per hertz to six costs about $14$ dB, and the climb steepens the whole way.'},
-{t:'box', kind:'warn', hd:'A floor that is approached and never touched', html:'Reaching the limit needs infinite bandwidth, and the rate per hertz goes to zero on the way. Coherent binary PSK needs about $9.6$ dB for an error probability of $10^{-5}$, so it sits some $11$ dB above the floor. Closing that gap is what channel coding was invented for. This course stops at the uncoded schemes, which is where the gap is widest and easiest to see.'},
-
-{t:'h2', num:'6.13', text:'Summary'},
-{t:'table', cap:'Summary of Chapter 6: information, entropy and source coding.', head:['Result','Statement','Anchor'], rows:[
- ['Self-information','$I(s_k)=-\\log_2 p_k$','PS CH12.1.1'],
- ['Entropy','$H(S)=-\\sum_k p_k\\log_2 p_k$','PS CH12.1.1'],
- ['Bounds','$0\\le H(S)\\le\\log_2 K$','PS CH12.1.1'],
- ['Extension','$H(S^n)=nH(S)$','PS CH12.1.1'],
- ['Average length','$\\bar{L}=\\sum_k p_kl_k$, $\\eta=H(S)/\\bar{L}$','PS CH12.2'],
- ['Source-coding theorem','$\\bar{L}\\ge H(S)$, so $L_{\\min}=H(S)$','PS CH12.2'],
- ['Kraft','$\\sum_k2^{-l_k}\\le1$: necessary, not sufficient','PS CH12.3'],
- ['Prefix bound','$H(S)\\le\\bar{L}<H(S)+1$','PS CH12.2'],
- ['Huffman','optimal, not unique. High placement gives least variance','PS CH12.3.1']
+ cap:'The least $E_b/N_0$ for each spectral efficiency $r=R_b/W$. Every reliable link sits to the right of the curve, and no code works left of $-1.59$ dB. Uncoded BPSK at $P_b=10^{-5}$ sits at $9.59$ dB and $r=1$.',
+ short:'The least $E_b/N_0$ for each spectral efficiency.'},
+{t:'box', kind:'warn', hd:'The gap', html:'Each uncoded scheme of Chapter 5 sits several decibels right of the curve. Channel coding exists to close that gap.'},
+{t:'p', text:'Let the spectral efficiency fall to zero, which spends band freely. The bound then falls toward a floor. For small $r$, $2^{r}=e^{r\\ln2}\\approx1+r\\ln2$.'},
+{t:'eqbox', cap:'Shannon limit', tex:'\\begin{aligned}\\frac{E_b}{N_0}&>\\lim_{r\\to0}\\frac{2^{r}-1}{r}=\\lim_{r\\to0}\\frac{r\\ln2}{r}\\\\&=\\ln2=0.693=-1.59\\ \\text{dB}\\end{aligned}',
+ after:'No code works below $-1.59$ dB, at any bandwidth. Chapter 5 met the same floor for orthogonal signals as $M$ grows.'},
+{t:'p', text:'Uncoded BPSK needs $9.59$ dB for $P_b=10^{-5}$. Its gap to the limit is $9.59-(-1.59)=11.18$ dB. Modern codes come within a fraction of a decibel of the limit.'},
+{t:'p', text:'Some channels split into parallel subchannels with different noise, such as the tones of a DSL line. A total power $P$ must be shared among them.'},
+{t:'eqbox', cap:'Parallel Gaussian channels', tex:'C=\\sum_i\\tfrac12\\log_2\\Bigl(1+\\frac{P_i}{N_i}\\Bigr),\\qquad\\sum_iP_i=P'},
+{t:'p', text:'The best share fills every used subchannel to the same level $\\mu$, like water poured over an uneven floor. A subchannel whose noise lies above $\\mu$ gets nothing.'},
+{t:'eqbox', cap:'Water-filling', tex:'P_i=\\max(0,\\ \\mu-N_i)'},
+{t:'ex', hd:'Example 6.9 — water-filling over six subchannels', rows:[
+ ['Given','Six subchannels with noise $0.1,0.2,0.4,0.8,1.6,3.2$ and a total power $P=1$.'],
+ ['Find','The water level $\\mu$, the subchannels used and the capacity.'],
+ ['Method','Guess how many subchannels are used, and solve $\\sum_i(\\mu-N_i)=P$ for $\\mu$. The guess is right when $\\mu$ lies below the noise of the first unused subchannel.'],
+ ['Solution','With three subchannels, $3\\mu-(0.1+0.2+0.4)=1$, so $\\mu=1.7/3=0.567$. That is below $0.8$, so three are used, with $P_i=0.467,0.367,0.167$. Each used subchannel has $1+P_i/N_i=\\mu/N_i$. So $C=\\tfrac12\\log_25.667+\\tfrac12\\log_22.833+\\tfrac12\\log_21.417=1.251+0.751+0.251=2.254$ bits.'],
+ ['Check','Equal shares of $1/6$ each give only $1.641$ bits. At $P=8$ the level rises to $\\mu=(8+3.1)/5=2.22$. That is below $3.2$, so five of the six subchannels are used.']
 ]},
-{t:'p', text:'Chapter 1 turned a waveform into bits. Chapters 2 to 5 got those bits across a channel and counted the errors. This chapter asked how few bits there needed to be in the first place, and answered with one number that the source itself decides. Everything between the two is engineering; the entropy is not.'}
+{t:'fig', svg:()=>waterfig(),
+ cap:'Water-filling at $P=1$. The noise of each subchannel is the floor (grey), and the power (cyan) fills three of them up to $\\mu=0.567$.'},
+
+{t:'h2', num:'6.7', text:'Summary'},
+{t:'p', text:'The chapter runs from a source to a channel. One example follows a source through a Huffman code and a BPSK link.'},
+{t:'ex', hd:'Example 6.10 — from a source to a channel', rows:[
+ ['Given','The source $0.4,0.2,0.2,0.1,0.1$ emits $1000$ symbols a second. It is coded with the Huffman code of Example 6.2. The bits are sent by BPSK at $3000$ bits a second and $4$ dB, decided bit by bit.'],
+ ['Find','Whether the link can be made reliable.'],
+ ['Method','Compare the information rate $HR_s$ of the source with the rate $CR_c$ that the channel can carry reliably.'],
+ ['Solution','The source has $H=2.122$ bits a symbol, so $HR_s=2122$ b/s. The Huffman code spends $\\bar{L}=2.2$, so $2200$ b/s leave the encoder. BPSK at $4$ dB is a BSC with $p=0.0125$ and $C=1-H_b(0.0125)=0.903$ bit a use. So $CR_c=0.903\\times3000=2709$ b/s, above $2122$ b/s.'],
+ ['Check','A channel code of rate $2200/3000=0.733<C$ exists that makes the link reliable. At $R_c=2000$ uses a second, $CR_c=0.903\\times2000=1806<2122$ b/s, and no code can.']
+]},
+{t:'table', cap:'Summary of Chapter 6: an introduction to information theory.', head:['Result','Statement'], rows:[
+ ['Self-information','$I(s_k)=-\\log_2p_k$ bits'],
+ ['Entropy','$H(S)=-\\sum_kp_k\\log_2p_k$, with $0\\le H(S)\\le\\log_2K$'],
+ ['Extension','$H(S^n)=nH(S)$ for a memoryless source'],
+ ['Typical sequences','About $2^{nH}$ sequences of probability near $2^{-nH}$ hold almost all the probability'],
+ ['Kraft inequality','A prefix code with lengths $l_k$ exists exactly when $\\sum_k2^{-l_k}\\le1$'],
+ ['Source-coding bound','$H\\le\\bar{L}<H+1$, and $H\\le L_n/n<H+1/n$ for blocks'],
+ ['Rate–distortion','$D(R)=\\sigma^{2}2^{-2R}$ for a Gaussian source'],
+ ['Huffman code','Merge the two smallest entries until one is left'],
+ ['Lempel–Ziv code','A pointer and one new bit a phrase, with no knowledge of the source'],
+ ['Binary symmetric channel','Crossover $p=Q\\bigl(\\sqrt{2E_b/N_0}\\bigr)$ for hard-decision BPSK'],
+ ['Mutual information','$I(X;Y)=H(X)-H(X\\mid Y)=H(X)+H(Y)-H(X,Y)\\ge0$'],
+ ['Capacity','$C=\\max_{p(x)}I(X;Y)$: $1-H_b(p)$ for the BSC, $1-\\epsilon$ for the BEC'],
+ ['Channel coding theorem','Rates $R<C$ can be made reliable, and rates $R>C$ cannot'],
+ ['Source over a channel','Reliable when $H(U)<C$ bits per channel use'],
+ ['Gaussian channel','$C=\\tfrac12\\log_2(1+P/P_N)$ bits per use'],
+ ['Bandlimited channel','$C=W\\log_2(1+P/N_0W)$ b/s, tending to $1.4427\\,P/N_0$ as $W\\to\\infty$'],
+ ['Shannon limit','$E_b/N_0>(2^{r}-1)/r$, and $E_b/N_0>\\ln2=-1.59$ dB at any $r$'],
+ ['Water-filling','$P_i=\\max(0,\\mu-N_i)$ over parallel channels']
+]},
+{t:'p', text:'A source is compressed to its entropy, and the bits are coded for the channel at a rate below its capacity. Chapter 7 builds those channel codes.'}
 
 ];
 })();

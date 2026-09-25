@@ -132,20 +132,25 @@ CONTENT.SECTIONS = {
   M6: [
     { n:'6.0', title:'Opening',                        ids:['m6-open'] },
     { n:'6.1', title:'Information and entropy',        ids:[
-        'm6-selfinfo','m6-entropy','m6-extension','m6-lab-i'] },
-    { n:'6.2', title:'What a code costs',              ids:['m6-coding'] },
-    { n:'6.3', title:'Prefix codes and the Kraft inequality', ids:[
-        'm6-prefix','m6-kraft','m6-bound'] },
-    { n:'6.4', title:'Huffman coding',                 ids:['m6-huffman','m6-huffman-var','m6-lab-j'] },
-    { n:'6.5', title:'Universal coding',               ids:['m6-lz'] },
-    { n:'6.6', title:'The discrete memoryless channel', ids:[
-        'm6-dmc','m6-inputdist','m6-bsc'] },
-    { n:'6.7', title:'Mutual information',             ids:[
-        'm6-condent','m6-mutual','m6-mutual-props'] },
-    { n:'6.8', title:'Channel capacity',               ids:[
-        'm6-capacity','m6-bsc-cap','m6-lab-k','m6-ex-zchannel','m6-coding-thm'] },
-    { n:'6.9', title:'The bandlimited channel',        ids:['m6-shannon','m6-limit'] },
-    { n:'6.10', title:'Summary',                       ids:['m6-synth'] }
+        'm6-selfinfo','m6-questions','m6-entropy','m6-hb','m6-ex-rate','m6-extension',
+        'm6-real-entropy','m6-lab-i','m6-code-entropy'] },
+    { n:'6.2', title:'The limits of compression',      ids:[
+        'm6-coding','m6-typical','m6-source-thm','m6-prefix','m6-kraft','m6-bound','m6-rd',
+        'm6-real-codes','m6-lab-typical','m6-code-bound'] },
+    { n:'6.3', title:'Huffman and Lempel–Ziv coding', ids:[
+        'm6-huffman','m6-huffman-var','m6-huffman-ext','m6-arith','m6-lz','m6-lz-long',
+        'm6-real-compress','m6-lab-j','m6-code-huffman'] },
+    { n:'6.4', title:'Channels and mutual information', ids:[
+        'm6-dmc','m6-inputdist','m6-bsc','m6-joint','m6-condent','m6-mutual','m6-mutual-props',
+        'm6-real-info','m6-lab-mi','m6-code-channel'] },
+    { n:'6.5', title:'Channel capacity',               ids:[
+        'm6-capacity','m6-bsc-cap','m6-bec','m6-ex-zchannel','m6-ex-symmetric','m6-why-capacity',
+        'm6-repetition','m6-coding-thm','m6-codes-glimpse','m6-transmission','m6-real-capacity',
+        'm6-lab-k','m6-code-capacity'] },
+    { n:'6.6', title:'The Gaussian channel',           ids:[
+        'm6-awgn','m6-shannon','m6-ex-phone','m6-bandwidth','m6-plane','m6-limit','m6-waterfill',
+        'm6-real-shannon','m6-lab-wf','m6-code-gauss'] },
+    { n:'6.7', title:'Summary',                        ids:['m6-chain','m6-quick','m6-synth','m6-projects'] }
   ]
 
 };
@@ -271,25 +276,37 @@ CONTENT.BOOK = {
   'm5-chain':'8.6, 8.7', 'm5-quick':'8.5, 8.6, 8.7, 9.7',
   'm5-synth':'8.5, 8.6, 8.7, 9.1, 9.5, 9.7', 'm5-projects':'8.6, 9.7',
 
-  'm6-open':'12.1', 'm6-selfinfo':'12.1.1', 'm6-entropy':'12.1.1',
-  'm6-extension':'12.1.1', 'm6-lab-i':'12.1.1',
-  'm6-coding':'12.2', 'm6-prefix':'12.3', 'm6-kraft':'12.3',
-  'm6-bound':'12.2', 'm6-huffman':'12.3.1', 'm6-huffman-var':'12.3.1',
+  /* Module 6 is Chapter 12 of the book, "An Introduction to Information
+     Theory". Each anchor was read there: 12.1.1 self-information and entropy,
+     12.1.2 joint and conditional entropy and H(S^n) = nH(S), 12.1.3 mutual
+     information, 12.2 the source-coding theorem and typical sequences, 12.3.1
+     prefix codes, the source-coding bound and Huffman coding, 12.3.2
+     Lempel-Ziv, 12.4 channel models, 12.5 capacity and the coding theorem,
+     12.5.1 the bandlimited Gaussian channel, and 12.6 the bandwidth-efficiency
+     plane, the Shannon limit and a source sent over a channel. The book has no
+     Kraft inequality, so m6-kraft carries no anchor. The yes/no questions,
+     rate and distortion, arithmetic coding, repetition codes, the Hamming code
+     glimpse, water-filling and the code pages are additions and carry none;
+     the water-filling laboratory keeps 12.5.1 for its per-channel formula. */
+  'm6-open':'12.1',
+  'm6-selfinfo':'12.1.1', 'm6-entropy':'12.1.1', 'm6-hb':'12.1.1', 'm6-ex-rate':'12.1.1',
+  'm6-extension':'12.1.2', 'm6-real-entropy':'12.1.1, 12.2', 'm6-lab-i':'12.1.1',
+  'm6-coding':'12.2, 12.3.1', 'm6-typical':'12.2', 'm6-source-thm':'12.2',
+  'm6-prefix':'12.3.1', 'm6-bound':'12.3.1', 'm6-real-codes':'12.3.1', 'm6-lab-typical':'12.2',
+  'm6-huffman':'12.3.1', 'm6-huffman-var':'12.3.1', 'm6-huffman-ext':'12.3.1',
+  'm6-lz':'12.3.2', 'm6-lz-long':'12.3.2', 'm6-real-compress':'12.3.1, 12.3.2',
   'm6-lab-j':'12.3.1',
-
-  /* The channel half of the module. Each of these was read in the book before
-     it was written down: 12.1.2 carries joint and conditional entropy, 12.1.3
-     mutual information, 12.3.2 the Lempel-Ziv algorithm, 12.4 the modelling of
-     communication channels, 12.5 channel capacity and 12.5.1 the Gaussian
-     channel — which is where the bandwidth-and-power law lives. */
-  'm6-lz':'12.3.2',
-  'm6-dmc':'12.4', 'm6-inputdist':'12.4', 'm6-bsc':'12.4',
+  'm6-dmc':'12.4', 'm6-inputdist':'12.4', 'm6-bsc':'12.4', 'm6-joint':'12.1.2',
   'm6-condent':'12.1.2', 'm6-mutual':'12.1.3', 'm6-mutual-props':'12.1.3',
-  'm6-capacity':'12.5', 'm6-bsc-cap':'12.5', 'm6-lab-k':'12.5',
-  'm6-ex-zchannel':'12.5', 'm6-coding-thm':'12.5',
-  'm6-shannon':'12.5.1', 'm6-limit':'12.5.1',
-
-  'm6-synth':'12.1, 12.2, 12.3, 12.5'
+  'm6-real-info':'12.1.3', 'm6-lab-mi':'12.1.3, 12.4',
+  'm6-capacity':'12.5', 'm6-bsc-cap':'12.5', 'm6-bec':'12.5', 'm6-ex-zchannel':'12.5',
+  'm6-ex-symmetric':'12.5', 'm6-why-capacity':'12.5', 'm6-coding-thm':'12.5',
+  'm6-transmission':'12.6', 'm6-real-capacity':'12.5', 'm6-lab-k':'12.5',
+  'm6-awgn':'12.4, 12.5.1', 'm6-shannon':'12.5.1', 'm6-ex-phone':'12.5.1',
+  'm6-bandwidth':'12.6', 'm6-plane':'12.6', 'm6-limit':'12.6',
+  'm6-real-shannon':'12.5.1, 12.6', 'm6-lab-wf':'12.5.1',
+  'm6-chain':'12.6', 'm6-quick':'12.1, 12.2, 12.5, 12.6',
+  'm6-synth':'12.1, 12.2, 12.3, 12.5, 12.6', 'm6-projects':'12.3, 12.5'
 };
 
 /* ---- derivation --------------------------------------------------------
