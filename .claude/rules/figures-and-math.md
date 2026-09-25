@@ -73,8 +73,10 @@ modes: the last plot ends within a few pixels of the foot of the control column.
 
 **Phone and tablet rule.** Every scene, laboratory, code page and practice page works on a phone
 held upright and on a tablet held upright; both get the one-column phone layout (`body[data-layout=phone]`,
-`DESIGN.md`, The two layouts). A tablet on its side is a desktop: it gets the wide 1920×1080 stage,
-unchanged. A style written for the wide stage (an inline `flex:0 0 auto`, a fixed width, a `1fr` track)
+`DESIGN.md`, The two layouts). Any screen on its side, a phone included, is a desktop: it gets the
+wide 1920×1080 stage, unchanged, with the contents rail opening closed under 480 px of height. The
+slide sizes for captions, cards, `.eq-note`, `.live-k`/`.live-v` and `.ask-why` have phone
+counterparts of equal weight, and an in-plot legend becomes a row above the drawing on the phone. A style written for the wide stage (an inline `flex:0 0 auto`, a fixed width, a `1fr` track)
 must not push anything past the edge of a 320 px screen; loosen it under `body[data-layout=phone]`,
 never in scene data. After any change to a scene, laboratory or style, the phone sweeps in
 `build-pipeline.md` report none on every line.

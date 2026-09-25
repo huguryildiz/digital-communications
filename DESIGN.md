@@ -300,13 +300,16 @@ not remove it, and do not set either property on a `.katex` subtree.
 ### The two layouts — LOCKED
 
 The artifact is one document with two layouts, and `body[data-layout]` says which is in force. The
-wide one above is the original. On a screen that cannot carry that basis (under 760 px width, or under
-480 px height with a coarse pointer, or up to 1024 px wide upright with a coarse pointer; the test is
-`NARROW` in `build/src/40_core.js`) the stage is dropped rather than shrunk further: the scene becomes one fluid column of real pixels that scrolls, the
-contents rail becomes a drawer, and the header hands its settings to the foot of that drawer. So a
-phone either way up and a tablet held upright get the column; a tablet on its side is a desktop and
-gets the wide stage, and so does a laptop window of any width above 760 px, because a mouse is not a
-finger. None of the gates in `.claude/rules/build-pipeline.md` reads this layout; `mcheck.js` and
+wide one above is the original. On a screen held upright that cannot carry that basis (under 760 px
+width, or up to 1024 px wide with a coarse pointer; the test is `NARROW` in `build/src/40_core.js`)
+the stage is dropped rather than shrunk further: the scene becomes one fluid column of real pixels that
+scrolls, the contents rail becomes a drawer, and the header hands its settings to the foot of that
+drawer, which the settings gear then opens. So a phone and a tablet held upright get the column; any screen on its side, a phone
+included, is a desktop and gets the wide stage scaled to its height, and so does a laptop window of
+any width above 760 px, because a mouse is not a finger. On a touch screen under 480 px tall the
+contents rail opens closed, and the stored rail choice is kept for the desktop. In the column, slide
+captions, cards and slider labels take the phone reading sizes, and an in-plot legend becomes one row
+above the drawing. None of the gates in `.claude/rules/build-pipeline.md` reads this layout; `mcheck.js` and
 `mshot.js` do, in the phone and tablet sweeps listed there.
 
 ### Rollout: a scene opts in
