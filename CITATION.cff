@@ -5,7 +5,7 @@ type: software
 authors:
   - family-names: "Yıldız"
     given-names: "Hüseyin Uğur"
-url: "https://digital-communications-tedu.vercel.app"
+url: "https://digital-communications.huguryildiz.com/"
 repository-code: "https://github.com/huguryildiz/digital-communications"
 license: CC-BY-NC-SA-4.0
 version: "1.3"
