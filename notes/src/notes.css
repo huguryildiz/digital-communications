@@ -182,7 +182,8 @@ td:last-child,th:last-child{ padding-right:0; }
 /* front cover — a full-bleed page with no margins and no running footer */
 @page cover{ size:A4 portrait; margin:0; }
 .cover{ page:cover; position:relative; width:210mm; height:297mm; overflow:hidden;
-  background:#0B1826; color:#F3EEE4; padding:30mm 22mm 18mm; display:flex; flex-direction:column; }
+  background:#0B1826; color:#F3EEE4; padding:30mm 22mm 18mm; display:flex; flex-direction:column;
+  box-shadow:0 0 0 4mm #0B1826; }
 .cover .cv-art{ position:absolute; inset:0; width:100%; height:100%; display:block; }
 .cover > *{ position:relative; }
 .cover .mark .eelogo{ width:34pt; height:34pt; display:block; margin-bottom:16pt; }
