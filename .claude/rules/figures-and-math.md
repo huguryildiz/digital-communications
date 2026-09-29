@@ -93,6 +93,28 @@ finger drag (a draggable point, as in `74_labs_m4.js` and `75_labs_m5.js`) must 
 change to pointer, touch, or laser handling, check on a real iPad in both orientations that the pencil
 draws, a finger swipe turns the slide, a vertical swipe scrolls, and a slider or drag does not turn it.
 
+**Laser and board on a touch screen.** Both live in `build/src/40_core.js`, which is byte-identical
+in signals-and-systems, digital-communications and quantum-computing, so a change to either goes
+into all three in the same session, each rebuilt and checked, and each commit message names the
+sync. Both canvases cover the whole page and are never moved or offset to follow a pinch zoom. A
+point is carried into a canvas through that canvas's own `getBoundingClientRect()`, read at the same
+moment as the event: Safari on iOS, and so every browser on an iPad, measures client coordinates
+from the visible part of a zoomed page, Chrome on a desktop from the page, and a correction through
+`visualViewport.offsetLeft`/`offsetTop` shifts the dot twice on one of them. The laser canvas sits
+in the top layer as a manual popover and is raised again whenever another popover opens, so no flip
+card, scaled stage or menu paints over it. Its backing store follows `devicePixelRatio` times the
+zoom, rounded to half steps and capped at 12 megapixels; do not reallocate it on every pinch frame.
+`touch-action` alone does not stop iPadOS from taking a pencil's first contact for a tap, a long
+press or a scroll and cancelling it: the board canvas cancels its own `touchstart` and `touchmove`
+(non-passive listeners), and the laser cancels `touchmove` while a stroke is being drawn. On the
+board, once a pen has touched it a finger is a resting palm and writes nothing; before that a finger
+writes, and a pen set down while a finger is writing takes the pointer and the finger's stroke is
+dropped. While the board is open the slide keys are held and the laser answers the pointer only when
+the board's Laser tool is chosen (`board.lasering()`). After a change here, check on a real iPad,
+unzoomed and pinch-zoomed, that a pencil tap leaves a dot, a quick stroke is not lost, a resting
+palm writes nothing, a pen takes over from a writing finger, and the laser dot lands under the
+pencil, over a slide and over the board.
+
 Keep the KaTeX macro lists in `60_plot.js`, `90_app.js`, and `notes/src/render.js` in step. `PLOT` and
 `APP` are top-level `const`, not `window` properties; use their bare identifiers in Playwright
 `page.evaluate`, and remember a probe reading `window.LABS` finds nothing even when `LABS` exists.
