@@ -51,6 +51,7 @@ Alongside the scenes, the artifact contains:
 - **Laboratories.** Each has controls for a signal, a coder or a receiver; moving one updates the plot and the numbers beside it, computed from the definitions at that moment.
 - **Practice questions.** Twenty open-ended questions for each of Modules 1 to 6, each with a worked solution that checks its own answer a second way.
 - **Code pages.** Short Python programs that reproduce a result from the lecture. A reader can run them in the browser from the course site. Modules 1 to 6 have them.
+- **Laser pointer and whiteboard.** In projector mode the pointer becomes a red laser dot; holding the mouse button or pressing a pen draws strokes that fade after a pause or stay until cleared. Pressing `W` opens a whiteboard over the page, with four inks, three line widths and blank, squared or ruled paper. It takes a mouse, a finger or a pen such as the Apple Pencil, and its laser tool brings the pointer over the board.
 
 The same content also produces a set of printable PDF editions: the lecture notes, a student workbook
 with the questions only, and a formula reference.
