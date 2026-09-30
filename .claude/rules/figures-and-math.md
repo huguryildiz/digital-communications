@@ -109,10 +109,16 @@ press or a scroll and cancelling it: the board canvas cancels its own `touchstar
 (non-passive listeners), and the laser cancels `touchmove` while a stroke is being drawn. On the
 board, once a pen has touched it a finger is a resting palm and writes nothing; before that a finger
 writes, and a pen set down while a finger is writing takes the pointer and the finger's stroke is
-dropped. While the board is open the slide keys are held and the laser answers the pointer only when
+dropped. The board has no edge: strokes are kept in the
+paper's coordinates and an offset moves the paper under the canvas, which itself never moves. A
+finger drags the paper, with two fingers always and with one once a pen has touched the board or
+under the laser tool; the wheel and a trackpad slide do the same. A dragging finger must travel
+8 px before the paper follows, and a pen set down puts the paper back where that drag found it,
+so a palm laid down ahead of the pencil does not shift the page. While the board is open the slide keys are held and the laser answers the pointer only when
 the board's Laser tool is chosen (`board.lasering()`). After a change here, check on a real iPad,
 unzoomed and pinch-zoomed, that a pencil tap leaves a dot, a quick stroke is not lost, a resting
-palm writes nothing, a pen takes over from a writing finger, and the laser dot lands under the
+palm writes nothing, a pen takes over from a writing finger, a finger drags the paper in every
+direction while a resting palm does not, and the laser dot lands under the
 pencil, over a slide and over the board.
 
 Keep the KaTeX macro lists in `60_plot.js`, `90_app.js`, and `notes/src/render.js` in step. `PLOT` and
