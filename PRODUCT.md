@@ -44,7 +44,8 @@ capacity (M6). M0 is the opening: what the whole subject asks, and how to use th
 - One HTML file, served by the site. It makes no network request of its own; the Python runtime for a
   code page's **Run** button, when built, is the one exception, loaded from the course site on first
   press.
-- No analytics. Progress is stored on the device only.
+- No analytics in the artifact or the notes; the site cover page alone
+  counts visits with cookieless GoatCounter. Progress is stored on the device only.
 - Fixed 1920×1080 stage, scaled to the window, with a fluid phone/tablet layout below that.
 - Every number on a page is recomputed by a verification script (`verify/verify_scenes.py`,
   `verify/verify_drills.py`, `verify/verify_ber.py`); every label in every figure is swept for
