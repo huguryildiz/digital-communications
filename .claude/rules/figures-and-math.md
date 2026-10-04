@@ -163,3 +163,5 @@ change that skips it leaves the gate measuring nothing while still reporting a p
   in `60_plot.js` carries `LBLS`.
 - Look at screenshots. Several bugs in this course and its sibling were invisible to every gate and
   visible at a glance.
+
+**Labels inside block-diagram boxes sit in the middle of the box.** A box from `blocks()` in `build/src/60_plot.js` centres its label on both axes. A TeX label is laid out above the foot of its `foreignObject`, so the helper lowers it by `0.22` of its size; measured ink offset is within 1.5 px of the box centre for `S`, `S_1`, `S_2`. Draw every system box through `blocks()` rather than a hand-placed label, and if the offset changes, measure the ink centre of a plain and a subscripted label again. This rule is shared with `digital-communications`.
