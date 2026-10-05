@@ -2408,7 +2408,7 @@ REAL_QUANT,
       live:{controls:[{k:'R', label:'$R$', min:1, max:10, step:1, v:8, show:v=>'$'+v+'$ bit'+(v===1?'':'s')}]},
       svg:figSqnrSources,
       caption:'The lines are $\\alpha+6.02R$. The dots are measured on each quantized source, up to the $R$ of the slider. The Gaussian dots leave their line at many bits, where the clipped peaks set the error.'},
-    {t:'legend', items:[['in','sinusoid'],['slate','uniform'],['in','Gaussian, $\\pm4\\sigma$',true],['mid','measured','dot']], at:'tl-axis'}
+    {t:'legend', items:[['in','sinusoid'],['slate','uniform'],['in','Gaussian, $\\pm4\\sigma$',true],['mid','measured','dot']], at:'tl-axis-low'}
   ], right:[
     {t:'note', kind:'def', head:'Same slope', html:'Every source gains $6.02$ dB a bit. The source sets only the intercept, $\\alpha=10\\log_{10}(3P_M/m_{\\max}^{2})$.'},
     {t:'eq', label:'Three intercepts', tex:'\\begin{aligned}\\text{sinusoid: }&\\quad 10\\log_{10}\\frac{3(A^{2}/2)}{A^{2}}=1.76\\ \\text{dB}\\\\\\text{uniform: }&\\quad 10\\log_{10}\\frac{3(1/3)}{1}=0\\ \\text{dB}\\\\\\text{Gaussian, }m_{\\max}=4\\sigma\\text{: }&\\quad 10\\log_{10}\\frac{3\\sigma^{2}}{16\\sigma^{2}}=-7.27\\ \\text{dB}\\end{aligned}'},
