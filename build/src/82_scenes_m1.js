@@ -169,7 +169,7 @@ function figSinc(){
   a.curve(t=>sinc(t), {color:C.h, width:2.4});
   for(let n=-3;n<=3;n++) if(n){
     a.point(n, 0, {color:C.h, r:3.6});
-    a.note(n, -0.40, n+'/(2W)', {tex:true, anchor:'middle', fs:13, color:C.muted});
+    a.note(n, -0.40, (n<0?'-':'')+'\\dfrac{'+Math.abs(n)+'}{2W}', {tex:true, anchor:'middle', fs:13, color:C.h});
   }
   a.note(0.14, 1.14, '\\operatorname{sinc}(2Wt)', {tex:true, fs:14, color:C.h});
   return a.svg();
