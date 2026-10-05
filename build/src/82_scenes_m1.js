@@ -161,14 +161,16 @@ function figLpf(){
 
 /* The impulse response of the reconstruction filter: one at the origin, zero
    at every non-zero multiple of 1/(2W). The filter keeps its amber in time as
-   in frequency, and the zeros are marked because the interpolation scene
+   in frequency, and the zeros are marked and labelled because the interpolation scene
    rests on them. */
 function figSinc(){
   const a = P.Axes(SZ({xr:[-3.6,3.6], yr:[-0.42,1.30], xlabel:'t', ylabel:'h(t)',
     xticksOverride:[-3,-2,-1,1,2,3], xtickfmt:()=>'', ytarget:3, ytickfmt:()=>''}));
   a.curve(t=>sinc(t), {color:C.h, width:2.4});
-  for(let n=-3;n<=3;n++) if(n) a.point(n, 0, {color:C.h, r:3.6});
-  a.span(2, 3, -0.30, '\\tfrac{1}{2W}', {tex:true, fs:13, color:C.h});
+  for(let n=-3;n<=3;n++) if(n){
+    a.point(n, 0, {color:C.h, r:3.6});
+    a.note(n, -0.40, n+'/(2W)', {tex:true, anchor:'middle', fs:13, color:C.muted});
+  }
   a.note(0.14, 1.14, '\\operatorname{sinc}(2Wt)', {tex:true, fs:14, color:C.h});
   return a.svg();
 }
