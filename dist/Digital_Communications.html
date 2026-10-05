@@ -5723,7 +5723,7 @@ Object.assign(LABS, (function(){
 
       root.querySelector('.lab-eq').innerHTML = ph
         ? T(`\\begin{gathered}g(t)=0.6\\cos(2\\pi(0.6)t)\\\\{}+0.4\\cos(2\\pi(1.0)t+0.7)\\end{gathered}`, true)
-        : T(`g(t)=0.6\\cos(2\\pi(0.6)t)+0.4\\cos(2\\pi(1.0)t+0.7),\\quad W=${N(W,2)}\\ \\text{kHz}`, true);
+        : T(`\\begin{aligned}g(t)&=0.6\\cos(2\\pi(0.6)t)+0.4\\cos(2\\pi(1.0)t+0.7)\\\\ W&=${N(W,2)}\\ \\text{kHz}\\end{aligned}`, true);
 
       const n = 800; let se=0, me=0;
       for(let i=0;i<=n;i++){ const t=tmax*i/n; const e=Math.abs(err(t)); se+=e*e; me=Math.max(me,e); }
