@@ -461,7 +461,7 @@ function figErrDensity(){
    horizontal axis stays at the foot of the plot rather than at 0 dB. */
 const ALPHA_SINE = 10*Math.log10(1.5);
 function figSqnr(v){
-  const R = v ? v.R : 8, lvl = v ? v.lvl : 0, Y0 = 10, Y1 = 130;
+  const R = v ? v.R : 8, lvl = v ? v.lvl : 0, Y0 = 10, Y1 = 110;
   const yS = 100+10*Math.log10(0.5)+lvl, yN = r => 100-10*Math.log10(3)-20*r*Math.log10(2);
   const a = P.Axes(SZ({xr:[0.3,12.7], yr:[Y0,Y1], xlabel:'R\\;(\\text{bits per sample})',
     ylabel:'\\text{power}\\;(\\mathrm{dB})', pad:{l:62,r:26,t:24,b:46},
@@ -2291,7 +2291,7 @@ REAL_QUANT,
         {k:'lvl', label:'level', min:-40, max:0, step:5, v:0, show:v=>'$'+v+'$ dB'}]},
       svg:figSqnr,
       caption:'Powers in dB relative to $m_{\\max}^{2}$. Each bit drops the noise by $6.02$ dB. A lower input level drops the signal line, and the SQNR falls by the same amount.'},
-    {t:'legend', items:[['in','signal $P_M$'],['err','noise $E[Q^{2}]$'],['mid','SQNR']], at:'tr'}
+    {t:'legend', items:[['in','signal $P_M$'],['err','noise $E[Q^{2}]$'],['mid','SQNR']], at:'tc-row'}
   ], right:[
     {t:'eq', label:'Uniform quantizer', tex:'\\begin{aligned}\\mathrm{SQNR}&=\\frac{P_M}{E[Q^{2}]}\\\\&=\\frac{3P_M}{m_{\\max}^{2}}\\,2^{2R}\\end{aligned}',
       note:'Substitute $E[Q^{2}]=m_{\\max}^{2}/(3\\cdot2^{2R})$.'},
