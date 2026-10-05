@@ -452,6 +452,29 @@ const GQ_EDGES  = [-Infinity, -40, -20, 20, 40, Infinity];
 const GQ_LEVELS = [-30, -10, 0, 10, 30];
 const gdens = x => Math.exp(-x*x/800)/Math.sqrt(2*Math.PI*400);
 const gq = x => { for(let k=0;k<5;k++) if(x<=GQ_EDGES[k+1]) return GQ_LEVELS[k]; return 30; };
+/* The power spectral density of the Gaussian example: flat at 2 on |f|<100
+   Hz. Its area is the signal power. */
+function figGaussPsd(){
+  const a = P.Axes(SZ({xr:[-160,160], yr:[-0.25,3], xlabel:'f\\ (\\text{Hz})', ylabel:'S_X(f)',
+    xticksOverride:[-100,0,100], yticksOverride:[0,1,2]}));
+  a.area(f => Math.abs(f)<100 ? 2 : 0, -100, 100, {color:C.dec.in, stroke:'none'});
+  a.poly([[-160,0],[-100,0],[-100,2],[100,2],[100,0],[160,0]], {color:C.in, width:2.4});
+  a.note(20, 2.45, '\\text{area}=2(200)=400=P_X', {tex:true, fs:15, color:C.in});
+  return a.svg();
+}
+/* The input-output staircase of the same quantizer, with the line y = x
+   dashed behind it. */
+function figGaussQ(){
+  const a = P.Axes(SZ({xr:[-60,60], yr:[-40,40], xlabel:'x', ylabel:'\\mathbb{Q}(x)',
+    xticksOverride:[-40,-20,0,20,40], yticksOverride:[-30,-10,0,10,30]}));
+  a.poly([[-40,-40],[40,40]], {color:C.muted, width:1.2, dash:'4 4'});
+  for(const e of [-40,-20,20,40]) a.vline(e, {color:C.muted, dash:'4 4'});
+  const E = [-60,-40,-20,20,40,60];
+  const pts = [];
+  for(let k=0;k<5;k++) pts.push([E[k],GQ_LEVELS[k]],[E[k+1],GQ_LEVELS[k]]);
+  a.poly(pts, {color:C.mid, width:2.4});
+  return a.svg();
+}
 function figGaussErr(){
   const a = P.Axes(SZ({xr:[-80,80], yr:[-0.3,5.8], xlabel:'x', ylabel:'(x-\\mathbb{Q}(x))^{2}f_X(x)',
     xticksOverride:[-40,-20,0,20,40], ytarget:3, pad:{l:66,r:26,t:24,b:42}}));
@@ -496,34 +519,6 @@ function figSqnrSources(){
   a.note(1, 55, '\\text{uniform},\\ \\alpha=0', {tex:true, fs:13, color:C.slate});
   a.note(1, 48, '\\text{Gaussian},\\ \\pm4\\sigma,\\ \\alpha=-7.27', {tex:true, fs:13, color:C.in});
   return a.svg();
-}
-/* Dither: the last frame, 64 dithered outputs averaged, and the two strips. */
-const DITH = (()=>{ const r = seeded(4242), N = 240, K = 64, d = [];
-  for(let k=0;k<K;k++){ const row = []; for(let n=0;n<N;n++) row.push(r()-0.5); d.push(row); }
-  return {N, K, d}; })();
-const ditherIn = n => 1.3*Math.sin(2*Math.PI*n/DITH.N);
-function figDither(){
-  const {N, K, d} = DITH;
-  const a = P.Axes({w:600, h:300, xr:[0,N], yr:[-2.3,2.3], xlabel:'n', ylabel:'m[n],\\;\\hat m[n]',
-    pad:{l:56,r:26,t:24,b:40}, xtarget:6, yticksOverride:[-2,-1,0,1,2]});
-  for(const L of [-2,-1,1,2]) a.hline(L, {color:C.rule, dash:'2 5', opacity:0.9});
-  a.raw('<g opacity="0.2">');
-  a.poly([...Array(N)].map((_,n)=>[n, Math.round(ditherIn(n))]), {color:C.mid, width:2.2});
-  a.raw('</g><g opacity="0.25">');
-  a.poly([...Array(N)].map((_,n)=>[n, Math.round(ditherIn(n)+d[0][n])]), {color:C.mid, width:1.1});
-  a.raw('</g>');
-  const avg = [...Array(N)].map((_,n)=>{ let s = 0; for(let k=0;k<K;k++) s += Math.round(ditherIn(n)+d[k][n]); return [n, s/K]; });
-  a.poly(avg, {color:C.out, width:2.4});
-  a.curve(ditherIn, {color:C.in, width:1.8, dash:'6 4'});
-  const W = 160, H = 12, L = 4;
-  const r = seeded(99), noise = [...Array(W*H)].map(()=>r()-0.5);
-  const q = x => Math.max(0, Math.min(L-1, Math.round(x*(L-1))))/(L-1);
-  const plain = pixels('dith0', W, H, i=>q(i/(W-1)));
-  const dith  = pixels('dith1', W, H, (i,j)=>q(i/(W-1)+noise[j*W+i]/(L-1)));
-  const lab = (t, y) => P.texName(t, {xRight:102, baseline:y, size:14, color:C.muted, figW:600});
-  return `<svg viewBox="0 0 600 404" xmlns="http://www.w3.org/2000/svg" role="img">${place(a.svg(),0,0,600,300)}`
-    + lab('\\text{no dither}', 336) + picture(plain, 112, 316, 462, 30, true)
-    + lab('\\text{dither}', 386) + picture(dith, 112, 366, 462, 30, true) + '</svg>';
 }
 
 /* ---- 1.5 non-uniform quantization --------------------------------------- */
@@ -1077,7 +1072,7 @@ window.C1 = [
 
 {t:'h1', text:'Contents', rule:false},
 {t:'toc', items:[
- ['1','The transition from analog to digital','The Fourier transform in $f$. Impulse-train sampling, the spectral replicas and the sampling theorem. The reconstruction filter and the interpolation formula. Uniform quantization, mid-rise and mid-tread, overload and granular noise. Quantization noise, the signal-to-quantization-noise ratio and dither. Non-uniform quantization and A-law and $\\mu$-law companding. Encoding, line codes, the bandwidth and bit errors of PCM, DPCM and delta modulation. Vector quantization. Linear predictive coding, T1, sigma-delta conversion and JPEG.','PS CH7.1&ndash;7.7'],
+ ['1','The transition from analog to digital','The Fourier transform in $f$. Impulse-train sampling, the spectral replicas and the sampling theorem. The reconstruction filter and the interpolation formula. Uniform quantization, mid-rise and mid-tread, overload and granular noise. Quantization noise, the signal-to-quantization-noise ratio. Non-uniform quantization and A-law and $\\mu$-law companding. Encoding, line codes, the bandwidth and bit errors of PCM, DPCM and delta modulation. Vector quantization. Linear predictive coding, T1, sigma-delta conversion and JPEG.','PS CH7.1&ndash;7.7'],
  ['2','Baseband transmission of digital signals','The matched filter and the peak signal-to-noise ratio. Antipodal signalling, and correlator and matched-filter demodulators. The decision statistic, the optimal threshold, the $Q$ function and the bit error probability. Intersymbol interference and the eye diagram. Nyquist\'s criterion, the minimum bandwidth and the raised cosine. Equalization, timing, the spectrum of a bit stream and regenerative repeaters.','PS CH8.2&ndash;8.3, 8.9, 10.1&ndash;10.3, 10.5'],
  ['3','Geometric representation of signal waveforms','Signals as vectors: orthonormal bases, coordinates, inner products, energy and distance. The constellation diagram, a cosine and a sine as axes, and points on a circle. The Gram&ndash;Schmidt procedure and the choice of basis.','PS CH8.1&ndash;8.2, 8.6.1, 8.7.1'],
  ['4','The optimal receiver in additive white Gaussian noise','The observation vector and the noise outside the signal space. The MAP and ML rules, minimum-distance detection and the correlation metric. Decision regions and the binary error probability. The union bound, its intelligent form and the nearest-neighbour approximation.','PS CH8.3.3, 8.4'],
@@ -1367,9 +1362,11 @@ window.C1 = [
  ['Given','A zero-mean stationary Gaussian source has $S_X(f)=2$ for $|f|<100$ Hz. Its samples enter a quantizer with five levels $0,\\pm10,\\pm30$ and boundaries $\\pm20,\\pm40$.'],
  ['Find','The SQNR.'],
  ['Method','The signal power is the area under the power spectral density. The quantizer is coarse and its outer regions are unbounded, so the noise power is integrated region by region.'],
- ['Solution','The signal power is the area under $S_X$, not its height. $$P_X=\\int_{-100}^{100}2\\,df=2(200)=400$$ The mean is zero, so $400$ is also the variance, and $f_X$ is Gaussian with $\\sigma=20$. The density $f_X$ is even, so each side region has a twin. The integrals are evaluated numerically. $$\\begin{aligned}P_Q&=\\int_{-20}^{20}x^{2}f_X\\,dx+2\\int_{20}^{40}(x-10)^{2}f_X\\,dx+2\\int_{40}^{\\infty}(x-30)^{2}f_X\\,dx\\\\&=79.50+2(46.36)+2(7.98)=188.17\\\\\\mathrm{SQNR}&=10\\log_{10}\\frac{400}{188.17}=3.28\\ \\text{dB}\\end{aligned}$$'],
+ ['Solution','The signal power is the area under $S_X$, not its height. $$P_X=\\int_{-100}^{100}2\\,df=2(200)=400$$ The mean is zero, so $400$ is also the variance, and $f_X(x)$ is Gaussian with $\\sigma=20$. The density $f_X(x)$ is even, so each side region has a twin. The integrals are evaluated numerically. $$\\begin{aligned}P_Q&=\\int_{-20}^{20}x^{2}f_X(x)\\,dx+2\\int_{20}^{40}(x-10)^{2}f_X(x)\\,dx+2\\int_{40}^{\\infty}(x-30)^{2}f_X(x)\\,dx\\\\&=79.50+2(46.36)+2(7.98)=188.17\\\\\\mathrm{SQNR}&=10\\log_{10}\\frac{400}{188.17}=3.28\\ \\text{dB}\\end{aligned}$$'],
  ['Check','The five areas of the error integrand add to $79.50+92.72+15.96=188.18$, which is $188.17$ before rounding. The ratio $400/188.17=2.126$, and $10\\log_{10}2.126=3.28$ dB.']
 ]},
+{t:'fig', svg:()=>narrow(figGaussPsd(),60), cap:'The power spectral density $S_X(f)=2$ for $|f|<100$ Hz. Its area, $2(200)=400$, is the signal power $P_X$.', short:'Example 1.4: the power spectral density of the source.'},
+{t:'fig', svg:()=>narrow(figGaussQ(),60), cap:'The five-level quantizer: outputs $0,\\pm10,\\pm30$ and boundaries $\\pm20,\\pm40$. The dashed line is $y=x$.', short:'Example 1.4: the quantizer input-output staircase.'},
 {t:'fig', svg:()=>narrow(figGaussErr(),60), cap:'The error integrand $(x-\\mathbb{Q}(x))^{2}f_X(x)$, region by region. The five areas add to the noise power $P_Q=188.17$.', short:'Example 1.4: the error integrand region by region.'},
 {t:'box', kind:'err', hd:'Common error', html:'Using $\\Delta^{2}/12=33.3$ gives $10.8$ dB, $7.5$ dB too high. That model holds only for a small $\\Delta$ and an input inside the range.'},
 
@@ -1384,13 +1381,6 @@ window.C1 = [
 {t:'p', text:'Speech quantized with $8$ bits has an error that sounds like a faint hiss. At $2$ bits the error follows the words.'},
 {t:'box', kind:'warn', hd:'Noise that follows the signal', html:'At a few bits the error moves with the speech. It sounds like distortion, not like hiss, and the uniform error model no longer holds.'},
 {t:'p', text:'For example, speech that sounds clean at $8$ bits loses $4(6.02)=24.08$ dB of SQNR at $4$ bits, by the rule of six decibels a bit.'},
-
-{t:'h3', text:'Dither'},
-{t:'box', kind:'def', hd:'Dither', html:'<b>Dither</b> is a small random signal, about one step wide, added before the quantizer. The error then no longer follows the signal.'},
-{t:'box', kind:'ok', hd:'The average follows', html:'Each output still sits on a level. Averaged over time, or by the eye over neighbouring pixels, it follows the input between the levels.'},
-{t:'fig', svg:()=>narrow(figDither(),66), cap:'A slow sinusoid $1.3$ steps high through a quantizer with a unit step. The faint traces are the staircase without dither and one output with dither. The green trace averages $64$ dithered outputs. The strips are a grey ramp at four levels, without and with dither.', short:'Dither.'},
-{t:'box', kind:'warn', hd:'The cost', html:'Dither adds noise power. It trades a pattern that the ear or the eye notices for a hiss or a grain that it ignores.'},
-{t:'p', text:'For example, let an input sit $0.3\\Delta$ above a level, with dither uniform on $[-\\Delta/2,\\Delta/2]$. The boundary is $0.5\\Delta$ up, so the dither must exceed $0.2\\Delta$. That happens with probability $0.3$, so the next level up is chosen $30\\%$ of the time. The average output is then $0.3\\Delta$ above the level.'},
 
 {t:'h3', text:'SQNR around us'},
 {t:'box', kind:'def', hd:'Headroom costs SQNR', html:'The formula assumes a full-scale input. Each decibel below full scale takes one decibel from the SQNR.'},

@@ -61,7 +61,7 @@ CONTENT.SECTIONS = {
     { n:'1.3', title:'Quantization',                   ids:[
         'm1-quant','m1-quant-b','m1-quant-walk','m1-lloydmax','m1-overload','m1-real-quant','m1-lab-n','m1-code-quant'] },
     { n:'1.4', title:'Quantization noise and SQNR',    ids:[
-        'm1-qnoise','m1-qnoise-b','m1-qnoise-c','m1-sqnr','m1-sqnr-def','m1-ex-cos','m1-ex-unif','m1-ex-gauss','m1-sqnr-sources','m1-hear-bits','m1-dither','m1-real-sqnr','m1-lab-a','m1-code-sqnr'] },
+        'm1-qnoise','m1-qnoise-b','m1-qnoise-c','m1-sqnr','m1-sqnr-def','m1-ex-cos','m1-ex-unif','m1-ex-gauss','m1-sqnr-sources','m1-hear-bits','m1-real-sqnr','m1-lab-a','m1-code-sqnr'] },
     { n:'1.5', title:'Non-uniform quantization',       ids:[
         'm1-nonuniform','m1-compander','m1-companding','m1-hear-mu','m1-real-companding','m1-lab-o','m1-code-companding'] },
     { n:'1.6', title:'PCM, DPCM and delta modulation', ids:[
@@ -195,7 +195,7 @@ CONTENT.BOOK = {
      book's 7.5 (LPC), 7.6.1 (telephone TDM and the T1 hierarchy), 7.6.2 (the
      CD player's oversampling and sigma-delta converter) and 7.7 (JPEG). The
      chain that closes the module is the PCM block diagram of 7.4.1. The
-     aliasing-in-an-image, hearing and dither scenes carry no anchor: the book
+     aliasing-in-an-image and hearing scenes carry no anchor: the book
      does not develop them. */
   'm1-pcm-bw':'7.4.1', 'm1-biterror':'7.3', 'm1-dpcm':'7.4.2', 'm1-dm':'7.4.3',
   'm1-lpc':'7.5', 'm1-t1':'7.6.1', 'm1-sigmadelta':'7.6.2', 'm1-jpeg':'7.7', 'm1-chain':'7.4.1',

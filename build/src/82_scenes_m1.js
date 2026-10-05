@@ -276,7 +276,7 @@ function figQuantWalk(v){
   P.hOverride = null;
   const f = (v ? v.frame : 0) + 1, mp = walkM(f), vp = walkQ(mp);
   const a = P.Axes({w:600, h:200, xr:[-0.2,8.4], yr:[-3.6,3.6], xlabel:'t/T_s', ylabel:'m(t),\\;v[n]',
-    pad:{l:56,r:26,t:24,b:40}, xtarget:9, ytarget:8});
+    pad:{l:56,r:26,t:24,b:40}, xtarget:9, yticksOverride:[-2,0,2]});
   for(let k=-3;k<=3;k++) a.hline(k, {color:C.rule, dash:'2 5', opacity:0.9});
   a.curve(walkM, {color:C.in, width:2});
   a.vline(f, {color:C.muted});
@@ -285,7 +285,7 @@ function figQuantWalk(v){
     a.point(n, m, {color:C.in, r:4}); a.point(n, q, {color:C.mid, r:4.6}); }
   a.point(f, mp, {color:C.in, r:5.4});
   const b = P.Axes({w:600, h:270, xr:[-3.8,3.8], yr:[-3.8,3.8], xlabel:'m', ylabel:'v=\\mathbb{Q}(m)',
-    pad:{l:56,r:26,t:26,b:40}, xtarget:8, ytarget:8});
+    pad:{l:56,r:26,t:26,b:40}, xticksOverride:[-2,0,2], yticksOverride:[-2,0,2]});
   b.poly([[-3.8,-3.8],[3.8,3.8]], {color:C.rule, width:1.2, dash:'3 4'});
   const pts=[]; for(let i=0;i<=1520;i++){ const m=-3.8+7.6*i/1520; pts.push([m,walkQ(m)]); }
   b.poly(pts, {color:C.mid, width:2.4});
@@ -339,26 +339,26 @@ function figQuantError(v){
   const R = v && v.R!=null ? v.R : 3, L = 2**R, mmax = 5, D = 2*mmax/L;
   const q = m => Math.max(-mmax+D/2, Math.min(mmax-D/2, (Math.floor(m/D)+0.5)*D));
   const m = t => mmax*Math.cos(t);
-  const a = P.Axes({w:600,h:230,xr:[0,2*Math.PI],yr:[-6,6.4],
+  const a = P.Axes({w:600,h:310,xr:[0,2*Math.PI],yr:[-6,6.4],
     xlabel:'t',ylabel:'\\text{amplitude}',pad:{l:54,r:26,t:24,b:40},
     xtarget:5,ytarget:4});
   a.curve(m,{color:C.in});
   const pts=[]; for(let i=0;i<=900;i++){ const t=2*Math.PI*i/900; pts.push([t,q(m(t))]); }
   a.poly(pts,{color:C.mid,width:2.0});
   const E = 1.8*D/2;
-  const b = P.Axes({w:600,h:210,xr:[0,2*Math.PI],yr:[-E,E],
+  const b = P.Axes({w:600,h:280,xr:[0,2*Math.PI],yr:[-E,E],
     xlabel:'t',ylabel:'\\text{amplitude}',pad:{l:54,r:26,t:26,b:40},
     xtarget:5,ytarget:4});
   b.hline(D/2,{color:C.err,dash:'4 4'}); b.hline(-D/2,{color:C.err,dash:'4 4'});
   b.curve(t=>m(t)-q(m(t)),{color:C.err,width:1.7,n:1400});
   b.note(2*Math.PI-0.1, D/2+0.3*D, '+\\Delta/2', {tex:true,fs:13,color:C.err,anchor:'end'});
   const nest = (svg, y, h) => svg.replace('<svg ', `<svg x="0" y="${y}" width="600" height="${h}" `);
-  return `<svg viewBox="0 0 600 440" xmlns="http://www.w3.org/2000/svg" role="img">${nest(a.svg(),0,230)}${nest(b.svg(),230,210)}</svg>`;
+  return `<svg viewBox="0 0 600 590" xmlns="http://www.w3.org/2000/svg" role="img">${nest(a.svg(),0,310)}${nest(b.svg(),310,280)}</svg>`;
 }
 
 /* The time-average SQNR of a noisy sinusoid under sliders on the window T
    and the bit count R. m(t) = 3cos t + n(t), where n(t) is Gaussian with
-   variance 0.36, drawn once from a seeded generator (samples every 0.25 s,
+   variance 0.36, drawn once from a seeded generator (samples every 0.5 s,
    joined by a raised-cosine blend) so the figure is the same in every render.
    The quantizer spans [-5,5]; the window [-T/2, T/2] is shaded on both panels
    and the two averages over it are printed with their ratio in dB. */
@@ -367,7 +367,7 @@ const SQNR_NOISE = (() => {
   const u = () => { a = (a + 0x6D2B79F5)>>>0; let t = a;
     t = Math.imul(t ^ t>>>15, t | 1); t ^= t + Math.imul(t ^ t>>>7, t | 61);
     return ((t ^ t>>>14)>>>0)/4294967296; };
-  const h = 0.25, n = [];
+  const h = 0.5, n = [];
   for(let i=0;i<=200;i++) n.push(0.6*Math.sqrt(-2*Math.log(u()+1e-12))*Math.cos(2*Math.PI*u()));
   return t => { const x = (t+25)/h, k = Math.max(0, Math.min(199, Math.floor(x))), f = x-k,
     w = (1-Math.cos(Math.PI*f))/2; return (1-w)*n[k] + w*n[k+1]; };
@@ -380,22 +380,22 @@ function figSqnrWindow(v){
   let ps = 0, pq = 0; const N = 6000;
   for(let i=0;i<N;i++){ const t = -T/2+T*(i+0.5)/N, e = m(t)-q(m(t)); ps += m(t)*m(t); pq += e*e; }
   ps /= N; pq /= N;
-  const a = P.Axes({w:600,h:230,xr:[-X,X],yr:[-6,12],
-    xlabel:'t',ylabel:'\\text{amplitude}',pad:{l:54,r:26,t:24,b:40},xtarget:5,yticksOverride:[-5,5]});
-  a.rect(-T/2, -6, T/2, 12, {fill:C.dec.in});
+  const a = P.Axes({w:600,h:260,xr:[-X,X],yr:[-6,10.5],
+    xlabel:'t',ylabel:'\\text{amplitude}',pad:{l:54,r:26,t:24,b:44},xticksOverride:[-10,-5,5,10],xtickfmt:()=>'',yticksOverride:[-5,0,5]});
+  a.rect(-T/2, -6, T/2, 10.5, {fill:C.dec.in});
   a.curve(m,{color:C.in,n:2400});
   const pts=[]; for(let i=0;i<=4800;i++){ const t=-X+2*X*i/4800; pts.push([t,q(m(t))]); }
   a.poly(pts,{color:C.mid,width:1.8});
-  const b = P.Axes({w:600,h:190,xr:[-X,X],yr:[-1.1*D,2.0*D],
-    xlabel:'t',ylabel:'q(t)',pad:{l:54,r:26,t:20,b:40},xtarget:5,yticksOverride:[]});
-  b.rect(-T/2, -1.1*D, T/2, 2.0*D, {fill:C.dec.in});
+  const b = P.Axes({w:600,h:220,xr:[-X,X],yr:[-1.2*D,2.6*D],
+    xlabel:'t',ylabel:'q(t)',pad:{l:54,r:26,t:20,b:44},xticksOverride:[-10,-5,5,10],xtickfmt:()=>'',yticksOverride:[]});
+  b.rect(-T/2, -1.2*D, T/2, 2.6*D, {fill:C.dec.in});
   b.hline(D/2,{color:C.err,dash:'4 4'}); b.hline(-D/2,{color:C.err,dash:'4 4'});
-  b.curve(t=>m(t)-q(m(t)),{color:C.err,width:1.5,n:4800});
-  b.note(X-0.2, 0.74*D, '\\pm\\Delta/2', {tex:true,fs:13,color:C.err,anchor:'end'});
-  b.note(0, 1.5*D, `\\mathrm{SQNR}=${ps.toFixed(2)}/${pq.toFixed(4)}=${(10*Math.log10(ps/pq)).toFixed(2)}\\ \\text{dB}`,
-    {tex:true, fs:17, color:C.err, anchor:'middle'});
+  b.curve(t=>m(t)-q(m(t)),{color:C.err,width:1.2,n:4800});
+  b.note(X-0.2, 0.62*D, '\\pm\\Delta/2', {tex:true,fs:13,color:C.err,anchor:'end'});
+  b.note(X-0.2, 1.95*D, `\\mathrm{SQNR}=${ps.toFixed(2)}/${pq.toFixed(4)}=${(10*Math.log10(ps/pq)).toFixed(2)}\\ \\text{dB}`,
+    {tex:true, fs:17, color:C.err, anchor:'end'});
   const nest = (svg, y, h) => svg.replace('<svg ', `<svg x="0" y="${y}" width="600" height="${h}" `);
-  return `<svg viewBox="0 0 600 420" xmlns="http://www.w3.org/2000/svg" role="img">${nest(a.svg(),0,230)}${nest(b.svg(),230,190)}</svg>`;
+  return `<svg viewBox="0 0 600 480" xmlns="http://www.w3.org/2000/svg" role="img">${nest(a.svg(),0,260)}${nest(b.svg(),260,220)}</svg>`;
 }
 
 /* The bound |q| <= Delta/2 under a slider on the input m. A four-level
@@ -497,31 +497,41 @@ function sqnrMeasured(R){
   }
   return 10*Math.log10(pm/pq);
 }
-/* The SQNR of a full-scale sinusoid through a fine uniform quantizer,
-   against the bit count, played one bit a frame. Frame k shows R = 1..k+1.
-   Between two frames the new stem rises from the height of the last one, and
-   a bracket marks the 6.02 dB it adds; the step Delta halves, so the noise
-   power falls by four. */
+/* The noise power of a fine quantizer against the bit count, one bit a frame.
+   Above, the range [-m_max, m_max] split into 2^R regions, one region of
+   width Delta marked. Below, a square of side Delta: its area stands for
+   Delta^2 and so for E[Q^2] = Delta^2/12. The squares of the earlier bits stay
+   as outlines, nested at one corner, so each new one is a quarter of the last.
+   Between two frames the square shrinks continuously. */
 function figNoiseBits(v){
-  const f = v ? v.frame : 7, n = Math.floor(f+1e-9), u = f-n, R = n+1;
-  const a = P.Axes(SZ({xr:[0,8.6], yr:[0,60], xlabel:'R\\;(\\text{bits per sample})',
-    ylabel:'\\mathrm{SQNR}\\;(\\mathrm{dB})', pad:{l:62,r:26,t:24,b:46}, xtarget:8, ytarget:6}));
-  const y = r => ALPHA_SINE + 20*r*Math.log10(2);
-  a.curve(y, {color:C.err, width:1.2, dash:'5 5', opacity:0.45});
-  const st = []; for(let r=1;r<=R;r++) st.push([r, y(r)]);
-  if(u > 0) st.push([R+1, y(R)+(y(R+1)-y(R))*u]);
-  a.stem(st, {color:C.err});
-  /* the step just taken: from bit Rb-1 to bit Rb, with its height grown by g */
-  const Rb = u > 0 ? R+1 : R, g = u > 0 ? u : 1;
-  if(Rb >= 2){
-    const lo = y(Rb-1), hi = lo+(y(Rb)-lo)*g, X = Rb+0.22;
-    a.poly([[Rb-1,lo],[X,lo]], {color:C.muted, width:1, dash:'3 4'});
-    a.poly([[X-0.06,lo],[X,lo],[X,hi],[X-0.06,hi]], {color:C.in, width:1.6});
-    if(g > 0.6) a.note(X, (lo+hi)/2, '+6.02\\ \\mathrm{dB}', {tex:true, fs:14, color:C.in, dx:6});
-  }
-  const Rs = u > 0.5 ? R+1 : R;
-  a.note(0.3, 55, '\\Delta=2m_{\\max}/2^{'+Rs+'}', {tex:true, fs:14, color:C.muted});
-  a.note(0.3, 48, 'E[Q^{2}]=m_{\\max}^{2}/(3\\cdot4^{'+Rs+'})', {tex:true, fs:14, color:C.err});
+  const f = v ? v.frame : 2, n = Math.floor(f+1e-9), R = n+1, Rs = Math.round(f)+1;
+  const a = P.Axes(SZ({xr:[0,1], yr:[0,1], pad:{l:24,r:24,t:18,b:22},
+    grid:false, zeroAxes:false, arrows:false, xticksOverride:[], yticksOverride:[]}));
+  const X = px => (px-a.x0)/(a.x1-a.x0), Y = py => (a.y0-py)/(a.y0-a.y1);
+  /* range bar: 2 m_max wide; the R = 1 square has side m_max, half the bar */
+  const barY = a.y1+46, top = barY+50, S = Math.min((a.x1-a.x0)*0.46, a.y0-top);
+  const bx0 = a.x0+6, bx1 = bx0+2*S, D = 2*S/2**R, fx = v=>v.toFixed(2);
+  a.raw(`<line x1="${fx(bx0)}" y1="${fx(barY)}" x2="${fx(bx1)}" y2="${fx(barY)}" stroke="${C.ink}" stroke-width="1.6"/>`);
+  for(let k=0;k<=2**R;k++){ const x = bx0+k*D, e = k===0||k===2**R;
+    a.raw(`<line x1="${fx(x)}" y1="${fx(barY-(e?8:5))}" x2="${fx(x)}" y2="${fx(barY+(e?8:5))}" stroke="${e?C.ink:C.muted}" stroke-width="${e?1.6:1.1}"/>`); }
+  a.raw(`<rect x="${fx(bx0)}" y="${fx(barY-5)}" width="${fx(D)}" height="10" fill="${C.in}" fill-opacity="0.28" stroke="none"/>`);
+  a.span(X(bx0), X(bx0+D), Y(barY-11), '\\Delta', {tex:true, fs:15, color:C.in});
+  a.note(X(bx0), Y(barY+24), '-m_{\\max}', {tex:true, fs:14, color:C.muted, anchor:'middle'});
+  a.note(X(bx1), Y(barY+24), 'm_{\\max}', {tex:true, fs:14, color:C.muted, anchor:'middle'});
+  a.note(X(bx1), Y(barY-22), 'L='+2**Rs+'\\ \\text{regions}', {tex:true, fs:14, color:C.muted, anchor:'end'});
+  /* squares, nested at the lower-left corner */
+  const sq = (s, o) => a.raw(`<rect x="${fx(bx0)}" y="${fx(a.y0-s)}" width="${fx(s)}" height="${fx(s)}" ${o}/>`);
+  for(let r=1;r<R;r++) sq(S/2**(r-1), `fill="none" stroke="${C.muted}" stroke-width="1.1" stroke-dasharray="4 4"`);
+  const sc = S/2**f;
+  if(R>1){ const sp = S/2**(R-2);   /* the last square, split into its four quarters */
+    a.raw(`<path d="M${fx(bx0+sp/2)},${fx(a.y0)}V${fx(a.y0-sp)}M${fx(bx0)},${fx(a.y0-sp/2)}H${fx(bx0+sp)}" stroke="${C.muted}" stroke-width="1" stroke-dasharray="2 4" fill="none"/>`); }
+  sq(sc, `fill="${C.err}" fill-opacity="0.22" stroke="${C.err}" stroke-width="2"`);
+  /* the values at this bit count */
+  const tx = X(bx0+S+28), L4 = 3*4**Rs, Dn = Rs===1 ? 'm_{\\max}' : 'm_{\\max}/'+2**(Rs-1);
+  a.note(tx, Y(a.y0-S+16), 'R='+Rs, {tex:true, fs:20, color:C.ink});
+  a.note(tx, Y(a.y0-S+58), '\\Delta='+Dn, {tex:true, fs:18, color:C.in});
+  a.note(tx, Y(a.y0-S+98), 'E[Q^{2}]=m_{\\max}^{2}/'+L4, {tex:true, fs:18, color:C.err});
+  if(Rs>1) a.note(tx, Y(a.y0-S+138), '\\text{a quarter of }m_{\\max}^{2}/'+L4/4, {tex:true, fs:16, color:C.muted});
   return a.svg();
 }
 /* The uniform source and its quantizer regions. The example has 256 levels;
@@ -546,8 +556,8 @@ function figUniformSource(){
   for(let k=-2;k<=2;k++) z.push(T(k*D,(k-0.5)*D), T(k*D,(k+0.5)*D));
   z.push(T(3*D,2.5*D));
   a.poly(z, {color:C.in, width:2.2});
-  const [ax, ay] = T(-1.25*D, -1.5*D);
-  a.note(ax, ay-0.13, '\\Delta', {tex:true, fs:14, color:C.in, anchor:'middle'});
+  const [sa, sy] = T(-2*D, -1.5*D), [sb] = T(-D, -1.5*D);
+  a.span(sa, sb, sy+0.06, '\\Delta', {tex:true, fs:15, color:C.in});
   return a.svg();
 }
 
@@ -557,6 +567,29 @@ const GQ_EDGES  = [-Infinity, -40, -20, 20, 40, Infinity];
 const GQ_LEVELS = [-30, -10, 0, 10, 30];
 const gdens = x => Math.exp(-x*x/800)/Math.sqrt(2*Math.PI*400);
 const gq = x => { for(let k=0;k<5;k++) if(x<=GQ_EDGES[k+1]) return GQ_LEVELS[k]; return 30; };
+/* The power spectral density of the Gaussian example: flat at 2 on |f|<100
+   Hz. Its area is the signal power. */
+function figGaussPsd(){
+  const a = P.Axes(SZ({xr:[-160,160], yr:[-0.25,3], xlabel:'f\\ (\\text{Hz})', ylabel:'S_X(f)',
+    xticksOverride:[-100,0,100], yticksOverride:[0,1,2]}));
+  a.area(f => Math.abs(f)<100 ? 2 : 0, -100, 100, {color:C.dec.in, stroke:'none'});
+  a.poly([[-160,0],[-100,0],[-100,2],[100,2],[100,0],[160,0]], {color:C.in, width:2.4});
+  a.note(20, 2.45, '\\text{area}=2(200)=400=P_X', {tex:true, fs:15, color:C.in});
+  return a.svg();
+}
+/* The input-output staircase of the same quantizer, with the line y = x
+   dashed behind it. */
+function figGaussQ(){
+  const a = P.Axes(SZ({xr:[-60,60], yr:[-40,40], xlabel:'x', ylabel:'\\mathbb{Q}(x)',
+    xticksOverride:[-40,-20,0,20,40], yticksOverride:[-30,-10,0,10,30]}));
+  a.poly([[-40,-40],[40,40]], {color:C.muted, width:1.2, dash:'4 4'});
+  for(const e of [-40,-20,20,40]) a.vline(e, {color:C.muted, dash:'4 4'});
+  const E = [-60,-40,-20,20,40,60];
+  const pts = [];
+  for(let k=0;k<5;k++) pts.push([E[k],GQ_LEVELS[k]],[E[k+1],GQ_LEVELS[k]]);
+  a.poly(pts, {color:C.mid, width:2.4});
+  return a.svg();
+}
 /* The error integrand of the same quantizer, region by region. The area of
    each piece is its contribution to P_Q. */
 function figGaussErr(){
@@ -1116,7 +1149,7 @@ const REAL_PCM = realGallery({ id:'m1-real-pcm', nav:'PCM around us',
   ]});
 
 /* ---- figures of the later scenes ------------------------------------------
-   Aliasing in an image, overload, dither, hearing the quantizer, the cost of
+   Aliasing in an image, overload, hearing the quantizer, the cost of
    PCM in bandwidth and in bit errors, DPCM and delta modulation, and the
    coders built on them: the T1 frame, LPC, sigma-delta and JPEG. */
 
@@ -1293,53 +1326,6 @@ function figHearMu(v){
   return `<svg viewBox="0 0 600 470" xmlns="http://www.w3.org/2000/svg" role="img">`
     + key(56, C.in, 'x(t)') + key(150, C.mid, '\\mathbb{Q}(x(t))')
     + panel(U, 52, '\\text{uniform, }6\\text{ bits}') + panel(M, 284, '\\mu\\text{-law, }6\\text{ bits}') + '</svg>';
-}
-
-/* Dither. A slow sinusoid 1.3 steps high through a mid-tread quantizer with
-   a unit step; frame 1 adds a uniform dither of one step before it, frame 2
-   averages 64 dithered passes. The strips under the plot are a grey ramp at
-   four levels, without and with dither. */
-const DITH = (()=>{ const r = seeded(4242), N = 240, K = 64, d = [];
-  for(let k=0;k<K;k++){ const row = []; for(let n=0;n<N;n++) row.push(r()-0.5); d.push(row); }
-  return {N, K, d}; })();
-const ditherIn = n => 1.3*Math.sin(2*Math.PI*n/DITH.N);
-function figDither(v){
-  P.hOverride = null;
-  const f = frameOf(v, 2), {N, K, d} = DITH, u1 = clamp01(f), u2 = clamp01(f-1);
-  const a = P.Axes({w:600, h:300, xr:[0,N], yr:[-2.3,2.3], xlabel:'n', ylabel:'m[n],\\;\\hat m[n]',
-    pad:{l:56,r:26,t:24,b:40}, xtarget:6, yticksOverride:[-2,-1,0,1,2]});
-  for(const L of [-2,-1,1,2]) a.hline(L, {color:C.rule, dash:'2 5', opacity:0.9});
-  a.raw(`<g opacity="${(1-0.8*u1).toFixed(3)}">`);
-  a.poly([...Array(N)].map((_,n)=>[n, Math.round(ditherIn(n))]), {color:C.mid, width:2.2});
-  a.raw('</g>');
-  if(u1 > 1e-3){
-    a.raw(`<g opacity="${(u1*(1-0.75*u2)).toFixed(3)}">`);
-    a.poly([...Array(N)].map((_,n)=>[n, Math.round(ditherIn(n)+d[0][n])]), {color:C.mid, width:1.1});
-    a.raw('</g>');
-  }
-  if(u2 > 1e-3){
-    const avg = [...Array(N)].map((_,n)=>{ let s = 0; for(let k=0;k<K;k++) s += Math.round(ditherIn(n)+d[k][n]); return [n, s/K]; });
-    a.raw(`<g opacity="${u2.toFixed(3)}">`); a.poly(avg, {color:C.out, width:2.4}); a.raw('</g>');
-  }
-  a.curve(ditherIn, {color:C.in, width:1.8, dash:'6 4'});
-  const W = 160, H = 12, L = 4;
-  const r = seeded(99), noise = [...Array(W*H)].map(()=>r()-0.5);
-  const q = x => Math.max(0, Math.min(L-1, Math.round(x*(L-1))))/(L-1);
-  const plain = pixels('dith0', W, H, i=>q(i/(W-1)));
-  const dith  = pixels('dith1', W, H, (i,j)=>q(i/(W-1)+noise[j*W+i]/(L-1)));
-  const lab = (t, y) => P.texName(t, {xRight:102, baseline:y, size:14, color:C.muted, figW:600});
-  return `<svg viewBox="0 0 600 404" xmlns="http://www.w3.org/2000/svg" role="img">${place(a.svg(),0,0,600,300)}`
-    + lab('\\text{no dither}', 336) + picture(plain, 112, 316, 462, 30, true)
-    + lab('\\text{dither}', 386) + picture(dith, 112, 366, 462, 30, true) + '</svg>';
-}
-/* The same idea by ear: a quiet tone 1.3 steps high at 8 kHz, one second. */
-const TONE = {};
-function ditherTone(withDither){
-  const key = withDither ? 'd' : 'p';
-  if(!TONE[key]){ const r = seeded(515), n = 8000, y = new Float32Array(n);
-    for(let i=0;i<n;i++){ const x = 1.3*Math.sin(2*Math.PI*330*i/8000); y[i] = Math.round(x + (withDither ? r()-0.5 : 0)); }
-    TONE[key] = y; }
-  return asSound(TONE[key], 8000);
 }
 
 /* The bandwidth PCM needs. Top: the message band and the least band of an
@@ -2195,7 +2181,7 @@ REAL_RECONSTRUCT,
       live:{controls:[{k:'V', label:'$m_{\\max}$', min:0.5, max:4, step:0.05, v:1, show:v=>'$'+v.toFixed(2)+'\\sigma$'}]},
       svg:figOverload,
       caption:'A signal with rare large peaks through a $3$-bit quantizer spanning $[-m_{\\max},m_{\\max}]$. Red marks the clipped peaks.'},
-    {t:'legend', items:[['in','$m(t)$'],['mid','$\\mathbb{Q}(m(t))$'],['err','clipped']], at:'tc'}
+    {t:'legend', items:[['in','$m(t)$'],['mid','$\\mathbb{Q}(m(t))$'],['err','clipped']], at:'tc-row'}
   ], right:[
     {t:'note', kind:'def', head:'Two errors', html:'<div class="cmp"><div><span class="cmp-h">Overload</span>An input beyond $\\pm m_{\\max}$ is clipped to the outer level. Its error has no bound.</div><div><span class="cmp-h">Granular noise</span>Inside the range $|q|\\le\\Delta/2$. A wider range makes $\\Delta$ and this error larger.</div></div>'},
     {t:'reveal', at:1, items:[
@@ -2264,9 +2250,9 @@ REAL_QUANT,
   {t:'title', text:'Quantization noise in bits'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true,
-      frames:{labels:['$R=1$','$R=2$','$R=3$','$R=4$','$R=5$','$R=6$','$R=7$','$R=8$']},
+      frames:{labels:['$R=1$','$R=2$','$R=3$','$R=4$','$R=5$','$R=6$']},
       svg:figNoiseBits,
-      caption:'Step through the bits for a full-scale sinusoid. Each added bit halves $\\Delta$, divides $E[Q^{2}]$ by four, and lifts the SQNR by $10\\log_{10}4=6.02$ dB.'}
+      caption:'Step through the bits. Each added bit doubles the regions and halves $\\Delta$. The square has side $\\Delta$, so its area, like $E[Q^{2}]=\\Delta^{2}/12$, falls to a quarter.'}
   ], right:[
     {t:'eq', label:'In bits', tex:'\\begin{aligned}E[Q^{2}]&=\\frac{\\Delta^{2}}{12}\\\\&=\\frac{1}{12}\\left(\\frac{2m_{\\max}}{2^{R}}\\right)^{2}\\\\&=\\frac{1}{12}\\cdot\\frac{4m_{\\max}^{2}}{2^{2R}}\\\\&=\\frac{m_{\\max}^{2}}{3\\cdot 2^{2R}}\\end{aligned}',
       note:'Substitute $\\Delta=2m_{\\max}/L$ and $L=2^{R}$.'},
@@ -2317,7 +2303,7 @@ REAL_QUANT,
         {k:'R', label:'$R$', min:1, max:5, step:1, v:3, show:v=>'$'+v+'$ bit'+(v===1?'':'s')}]},
       svg:figSqnrWindow,
       caption:'A sinusoid with Gaussian noise on it, through an $R$-bit quantizer spanning $[-5,5]$. Widen the window $T$. The ratio of the two time averages settles as $T$ grows.'},
-    {t:'legend', items:[['in','$m(t)$'],['mid','$\\mathbb{Q}(m(t))$'],['err','$q(t)$']], at:'tc'}
+    {t:'legend', items:[['in','$m(t)$'],['mid','$\\mathbb{Q}(m(t))$'],['err','$q(t)$']], at:'tc-row'}
   ], right:[
     {t:'eq', label:'Random variable', tex:'\\mathrm{SQNR}=\\frac{E[M^{2}]}{E\\big[(M-\\mathbb{Q}(M))^{2}\\big]}',
       note:'Quantize the random variable $M$ to $\\mathbb{Q}(M)$. Both powers are expected values.'},
@@ -2339,7 +2325,7 @@ REAL_QUANT,
       live:{controls:[{k:'R', label:'$R$', min:1, max:5, step:1, v:3, show:v=>'$'+v+'$ bit'+(v===1?'':'s')}]},
       svg:v=>figQuantError(v),
       caption:'$m(t)=5\\cos t$ through an $R$-bit quantizer spanning $[-5,5]$, and the error below it. The error stays between $-\\Delta/2$ and $\\Delta/2$.'},
-    {t:'legend', items:[['in','$m(t)$'],['mid','$\\mathbb{Q}(m(t))$'],['err','$q(t)$']], at:'tc'}
+    {t:'legend', items:[['in','$m(t)$'],['mid','$\\mathbb{Q}(m(t))$'],['err','$q(t)$']], at:'tc-row'}
   ], right:[
     {t:'note', kind:'def', head:'Given', html:'$m(t)=5\\cos t$ and a uniform quantizer over its full range, $R=3$.<div class="nsep"></div>Find the step size and the SQNR.',
       ask:{key:'m1-ex-cos', q:'Predict the step size first.', choices:['$0.625$','$1.25$','$2.5$'], answer:1,
@@ -2379,20 +2365,25 @@ REAL_QUANT,
 { id:'m1-ex-gauss', module:'M1', nav:'Worked example · a Gaussian source', title:'Worked example: SQNR of a Gaussian source',
   objective:'Integrate the error of a coarse quantizer on a Gaussian source region by region and compare it with the uniform model.',
   keywords:'worked example gaussian source psd five level quantizer signal power 400 noise power 188.17 sqnr 3.28 db model limit 10.8 db',
-  src:'CH7 s.27–28', slide:true, steps:2, blocks:[
+  src:'CH7 s.27–28', slide:true, steps:3, blocks:[
   {t:'eyebrow', text:'Module 1 · Worked example'},
   {t:'title', text:'Worked example: SQNR of a Gaussian source'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
-    {t:'fig', frame:true, grow:true, svg:figGaussErr,
-      caption:'The error integrand $(x-\\mathbb{Q}(x))^{2}f_X(x)$, region by region. The five areas add to the noise power $P_Q=188.17$.'}
+    {t:'fig', frame:true, grow:true,
+      frames:{labels:['$S_X(f)$','$\\mathbb{Q}(x)$','$(x-\\mathbb{Q}(x))^{2}f_X(x)$']},
+      svg:v=>[figGaussPsd, figGaussQ, figGaussErr][Math.round(v.frame)](),
+      caption:'Step through the frames: the flat spectrum whose area is $P_X$, the five-level quantizer, and the error integrand whose five areas add to $P_Q=188.17$.'}
   ], right:[
     {t:'note', kind:'def', head:'Given', html:'A zero-mean Gaussian source with $S_X(f)=2$ for $|f|<100$ Hz. Five levels $0,\\pm10,\\pm30$, boundaries $\\pm20,\\pm40$.<div class="nsep"></div>Find the SQNR.',
       ask:{key:'m1-ex-gauss', q:'Predict the signal power first.', choices:['$2$','$200$','$400$'], answer:2,
         why:'$P_X=\\int S_X(f)\\,df=2(200)=400$. The value $2$ is the height of $S_X$, not its area.'}},
     {t:'reveal', at:1, items:[
-      {t:'eq', label:'Solution', tex:'\\begin{aligned}P_Q&=\\int_{-20}^{20}x^{2}f_X\\,dx+2\\int_{20}^{40}(x-10)^{2}f_X\\,dx+2\\int_{40}^{\\infty}(x-30)^{2}f_X\\,dx\\\\&=79.50+2(46.36)+2(7.98)=188.17\\\\\\mathrm{SQNR}&=10\\log_{10}\\frac{400}{188.17}=3.28\\ \\text{dB}\\end{aligned}',
-        note:'$f_X$ is even, so each side region has a twin. The integrals are evaluated numerically.'}]},
+      {t:'eq', label:'Signal power', tex:'P_X=\\int_{-\\infty}^{\\infty}S_X(f)\\,df=\\int_{-100}^{100}2\\,df=2(200)=400',
+        note:'The mean is zero, so $P_X=\\sigma^{2}=400$ and $f_X(x)$ is Gaussian with $\\sigma=20$.'}]},
     {t:'reveal', at:2, items:[
+      {t:'eq', label:'Noise power and SQNR', tex:'\\begin{aligned}P_Q&=\\int_{-20}^{20}x^{2}f_X(x)\\,dx+2\\int_{20}^{40}(x-10)^{2}f_X(x)\\,dx+2\\int_{40}^{\\infty}(x-30)^{2}f_X(x)\\,dx\\\\&=79.50+2(46.36)+2(7.98)=188.17\\\\\\mathrm{SQNR}&=10\\log_{10}\\frac{400}{188.17}=3.28\\ \\text{dB}\\end{aligned}',
+        note:'$f_X(x)$ is even, so each side region has a twin. The integrals are evaluated numerically.'}]},
+    {t:'reveal', at:3, items:[
       {t:'note', kind:'err', head:'Common error', html:'Using $\\Delta^{2}/12=33.3$ gives $10.8$ dB, $7.5$ dB too high. That model holds only for a small $\\Delta$ and an input inside the range.'}]}
   ]}
 ]},
@@ -2436,7 +2427,7 @@ REAL_QUANT,
         {label:'original', sound:()=>speech('apollo11', 1)}]},
       svg:figHearBits,
       caption:'$25$ ms of speech through an $R$-bit uniform quantizer spanning its peak, and the error below it. Each sound plays at the same loudness.'},
-    {t:'legend', items:[['in','$x(t)$'],['mid','$\\mathbb{Q}(x(t))$'],['err','$q(t)$']], at:'tc'}
+    {t:'legend', items:[['in','$x(t)$'],['mid','$\\mathbb{Q}(x(t))$'],['err','$q(t)$']], at:'tc-row'}
   ], right:[
     {t:'note', kind:'def', head:'Listen', html:'Play the speech at $R$ bits, then the error alone. At $8$ bits the error is a faint hiss. At $2$ bits it follows the words.'},
     {t:'reveal', at:1, items:[
@@ -2445,33 +2436,6 @@ REAL_QUANT,
       {t:'note', kind:'def', head:'Given', html:'Speech sounds clean at $8$ bits.<div class="nsep"></div>How much SQNR does the rule take away at $4$ bits?',
         ask:{key:'m1-hear-bits', choices:['$6.02$ dB','$24.08$ dB','$48.16$ dB'], answer:1,
           why:'Four bits fewer at $6.02$ dB a bit: $4(6.02)=24.08$ dB.'}}]}
-  ]}
-]},
-
-{ id:'m1-dither', module:'M1', nav:'Dither', title:'Dither',
-  objective:'Add a small random signal before the quantizer so that the average output follows the input between the levels.',
-  keywords:'dither random noise before quantizer average banding tone distortion grain frames listen',
-  slide:true, steps:3, blocks:[
-  {t:'eyebrow', text:'Module 1 · Quantization noise'},
-  {t:'title', text:'Dither'},
-  {t:'cols', ratio:'c-5-7', fill:true, left:[
-    {t:'fig', frame:true,
-      frames:{labels:['no dither','with dither','the average']},
-      listen:{items:[
-        {label:'quiet tone, no dither', sound:()=>ditherTone(false)},
-        {label:'with dither', sound:()=>ditherTone(true)}]},
-      svg:figDither,
-      caption:'A slow sinusoid $1.3$ steps high through a quantizer with a unit step. Step through the frames: the staircase, the output with dither, and $64$ dithered outputs averaged. The strips are a grey ramp at four levels.'}
-  ], right:[
-    {t:'note', kind:'def', head:'Dither', html:'Add a small random signal, about one step wide, before the quantizer. The error then no longer follows the signal.'},
-    {t:'reveal', at:1, items:[
-      {t:'note', kind:'ok', head:'The average follows', html:'Each output still sits on a level. Averaged over time, or by the eye over neighbouring pixels, it follows the input between the levels.'}]},
-    {t:'reveal', at:2, items:[
-      {t:'note', kind:'warn', head:'The cost', html:'Dither adds noise power. It trades a pattern that the ear or the eye notices for a hiss or a grain that it ignores.'}]},
-    {t:'reveal', at:3, items:[
-      {t:'note', kind:'def', head:'Given', html:'An input sits $0.3\\Delta$ above a level. The dither is uniform on $[-\\Delta/2,\\Delta/2]$.<div class="nsep"></div>How often is the next level up chosen?',
-        ask:{key:'m1-dither', choices:['Never','$30\\%$ of the time','$50\\%$ of the time'], answer:1,
-          why:'The boundary is $0.5\\Delta$ up, so the dither must exceed $0.2\\Delta$: a chance of $0.3$. The average output is then $0.3\\Delta$.'}}]}
   ]}
 ]},
 

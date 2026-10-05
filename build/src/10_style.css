@@ -761,7 +761,9 @@ figure.fig, .plot-wrap{ position:relative; }
    drops with the type scale, so in projector size it stays below the name */
 .fig-frame > .legend.in-plot.lg-at-tl-axis-low{ right:auto; left:calc(16px + 14%); top:calc(74px * var(--ts)); }
 /* centred over the data area, for a trace that fills both top corners */
-.fig-frame > .legend.in-plot.lg-at-tc{ right:auto; left:54%; transform:translateX(-50%); }
+.fig-frame > .legend.in-plot.lg-at-tc, .fig-frame > .legend.in-plot.lg-at-tc-row{ right:auto; left:54%; transform:translateX(-50%); }
+/* the same, set in one row, when the plot leaves a strip above the traces */
+.fig-frame > .legend.in-plot.lg-at-tc-row{ flex-direction:row; flex-wrap:nowrap; white-space:nowrap; gap:4px 20px; padding:5px 13px 6px; }
 /* a laboratory panel redraws its traces anywhere in the data area, so its
    legend sits in one row in the strip above it, beside the axis name */
 .plot-wrap > .legend.in-plot{ flex-direction:row; gap:4px 18px; top:2px; right:14px; padding:3px 10px 4px; }
