@@ -453,19 +453,35 @@ function figErrDensity(){
   return a.svg();
 }
 
-/* SQNR against the bit count for a sinusoid at a chosen level below full
-   scale. The full-scale line stays as the reference; the violet line moves
-   with the slider and carries its value at R = 8. */
+/* The SQNR as a gap between two powers, in dB relative to m_max^2. The
+   signal power of a sinusoid at the chosen level is a flat line; the noise
+   power E[Q^2] = m_max^2/(3*4^R) is a staircase that steps down 6.02 dB a
+   bit. At the chosen R an arrow spans the gap, which is the SQNR. Every
+   power is drawn 100 dB up and the tick labels take the 100 back off, so the
+   horizontal axis stays at the foot of the plot rather than at 0 dB. */
 const ALPHA_SINE = 10*Math.log10(1.5);
 function figSqnr(v){
-  const lvl = v ? v.lvl : -20;
-  const a = P.Axes(SZ({xr:[1,12], yr:[0,80], xlabel:'R\\;(\\text{bits per sample})',
-    ylabel:'\\mathrm{SQNR}\\;(\\mathrm{dB})', pad:{l:62,r:26,t:24,b:46}, xtarget:6, ytarget:5}));
-  a.curve(R=>ALPHA_SINE+6.02*R, {color:C.in, width:2.3});
-  a.curve(R=>ALPHA_SINE+lvl+6.02*R, {color:C.mid, width:2.3});
-  const y8 = ALPHA_SINE + lvl + 6.02*8;
-  a.point(8, y8, {color:C.mid, r:5});
-  a.note(8.3, y8-3, P.fmt(y8,1)+'\\ \\mathrm{dB}', {tex:true, fs:14, color:C.mid});
+  const R = v ? v.R : 8, lvl = v ? v.lvl : 0, Y0 = 10, Y1 = 130;
+  const yS = 100+10*Math.log10(0.5)+lvl, yN = r => 100-10*Math.log10(3)-20*r*Math.log10(2);
+  const a = P.Axes(SZ({xr:[0.3,12.7], yr:[Y0,Y1], xlabel:'R\\;(\\text{bits per sample})',
+    ylabel:'\\text{power}\\;(\\mathrm{dB})', pad:{l:62,r:26,t:24,b:46},
+    xticksOverride:[2,4,6,8,10,12], yticksOverride:[20,40,60,80,100], ytickfmt:v=>String(v-100)}));
+  const st = []; for(let r=1;r<=12;r++) st.push([r-0.5,yN(r)],[r+0.5,yN(r)]);
+  a.poly(st, {color:C.err, width:2.3});
+  a.poly([[0.3,yS],[12.7,yS]], {color:C.in, width:2.3});
+  /* one step of the staircase, labelled beside its riser, away from the arrow */
+  const rs = R<=6 ? 10 : 2;
+  a.note(rs+0.5, (yN(rs)+yN(rs+1))/2, '-6.02\\ \\mathrm{dB}', {tex:true, fs:14, color:C.err, dx:8});
+  /* the gap at the chosen R */
+  const px = x => a.x0+(x-0.3)/12.4*(a.x1-a.x0), py = y => a.y0-(y-Y0)/(Y1-Y0)*(a.y0-a.y1), fx = u=>u.toFixed(2);
+  const X = px(R), Yt = py(yS), Yb = py(yN(R)), d = Yb>Yt ? 1 : -1;   /* d = -1: noise above signal */
+  if(Math.abs(Yb-Yt) > 20)
+    a.raw(`<line x1="${fx(X)}" y1="${fx(Yt+7*d)}" x2="${fx(X)}" y2="${fx(Yb-7*d)}" stroke="${C.mid}" stroke-width="2"/>`
+      + `<path d="M${fx(X)},${fx(Yt)} l-5,${9*d} h10 Z M${fx(X)},${fx(Yb)} l-5,${-9*d} h10 Z" fill="${C.mid}"/>`);
+  a.point(R, yN(R), {color:C.err, r:4.6});
+  const sq = ALPHA_SINE+lvl+20*R*Math.log10(2);
+  a.note(R, (yS+yN(R))/2, '\\mathrm{SQNR}='+P.fmt(sq,1)+'\\ \\mathrm{dB}', {tex:true, fs:15, color:C.mid,
+    anchor: R>7 ? 'end' : 'start', dx: R>7 ? -10 : 10});
   return a.svg();
 }
 
@@ -2271,10 +2287,11 @@ REAL_QUANT,
   {t:'title', text:'Signal-to-quantization-noise ratio'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true,
-      live:{controls:[{k:'lvl', label:'level', min:-40, max:0, step:5, v:-20, show:v=>'$'+v+'$ dB'}]},
+      live:{controls:[{k:'R', label:'$R$', min:1, max:12, step:1, v:8, show:v=>'$'+v+'$ bits'},
+        {k:'lvl', label:'level', min:-40, max:0, step:5, v:0, show:v=>'$'+v+'$ dB'}]},
       svg:figSqnr,
-      caption:'Drag the input level below full scale. The line keeps its slope of $6.02$ dB a bit and drops by the level.'},
-    {t:'legend', items:[['in','full-scale sinusoid'],['mid','at the chosen level']], at:'tl-axis'}
+      caption:'Powers in dB relative to $m_{\\max}^{2}$. Each bit drops the noise by $6.02$ dB. A lower input level drops the signal line, and the SQNR falls by the same amount.'},
+    {t:'legend', items:[['in','signal $P_M$'],['err','noise $E[Q^{2}]$'],['mid','SQNR']], at:'tr'}
   ], right:[
     {t:'eq', label:'Uniform quantizer', tex:'\\begin{aligned}\\mathrm{SQNR}&=\\frac{P_M}{E[Q^{2}]}\\\\&=\\frac{3P_M}{m_{\\max}^{2}}\\,2^{2R}\\end{aligned}',
       note:'Substitute $E[Q^{2}]=m_{\\max}^{2}/(3\\cdot2^{2R})$.'},
