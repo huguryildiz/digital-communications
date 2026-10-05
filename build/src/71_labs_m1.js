@@ -223,7 +223,12 @@ Object.assign(LABS, (function(){
       a1.stem(pts,{color:P.COL.mid,r:4});
       a1.curve(gr,{color:P.COL.out,width:2.2});
 
-      const a2 = P.Axes({w:ph?300:680,h:ph?200:gh(160),xr:[0,tmax],yr:[-0.55,0.55],
+      const n = 800; let se=0, me=0;
+      for(let i=0;i<=n;i++){ const t=tmax*i/n; const e=Math.abs(err(t)); se+=e*e; me=Math.max(me,e); }
+      const rms = Math.sqrt(se/(n+1));
+      // error axis grows in 0.5 steps when the error leaves ±0.5 (aliasing, coarse hold)
+      const ye = 1.1*Math.max(0.5, Math.ceil(me/0.5)*0.5);
+      const a2 = P.Axes({w:ph?300:680,h:ph?200:gh(160),xr:[0,tmax],yr:[-ye,ye],
         xlabel:'t\\;(\\text{ms})',ylabel:'g(t)-g_r(t)',pad:{l:ph?42:54,r:ph?16:24,t:22,b:40},xtarget:ph?4:6,ytarget:3});
       a2.curve(err,{color:P.COL.err,width:1.8});
 
@@ -239,9 +244,6 @@ Object.assign(LABS, (function(){
         ? T(`\\begin{gathered}g(t)=0.6\\cos(2\\pi(0.6)t)\\\\{}+0.4\\cos(2\\pi(1.0)t+0.7)\\end{gathered}`, true)
         : T(`\\begin{aligned}g(t)&=0.6\\cos(2\\pi(0.6)t)+0.4\\cos(2\\pi(1.0)t+0.7)\\\\ W&=${N(W,2)}\\ \\text{kHz}\\end{aligned}`, true);
 
-      const n = 800; let se=0, me=0;
-      for(let i=0;i<=n;i++){ const t=tmax*i/n; const e=Math.abs(err(t)); se+=e*e; me=Math.max(me,e); }
-      const rms = Math.sqrt(se/(n+1));
 
       root.querySelector('.ro').innerHTML = `
         <div><dt>fs / W</dt><dd class="${st.rate<1?'warnv':'okv'}">${N(fs/W,3)}</dd></div>
@@ -301,17 +303,21 @@ Object.assign(LABS, (function(){
     const MMAX = 4;
     let st = { levels:8, kind:'midrise', m:1.3 };
 
-    /* Region index k runs 0..L-1 across the range, from the lower boundary
-       -mmax up. Mid-rise puts a boundary at 0 (k = floor((m+mmax)/d)),
-       mid-tread puts a level at 0 (k = round((m+mmax)/d - 1/2)); both are
-       clamped to the outermost region, which is where overload shows up as
-       a region that no longer moves with m. */
+    /* Mid-rise: L regions of width d across [-mmax, mmax], a boundary at 0,
+       levels at the midpoints. Mid-tread: levels at k*d with a level at 0,
+       |k| <= floor((L-1)/2), boundaries halfway between; with L even one code
+       is left unused, as in figQuantizer. Both clamp to the outermost level;
+       `edge` is where the outer region stops keeping |q| <= d/2 (overload). */
     function region(m, Lv, kind, mmax){
       const d = 2*mmax/Lv;
-      let k = kind==='midrise' ? Math.floor((m+mmax)/d) : Math.round((m+mmax)/d - 0.5);
-      k = Math.max(0, Math.min(Lv-1, k));
-      const lo = -mmax + k*d, hi = lo + d, v = lo + d/2;
-      return { lo, hi, v, k: k+1 };
+      if(kind==='midrise'){
+        const k = Math.max(0, Math.min(Lv-1, Math.floor((m+mmax)/d)));
+        const lo = -mmax + k*d;
+        return { lo, hi: lo + d, v: lo + d/2, k: k+1, edge: mmax };
+      }
+      const K = Math.floor((Lv-1)/2);
+      const k = Math.max(-K, Math.min(K, Math.round(m/d)));
+      return { lo: (k-0.5)*d, hi: (k+0.5)*d, v: k*d, k: k+K+1, edge: (K+0.5)*d };
     }
     function draw(root){
       const Lv = st.levels, kind = st.kind, mmax = MMAX, d = 2*mmax/Lv;
@@ -319,7 +325,7 @@ Object.assign(LABS, (function(){
       const q = m => region(m, Lv, kind, mmax).v;
       const reg = region(mClamped, Lv, kind, mmax);
       const v = q(mClamped);
-      const overload = Math.abs(mClamped) > mmax;
+      const overload = Math.abs(mClamped) > reg.edge + 1e-9;
       const err = mClamped - v;
 
       const ph = PHONE(), gh = GH(root);
@@ -336,16 +342,16 @@ Object.assign(LABS, (function(){
 
       root.querySelector('.lab-eq').innerHTML = T(`L=${Lv}${(Lv&(Lv-1))===0?`,\\ R=\\log_2 L=${Math.round(Math.log2(Lv))}`:''},\\quad m_{\\max}=${N(mmax,1)}`, true);
 
-      root.querySelector('.ro').innerHTML = `
-        <div><dt>Step Δ</dt><dd>${N(d,4)}</dd></div>
-        <div><dt>Region index k</dt><dd>${overload?'—':reg.k}</dd></div>
-        <div><dt>Boundaries</dt><dd>${overload?'—':`[${N(reg.lo,3)}, ${N(reg.hi,3)}]`}</dd></div>
-        <div><dt>Level v_k</dt><dd>${N(v,4)}</dd></div>
-        <div><dt>Error q = m − v_k</dt><dd class="${overload?'warnv':''}">${N(err,4)}</dd></div>`;
+      root.querySelector('.ro').innerHTML = M(`
+        <div><dt>Step $\\Delta$</dt><dd>${N(d,4)}</dd></div>
+        <div><dt>Region $k$</dt><dd>${overload?'—':reg.k}</dd></div>
+        <div><dt>Cell</dt><dd>${overload?'—':`[${N(reg.lo,2)}, ${N(reg.hi,2)}]`}</dd></div>
+        <div><dt>Level $v_k$</dt><dd>${N(v,4)}</dd></div>
+        <div><dt>Error $q$</dt><dd class="${overload?'warnv':''}">${N(err,4)}</dd></div>`);
 
       root.querySelector('.derive').innerHTML = overload
         ? M(`<div class="note err"><span class="note-h">Overload</span>
-             $|m|=${N(Math.abs(mClamped),3)}$ exceeds $m_{\\max}=${N(mmax,1)}$. The input clips to the outermost level, and the error is no longer bounded by $\\Delta/2=${N(d/2,4)}$: here it is ${T(N(Math.abs(err),4),false)}.</div>`)
+             $|m|=${N(Math.abs(mClamped),3)}$ exceeds ${reg.edge===mmax?`$m_{\\max}=${N(mmax,1)}$`:`$${N(reg.edge,3)}$, the outer edge of the last tread`}. The input clips to the outermost level, and the error is no longer bounded by $\\Delta/2=${N(d/2,4)}$: here it is ${T(N(Math.abs(err),4),false)}.</div>`)
         : M(`<div class="note ok"><span class="note-h">Error bound holds</span>
               $|q|=|m-v_k|=${N(Math.abs(err),4)}\\le\\Delta/2=${N(d/2,4)}$. Every input inside the range is sent to the nearer level, so the error never exceeds half a step.</div>`);
 
