@@ -2603,7 +2603,7 @@ REAL_COMPANDING,
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true, svg:figPcmExample,
       caption:'The message (cyan), its samples every $0.6$ s, and the selected levels (violet). Each error is under half a step.'},
-    {t:'legend', items:[['in','$m(t)$'],['in','samples $m(nT_s)$','dot'],['mid','levels $\\mathbb{Q}(m(nT_s))$','dot']], at:'tl-axis'}
+    {t:'legend', items:[['in','$m(t)$'],['in','samples','dot'],['mid','levels','dot']], at:'tl-axis-low'}
   ], right:[
     {t:'note', kind:'def', head:'Given', html:'$m(t)=8\\,|\\operatorname{sinc}(t-2)|$, sampled every $T_s=0.6$ s, with an eight-level uniform quantizer over $[0,8]$.<div class="nsep"></div>Find the step size, the code words for $t=0,0.6,\\dots,3.6$, and the bit rate.',
       ask:{key:'m1-ex-pcm', q:'Predict the step size first.', choices:['$0.5$ V','$1$ V','$2$ V'], answer:1,
@@ -2624,7 +2624,7 @@ REAL_COMPANDING,
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true, svg:figPcmExample,
       caption:'Each sample falls in one tread and takes that tread\'s level (violet). Each error is under half a step.'},
-    {t:'legend', items:[['in','$m(t)$'],['in','samples $m(nT_s)$','dot'],['mid','levels $\\mathbb{Q}(m(nT_s))$','dot']], at:'tl-axis'}
+    {t:'legend', items:[['in','$m(t)$'],['in','samples','dot'],['mid','levels','dot']], at:'tl-axis-low'}
   ], right:[
     {t:'eq', label:'Samples', tex:'\\begin{array}{c|ccccccc}t&0&0.6&1.2&1.8&2.4&3.0&3.6\\\\t-2&-2&-1.4&-0.8&-0.2&0.4&1&1.6\\\\\\hline m(t)&0&1.73&1.87&7.48&6.05&0&1.51\\end{array}',
         note:'With $\\operatorname{sinc}(x)=\\sin(\\pi x)/(\\pi x)$: $m(0.6)=8\\,|\\sin(1.4\\pi)|/(1.4\\pi)=8(0.951)/4.398=1.73$.'},
@@ -2739,7 +2739,7 @@ REAL_COMPANDING,
       live:{controls:[{k:'D', label:'$\\Delta$', min:0.02, max:0.3, step:0.01, v:0.06, show:v=>'$'+v.toFixed(2)+'$'}]},
       svg:figDm,
       caption:'A signal with one steep rise, and the staircase that follows it one step a sample. Red shades slope overload. The ticks under the plot are the bits.'},
-    {t:'legend', items:[['in','$x[n]$'],['mid','$\\hat x[n]$'],['err','slope overload']], at:'tl-axis'}
+    {t:'legend', items:[['in','$x[n]$'],['mid','$\\hat x[n]$'],['err','slope overload']], at:'tl-axis-low'}
   ], right:[
     {t:'note', kind:'def', head:'One bit a sample', html:'Delta modulation is DPCM with a two-level quantizer. Each bit moves the staircase up or down by $\\Delta$.'},
     {t:'reveal', at:1, items:[

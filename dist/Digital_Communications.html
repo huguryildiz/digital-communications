@@ -18398,7 +18398,7 @@ REAL_COMPANDING,
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true, svg:figPcmExample,
       caption:'The message (cyan), its samples every $0.6$ s, and the selected levels (violet). Each error is under half a step.'},
-    {t:'legend', items:[['in','$m(t)$'],['in','samples $m(nT_s)$','dot'],['mid','levels $\\mathbb{Q}(m(nT_s))$','dot']], at:'tl-axis'}
+    {t:'legend', items:[['in','$m(t)$'],['in','samples','dot'],['mid','levels','dot']], at:'tl-axis-low'}
   ], right:[
     {t:'note', kind:'def', head:'Given', html:'$m(t)=8\\,|\\operatorname{sinc}(t-2)|$, sampled every $T_s=0.6$ s, with an eight-level uniform quantizer over $[0,8]$.<div class="nsep"></div>Find the step size, the code words for $t=0,0.6,\\dots,3.6$, and the bit rate.',
       ask:{key:'m1-ex-pcm', q:'Predict the step size first.', choices:['$0.5$ V','$1$ V','$2$ V'], answer:1,
@@ -18419,7 +18419,7 @@ REAL_COMPANDING,
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true, svg:figPcmExample,
       caption:'Each sample falls in one tread and takes that tread\'s level (violet). Each error is under half a step.'},
-    {t:'legend', items:[['in','$m(t)$'],['in','samples $m(nT_s)$','dot'],['mid','levels $\\mathbb{Q}(m(nT_s))$','dot']], at:'tl-axis'}
+    {t:'legend', items:[['in','$m(t)$'],['in','samples','dot'],['mid','levels','dot']], at:'tl-axis-low'}
   ], right:[
     {t:'eq', label:'Samples', tex:'\\begin{array}{c|ccccccc}t&0&0.6&1.2&1.8&2.4&3.0&3.6\\\\t-2&-2&-1.4&-0.8&-0.2&0.4&1&1.6\\\\\\hline m(t)&0&1.73&1.87&7.48&6.05&0&1.51\\end{array}',
         note:'With $\\operatorname{sinc}(x)=\\sin(\\pi x)/(\\pi x)$: $m(0.6)=8\\,|\\sin(1.4\\pi)|/(1.4\\pi)=8(0.951)/4.398=1.73$.'},
@@ -18534,7 +18534,7 @@ REAL_COMPANDING,
       live:{controls:[{k:'D', label:'$\\Delta$', min:0.02, max:0.3, step:0.01, v:0.06, show:v=>'$'+v.toFixed(2)+'$'}]},
       svg:figDm,
       caption:'A signal with one steep rise, and the staircase that follows it one step a sample. Red shades slope overload. The ticks under the plot are the bits.'},
-    {t:'legend', items:[['in','$x[n]$'],['mid','$\\hat x[n]$'],['err','slope overload']], at:'tl-axis'}
+    {t:'legend', items:[['in','$x[n]$'],['mid','$\\hat x[n]$'],['err','slope overload']], at:'tl-axis-low'}
   ], right:[
     {t:'note', kind:'def', head:'One bit a sample', html:'Delta modulation is DPCM with a two-level quantizer. Each bit moves the staircase up or down by $\\Delta$.'},
     {t:'reveal', at:1, items:[
@@ -20055,7 +20055,7 @@ const SC = [
       frames:{labels:['$s(t)$','$s(-t)$','$h(t)=s(T-t)$']},
       svg:figMatchedBuild,
       caption:'Step through the frames for the ramp $s(t)=t/T$. Reverse it in time, then shift it right by $T$.'},
-    {t:'legend', items:[['in','$s(t)$'],['h','$s(-t)$',0,1,1],['h','$h(t)=s(T-t)$',0,2]], at:'tl-axis'}
+    {t:'legend', items:[['in','$s(t)$'],['h','$s(-t)$',0,1,1],['h','$h(t)=s(T-t)$',0,2]], at:'tl-axis-low'}
   ], right:[
     {t:'eq', label:'In frequency', tex:'H_{\\mathrm{opt}}(f)=k\\,G^{*}(f)\\,e^{-j2\\pi fT}',
       note:'This is the equality condition, $\\phi_1=k\\phi_2^{*}$, with $\\phi_2=G(f)e^{j2\\pi fT}$.'},
@@ -20521,7 +20521,7 @@ REAL_DECISION,
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true, svg:figIsiTerm,
       caption:'The bits $0,0,0,1$ after a line idle at the level of a $0$, with $BT_b=0.25$. The lower panel splits the last sample into its own share and the tails of earlier bits.'},
-    {t:'legend', items:[['mid','own bit'],['err','earlier bits']], at:'tl-axis'}
+    {t:'legend', items:[['mid','own bit'],['err','earlier bits']], at:'tc'}
   ], right:[
     {t:'eq', label:'One sample', tex:'y_k=a_k(1-q)+\\sum_{m=1}^{\\infty}a_{k-m}\\,(1-q)\\,q^{m},\\qquad a_k=\\pm1',
       note:'After its bit, a response decays as $(1-q)e^{-(t-T_b)/\\tau}$. One bit later that is $(1-q)q$, $m$ bits later $(1-q)q^{m}$.'},

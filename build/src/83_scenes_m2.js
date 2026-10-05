@@ -1041,7 +1041,7 @@ const SC = [
       frames:{labels:['$s(t)$','$s(-t)$','$h(t)=s(T-t)$']},
       svg:figMatchedBuild,
       caption:'Step through the frames for the ramp $s(t)=t/T$. Reverse it in time, then shift it right by $T$.'},
-    {t:'legend', items:[['in','$s(t)$'],['h','$s(-t)$',0,1,1],['h','$h(t)=s(T-t)$',0,2]], at:'tl-axis'}
+    {t:'legend', items:[['in','$s(t)$'],['h','$s(-t)$',0,1,1],['h','$h(t)=s(T-t)$',0,2]], at:'tl-axis-low'}
   ], right:[
     {t:'eq', label:'In frequency', tex:'H_{\\mathrm{opt}}(f)=k\\,G^{*}(f)\\,e^{-j2\\pi fT}',
       note:'This is the equality condition, $\\phi_1=k\\phi_2^{*}$, with $\\phi_2=G(f)e^{j2\\pi fT}$.'},
@@ -1507,7 +1507,7 @@ REAL_DECISION,
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true, svg:figIsiTerm,
       caption:'The bits $0,0,0,1$ after a line idle at the level of a $0$, with $BT_b=0.25$. The lower panel splits the last sample into its own share and the tails of earlier bits.'},
-    {t:'legend', items:[['mid','own bit'],['err','earlier bits']], at:'tl-axis'}
+    {t:'legend', items:[['mid','own bit'],['err','earlier bits']], at:'tc'}
   ], right:[
     {t:'eq', label:'One sample', tex:'y_k=a_k(1-q)+\\sum_{m=1}^{\\infty}a_{k-m}\\,(1-q)\\,q^{m},\\qquad a_k=\\pm1',
       note:'After its bit, a response decays as $(1-q)e^{-(t-T_b)/\\tau}$. One bit later that is $(1-q)q$, $m$ bits later $(1-q)q^{m}$.'},
