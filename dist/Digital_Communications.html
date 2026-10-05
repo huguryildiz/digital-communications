@@ -16950,14 +16950,11 @@ function gaussSqnr(V, L){
   for(let i=0;i<=n;i++){ const x = a+i*h, w = (i===0||i===n) ? 1 : (i%2 ? 4 : 2); s += w*(x-q(x))**2*phi(x); }
   return -10*Math.log10(s*h/3);
 }
-const OVL = (()=>{ const pts = []; let best = [0,-1];
-  for(let V=0.4; V<=4.0001; V+=0.02){ const s = gaussSqnr(V, 8); pts.push([V, s]); if(s > best[1]) best = [V, s]; }
-  return {pts, best}; })();
 function figOverload(v){
   P.hOverride = null;
   const V = v && v.V!=null ? v.V : 1, L = 8, D = 2*V/L;
   const q = m => Math.max(-V+D/2, Math.min(V-D/2, (Math.floor(m/D)+0.5)*D));
-  const a = P.Axes({w:600, h:236, xr:[0,12], yr:[-3.2,4.4], xlabel:'t', ylabel:'m(t)',
+  const a = P.Axes({w:600, h:400, xr:[0,12], yr:[-3.2,4.4], xlabel:'t', ylabel:'m(t)',
     pad:{l:54,r:26,t:24,b:40}, xtarget:6, yticksOverride:[-3,-2,-1,0,1,2,3]});
   a.hline(V, {color:C.err, dash:'5 4', opacity:0.9}); a.hline(-V, {color:C.err, dash:'5 4', opacity:0.9});
   a.curve(GSIG, {color:C.in, n:1400});
@@ -16968,14 +16965,7 @@ function figOverload(v){
     if(Math.abs(x) > V){ seg.push([t, x]); }
     else if(seg.length){ a.poly(seg, {color:C.err, width:3.4}); seg = []; } }
   if(seg.length) a.poly(seg, {color:C.err, width:3.4});
-  const b = P.Axes({w:600, h:214, xr:[0.4,4], yr:[0,16], xlabel:'m_{\\max}/\\sigma', ylabel:'\\mathrm{SQNR}\\;(\\mathrm{dB})',
-    pad:{l:62,r:26,t:24,b:44}, xticksOverride:[0.5,1,1.5,2,2.5,3,3.5,4], yticksOverride:[0,5,10,15]});
-  b.vline(OVL.best[0], {color:C.muted, dash:'4 4'});
-  b.poly(OVL.pts, {color:C.mid, width:2.3});
-  const s = gaussSqnr(V, L);
-  b.point(V, s, {color:C.mid, r:5.5});
-  b.note(V + (V < 3 ? 0.08 : -0.08), s - 2.6, s.toFixed(2)+'\\ \\mathrm{dB}', {tex:true, fs:15, color:C.mid, anchor:V < 3 ? 'start' : 'end'});
-  return `<svg viewBox="0 0 600 450" xmlns="http://www.w3.org/2000/svg" role="img">${place(a.svg(),0,0,600,236)}${place(b.svg(),0,236,600,214)}</svg>`;
+  return a.svg();
 }
 
 /* SQNR against R for three sources, each at full range: the model lines
@@ -17886,9 +17876,9 @@ REAL_RECONSTRUCT,
     {t:'reveal', at:1, items:[
       {t:'note', kind:'def', head:'Mid-rise', html:'A decision boundary sits at zero. With $L$ even, the levels are $\\pm\\Delta/2,\\pm3\\Delta/2,\\dots$ and none of them is zero.'}]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'def', head:'Given', html:'A mid-rise quantizer has $\\Delta=1$.<div class="nsep"></div>What is the output for $m=0.2$?',
-        ask:{key:'m1-quant', choices:['$0$','$0.2$','$0.5$'], answer:2,
-          why:'$0.2$ lies in the region $(0,1]$, whose level is its midpoint $0.5$.'}}]}
+      {t:'note', kind:'def', head:'Given', html:'A mid-rise quantizer has $\\Delta=1$.<div class="nsep"></div>Which value is one of its levels?',
+        ask:{key:'m1-quant', choices:['$0$','$0.5$','$1$'], answer:1,
+          why:'The mid-rise levels are $\\pm\\Delta/2,\\pm3\\Delta/2,\\dots$, so with $\\Delta=1$ they are $\\pm0.5,\\pm1.5,\\dots$ and $0$ is not among them.'}}]}
   ]}
 ]},
 
@@ -17906,9 +17896,9 @@ REAL_RECONSTRUCT,
     {t:'reveal', at:1, items:[
       {t:'note', kind:'warn', head:'Silence', html:'A mid-rise quantizer turns a silent input with a little noise into a signal of $\\pm\\Delta/2$. A mid-tread quantizer keeps it silent.'}]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'def', head:'Given', html:'A mid-tread quantizer has $\\Delta=1$.<div class="nsep"></div>What is the output for $m=0.2$?',
-        ask:{key:'m1-quant-b', choices:['$0$','$0.2$','$0.5$'], answer:0,
-          why:'The tread around zero covers $|m|<0.5$, and its level is $0$.'}}]}
+      {t:'note', kind:'def', head:'Given', html:'A microphone in a silent room picks up a little noise around zero.<div class="nsep"></div>Which quantizer keeps it silent?',
+        ask:{key:'m1-quant-b', choices:['Mid-rise','Mid-tread','Both'], answer:1,
+          why:'Mid-tread has a level at zero, so a small input goes to exactly $0$. Mid-rise has a boundary at zero and sends it to $\\pm\\Delta/2$.'}}]}
   ]}
 ]},
 
@@ -17967,14 +17957,14 @@ REAL_RECONSTRUCT,
     {t:'fig', frame:true,
       live:{controls:[{k:'V', label:'$m_{\\max}$', min:0.5, max:4, step:0.05, v:1, show:v=>'$'+v.toFixed(2)+'\\sigma$'}]},
       svg:figOverload,
-      caption:'A signal with rare large peaks through a $3$-bit quantizer spanning $[-m_{\\max},m_{\\max}]$. Red marks the clipped peaks. The lower curve is the SQNR of a Gaussian input against the range.'},
+      caption:'A signal with rare large peaks through a $3$-bit quantizer spanning $[-m_{\\max},m_{\\max}]$. Red marks the clipped peaks.'},
     {t:'legend', items:[['in','$m(t)$'],['mid','$\\mathbb{Q}(m(t))$'],['err','clipped']], at:'tc'}
   ], right:[
     {t:'note', kind:'def', head:'Two errors', html:'<div class="cmp"><div><span class="cmp-h">Overload</span>An input beyond $\\pm m_{\\max}$ is clipped to the outer level. Its error has no bound.</div><div><span class="cmp-h">Granular noise</span>Inside the range $|q|\\le\\Delta/2$. A wider range makes $\\Delta$ and this error larger.</div></div>'},
     {t:'reveal', at:1, items:[
-      {t:'note', kind:'ok', head:'The best range', html:'For a Gaussian input and $3$ bits the SQNR peaks at $m_{\\max}=2.34\\sigma$, with $14.27$ dB. A few clipped peaks cost less than a coarser step.'}]},
+      {t:'note', kind:'ok', head:'The best range', html:'For a Gaussian input and $3$ bits the total error is smallest at $m_{\\max}=2.34\\sigma$. A few clipped peaks cost less than a coarser step.'}]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'err', head:'Common error', html:'Set $m_{\\max}$ from the rare peaks of the signal, not from its typical size. At $m_{\\max}=\\sigma$ the SQNR falls to $6.97$ dB.'}]},
+      {t:'note', kind:'err', head:'Common error', html:'Set $m_{\\max}$ from the rare peaks of the signal, not from its typical size.'}]},
     {t:'reveal', at:3, items:[
       {t:'note', kind:'def', head:'Given', html:'A $3$-bit quantizer is set to $m_{\\max}=\\sigma$ for a Gaussian input.<div class="nsep"></div>Which error dominates?',
         ask:{key:'m1-overload', choices:['Overload','Granular noise'], answer:0,
