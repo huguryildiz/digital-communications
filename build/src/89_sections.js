@@ -61,14 +61,13 @@ CONTENT.SECTIONS = {
     { n:'1.3', title:'Quantization',                   ids:[
         'm1-quant','m1-quant-b','m1-quant-walk','m1-lloydmax','m1-overload','m1-real-quant','m1-lab-n','m1-code-quant'] },
     { n:'1.4', title:'Quantization noise and SQNR',    ids:[
-        'm1-qnoise','m1-qnoise-b','m1-qnoise-c','m1-sqnr','m1-sqnr-def','m1-ex-cos','m1-ex-unif','m1-ex-gauss','m1-sqnr-sources','m1-hear-bits','m1-real-sqnr','m1-lab-a','m1-code-sqnr'] },
+        'm1-prob-review','m1-qnoise','m1-qnoise-b','m1-qnoise-c','m1-sqnr','m1-sqnr-def','m1-ex-cos','m1-ex-unif','m1-ex-gauss','m1-sqnr-sources','m1-hear-bits','m1-real-sqnr','m1-lab-a','m1-code-sqnr'] },
     { n:'1.5', title:'Non-uniform quantization',       ids:[
         'm1-nonuniform','m1-compander','m1-companding','m1-hear-mu','m1-real-companding','m1-lab-o','m1-code-companding'] },
     { n:'1.6', title:'PCM, DPCM and delta modulation', ids:[
         'm1-encode','m1-linecodes','m1-ex-pcm','m1-ex-pcm-s','m1-ex-pcm-b','m1-pcm-bw','m1-biterror','m1-dpcm','m1-dm','m1-real-pcm','m1-lab-b','m1-code-pcm'] },
-    { n:'1.7', title:'Vector quantization',            ids:['m1-vq','m1-vq-image'] },
-    { n:'1.8', title:'Speech, audio and image coding', ids:['m1-lpc','m1-t1','m1-sigmadelta','m1-jpeg'] },
-    { n:'1.9', title:'Summary',                        ids:['m1-chain','m1-quick','m1-synth','m1-projects'] }
+    { n:'1.7', title:'Coding in practice',             ids:['m1-vq','m1-vq-image','m1-lpc','m1-t1','m1-sigmadelta','m1-jpeg'] },
+    { n:'1.8', title:'Summary',                        ids:['m1-chain','m1-quick','m1-synth','m1-projects'] }
   ],
 
   M2: [

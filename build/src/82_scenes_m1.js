@@ -780,7 +780,7 @@ function figPcmExample(){
   const Ts = 0.6;
   const q = v => Math.min(7, Math.floor(v)) + 0.5;      /* eight levels, step 1 V */
   const a = P.Axes(SZ({xr:[-0.15,3.75], yr:[-0.5,9.2], xlabel:'t\\;(\\mathrm{s})', ylabel:'m(t)',
-    pad:{l:52,r:26,t:24,b:44}, xtarget:6, ytarget:4}));
+    pad:{l:52,r:26,t:24,b:44}, xstep:Ts, ytarget:4}));
   for(let k=0;k<8;k++) a.hline(k+0.5, {color:C.rule, dash:'2 5', opacity:0.9});
   a.curve(m, {color:C.in});
   for(let n=0;n<=6;n++){ const t=n*Ts, v=m(t);
@@ -1737,7 +1737,7 @@ const SC = [
   src:'CH7 s.3', dark:true, steps:0, blocks:[
   {t:'eyebrow', text:'Module 1 · Sampling, quantization and PCM'},
   {t:'title', level:1, text:'Sampling, Quantization and PCM'},
-  {t:'lede', text:'A continuous waveform becomes a bit stream in three stages: sampling, quantization and encoding.'},
+  {t:'lede', text:'A telephone call turns a voice into $64\\,000$ bits a second in three stages: sampling, quantization and encoding.'},
   {t:'cols', ratio:'c-6-6', vcenter:true, left:[
     {t:'stack', style:'--ts:1.6;gap:34px', items:[
       {t:'note', kind:'warn', head:'Result 1', html:'<span style="color:var(--graphite)">Sampling can be undone. At $f_s\\ge 2W$ the samples of a signal bandlimited to $W$ determine it exactly.</span>'},
@@ -2113,7 +2113,7 @@ REAL_RECONSTRUCT,
   {t:'title', text:'Mid-rise and mid-tread'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true, svg:()=>figQuantizer('midtread'),
-      caption:'A mid-tread quantizer with $\\Delta=1$. A level sits at the origin, and the tread around zero is one step wide.'}
+      caption:'A mid-tread quantizer with $\\Delta=1$. A tread is a flat step of the staircase. A level sits at the origin, and the tread around zero is one step wide.'}
   ], right:[
     {t:'note', kind:'def', head:'Two families', html:'<div class="cmp"><div><span class="cmp-h">Mid-rise</span>A boundary at zero. A small input goes to $\\pm\\Delta/2$.</div><div><span class="cmp-h">Mid-tread</span>A level at zero. A small input goes to exactly $0$.</div></div>'},
     {t:'reveal', at:1, items:[
@@ -2198,6 +2198,25 @@ REAL_RECONSTRUCT,
 REAL_QUANT,
 
 /* ---------------------------------------------------------------- 1.4 ---- */
+{ id:'m1-prob-review', module:'M1', nav:'Probability review', title:'Probability review',
+  objective:'Restate the density, the expectation, the power and the two densities the section uses.',
+  keywords:'probability review random variable density expectation mean power variance uniform gaussian q function',
+  budget:'a reference slide of the density, the expectation and two densities. There is nothing to draw',
+  slide:true, steps:0, blocks:[
+  {t:'eyebrow', text:'Module 1 · Quantization noise'},
+  {t:'title', text:'Probability review'},
+  {t:'cols', ratio:'c-6-6', left:[
+    {t:'eq', label:'Density and expectation', tex:'\\begin{aligned}P(a<X\\le b)&=\\int_{a}^{b}f_X(x)\\,dx\\\\E[X]&=\\int_{-\\infty}^{\\infty}x\\,f_X(x)\\,dx\\\\E[g(X)]&=\\int_{-\\infty}^{\\infty}g(x)\\,f_X(x)\\,dx\\end{aligned}',
+      note:'A density is never negative and has total area $1$. The expectation weights each value by its density.'},
+    {t:'eq', label:'Power and variance', tex:'\\begin{aligned}P_X&=E[X^{2}]\\\\\\sigma_X^{2}&=E\\bigl[(X-\\mu_X)^{2}\\bigr]\\\\&=E[X^{2}]-\\mu_X^{2}\\end{aligned}',
+      note:'Here $\\mu_X=E[X]$. Expand the square: $E[X^{2}]-2\\mu_XE[X]+\\mu_X^{2}=E[X^{2}]-\\mu_X^{2}$.'}
+  ], right:[
+    {t:'eq', label:'Two densities', tex:'\\begin{aligned}U(a,b):\\;f_X(x)&=\\frac{1}{b-a},\\quad a<x<b\\\\\\mu_X&=\\frac{a+b}{2},\\quad\\sigma_X^{2}=\\frac{(b-a)^{2}}{12}\\\\\\mathcal{N}(\\mu,\\sigma^{2}):\\;f_X(x)&=\\frac{1}{\\sqrt{2\\pi\\sigma^{2}}}\\,e^{-(x-\\mu)^{2}/2\\sigma^{2}}\\\\P\\bigl(|X-\\mu|>\\sigma\\bigr)&=2Q(1)=0.317\\end{aligned}',
+      note:'$Q(x)=\\tfrac12\\operatorname{erfc}(x/\\sqrt2)$ is the Gaussian tail. So about $32\\%$ of Gaussian samples lie outside $\\pm\\sigma$.'},
+    {t:'note', kind:'err', head:'Common error', html:'Use $P_X=E[X^{2}]$, not $\\sigma_X^{2}$, for the power of a signal with a non-zero mean. The two are equal only when $\\mu_X=0$.'}
+  ]}
+]},
+
 { id:'m1-qnoise', module:'M1', nav:'Quantization noise', title:'Quantization noise',
   objective:'Define the quantization error, bound it and state the uniform model.',
   keywords:'quantization noise error bound half step uniform model',
@@ -2609,7 +2628,7 @@ REAL_COMPANDING,
       ask:{key:'m1-ex-pcm', q:'Predict the step size first.', choices:['$0.5$ V','$1$ V','$2$ V'], answer:1,
         why:'The range $[0,8]$ is $8$ wide and there are $8$ levels, so $\\Delta=8/8=1$ V.'}},
     {t:'reveal', at:1, items:[
-      {t:'note', kind:'def', head:'Method', html:'<ol class="steps"><li>Take $\\Delta$ from the range and $L$.</li><li>Evaluate each sample.</li><li>Read the tread, then its code word.</li></ol>'}]},
+      {t:'note', kind:'def', head:'Method', html:'<ol class="steps"><li>Take $\\Delta$ from the range and $L$.</li><li>Evaluate each sample.</li><li>Find the region of each sample, then its level and code word.</li></ol>'}]},
     {t:'reveal', at:2, items:[
       {t:'eq', label:'Step and levels', tex:'\\begin{aligned}\\Delta&=\\frac{8-0}{8}=1\\ \\text{V}\\\\v_k&=\\bigl(k+\\tfrac12\\bigr)\\Delta,\\quad k=0,\\dots,7\\\\&=0.5,\\,1.5,\\,\\dots,\\,7.5\\ \\text{V}\\end{aligned}'}]}
   ]}
@@ -2623,7 +2642,7 @@ REAL_COMPANDING,
   {t:'title', text:'Worked example: samples and code words'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true, svg:figPcmExample,
-      caption:'Each sample falls in one tread and takes that tread\'s level (violet). Each error is under half a step.'},
+      caption:'Each sample falls in one region and takes that region\'s level (violet). Each error is under half a step.'},
     {t:'legend', items:[['in','$m(t)$'],['in','samples','dot'],['mid','levels','dot']], at:'tl-axis-low'}
   ], right:[
     {t:'eq', label:'Samples', tex:'\\begin{array}{c|ccccccc}t&0&0.6&1.2&1.8&2.4&3.0&3.6\\\\t-2&-2&-1.4&-0.8&-0.2&0.4&1&1.6\\\\\\hline m(t)&0&1.73&1.87&7.48&6.05&0&1.51\\end{array}',
@@ -2771,7 +2790,7 @@ REAL_PCM,
   objective:'Show why quantizing a block of samples beats quantizing each one alone.',
   keywords:'vector quantization scalar codebook block pairs smooth signal rate reduction',
   src:'CH7 s.37', slide:true, steps:3, blocks:[
-  {t:'eyebrow', text:'Module 1 · Vector quantization'},
+  {t:'eyebrow', text:'Module 1 · Coding in practice'},
   {t:'title', text:'Vector quantization'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true, svg:()=>figPairLattice(16, APP.state.step>=2),
@@ -2794,7 +2813,7 @@ REAL_PCM,
   objective:'Work the size of a quantized image and name what is lost.',
   keywords:'image quantization bits per pixel kib banding contouring lossy compression',
   src:'CH7 s.37', slide:true, steps:3, blocks:[
-  {t:'eyebrow', text:'Module 1 · Vector quantization'},
+  {t:'eyebrow', text:'Module 1 · Coding in practice'},
   {t:'title', text:'Image quantization'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, svg:figImageQuant,
@@ -2820,7 +2839,7 @@ REAL_PCM,
   objective:'Send the settings of a model of the voice in place of its samples.',
   keywords:'lpc linear predictive coding analysis synthesis vocal tract all pole filter pitch voiced unvoiced 2.4 kb/s frames listen',
   slide:true, steps:3, blocks:[
-  {t:'eyebrow', text:'Module 1 · Speech, audio and image coding'},
+  {t:'eyebrow', text:'Module 1 · Coding in practice'},
   {t:'title', text:'Linear predictive coding'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true,
@@ -2849,7 +2868,7 @@ REAL_PCM,
   objective:'Share one line among 24 PCM calls by giving each a slot in every frame.',
   keywords:'time division multiplexing tdm t1 ds-1 frame 193 bits 1.544 mb/s 24 calls framing bit e1 hierarchy frames',
   slide:true, steps:3, blocks:[
-  {t:'eyebrow', text:'Module 1 · Speech, audio and image coding'},
+  {t:'eyebrow', text:'Module 1 · Coding in practice'},
   {t:'title', text:'Time-division multiplexing and T1'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true,
@@ -2874,7 +2893,7 @@ REAL_PCM,
   objective:'Convert with one bit a sample by sampling far above the Nyquist rate and filtering.',
   keywords:'oversampling sigma delta modulator one bit converter cd player 256 times 11.2896 mhz integrator lowpass filter slider',
   slide:true, steps:3, blocks:[
-  {t:'eyebrow', text:'Module 1 · Speech, audio and image coding'},
+  {t:'eyebrow', text:'Module 1 · Coding in practice'},
   {t:'title', text:'Oversampling and sigma-delta conversion'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true,
@@ -2900,7 +2919,7 @@ REAL_PCM,
   objective:'Quantize the cosine transform of each image block, so that most coefficients become zero.',
   keywords:'jpeg transform coding discrete cosine transform dct 8 by 8 blocks quantization table zigzag blocking quality slider',
   slide:true, steps:3, blocks:[
-  {t:'eyebrow', text:'Module 1 · Speech, audio and image coding'},
+  {t:'eyebrow', text:'Module 1 · Coding in practice'},
   {t:'title', text:'Transform coding and JPEG'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true,

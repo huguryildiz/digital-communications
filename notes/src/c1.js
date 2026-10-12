@@ -1090,7 +1090,7 @@ window.C1 = [
 
 /* ================= CHAPTER 1 ================= */
 {t:'h1', num:'CHAPTER 1', text:'The transition from analog to digital'},
-{t:'p', lead:true, text:'A continuous waveform becomes a bit stream in three stages: sampling, quantization and encoding.'},
+{t:'p', lead:true, text:'A telephone call turns a voice into $64\\,000$ bits a second in three stages: sampling, quantization and encoding. The voice is sampled $8000$ times a second, and each sample is written in $8$ bits.'},
 {t:'p', text:'Two results carry through the chapter. Sampling can be undone. At $f_s\\ge 2W$ the samples of a signal bandlimited to $W$ determine it exactly. Quantization cannot be undone. Each extra bit divides the error power by four, which is about $6$ dB of signal-to-quantization-noise ratio.'},
 
 /* ---------------------------------------------------------------- 1.1 */
@@ -1251,7 +1251,7 @@ window.C1 = [
  ['Mid-rise','a boundary','goes to $\\pm\\Delta/2$'],
  ['Mid-tread','a level','goes to exactly $0$']
 ]},
-{t:'fig', svg:()=>narrow(figQuantizer('midtread'),60), cap:'A mid-tread quantizer with $\\Delta=1$. A level sits at the origin, and the tread around zero is one step wide.', short:'A mid-tread quantizer.'},
+{t:'fig', svg:()=>narrow(figQuantizer('midtread'),60), cap:'A mid-tread quantizer with $\\Delta=1$. A tread is a flat step of the staircase. A level sits at the origin, and the tread around zero is one step wide.', short:'A mid-tread quantizer.'},
 {t:'box', kind:'warn', hd:'Silence', html:'A mid-rise quantizer turns a silent input with a little noise into a signal of $\\pm\\Delta/2$. A mid-tread quantizer keeps it silent.'},
 {t:'p', text:'For example, a mid-tread quantizer with $\\Delta=1$ maps $m=0.2$ to $0$. The tread around zero covers $|m|<0.5$, and its level is $0$.'},
 
@@ -1297,6 +1297,17 @@ window.C1 = [
 
 /* ---------------------------------------------------------------- 1.4 */
 {t:'h2', num:'1.4', text:'Quantization noise and SQNR'},
+
+{t:'h3', text:'Probability review'},
+{t:'p', text:'This section treats the quantization error as a random variable. A <b>random variable</b> $X$ is described by its <b>density</b> $f_X(x)$. A density is never negative and has total area $1$. The probability of an interval is the area under the density over that interval.'},
+{t:'p', text:'The <b>expectation</b> weights each value by its density. The same rule gives the expectation of any function $g(X)$, with no new density.'},
+{t:'eqbox', cap:'Density and expectation', tex:'\\begin{aligned}P(a<X\\le b)&=\\int_{a}^{b}f_X(x)\\,dx\\\\E[X]&=\\int_{-\\infty}^{\\infty}x\\,f_X(x)\\,dx\\\\E[g(X)]&=\\int_{-\\infty}^{\\infty}g(x)\\,f_X(x)\\,dx\\end{aligned}'},
+{t:'p', text:'The <b>power</b> of $X$ is its mean-square value. The <b>variance</b> is the power of $X$ about its mean $\\mu_X=E[X]$. Expand the square and take the expectation term by term: $E[X^{2}]-2\\mu_XE[X]+\\mu_X^{2}=E[X^{2}]-\\mu_X^{2}$.'},
+{t:'eqbox', cap:'Power and variance', tex:'\\begin{aligned}P_X&=E[X^{2}]\\\\\\sigma_X^{2}&=E\\bigl[(X-\\mu_X)^{2}\\bigr]\\\\&=E[X^{2}]-\\mu_X^{2}\\end{aligned}'},
+{t:'p', text:'Two densities appear below. The uniform density $U(a,b)$ is flat on $(a,b)$. The Gaussian density $\\mathcal{N}(\\mu,\\sigma^{2})$ is the bell curve with mean $\\mu$ and variance $\\sigma^{2}$.'},
+{t:'eqbox', cap:'Two densities', tex:'\\begin{aligned}U(a,b):\\;f_X(x)&=\\frac{1}{b-a},\\quad a<x<b\\\\\\mu_X&=\\frac{a+b}{2},\\quad\\sigma_X^{2}=\\frac{(b-a)^{2}}{12}\\\\\\mathcal{N}(\\mu,\\sigma^{2}):\\;f_X(x)&=\\frac{1}{\\sqrt{2\\pi\\sigma^{2}}}\\,e^{-(x-\\mu)^{2}/2\\sigma^{2}}\\\\P\\bigl(|X-\\mu|>\\sigma\\bigr)&=2Q(1)=0.317\\end{aligned}',
+ after:'$Q(x)=\\tfrac12\\operatorname{erfc}(x/\\sqrt2)$ is the Gaussian tail. So about $32\\%$ of Gaussian samples lie outside $\\pm\\sigma$.'},
+{t:'box', kind:'err', hd:'Common error', html:'Use $P_X=E[X^{2}]$, not $\\sigma_X^{2}$, for the power of a signal with a non-zero mean. The two are equal only when $\\mu_X=0$.'},
 
 {t:'h3', text:'Quantization noise'},
 {t:'p', text:'The <b>quantization error</b> is the difference between the input and its level.'},
@@ -1455,7 +1466,7 @@ window.C1 = [
 {t:'ex', hd:'Example 1.5 — PCM encoding of a sinc pulse', rows:[
  ['Given','$m(t)=8\\,|\\operatorname{sinc}(t-2)|$, with $\\operatorname{sinc}(x)=\\sin(\\pi x)/(\\pi x)$. It is sampled every $T_s=0.6$ s and quantized by an eight-level uniform quantizer over $[0,8]$.'],
  ['Find','The step size, the code words for $t=0,0.6,\\dots,3.6$, and the bit rate.'],
- ['Method','Take $\\Delta$ from the range and $L$. Evaluate each sample. Read the tread it falls in, then its code word. The bit rate is $R_b=R\\,f_s$.'],
+ ['Method','Take $\\Delta$ from the range and $L$. Evaluate each sample. Find the region of each sample, then its level and code word. The bit rate is $R_b=R\\,f_s$.'],
  ['Solution','The step and the levels come from the range $[0,8]$ and $L=8$. $$\\begin{aligned}\\Delta&=\\frac{8-0}{8}=1\\ \\text{V}\\\\v_k&=\\bigl(k+\\tfrac12\\bigr)\\Delta,\\quad k=0,\\dots,7\\\\&=0.5,\\,1.5,\\,\\dots,\\,7.5\\ \\text{V}\\end{aligned}$$ Evaluate the samples. For instance, $m(0.6)=8\\,|\\sin(1.4\\pi)|/(1.4\\pi)=8(0.951)/4.398=1.73$. $$\\begin{array}{c|ccccccc}t&0&0.6&1.2&1.8&2.4&3.0&3.6\\\\t-2&-2&-1.4&-0.8&-0.2&0.4&1&1.6\\\\\\hline m(t)&0&1.73&1.87&7.48&6.05&0&1.51\\end{array}$$ Each sample takes the level of its tread. The index is $k=v/\\Delta-\\tfrac12$, written in three bits. $$\\begin{array}{c|ccccccc}v&0.5&1.5&1.5&7.5&6.5&0.5&1.5\\\\k&0&1&1&7&6&0&1\\\\\\hline\\text{code}&000&001&001&111&110&000&001\\end{array}$$ Three bits a sample give the bit rate and the bit duration. $$\\begin{aligned}f_s&=\\frac{1}{T_s}=\\frac{1}{0.6}=1.667\\ \\text{samples/s}\\\\R_b&=R\\,f_s=\\frac{3}{0.6}=5\\ \\text{b/s}\\\\T_b&=\\frac{1}{R_b}=0.2\\ \\text{s}\\end{aligned}$$'],
  ['Check','At $t=3$ the sample is $8|\\operatorname{sinc}(1)|=0$ exactly, because $\\operatorname{sinc}$ vanishes at every non-zero integer.']
 ]},
@@ -1506,7 +1517,8 @@ window.C1 = [
 {t:'box', kind:'ok', hd:'One bit at a boundary', html:'A reading taken exactly on a sector edge can see either neighbour. With a Gray code it is off by at most one sector.'},
 
 /* ---------------------------------------------------------------- 1.7 */
-{t:'h2', num:'1.7', text:'Vector quantization'},
+{t:'h2', num:'1.7', text:'Coding in practice'},
+{t:'p', text:'PCM sends every sample on its own. The methods below spend fewer bits: they quantize samples together, predict them, or transform them first.'},
 
 {t:'h3', text:'Vector quantization'},
 {t:'box', kind:'def', hd:'Vector quantization', html:'<b>Vector quantization</b> treats $n$ samples as one point in $n$ dimensions and sends the nearest point of a <b>codebook</b>. Scalar quantization is the case $n=1$.'},
@@ -1527,9 +1539,6 @@ window.C1 = [
 {t:'fig', svg:()=>narrow(figImageRamp(),66), cap:'A grey ramp from $0$ to $1$ through a uniform quantizer with $L=8$ levels. Below it is the size of a $512\\times512$ image at $3$ bits a pixel.', short:'Image quantization.'},
 {t:'box', kind:'warn', hd:'Banding', html:'Coarse levels turn a smooth gradient into flat steps. The eye reads the step edges as contours that the scene never had.'},
 {t:'p', text:'For example, a $256\\times256$ image with $L=64$ levels needs $R=\\log_2 64=6$ bits a pixel. Its size is $256^{2}(6)/8=49\\,152$ bytes, or $48$ KiB.'},
-
-/* ---------------------------------------------------------------- 1.8 */
-{t:'h2', num:'1.8', text:'Speech, audio and image coding'},
 
 {t:'h3', text:'Linear predictive coding'},
 {t:'box', kind:'def', hd:'A model, not a waveform', html:'<b>Linear predictive coding</b> (LPC) measures a model of the voice every $20$ ms and sends its settings. The receiver runs the model to make the speech again.'},
@@ -1565,7 +1574,7 @@ window.C1 = [
 {t:'p', text:'For example, a $512\\times512$ picture coded at $0.5$ bit a pixel takes $512^{2}(0.5)/8=16\\,384$ bytes, or $16$ KiB. That is sixteen times less than at $8$ bits a pixel.'},
 
 /* ---------------------------------------------------------------- 1.9 */
-{t:'h2', num:'1.9', text:'Summary'},
+{t:'h2', num:'1.8', text:'Summary'},
 
 {t:'h3', text:'From sound to bits'},
 {t:'p', text:'One signal passes through the whole chain in four stages.'},
