@@ -723,6 +723,8 @@ const G = (()=>{
   const sincPath = (x0,w,y0,h,col) => ln('M'+[...Array(81)].map((_,k)=>{ const u=-4+8*k/80;
     return (x0+w*k/80).toFixed(1)+','+(y0-h*sinc(u)).toFixed(1); }).join('L'), col, 1.8);
   return {
+    white:  sv(ln('M1 38 H91',AX,1)+ln('M4 18 H88',CY)+ln('M46 38 V6',VI,1.6)),
+    filt:   sv(ln('M1 38 H91',AX,1)+ln('M4 16 H88',CY,1.4)+ln(bell(46,11,26,38),GR)),
     mf:     sv(ln('M1 38 H91',AX,1)+ln('M8 38 V14 H40 V38',CY,1.6)+ln('M46 38 L66 8 L86 38',VI)),
     snr:    sv(ln('M1 38 H91',AX,1)+ln('M10 36 Q46 -8 82 36',AM)+ln('M10 36 Q46 10 82 36',CY,1.6)),
     space:  sv(ln('M4 24 H88',AX,1)+`<circle cx="20" cy="24" r="4.5" fill="${CY}"/><circle cx="72" cy="24" r="4.5" fill="${CY}"/>`
@@ -1884,9 +1886,13 @@ REAL_NYQUIST,
   dark:true, steps:1, blocks:[
   {t:'eyebrow', text:'Module 2 · Summary'},
   {t:'title', text:'Module 2 summary'},
-  /* Twelve results as prompts, in the order of the module: the student answers
+  /* Fourteen results as prompts, in the order of the module: the student answers
      each one aloud, then opens the card. */
   {t:'raw', html:()=>RECALL.deck('m2', [
+    {q:'What is white noise?', glyph:G.white,
+     a:'Noise with $S_W(f)=N_0/2$ at every $f$, so $R_W(\\tau)=\\frac{N_0}{2}\\delta(\\tau)$: values at different times are uncorrelated.'},
+    {q:'What does a filter do to a random signal?', glyph:G.filt,
+     a:'$S_Y(f)=|H(f)|^{2}S_X(f)$. White noise then has power $P_Y=\\frac{N_0}{2}\\int|H(f)|^{2}df=N_0B_{\\text{neq}}H_{\\max}^{2}$.'},
     {q:'Which filter gives the largest peak SNR?', glyph:G.mf,
      a:'The <b>matched filter</b> $h(t)=k\\,g(T-t)$, or $H(f)=k\\,G^{*}(f)\\,e^{-j2\\pi fT}$, sampled at $t=T$.'},
     {q:'What is that largest peak SNR?', glyph:G.snr,

@@ -1,7 +1,7 @@
 /* ==========================================================================
    web/fig.js — Figure 1 on the cover page, drawn from the scroll position.
 
-   Section 2.3 of the course, the decision and its error, in three steps:
+   Section 2.4 of the course, the decision and its error, in three steps:
      1. twelve bits leave the transmitter as a Manchester waveform s(t)
         (IEEE 802.3: a 1 rises in the middle of its cell, a 0 falls),
         drawn over a dashed trace of the whole word; three are sent when

@@ -1,9 +1,9 @@
 /* ==========================================================================
    Module 2 — five visual scenes added to the module.
 
-   One slide in 2.4 puts noise on the eye diagram and reads the error count
-   off the samples at the sampling instant. Section 2.6 is a survey, like 1.7
-   and 1.8: four slides on what a real link adds to the receiver of 2.1–2.5,
+   One slide in 2.5 puts noise on the eye diagram and reads the error count
+   off the samples at the sampling instant. Section 2.7 is a survey, like 1.7
+   and 1.8: four slides on what a real link adds to the receiver of 2.2–2.6,
    each carried by one animated or live figure and little mathematics. The
    equalizer is the book's 10.5.2, symbol timing 8.9.1, the power spectrum
    10.2 and regenerative repeaters 8.10; the addresses and anchors live in

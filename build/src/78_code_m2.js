@@ -11,6 +11,7 @@
    it prints with `out`.
    ========================================================================== */
 const CODE_BANKS_M2 = {
+  'm2-code-random':   ['rp-phase', 'rp-psd', 'rp-rc', 'rp-lpf'],
   'm2-code-matched':  ['mf-rect', 'mf-instant', 'mf-shapes'],
   'm2-code-demod':    ['dem-basis', 'dem-two', 'dem-var'],
   'm2-code-decision': ['dec-example', 'dec-curve', 'dec-scan'],
@@ -21,6 +22,175 @@ const CODE_BANKS_M2 = {
 const CODE_M2 = {
 
 /* -------------------------------------------------------------- 2.1 ---- */
+'rp-phase': {
+  title:'Ensemble averages of a random-phase sinusoid',
+  what:'Averages $X(t)=A\\cos(2\\pi f_0t+\\Theta)$ over 360 equally spaced phases at one time $t$. It prints the mean, $R_X(\\tau)$ at three lags and the power.',
+  try:'Change $t$ to 0.7 ms. Predict which printed numbers change before you run it.',
+  out:'E[X(t)] = 0.0000 V\nR_X(0.00 ms) =  4.5000 V^2   theory  4.5000 V^2\nR_X(0.25 ms) =  0.0000 V^2   theory  0.0000 V^2\nR_X(0.50 ms) = -4.5000 V^2   theory -4.5000 V^2\nP_X = R_X(0) = 4.5000 V^2',
+  m:`% X(t) = A cos(2 pi f0 t + Theta), Theta uniform: average over M equal phases
+A = 3; f0 = 1e3; M = 360; t = 0.2e-3;
+theta = 2*pi*(0:M-1)/M;                      % the ensemble of phases
+X = @(t) A*cos(2*pi*f0*t + theta);           % one value per sample function
+mX = mean(X(t));
+if abs(mX) < 1e-9, mX = 0; end               % rounding error, not a mean
+fprintf('E[X(t)] = %.4f V\\n', mX)
+for tau = [0 0.25 0.5]*1e-3
+    R = mean(X(t).*X(t+tau));
+    if abs(R) < 1e-9, R = 0; end
+    Rth = A^2/2*cos(2*pi*f0*tau);            % theory (A^2/2) cos(2 pi f0 tau)
+    fprintf('R_X(%.2f ms) = %7.4f V^2   theory %7.4f V^2\\n', tau*1e3, R, Rth)
+end
+fprintf('P_X = R_X(0) = %.4f V^2\\n', mean(X(t).^2))
+
+tt = linspace(0, 2e-3, 400)';
+plot(tt*1e3, A*cos(2*pi*f0*tt + theta(1:72:end)), 'LineWidth', 1.2), grid on
+xlabel('t (ms)'), ylabel('x(t) (V)')`,
+  py:`import numpy as np
+import matplotlib.pyplot as plt
+
+# X(t) = A cos(2 pi f0 t + Theta), Theta uniform: average over M equal phases
+A, f0, M, t = 3, 1e3, 360, 0.2e-3
+theta = 2*np.pi*np.arange(M)/M               # the ensemble of phases
+X = lambda t: A*np.cos(2*np.pi*f0*t + theta) # one value per sample function
+mX = np.mean(X(t))
+if abs(mX) < 1e-9: mX = 0.0                  # rounding error, not a mean
+print(f'E[X(t)] = {mX:.4f} V')
+for tau in np.array([0, 0.25, 0.5])*1e-3:
+    R = np.mean(X(t)*X(t+tau))
+    if abs(R) < 1e-9: R = 0.0
+    Rth = A**2/2*np.cos(2*np.pi*f0*tau)      # theory (A^2/2) cos(2 pi f0 tau)
+    print(f'R_X({tau*1e3:.2f} ms) = {R:7.4f} V^2   theory {Rth:7.4f} V^2')
+print(f'P_X = R_X(0) = {np.mean(X(t)**2):.4f} V^2')
+
+tt = np.linspace(0, 2e-3, 400)[:, None]
+plt.plot(tt*1e3, A*np.cos(2*np.pi*f0*tt + theta[::72]), linewidth=1.2)
+plt.xlabel(r'$t$ (ms)'); plt.ylabel(r'$x(t)$ (V)'); plt.grid(True)
+plt.show()`},
+
+'rp-psd': {
+  title:'The Wiener–Khinchin relation',
+  what:'Transforms $R_X(\\tau)=e^{-|\\tau|/\\tau_c}$ numerically and prints $S_X(f)$ beside $2\\tau_c/(1+(2\\pi f\\tau_c)^2)$. The area under $S_X(f)$ gives back the power $R_X(0)$.',
+  try:'Halve $\\tau_c$. Predict $S_X(0)$ and the half-power frequency before you run it.',
+  out:'f =    0.0 Hz   S_X = 2.0000e-03 W/Hz   theory 2.0000e-03 W/Hz\nf =  159.2 Hz   S_X = 1.0000e-03 W/Hz   theory 1.0000e-03 W/Hz\nf = 1000.0 Hz   S_X = 4.9409e-05 W/Hz   theory 4.9409e-05 W/Hz\nP_X = sum of S_X df = 1.0000 W   R_X(0) = 1 W',
+  m:`% R_X(tau) = exp(-|tau|/tauc); Wiener-Khinchin: S_X(f) is its Fourier transform
+tauc = 1e-3; dtau = 1e-6;
+tau = (-20000:20000)*dtau;                   % |tau| <= 20 ms, R_X is 2e-9 at the ends
+R = exp(-abs(tau)/tauc);
+for f = [0 1/(2*pi*tauc) 1e3]
+    S = real(sum(R.*exp(-1j*2*pi*f*tau))*dtau);   % Riemann sum of the transform
+    Sth = 2*tauc/(1 + (2*pi*f*tauc)^2);
+    fprintf('f = %6.1f Hz   S_X = %.4e W/Hz   theory %.4e W/Hz\\n', f, S, Sth)
+end
+N = numel(tau); df = 1/(N*dtau);
+Sall = fftshift(abs(fft(R)))*dtau;           % S_X on the DFT grid
+fprintf('P_X = sum of S_X df = %.4f W   R_X(0) = 1 W\\n', sum(Sall)*df)
+
+f = (-(N-1)/2:(N-1)/2)*df;
+k = abs(f) <= 3e3;
+plot(f(k), Sall(k), 'LineWidth', 1.5), grid on
+xlabel('f (Hz)'), ylabel('S_X(f) (W/Hz)')`,
+  py:`import numpy as np
+import matplotlib.pyplot as plt
+
+# R_X(tau) = exp(-|tau|/tauc); Wiener-Khinchin: S_X(f) is its Fourier transform
+tauc, dtau = 1e-3, 1e-6
+tau = np.arange(-20000, 20001)*dtau          # |tau| <= 20 ms, R_X is 2e-9 at the ends
+R = np.exp(-np.abs(tau)/tauc)
+for f in [0, 1/(2*np.pi*tauc), 1e3]:
+    S = np.real(np.sum(R*np.exp(-1j*2*np.pi*f*tau))*dtau)   # Riemann sum
+    Sth = 2*tauc/(1 + (2*np.pi*f*tauc)**2)
+    print(f'f = {f:6.1f} Hz   S_X = {S:.4e} W/Hz   theory {Sth:.4e} W/Hz')
+N = len(tau); df = 1/(N*dtau)
+Sall = np.fft.fftshift(np.abs(np.fft.fft(R)))*dtau  # S_X on the DFT grid
+print(f'P_X = sum of S_X df = {np.sum(Sall)*df:.4f} W   R_X(0) = 1 W')
+
+f = (np.arange(N) - (N-1)//2)*df
+k = np.abs(f) <= 3e3
+plt.plot(f[k], Sall[k], linewidth=1.5)
+plt.xlabel(r'$f$ (Hz)'); plt.ylabel(r'$S_X(f)$ (W/Hz)'); plt.grid(True)
+plt.show()`},
+
+'rp-rc': {
+  title:'White noise through an RC filter',
+  what:'Integrates $S_Y(f)=(N_0/2)|H(f)|^2$ for an RC lowpass filter and prints the output power. It compares the noise-equivalent bandwidth with the 3 dB bandwidth.',
+  try:'Double $RC$. Predict the new $P_Y$ and $B_{\\mathrm{neq}}$ before you run it.',
+  out:'P_Y = 5.000e-06 W   theory N0/(4RC) = 5.000e-06 W\nB_neq = 250.0 Hz   f_3dB = 159.2 Hz\nN0*f_3dB = 3.18e-06 W, the wrong answer from the 3 dB bandwidth',
+  m:`% White noise, N0/2 = 1e-8 W/Hz, through an RC lowpass filter, RC = 1 ms
+N0 = 2e-8; RC = 1e-3;
+H2 = @(f) 1./(1 + (2*pi*f*RC).^2);           % |H(f)|^2
+df = 10; f = -1e7:df:1e7;                    % |f| <= 10 MHz, tail 1e-5 of P_Y
+PY = sum(N0/2*H2(f))*df;
+Bneq = PY/N0;                                % P_Y = N0*Bneq*|H(0)|^2
+f3 = 1/(2*pi*RC);
+fprintf('P_Y = %.3e W   theory N0/(4RC) = %.3e W\\n', PY, N0/(4*RC))
+fprintf('B_neq = %.1f Hz   f_3dB = %.1f Hz\\n', Bneq, f3)
+fprintf('N0*f_3dB = %.2e W, the wrong answer from the 3 dB bandwidth\\n', N0*f3)
+
+fp = linspace(-1e3, 1e3, 801);
+plot(fp, N0/2*H2(fp), fp, N0/2*(abs(fp) <= Bneq), '--', 'LineWidth', 1.5), grid on
+xlabel('f (Hz)'), ylabel('S_Y(f) (W/Hz)'), legend('S_Y(f)', 'width 2B_{neq}')`,
+  py:`import numpy as np
+import matplotlib.pyplot as plt
+
+# White noise, N0/2 = 1e-8 W/Hz, through an RC lowpass filter, RC = 1 ms
+N0, RC = 2e-8, 1e-3
+H2 = lambda f: 1/(1 + (2*np.pi*f*RC)**2)     # |H(f)|^2
+df = 10; f = np.arange(-1e6, 1e6 + 1)*df     # |f| <= 10 MHz, tail 1e-5 of P_Y
+PY = np.sum(N0/2*H2(f))*df
+Bneq = PY/N0                                 # P_Y = N0*Bneq*|H(0)|^2
+f3 = 1/(2*np.pi*RC)
+print(f'P_Y = {PY:.3e} W   theory N0/(4RC) = {N0/(4*RC):.3e} W')
+print(f'B_neq = {Bneq:.1f} Hz   f_3dB = {f3:.1f} Hz')
+print(f'N0*f_3dB = {N0*f3:.2e} W, the wrong answer from the 3 dB bandwidth')
+
+fp = np.linspace(-1e3, 1e3, 801)
+plt.plot(fp, N0/2*H2(fp), fp, N0/2*(np.abs(fp) <= Bneq), '--', linewidth=1.5)
+plt.xlabel(r'$f$ (Hz)'); plt.ylabel(r'$S_Y(f)$ (W/Hz)'); plt.grid(True)
+plt.legend([r'$S_Y(f)$', r'width $2B_{\\mathrm{neq}}$'])
+plt.show()`},
+
+'rp-lpf': {
+  title:'White noise through an ideal lowpass filter',
+  what:'Takes the inverse transform of the flat band $|f|<B$ and prints $R_Y(\\tau)$ at four lags. Its zeros at $k/(2B)$ make samples $1/(2B)$ apart uncorrelated.',
+  try:'Set $B=2$ MHz. Predict $P_Y$ and the first zero of $R_Y(\\tau)$ before you run it.',
+  out:'P_Y = N0*B = 0.0200 W   1/(2B) = 0.50 us\nR_Y(0.00 us) = 0.020000 W   theory 0.020000 W\nR_Y(0.25 us) = 0.012732 W   theory 0.012732 W\nR_Y(0.50 us) = 0.000000 W   theory 0.000000 W\nR_Y(1.00 us) = 0.000000 W   theory 0.000000 W',
+  m:`% White noise, N0/2 = 1e-8 W/Hz, through an ideal lowpass filter of bandwidth B
+N0 = 2e-8; B = 1e6; df = B/1000;
+f = -B+df/2 : df : B-df/2;                   % midpoints across the band |f| < B
+sincf = @(x) (x == 0) + sin(pi*x)./(pi*x + (x == 0));
+fprintf('P_Y = N0*B = %.4f W   1/(2B) = %.2f us\\n', N0*B, 1e6/(2*B))
+for tau = [0 0.25 0.5 1]*1e-6
+    RY = sum(N0/2*cos(2*pi*f*tau))*df;       % numerical inverse transform
+    v = [RY, N0*B*sincf(2*B*tau)];
+    v(abs(v) < 1e-12) = 0;                   % rounding error, not a value
+    fprintf('R_Y(%.2f us) = %.6f W   theory %.6f W\\n', tau*1e6, v(1), v(2))
+end
+
+tt = linspace(-3e-6, 3e-6, 601);
+RY = N0/2*df*sum(cos(2*pi*f'*tt), 1);        % inverse transform at every lag
+plot(tt*1e6, RY, 'LineWidth', 1.5), grid on
+xlabel('\\tau (\\mus)'), ylabel('R_Y(\\tau) (W)')`,
+  py:`import numpy as np
+import matplotlib.pyplot as plt
+
+# White noise, N0/2 = 1e-8 W/Hz, through an ideal lowpass filter of bandwidth B
+N0, B = 2e-8, 1e6
+df = B/1000
+f = -B + df/2 + np.arange(2000)*df           # midpoints across the band |f| < B
+print(f'P_Y = N0*B = {N0*B:.4f} W   1/(2B) = {1e6/(2*B):.2f} us')
+for tau in np.array([0, 0.25, 0.5, 1])*1e-6:
+    RY = np.sum(N0/2*np.cos(2*np.pi*f*tau))*df   # numerical inverse transform
+    v = np.array([RY, N0*B*np.sinc(2*B*tau)])
+    v[np.abs(v) < 1e-12] = 0                 # rounding error, not a value
+    print(f'R_Y({tau*1e6:.2f} us) = {v[0]:.6f} W   theory {v[1]:.6f} W')
+
+tt = np.linspace(-3e-6, 3e-6, 601)
+RY = N0/2*df*np.sum(np.cos(2*np.pi*f[:, None]*tt), axis=0)   # every lag
+plt.plot(tt*1e6, RY, linewidth=1.5)
+plt.xlabel(r'$\\tau$ ($\\mu$s)'); plt.ylabel(r'$R_Y(\\tau)$ (W)'); plt.grid(True)
+plt.show()`},
+
+/* -------------------------------------------------------------- 2.2 ---- */
 'mf-rect': {
   title:'The matched filter output of a rectangular pulse',
   what:'Filters $s(t)=A$ on $0\\le t\\le T$ with its matched filter $h(t)=s(T-t)$ and prints the peak output and $(\\mathrm{SNR})_o=2E/N_0$.',
@@ -151,7 +321,7 @@ plt.plot(t/T, raw[0], t/T, raw[1], t/T, raw[2], linewidth=1.5)
 plt.xlabel(r'$t/T$'); plt.ylabel(r'pulse shape'); plt.legend(shapes); plt.grid(True)
 plt.show()`},
 
-/* -------------------------------------------------------------- 2.2 ---- */
+/* -------------------------------------------------------------- 2.3 ---- */
 'dem-basis': {
   title:'The rectangular basis function',
   what:'Builds $\\psi(t)=1/\\sqrt{T_b}$ on $[0,T_b]$ and prints $\\int\\psi^2$, the bit energy $E_b$, and the two signal points $s_0,s_1=\\mp\\sqrt{E_b}$.',
@@ -267,7 +437,7 @@ plt.plot(t, psis[0]**2, t, psis[1]**2, linewidth=1.5)
 plt.xlabel(r'$t$'); plt.legend(['rectangular', 'half sine']); plt.grid(True)
 plt.show()`},
 
-/* -------------------------------------------------------------- 2.3 ---- */
+/* -------------------------------------------------------------- 2.4 ---- */
 'dec-example': {
   title:'The optimal threshold with unequal priors',
   what:'Finds $\\lambda_{\\mathrm{opt}}=\\tfrac{N_0}{4\\sqrt{E_b}}\\ln\\tfrac{P(s_0)}{P(s_1)}$ and prints both error terms and $P_e$, against $P_e$ at $\\lambda=0$.',
@@ -392,7 +562,7 @@ plt.plot(lam, np.log10(Pe), linewidth=1.5)
 plt.xlabel(r'$\\lambda$'); plt.ylabel(r'$\\log_{10}P_e$'); plt.grid(True)
 plt.show()`},
 
-/* -------------------------------------------------------------- 2.4 ---- */
+/* -------------------------------------------------------------- 2.5 ---- */
 'isi-taps': {
   title:'Interference taps of an RC channel',
   what:'Passes polar NRZ through a first-order RC lowpass and prints the wanted sample $r(T_b)$ and the first three interference taps.',
@@ -506,7 +676,7 @@ plt.plot(BTb, 1 - 2*np.exp(-2*np.pi*BTb), linewidth=1.5)
 plt.xlabel(r'$BT_b$'); plt.ylabel(r'eye half-opening'); plt.grid(True)
 plt.show()`},
 
-/* -------------------------------------------------------------- 2.5 ---- */
+/* -------------------------------------------------------------- 2.6 ---- */
 'nyq-tiling': {
   title:'The Nyquist tiling test',
   what:'Sums shifted copies $R_b\\sum_n P(f-nR_b)$ of the raised-cosine spectrum for three roll-offs and prints the largest deviation from 1.',

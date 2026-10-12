@@ -200,7 +200,7 @@ and no neon.
 
 **The frame.** The first 300vh is one pinned stage with four corner marks, like a viewfinder. It holds
 the course name and links to the modules and the documents; on the left the label `Figure 1 ·
-section 2.3`, a large serif title whose second line is italic, one caption sentence, `Open the course`
+section 2.4`, a large serif title whose second line is italic, one caption sentence, `Open the course`
 and `Download the PDFs`; on the right Figure 1, frameless, with a `+` label naming the trace and its
 reading; a vertical label on the right edge; and at the foot the step counter, a timeline whose marks
 (Symbols, Channel, Error rate, Documents) scroll to their step, and a GitHub button linking the
@@ -210,7 +210,7 @@ wrong.*". On a phone the caption, the second link and the side label are hidden.
 After the frame: the four facts as large serif numerals, the seven modules as a two-column list, the
 three PDFs, and a footer with the copyright line and the GitHub button again.
 
-**Figure 1** (`web/fig.js`) is section 2.3, the decision and its error, in three steps driven by the
+**Figure 1** (`web/fig.js`) is section 2.4, the decision and its error, in three steps driven by the
 scroll position. Twelve bits leave as a Manchester waveform s(t) in cyan, drawn over a dashed trace
 of the whole word so the first frame is already a full figure (three bits are sent when the page
 opens, the rest follow the scroll); the channel adds white

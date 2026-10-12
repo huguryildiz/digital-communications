@@ -4,8 +4,8 @@
    sections are the module's sections, each heading inside a section is one
    teaching slide, and every figure is the slide's figure drawn at one static
    state (the last frame of a stepped figure, a named slider setting of a live
-   one). The figure helpers below repeat the ones in `83_scenes_m2.js` and
-   `88_scenes_m2x.js`, with the same seeds, so the noisy figures are the same
+   one). The figure helpers below repeat the ones in `83_scenes_m2.js`,
+   `88_scenes_m2r.js` and `88_scenes_m2x.js`, with the same seeds, so the noisy figures are the same
    figures as on the slides. Galleries, laboratories, code pages and the quick
    check are not carried here, as in Chapter 1. */
 (function(){
@@ -57,7 +57,180 @@ function leftTicks(a,vals,fmt){
     a.raw(`<text x="${a.x0-10}" y="${(+y+4.5).toFixed(2)}" font-size="13" fill="${C.muted}" text-anchor="end">${fmt(v)}</text>`); });
 }
 
-/* ---- 2.1 the matched filter --------------------------------------------- */
+/* ---- 2.1 random signals --------------------------------------------------
+   The figures of `88_scenes_m2r.js`, with the same seeds, each at the last
+   frame of its stepped figure or at the slider setting the slide opens on. */
+const SZ=o=>Object.assign({w:560,h:380,pad:{l:56,r:26,t:24,b:42}},o);
+/* a stationary Gaussian process with R(tau)=exp(-|tau|/tc) and unit power */
+function ou(z,dt,tc){ const a=Math.exp(-dt/tc), b=Math.sqrt(1-a*a), x=[z[0]];
+  for(let k=1;k<z.length;k++) x.push(a*x[k-1]+b*z[k]); return x; }
+const path=(x,dt,t1)=>t=>{ if(t<0||t>t1) return NaN;
+  const u=t/dt, k=Math.max(0,Math.min(x.length-2,Math.floor(u))), f=u-k; return x[k]*(1-f)+x[k+1]*f; };
+const dN=x=>Math.exp(-x*x/2)/Math.sqrt(2*Math.PI);
+const side3=(a,hA,b,c,hB)=>`<svg viewBox="0 0 560 ${hA+hB}" xmlns="http://www.w3.org/2000/svg" role="img">${place(a.svg(),0,0,560,hA)}${place(b.svg(),0,hA,280,hB)}${place(c.svg(),280,hA,280,hB)}</svg>`;
+
+const EN_DT=0.02, EN_T1=9, EN_T0=5;
+const EN_P=[0,1,2,3,4,5,6,7].map(i=>ou(gauss(20260401+i,451,1),EN_DT,0.4));
+const EN_BW=0.25, EN_LO=-3.25;
+const EN_H=(()=>{ const c=Array(26).fill(0);
+  gauss(20260411,2000,1).forEach(x=>{ const k=Math.floor((x-EN_LO)/EN_BW); if(k>=0&&k<26) c[k]++; }); return c; })();
+function figEnsemble(){
+  const a=P.Axes(SZ({w:700,h:300,xr:[0,13.4],yr:[-3.5,4.1],xlabel:'t\\;(\\text{ms})',ylabel:'x(t)',
+    xticksOverride:[0,2,4,6,8],yticksOverride:[-2,0,2]}));
+  a.raw('<g opacity="0.55">'); for(let i=1;i<8;i++) a.curve(path(EN_P[i],EN_DT,EN_T1),{color:C.in,width:1.3,n:700}); a.raw('</g>');
+  a.curve(path(EN_P[0],EN_DT,EN_T1),{color:C.in,width:2.5,n:900});
+  a.poly([[EN_T0,-3.5],[EN_T0,3.2]],{color:C.mid,width:1.6,dash:'5 4'});
+  EN_P.forEach(x=>a.point(EN_T0,path(x,EN_DT,EN_T1)(EN_T0),{color:C.mid,r:4.2}));
+  a.note(EN_T0,3.55,'t_0',{tex:true,fs:15,color:C.mid,anchor:'middle'});
+  const X0=9.7, L=3.2/Math.max(...EN_H);
+  EN_H.forEach((c,k)=>{ if(c) a.rect(X0,EN_LO+k*EN_BW+0.015,X0+L*c,EN_LO+(k+1)*EN_BW-0.015,{fill:C.dec.mid,stroke:C.mid,width:1}); });
+  const pts=[]; for(let i=0;i<=120;i++){ const y=-3.3+6.6*i/120; pts.push([X0+L*2000*EN_BW*dN(y),y]); }
+  a.poly(pts,{color:C.mid,width:2.4});
+  a.note(13.3,3.55,'f_{X(t_0)}(x)',{tex:true,fs:15,color:C.mid,anchor:'end'});
+  return a.svg();
+}
+
+const AC_DT=0.02, AC_TC=1, AC_T1=1.5;
+const AC_P=[0,1,2].map(i=>ou(gauss(20260421+i,301,1),AC_DT,AC_TC));
+const AC_Z1=gauss(20260431,300,1), AC_Z2=gauss(20260432,300,1);
+function figAcf(tau){
+  const rho=Math.exp(-tau/AC_TC), s=Math.sqrt(1-rho*rho), hA=160, hB=270;
+  const a=P.Axes({w:560,h:hA,xr:[0,6],yr:[-3.2,3.2],xlabel:'t\\;(\\text{ms})',ylabel:'x(t)',
+    pad:{l:56,r:26,t:22,b:40},xticksOverride:[0,1,2,3,4,5,6],yticksOverride:[-2,0,2]});
+  AC_P.forEach(x=>a.curve(path(x,AC_DT,6),{color:C.in,width:1.5,n:700}));
+  [AC_T1,AC_T1+tau].forEach(t=>{ a.vline(t,{color:C.mid,dash:'5 4',width:1.4,opacity:0.9});
+    AC_P.forEach(x=>a.point(t,path(x,AC_DT,6)(t),{color:C.mid,r:4})); });
+  const b=P.Axes({w:300,h:hB,xr:[-3.3,3.3],yr:[-3.3,3.3],xlabel:'X(t)',ylabel:'X(t+\\tau)',
+    pad:{l:52,r:14,t:24,b:42},xticksOverride:[-2,0,2],yticksOverride:[-2,0,2]});
+  let sum=0;
+  AC_Z1.forEach((z,i)=>{ const y=rho*z+s*AC_Z2[i]; sum+=z*y;
+    if(Math.abs(z)<3.25&&Math.abs(y)<3.25)
+      b.raw(`<circle cx="${b.sx(z).toFixed(2)}" cy="${b.sy(y).toFixed(2)}" r="2.6" fill="${C.mid}" opacity="0.6"/>`); });
+  const c=P.Axes({w:260,h:hB,xr:[0,3.2],yr:[-0.08,1.32],xlabel:'\\tau\\;(\\text{ms})',ylabel:'R_X(\\tau)',
+    pad:{l:48,r:18,t:24,b:42},xticksOverride:[0,1,2,3],yticksOverride:[0,0.5,1]});
+  c.curve(t=>Math.exp(-t/AC_TC),{color:C.mid,width:2.5,n:400});
+  c.point(tau,rho,{color:C.mid,r:5.2});
+  c.note(3.15,1.17,`\\hat R_X(\\tau)=${(sum/AC_Z1.length).toFixed(2)}`,{tex:true,fs:15,color:C.ink,anchor:'end'});
+  return `<svg viewBox="0 0 560 ${hA+hB}" xmlns="http://www.w3.org/2000/svg" role="img">${place(a.svg(),0,0,560,hA)}${place(b.svg(),0,hA,300,hB)}${place(c.svg(),300,hA,260,hB)}</svg>`;
+}
+
+const RW=t=>4*Math.exp(-Math.abs(t)/2)*Math.cos(2*Math.PI*t);
+function figWss(){
+  const a=P.Axes(SZ({w:700,h:300,xr:[-3.2,3.2],yr:[-5.6,6],xlabel:'\\tau\\;(\\text{ms})',ylabel:'R_X(\\tau)\\;(\\text{V}^{2})',
+    xticksOverride:[-3,-2,-1,0,1,2,3],yticksOverride:[-4,-2,2,4]}));
+  a.rect(-3.2,-4,3.2,4,{fill:C.dec.mid});
+  a.hline(4,{color:C.slate,dash:'6 4',width:1.4,opacity:1}); a.hline(-4,{color:C.slate,dash:'6 4',width:1.4,opacity:1});
+  a.note(3.15,-4.9,'|R_X(\\tau)|\\le R_X(0)',{tex:true,fs:15,color:C.slate,anchor:'end'});
+  a.curve(RW,{color:C.mid,width:2.6,n:900});
+  a.note(-3.1,5.25,'R_X(-\\tau)=R_X(\\tau)',{tex:true,fs:15,color:C.mid});
+  a.point(0,4,{color:C.mid,r:5.4});
+  a.note(0.22,5.25,'R_X(0)=P_X=4',{tex:true,fs:15,color:C.mid});
+  return a.svg();
+}
+
+function figExPhase(){
+  const a=P.Axes(SZ({w:700,h:280,xr:[-1.6,1.6],yr:[-6.6,6.6],xlabel:'t,\\;\\tau\\;(\\text{ms})',ylabel:'x(t),\\;R_X(\\tau)',
+    xticksOverride:[-1.5,-1,-0.5,0.5,1,1.5],yticksOverride:[-4.5,-3,3,4.5]}));
+  a.curve(t=>3*Math.sin(2*Math.PI*t),{color:C.ink,width:1.6,dash:'6 5',n:700});
+  a.note(-1.56,-5.95,'x(t),\\;\\theta=-\\pi/2',{tex:true,fs:14,color:C.ink});
+  a.curve(t=>4.5*Math.cos(2*Math.PI*t),{color:C.mid,width:2.6,n:700});
+  a.point(0,4.5,{color:C.mid,r:5});
+  a.note(0.1,5.55,'R_X(0)=4.5',{tex:true,fs:15,color:C.mid});
+  return a.svg();
+}
+
+const PS_DT=0.01, PS_Z=gauss(20260441,1001,1);
+function figPsdR(tc){
+  const hA=160, hB=270, S=f=>2*tc/(1+Math.pow(2*Math.PI*f*tc,2));
+  const a=P.Axes({w:560,h:hA,xr:[0,10],yr:[-3.4,3.4],xlabel:'t\\;(\\text{ms})',ylabel:'x(t)',
+    pad:{l:56,r:26,t:22,b:40},xticksOverride:[0,2,4,6,8,10],yticksOverride:[-2,0,2]});
+  a.curve(path(ou(PS_Z,PS_DT,tc),PS_DT,10),{color:C.in,width:1.5,n:1000});
+  const b=P.Axes({w:280,h:hB,xr:[-2.2,2.2],yr:[-0.06,1.3],xlabel:'\\tau\\;(\\text{ms})',ylabel:'R_X(\\tau)',
+    pad:{l:48,r:16,t:24,b:42},xticksOverride:[-2,-1,0,1,2],yticksOverride:[0.5,1]});
+  b.curve(t=>Math.exp(-Math.abs(t)/tc),{color:C.mid,width:2.5,n:900});
+  const c=P.Axes({w:280,h:hB,xr:[-2.2,2.2],yr:[0,2.35],xlabel:'f\\;(\\text{kHz})',ylabel:'S_X\\;(\\text{V}^{2}/\\text{kHz})',
+    pad:{l:48,r:16,t:24,b:42},xticksOverride:[-2,-1,0,1,2],yticksOverride:[0.5,1,1.5,2]});
+  c.area(S,-2.2,2.2,{color:C.dec.in,n:600});
+  c.curve(S,{color:C.in,width:2.6,n:900});
+  c.note(2.15,2.12,'P_X=1',{tex:true,fs:15,color:C.ink,anchor:'end'});
+  return side3(a,hA,b,c,hB);
+}
+
+const WH_DF=0.05, WH_PH=(()=>{ const r=rng(20260451), o=[]; for(let k=0;k<200;k++) o.push(2*Math.PI*r()); return o; })();
+function figWhite(B){
+  const hA=160, hB=270, K=Math.max(1,Math.floor(B/WH_DF-0.5)+1), g=Math.sqrt(2/K);
+  const a=P.Axes({w:560,h:hA,xr:[0,3],yr:[-3.4,3.4],xlabel:'t\\;(\\text{ms})',ylabel:'x(t)/\\sigma',
+    pad:{l:56,r:26,t:22,b:40},xticksOverride:[0,0.5,1,1.5,2,2.5,3],yticksOverride:[-2,0,2]});
+  a.curve(t=>{ let s=0; for(let k=0;k<K;k++) s+=Math.cos(2*Math.PI*(k+0.5)*WH_DF*t+WH_PH[k]); return g*s; },
+    {color:C.in,width:1.4,n:1200});
+  const b=P.Axes({w:280,h:hB,xr:[-1.2,1.2],yr:[-0.3,1.3],xlabel:'\\tau\\;(\\text{ms})',ylabel:'R_X(\\tau)/N_0B',
+    pad:{l:48,r:16,t:24,b:42},xticksOverride:[-1,0,1],yticksOverride:[0.5,1]});
+  b.curve(t=>sinc(2*B*t),{color:C.mid,width:2.5,n:1400});
+  const z=1/(2*B);
+  [-z,z].forEach(t=>b.point(t,0,{color:C.mid,r:4.4}));
+  b.note(z+0.06,0.16,'\\tfrac{1}{2B}',{tex:true,fs:15,color:C.mid});
+  const c=P.Axes({w:280,h:hB,xr:[-10,10],yr:[0,1.45],xlabel:'f\\;(\\text{kHz})',ylabel:'S_X(f)',
+    pad:{l:48,r:16,t:24,b:42},xticksOverride:[-10,-5,0,5,10],yticksOverride:[1],ytickfmt:()=>''});
+  c.poly([[-10,1],[10,1]],{color:C.in,width:1.4,dash:'4 5'});
+  c.rect(-B,0,B,1,{fill:C.dec.in});
+  c.poly([[-10,0],[-B,0],[-B,1],[B,1],[B,0],[10,0]],{color:C.in,width:2.6});
+  c.note(-9.7,1.16,'\\tfrac{N_0}{2}',{tex:true,fs:15,color:C.in});
+  return side3(a,hA,b,c,hB);
+}
+
+const LT_X=noiseFn(20260461,0.02,1,-0.5,6);
+const LT_Y=(()=>{ const rc=1/(2*Math.PI), dt=0.005, y=[0]; let v=0;
+  for(let k=1;k<=Math.round(6.5/dt);k++){ const t=-0.5+k*dt; v+=(LT_X(t)-v)*dt/rc; y.push(v); }
+  return t=>{ const u=(t+0.5)/dt, k=Math.max(0,Math.min(y.length-2,Math.floor(u))), f=u-k; return y[k]*(1-f)+y[k+1]*f; }; })();
+function figLti(){
+  const h1=230, h2=160, H2=x=>1/(1+x*x), Sy=x=>0.5*H2(x);
+  const a=P.Axes({w:560,h:h1,xr:[-5,5],yr:[0,2.05],xlabel:'f\\;(\\text{kHz})',ylabel:'S(f),\\;|H(f)|^{2}',
+    pad:{l:56,r:26,t:24,b:42},xticksOverride:[-4,-2,0,2,4],yticksOverride:[]});
+  a.curve(()=>0.5,{color:C.in,width:1.5,dash:'6 5',n:4});
+  a.curve(H2,{color:C.h,width:2.2,dash:'7 5',n:600});
+  a.note(-4.9,0.63,'\\tfrac{N_0}{2}',{tex:true,fs:15,color:C.in});
+  a.area(Sy,-5,5,{color:C.dec.out,n:400}); a.curve(Sy,{color:C.out,width:2.6,n:600});
+  a.note(0.35,1.55,'|H(f)|^{2}',{tex:true,fs:15,color:C.h});
+  a.note(0.55,0.3,'S_Y(f)',{tex:true,fs:15,color:C.out});
+  const b=P.Axes({w:560,h:h2,xr:[0,5],yr:[-3.2,3.2],xlabel:'t\\;(\\text{ms})',ylabel:'x(t),\\;y(t)',
+    pad:{l:56,r:26,t:22,b:40},xticksOverride:[0,1,2,3,4,5],yticksOverride:[-2,0,2]});
+  b.curve(LT_X,{color:C.in,width:1.1,n:1200,opacity:0.55});
+  b.curve(LT_Y,{color:C.out,width:2.6,n:800});
+  return stack(560,[[a.svg(),h1],[b.svg(),h2]]);
+}
+
+function figNoiseBw(rc){
+  const bn=1/(4*rc), f3=1/(2*Math.PI*rc), H2=f=>1/(1+Math.pow(2*Math.PI*f*rc,2));
+  const a=P.Axes(SZ({w:700,h:280,xr:[-2,2],yr:[0,1.55],xlabel:'f\\;(\\text{kHz})',ylabel:'|H(f)|^{2}',
+    xticksOverride:[-2,-1,0,1,2],yticksOverride:[0.5,1]}));
+  a.area(H2,-2,2,{color:C.dec.h,n:600});
+  a.poly([[-bn,0],[-bn,1],[bn,1],[bn,0]],{color:C.slate,width:2,dash:'7 5'});
+  [-f3,f3].forEach(x=>a.poly([[x,0],[x,0.5]],{color:C.muted,width:1.4,dash:'3 4'}));
+  a.curve(H2,{color:C.h,width:2.6,n:900});
+  a.note(-1.95,1.38,`B_{\\text{neq}}=${Math.round(1000*bn)}\\ \\text{Hz}`,{tex:true,fs:15,color:C.slate});
+  a.note(-1.95,1.18,`f_{3\\text{dB}}=${Math.round(1000*f3)}\\ \\text{Hz}`,{tex:true,fs:15,color:C.muted});
+  return a.svg();
+}
+
+/* the sum of n independent uniform sources, scaled to unit variance */
+const CL_X=[...Array(361)].map((_,i)=>-3.6+0.02*i);
+function cltDens(n){
+  const cf=(s,W,dw)=>{ let r=0; for(let w=dw/2;w<W;w+=dw){ r+=Math.pow(Math.sin(w)/w,n)*Math.cos(w*s); } return r*dw/Math.PI; };
+  const c=Math.sqrt(n/3);
+  return CL_X.map(z=>c*Math.max(0,cf(c*z,n<10?60:8,n<10?0.01:0.005)));
+}
+function figClt(){
+  const d=cltDens(30);
+  const at=z=>{ const u=(z+3.6)/0.02, i=Math.max(0,Math.min(359,Math.floor(u))), w=u-i; return d[i]*(1-w)+d[i+1]*w; };
+  const a=P.Axes(SZ({w:700,h:280,xr:[-3.6,3.6],yr:[0,0.62],xlabel:'z',ylabel:'f_Z(z)',
+    xticksOverride:[-3,-2,-1,0,1,2,3],yticksOverride:[0.2,0.4]}));
+  a.area(at,-3.6,3.6,{color:C.dec.mid,n:720});
+  a.curve(at,{color:C.mid,width:2.6,n:720});
+  a.curve(dN,{color:C.slate,width:1.8,dash:'7 5',n:500});
+  return a.svg();
+}
+
+/* ---- 2.2 the matched filter --------------------------------------------- */
 const RX_W=noiseFn(7,0.012,0.5,-1,4);
 function figReceiver(){
   const X=x=>+(x*1.25).toFixed(1);
@@ -167,7 +340,7 @@ function figExMf(){
   return a.svg();
 }
 
-/* ---- 2.2 the demodulator ----------------------------------------------- */
+/* ---- 2.3 the demodulator ----------------------------------------------- */
 function figBasis(){
   const a=ax1({h:260,xr:[-0.3,1.35],yr:[-2.1,2.1],xlabel:'t/T_b',ylabel:'\\psi(t),\\;s_m(t)',
     xticksOverride:[0,0.5,1],ytickfmt:()=>'',yticksOverride:[-1.5,-1,0,1,1.5]});
@@ -234,7 +407,7 @@ function figCorrMf(){
   return a.svg();
 }
 
-/* ---- 2.3 the decision and its error ------------------------------------- */
+/* ---- 2.4 the decision and its error ------------------------------------- */
 const DS={A:1,s:0.5,N0:0.5};
 const densFrame=o=>ax1(Object.assign({xr:[-3,3],xlabel:'y',xticksOverride:[-2,-1,0,1,2],
   xtickfmt:v=>Math.abs(v)===1?'':String(v),ytickfmt:()=>''},o));
@@ -340,7 +513,7 @@ function figExPe(){
   return a.svg();
 }
 
-/* ---- 2.4 intersymbol interference ---------------------------------------
+/* ---- 2.5 intersymbol interference ---------------------------------------
    A first-order RC lowpass of 3 dB bandwidth B, T_b = 1, q = exp(-2 pi B T_b). */
 const rcq=bt=>Math.exp(-2*Math.PI*bt);
 function rcResp(bt){ const tau=1/(2*Math.PI*bt), e=Math.exp(-1/tau);
@@ -451,7 +624,7 @@ function figEyeNoise(bt,sg){
   return a.svg();
 }
 
-/* ---- 2.5 Nyquist and the raised cosine ----------------------------------
+/* ---- 2.6 Nyquist and the raised cosine ----------------------------------
    T_b = 1, so R_b = 1 and W = 1/2. */
 const rcPulse=(t,al)=>{ const den=1-4*al*al*t*t;
   if(Math.abs(den)<1e-6) return sinc(t)*Math.PI/4;
@@ -528,7 +701,7 @@ function figSrrc(){
   return a.svg();
 }
 
-/* ---- 2.6 the link in practice ------------------------------------------- */
+/* ---- 2.7 the link in practice ------------------------------------------- */
 /* One tap: z(t) = y(t) + w y(t - T_b). The eye uses 128 seeded patterns of
    twelve bits, as on the slide. */
 const EQ_P=(()=>{ const r=rng(20260970), o=[];
@@ -651,11 +824,125 @@ function figChain(){
 window.C2 = [
 
 {t:'h1', num:'CHAPTER 2', text:'Baseband transmission of digital signals'},
-{t:'p', lead:true, text:'Each bit is sent as one waveform. The channel adds noise, and the receiver filters, samples and decides.'},
+{t:'p', lead:true, text:'Each bit is sent as one waveform. The channel adds noise, and the receiver filters, samples and decides. Noise is a random signal, so the chapter first describes random signals.'},
 {t:'p', text:'The matched filter gives the largest peak SNR, $2E/N_0$. Only the pulse energy counts, not its shape. With polar signalling and equal priors, $P_b=Q\\bigl(\\sqrt{2E_b/N_0}\\bigr)$. A channel narrower than $R_b/2$ cannot avoid intersymbol interference.'},
 
 /* ================================================================ 2.1 === */
-{t:'h2', num:'2.1', text:'The matched filter'},
+{t:'h2', num:'2.1', text:'Random signals'},
+
+{t:'h3', text:'A random signal'},
+{t:'p', text:'Noise is a random signal: its waveform is not known in advance. The receiver of this chapter is still designed against it.'},
+{t:'p', text:'A <b>random process</b> $X(t)$ gives one waveform for each outcome of an experiment. Each waveform is a <b>sample function</b>. All the sample functions together are the <b>ensemble</b>.'},
+{t:'p', text:'Fix a time $t_0$ and let the outcome vary. The values of all the sample functions at $t_0$ then spread out with some density.'},
+{t:'eqbox', cap:'At a fixed time', tex:'X(t_0)\\ \\text{is a random variable with density}\\ f_{X(t_0)}(x)',
+ after:'For example, read a thousand identical receivers at the same time $t_0=2$ ms. The thousand values are draws of $X(t_0)$, not one sample function.'},
+{t:'fig', svg:()=>figEnsemble(),
+ cap:'Eight sample functions of one random process (cyan), one drawn heavy. Their values at $t_0=5$ ms (violet dots) are draws of $X(t_0)$. The histogram at the right is $X(t_0)$ over $2000$ outcomes, with the Gaussian density it follows.'},
+
+{t:'h3', text:'Mean and autocorrelation'},
+{t:'p', text:'Two averages over the ensemble describe a random process well enough for this course. The first is the mean.'},
+{t:'eqbox', cap:'Mean', tex:'\\mu_X(t)=E\\bigl[X(t)\\bigr]',
+ after:'It is the average over the ensemble at the time $t$, not an average along one waveform.'},
+{t:'p', text:'The second is the autocorrelation. It is the average product of two values of the process, taken $\\tau$ apart.'},
+{t:'eqbox', cap:'Autocorrelation', tex:'R_X(t,t+\\tau)=E\\bigl[X(t)\\,X(t+\\tau)\\bigr]',
+ after:'It is large when the two values tend to move together. For example, $R_X(\\tau)=e^{-|\\tau|/\\tau_c}$ with $\\tau_c=1$ ms gives $R_X(1\\ \\text{ms})=e^{-1}=0.37$, so values $1$ ms apart are still partly alike.'},
+{t:'fig', svg:()=>figAcf(0.5),
+ cap:'Top: three sample functions, read at $t=1.5$ ms and at $t+\\tau$ with $\\tau=0.5$ ms. Left: $300$ pairs $X(t)$ and $X(t+\\tau)$ of the same process. Right: $R_X(\\tau)=e^{-|\\tau|/\\tau_c}$ with $\\tau_c=1$ ms, and the estimate from the pairs.'},
+
+{t:'h3', text:'Stationarity and power'},
+{t:'p', text:'A process is <b>wide-sense stationary</b> when its mean is a constant and $R_X(t,t+\\tau)$ depends only on the gap $\\tau$. A shift of the time origin then changes neither, and we write $R_X(\\tau)$.'},
+{t:'p', text:'Three properties follow from the definition. The second substitutes $s=t-\\tau$. The third expands a square, which is never negative, with both signs.'},
+{t:'eqbox', cap:'Three properties', tex:'\\begin{aligned}R_X(0)&=E\\bigl[X^{2}(t)\\bigr]=P_X\\\\R_X(-\\tau)&=E\\bigl[X(s+\\tau)\\,X(s)\\bigr]=R_X(\\tau)\\\\E\\bigl[(X(t)\\pm X(t+\\tau))^{2}\\bigr]&=2R_X(0)\\pm2R_X(\\tau)\\ge0\\end{aligned}',
+ after:'The first line is the average power $P_X$. The third line, with both signs, gives $|R_X(\\tau)|\\le R_X(0)$: a value is never more alike to another value than to itself.'},
+{t:'p', text:'For example, $R_X(\\tau)=4e^{-|\\tau|/2}\\cos(2\\pi\\tau)\\ \\text{V}^{2}$, with $\\tau$ in ms, has $P_X=R_X(0)=4e^{0}\\cos0=4\\ \\text{V}^{2}$. Across $1\\ \\Omega$ that is $4$ W.'},
+{t:'fig', svg:()=>figWss(),
+ cap:'$R_X(\\tau)=4e^{-|\\tau|/2}\\cos(2\\pi\\tau)$, with $\\tau$ in ms. Its value at $\\tau=0$ is the power $P_X=4$. It is even, and it stays inside the shaded band $|R_X(\\tau)|\\le R_X(0)$.'},
+
+{t:'ex', hd:'Example 2.1 — a sinusoid with a random phase', rows:[
+ ['Given','$X(t)=A\\cos(2\\pi f_0t+\\Theta)$ with $A=3$ V, $f_0=1$ kHz and $\\Theta$ uniform on $[0,2\\pi)$, so its density there is $1/(2\\pi)$.'],
+ ['Find','The mean $\\mu_X$, the autocorrelation $R_X(\\tau)$ and the power $P_X$.'],
+ ['Method','Average over the phase with its density. Turn the product of two cosines into a sum with $\\cos a\\cos b=\\tfrac12\\cos(a-b)+\\tfrac12\\cos(a+b)$.'],
+ ['Solution','The mean is $\\mu_X=\\frac{1}{2\\pi}\\int_0^{2\\pi}A\\cos(2\\pi f_0t+\\theta)\\,d\\theta=0$, since a cosine integrates to zero over a full period of $\\theta$. With $\\phi=2\\pi f_0(2t+\\tau)$, $R_X=\\frac{A^{2}}{2}E\\bigl[\\cos(2\\pi f_0\\tau)\\bigr]+\\frac{A^{2}}{2}E\\bigl[\\cos(\\phi+2\\Theta)\\bigr]$. The second average is zero for the same reason. So $R_X(\\tau)=\\frac{A^{2}}{2}\\cos(2\\pi f_0\\tau)=4.5\\cos(2\\pi f_0\\tau)\\ \\text{V}^{2}$ and $P_X=R_X(0)=4.5\\ \\text{V}^{2}$.'],
+ ['Check','The mean is constant and $R_X$ depends on $\\tau$ only, so the process is wide-sense stationary. The time average of one sample function, $A^{2}\\cos^{2}$ over a period, is also $A^{2}/2=4.5\\ \\text{V}^{2}$.']
+]},
+{t:'fig', svg:()=>figExPhase(),
+ cap:'Example 2.1: one sample function, the one with $\\theta=-\\pi/2$ (dashed), and the autocorrelation $R_X(\\tau)=4.5\\cos(2\\pi f_0\\tau)$ (violet). Its value at $\\tau=0$ is the power, $4.5\\ \\text{V}^{2}$.'},
+{t:'box', kind:'err', hd:'Common error', html:'Use $A^{2}/2$, not $A^{2}$, for the power of the sinusoid. Dropping the $\\tfrac12$ gives $9\\ \\text{V}^{2}$.'},
+
+{t:'h3', text:'Power spectral density'},
+{t:'p', text:'The autocorrelation says how fast a process changes. Its Fourier transform says the same thing in frequency. It is the <b>power spectral density</b> $S_X(f)$, the power per hertz at each frequency.'},
+{t:'eqbox', cap:'Wiener–Khinchin theorem', tex:'S_X(f)=\\int_{-\\infty}^{\\infty}R_X(\\tau)\\,e^{-j2\\pi f\\tau}\\,d\\tau',
+ after:'This holds for a stationary process. The power spectral density is real, even and never negative.'},
+{t:'p', text:'Write the inverse transform and set $\\tau=0$. The power is then the area under the spectral density.'},
+{t:'eqbox', cap:'Power', tex:'\\begin{aligned}R_X(\\tau)&=\\int_{-\\infty}^{\\infty}S_X(f)\\,e^{j2\\pi f\\tau}\\,df\\\\P_X=R_X(0)&=\\int_{-\\infty}^{\\infty}S_X(f)\\,df\\end{aligned}',
+ after:'For example, $S_X(f)=10^{-3}$ W/Hz on $|f|<5$ kHz gives $P_X=\\int_{-5000}^{5000}10^{-3}\\,df=10^{-3}(10^{4})=10$ W. Both halves of the band count.'},
+{t:'p', text:'A process whose values stay alike for a long time has a narrow spectrum. Take $R_X(\\tau)=e^{-|\\tau|/\\tau_c}$, where $\\tau_c$ is the correlation time. The function is even, so the transform keeps only its cosine part.'},
+{t:'eqbox', cap:'A correlation time and a bandwidth', tex:'\\begin{aligned}S_X(f)&=2\\int_0^{\\infty}e^{-\\tau/\\tau_c}\\cos(2\\pi f\\tau)\\,d\\tau\\\\&=\\frac{2\\,(1/\\tau_c)}{(1/\\tau_c)^{2}+(2\\pi f)^{2}}\\\\&=\\frac{2\\tau_c}{1+(2\\pi f\\tau_c)^{2}}\\end{aligned}',
+ after:'The second line is $\\int_0^\\infty e^{-a\\tau}\\cos(b\\tau)\\,d\\tau=a/(a^{2}+b^{2})$ with $a=1/\\tau_c$ and $b=2\\pi f$. The spectrum falls to half its peak at $f=1/(2\\pi\\tau_c)$, so a short correlation time means a wide band. The area stays $R_X(0)=1$.'},
+{t:'fig', svg:()=>figPsdR(0.3),
+ cap:'A process with $R_X(\\tau)=e^{-|\\tau|/\\tau_c}$ and $\\tau_c=0.3$ ms. Top: one sample function. Left: its autocorrelation. Right: its spectral density $S_X(f)=2\\tau_c/\\bigl(1+(2\\pi f\\tau_c)^{2}\\bigr)$, whose area is $P_X=1$.'},
+
+{t:'h3', text:'White noise'},
+{t:'p', text:'Thermal noise is modelled as <b>white noise</b>: its spectral density is the same constant at every frequency. The inverse transform of a constant is an impulse.'},
+{t:'eqbox', cap:'White noise', tex:'S_W(f)=\\frac{N_0}{2}\\quad\\text{for all }f,\\qquad R_W(\\tau)=\\frac{N_0}{2}\\,\\delta(\\tau)',
+ after:'Two values of white noise at different times are uncorrelated, however close they are. The density is two-sided: $N_0/2$ on positive and on negative frequencies.'},
+{t:'box', kind:'warn', hd:'A model', html:'The area under a flat density is infinite, so no real noise is white. Thermal noise stays within $10\\%$ of flat up to $10^{12}$ Hz, far above any receiver band.'},
+{t:'p', text:'A receiver never sees the whole band. Noise of density $N_0/2$ on $|f|<B$ has a finite power. Its autocorrelation is the inverse transform of a rectangle.'},
+{t:'eqbox', cap:'Bandlimited white noise', tex:'\\begin{aligned}R(\\tau)&=\\int_{-B}^{B}\\frac{N_0}{2}\\,e^{j2\\pi f\\tau}\\,df\\\\&=\\frac{N_0}{2}\\cdot\\frac{\\sin(2\\pi B\\tau)}{\\pi\\tau}\\\\&=N_0B\\operatorname{sinc}(2B\\tau)\\end{aligned}',
+ after:'Here $\\operatorname{sinc}(x)=\\sin(\\pi x)/(\\pi x)$. The power is $R(0)=N_0B$. The zeros fall at $\\tau=k/(2B)$. With $B=1$ MHz, two samples $0.5\\ \\mu$s apart have $2B\\tau=1$, so they are uncorrelated.'},
+{t:'fig', svg:()=>figWhite(2),
+ cap:'Noise of density $N_0/2$ on $|f|<B$ with $B=2$ kHz. Top: one sample function. Left: $R(\\tau)/N_0B=\\operatorname{sinc}(2B\\tau)$, with its first zeros at $\\pm1/(2B)$. Right: the flat density inside the band. As $B$ grows, $R(\\tau)$ narrows toward an impulse.'},
+
+{t:'h3', text:'A random signal through a filter'},
+{t:'p', text:'A receiver filters its input. So we need the random signal at the output of a linear time-invariant filter $h(t)$. The output is $Y(t)=\\int h(u)\\,X(t-u)\\,du$.'},
+{t:'p', text:'Take the expectation inside the integral. Only the gain at $f=0$ is left.'},
+{t:'eqbox', cap:'Mean', tex:'\\begin{aligned}\\mu_Y&=\\int_{-\\infty}^{\\infty}h(u)\\,E\\bigl[X(t-u)\\bigr]\\,du\\\\&=\\mu_X\\int_{-\\infty}^{\\infty}h(u)\\,du=\\mu_X\\,H(0)\\end{aligned}',
+ after:'For example, a differentiator, $H(f)=j2\\pi f$, gives $\\mu_Y=\\mu_X(j2\\pi\\cdot0)=0$. It removes the constant part.'},
+{t:'p', text:'Write out $E[Y(t)Y(t+\\tau)]$ with the two convolution integrals. For a stationary input it depends on $\\tau$ only, so the output is stationary too. Then transform each factor.'},
+{t:'eqbox', cap:'Output spectrum', big:true, tex:'\\begin{aligned}R_Y(\\tau)&=h(\\tau)*h(-\\tau)*R_X(\\tau)\\\\S_Y(f)&=H(f)\\,H^{*}(f)\\,S_X(f)=|H(f)|^{2}S_X(f)\\end{aligned}',
+ after:'For a real $h$, $h(-\\tau)$ becomes $H^{*}(f)$. The phase of the filter drops out.'},
+{t:'fig', svg:()=>figLti(),
+ cap:'White noise with $N_0/2=0.5$ through an RC lowpass filter with $f_{3\\text{dB}}=1$ kHz. Top: the input density (dashed), $|H(f)|^{2}$ (amber) and the output density $S_Y(f)$ (green). Bottom: one input sample function and the filter output, which varies more slowly.'},
+
+{t:'h3', text:'Filtered white noise'},
+{t:'p', text:'For white noise at the input, $S_Y(f)=\\frac{N_0}{2}|H(f)|^{2}$. Its area is the output noise power. One width describes that area.'},
+{t:'eqbox', cap:'Output power', tex:'\\begin{aligned}P_Y&=\\int_{-\\infty}^{\\infty}\\frac{N_0}{2}\\,|H(f)|^{2}\\,df=N_0\\,B_{\\text{neq}}\\,H_{\\max}^{2}\\\\B_{\\text{neq}}&=\\frac{\\int_{-\\infty}^{\\infty}|H(f)|^{2}\\,df}{2H_{\\max}^{2}}\\end{aligned}',
+ after:'$B_{\\text{neq}}$ is the <b>noise-equivalent bandwidth</b>: the half-width of an ideal filter with the same peak gain that passes the same noise power.'},
+{t:'p', text:'For the RC lowpass filter, $|H(f)|^{2}=1/\\bigl(1+(2\\pi fRC)^{2}\\bigr)$ and $H_{\\max}=1$. Substitute $u=2\\pi fRC$. The integral of $1/(1+u^{2})$ over the whole line is $\\pi$.'},
+{t:'eqbox', cap:'RC lowpass', tex:'\\begin{aligned}\\int_{-\\infty}^{\\infty}\\frac{df}{1+(2\\pi fRC)^{2}}&=\\frac{1}{2\\pi RC}\\int_{-\\infty}^{\\infty}\\frac{du}{1+u^{2}}=\\frac{1}{2RC}\\\\B_{\\text{neq}}&=\\frac{1}{4RC}\\end{aligned}',
+ after:'$B_{\\text{neq}}$ is $\\pi/2$ times the $3$ dB frequency $1/(2\\pi RC)$.'},
+{t:'fig', svg:()=>figNoiseBw(1),
+ cap:'$|H(f)|^{2}$ of an RC filter with $RC=1$ ms (amber) and the ideal filter with the same peak and area (dashed). Its half-width $B_{\\text{neq}}=250$ Hz is wider than the $3$ dB frequency of $159$ Hz.'},
+
+{t:'ex', hd:'Example 2.2 — white noise through an RC filter', rows:[
+ ['Given','White noise with $N_0/2=10^{-8}$ W/Hz enters an RC lowpass filter with $RC=1$ ms.'],
+ ['Find','The noise-equivalent bandwidth $B_{\\text{neq}}$ and the output noise power $P_Y$.'],
+ ['Method','Use $B_{\\text{neq}}=1/(4RC)$ with $H_{\\max}=1$, then $P_Y=N_0B_{\\text{neq}}$. The formula needs only the area of $|H(f)|^{2}$.'],
+ ['Solution','$B_{\\text{neq}}=1/(4\\times10^{-3})=250$ Hz. With $N_0=2\\times10^{-8}$ W/Hz, $P_Y=(2\\times10^{-8})(250)=5\\times10^{-6}$ W.'],
+ ['Check','Work in time instead. The impulse response is $h(t)=\\frac{1}{RC}e^{-t/RC}$ for $t\\ge0$, so $\\int_0^{\\infty}h^{2}(t)\\,dt=\\frac{1}{R^{2}C^{2}}\\cdot\\frac{RC}{2}=\\frac{1}{2RC}=500\\ \\text{s}^{-1}$. By Parseval, $P_Y=\\frac{N_0}{2}\\int h^{2}\\,dt=(10^{-8})(500)=5\\times10^{-6}$ W.']
+]},
+{t:'box', kind:'err', hd:'Common error', html:'Use $B_{\\text{neq}}=1/(4RC)$, not the $3$ dB frequency $1/(2\\pi RC)$, for the noise power. The $3$ dB width gives $3.18\\times10^{-6}$ W, which is $\\pi/2$ too small.'},
+
+{t:'h3', text:'Gaussian noise'},
+{t:'p', text:'Thermal noise is the sum of the currents of very many electrons, each small and independent. By the <b>central limit theorem</b>, such a sum has a Gaussian density.'},
+{t:'p', text:'A linear filter keeps a Gaussian process Gaussian, because every output value is a weighted sum of input values. So one sample of filtered noise is a Gaussian variable, and its variance is the output power.'},
+{t:'eqbox', cap:'After a filter', tex:'\\begin{aligned}Y(t_0)&\\sim\\mathcal{N}\\bigl(0,\\sigma^{2}\\bigr),\\qquad\\sigma^{2}=P_Y=\\frac{N_0}{2}\\int_{-\\infty}^{\\infty}|H(f)|^{2}\\,df\\\\P\\bigl(Y(t_0)>a\\bigr)&=Q\\!\\left(\\frac{a}{\\sigma}\\right)\\end{aligned}',
+ after:'This holds for zero-mean white Gaussian noise at the input. $Q(x)=\\tfrac12\\operatorname{erfc}(x/\\sqrt2)$ is the Gaussian tail. For $\\sigma=2$ mV, the chance that a sample exceeds $4$ mV is $Q(4/2)=Q(2)=0.0228$.'},
+{t:'fig', svg:()=>figClt(),
+ cap:'The density of the sum $Z$ of thirty independent uniform sources, scaled to unit variance (violet), and the Gaussian density (dashed). The two curves lie on top of each other.'},
+
+{t:'h3', text:'Random signals around us'},
+{t:'p', text:'Random signals appear in every resistor, in speech coders, in receiver noise floors and in scrambled data.'},
+{t:'ul', items:[
+ '<b>Thermal noise.</b> A $1\\ \\text{k}\\Omega$ resistor at $T=290$ K in a band $B=1$ MHz has $v_{\\mathrm{rms}}=\\sqrt{4kTRB}=4.0\\ \\mu$V.',
+ '<b>Pitch.</b> A vowel is a sum of harmonics of its pitch $f_0$. A speech coder finds $f_0=125$ Hz where $R(\\tau)$ peaks again, at $T_0=8$ ms.',
+ '<b>Noise floor.</b> At $T=290$ K, $N_0=kT=-174$ dBm/Hz. A $20$ MHz Wi-Fi channel collects $kTB=-101$ dBm.',
+ '<b>Scrambled data.</b> The $15$-chip shift-register sequence $c[n]$ has $R[k]=\\tfrac{1}{15}\\sum_nc[n]\\,c[n+k]$ equal to $1$ at $k=0$ and $-1/15$ elsewhere, so it looks white.'
+]},
+{t:'box', kind:'warn', hd:'Bandwidth costs noise', html:'Noise power grows by $10$ dB for every factor of $10$ in bandwidth. So a receiver filters to the band of its signal.'},
+
+/* ================================================================ 2.2 === */
+{t:'h2', num:'2.2', text:'The matched filter'},
 
 {t:'h3', text:'The receiver model'},
 {t:'p', text:'One bit is sent as a pulse $g(t)$ on $0\\le t\\le T$. The channel adds noise $w(t)$. The receiver passes the sum through a linear filter $h(t)$ and samples the output once, at $t=T$.'},
@@ -723,7 +1010,7 @@ window.C2 = [
 {t:'fig', svg:()=>figEqualOutputs(),
  cap:'A rectangular pulse and a half-sine pulse of the same energy $E$, each through its own matched filter. The rectangular output is solid and the half-sine output dashed. Both peak at $t=T$ with the value $E$.'},
 
-{t:'ex', hd:'Example 2.1 — the matched filter of a rectangular pulse', rows:[
+{t:'ex', hd:'Example 2.3 — the matched filter of a rectangular pulse', rows:[
  ['Given','$s(t)=A$ on $[0,T]$, with $A=2$ V, $T=0.5$ ms and $N_0/2=10^{-4}$ W/Hz.'],
  ['Find','The matched filter $h(t)$, its output $y(t)$ and the largest peak SNR $\\eta_{\\max}$.'],
  ['Method','Reverse and shift the pulse to get $h(t)$. The output is the sliding overlap of $s$ and $h$. The largest SNR is $2E/N_0$, which needs only the energy.'],
@@ -731,7 +1018,7 @@ window.C2 = [
  ['Check','$10\\log_{10}20=13.0$ dB. The peak is $y(T)=A^{2}T=E$, as the general result requires.']
 ]},
 {t:'fig', svg:()=>figExMf(),
- cap:'Example 2.1: the pulse $s(t)/A$ (dashed) and the output of its matched filter, $y(t)/(A^{2}T)$. The output is a triangle that peaks at $y(T)=A^{2}T$.'},
+ cap:'Example 2.3: the pulse $s(t)/A$ (dashed) and the output of its matched filter, $y(t)/(A^{2}T)$. The output is a triangle that peaks at $y(T)=A^{2}T$.'},
 {t:'box', kind:'err', hd:'Common error', html:'Use $N_0=2\\times10^{-4}$, not $N_0/2$, in $2E/N_0$. The wrong value gives $40$.'},
 
 {t:'h3', text:'Matched filters around us'},
@@ -746,8 +1033,8 @@ window.C2 = [
 {t:'box', kind:'def', hd:'Peak time', html:'The peak falls where the copy lines up with the echo. Its time is the delay, and the delay gives the range.'},
 {t:'box', kind:'warn', hd:'Pulse compression', html:'A long chirp carries much energy, and its matched output is still a peak about $1/B$ wide. The resolution comes from the bandwidth $B$, not from the length $T$.'},
 
-/* ================================================================ 2.2 === */
-{t:'h2', num:'2.2', text:'The demodulator'},
+/* ================================================================ 2.3 === */
+{t:'h2', num:'2.3', text:'The demodulator'},
 
 {t:'h3', text:'The unit-energy basis and antipodal signalling'},
 {t:'p', text:'Polar signalling sends $+A$ for a $1$ and $-A$ for a $0$, over a bit of length $T_b$. Both waveforms are multiples of one shape, the <b>basis function</b> $\\psi(t)$.'},
@@ -805,8 +1092,8 @@ window.C2 = [
 {t:'box', kind:'def', hd:'A correlator on samples', html:'A digital receiver adds samples instead of integrating. The sum of $N$ samples a bit is the correlator with $\\psi$ sampled $N$ times.'},
 {t:'box', kind:'warn', hd:'Timing', html:'The correlator is read at the end of the bit. An offset of $\\epsilon$ scales the signal term by $1-\\epsilon/T_b$.'},
 
-/* ================================================================ 2.3 === */
-{t:'h2', num:'2.3', text:'The decision and its error'},
+/* ================================================================ 2.4 === */
+{t:'h2', num:'2.4', text:'The decision and its error'},
 
 {t:'h3', text:'The decision statistic'},
 {t:'p', text:'The demodulator output $y$ at $t=T_b$ is the <b>decision statistic</b>. It is all the receiver keeps of the bit.'},
@@ -872,7 +1159,7 @@ window.C2 = [
 {t:'fig', svg:()=>figPe(9.6),
  cap:'Bit error probability of polar signalling against $E_b/N_0$. The marked point is $E_b/N_0=9.6$ dB, where $P_b=9.74\\times10^{-6}$.'},
 
-{t:'ex', hd:'Example 2.2 — unequal priors: the threshold', rows:[
+{t:'ex', hd:'Example 2.4 — unequal priors: the threshold', rows:[
  ['Given','Polar signalling with $E_b=1$, $N_0=0.1$ and $P(s_1)=0.3$.'],
  ['Find','(a) The optimal threshold $\\lambda_{\\mathrm{opt}}$.'],
  ['Method','The priors are unequal, so the threshold is not zero. Use $\\lambda_{\\mathrm{opt}}=\\frac{N_0}{4\\sqrt{E_b}}\\ln\\frac{p_0}{p_1}$ with $p_0=1-P(s_1)=0.7$ and $p_1=0.3$.'],
@@ -880,18 +1167,18 @@ window.C2 = [
  ['Check','Both weighted densities are equal there. $p_0f_Y(\\lambda\\mid s_0)=\\frac{0.7}{\\sqrt{0.1\\pi}}e^{-(1.0212)^{2}/0.1}=1.249\\,e^{-10.428}=3.70\\times10^{-5}$. $p_1f_Y(\\lambda\\mid s_1)=\\frac{0.3}{\\sqrt{0.1\\pi}}e^{-(0.9788)^{2}/0.1}=0.535\\,e^{-9.581}=3.70\\times10^{-5}$.']
 ]},
 {t:'fig', svg:()=>figExLog(),
- cap:'Example 2.2: the two weighted densities on a logarithmic scale, where each is a parabola. The weighted density of $s_0$ is dashed. They cross at $\\lambda_{\\mathrm{opt}}=0.0212$, just right of zero.'},
+ cap:'Example 2.4: the two weighted densities on a logarithmic scale, where each is a parabola. The weighted density of $s_0$ is dashed. They cross at $\\lambda_{\\mathrm{opt}}=0.0212$, just right of zero.'},
 {t:'box', kind:'err', hd:'Common error', html:'Use $p_0=0.7$, not the given $0.3$, for $s_0$. Swapping them gives $-0.0212$.'},
 
-{t:'ex', hd:'Example 2.3 — unequal priors: the error probability', rows:[
- ['Given','$E_b=1$, $N_0=0.1$, $p_0=0.7$ and $\\lambda_{\\mathrm{opt}}=0.0212$, from Example 2.2.'],
+{t:'ex', hd:'Example 2.5 — unequal priors: the error probability', rows:[
+ ['Given','$E_b=1$, $N_0=0.1$, $p_0=0.7$ and $\\lambda_{\\mathrm{opt}}=0.0212$, from Example 2.4.'],
  ['Find','(b) $P_e$ at $\\lambda_{\\mathrm{opt}}$, against $P_e$ at $\\lambda=0$.'],
  ['Method','Weight the two conditional errors by their priors: $P_e=p_0\\,Q\\bigl((\\lambda+\\sqrt{E_b})/\\sigma\\bigr)+p_1\\,Q\\bigl((\\sqrt{E_b}-\\lambda)/\\sigma\\bigr)$, with $\\sigma=\\sqrt{N_0/2}=0.2236$.'],
  ['Solution','$P(\\text{err}\\mid s_0)=Q(1.0212/0.2236)=Q(4.567)=2.48\\times10^{-6}$. $P(\\text{err}\\mid s_1)=Q(0.9788/0.2236)=Q(4.377)=6.01\\times10^{-6}$. In units of $10^{-6}$, $P_e=0.7(2.48)+0.3(6.01)=3.53$, so $P_e=3.53\\times10^{-6}$.'],
  ['Check','At $\\lambda=0$ both conditional errors are $Q(1/0.2236)=Q(4.472)$, so $P_e=Q(4.472)=3.87\\times10^{-6}$. The ratio $3.87/3.53=1.10$, so the zero threshold is about $10$ per cent worse.']
 ]},
 {t:'fig', svg:()=>figExPe(),
- cap:'Example 2.3: $P_e$ against the threshold for the same link. The minimum sits at $\\lambda_{\\mathrm{opt}}=0.0212$. At $\\lambda=0$ (grey dot) it is about $10$ per cent higher.'},
+ cap:'Example 2.5: $P_e$ against the threshold for the same link. The minimum sits at $\\lambda_{\\mathrm{opt}}=0.0212$. At $\\lambda=0$ (grey dot) it is about $10$ per cent higher.'},
 {t:'box', kind:'err', hd:'Common error', html:'Use $\\sigma=\\sqrt{N_0/2}$, not $\\sqrt{N_0}$. The wrong $\\sigma$ raises $P_e$ over a hundred times.'},
 
 {t:'h3', text:'Error rates around us'},
@@ -906,8 +1193,8 @@ window.C2 = [
 {t:'box', kind:'def', hd:'Counting errors', html:'A measured $P_b$ is errors divided by bits. About $10$ errors are needed for a steady estimate, so $P_b=10^{-4}$ needs about $10^{5}$ bits.'},
 {t:'box', kind:'warn', hd:'Rare symbols', html:'When one symbol is rare, $\\lambda_{\\mathrm{opt}}$ moves toward it. The receiver then needs stronger evidence before it decides the rare symbol.'},
 
-/* ================================================================ 2.4 === */
-{t:'h2', num:'2.4', text:'Intersymbol interference'},
+/* ================================================================ 2.5 === */
+{t:'h2', num:'2.5', text:'Intersymbol interference'},
 
 {t:'h3', text:'Intersymbol interference'},
 {t:'p', text:'A first-order RC lowpass is the simplest bandlimited channel. It has one parameter, the $3$ dB bandwidth $B$.'},
@@ -931,7 +1218,7 @@ window.C2 = [
  {svg:()=>figIsiTermBottom(), cap:'The last sample split into its own share $1-q$ (violet) and the tails $-(1-q)q^{m}$ of the earlier bits (red).'}
 ]},
 
-{t:'ex', hd:'Example 2.4 — the samples of a bit pattern', rows:[
+{t:'ex', hd:'Example 2.6 — the samples of a bit pattern', rows:[
  ['Given','Bits $0\\,0\\,0\\,1\\,1\\,1\\,0\\,1$ sent after a line idle at the level of a $0$ ($a_k=-1$), through an RC channel with $BT_b=0.25$, so $q=0.208$.'],
  ['Find','The sample at the end of the seventh bit, $y_7$.'],
  ['Method','Every earlier bit leaves a tail in the sample. Add the bit\'s own share, the tails of the three $1$s, and the tails of every earlier bit and the idle line, all $-1$.'],
@@ -939,7 +1226,7 @@ window.C2 = [
  ['Check','The sample is negative, so the $0$ is still decided correctly.']
 ]},
 {t:'fig', svg:()=>figExIsi(),
- cap:'Example 2.4: the sent pattern (dashed) and the channel output (green), with its value at the end of each bit. The seventh sample is $-0.588$.'},
+ cap:'Example 2.6: the sent pattern (dashed) and the channel output (green), with its value at the end of each bit. The seventh sample is $-0.588$.'},
 {t:'box', kind:'err', hd:'Common error', html:'Use the full history, not only the previous bit. Each earlier bit still contributes its own tail $(1-q)q^{m}$.'},
 
 {t:'h3', text:'The eye diagram'},
@@ -980,8 +1267,8 @@ window.C2 = [
 {t:'box', kind:'def', hd:'Echoes', html:'A radio echo is intersymbol interference with a delay. An echo $d$ symbols late with gain $g$ adds $g\\,a_{k-d}$ to $y_k$.'},
 {t:'box', kind:'warn', hd:'Errors without noise', html:'When the eye is closed, some bit patterns are decided wrongly with no noise at all. More transmit power does not remove them.'},
 
-/* ================================================================ 2.5 === */
-{t:'h2', num:'2.5', text:'Nyquist and the raised cosine'},
+/* ================================================================ 2.6 === */
+{t:'h2', num:'2.6', text:'Nyquist and the raised cosine'},
 
 {t:'h3', text:'A pulse with zero interference'},
 {t:'p', text:'A pulse adds nothing to the samples of its neighbours when it is zero at every sampling instant but its own. This holds however long the pulse lasts.'},
@@ -1040,7 +1327,7 @@ window.C2 = [
 {t:'fig', svg:()=>figRcPulse(0.5),
  cap:'The raised-cosine pulse with $\\alpha=0.5$ (solid) against the sinc pulse (dashed). The zeros at $t=kT_b$ stay where they are, and the tails die out sooner.'},
 
-{t:'ex', hd:'Example 2.5 — a raised-cosine link', rows:[
+{t:'ex', hd:'Example 2.7 — a raised-cosine link', rows:[
  ['Given','A link sends $R_b=20$ kb/s with raised-cosine pulses and $\\alpha=0.5$.'],
  ['Find','$W$, $f_1$ and $B_T$.'],
  ['Method','Each of the three follows from $R_b$ and $\\alpha$: $W=R_b/2$, $f_1=W(1-\\alpha)$ and $B_T=W(1+\\alpha)$. The spectrum is flat up to $f_1$ and falls to zero at $B_T$, with its half-height point at $W$.'],
@@ -1048,7 +1335,7 @@ window.C2 = [
  ['Check','$B_T-W=W-f_1=5$ kHz, so the roll-off is symmetric about $W$.']
 ]},
 {t:'fig', svg:()=>figExRc(),
- cap:'Example 2.5: the ideal rectangle of width $2W$ (dashed) and the raised-cosine spectrum with $\\alpha=0.5$, which reaches $B_T=15$ kHz.'},
+ cap:'Example 2.7: the ideal rectangle of width $2W$ (dashed) and the raised-cosine spectrum with $\\alpha=0.5$, which reaches $B_T=15$ kHz.'},
 {t:'box', kind:'err', hd:'Common error', html:'Use $W=R_b/2=10$ kHz, not $R_b=20$ kHz. The wrong $W$ gives $B_T=30$ kHz, twice the true value.'},
 
 {t:'h3', text:'Splitting the raised cosine'},
@@ -1071,8 +1358,8 @@ window.C2 = [
 {t:'box', kind:'def', hd:'Bandwidth', html:'$B_T=\\tfrac{R_s}{2}(1+\\alpha)$ at baseband. On a carrier the occupied band is twice that, $R_s(1+\\alpha)$.'},
 {t:'box', kind:'warn', hd:'Timing', html:'A small $\\alpha$ gives long tails. A sample taken late then collects interference from many neighbours.'},
 
-/* ================================================================ 2.6 === */
-{t:'h2', num:'2.6', text:'The link in practice'},
+/* ================================================================ 2.7 === */
+{t:'h2', num:'2.7', text:'The link in practice'},
 
 {t:'h3', text:'The equalizer'},
 {t:'p', text:'An <b>equalizer</b> is a filter after the channel that removes interference. The simplest one adds $w$ times the waveform one bit earlier.'},
@@ -1116,8 +1403,8 @@ window.C2 = [
 {t:'fig', svg:()=>figRepeater(),
  cap:'Four hops of the bits $1,0,1,1,0,0,1,0$. Top: the amplified chain carries the noise of every hop, and a red dot is a wrong decision. Bottom: the regenerative chain sends a clean waveform on, and a wrong bit, drawn red, stays wrong.'},
 
-/* ================================================================ 2.7 === */
-{t:'h2', num:'2.7', text:'Summary'},
+/* ================================================================ 2.8 === */
+{t:'h2', num:'2.8', text:'Summary'},
 
 {t:'h3', text:'From bits to decisions'},
 {t:'p', text:'The whole link has four stages.'},

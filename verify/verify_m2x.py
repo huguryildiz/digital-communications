@@ -1,7 +1,7 @@
 """PASS lines for every number stated in build/src/88_scenes_m2x.js.
 
-The five visual scenes of Module 2 (the noisy eye in 2.4 and the survey
-section 2.6). Standard library only, so it runs without the project venv.
+The five visual scenes of Module 2 (the noisy eye in 2.5 and the survey
+section 2.7). Standard library only, so it runs without the project venv.
 Merge these checks into verify_scenes.py once that file is free to edit.
 
     python3 verify/verify_m2x.py      # N passed, 0 failed
