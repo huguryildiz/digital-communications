@@ -75,7 +75,7 @@ CONTENT.SECTIONS = {
     { n:'2.1', title:'Random signals',                 ids:[
         'm2-rp-ensemble','m2-rp-acf','m2-rp-wss','m2-rp-ex-phase','m2-rp-psd','m2-rp-white','m2-rp-lti','m2-rp-filtered','m2-rp-gauss','m2-real-random','m2-lab-t','m2-code-random'] },
     { n:'2.2', title:'The matched filter',             ids:[
-        'm2-receiver','m2-model','m2-schwarz','m2-matched','m2-conv','m2-props','m2-ex-mf','m2-real-matched','m2-lab-c','m2-code-matched'] },
+        'm2-filter-choice','m2-receiver','m2-model','m2-schwarz','m2-bound','m2-matched','m2-conv','m2-props','m2-ex-mf','m2-real-matched','m2-lab-c','m2-code-matched'] },
     { n:'2.3', title:'The demodulator',                ids:[
         'm2-basis','m2-space','m2-demod','m2-correlator','m2-real-demod','m2-lab-p','m2-code-demod'] },
     { n:'2.4', title:'The decision and its error',     ids:[
@@ -227,7 +227,7 @@ CONTENT.BOOK = {
   'm2-rp-ensemble':'5.2', 'm2-rp-acf':'5.2.1', 'm2-rp-wss':'5.2.2', 'm2-rp-ex-phase':'5.2.1',
   'm2-rp-psd':'5.2.5', 'm2-rp-white':'5.3.2', 'm2-rp-lti':'5.2.4, 5.2.5', 'm2-rp-filtered':'5.3.3',
   'm2-rp-gauss':'5.3.1', 'm2-real-random':'5.3', 'm2-lab-t':'5.2.5, 5.3.3',
-  'm2-receiver':'8.3.2', 'm2-model':'8.3.2', 'm2-schwarz':'8.3.2', 'm2-matched':'8.3.2', 'm2-conv':'8.3.2', 'm2-props':'8.3.2',
+  'm2-filter-choice':'8.3.2', 'm2-receiver':'8.3.2', 'm2-model':'8.3.2', 'm2-schwarz':'8.3.2', 'm2-bound':'8.3.2', 'm2-matched':'8.3.2', 'm2-conv':'8.3.2', 'm2-props':'8.3.2',
   'm2-ex-mf':'8.3.2', 'm2-real-matched':'8.3.2', 'm2-lab-c':'8.3.2',
   'm2-basis':'8.2.1', 'm2-space':'8.2.1', 'm2-demod':'8.3.1', 'm2-correlator':'8.3.1', 'm2-real-demod':'8.3.1', 'm2-lab-p':'8.3.1',
   'm2-stat':'8.3.3', 'm2-errors':'8.3.3', 'm2-threshold':'8.3.3', 'm2-threshold-b':'8.3.3', 'm2-q':'8.3.3', 'm2-pe':'8.3.3',

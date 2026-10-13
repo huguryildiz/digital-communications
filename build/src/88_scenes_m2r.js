@@ -110,7 +110,8 @@ function figAcf(v){
   const hA = TOPH()+50, hB = 270 + extraHeight(hA+270);
   const a = P.Axes({w:560, h:hA, xr:[0,6], yr:[-2.4,4.2], xlabel:'t\\;(\\text{ms})', ylabel:'x(t)',
     pad:{l:56,r:26,t:22,b:40}, xticksOverride:[0,1,2,3,4,5,6], yticksOverride:[-2,0,2,4]});
-  AC_P.forEach(x=>a.curve(path(x, AC_DT, 6), {color:C.in, width:1.5, n:700}));
+  /* three sample functions: three hues far apart, so each stays followable where they cross */
+  AC_P.forEach((x,i)=>a.curve(path(x, AC_DT, 6), {color:[C.in, C.h, C.err][i], width:1.6, n:700}));
   [AC_T1, AC_T1+tau].forEach(t=>{ a.vline(t, {color:C.mid, dash:'5 4', width:1.4, opacity:0.9});
     AC_P.forEach(x=>a.point(t, path(x, AC_DT, 6)(t), {color:C.mid, r:4})); });
   const b = P.Axes({w:300, h:hB, xr:[-3.3,3.3], yr:[-3.3,3.3], xlabel:'X(t)', ylabel:'X(t+\\tau)',
@@ -207,26 +208,26 @@ function figPsdR(v){
    while the lobe narrows. The sample function is a sum of cosines at
    (k + 1/2) 50 Hz with seeded phases, every one below B, scaled to unit
    power, so widening the band adds components and keeps the old ones. */
-const WH_DF = 0.05, WH_PH = (()=>{ const r = rng(20260451), o = []; for(let k=0;k<200;k++) o.push(2*Math.PI*r()); return o; })();
+const WH_DF = 0.05, WH_PH = (()=>{ const r = rng(20260451), o = []; for(let k=0;k<2400;k++) o.push(2*Math.PI*r()); return o; })();
 function figWhite(v){
-  const B = val(v, 'B', 2), hA = TOPH(), hB = 270 + extraHeight(hA+270);
+  const B = 0.5*Math.pow(200, val(v, 'B', 0.2616)), X = B > 8 ? 10*Math.ceil(1.25*B/10) : 10, hA = TOPH(), hB = 270 + extraHeight(hA+270);
   const K = Math.max(1, Math.floor(B/WH_DF - 0.5) + 1), g = Math.sqrt(2/K);
   const a = P.Axes({w:560, h:hA, xr:[0,3], yr:[-3.4,3.4], xlabel:'t\\;(\\text{ms})', ylabel:'x(t)/\\sigma',
     pad:{l:56,r:26,t:22,b:40}, xticksOverride:[0,0.5,1,1.5,2,2.5,3], yticksOverride:[-2,0,2]});
   a.curve(t=>{ let s = 0; for(let k=0;k<K;k++) s += Math.cos(2*Math.PI*(k+0.5)*WH_DF*t + WH_PH[k]); return g*s; },
-    {color:C.in, width:1.4, n:1200});
+    {color:C.in, width:1.4, n:Math.min(3000, Math.max(1200, Math.ceil(60*B)))});
   const b = P.Axes({w:280, h:hB, xr:[-1.2,1.2], yr:[-0.3,1.3], xlabel:'\\tau\\;(\\text{ms})', ylabel:'R_X(\\tau)/N_0B',
     pad:{l:48,r:16,t:24,b:42}, xticksOverride:[-1,0,1], yticksOverride:[0.5,1]});
-  b.curve(t=>sinc(2*B*t), {color:C.mid, width:2.5, n:1400});
+  b.curve(t=>sinc(2*B*t), {color:C.mid, width:2.5, n:Math.min(8000, Math.max(1400, Math.ceil(48*B)))});
   const z = 1/(2*B);
   if(z <= 1.15){ [-z, z].forEach(t=>b.point(t, 0, {color:C.mid, r:4.4}));
     b.note(z+0.06, 0.16, '\\tfrac{1}{2B}', {tex:true, fs:15, color:C.mid}); }
-  const c = P.Axes({w:280, h:hB, xr:[-10,10], yr:[0,1.45], xlabel:'f\\;(\\text{kHz})', ylabel:'S_X(f)',
-    pad:{l:48,r:16,t:24,b:42}, xticksOverride:[-10,-5,0,5,10], yticksOverride:[1], ytickfmt:()=>''});
-  c.poly([[-10,1],[10,1]], {color:C.in, width:1.4, dash:'4 5'});
+  const c = P.Axes({w:280, h:hB, xr:[-X,X], yr:[0,1.45], xlabel:'f\\;(\\text{kHz})', ylabel:'S_X(f)',
+    pad:{l:48,r:16,t:24,b:42}, xticksOverride:[-X,-X/2,0,X/2,X], yticksOverride:[1], ytickfmt:()=>''});
+  c.poly([[-X,1],[X,1]], {color:C.in, width:1.4, dash:'4 5'});
   c.rect(-B, 0, B, 1, {fill:C.dec.in});
-  c.poly([[-10,0],[-B,0],[-B,1],[B,1],[B,0],[10,0]], {color:C.in, width:2.6});
-  c.note(-9.7, 1.16, '\\tfrac{N_0}{2}', {tex:true, fs:15, color:C.in});
+  c.poly([[-X,0],[-B,0],[-B,1],[B,1],[B,0],[X,0]], {color:C.in, width:2.6});
+  c.note(-0.97*X, 1.16, '\\tfrac{N_0}{2}', {tex:true, fs:15, color:C.in});
   return `<svg viewBox="0 0 560 ${hA+hB}" xmlns="http://www.w3.org/2000/svg" role="img">${place(a.svg(),0,0,560,hA)}${place(b.svg(),0,hA,280,hB)}${place(c.svg(),280,hA,280,hB)}</svg>`;
 }
 
@@ -422,7 +423,7 @@ const SC = [
 ]},
 
 { id:'m2-rp-wss', module:'M2', nav:'Stationarity and power', title:'Stationarity and power',
-  objective:'State wide-sense stationarity and the three properties of the autocorrelation, with the power as its value at zero.',
+  objective:'State strict-sense and wide-sense stationarity and the three properties of the autocorrelation, with the power as its value at zero.',
   keywords:'wide sense stationary wss stationarity autocorrelation properties even function maximum at zero average power R(0)',
   src:'book 5.2.2', slide:true, steps:2, blocks:[
   {t:'eyebrow', text:EB},
@@ -433,7 +434,8 @@ const SC = [
       svg:figWss,
       caption:'Step through the frames for $R_X(\\tau)=4e^{-|\\tau|/2}\\cos(2\\pi\\tau)$, with $\\tau$ in ms. Each frame marks one property.'}
   ], right:[
-    {t:'note', kind:'def', head:'Wide-sense stationary', html:'A process is wide-sense stationary when its mean is a constant and $R_X$ depends only on the gap $\\tau$. A shift of the time origin changes neither.'},
+    {t:'note', kind:'def', head:'Strict-sense stationary', html:'A process is strict-sense stationary when every joint density of $X(t_1),\\dots,X(t_n)$ is unchanged by a shift $T$ of all the times, for every $n$.'},
+    {t:'note', kind:'def', head:'Wide-sense stationary', html:'A weaker test: the mean is a constant and $R_X$ depends only on the gap $\\tau$. Strict-sense stationarity implies it.'},
     {t:'reveal', at:1, items:[
       {t:'eq', label:'Three properties', tex:'\\begin{aligned}R_X(0)&=E\\bigl[X^{2}(t)\\bigr]=P_X\\\\R_X(-\\tau)&=R_X(\\tau)\\\\|R_X(\\tau)|&\\le R_X(0)\\end{aligned}',
         note:'The first is the average power. A value is never more alike to another value than to itself, which is the third.'}]},
@@ -500,7 +502,7 @@ const SC = [
   {t:'title', text:'White noise'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true,
-      live:{controls:[{k:'B', label:'$B$ (kHz)', min:0.5, max:8, step:0.1, v:2, show:v=>'$'+v.toFixed(1)+'$'}]},
+      live:{controls:[{k:'B', label:'$B$ (kHz)', min:0, max:1, step:0.005, v:0.2616, show:v=>{ const B = 0.5*Math.pow(200, v); return '$'+(B < 10 ? B.toFixed(1) : Math.round(B))+'$'; }}]},
       svg:figWhite,
       caption:'Drag the band $B$ of noise with density $N_0/2$ on $|f|<B$. Its $R_X(\\tau)=N_0B\\operatorname{sinc}(2B\\tau)$, with $\\operatorname{sinc}(x)=\\sin(\\pi x)/(\\pi x)$, narrows toward an impulse as $B$ grows.'}
   ], right:[

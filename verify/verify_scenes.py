@@ -377,6 +377,37 @@ def _m2_mf_output(s, t):
     return float(np.sum(su[inside] * s(v[inside])) / n / E)
 
 
+def _m2_rc_ratio(x):
+    """eta/(2E/N0) at t = T for a unit rectangle through h(t) = e^{-t/tau}/tau,
+    x = T/tau, from the convolution and the noise integral on a grid."""
+    tau = 1.0 / x
+    n = 20000
+    u = (np.arange(n) + 0.5) / n                      # pulse support [0, 1]
+    g0T = float(np.sum(np.exp(-(1 - u) / tau) / tau) / n)
+    v = (np.arange(400 * n) + 0.5) * (40 * tau) / (400 * n)
+    hsq = float(np.sum((np.exp(-v / tau) / tau) ** 2) * (40 * tau) / (400 * n))
+    E, N0 = 1.0, 1.0
+    return (g0T ** 2 / (N0 / 2 * hsq)) / (2 * E / N0)
+
+
+def _m2_rc_best():
+    xs = np.linspace(0.5, 3.0, 2501)
+    r = 2 * (1 - np.exp(-xs)) ** 2 / xs
+    return float(xs[np.argmax(r)]), float(r.max())
+
+
+def _m2_rc_noise(tau, N0=1.0):
+    """(N0/2) int_0^inf h^2 for h = e^{-t/tau}/tau, by quadrature."""
+    return N0 / 2 * integrate.quad(lambda t: (math.exp(-t / tau) / tau) ** 2, 0, math.inf)[0]
+
+
+def _m2_eta_gain(c):
+    """(int c H G)^2 / ((N0/2) int |c H|^2) for Gaussian G and H of width 2, N0 = 1."""
+    f = np.linspace(-12, 12, 200_001)
+    G, H = np.exp(-f ** 2), c * np.exp(-f ** 2 / 4)
+    return float(np.trapezoid(H * G, f) ** 2 / (0.5 * np.trapezoid(H ** 2, f)))
+
+
 def _m2_barker(side=False):
     c = [1, -1, 1, 1, -1, 1, 1, 1, -1, -1, -1]
     r = np.correlate(c, c, mode="full")
@@ -1041,6 +1072,38 @@ CHECKS: list[dict] = [
      "stated": 4.0, "derive": lambda: _mse_by_integral(2.0) / _mse_by_integral(1.0)},
     {"name": "1.8.2 levels of a 16-bit quantizer",
      "stated": 65536, "derive": lambda: 2 ** 16},
+
+    # ---- 2.2, the matched filter: the lines added with the RC comparison --
+    {"name": "2.2.1 RC noise power is N0/(4 tau), checked at tau = 0.3",
+     "stated": 1 / (4 * 0.3), "derive": lambda: _m2_rc_noise(0.3), "tol": 1e-6},
+    {"name": "2.2.1 tau ten times smaller gives ten times the noise power",
+     "stated": 10.0, "derive": lambda: _m2_rc_noise(0.1) / _m2_rc_noise(1.0), "tol": 1e-6},
+    {"name": "2.2.1 RC with tau = T/10 reaches 0.20 of the bound",
+     "stated": 0.20, "derive": lambda: _m2_rc_ratio(10.0), "tol": 5e-3},
+    {"name": "2.2.1 RC with tau = 2T reaches 0.62 of the bound",
+     "stated": 0.62, "derive": lambda: _m2_rc_ratio(0.5), "tol": 5e-3},
+    {"name": "2.2.3 best RC filter reaches 0.81 of the bound",
+     "stated": 0.81, "derive": lambda: _m2_rc_best()[1], "tol": 6e-3},
+    {"name": "2.2.3 best RC filter at T/tau = 1.26",
+     "stated": 1.26, "derive": lambda: _m2_rc_best()[0], "tol": 4e-3},
+    {"name": "2.2.3 best RC filter, dB below the bound",
+     "stated": 0.9, "derive": lambda: -10 * math.log10(_m2_rc_ratio(1.2564)), "tol": 1.2e-2},
+    {"name": "2.2.3 RC formula 2(1-e^-x)^2/x against the grid at x = 1",
+     "stated": 2 * (1 - math.exp(-1)) ** 2, "derive": lambda: _m2_rc_ratio(1.0), "tol": 1e-4},
+    {"name": "2.2.4 a gain of 3 on H leaves eta unchanged (ratio of the two etas)",
+     "stated": 1.0, "derive": lambda: _m2_eta_gain(3.0) / _m2_eta_gain(1.0), "tol": 1e-9},
+    {"name": "2.2.5 Schwarz ratio 2b/(1+b^2) is 0.80 at b = 2",
+     "stated": 0.80, "derive": lambda: _m2_schwarz_ratio(2.0), "tol": 2e-3},
+    {"name": "2.2.5 Schwarz ratio 2b/(1+b^2) is 0.80 at b = 1/2",
+     "stated": 0.80, "derive": lambda: _m2_schwarz_ratio(0.5), "tol": 2e-3},
+    {"name": "2.2.7 ramp through its matched filter at T/2, in units of E",
+     "stated": 0.31, "derive": lambda: _m2_mf_output(lambda t: t, 0.5), "tol": 1.6e-2},
+    {"name": "2.2.7 ramp through its matched filter at 3T/2, in units of E",
+     "stated": 0.31, "derive": lambda: _m2_mf_output(lambda t: t, 1.5), "tol": 1.6e-2},
+    {"name": "2.2.7 ramp output 5/48 at t = 1/2 for T = 1",
+     "stated": 5 / 48, "derive": lambda: integrate.quad(lambda u: u * (0.5 + u), 0, 0.5)[0], "tol": 1e-9},
+    {"name": "2.2.7 ramp energy 1/3 for T = 1",
+     "stated": 1 / 3, "derive": lambda: _m2_energy(lambda t: t, 1.0), "tol": 1e-6},
 
     # ---- 2.1, the matched filter ----------------------------------------
     # The matched-filter numbers are re-derived by integrating the pulses on a

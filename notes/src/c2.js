@@ -253,23 +253,69 @@ function figReceiver(){
   return stack(700,[[top,140],[a.svg(),210]]);
 }
 
-const SNR_N=noiseFn(11,0.06,0.16,-1,4);
-function figSnr(){
-  const s=0.16, g0=t=>t<0?0:t<1?t:t<2?2-t:0;
-  const a=ax1({xr:[0,2.3],yr:[-0.45,1.45],xlabel:'t/T',ylabel:'y(t)',xticksOverride:[0,0.5,1,1.5,2],ytarget:4});
-  const pts=[]; for(let i=0;i<=230;i++){ const t=2.3*i/230; pts.push([a.sx(t),a.sy(g0(t)+s)]); }
-  for(let i=230;i>=0;i--){ const t=2.3*i/230; pts.push([a.sx(t),a.sy(g0(t)-s)]); }
+/* The filter problem, as on the slides: one rectangular pulse in white noise
+   of N0 = 0.08 on a grid of dt = T/200, the same seed, through an RC filter
+   or the matched filter. The input is drawn averaged over T/25. */
+const FP_N0=0.08, FP_DT=1/200, FP_T0=-6, FP_T1=2.4;
+const FP_K=Math.round((FP_T1-FP_T0)/FP_DT)+1;
+const FP_W=gauss(20261209,FP_K,Math.sqrt(FP_N0/(2*FP_DT)));
+const fpG=t=>(t>=0&&t<=1)?1:0;
+const rcSig=(t,tau)=>t<0?0:t<=1?1-Math.exp(-t/tau):(1-Math.exp(-1/tau))*Math.exp(-(t-1)/tau);
+const mfSig=t=>t<0?0:t<1?t:t<2?2-t:0;
+const rcRatio=x=>2*Math.pow(1-Math.exp(-x),2)/x;
+function fpNoise(tau){ const n=new Float64Array(FP_K);
+  if(tau){ const a=Math.exp(-FP_DT/tau); let s=0; for(let k=0;k<FP_K;k++){ s=a*s+FP_W[k]*FP_DT/tau; n[k]=s; } }
+  else { let s=0; for(let k=0;k<FP_K;k++){ s+=FP_W[k]*FP_DT; if(k>=200) s-=FP_W[k-200]*FP_DT; n[k]=s; } }
+  return t=>{ const x=(t-FP_T0)/FP_DT, k=Math.max(0,Math.min(FP_K-2,Math.floor(x))), f=x-k; return (1-f)*n[k]+f*n[k+1]; }; }
+const FP_X=(()=>{ const o=[]; for(let k=Math.round((-0.2-FP_T0)/FP_DT);k+8<FP_K;k+=8){
+  let s=0; for(let i=0;i<8;i++) s+=FP_W[k+i]; const t=FP_T0+(k+4)*FP_DT;
+  if(t>2.3) break; o.push([t,fpG(t)+s/8]); } return o; })();
+const fpFilter=tau=>tau
+  ? {sig:t=>rcSig(t,tau),sd:Math.sqrt(FP_N0/(4*tau)),n:fpNoise(tau),ratio:rcRatio(1/tau)}
+  : {sig:mfSig,sd:Math.sqrt(FP_N0/2),n:fpNoise(0),ratio:1};
+function fpOutput(a,F){
+  const N=250, pts=[];
+  for(let i=0;i<=N;i++){ const t=-0.2+2.5*i/N; pts.push([a.sx(t),a.sy(F.sig(t)+F.sd)]); }
+  for(let i=N;i>=0;i--){ const t=-0.2+2.5*i/N; pts.push([a.sx(t),a.sy(F.sig(t)-F.sd)]); }
   a.under(`<path d="M${pts.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join('L')}Z" fill="${C.noiseSoft}"/>`);
-  a.curve(t=>g0(t)+SNR_N(t),{color:C.mid,width:1.2,opacity:0.35,n:900});
-  a.curve(g0,{color:C.mid,width:2.6});
+  a.curve(t=>F.sig(t)+F.n(t),{color:C.mid,width:1.2,opacity:0.4,n:900});
+  a.curve(F.sig,{color:C.mid,width:2.6,n:600});
   a.vline(1,{color:C.muted});
-  a.point(1,1,{color:C.mid,r:5});
-  a.note(1.05,1.26,'g_0(T)',{tex:true,fs:14,color:C.mid});
-  a.poly([[1.55,0.45-s],[1.55,0.45+s]],{color:C.muted,width:1.6});
-  a.poly([[1.52,0.45+s],[1.58,0.45+s]],{color:C.muted,width:1.6});
-  a.poly([[1.52,0.45-s],[1.58,0.45-s]],{color:C.muted,width:1.6});
-  a.note(1.62,0.64,'\\pm\\sqrt{E[n^{2}]}',{tex:true,fs:14,color:C.muted});
+  a.point(1,F.sig(1),{color:C.mid,r:5});
+}
+const etaNote=r=>`\\eta=${r.toFixed(2)}\\cdot\\dfrac{2E}{N_0}`;
+/* the noisy input, and one filter's output under it */
+function figFpInput(){
+  const a=ax1({h:190,xr:[-0.2,2.3],yr:[-3.2,4.4],xlabel:'t/T',ylabel:'x(t)',xticksOverride:[0,1,2],yticksOverride:[-2,0,2,4]});
+  a.poly(FP_X,{color:C.out,width:1.3});
+  a.poly([[-0.2,0],[0,0],[0,1],[1,1],[1,0],[2.3,0]],{color:C.in,width:2.4});
   return a.svg();
+}
+function figFpOut(tau){
+  const F=fpFilter(tau);
+  const a=ax2({xr:[-0.2,2.3],yr:[-1.1,2.1],xlabel:'t/T',ylabel:'y(t)',xticksOverride:[0,1,2],yticksOverride:[-1,0,1,2]});
+  fpOutput(a,F);
+  a.note(0.95,1.82,etaNote(F.ratio),{tex:true,fs:14,color:C.mid});
+  return a.svg();
+}
+
+/* the RC filter at T/tau = x, and eta/(2E/N0) against T/tau on a log axis */
+const RC_BEST=1.2564;
+function figSnr(x){
+  const F=fpFilter(+(1/x).toPrecision(6));
+  const a=ax1({h:230,xr:[-0.2,2.3],yr:[-1.1,1.9],xlabel:'t/T',ylabel:'y(t)',xticksOverride:[0,1,2],yticksOverride:[-1,0,1]});
+  fpOutput(a,F);
+  a.note(1.06,F.sig(1)+F.sd+0.28,'g_0(T)',{tex:true,fs:14,color:C.mid});
+  a.note(0.06,1.6,etaNote(F.ratio),{tex:true,fs:14,color:C.mid});
+  const b=ax1({h:200,xr:[0,2.3],yr:[0,1.3],xlabel:'T/\\tau',ylabel:'\\eta\\,/\\,(2E/N_0)',
+    xticksOverride:[0.2,1.2,2.2],xtickfmt:u=>u<1?'0.1':u<2?'1':'10',yticksOverride:[0.5,1]});
+  b.hline(1,{color:C.muted,dash:'5 4'});
+  b.note(1.72,1.07,'\\text{the bound}',{tex:true,fs:13,color:C.muted});
+  b.curve(u=>rcRatio(Math.pow(10,u-1.2)),{color:C.h,width:2.4,n:400});
+  const ub=Math.log10(RC_BEST)+1.2;
+  b.point(ub,rcRatio(RC_BEST),{color:C.mid,r:5});
+  b.note(ub+0.08,0.48,'0.81',{tex:true,fs:13,color:C.h});
+  return stack(700,[[a.svg(),230],[b.svg(),200]]);
 }
 
 const schwarzRatio=b=>2*b/(1+b*b);
@@ -284,31 +330,45 @@ function figSchwarz(b){
   return a.svg();
 }
 
-/* the ramp s(t) = t/T, its reversal s(-t), and h(t) = s(T - t) */
+/* eta/(2E/N0) = 2b/(1 + b^2) against the width b of |H(f)| */
+function figBoundCurve(){
+  const a=ax1({h:230,xr:[0,3.2],yr:[0,1.25],xlabel:'b',ylabel:'\\eta\\,/\\,(2E/N_0)',
+    xticksOverride:[0,0.5,1,2,3],yticksOverride:[0.5,0.8,1]});
+  a.hline(1,{color:C.muted,dash:'5 4'});
+  a.note(2.3,1.1,'\\text{the bound}',{tex:true,fs:13,color:C.muted});
+  a.curve(b=>schwarzRatio(b),{color:C.h,width:2.6,n:500});
+  [[0.5,0.8],[2,0.8]].forEach(([x,y])=>a.point(x,y,{color:C.h,r:4.5}));
+  a.point(1,1,{color:C.mid,r:5});
+  a.note(1.06,1.1,'b=1',{tex:true,fs:14,color:C.mid});
+  return a.svg();
+}
+
+/* the ramp g(t) = t/T, its reversal g(-t), and h(t) = g(T - t) */
 function figMatchedBuild(){
-  const a=ax1({xr:[-1.35,1.35],yr:[-0.2,1.35],xlabel:'t/T',ylabel:'s(t),\\;h(t)',
+  const a=ax1({xr:[-1.35,1.35],yr:[-0.2,1.35],xlabel:'t/T',ylabel:'g(t),\\;h(t)',
     xticksOverride:[-1,-0.5,0,0.5,1]});
   a.poly([[0,0],[1,1],[1,0]],{color:C.in,width:2.4});
   a.poly([[0,0],[-1,1],[-1,0]],{color:C.h,width:2.0,dash:'7 5'});
   a.poly([[1,0],[0,1],[0,0]],{color:C.h,width:2.6});
-  a.note(1.05,0.78,'s(t)',{tex:true,fs:14,color:C.in});
-  a.note(-1.28,1.12,'s(-t)',{tex:true,fs:14,color:C.h});
-  a.note(0.06,1.14,'h(t)=s(T-t)',{tex:true,fs:14,color:C.h});
+  a.note(1.05,0.78,'g(t)',{tex:true,fs:14,color:C.in});
+  a.note(-1.28,1.12,'g(-t)',{tex:true,fs:14,color:C.h});
+  a.note(0.06,1.14,'h(t)=g(T-t)',{tex:true,fs:14,color:C.h});
   return a.svg();
 }
 
-/* the sliding overlap at t = T/2, and y(t) drawn as far as the slide has gone */
+/* the sliding overlap of the ramp at t = T/2, and y(t)/E drawn as far as the
+   slide has gone: y/E = 1.5t^2 - 0.5t^3 up to T, even about T */
 function figConvTop(){
-  const t=0.5, s=u=>(u>=0&&u<=1)?1:0;
-  const a=ax2({xr:[-1.2,2.3],yr:[-0.2,1.4],xlabel:'\\tau/T',ylabel:'s(\\tau),\\;h(t-\\tau)',xticksOverride:[-1,0,1,2],ytarget:2});
-  a.area(u=>Math.min(s(u),s(u-t+1)),-1.2,2.3,{color:C.dec.mid});
-  a.poly([[-1.2,0],[0,0],[0,1],[1,1],[1,0],[2.3,0]],{color:C.in,width:2.4});
-  a.poly([[-1.2,0],[t-1,0],[t-1,1],[t,1],[t,0],[2.3,0]],{color:C.h,width:2.2,dash:'7 5'});
+  const t=0.5, g=u=>(u>=0&&u<=1)?u:0;
+  const a=ax2({xr:[-1.2,2.3],yr:[-0.2,1.4],xlabel:'\\tau/T',ylabel:'g(\\tau),\\;h(t-\\tau)',xticksOverride:[-1,0,1,2],ytarget:2});
+  a.area(u=>g(u)*g(1-t+u),-1.2,2.3,{color:C.dec.mid});
+  a.poly([[-1.2,0],[0,0],[1,1],[1,0],[2.3,0]],{color:C.in,width:2.4});
+  a.poly([[-1.2,0],[t-1,0],[t,1],[t,0],[2.3,0]],{color:C.h,width:2.2,dash:'7 5'});
   return a.svg();
 }
 function figConvBottom(){
-  const t=0.5, y=u=>u<0?0:u<1?u:u<2?2-u:0;
-  const a=ax2({xr:[-1.2,2.3],yr:[-0.2,1.4],xlabel:'t/T',ylabel:'y(t)',xticksOverride:[-1,0,1,2],ytarget:2});
+  const t=0.5, yh=u=>u<=0?0:u>=1?1:1.5*u*u-0.5*u*u*u, y=u=>u<=1?yh(u):yh(2-u);
+  const a=ax2({xr:[-1.2,2.3],yr:[-0.2,1.4],xlabel:'t/T',ylabel:'y(t)/E',xticksOverride:[-1,0,1,2],ytarget:2});
   a.curve(y,{color:C.mid,width:1.4,dash:'4 5',opacity:0.5});
   a.curve(u=>u<=t+1e-9?y(u):NaN,{color:C.mid,width:2.6,n:700});
   a.point(t,y(t),{color:C.mid,r:5});
@@ -333,7 +393,7 @@ function figEqualOutputs(){
 function figExMf(){
   const a=ax1({xr:[-0.4,2.4],yr:[-0.12,1.3],xlabel:'t/T',ylabel:'y(t)/(A^{2}T)',xticksOverride:[0,0.5,1,1.5,2],ytarget:4});
   a.poly([[-0.2,0],[0,0],[0,1],[1,1],[1,0],[2.4,0]],{color:C.ink,width:1.6,dash:'6 5'});
-  a.note(0.06,1.12,'s(t)/A',{tex:true,fs:14,color:C.ink});
+  a.note(0.06,1.12,'g(t)/A',{tex:true,fs:14,color:C.ink});
   a.poly([[-0.2,0],[0,0],[1,1],[2,0],[2.4,0]],{color:C.mid,width:2.6});
   a.point(1,1,{color:C.mid,r:5});
   a.note(1.08,1.14,'y(T)=A^{2}T',{tex:true,fs:14,color:C.mid});
@@ -850,7 +910,8 @@ window.C2 = [
  cap:'Top: three sample functions, read at $t=1.5$ ms and at $t+\\tau$ with $\\tau=0.5$ ms. Left: $300$ pairs $X(t)$ and $X(t+\\tau)$ of the same process. Right: $R_X(\\tau)=e^{-|\\tau|/\\tau_c}$ with $\\tau_c=1$ ms, and the estimate from the pairs.'},
 
 {t:'h3', text:'Stationarity and power'},
-{t:'p', text:'A process is <b>wide-sense stationary</b> when its mean is a constant and $R_X(t,t+\\tau)$ depends only on the gap $\\tau$. A shift of the time origin then changes neither, and we write $R_X(\\tau)$.'},
+{t:'p', text:'A process is <b>strict-sense stationary</b> when every joint density of $X(t_1),\\dots,X(t_n)$ is unchanged by a shift $T$ of all the times, for every $n$.'},
+{t:'p', text:'A weaker test is enough here. A process is <b>wide-sense stationary</b> when its mean is a constant and $R_X(t,t+\\tau)$ depends only on the gap $\\tau$. A shift of the time origin then changes neither, and we write $R_X(\\tau)$. Strict-sense stationarity implies it.'},
 {t:'p', text:'Three properties follow from the definition. The second substitutes $s=t-\\tau$. The third expands a square, which is never negative, with both signs.'},
 {t:'eqbox', cap:'Three properties', tex:'\\begin{aligned}R_X(0)&=E\\bigl[X^{2}(t)\\bigr]=P_X\\\\R_X(-\\tau)&=E\\bigl[X(s+\\tau)\\,X(s)\\bigr]=R_X(\\tau)\\\\E\\bigl[(X(t)\\pm X(t+\\tau))^{2}\\bigr]&=2R_X(0)\\pm2R_X(\\tau)\\ge0\\end{aligned}',
  after:'The first line is the average power $P_X$. The third line, with both signs, gives $|R_X(\\tau)|\\le R_X(0)$: a value is never more alike to another value than to itself.'},
@@ -944,6 +1005,21 @@ window.C2 = [
 /* ================================================================ 2.2 === */
 {t:'h2', num:'2.2', text:'The matched filter'},
 
+{t:'h3', text:'Choosing the receive filter'},
+{t:'p', text:'The receiver reads one number, $y(T)$, and decides the bit from it. The pulse puts a value there and the noise moves it. The receive filter $h(t)$ decides how far the noise moves it.'},
+{t:'p', text:'The task of this section is to choose $h(t)$ so that the pulse part of $y(T)$ is as large as possible against the noise part.'},
+{t:'fig', svg:()=>figFpInput(),
+ cap:'One rectangular pulse $g(t)$ (cyan) on $[0,T]$, buried in white noise. The green line is the input $x(t)$.'},
+{t:'p', text:'A first try is an RC lowpass filter. Its impulse response decays with the time constant $\\tau$. The output noise power is $\\frac{N_0}{2}\\int h^{2}(t)\\,dt$, the filtered white noise result of Section 2.1.'},
+{t:'eqbox', cap:'An RC filter', tex:'\\begin{aligned}h(t)&=\\frac{1}{\\tau}\\,e^{-t/\\tau},\\qquad t\\ge0\\\\E[n^{2}]&=\\frac{N_0}{2}\\int_{0}^{\\infty}\\frac{e^{-2t/\\tau}}{\\tau^{2}}\\,dt=\\frac{N_0}{2}\\cdot\\frac{1}{2\\tau}=\\frac{N_0}{4\\tau}\\end{aligned}',
+ after:'A small $\\tau$ passes a wide band of noise. For example, making $\\tau$ ten times smaller makes $E[n^{2}]$ ten times larger. A large $\\tau$ passes little noise, but it also smooths the pulse away.'},
+{t:'figrow', n:3, items:[
+ {svg:()=>figFpOut(0.1), cap:'RC, $\\tau=T/10$: the pulse passes, and so does much noise.'},
+ {svg:()=>figFpOut(2), cap:'RC, $\\tau=2T$: little noise passes, and the pulse is smoothed away.'},
+ {svg:()=>figFpOut(0), cap:'The matched filter: a clear peak at $t=T$, with $\\eta$ at its bound.'}
+]},
+{t:'p', text:'Each panel shows the signal part of the output (heavy line), a band one noise standard deviation wide around it, and one noisy output. The rest of this section finds the best filter and the best value $\\eta$ can take.'},
+
 {t:'h3', text:'The receiver model'},
 {t:'p', text:'One bit is sent as a pulse $g(t)$ on $0\\le t\\le T$. The channel adds noise $w(t)$. The receiver passes the sum through a linear filter $h(t)$ and samples the output once, at $t=T$.'},
 {t:'fig', svg:()=>figReceiver(),
@@ -961,20 +1037,28 @@ window.C2 = [
  after:'The ratio $\\eta$ is the <b>peak pulse signal-to-noise ratio</b>. For example, $g_0(T)=2$ mV and $E[n^{2}(T)]=10^{-6}\\ \\text{V}^{2}$ give $\\eta=(2\\times10^{-3})^{2}/10^{-6}=4$.'},
 {t:'p', text:'Both parts can be written in the frequency domain. The signal part is the inverse transform of $H(f)G(f)$, read at $t=T$. The noise part integrates the output noise density $S_W(f)|H(f)|^{2}$.'},
 {t:'eqbox', cap:'Both parts in $f$', tex:'\\begin{aligned}g_0(T)&=\\int_{-\\infty}^{\\infty}H(f)\\,G(f)\\,e^{j2\\pi fT}\\,df\\\\E[n^{2}(T)]&=\\int_{-\\infty}^{\\infty}\\frac{N_0}{2}\\,|H(f)|^{2}\\,df\\end{aligned}'},
-{t:'fig', svg:()=>figSnr(),
- cap:'The filter output. The heavy line is the signal part $g_0(t)$ and the grey band is one noise standard deviation wide around it. The thin line is one noisy output. The receiver reads one value, at $t=T$.'},
+{t:'p', text:'For the RC filter and the rectangular pulse, $g_0(T)=1-e^{-T/\\tau}$ and $E[n^{2}]=N_0/(4\\tau)$, with $E=T$. Divide one by the other and write $x=T/\\tau$.'},
+{t:'eq', tex:'\\frac{\\eta}{2E/N_0}=\\frac{(1-e^{-x})^{2}}{N_0/(4\\tau)}\\cdot\\frac{N_0}{2T}=\\frac{2\\,(1-e^{-x})^{2}}{x}'},
+{t:'p', text:'This ratio is largest at $x=T/\\tau\\approx1.26$, where it is $0.81$. So the best RC filter stays $0.9$ dB below the bound $2E/N_0$ derived below.'},
+{t:'fig', svg:()=>figSnr(RC_BEST),
+ cap:'The RC filter at its best, $T/\\tau=1.26$. Above: the signal part $g_0(t)$, a band one noise standard deviation wide, and one noisy output. Below: $\\eta$ as a fraction of $2E/N_0$ against $T/\\tau$. No RC filter passes $0.81$.'},
 
-{t:'h3', text:'The bound on the output SNR'},
+{t:'h3', text:'Schwarz\'s inequality'},
 {t:'p', text:'Schwarz\'s inequality bounds $\\eta$. It holds for any pair of functions.'},
 {t:'eqbox', cap:'Schwarz\'s inequality', tex:'\\Bigl|\\int\\phi_1(f)\\,\\phi_2(f)\\,df\\Bigr|^{2}\\le\\int|\\phi_1(f)|^{2}\\,df\\int|\\phi_2(f)|^{2}\\,df',
  after:'Equality holds only when $\\phi_1(f)=k\\,\\phi_2^{*}(f)$ for a constant $k$.'},
 {t:'p', text:'Take $\\phi_1=H(f)$ and $\\phi_2=G(f)\\,e^{j2\\pi fT}$. The left side is then $|g_0(T)|^{2}$. Since $|e^{j2\\pi fT}|=1$, the right side is $\\int|H(f)|^{2}df\\int|G(f)|^{2}df$.'},
-{t:'eq', tex:'|g_0(T)|^{2}\\le\\int|H(f)|^{2}df\\int|G(f)|^{2}df'},
-{t:'p', text:'Divide both sides by the noise power $E[n^{2}(T)]$.'},
-{t:'eqbox', cap:'The bound', tex:'\\begin{aligned}\\eta&\\le\\frac{\\int|H(f)|^{2}df\\int|G(f)|^{2}df}{\\frac{N_0}{2}\\int|H(f)|^{2}df}\\\\&=\\frac{2}{N_0}\\int|G(f)|^{2}\\,df=\\frac{2E}{N_0}\\end{aligned}',
- after:'The factor $\\int|H(f)|^{2}df$ cancels between the top and the bottom. Parseval\'s theorem gives $\\int|G(f)|^{2}df=E$, the pulse energy, so the bound contains no $H$. For example, $E=5\\times10^{-7}$ J and $N_0=10^{-7}$ W/Hz give $\\eta_{\\max}=2(5\\times10^{-7})/10^{-7}=10$.'},
+{t:'eqbox', cap:'Apply it to $g_0(T)$', tex:'\\begin{aligned}|g_0(T)|^{2}&=\\Bigl|\\int H(f)\\,G(f)\\,e^{j2\\pi fT}\\,df\\Bigr|^{2}\\\\&\\le\\int|H(f)|^{2}df\\int|G(f)|^{2}df\\end{aligned}'},
 {t:'fig', svg:()=>figSchwarz(2),
- cap:'The signal spectrum $|G(f)|$ (cyan) and a filter $|H(f)|$ (amber, dashed) of twice its width, $b=2$. The shaded overlap sets the SNR, here $0.80$ of the bound. The bound is reached only when the two shapes agree, at $b=1$.'},
+ cap:'The signal spectrum $|G(f)|$ (cyan) and a filter $|H(f)|$ (amber, dashed) of twice its width, $b=2$. The shaded overlap sets the SNR, here $0.80$ of the bound. A wider $|H|$ passes noise where the pulse has no energy, and a narrower one cuts the pulse.'},
+{t:'p', text:'A gain on the filter changes nothing. If $H(f)$ becomes $3H(f)$, then $|g_0(T)|^{2}$ and $E[n^{2}(T)]$ both grow $9$ times, so $\\eta$ stays the same. Only the shape of $H$ matters.'},
+
+{t:'h3', text:'The bound on the output SNR'},
+{t:'p', text:'Write $\\eta$ with the noise power in the frequency domain. Put Schwarz\'s bound on the top.'},
+{t:'eqbox', cap:'The bound', tex:'\\begin{aligned}\\eta&=\\frac{|g_0(T)|^{2}}{\\frac{N_0}{2}\\int|H(f)|^{2}df}\\\\&\\le\\frac{\\int|H(f)|^{2}df\\int|G(f)|^{2}df}{\\frac{N_0}{2}\\int|H(f)|^{2}df}\\\\&=\\frac{2}{N_0}\\int|G(f)|^{2}\\,df=\\frac{2E}{N_0}\\end{aligned}',
+ after:'The factor $\\int|H(f)|^{2}df$ is above and below the line, so it cancels. Parseval\'s theorem gives $\\int|G(f)|^{2}df=E$, the pulse energy, so the bound contains no $H$. For example, $E=5\\times10^{-7}$ J and $N_0=10^{-7}$ W/Hz give $\\eta_{\\max}=2(5\\times10^{-7})/10^{-7}=10$.'},
+{t:'fig', svg:()=>figBoundCurve(),
+ cap:'The SNR of the filter of width $b$ as a fraction of the bound, $2b/(1+b^{2})$. It is $0.80$ at $b=1/2$ and at $b=2$, and it reaches $1$ only at $b=1$.'},
 
 {t:'h3', text:'The matched filter'},
 {t:'p', text:'The equality condition of Schwarz\'s inequality names the best filter. Put $\\phi_1=H(f)$ and $\\phi_2=G(f)e^{j2\\pi fT}$ into $\\phi_1=k\\phi_2^{*}$.'},
@@ -985,40 +1069,42 @@ window.C2 = [
  after:'A real pulse has $g^{*}=g$. The filter is the pulse reversed in time and shifted right by $T$. It is called the <b>matched filter</b>.'},
 {t:'p', text:'For example, the ramp $g(t)=t/T$ on $0\\le t\\le T$ with $k=1$ has $h_{\\mathrm{opt}}(0)=g(T-0)=g(T)=1$.'},
 {t:'fig', svg:()=>figMatchedBuild(),
- cap:'The matched filter of the ramp $s(t)=t/T$, built in two moves. The ramp (cyan) is reversed in time to $s(-t)$ (amber, dashed), then shifted right by $T$ to $h(t)=s(T-t)$ (amber).'},
+ cap:'The matched filter of the ramp $g(t)=t/T$, built in two moves. The ramp (cyan) is reversed in time to $g(-t)$ (amber, dashed), then shifted right by $T$ to $h(t)=g(T-t)$ (amber).'},
 
 {t:'h3', text:'The output of the matched filter'},
-{t:'p', text:'The matched-filter output is a sliding overlap. Write it as a convolution and substitute $h(t)=s(T-t)$, so that $h(t-\\tau)=s(T-t+\\tau)$.'},
-{t:'eqbox', cap:'Convolution', tex:'\\begin{aligned}y(t)&=\\int_{-\\infty}^{\\infty}s(\\tau)\\,h(t-\\tau)\\,d\\tau\\\\&=\\int_{-\\infty}^{\\infty}s(\\tau)\\,s(T-t+\\tau)\\,d\\tau\\end{aligned}'},
-{t:'p', text:'At $t=T$ the two copies of $s$ lie on top of each other. The overlap is then the integral of $s^{2}$, which is the energy.'},
-{t:'eqbox', cap:'The peak', tex:'y(T)=\\int_{-\\infty}^{\\infty}s^{2}(\\tau)\\,d\\tau=E',
- after:'For $s(t)=A$ on $[0,T]$, the overlap at $0\\le t\\le T$ has length $t$. So $y(t)=A^{2}t$, and $y(T/2)=A^{2}T/2=E/2$.'},
+{t:'p', text:'The matched-filter output is a sliding overlap. Write it as a convolution and substitute $h(t)=g(T-t)$, so that $h(t-\\tau)=g(T-t+\\tau)$. That is the pulse itself, moved to start at $t-T$, so the output measures how well $g$ lines up with a shifted copy of itself.'},
+{t:'eqbox', cap:'Convolution', tex:'\\begin{aligned}y(t)&=\\int_{-\\infty}^{\\infty}g(\\tau)\\,h(t-\\tau)\\,d\\tau\\\\&=\\int_{-\\infty}^{\\infty}g(\\tau)\\,g(T-t+\\tau)\\,d\\tau\\end{aligned}'},
+{t:'p', text:'At $t=T$ the two copies of $g$ lie on top of each other. The overlap is then the integral of $g^{2}$, which is the energy.'},
+{t:'eqbox', cap:'The peak', tex:'y(T)=\\int_{-\\infty}^{\\infty}g^{2}(\\tau)\\,d\\tau=E'},
+{t:'p', text:'For the ramp $g(t)=t/T$, take $T=1$, so $E=1/3$. For $0\\le t\\le1$ the copies overlap on $0\\le\\tau\\le t$.'},
+{t:'eq', tex:'\\begin{aligned}y(t)&=\\int_{0}^{t}\\tau\\,(1-t+\\tau)\\,d\\tau\\\\&=\\frac{(1-t)\\,t^{2}}{2}+\\frac{t^{3}}{3}\\end{aligned}'},
+{t:'p', text:'At $t=1/2$ this is $1/16+1/24=5/48$, so $y(T/2)=(5/48)/(1/3)\\,E=0.31E$. The output is even about $t=T$: $y(T+u)=\\int g(\\tau)g(\\tau-u)\\,d\\tau$, and the shift $\\tau\\to\\tau+u$ turns it into $y(T-u)$. So $y(3T/2)=0.31E$ as well.'},
 {t:'figrow', n:2, items:[
- {svg:()=>figConvTop(), cap:'The overlap at $t=T/2$. The pulse $s(\\tau)$ (cyan) and the copy $h(t-\\tau)$ (amber, dashed) share the shaded interval.'},
- {svg:()=>figConvBottom(), cap:'The output $y(t)$, the area of the overlap, drawn up to $t=T/2$. The dashed rest of the output peaks at $y(T)=E$.'}
+ {svg:()=>figConvTop(), cap:'The overlap at $t=T/2$. The ramp $g(\\tau)$ (cyan) and the copy $h(t-\\tau)$ (amber, dashed). The shaded area is their product.'},
+ {svg:()=>figConvBottom(), cap:'The output $y(t)/E$, the area of that product, drawn up to $t=T/2$. The dashed rest is even about $t=T$ and peaks at $y(T)=E$.'}
 ]},
 
 {t:'h3', text:'Properties of the matched filter'},
 {t:'p', text:'Two properties follow from the results above.'},
 {t:'ol', items:[
- 'The output is the autocorrelation of the pulse, shifted by $T$. Its peak is $y(T)=E$.',
+ 'The output is $y(t)=R_g(t-T)$. Here $R_g(u)=\\int g(\\tau)\\,g(\\tau-u)\\,d\\tau$ is the <b>pulse autocorrelation</b>. Its peak is $R_g(0)=E$.',
  'The peak SNR is $2E/N_0$. It depends on the energy, not on the shape.'
 ]},
-{t:'p', text:'The second property can be checked in time. Parseval\'s theorem turns $\\int|H(f)|^{2}df$ into $\\int h^{2}(t)\\,dt$, and $h$ has the same energy as $s$.'},
-{t:'eqbox', cap:'Noise at the output', tex:'\\begin{aligned}E[n^{2}(T)]&=\\frac{N_0}{2}\\int_{-\\infty}^{\\infty}h^{2}(t)\\,dt\\\\&=\\frac{N_0}{2}\\int_{-\\infty}^{\\infty}s^{2}(T-t)\\,dt=\\frac{N_0E}{2}\\end{aligned}',
+{t:'p', text:'The second property can be checked in time. Parseval\'s theorem turns $\\int|H(f)|^{2}df$ into $\\int h^{2}(t)\\,dt$, and $h$ has the same energy as $g$.'},
+{t:'eqbox', cap:'Noise at the output', tex:'\\begin{aligned}E[n^{2}(T)]&=\\frac{N_0}{2}\\int_{-\\infty}^{\\infty}h^{2}(t)\\,dt\\\\&=\\frac{N_0}{2}\\int_{-\\infty}^{\\infty}g^{2}(T-t)\\,dt=\\frac{N_0E}{2}\\end{aligned}',
  after:'Then $\\eta=E^{2}/(N_0E/2)=2E/N_0$, which is the bound. For example, a rectangular pulse and a half-sine pulse with $E=10^{-6}$ J and $N_0=10^{-7}$ W/Hz both give $\\eta_{\\max}=20$.'},
 {t:'fig', svg:()=>figEqualOutputs(),
  cap:'A rectangular pulse and a half-sine pulse of the same energy $E$, each through its own matched filter. The rectangular output is solid and the half-sine output dashed. Both peak at $t=T$ with the value $E$.'},
 
 {t:'ex', hd:'Example 2.3 — the matched filter of a rectangular pulse', rows:[
- ['Given','$s(t)=A$ on $[0,T]$, with $A=2$ V, $T=0.5$ ms and $N_0/2=10^{-4}$ W/Hz.'],
+ ['Given','$g(t)=A$ on $[0,T]$, with $A=2$ V, $T=0.5$ ms and $N_0/2=10^{-4}$ W/Hz.'],
  ['Find','The matched filter $h(t)$, its output $y(t)$ and the largest peak SNR $\\eta_{\\max}$.'],
- ['Method','Reverse and shift the pulse to get $h(t)$. The output is the sliding overlap of $s$ and $h$. The largest SNR is $2E/N_0$, which needs only the energy.'],
- ['Solution','$h(t)=s(T-t)=A$ for $0\\le t\\le T$. The overlap gives $y(t)=A^{2}t$ for $0\\le t\\le T$ and $y(t)=A^{2}(2T-t)$ for $T\\le t\\le2T$. The energy is $E=A^{2}T=(2)^{2}(0.5\\times10^{-3})=2\\times10^{-3}$ J. Then $\\eta_{\\max}=2E/N_0=2(2\\times10^{-3})/(2\\times10^{-4})=20$.'],
+ ['Method','Reverse and shift the pulse to get $h(t)$. The output is the sliding overlap of $g$ and $h$. The largest SNR is $2E/N_0$, which needs only the energy.'],
+ ['Solution','$h(t)=g(T-t)=A$ for $0\\le t\\le T$. The overlap gives $y(t)=A^{2}t$ for $0\\le t\\le T$ and $y(t)=A^{2}(2T-t)$ for $T\\le t\\le2T$. The energy is $E=A^{2}T=(2)^{2}(0.5\\times10^{-3})=2\\times10^{-3}$ J. Then $\\eta_{\\max}=2E/N_0=2(2\\times10^{-3})/(2\\times10^{-4})=20$.'],
  ['Check','$10\\log_{10}20=13.0$ dB. The peak is $y(T)=A^{2}T=E$, as the general result requires.']
 ]},
 {t:'fig', svg:()=>figExMf(),
- cap:'Example 2.3: the pulse $s(t)/A$ (dashed) and the output of its matched filter, $y(t)/(A^{2}T)$. The output is a triangle that peaks at $y(T)=A^{2}T$.'},
+ cap:'Example 2.3: the pulse $g(t)/A$ (dashed) and the output of its matched filter, $y(t)/(A^{2}T)$. The output is a triangle that peaks at $y(T)=A^{2}T$.'},
 {t:'box', kind:'err', hd:'Common error', html:'Use $N_0=2\\times10^{-4}$, not $N_0/2$, in $2E/N_0$. The wrong value gives $40$.'},
 
 {t:'h3', text:'Matched filters around us'},
@@ -1029,7 +1115,7 @@ window.C2 = [
  '<b>Range finder.</b> An ultrasonic range finder correlates the echo with the pulse it sent. The peak at $t_0=5.83$ ms gives $d=ct_0/2=1.00$ m for $c=343$ m/s.',
  '<b>Serial port.</b> A serial port at $9600$ baud integrates each bit over $T_b=1/9600=104.2\\ \\mu$s, then dumps. The integrator is the matched filter of a rectangular bit.'
 ]},
-{t:'box', kind:'def', hd:'Correlation with a template', html:'Each receiver correlates what it hears with a copy of what was sent. That is the matched filter $h(t)=s(T-t)$ read at its peak.'},
+{t:'box', kind:'def', hd:'Correlation with a template', html:'Each receiver correlates what it hears with a copy of what was sent. That is the matched filter $h(t)=g(T-t)$ read at its peak.'},
 {t:'box', kind:'def', hd:'Peak time', html:'The peak falls where the copy lines up with the echo. Its time is the delay, and the delay gives the range.'},
 {t:'box', kind:'warn', hd:'Pulse compression', html:'A long chirp carries much energy, and its matched output is still a peak about $1/B$ wide. The resolution comes from the bandwidth $B$, not from the length $T$.'},
 

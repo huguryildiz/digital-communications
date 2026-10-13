@@ -193,15 +193,15 @@ plt.show()`},
 /* -------------------------------------------------------------- 2.2 ---- */
 'mf-rect': {
   title:'The matched filter output of a rectangular pulse',
-  what:'Filters $s(t)=A$ on $0\\le t\\le T$ with its matched filter $h(t)=s(T-t)$ and prints the peak output and $(\\mathrm{SNR})_o=2E/N_0$.',
-  try:'Double $A$. Predict the new energy $E$ and the new $(\\mathrm{SNR})_o$ in dB before you run it.',
+  what:'Filters $g(t)=A$ on $0\\le t\\le T$ with its matched filter $h(t)=g(T-t)$ and prints the peak output and $\\eta_{\\max}=2E/N_0$.',
+  try:'Double $A$. Predict the new energy $E$ and the new $\\eta$ in dB before you run it.',
   out:'E = 0.004000 J\ny(T) = 0.004000\n2E/N0 = 80.00 = 19.03 dB',
-  m:`% s(t) = A on [0,T], matched filter h(t) = s(T-t): convolve on a fine grid
+  m:`% g(t) = A on [0,T], matched filter h(t) = g(T-t): convolve on a fine grid
 A = 2; T = 1e-3; N0 = 1e-4; N = 1000;
 dt = T/N;
 t  = (0:N-1)*dt;                            % N samples over [0,T)
 s  = A*ones(size(t));
-h  = A*ones(size(t));                       % s(T-t) is the same rectangle
+h  = A*ones(size(t));                       % g(T-t) is the same rectangle
 y  = conv(s, h)*dt;
 ty = (0:length(y)-1)*dt;
 
@@ -216,12 +216,12 @@ xlabel('t/T'), ylabel('y(t)')`,
   py:`import numpy as np
 import matplotlib.pyplot as plt
 
-# s(t) = A on [0,T], matched filter h(t) = s(T-t): convolve on a fine grid
+# g(t) = A on [0,T], matched filter h(t) = g(T-t): convolve on a fine grid
 A, T, N0, N = 2, 1e-3, 1e-4, 1000
 dt = T/N
 t = np.arange(N)*dt                         # N samples over [0,T)
 s = A*np.ones_like(t)
-h = A*np.ones_like(t)                       # s(T-t) is the same rectangle
+h = A*np.ones_like(t)                       # g(T-t) is the same rectangle
 y = np.convolve(s, h)*dt
 ty = np.arange(len(y))*dt
 E = A**2*T
@@ -236,7 +236,7 @@ plt.show()`},
 
 'mf-instant': {
   title:'Output SNR away from the matched instant',
-  what:'Samples the same matched filter output before $t=T$ and prints the drop in $(\\mathrm{SNR})_o$ at each earlier instant.',
+  what:'Samples the same matched filter output before $t=T$ and prints the drop in $\\eta$ at each earlier instant.',
   try:'Predict the drop in dB at $t_0=0.5T$ before you run it. It should be a familiar number.',
   out:'t0/T = 0.25   SNR =  6.99 dB\nt0/T = 0.50   SNR = 13.01 dB\nt0/T = 0.75   SNR = 16.53 dB\nt0/T = 1.00   SNR = 19.03 dB',
   m:`% Rectangular pulse, matched filter: g0(t0) rises linearly, g0(t0) = A^2*t0
@@ -277,7 +277,7 @@ plt.show()`},
 
 'mf-shapes': {
   title:'Three pulse shapes at equal energy',
-  what:'Scales a rectangle, a half sine, and a triangle to the same energy $E=0.004$ J and matches each: all three peak at $t=T$ with the same $(\\mathrm{SNR})_o$.',
+  what:'Scales a rectangle, a half sine, and a triangle to the same energy $E=0.004$ J and matches each: all three peak at $t=T$ with the same $\\eta$.',
   try:'Predict, before you run it, whether the peak time changes with the pulse shape.',
   out:'rectangular   t/T = 1.000   SNR = 19.03 dB\nhalf sine     t/T = 1.000   SNR = 19.03 dB\ntriangle      t/T = 1.000   SNR = 19.03 dB',
   m:`% Three pulses on [0,T], each scaled to energy E = 0.004 J, matched filtered

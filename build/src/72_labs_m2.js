@@ -1,8 +1,8 @@
 /* ==========================================================================
    Module 2 laboratories.
 
-   C · The matched filter — the pulse, the noise and the sampling instant
-       against the bound 2E/N0.
+   C · The matched filter — the pulse, the filter, the noise and the
+       sampling instant against the bound 2E/N0.
    P · Correlator and matched filter — one bit through both demodulators,
        compared over the interval and at t = T_b.
    D · Threshold and error probability — the threshold placed by hand against
@@ -48,12 +48,19 @@ Object.assign(LABS, (function(){
 
   /* =======================================================================
      C · THE MATCHED FILTER
-     The pulse and the filter matched to it, swept and scanned; the output
-     signal-to-noise ratio against the bound 2E/N0.
+     One pulse in white noise through the filter matched to it or through an
+     RC filter; the noisy input, the noisy output and the output SNR at the
+     chosen instant against the bound 2E/N0.
      ======================================================================= */
   const C = (() => {
-    const NS = 512, TB = 1;
-    let st = { shape:'rect', noise:30, samp:100, phase:40 };
+    const NS = 256, TB = 1, DT = TB/NS, T0 = -8, T1 = 2.2, RC_TAU = 0.8;
+    const NK = Math.round((T1-T0)/DT);
+    let st = { shape:'rect', filt:'mf', snr:6, samp:100, phase:40 };
+    /* One seeded realisation of unit white samples on the grid. The noise of
+       density N0/2 is sqrt(N0/(2 dt)) times it, so moving the E/N0 slider
+       scales the same noise rather than drawing a new one. */
+    const Z = gauss(20261285, NK, 1);
+    const tz = j => T0 + (j+0.5)*DT;
 
     /* Three pulses, each normalised to unit energy over [0,1], so that what
        changes between them is the shape and not the energy the bound depends
@@ -65,23 +72,28 @@ Object.assign(LABS, (function(){
       if(st.shape==='tri'){ const u = 2*t/TB; return Math.sqrt(3)*(u<1?u:2-u); }
       return 1;
     }
+    /* the impulse response: the pulse reversed and shifted by T, or an RC
+       filter of time constant 0.8T, the best RC filter for the rectangle */
+    const hf = u => st.filt==='mf' ? pulse(TB-u) : (u<0 ? 0 : Math.exp(-u/RC_TAU)/RC_TAU);
 
-    /* The matched filter output is the correlation of the pulse with itself,
-       which peaks at t = T and nowhere else. It is a property of the pulse
-       alone, so it is computed once per shape and reused across all phases. */
-    let cache = { shape:null };
-    function correlation(){
-      if(cache.shape === st.shape) return cache;
-      const dt = TB/NS, sig = [];
-      for(let i=0;i<NS;i++) sig.push(pulse(i*dt));
-      const E = sig.reduce((s,v)=>s+v*v,0)*dt;
-      const out = [];
-      for(let k=0;k<=NS;k++){
-        let s=0;
-        for(let i=0;i<NS;i++){ const j=i-(NS-k); if(j>=0&&j<NS) s += sig[i]*sig[j]; }
-        out.push(s*dt);
-      }
-      cache = { shape:st.shape, out, E };
+    /* The signal part and the unit noise part of the output on t = 0..2T,
+       and int h^2, computed once for each pulse and filter. */
+    let cache = { key:null };
+    function outputs(){
+      const key = st.shape+'/'+st.filt;
+      if(cache.key === key) return cache;
+      const g = []; for(let i=0;i<NS;i++) g.push(pulse((i+0.5)*DT));
+      const E = g.reduce((s,v)=>s+v*v,0)*DT;
+      const L = st.filt==='mf' ? NS : Math.round(12*RC_TAU/DT);
+      let hsq = 0; for(let i=0;i<L;i++){ const v = hf((i+0.5)*DT); hsq += v*v*DT; }
+      const sig = [], n1 = [];
+      for(let k=0;k<=2*NS;k++){ const t = k*DT;
+        let s = 0; for(let i=0;i<NS;i++) s += g[i]*hf(t-(i+0.5)*DT);
+        sig.push(s*DT);
+        let n = 0; const j1 = Math.min(NK-1, Math.floor((t-T0)/DT)), j0 = Math.max(0, j1-L);
+        for(let j=j0;j<=j1;j++) n += Z[j]*hf(t-tz(j));
+        n1.push(n*DT); }
+      cache = { key, E, hsq, sig, n1 };
       return cache;
     }
 
@@ -96,65 +108,70 @@ Object.assign(LABS, (function(){
     }
 
     function draw(root){
-      const { out, E } = correlation();
-      const N0 = Math.pow(10, -st.noise/10);
-      const sweeping = st.phase <= 20;
-      const swept    = Math.min(1, st.phase/20);
-
-      const idx = Math.round(st.samp/100*NS);
-      const peak = out[Math.min(NS,idx)];
-      const snrMax = 2*E/N0;
-      const snrHere = snrMax*Math.pow(peak/out[NS], 2);
-      const lossDb = 10*Math.log10(Math.max(1e-12, snrHere/snrMax));
+      const { E, hsq, sig, n1 } = outputs();
+      const N0 = E/Math.pow(10, st.snr/10), sw = Math.sqrt(N0/(2*DT));
+      const sweeping = st.phase <= 20, swept = Math.min(1, st.phase/20);
+      const k = Math.round(st.samp/100*NS), ys = sig[k];
+      const snrMax = 2*E/N0, snrHere = ys*ys/(N0/2*hsq), ratio = snrHere/snrMax;
+      const lossDb = 10*Math.log10(Math.max(1e-12, ratio));
 
       const ph = PHONE(), gh = GH(root);
-      const ax = P.Axes({w:ph?300:680,h:ph?220:gh(165),xr:[-0.15,1.15],yr:[-0.4,2.1],
-        xlabel:'t/T',ylabel:'s(t),\\;h_{\\mathrm{opt}}(t)',pad:{l:ph?42:58,r:ph?16:26,t:24,b:40},
-        xtarget:ph?4:5,ytarget:4});
-      ax.curve(t=>pulse(t*TB),{color:P.COL.in,width:2.2,n:600});
-      ax.curve(t=>pulse(TB-t*TB),{color:P.COL.h,width:1.9,dash:'6 4',n:600});
-      if(sweeping){
-        const tau = swept;
-        ax.curve(t=>pulse((tau-t)*TB),{color:P.COL.h,width:1.9,n:600});
-        ax.area(t=>Math.min(pulse(t*TB), pulse((tau-t)*TB)), 0, 1, {color:P.COL.dec.h});
-      }
+      /* the input, as a scope of bandwidth 32/T would show it: the noise
+         averaged over 8 grid steps, so its spread is sqrt(16 N0) */
+      const sd = Math.sqrt(16*N0), hi = Math.min(6, Math.max(2.4, 1.9+2*sd)), lo = -Math.min(5, Math.max(0.6, 2*sd));
+      const cl = (v,a,b) => Math.max(a, Math.min(b, v));
+      const xs = []; for(let j=Math.floor((-0.2-T0)/DT); j+8<=NK; j+=8){ const t = tz(j+4)-DT/2; if(t > 2.1) break;
+        let s = 0; for(let i=0;i<8;i++) s += Z[j+i]; xs.push([t, cl(pulse(t)+sw*s/8, lo, hi)]); }
+      const ax = P.Axes({w:ph?300:680,h:ph?290:gh(165),xr:[-0.2,2.1],yr:[lo,hi],
+        xlabel:'t/T',ylabel:'x(t),\\;g(t),\\;h(t)',pad:{l:ph?42:58,r:ph?16:26,t:24,b:40},
+        xticksOverride:[0,0.5,1,1.5,2],ytarget:4});
+      ax.poly(xs, {color:P.COL.out, width:1.2, opacity:0.75});
+      ax.curve(t=>pulse(t*TB),{color:P.COL.in,width:2.4,n:600});
+      if(sweeping) ax.curve(t=>hf(2*swept-t),{color:P.COL.h,width:2.1,n:600});
+      else ax.curve(t=>hf(t),{color:P.COL.h,width:1.9,dash:'6 4',n:600});
 
-      const bx = P.Axes({w:ph?300:680,h:ph?200:gh(155),xr:[0,1],yr:[-0.15*out[NS],1.25*out[NS]],
+      const peak = Math.max(...sig), so = Math.sqrt(N0/2*hsq);
+      const ylo = -Math.max(0.15*peak, 2.5*so), yhi = Math.max(1.25*peak, peak+2.5*so);
+      const bx = P.Axes({w:ph?300:680,h:ph?280:gh(155),xr:[0,2],yr:[ylo,yhi],
         xlabel:'\\text{sampling instant},\\;t/T',ylabel:'\\text{filter output}',
-        pad:{l:ph?42:60,r:ph?16:26,t:22,b:44},xtarget:ph?4:5,ytarget:4});
-      const kmax = sweeping ? Math.round(swept*NS) : NS;
-      bx.poly(out.slice(0,kmax+1).map((v,k)=>[k/NS,v]),{color:P.COL.out,width:2.3});
+        pad:{l:ph?42:60,r:ph?16:26,t:22,b:44},xticksOverride:[0,0.5,1,1.5,2],ytarget:ph?3:4});
+      const kmax = sweeping ? Math.round(swept*2*NS) : 2*NS;
+      bx.poly(sig.slice(0,kmax+1).map((v,i)=>[i/NS, cl(v+sw*n1[i], ylo, yhi)]),{color:P.COL.mid,width:1.2,opacity:0.55});
+      bx.poly(sig.slice(0,kmax+1).map((v,i)=>[i/NS, v]),{color:P.COL.mid,width:2.4,dash:'7 5'});
       if(!sweeping){
         bx.vline(st.samp/100,{color:P.COL.err,width:1.6,dash:'5 4'});
-        bx.point(st.samp/100, peak, {color:P.COL.err, r:4.5});
+        bx.point(st.samp/100, ys, {color:P.COL.err, r:4.5});
       }
 
-      const lg1 = `${L('in','s(t)')}${L('h','h_{\\mathrm{opt}}(t)')}`;
-      const lg2 = `${L('out','\\text{filter output}')}`;
+      const lg1 = `${L('out','x(t)')}${L('in','g(t)')}${L('h','h(t)',!sweeping)}`;
+      const lg2 = `${L('mid','g_0(t)',true)}${L('mid','y(t)')}`;
       root.querySelector('.plots').innerHTML = ph
         ? `<div class="plot-wrap">${ax.svg()}</div>${legendRow(lg1)}`
         + `<div class="plot-wrap">${bx.svg()}</div>${legendRow(lg2)}`
         : `<div class="plot-wrap">${ax.svg()}<div class="legend in-plot lg-at-tr">${lg1}</div></div>`
         + `<div class="plot-wrap">${bx.svg()}<div class="legend in-plot lg-at-tr">${lg2}</div></div>`;
 
-      root.querySelector('.lab-eq').innerHTML = ph
-        ? T(`h_{\\mathrm{opt}}(t)=s(T-t)`, true)
-        : T(`h_{\\mathrm{opt}}(t)=s(T-t),\\quad E=${N(E,3)}`, true);
+      const heq = st.filt==='mf' ? 'h_{\\mathrm{opt}}(t)=g(T-t)' : 'h(t)=\\tfrac{1}{\\tau}e^{-t/\\tau},\\;\\tau=0.8T';
+      root.querySelector('.lab-eq').innerHTML = ph ? T(heq, true) : T(`${heq},\\quad E=${N(E,3)}`, true);
 
       root.querySelector('.ro').innerHTML = `
-        <div><dt>Noise density N₀</dt><dd>${N(N0,5)}</dd></div>
-        <div><dt>Bound 2E/N₀</dt><dd>${N(10*Math.log10(snrMax),3)} dB</dd></div>
-        <div><dt>SNR at that instant</dt><dd class="${lossDb<-0.5?'warnv':'okv'}">${N(10*Math.log10(Math.max(1e-12,snrHere)),4)} dB</dd></div>`;
+        <div><dt>Noise density N₀</dt><dd>${N(N0,4)}</dd></div>
+        <div><dt>Bound 2E/N₀</dt><dd>${N(10*Math.log10(snrMax),2)} dB</dd></div>
+        <div><dt>SNR at that instant</dt><dd class="${lossDb<-0.5?'warnv':'okv'}">${N(10*Math.log10(Math.max(1e-12,snrHere)),2)} dB</dd></div>`;
 
+      const mfPeak = st.filt==='mf' && st.samp===100;
       root.querySelector('.derive').innerHTML = M(`
-        <div class="note ${st.samp===100?'ok':'err'}"><span class="note-h">${st.samp===100?'At the peak':'Off the peak'}</span>${
-          st.samp===100
+        <div class="note ${mfPeak?'ok':'err'}"><span class="note-h">${
+          st.filt==='rc' ? 'RC filter' : mfPeak ? 'At the peak' : 'Off the peak'}</span>${
+          st.filt==='rc'
+          ? `This filter reaches ${T(fmt(ratio,2),false)} of the bound here, ${T(fmt(-lossDb,2),false)} dB short. No instant reaches $2E/N_0$; only the matched filter does.`
+          : mfPeak
           ? `The bound $2E/N_0$ is reached exactly, for all three shapes, since all three carry the same energy.`
           : `Losing ${T(fmt(-lossDb,2),false)} dB here is losing it for nothing.`}</div>`);
 
       root.querySelectorAll('[data-out]').forEach(o=>{ o.textContent = String(st[o.dataset.out]); });
-      root.querySelectorAll('[data-seg=shape]').forEach(b=>
-        b.setAttribute('aria-pressed', String(b.dataset.val===st.shape)));
+      root.querySelectorAll('[data-seg]').forEach(b=>
+        b.setAttribute('aria-pressed', String(b.dataset.val===st[b.dataset.seg])));
     }
 
     return { mount(root){
@@ -168,10 +185,13 @@ Object.assign(LABS, (function(){
                 <button data-seg="shape" data-val="rect">rectangular</button>
                 <button data-seg="shape" data-val="sine">half sine</button>
                 <button data-seg="shape" data-val="tri">triangular</button></span></label></div>
-              <div class="ctrl"><label>Noise level, dB <span class="val" data-out="noise">30</span></label>
-                <input type="range" data-v="noise" min="0" max="40" step="2" value="30"></div>
+              <div class="ctrl" style="grid-column:1/-1"><label>Filter <span class="seg">
+                <button data-seg="filt" data-val="mf">matched</button>
+                <button data-seg="filt" data-val="rc">RC, τ = 0.8T</button></span></label></div>
+              <div class="ctrl"><label>E/N₀, dB <span class="val" data-out="snr">6</span></label>
+                <input type="range" data-v="snr" min="0" max="20" step="1" value="6"></div>
               <div class="ctrl"><label>Sampling instant, % of T <span class="val" data-out="samp">100</span></label>
-                <input type="range" data-v="samp" min="20" max="100" step="5" value="100"></div>
+                <input type="range" data-v="samp" min="20" max="180" step="5" value="100"></div>
               <div class="ctrl" style="grid-column:1/-1"><label>Sweep and scan <span class="val" data-out="phase">40</span></label>
                 <div class="ctrl-run"><input type="range" data-v="phase" min="0" max="40" step="1" value="40">${LABS.KIT.runbar()}</div></div>
             </div>
@@ -180,8 +200,8 @@ Object.assign(LABS, (function(){
           </div></div>`);
       root.addEventListener('input', e=>{ const k=e.target.dataset.v; if(!k) return;
         st[k]=parseInt(e.target.value,10); if(k==='phase') scan(root); draw(root); });
-      root.addEventListener('click', e=>{ const b=e.target.closest('[data-seg=shape]'); if(!b) return;
-        st.shape=b.dataset.val; draw(root); });
+      root.addEventListener('click', e=>{ const b=e.target.closest('[data-seg]'); if(!b) return;
+        st[b.dataset.seg]=b.dataset.val; draw(root); });
       draw(root);
       root.redraw = () => draw(root);
       LABS.KIT.transport(root, { key:'phase', max:40, ms:90,
