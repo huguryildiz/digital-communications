@@ -73,11 +73,17 @@ CONTENT.SECTIONS = {
   M2: [
     { n:'2.0', title:'Opening',                        ids:['m2-open'] },
     { n:'2.1', title:'Random signals',                 ids:[
-        'm2-rp-ensemble','m2-rp-acf','m2-rp-wss','m2-rp-ex-phase','m2-rp-psd','m2-rp-white','m2-rp-lti','m2-rp-filtered','m2-rp-gauss','m2-real-random','m2-lab-t','m2-code-random'] },
+        'm2-rp-ensemble','m2-rp-mean','m2-rp-acf','m2-rp-acf-value','m2-rp-wss','m2-rp-power',
+        'm2-rp-ex-phase','m2-rp-phase-product','m2-rp-phase-result','m2-rp-psd','m2-rp-psd-power',
+        'm2-rp-white','m2-rp-white-correlation','m2-rp-white-ideal','m2-rp-mean-filter','m2-rp-lti',
+        'm2-rp-filtered','m2-rp-noise-bandwidth','m2-rp-rc-bandwidth','m2-rp-gauss','m2-rp-sample',
+        'm2-real-random','m2-lab-t','m2-code-random'] },
     { n:'2.2', title:'The matched filter',             ids:[
-        'm2-filter-choice','m2-receiver','m2-model','m2-schwarz','m2-bound','m2-matched','m2-conv','m2-props','m2-ex-mf','m2-real-matched','m2-lab-c','m2-code-matched'] },
+        'm2-awgn','m2-filter-choice','m2-receiver','m2-split','m2-model','m2-noise-power','m2-schwarz','m2-bound',
+        'm2-matched','m2-mf-freq','m2-conv','m2-mf-correlator','m2-props','m2-props-snr','m2-sample-time','m2-sample-dist','m2-ex-mf','m2-real-matched','m2-lab-c','m2-code-matched'] },
     { n:'2.3', title:'The demodulator',                ids:[
-        'm2-basis','m2-space','m2-demod','m2-correlator','m2-real-demod','m2-lab-p','m2-code-demod'] },
+        'm2-basis','m2-antipodal','m2-space','m2-demod-mf','m2-demod-signal','m2-demod','m2-demod-shapes','m2-demod-train',
+        'm2-corr-out','m2-correlator','m2-demod-noise','m2-demod-noise-var','m2-real-demod','m2-lab-p','m2-code-demod'] },
     { n:'2.4', title:'The decision and its error',     ids:[
         'm2-stat','m2-errors','m2-threshold','m2-threshold-b','m2-q','m2-pe','m2-ex-pe','m2-ex-pe-b','m2-real-decision','m2-lab-d','m2-code-decision'] },
     { n:'2.5', title:'Intersymbol interference',       ids:[
@@ -224,12 +230,19 @@ CONTENT.BOOK = {
      spectra in LTI systems 5.2.5, Gaussian processes 5.3.1 (thermal noise as a
      Gaussian process is argued in the opening of 5.3), white processes 5.3.2,
      and filtered noise with the noise-equivalent bandwidth 5.3.3. */
-  'm2-rp-ensemble':'5.2', 'm2-rp-acf':'5.2.1', 'm2-rp-wss':'5.2.2', 'm2-rp-ex-phase':'5.2.1',
-  'm2-rp-psd':'5.2.5', 'm2-rp-white':'5.3.2', 'm2-rp-lti':'5.2.4, 5.2.5', 'm2-rp-filtered':'5.3.3',
-  'm2-rp-gauss':'5.3.1', 'm2-real-random':'5.3', 'm2-lab-t':'5.2.5, 5.3.3',
+  'm2-rp-ensemble':'5.2', 'm2-rp-mean':'5.2.1', 'm2-rp-acf':'5.2.1', 'm2-rp-acf-value':'5.2.1',
+  'm2-rp-wss':'5.2.2', 'm2-rp-power':'5.2.2', 'm2-rp-ex-phase':'5.2.1', 'm2-rp-phase-result':'5.2.1',
+  'm2-rp-psd':'5.2.5', 'm2-rp-psd-power':'5.2.5', 'm2-rp-white':'5.3.2',
+  'm2-rp-white-correlation':'5.3.2', 'm2-rp-white-ideal':'5.3.2',
+  'm2-rp-mean-filter':'5.2.4', 'm2-rp-lti':'5.2.4, 5.2.5',
+  'm2-rp-filtered':'5.3.3', 'm2-rp-noise-bandwidth':'5.3.3', 'm2-rp-rc-bandwidth':'5.3.3',
+  'm2-rp-gauss':'5.3.1', 'm2-rp-sample':'5.3.1, 5.3.3', 'm2-real-random':'5.3', 'm2-lab-t':'5.2.5, 5.3.3',
+  'm2-awgn':'5.3.2', 'm2-split':'8.3.2', 'm2-mf-freq':'8.3.2', 'm2-mf-correlator':'8.3.2', 'm2-sample-dist':'8.3.3', 'm2-noise-power':'8.3.2', 'm2-props-snr':'8.3.2',
   'm2-filter-choice':'8.3.2', 'm2-receiver':'8.3.2', 'm2-model':'8.3.2', 'm2-schwarz':'8.3.2', 'm2-bound':'8.3.2', 'm2-matched':'8.3.2', 'm2-conv':'8.3.2', 'm2-props':'8.3.2',
   'm2-ex-mf':'8.3.2', 'm2-real-matched':'8.3.2', 'm2-lab-c':'8.3.2',
-  'm2-basis':'8.2.1', 'm2-space':'8.2.1', 'm2-demod':'8.3.1', 'm2-correlator':'8.3.1', 'm2-real-demod':'8.3.1', 'm2-lab-p':'8.3.1',
+  'm2-basis':'8.2.1', 'm2-antipodal':'8.2.1', 'm2-space':'8.2.1', 'm2-demod-mf':'8.3.2', 'm2-demod-signal':'8.3.2', 'm2-demod':'8.3.2',
+  'm2-demod-shapes':'8.3.2', 'm2-demod-train':'8.3.2', 'm2-corr-out':'8.3.1', 'm2-correlator':'8.3.1',
+  'm2-demod-noise':'8.3.1', 'm2-demod-noise-var':'8.3.1', 'm2-real-demod':'8.3.1', 'm2-lab-p':'8.3.1',
   'm2-stat':'8.3.3', 'm2-errors':'8.3.3', 'm2-threshold':'8.3.3', 'm2-threshold-b':'8.3.3', 'm2-q':'8.3.3', 'm2-pe':'8.3.3',
   'm2-ex-pe':'8.3.3', 'm2-ex-pe-b':'8.3.3', 'm2-real-decision':'8.3.3', 'm2-lab-d':'8.3.3',
   'm2-isi':'10.1.1', 'm2-isi-term':'10.1.1', 'm2-ex-isi':'10.1.1', 'm2-real-isi':'10.1.1', 'm2-lab-q':'10.1.1',

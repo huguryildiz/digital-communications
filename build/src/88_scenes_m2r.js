@@ -75,7 +75,7 @@ const EN_H = (()=>{ const c = Array(26).fill(0);
   gauss(20260411, 2000, 1).forEach(x=>{ const k = Math.floor((x-EN_LO)/EN_BW); if(k>=0 && k<26) c[k]++; }); return c; })();
 function figEnsemble(v){
   const f = frameOf(v, 3), o1 = clamp01(f), o2 = clamp01(f-1), o3 = clamp01(f-2);
-  const a = P.Axes(SZ({xr:[0,13.4], yr:[-3.5,4.1], xlabel:'t\\;(\\text{ms})', ylabel:'x(t)',
+  const a = P.Axes(SZ({xr:[0,13.4], yr:[-3.5,4.1], xlabel:'t\\;(\\text{ms})', ylabel:'X(t)',
     xticksOverride:[0,2,4,6,8], yticksOverride:[-2,0,2]}));
   fade(a, 0.32*o1, ()=>{ for(let i=1;i<8;i++) a.curve(path(EN_P[i], EN_DT, EN_T1), {color:C.in, width:0.9, n:700}); });
   a.curve(path(EN_P[0], EN_DT, EN_T1), {color:C.in, width:2.9, n:900});
@@ -161,21 +161,19 @@ function figWss(v){
 }
 
 /* ---- Worked example: a random phase ---------------------------------------
-   A = 3, f0 = 1 kHz, tau in ms. The given sample function (theta = -pi/2, a
-   sine, so it is zero on the vertical axis where the tick numbers sit) is the
-   faint trace; the answer R(tau) = (A^2/2) cos(2 pi f0 tau) = 4.5 cos(2 pi tau)
-   sits in the sketch key. */
-function figExPhase(){
-  const a = P.Axes(SZ({xr:[-1.6,1.6], yr:[-6.6,6.6], xlabel:'t,\\;\\tau\\;(\\text{ms})', ylabel:'x(t),\\;R_X(\\tau)',
-    xticksOverride:[-1.5,-1,-0.5,0.5,1,1.5], yticksOverride:[-4.5,-3,3,4.5]}));
-  a.raw(`<rect class="sk-area" x="${a.x0}" y="${a.y1}" width="${a.x1-a.x0}" height="${a.y0-a.y1}" fill="none"/>`);
-  a.curve(t=>3*Math.sin(2*Math.PI*t), {color:C.ink, width:1.6, dash:'6 5', n:700});
-  a.note(-1.56, -5.95, 'x(t),\\;\\theta=-\\pi/2', {tex:true, fs:14, color:C.ink});
-  a.raw('<g class="sk-key">');
-  a.curve(t=>4.5*Math.cos(2*Math.PI*t), {color:C.mid, width:2.6, n:700});
-  a.point(0, 4.5, {color:C.mid, r:5});
-  a.note(0.1, 5.55, 'R_X(0)=4.5', {tex:true, fs:15, color:C.mid});
-  a.raw('</g>');
+   A = 3, f0 = 1 kHz, t in ms. Keep the initial sine (theta = 3pi/2), then
+   show five seeded uniform phase draws. Fade out one recording before fading
+   in the next: interpolating phase would suggest a phase varying with time.
+   Each complete recording has one fixed phase, amplitude and frequency. */
+const EX_PHASES = (()=>{ const r=rng(20261014);
+  return [3*Math.PI/2, ...Array.from({length:5}, ()=>2*Math.PI*r())]; })();
+const exPhaseLabel = i => i===0 ? '\\theta=3\\pi/2' : '\\theta\\approx '+EX_PHASES[i].toFixed(2)+'\\;\\text{rad}';
+function figExPhase(v){
+  const f=Math.max(0,Math.min(EX_PHASES.length-1,frameOf(v,0))), lo=Math.floor(f), u=f-lo;
+  const i=u<0.5 ? lo : Math.min(lo+1,EX_PHASES.length-1), op=Math.abs(2*u-1);
+  const a=P.Axes(SZ({xr:[-1.6,1.6],yr:[-4,4],xlabel:'t\\;(\\text{ms})',ylabel:'X(t)\\;(\\text{V})',xticksOverride:[-1.5,-1,-0.5,0.5,1,1.5],yticksOverride:[-3,0,3]}));
+  a.note(1.55,3.65,exPhaseLabel(i),{tex:true,fs:15,color:C.ink,anchor:'end'});
+  fade(a,op,()=>a.curve(t=>3*Math.cos(2*Math.PI*t+EX_PHASES[i]),{color:C.in,width:2.6,n:700}));
   return a.svg();
 }
 
@@ -372,224 +370,1184 @@ const REAL_RANDOM = {
   ]}
 ]};
 
+/* Single-panel figures keep one observation readable at lecture distance. */
+function figMean(){
+  const a=P.Axes(SZ({xr:[0,9],yr:[-3.5,4.1],xlabel:'t\\;(\\text{ms})',ylabel:'X(t)\\;(\\text{V})',xticksOverride:[0,2,4,6,8],yticksOverride:[-2,0,2]}));
+  EN_P.forEach((x,i)=>a.curve(path(x,EN_DT,EN_T1),{color:C.in,width:i?1:2.5,n:700,opacity:i?0.3:1}));
+  a.hline(0,{color:C.slate,dash:'6 5',width:2}); return a.svg();
+}
+function figAcfPairs(v){
+  const tau=v&&v.tau!=null?v.tau:0.5, rho=Math.exp(-tau), s=Math.sqrt(1-rho*rho);
+  const a=P.Axes(SZ({xr:[-3.3,3.3],yr:[-3.3,3.3],xlabel:'X(t)\\;(\\text{V})',ylabel:'X(t+\\tau)\\;(\\text{V})',xticksOverride:[-2,0,2],yticksOverride:[-2,0,2]}));
+  AC_Z1.forEach((z,i)=>{const y=rho*z+s*AC_Z2[i];if(Math.abs(z)<3.25&&Math.abs(y)<3.25)a.point(z,y,{color:C.mid,r:2.8});});return a.svg();
+}
+function figAcfCurve(v){
+  const tau=v&&v.tau!=null?v.tau:1, rho=Math.exp(-Math.abs(tau));
+  const a=P.Axes(SZ({xr:[-3.2,3.2],yr:[-0.08,1.4],xlabel:'\\tau\\;(\\text{ms})',ylabel:'R_X(\\tau)\\;(\\text{V}^{2})',xticksOverride:[-3,-2,-1,0,1,2,3],yticksOverride:[0.5,1]}));
+  a.curve(t=>Math.exp(-Math.abs(t)),{color:C.mid,width:2.6,n:700});
+  if(v){
+    a.poly([[tau,0],[tau,rho],[0,rho]],{color:C.mid,width:1,dash:'4 4',opacity:0.55});
+    a.note(-3.05,1.2,`R_X(${+tau.toFixed(2)})=${rho.toFixed(3)}\\;\\text{V}^{2}`,{tex:true,fs:15,color:C.mid});
+  }
+  a.point(tau,rho,{color:C.mid,r:5});
+  if(v) a.raw(`<circle data-acf-drag data-x0="${a.x0}" data-x1="${a.x1}" cx="${a.sx(tau)}" cy="${a.sy(rho)}" r="${24*P.labelScale()}" fill="transparent" style="cursor:ew-resize;touch-action:none" aria-hidden="true"/>`);
+  return a.svg();
+}
+/* The figure owns pointer capture because its SVG is replaced by the live
+   slider redraw. Map every move through the current SVG, including stage
+   scaling and figure growth, then let the existing slider update its state. */
+let acfDrag=null;
+document.addEventListener('pointerdown',e=>{
+  const hit=e.target.closest('[data-acf-drag]');
+  if(!hit || e.button || acfDrag) return;
+  if(APP.state.display==='projector' && APP.state.pointer==='laser' && e.pointerType!=='touch') return;
+  const fig=hit.closest('figure'), input=fig.querySelector('input[data-live="tau"]');
+  if(!input) return;
+  e.preventDefault();
+  acfDrag={fig,input,id:e.pointerId};
+  fig.setPointerCapture(e.pointerId);
+});
+/* The initial touch target is replaced on redraw. Keep the browser from
+   taking that active drag for scrolling after the target has gone. */
+document.addEventListener('touchstart',e=>{
+  if(acfDrag && e.target.closest('[data-acf-drag]')) e.preventDefault();
+},{passive:false});
+document.addEventListener('touchmove',e=>{
+  if(acfDrag) e.preventDefault();
+},{passive:false});
+document.addEventListener('pointermove',e=>{
+  if(!acfDrag || e.pointerId!==acfDrag.id) return;
+  const {fig,input}=acfDrag, hit=fig.querySelector('[data-acf-drag]'), svg=hit&&hit.ownerSVGElement;
+  const matrix=svg&&svg.getScreenCTM();
+  if(!matrix || !fig.isConnected){ acfDrag=null; return; }
+  const q=new DOMPoint(e.clientX,e.clientY).matrixTransform(matrix.inverse());
+  const min=+input.min, max=+input.max, step=+input.step;
+  const tau=-3.2+(q.x-+hit.dataset.x0)/(+hit.dataset.x1-+hit.dataset.x0)*6.4;
+  input.value=Math.max(min,Math.min(max,min+Math.round((tau-min)/step)*step)).toFixed(2);
+  input.dispatchEvent(new Event('input',{bubbles:true}));
+});
+const endAcfDrag=e=>{
+  if(!acfDrag || e.pointerId!==acfDrag.id) return;
+  const {fig,id}=acfDrag;
+  acfDrag=null;
+  if(fig.hasPointerCapture(id)) fig.releasePointerCapture(id);
+};
+document.addEventListener('pointerup',endAcfDrag);
+document.addEventListener('pointercancel',endAcfDrag);
+document.addEventListener('lostpointercapture',endAcfDrag);
+function figPsdOnly(v){
+  const tc=v&&v.tc!=null?v.tc:0.3, S=f=>2*tc/(1+(2*Math.PI*f*tc)**2);
+  const a=P.Axes(SZ({xr:[-4,4],yr:[0,2.4],xlabel:'f\\;(\\text{kHz})',ylabel:'S_X(f)\\;(\\text{V}^{2}/\\text{kHz})',xticksOverride:[-4,-2,0,2,4],yticksOverride:[0.5,1,1.5,2]}));
+  a.area(S,-4,4,{color:C.dec.in,n:600});a.curve(S,{color:C.in,width:2.6,n:700});return a.svg();
+}
+function figPowerArea(){
+  const a=P.Axes(SZ({xr:[-7,7],yr:[0,1.6],xlabel:'f\\;(\\text{kHz})',ylabel:'S_X(f)\\;(\\text{mW}/\\text{Hz})',xticksOverride:[-5,0,5],yticksOverride:[0.5,1]}));
+  a.rect(-5,0,5,1,{fill:C.dec.in});a.poly([[-7,0],[-5,0],[-5,1],[5,1],[5,0],[7,0]],{color:C.in,width:2.6});return a.svg();
+}
+function figWhiteSpectrum(v){
+  const B=v&&v.B!=null?v.B:2;
+  const a=P.Axes(SZ({xr:[-5,5],yr:[0,1.6],xlabel:'f\\;(\\text{kHz})',ylabel:'S_w(f)/(N_0/2)',xticksOverride:[-4,-2,0,2,4],yticksOverride:[0.5,1]}));
+  a.rect(-B,0,B,1,{fill:C.dec.in});a.poly([[-5,0],[-B,0],[-B,1],[B,1],[B,0],[5,0]],{color:C.in,width:2.6});return a.svg();
+}
+function figWhiteCorrelation(v){
+  const B=v&&v.B!=null?v.B:2;
+  const a=P.Axes(SZ({xr:[-1.2,1.2],yr:[-0.4,1.5],xlabel:'\\tau\\;(\\text{ms})',ylabel:'R_w(\\tau)/(N_0B)',xticksOverride:[-1,-0.5,0,0.5,1],yticksOverride:[0.5,1]}));
+  a.curve(t=>sinc(2*B*t),{color:C.mid,width:2.6,n:1800});[-1/(2*B),1/(2*B)].forEach(t=>a.point(t,0,{color:C.mid,r:4.5}));return a.svg();
+}
+/* The white-noise limit: R_w(tau)/(N0/2) = 2B sinc(2B tau), B in kHz, tau in
+   ms. The peak 2B grows and the lobe narrows while the area stays 1, so the
+   curve tends to the impulse delta(tau) as B grows. */
+function figWhiteLimit(v){
+  const B=v&&v.B!=null?v.B:1, r=t=>2*B*sinc(2*B*t);
+  const a=P.Axes(SZ({xr:[-1.2,1.2],yr:[-2.6,11.6],xlabel:'\\tau\\;(\\text{ms})',ylabel:'R_w(\\tau)/(N_0/2)\\;(\\text{kHz})',xticksOverride:[-1,-0.5,0,0.5,1],yticksOverride:[2,4,6,8,10]}));
+  a.area(r,-1.2,1.2,{color:C.dec.mid,n:1800});a.curve(r,{color:C.mid,width:2.6,n:1800});
+  a.point(0,2*B,{color:C.mid,r:5});
+  a.note(0.08,2*B+0.35,'2B',{tex:true,fs:15,color:C.mid});
+  a.note(1.15,10.6,'\\text{area}=1',{tex:true,fs:15,color:C.ink,anchor:'end'});
+  return a.svg();
+}
+function figFilterSpectrum(v){
+  const f=v&&v.frame!=null?v.frame:2, H2=x=>1/(1+x*x);
+  const a=P.Axes(SZ({xr:[-5,5],yr:[0,1.7],xlabel:'f\\;(\\text{kHz})',ylabel:'S(f),\\;|H(f)|^{2}',xticksOverride:[-4,-2,0,2,4],yticksOverride:[0.5,1]}));
+  a.curve(()=>0.5,{color:C.in,width:1.8,dash:'6 5',n:4});
+  a.raw(`<g opacity="${clamp01(f)}">`);a.curve(H2,{color:C.h,width:2.2,dash:'7 5',n:600});a.raw('</g>');
+  a.raw(`<g opacity="${clamp01(f-1)}">`);a.area(x=>0.5*H2(x),-5,5,{color:C.dec.out,n:600});a.curve(x=>0.5*H2(x),{color:C.out,width:2.6,n:600});a.raw('</g>');return a.svg();
+}
+function figFilterTime(){
+  const a=P.Axes(SZ({xr:[0,5],yr:[-3.2,3.2],xlabel:'t\\;(\\text{ms})',ylabel:'x(t),\\;y(t)',xticksOverride:[0,1,2,3,4,5],yticksOverride:[-2,0,2]}));
+  a.curve(LT_X,{color:C.in,width:1.1,opacity:0.45,n:1000});a.curve(LT_Y,{color:C.out,width:2.6,n:800});return a.svg();
+}
+function figGaussianSample(){
+  const sigma=2, d=x=>Math.exp(-x*x/(2*sigma*sigma))/(sigma*Math.sqrt(2*Math.PI));
+  const a=P.Axes(SZ({xr:[-7,7],yr:[0,0.3],xlabel:'n\\;(\\text{mV})',ylabel:'f_n(n)\\;(\\text{mV}^{-1})',xticksOverride:[-4,-2,0,2,4,6],yticksOverride:[0.1,0.2]}));
+  a.area(d,4,7,{color:C.dec.err,n:200});a.curve(d,{color:C.mid,width:2.6,n:700});a.poly([[4,0],[4,d(4)]],{color:C.err,width:2,dash:'5 4'});return a.svg();
+}
+
+function figPhaseResult(){
+  const a=P.Axes(SZ({xr:[-1.6,1.6],yr:[-6,6],xlabel:'\\tau\\;(\\text{ms})',ylabel:'R_X(\\tau)\\;(\\text{V}^{2})',xticksOverride:[-1.5,-1,-0.5,0.5,1,1.5],yticksOverride:[-4.5,0,4.5]}));
+  a.raw(`<rect class="sk-area" x="${a.x0}" y="${a.y1}" width="${a.x1-a.x0}" height="${a.y0-a.y1}" fill="none"/>`);a.raw('<g class="sk-key">');
+  a.curve(t=>4.5*Math.cos(2*Math.PI*t),{color:C.mid,width:2.6,n:700});a.point(0,4.5,{color:C.mid,r:5});a.raw('</g>');return a.svg();
+}
+/* Stationarity: the three recordings of the autocorrelation scene, read at a
+   start time t that the slider moves and at t + 1 ms. The gap stays fixed, so
+   for this WSS process the average product stays R_X(1 ms) = e^-1 V^2. */
+function figWssShift(v){
+  const t0=val(v,'t',1), tau=1;
+  const a=P.Axes(SZ({xr:[0,6],yr:[-3.4,5.4],xlabel:'t\\;(\\text{ms})',ylabel:'X(t)\\;(\\text{V})',xticksOverride:[0,1,2,3,4,5,6],yticksOverride:[-2,0,2]}));
+  AC_P.forEach((x,i)=>a.curve(path(x,AC_DT,6),{color:[C.in,C.h,C.err][i],width:1.6,n:700}));
+  [t0,t0+tau].forEach(t=>{a.vline(t,{color:C.mid,dash:'5 4',width:1.4,opacity:0.9});
+    AC_P.forEach(x=>a.point(t,path(x,AC_DT,6)(t),{color:C.mid,r:4}));});
+  a.span(t0,t0+tau,4.45,'\\tau=1\\ \\text{ms}',{tex:true,fs:15,color:C.mid});
+  return a.svg();
+}
+/* The cosine product: the theta = 3pi/2 recording read at t = 0.6 ms and at
+   t + tau = 0.85 ms, the two values the product multiplies. */
+function figPhaseProduct(){
+  const th=EX_PHASES[0], x=t=>3*Math.cos(2*Math.PI*t+th), t1=0.6, t2=0.85;
+  const a=P.Axes(SZ({xr:[-1.6,1.6],yr:[-4,4.4],xlabel:'t\\;(\\text{ms})',ylabel:'X(t)\\;(\\text{V})',xticksOverride:[-1.5,-1,-0.5,0.5,1,1.5],yticksOverride:[-3,0,3]}));
+  a.curve(x,{color:C.in,width:2.6,n:700});
+  [t1,t2].forEach(t=>{a.poly([[t,0],[t,x(t)]],{color:C.mid,width:1.4,dash:'5 4'});a.point(t,x(t),{color:C.mid,r:5});});
+  a.span(t1,t2,3.7,'\\tau',{tex:true,fs:15,color:C.mid});
+  a.note(t1-0.06,x(t1)-0.75,'X(t)',{tex:true,fs:15,color:C.mid,anchor:'end'});
+  a.note(t2+0.06,x(t2)-0.45,'X(t+\\tau)',{tex:true,fs:15,color:C.mid});
+  return a.svg();
+}
+
 const EB = 'Module 2 · Random signals';
+function figOutputNoise(v){
+  const rc=v&&v.rc!=null?v.rc:1, H2=f=>1/(1+(2*Math.PI*f*rc)**2);
+  const a=P.Axes(SZ({xr:[-2,2],yr:[0,1.5],xlabel:'f\\;(\\text{kHz})',ylabel:'S_n(f)/(N_0/2)',xticksOverride:[-2,-1,0,1,2],yticksOverride:[0.5,1]}));
+  a.area(H2,-2,2,{color:C.dec.out,n:600});a.curve(H2,{color:C.out,width:2.6,n:700});return a.svg();
+}
+
 const SC = [
 
-{ id:'m2-rp-ensemble', module:'M2', nav:'A random signal', title:'A random signal',
-  objective:'Describe a random signal as an ensemble of waveforms and as a random variable at each fixed time.',
-  keywords:'random process stochastic process ensemble sample function outcome random variable fixed time noise voltage histogram density',
-  src:'SPS intro; book 5.2', slide:true, steps:2, blocks:[
-  {t:'eyebrow', text:EB},
-  {t:'title', text:'A random signal'},
-  {t:'cols', ratio:'c-5-7', fill:true, left:[
-    {t:'fig', frame:true, grow:true,
-      frames:{labels:['one outcome','the ensemble','a fixed time','the distribution']},
-      svg:figEnsemble,
-      caption:'Step through the frames. Each run of the experiment draws one waveform. Across all runs, the value at $t_0$ is a random variable, and its histogram is drawn at the right.'}
-  ], right:[
-    {t:'note', kind:'def', head:'Random process', html:'A random process $X(t)$ gives one waveform for each outcome of an experiment. Each waveform is a sample function, and all of them together are the ensemble.'},
-    {t:'reveal', at:1, items:[
-      {t:'eq', label:'At a fixed time', tex:'X(t_0)\\ \\text{is a random variable with density}\\ f_{X(t_0)}(x)',
-        note:'Fix the time and let the outcome vary. The values across the ensemble spread with this density.'}]},
-    {t:'reveal', at:2, items:[
-      {t:'note', kind:'def', head:'Given', html:'A thousand identical receivers record their noise. Each one is read at the same time $t_0=2$ ms.<div class="nsep"></div>What are the thousand values?',
-        ask:{key:'m2-rp-ensemble', choices:['one sample function','draws of the random variable $X(t_0)$','the autocorrelation'], answer:1,
-          why:'The time is fixed and the outcome changes. So the values are draws of one random variable.'}}]}
-  ]}
-]},
+{
+  id:'m2-rp-ensemble',
+  module:'M2',
+  nav:'A random signal',
+  title:'A random signal',
+  objective:'Distinguish a noise recording, its ensemble and the random variable obtained at a fixed time.',
+  keywords:'random signal noise receiver a random signal',
+  slide:true,
+  steps:1,
+  blocks:[
+    {t:'eyebrow', text:'Module 2 · Random signals'},
+    {t:'title', text:'A random signal'},
+    {
+      t:'cols',
+      ratio:'c-5-7',
+      fill:true,
+      left:[
+        {
+          t:'fig',
+          frame:true,
+          grow:true,
+          svg:figEnsemble,
+          caption:'Each trace is one noise recording. Fix $t_0$ and compare recordings to obtain the distribution of $X(t_0)$.',
+          frames:{
+            labels:['one recording', 'the ensemble', 'a fixed time', 'the distribution']
+          }
+        }
+      ],
+      right:[
+        {t:'note', kind:'def', head:'Random process', html:'Each noise recording is a sample function of $X(t)$. Their collection is the ensemble.'},
+        {
+          t:'note',
+          kind:'def',
+          head:'Given',
+          html:'Read a thousand receiver trials at the same time $t_0=5$ ms.<div class="nsep"></div>What do the readings describe?',
+          ask:{
+            key:'m2-rp-ensemble',
+            choices:['one waveform', 'the random variable $X(t_0)$', 'a time average'],
+            answer:1,
+            why:'The time is fixed. The trial changes, so each reading is one value of $X(t_0)$.'
+          }
+        },
+        {
+          t:'reveal',
+          at:1,
+          items:[
+            {t:'eq', label:'At a fixed time', tex:'X(t_0)\\ \\text{has density}\\ f_{X(t_0)}(x)', note:'A recording varies with time. A random variable varies across trials at one fixed time.'}
+          ]
+        }
+      ]
+    }
+  ],
+  src:'book 5.2'
+},
 
-{ id:'m2-rp-acf', module:'M2', nav:'Mean and autocorrelation', title:'Mean and autocorrelation',
-  objective:'Define the mean and the autocorrelation of a random process and read the autocorrelation from pairs of values.',
-  keywords:'mean autocorrelation expected value ensemble average pairs of samples correlation lag tau scatter plot correlation time',
-  src:'book 5.2.1', slide:true, steps:2, blocks:[
-  {t:'eyebrow', text:EB},
-  {t:'title', text:'Mean and autocorrelation'},
-  {t:'cols', ratio:'c-5-7', fill:true, left:[
-    {t:'fig', frame:true, grow:true,
-      live:{controls:[{k:'tau', label:'$\\tau$ (ms)', min:0, max:3, step:0.05, v:0.5, show:v=>'$'+v.toFixed(2)+'$'}]},
-      svg:figAcf,
-      caption:'Drag the gap $\\tau$. Each dot is one sample function read at $t$ and at $t+\\tau$. Close together the pairs agree. Far apart they form a round cloud.'}
-  ], right:[
-    {t:'eq', label:'Mean', tex:'\\mu_X(t)=E\\bigl[X(t)\\bigr]',
-      note:'The average over the ensemble at the time $t$, not an average over time.'},
-    {t:'reveal', at:1, items:[
-      {t:'eq', label:'Autocorrelation', tex:'R_X(t,t+\\tau)=E\\bigl[X(t)\\,X(t+\\tau)\\bigr]',
-        note:'The average product of two values $\\tau$ apart. It is large when the two values move together.'}]},
-    {t:'reveal', at:2, items:[
-      {t:'note', kind:'def', head:'Given', html:'For this process $R_X$ depends only on the gap: $R_X(\\tau)=e^{-|\\tau|/\\tau_c}$ with $\\tau_c=1$ ms.<div class="nsep"></div>What is $R_X(1\\ \\text{ms})$?',
-        ask:{key:'m2-rp-acf', choices:['$0.37$','$0.61$','$1$'], answer:0,
-          why:'$R_X(1\\ \\text{ms})=e^{-1}=0.37$. Values $1$ ms apart are still partly alike.'}}]}
-  ]}
-]},
+{
+  id:'m2-rp-mean',
+  module:'M2',
+  nav:'The ensemble mean',
+  title:'The ensemble mean',
+  objective:'Interpret the ensemble mean without assuming that one recording has the same time average.',
+  keywords:'random signal noise receiver the ensemble mean',
+  slide:true,
+  steps:1,
+  blocks:[
+    {t:'eyebrow', text:'Module 2 · Random signals'},
+    {t:'title', text:'The ensemble mean'},
+    {
+      t:'cols',
+      ratio:'c-5-7',
+      fill:true,
+      left:[
+        {t:'fig', frame:true, grow:true, svg:figMean, caption:'The dashed line is the ensemble mean of this zero-mean noise. Individual recordings fluctuate around it.'},
+        {
+          t:'legend',
+          items:[
+            ['in', 'recordings'],
+            ['slate', 'ensemble mean', true]
+          ],
+          at:'tr'
+        }
+      ],
+      right:[
+        {t:'note', kind:'def', head:'Mean', html:'At a fixed time, average the values across receiver trials. The mean describes the centre of their distribution.'},
+        {
+          t:'note',
+          kind:'def',
+          head:'Given',
+          html:'The noise has zero ensemble mean.<div class="nsep"></div>What must one noise recording do?',
+          ask:{
+            key:'m2-rp-mean',
+            choices:['stay at zero', 'fluctuate; it need not be zero', 'have zero value at every sample'],
+            answer:1,
+            why:'Zero mean describes the average across trials. Individual noise values can be positive or negative.'
+          }
+        },
+        {
+          t:'reveal',
+          at:1,
+          items:[
+            {t:'eq', label:'Definition', tex:'\\mu_X(t)=E[X(t)]', note:'This expectation averages across the ensemble. A time average along one recording requires additional assumptions.'}
+          ]
+        }
+      ]
+    }
+  ],
+  src:'book 5.2.1'
+},
 
-{ id:'m2-rp-wss', module:'M2', nav:'Stationarity and power', title:'Stationarity and power',
-  objective:'State strict-sense and wide-sense stationarity and the three properties of the autocorrelation, with the power as its value at zero.',
-  keywords:'wide sense stationary wss stationarity autocorrelation properties even function maximum at zero average power R(0)',
-  src:'book 5.2.2', slide:true, steps:2, blocks:[
-  {t:'eyebrow', text:EB},
-  {t:'title', text:'Stationarity and power'},
-  {t:'cols', ratio:'c-5-7', fill:true, left:[
-    {t:'fig', frame:true, grow:true,
-      frames:{labels:['$R_X(\\tau)$','power','even','bounded']},
-      svg:figWss,
-      caption:'Step through the frames for $R_X(\\tau)=4e^{-|\\tau|/2}\\cos(2\\pi\\tau)$, with $\\tau$ in ms. Each frame marks one property.'}
-  ], right:[
-    {t:'note', kind:'def', head:'Strict-sense stationary', html:'A process is strict-sense stationary when every joint density of $X(t_1),\\dots,X(t_n)$ is unchanged by a shift $T$ of all the times, for every $n$.'},
-    {t:'note', kind:'def', head:'Wide-sense stationary', html:'A weaker test: the mean is a constant and $R_X$ depends only on the gap $\\tau$. Strict-sense stationarity implies it.'},
-    {t:'reveal', at:1, items:[
-      {t:'eq', label:'Three properties', tex:'\\begin{aligned}R_X(0)&=E\\bigl[X^{2}(t)\\bigr]=P_X\\\\R_X(-\\tau)&=R_X(\\tau)\\\\|R_X(\\tau)|&\\le R_X(0)\\end{aligned}',
-        note:'The first is the average power. A value is never more alike to another value than to itself, which is the third.'}]},
-    {t:'reveal', at:2, items:[
-      {t:'note', kind:'def', head:'Given', html:'$R_X(\\tau)=4e^{-|\\tau|/2}\\cos(2\\pi\\tau)\\ \\text{V}^{2}$, with $\\tau$ in ms.<div class="nsep"></div>What is the average power $P_X$?',
-        ask:{key:'m2-rp-wss', choices:['$2\\ \\text{V}^{2}$','$4\\ \\text{V}^{2}$','$8\\ \\text{V}^{2}$'], answer:1,
-          why:'$P_X=R_X(0)=4e^{0}\\cos0=4\\ \\text{V}^{2}$. Across $1\\ \\Omega$ that is $4$ W.'}}]}
-  ]}
-]},
+{
+  id:'m2-rp-acf',
+  module:'M2',
+  nav:'Autocorrelation',
+  title:'Autocorrelation',
+  objective:'Interpret the average product of two readings and predict how their relationship changes with the gap.',
+  keywords:'random signal noise receiver autocorrelation',
+  slide:true,
+  steps:1,
+  blocks:[
+    {t:'eyebrow', text:'Module 2 · Random signals'},
+    {t:'title', text:'Autocorrelation'},
+    {
+      t:'cols',
+      ratio:'c-5-7',
+      fill:true,
+      left:[
+        {
+          t:'fig',
+          frame:true,
+          grow:true,
+          svg:figAcfPairs,
+          caption:'Each dot is a pair from one trial: $X(t)$ and $X(t+\\tau)$. Increase the gap and watch the cloud spread.',
+          live:{
+            controls:[
+              {k:'tau', label:'$\\tau$ (ms)', min:0, max:3, step:0.05, v:0.5, show:v=>'$'+v.toFixed(2)+'$'}
+            ]
+          }
+        }
+      ],
+      right:[
+        {t:'note', kind:'def', head:'Pairs of values', html:'Take two readings from each noise recording, separated by $\\tau$. Their average product is the autocorrelation.'},
+        {
+          t:'note',
+          kind:'def',
+          head:'Given',
+          html:'For this zero-mean process, increase the gap $\\tau$.<div class="nsep"></div>How does the cloud change?',
+          ask:{
+            key:'m2-rp-acf',
+            choices:['it concentrates on the diagonal', 'it spreads away from the diagonal', 'every value becomes zero'],
+            answer:1,
+            why:'In this example the correlation decreases with the gap. The later reading becomes less related to the earlier one.'
+          }
+        },
+        {
+          t:'reveal',
+          at:1,
+          items:[
+            {t:'eq', label:'Definition', tex:'R_X(t,t+\\tau)=E[X(t)X(t+\\tau)]', note:'The product is positive when the readings have the same sign. Autocorrelation also depends on their magnitudes.'}
+          ]
+        }
+      ]
+    }
+  ],
+  src:'book 5.2.1'
+},
 
-{ id:'m2-rp-ex-phase', module:'M2', nav:'Worked example · a random phase', title:'Worked example: a sinusoid with a random phase',
-  objective:'Find the mean, the autocorrelation and the power of a sinusoid whose phase is uniformly random.',
-  keywords:'worked example random phase sinusoid uniform phase mean zero autocorrelation cosine power A^2/2 stationary sketch',
-  src:'book Ex. 5.2.2, 5.2.8', slide:true, steps:3, blocks:[
-  {t:'eyebrow', text:'Module 2 · Worked example'},
-  {t:'title', text:'Worked example: a sinusoid with a random phase'},
-  {t:'cols', ratio:'c-5-7', fill:true, left:[
-    {t:'fig', frame:true, grow:true, sketch:{label:'Sketch $R_X(\\tau)$ on the axes, then check it.'}, svg:figExPhase,
-      caption:'The dashed trace is one sample function, the one with $\\theta=-\\pi/2$. Draw $R_X(\\tau)$ on the same axes, then show the answer.'}
-  ], right:[
-    {t:'note', kind:'def', head:'Given', html:'$X(t)=A\\cos(2\\pi f_0t+\\Theta)$, $A=3$ V, $f_0=1$ kHz, $\\Theta$ uniform on $[0,2\\pi)$.<div class="nsep"></div>Find $\\mu_X$, $R_X(\\tau)$ and $P_X$.',
-      ask:{key:'m2-rp-ex-phase', choices:['$1.5\\ \\text{V}^{2}$','$4.5\\ \\text{V}^{2}$','$9\\ \\text{V}^{2}$'], answer:1,
-        why:'$P_X=R_X(0)=A^{2}/2=9/2=4.5\\ \\text{V}^{2}$.'}},
-    {t:'reveal', at:1, items:[
-      {t:'eq', label:'Method', tex:'\\begin{aligned}\\mu_X&=\\tfrac{1}{2\\pi}\\textstyle\\int_0^{2\\pi}A\\cos(2\\pi f_0t+\\theta)\\,d\\theta=0\\\\R_X&=\\tfrac{A^{2}}{2}E\\bigl[\\cos(2\\pi f_0\\tau)+\\cos(\\phi+2\\Theta)\\bigr]\\end{aligned}',
-        note:'Average over the phase. A product of cosines is half the cosine of the difference plus half the cosine of the sum, $\\phi=2\\pi f_0(2t+\\tau)$.'}]},
-    {t:'reveal', at:2, items:[
-      {t:'eq', label:'Solution', tex:'\\begin{aligned}R_X(\\tau)&=\\tfrac{A^{2}}{2}\\cos(2\\pi f_0\\tau)=4.5\\cos(2\\pi f_0\\tau)\\ \\text{V}^{2}\\\\P_X&=R_X(0)=4.5\\ \\text{V}^{2}\\end{aligned}',
-        note:'Check: $\\cos(\\phi+2\\Theta)$ averages to zero. $R_X$ depends on $\\tau$ only, so the process is stationary.'}]},
-    {t:'reveal', at:3, items:[
-      {t:'note', kind:'err', head:'Common error', html:'Use $A^{2}/2$, not $A^{2}$, for the power. Dropping the $\\tfrac12$ gives $9\\ \\text{V}^{2}$.'}]}
-  ]}
-]},
+{
+  id:'m2-rp-acf-value',
+  module:'M2',
+  nav:'Reading the autocorrelation',
+  title:'Reading the autocorrelation',
+  objective:'Evaluate the autocorrelation at a given gap and compare it with its zero-gap value.',
+  keywords:'random signal noise receiver reading the autocorrelation',
+  slide:true,
+  steps:1,
+  blocks:[
+    {t:'eyebrow', text:'Module 2 · Random signals'},
+    {t:'title', text:'Reading the autocorrelation'},
+    {
+      t:'cols',
+      ratio:'c-5-7',
+      fill:true,
+      left:[
+        {t:'fig', frame:true, grow:true, svg:figAcfCurve,
+          live:{controls:[{k:'tau',label:'$\\tau$',min:-3,max:3,step:0.01,v:1,show:x=>`$${x.toFixed(2)}\\;\\text{ms}$`}]},
+          caption:'Drag the point or move the slider to read the gap and autocorrelation. For this zero-mean, unit-power process, autocorrelation decreases with the gap magnitude.'}
+      ],
+      right:[
+        {t:'note', kind:'def', head:'Receiver readings', html:'A large positive autocorrelation means the readings tend to have the same sign. Here it depends only on the gap.'},
+        {t:'eq', label:'Example', tex:'R_X(\\tau)=e^{-|\\tau|/\\tau_c}\\ \\text{V}^{2},\\qquad\\tau_c=1\\ \\text{ms}', note:'At zero gap, multiply each reading by itself. This process has $R_X(0)=1\\ \\text{V}^{2}$.'},
+        {
+          t:'note',
+          kind:'def',
+          head:'Given',
+          html:'Read the curve at $\\tau=1$ ms.<div class="nsep"></div>What is $R_X(1\\ \\text{ms})$?',
+          ask:{
+            key:'m2-rp-acf-value',
+            choices:['$0.37\\ \\text{V}^{2}$', '$0.61\\ \\text{V}^{2}$', '$1\\ \\text{V}^{2}$'],
+            answer:0,
+            why:'Substitute the gap: $R_X(1\\ \\text{ms})=e^{-1}=0.37\\ \\text{V}^{2}$, below its zero-gap value.'
+          }
+        }
+      ]
+    }
+  ],
+  src:'book 5.2.1'
+},
 
-{ id:'m2-rp-psd', module:'M2', nav:'Power spectral density', title:'Power spectral density',
-  objective:'Define the power spectral density as the Fourier transform of the autocorrelation and read the power as its area.',
-  keywords:'power spectral density psd wiener khinchin theorem fourier transform autocorrelation spectrum power area correlation time bandwidth',
-  src:'SPS 5; book 5.2.5', slide:true, steps:2, blocks:[
-  {t:'eyebrow', text:EB},
-  {t:'title', text:'Power spectral density'},
-  {t:'cols', ratio:'c-5-7', fill:true, left:[
-    {t:'fig', frame:true, grow:true,
-      live:{controls:[{k:'tc', label:'$\\tau_c$ (ms)', min:0.05, max:1, step:0.01, v:0.3, show:v=>'$'+v.toFixed(2)+'$'}]},
-      svg:figPsdR,
-      caption:'Drag $\\tau_c$ in $R_X(\\tau)=e^{-|\\tau|/\\tau_c}$, whose transform is $S_X(f)=2\\tau_c/\\bigl(1+(2\\pi f\\tau_c)^{2}\\bigr)$. A fast waveform has a narrow $R_X$ and a wide spectrum. The area stays $1$.'}
-  ], right:[
-    {t:'eq', label:'Wiener–Khinchin', key:true, tex:'S_X(f)=\\int_{-\\infty}^{\\infty}R_X(\\tau)\\,e^{-j2\\pi f\\tau}\\,d\\tau',
-      note:'For a stationary process the power spectral density is the Fourier transform of $R_X(\\tau)$. It is real, even and never negative.'},
-    {t:'reveal', at:1, items:[
-      {t:'eq', label:'Power', tex:'\\begin{aligned}R_X(\\tau)&=\\int_{-\\infty}^{\\infty}S_X(f)\\,e^{j2\\pi f\\tau}\\,df\\\\P_X=R_X(0)&=\\int_{-\\infty}^{\\infty}S_X(f)\\,df\\end{aligned}',
-        note:'Write the inverse transform and set $\\tau=0$. The power is the area under the spectral density.'}]},
-    {t:'reveal', at:2, items:[
-      {t:'note', kind:'def', head:'Given', html:'A process has $S_X(f)=10^{-3}$ W/Hz for $|f|<5$ kHz and $0$ elsewhere.<div class="nsep"></div>What is its power $P_X$?',
-        ask:{key:'m2-rp-psd', choices:['$5$ W','$10$ W','$20$ W'], answer:1,
-          why:'$P_X=\\int_{-5000}^{5000}10^{-3}\\,df=10^{-3}(10^{4})=10$ W. Both halves of the band count.'}}]}
-  ]}
-]},
+{
+  id:'m2-rp-wss',
+  module:'M2',
+  nav:'Stationarity',
+  title:'Stationarity',
+  objective:'State the WSS conditions and distinguish them from strict-sense stationarity.',
+  keywords:'random signal noise receiver stationarity',
+  slide:true,
+  steps:1,
+  blocks:[
+    {t:'eyebrow', text:'Module 2 · Random signals'},
+    {t:'title', text:'Stationarity'},
+    {
+      t:'cols',
+      ratio:'c-5-7',
+      fill:true,
+      left:[
+        {t:'fig', frame:true, grow:true, svg:figWssShift,
+          live:{controls:[{k:'t',label:'$t$ (ms)',min:0.2,max:4.8,step:0.05,v:1,show:x=>'$'+x.toFixed(2)+'$'}]},
+          caption:'Drag the start time $t$. The readings change, but the gap stays $\\tau=1$ ms. For a WSS process their average product stays $R_X(1\\ \\text{ms})=0.37\\ \\text{V}^{2}$.'}
+      ],
+      right:[
+        {t:'note', kind:'def', head:'Stationarity', html:'Wide-sense stationarity (WSS) preserves the mean and autocorrelation under a time shift. Strict-sense stationarity preserves every joint distribution.'},
+        {t:'eq', label:'WSS conditions', tex:'\\mu_X(t)=\\mu_X,\\qquad R_X(t,t+\\tau)=R_X(\\tau)', note:'Both moments are finite. With finite second moments, strict-sense stationarity implies WSS.'},
+        {
+          t:'note',
+          kind:'def',
+          head:'Given',
+          html:'Move both WSS readings by the same time shift.<div class="nsep"></div>What stays unchanged?',
+          ask:{
+            key:'m2-rp-wss',
+            choices:['the individual readings', 'their ensemble average product', 'the whole recording'],
+            answer:1,
+            why:'WSS fixes these statistics. Individual recordings do not have to repeat.'
+          }
+        }
+      ]
+    }
+  ],
+  src:'book 5.2.2'
+},
 
-{ id:'m2-rp-white', module:'M2', nav:'White noise', title:'White noise',
-  objective:'Model thermal noise as white noise with a flat two-sided density N0/2 and an impulse autocorrelation.',
-  keywords:'white noise flat power spectral density N0/2 two sided impulse autocorrelation uncorrelated bandlimited sinc thermal noise',
-  src:'book 5.3.2', slide:true, steps:2, blocks:[
-  {t:'eyebrow', text:EB},
-  {t:'title', text:'White noise'},
-  {t:'cols', ratio:'c-5-7', fill:true, left:[
-    {t:'fig', frame:true, grow:true,
-      live:{controls:[{k:'B', label:'$B$ (kHz)', min:0, max:1, step:0.005, v:0.2616, show:v=>{ const B = 0.5*Math.pow(200, v); return '$'+(B < 10 ? B.toFixed(1) : Math.round(B))+'$'; }}]},
-      svg:figWhite,
-      caption:'Drag the band $B$ of noise with density $N_0/2$ on $|f|<B$. Its $R_X(\\tau)=N_0B\\operatorname{sinc}(2B\\tau)$, with $\\operatorname{sinc}(x)=\\sin(\\pi x)/(\\pi x)$, narrows toward an impulse as $B$ grows.'}
-  ], right:[
-    {t:'eq', label:'White noise', tex:'S_W(f)=\\frac{N_0}{2}\\quad\\text{for all }f,\\qquad R_W(\\tau)=\\frac{N_0}{2}\\,\\delta(\\tau)',
-      note:'The inverse transform of a constant is an impulse. So two values at different times are uncorrelated, however close.'},
-    {t:'reveal', at:1, items:[
-      {t:'note', kind:'warn', head:'A model', html:'The area under a flat density is infinite, so no real noise is white. Thermal noise stays within $10\\%$ of flat up to $10^{12}$ Hz, far above any receiver band.'}]},
-    {t:'reveal', at:2, items:[
-      {t:'note', kind:'def', head:'Given', html:'White noise passes an ideal lowpass filter with $B=1$ MHz. Two output samples are taken $0.5\\ \\mu$s apart.<div class="nsep"></div>How are the two samples related?',
-        ask:{key:'m2-rp-white', choices:['uncorrelated','fully correlated','negatively correlated'], answer:0,
-          why:'$R(\\tau)$ is proportional to $\\operatorname{sinc}(2B\\tau)$, and $2B\\tau=2(10^{6})(0.5\\times10^{-6})=1$ is a zero of the sinc.'}}]}
-  ]}
-]},
+{
+  id:'m2-rp-power',
+  module:'M2',
+  nav:'Autocorrelation and power',
+  title:'Autocorrelation and power',
+  objective:'Find mean-square power from the zero-gap autocorrelation and state symmetry and magnitude bounds.',
+  keywords:'random signal noise receiver autocorrelation and power',
+  slide:true,
+  steps:1,
+  blocks:[
+    {t:'eyebrow', text:'Module 2 · Random signals'},
+    {t:'title', text:'Autocorrelation and power'},
+    {
+      t:'cols',
+      ratio:'c-5-7',
+      fill:true,
+      left:[
+        {
+          t:'fig',
+          frame:true,
+          grow:true,
+          svg:figWss,
+          caption:'Read the peak at zero gap, then compare positive and negative gaps. The process is real-valued and WSS.',
+          frames:{
+            labels:['autocorrelation', 'power', 'even', 'bounded']
+          }
+        }
+      ],
+      right:[
+        {t:'note', kind:'def', head:'Zero gap', html:'At zero gap, a reading is multiplied by itself. Its expectation is the average squared value, or mean-square power.'},
+        {t:'eq', label:'Three properties', tex:'\\begin{aligned}P_X=R_X(0)&=E[X^2(t)]\\\\R_X(-\\tau)&=R_X(\\tau)\\\\|R_X(\\tau)|&\\le R_X(0)\\end{aligned}', note:'For voltage, $P_X$ has units $\\text{V}^{2}$. Across a $1\\ \\Omega$ load, its numerical value is the power in watts.'},
+        {
+          t:'note',
+          kind:'def',
+          head:'Given',
+          html:'The curve is $R_X(\\tau)=4e^{-|\\tau|/2}\\cos(2\\pi\\tau)\\ \\text{V}^{2}$, with $\\tau$ in ms.<div class="nsep"></div>What is $P_X$?',
+          ask:{
+            key:'m2-rp-power',
+            choices:['$2\\ \\text{V}^{2}$', '$4\\ \\text{V}^{2}$', '$8\\ \\text{V}^{2}$'],
+            answer:1,
+            why:'Set $\\tau=0$: $P_X=4e^0\\cos0=4\\ \\text{V}^{2}$.'
+          }
+        }
+      ]
+    }
+  ],
+  src:'book 5.2.2'
+},
 
-{ id:'m2-rp-lti', module:'M2', nav:'Through a linear filter', title:'A random signal through a filter',
-  objective:'Find the mean and the power spectral density of a random process at the output of a linear time-invariant filter.',
-  keywords:'linear time invariant filter lti random process output mean dc gain H(0) output power spectral density |H(f)|^2 autocorrelation convolution',
-  src:'SPS 1, 8; book 5.2.4, 5.2.5', slide:true, steps:2, blocks:[
-  {t:'eyebrow', text:EB},
-  {t:'title', text:'A random signal through a filter'},
-  {t:'cols', ratio:'c-5-7', fill:true, left:[
-    {t:'fig', frame:true, grow:true,
-      frames:{labels:['$S_X(f)$','$|H(f)|^{2}$','$S_Y(f)$','in time']},
-      svg:figLti,
-      caption:'Step through the frames. White noise with $N_0/2=0.5$ enters an RC lowpass filter with $f_{3\\text{dB}}=1$ kHz. The output keeps the low frequencies, so it varies more slowly.'},
-    {t:'legend', items:[['in','$S_X(f)$'],['h','$|H(f)|^{2}$',true,1],['out','$S_Y(f)$',0,2]], at:'tr'}
-  ], right:[
-    {t:'eq', label:'Mean', tex:'\\mu_Y=\\mu_X\\int_{-\\infty}^{\\infty}h(t)\\,dt=\\mu_X\\,H(0)',
-      note:'Take the expectation inside the convolution integral. Only the gain at $f=0$ matters.'},
-    {t:'reveal', at:1, items:[
-      {t:'eq', label:'Key result · Output spectrum', result:true, tex:'\\begin{aligned}R_Y(\\tau)&=h(\\tau)*h(-\\tau)*R_X(\\tau)\\\\S_Y(f)&=H(f)\\,H^{*}(f)\\,S_X(f)=|H(f)|^{2}S_X(f)\\end{aligned}',
-        note:'Transform each factor. For a real $h$, $h(-\\tau)$ becomes $H^{*}(f)$, so the phase of $H$ drops out.'}]},
-    {t:'reveal', at:2, items:[
-      {t:'note', kind:'def', head:'Given', html:'A process with mean $\\mu_X=3$ V passes a differentiator, $H(f)=j2\\pi f$.<div class="nsep"></div>What is the output mean $\\mu_Y$?',
-        ask:{key:'m2-rp-lti', choices:['$0$','$3$ V','$6\\pi$ V'], answer:0,
-          why:'$\\mu_Y=\\mu_XH(0)=3\\,(j2\\pi\\cdot0)=0$. A differentiator removes the constant part.'}}]}
-  ]}
-]},
+{
+  id:'m2-rp-ex-phase',
+  module:'M2',
+  nav:'Worked example: a sinusoid with a random phase',
+  title:'Worked example: a sinusoid with a random phase',
+  objective:'Set up the random-phase sinusoid and compute its ensemble mean.',
+  keywords:'random signal noise receiver worked example: a sinusoid with a random phase',
+  slide:true,
+  steps:1,
+  blocks:[
+    {t:'eyebrow', text:'Module 2 · Random signals'},
+    {t:'title', text:'Worked example: a sinusoid with a random phase'},
+    {
+      t:'cols',
+      ratio:'c-5-7',
+      fill:true,
+      left:[
+        {
+          t:'fig',
+          frame:true,
+          grow:true,
+          svg:figExPhase,
+          caption:'Each recording has one fixed phase. Press Next for another phase sample. Amplitude and frequency stay fixed.',
+          frames:{
+            labels:EX_PHASES.map(()=>''),
+            ms:900
+          },
+        }
+      ],
+      right:[
+        {
+          t:'note',
+          kind:'def',
+          head:'Given',
+          html:'Let $X(t)=A\\cos(2\\pi f_0t+\\Theta)$, $A=3$ V, $f_0=1$ kHz. The phase is uniform on $[0,2\\pi)$. Find the mean, autocorrelation and power.<div class="nsep"></div>What is the mean-square power?',
+          ask:{
+            key:'m2-rp-ex-phase',
+            choices:['$1.5\\ \\text{V}^{2}$', '$4.5\\ \\text{V}^{2}$', '$9\\ \\text{V}^{2}$'],
+            answer:1,
+            why:'The mean square of a sinusoid is $A^2/2=4.5\\ \\text{V}^{2}$. Common error: $A^2=9\\ \\text{V}^{2}$ drops the $\\tfrac12$.'
+          }
+        },
+        {t:'eq', label:'Mean', tex:'\\mu_X=\\frac{1}{2\\pi}\\int_0^{2\\pi}A\\cos(2\\pi f_0t+\\theta)\\,d\\theta=0', note:'Average across phases. The integral covers a full cycle.'},
+      ]
+    }
+  ],
+  src:'book 5.2.1'
+},
 
-{ id:'m2-rp-filtered', module:'M2', nav:'Filtered white noise', title:'Filtered white noise',
-  objective:'Compute the output power of white noise through a filter with the noise-equivalent bandwidth.',
-  keywords:'filtered white noise output noise power noise equivalent bandwidth rc lowpass 1/(4RC) 3 dB bandwidth ideal filter same area',
-  src:'book 5.3.3, Ex. 5.3.4', slide:true, steps:2, blocks:[
-  {t:'eyebrow', text:EB},
-  {t:'title', text:'Filtered white noise'},
-  {t:'cols', ratio:'c-5-7', fill:true, left:[
-    {t:'fig', frame:true, grow:true,
-      live:{controls:[{k:'rc', label:'$RC$ (ms)', min:0.25, max:2, step:0.05, v:1, show:v=>'$'+v.toFixed(2)+'$'}]},
-      svg:figNoiseBw,
-      caption:'Drag $RC$. The dashed ideal filter has the same peak and the same area as $|H(f)|^{2}$. Its half-width $B_{\\text{neq}}$ is wider than the $3$ dB frequency.'},
-    {t:'legend', items:[['h','$|H(f)|^{2}$'],['slate','ideal, same area',true]], at:'tr'}
-  ], right:[
-    {t:'eq', label:'Output power', tex:'\\begin{aligned}P_Y&=\\int_{-\\infty}^{\\infty}\\frac{N_0}{2}\\,|H(f)|^{2}\\,df\\\\&=N_0\\,B_{\\text{neq}}\\,H_{\\max}^{2}\\end{aligned}',
-      note:'Here $B_{\\text{neq}}=\\int|H(f)|^{2}df\\,/\\,(2H_{\\max}^{2})$ is the noise-equivalent bandwidth: the half-width of an ideal filter that passes the same noise power.'},
-    {t:'reveal', at:1, items:[
-      {t:'eq', label:'RC lowpass', tex:'\\begin{aligned}\\int_{-\\infty}^{\\infty}\\frac{df}{1+(2\\pi fRC)^{2}}&=\\frac{1}{2\\pi RC}\\int_{-\\infty}^{\\infty}\\frac{du}{1+u^{2}}=\\frac{1}{2RC}\\\\B_{\\text{neq}}&=\\frac{1}{4RC}\\end{aligned}',
-        note:'Here $|H(f)|^{2}=1/\\bigl(1+(2\\pi fRC)^{2}\\bigr)$ and $H_{\\max}=1$. Substitute $u=2\\pi fRC$. The integral of $1/(1+u^{2})$ is $\\pi$.'}]},
-    {t:'reveal', at:2, items:[
-      {t:'note', kind:'def', head:'Given', html:'White noise with $N_0/2=10^{-8}$ W/Hz passes an RC filter with $RC=1$ ms.<div class="nsep"></div>What is the output power $P_Y$?',
-        ask:{key:'m2-rp-filtered', choices:['$3.2\\ \\mu$W','$5\\ \\mu$W','$10\\ \\mu$W'], answer:1,
-          why:'$B_{\\text{neq}}=1/(4RC)=250$ Hz, so $P_Y=N_0B_{\\text{neq}}=(2\\times10^{-8})(250)=5\\ \\mu$W. The $3$ dB width gives $3.2\\ \\mu$W.'}}]}
-  ]}
-]},
+{
+  id:'m2-rp-phase-product',
+  module:'M2',
+  nav:'The cosine product',
+  title:'The cosine product',
+  objective:'Expand the sinusoid product and identify the sum and difference of its phases.',
+  keywords:'random phase autocorrelation cosine product sum identity',
+  slide:true,
+  steps:1,
+  blocks:[
+    {t:'eyebrow', text:'Module 2 · Random signals'},
+    {t:'title', text:'The cosine product'},
+    {t:'cols', ratio:'c-5-7', fill:true,
+      left:[{t:'fig', frame:true, grow:true, svg:figPhaseProduct,
+        caption:'Autocorrelation multiplies the values of one recording at $t$ and $t+\\tau$. Both values have the same phase $\\Theta$.'}],
+      right:[
+        {t:'eq', label:'Product identity', tex:'\\cos\\alpha\\cos\\beta=\\frac12[\\cos(\\alpha-\\beta)+\\cos(\\alpha+\\beta)]',
+          note:'Set $\\alpha=2\\pi f_0t+\\Theta$ and $\\beta=2\\pi f_0(t+\\tau)+\\Theta$.'},
+        {t:'eq', label:'Sum of the arguments', tex:'\\begin{aligned}\\alpha+\\beta&=2\\pi f_0[t+(t+\\tau)]+2\\Theta\\\\&=2\\pi f_0(2t+\\tau)+2\\Theta\\end{aligned}',
+          note:'The two time arguments add to $2t+\\tau$.'},
+        {t:'eq', label:'Difference of the arguments', tex:'\\alpha-\\beta=-2\\pi f_0\\tau',
+          note:'The common phase cancels. Since cosine is even, $\\cos(-2\\pi f_0\\tau)=\\cos(2\\pi f_0\\tau)$.'}
+      ]}
+  ],
+  src:'book 5.2.1'
+},
 
-{ id:'m2-rp-gauss', module:'M2', nav:'Gaussian noise', title:'Gaussian noise',
-  objective:'Explain why thermal noise is Gaussian and state that a sample of filtered Gaussian noise is a Gaussian random variable.',
-  keywords:'gaussian process thermal noise central limit theorem sum of many independent sources normal density filter output sample variance Q function',
-  src:'book 5.3, 5.3.1', slide:true, steps:2, blocks:[
-  {t:'eyebrow', text:EB},
-  {t:'title', text:'Gaussian noise'},
-  {t:'cols', ratio:'c-5-7', fill:true, left:[
-    {t:'fig', frame:true, grow:true,
-      frames:{labels:['one source','two','five','thirty']},
-      svg:figClt,
-      caption:'Step through the frames. Each source adds an independent uniform current, and the sum $Z$ is scaled to unit variance. By five sources it already follows the Gaussian curve.'},
-    {t:'legend', items:[['mid','sum of $n$ sources'],['slate','Gaussian',true]], at:'tr'}
-  ], right:[
-    {t:'note', kind:'def', head:'Central limit theorem', html:'Thermal noise is the sum of the currents of very many electrons, each small and independent. Such a sum has a Gaussian density.'},
-    {t:'reveal', at:1, items:[
-      {t:'eq', label:'After a filter', tex:'Y(t_0)\\sim\\mathcal{N}(0,\\sigma^{2}),\\qquad\\sigma^{2}=P_Y=\\frac{N_0}{2}\\int_{-\\infty}^{\\infty}|H(f)|^{2}\\,df',
-        note:'A linear filter keeps zero-mean white Gaussian noise Gaussian. So one output sample is a Gaussian variable, and its variance is the output power.'}]},
-    {t:'reveal', at:2, items:[
-      {t:'note', kind:'def', head:'Given', html:'A sample of filtered noise has $\\sigma=2$ mV. $Q(x)=\\tfrac12\\operatorname{erfc}(x/\\sqrt2)$ is the Gaussian tail.<div class="nsep"></div>What is $P\\bigl(Y(t_0)>4\\ \\text{mV}\\bigr)$?',
-        ask:{key:'m2-rp-gauss', choices:['$Q(1)$','$Q(2)$','$Q(4)$'], answer:1,
-          why:'Divide by $\\sigma$: $P(Y>4\\ \\text{mV})=Q(4/2)=Q(2)=0.0228$.'}}]}
-  ]}
-]},
+{
+  id:'m2-rp-phase-result',
+  module:'M2',
+  nav:'The random-phase autocorrelation',
+  title:'The random-phase autocorrelation',
+  objective:'Derive the autocorrelation and power of the random-phase sinusoid.',
+  keywords:'random signal noise receiver the random-phase autocorrelation',
+  slide:true,
+  steps:1,
+  blocks:[
+    {t:'eyebrow', text:'Module 2 · Random signals'},
+    {t:'title', text:'The random-phase autocorrelation'},
+    {
+      t:'cols',
+      ratio:'c-5-7',
+      fill:true,
+      left:[
+        {t:'fig', frame:true, grow:true, svg:figPhaseResult,
+          sketch:{label:'Sketch $R_X(\\tau)$, then check it.'}, caption:'Sketch the autocorrelation of $X(t)=3\\cos(2\\pi f_0t+\\Theta)$, with $f_0=1$ kHz and uniform phase. Then show the answer.'}
+      ],
+      right:[
+        {t:'note', kind:'def', head:'Method', html:'Use the expanded cosine product. Average the sum term over the random phase.'},
+        {t:'eq', label:'Average the product', tex:'\\begin{aligned}R_X(\\tau)&=\\frac{A^2}{2}E[\\cos(2\\pi f_0\\tau)+\\cos(\\phi+2\\Theta)]\\\\&=\\frac{A^2}{2}\\cos(2\\pi f_0\\tau)\\end{aligned}', note:'Here $\\phi=2\\pi f_0(2t+\\tau)$. The average of $\\cos(\\phi+2\\Theta)$ is zero.'},
+        {
+          t:'note',
+          kind:'def',
+          head:'Given',
+          html:'Set $\\tau=0$ in this result.<div class="nsep"></div>Which power follows?',
+          ask:{
+            key:'m2-rp-phase-result',
+            choices:['$A^2$', '$A^2/2$', '$0$'],
+            answer:1,
+            why:'$R_X(0)=A^2/2=4.5\\ \\text{V}^{2}$. The mean is constant and $R_X$ depends only on the gap, so the process is WSS.'
+          }
+        }
+      ]
+    }
+  ],
+  src:'book 5.2.1'
+},
+
+{
+  id:'m2-rp-psd',
+  module:'M2',
+  nav:'Power spectral density',
+  title:'Power spectral density',
+  objective:'Interpret power spectral density and connect correlation time to spectral width.',
+  keywords:'random signal noise receiver power spectral density',
+  slide:true,
+  steps:1,
+  blocks:[
+    {t:'eyebrow', text:'Module 2 · Random signals'},
+    {t:'title', text:'Power spectral density'},
+    {
+      t:'cols',
+      ratio:'c-5-7',
+      fill:true,
+      left:[
+        {
+          t:'fig',
+          frame:true,
+          grow:true,
+          svg:figPsdOnly,
+          caption:'Drag $\\tau_c$. A longer correlation time concentrates the spectrum near zero frequency. The total area stays $1\\ \\text{V}^{2}$.',
+          live:{
+            controls:[
+              {k:'tc', label:'$\\tau_c$ (ms)', min:0.05, max:1, step:0.01, v:0.3, show:v=>'$'+v.toFixed(2)+'$'}
+            ]
+          }
+        }
+      ],
+      right:[
+        {t:'note', kind:'def', head:'Power per frequency', html:'Power spectral density (PSD) describes power per unit frequency. Here it is measured in $\\text{V}^{2}/\\text{kHz}$.'},
+        {
+          t:'note',
+          kind:'def',
+          head:'Given',
+          html:'This process has $R_X(\\tau)=e^{-|\\tau|/\\tau_c}\\ \\text{V}^{2}$. Increase $\\tau_c$.<div class="nsep"></div>What happens to the spectrum?',
+          ask:{
+            key:'m2-rp-psd',
+            choices:['it becomes wider', 'it becomes narrower', 'its total power increases'],
+            answer:1,
+            why:'The spectrum narrows. The total power remains $R_X(0)=1\\ \\text{V}^{2}$.'
+          }
+        },
+        {
+          t:'reveal',
+          at:1,
+          items:[
+            {t:'eq', label:'Wiener–Khinchin', tex:'S_X(f)=\\int_{-\\infty}^{\\infty}R_X(\\tau)e^{-j2\\pi f\\tau}\\,d\\tau', note:'For a real WSS process, the PSD is real, even and nonnegative. Here $S_X(f)=2\\tau_c/[1+(2\\pi f\\tau_c)^2]$.'}
+          ]
+        }
+      ]
+    }
+  ],
+  src:'book 5.2.5'
+},
+
+{
+  id:'m2-rp-psd-power',
+  module:'M2',
+  nav:'Power from the spectrum',
+  title:'Power from the spectrum',
+  objective:'Compute total power by integrating the two-sided PSD.',
+  keywords:'random signal noise receiver power from the spectrum',
+  slide:true,
+  steps:1,
+  blocks:[
+    {t:'eyebrow', text:'Module 2 · Random signals'},
+    {t:'title', text:'Power from the spectrum'},
+    {
+      t:'cols',
+      ratio:'c-5-7',
+      fill:true,
+      left:[
+        {t:'fig', frame:true, grow:true, svg:figPowerArea, caption:'The shaded rectangle covers both negative and positive frequencies. Its total width is $10$ kHz.'}
+      ],
+      right:[
+        {t:'note', kind:'def', head:'Area', html:'Add the power in all frequency intervals. This gives the same mean-square power as $R_X(0)$.'},
+        {t:'eq', label:'Inverse transform', tex:'\\begin{aligned}R_X(\\tau)&=\\int_{-\\infty}^{\\infty}S_X(f)e^{j2\\pi f\\tau}\\,df\\\\P_X=R_X(0)&=\\int_{-\\infty}^{\\infty}S_X(f)\\,df\\end{aligned}', note:'Set $\\tau=0$ in the inverse transform. The exponential becomes $1$.'},
+        {
+          t:'note',
+          kind:'def',
+          head:'Given',
+          html:'$S_X(f)=10^{-3}$ W/Hz on $|f|<5$ kHz and zero elsewhere.<div class="nsep"></div>What is the power?',
+          ask:{
+            key:'m2-rp-psd-power',
+            choices:['$5$ W', '$10$ W', '$20$ W'],
+            answer:1,
+            why:'Integrate over both halves: $P_X=10^{-3}(5000-(-5000))=10$ W.'
+          }
+        }
+      ]
+    }
+  ],
+  src:'book 5.2.5'
+},
+
+{
+  id:'m2-rp-white',
+  module:'M2',
+  nav:'Noise in a finite band',
+  title:'Noise in a finite band',
+  objective:'Compute the finite power of noise with a flat PSD over a finite band.',
+  keywords:'random signal noise receiver noise in a finite band',
+  slide:true,
+  steps:1,
+  blocks:[
+    {t:'eyebrow', text:'Module 2 · Random signals'},
+    {t:'title', text:'Noise in a finite band'},
+    {
+      t:'cols',
+      ratio:'c-5-7',
+      fill:true,
+      left:[
+        {
+          t:'fig',
+          frame:true,
+          grow:true,
+          svg:figWhiteSpectrum,
+          caption:'Drag the half-width $B$. A flat two-sided density of $N_0/2$ collects more noise power when the band widens.',
+          live:{
+            controls:[
+              {k:'B', label:'$B$ (kHz)', min:0.5, max:4, step:0.05, v:2, show:v=>'$'+v.toFixed(2)+'$'}
+            ]
+          }
+        }
+      ],
+      right:[
+        {t:'note', kind:'def', head:'Receiver band', html:'Start with noise whose PSD is flat inside a finite band. Its power is finite.'},
+        {t:'eq', label:'Bandlimited noise', tex:'\\begin{aligned}S_w(f)&=\\frac{N_0}{2},\\quad |f|<B\\\\P_w&=\\int_{-B}^{B}\\frac{N_0}{2}\\,df=N_0B\\end{aligned}', note:'Outside this ideal lowpass band, the PSD is zero. The total width is $2B$.'},
+        {
+          t:'note',
+          kind:'def',
+          head:'Given',
+          html:'Keep $N_0/2$ fixed and double $B$.<div class="nsep"></div>What happens to the noise power?',
+          ask:{
+            key:'m2-rp-white',
+            choices:['it halves', 'it stays the same', 'it doubles'],
+            answer:2,
+            why:'The spectral area doubles because the width doubles.'
+          }
+        }
+      ]
+    }
+  ],
+  src:'book 5.3.2'
+},
+
+{
+  id:'m2-rp-white-correlation',
+  module:'M2',
+  nav:'Bandlimited noise samples',
+  title:'Bandlimited noise samples',
+  objective:'Relate the finite-band noise spectrum to its sinc autocorrelation and sample correlations.',
+  keywords:'random signal noise receiver bandlimited noise samples',
+  slide:true,
+  steps:1,
+  blocks:[
+    {t:'eyebrow', text:'Module 2 · Random signals'},
+    {t:'title', text:'Bandlimited noise samples'},
+    {
+      t:'cols',
+      ratio:'c-5-7',
+      fill:true,
+      left:[
+        {
+          t:'fig',
+          frame:true,
+          grow:true,
+          svg:figWhiteCorrelation,
+          caption:'Drag $B$. The normalized autocorrelation narrows. Filtered noise samples can remain correlated at nonzero time gaps.',
+          live:{
+            controls:[
+              {k:'B', label:'$B$ (kHz)', min:0.5, max:4, step:0.05, v:2, show:v=>'$'+v.toFixed(2)+'$'}
+            ]
+          }
+        }
+      ],
+      right:[
+        {t:'note', kind:'def', head:'Time relation', html:'Take the inverse transform of the flat finite-band spectrum. It gives a sinc-shaped autocorrelation.'},
+        {t:'eq', label:'Autocorrelation', tex:'R_w(\\tau)=N_0B\\operatorname{sinc}(2B\\tau)', note:'Here $\\operatorname{sinc}(x)=\\sin(\\pi x)/(\\pi x)$ and $\\operatorname{sinc}(0)=1$. The first zeros occur at $\\tau=\\pm1/(2B)$.'},
+        {
+          t:'note',
+          kind:'def',
+          head:'Given',
+          html:'An ideal lowpass filter has $B=1$ MHz. Read its noise output $0.5\\ \\mu$s apart.<div class="nsep"></div>How are the samples related?',
+          ask:{
+            key:'m2-rp-white-correlation',
+            choices:['uncorrelated', 'fully correlated', 'negatively correlated'],
+            answer:0,
+            why:'$2B\\tau=1$, so $R_w(\\tau)=N_0B\\operatorname{sinc}(1)=0$.'
+          }
+        }
+      ]
+    }
+  ],
+  src:'book 5.3.2'
+},
+
+{
+  id:'m2-rp-white-ideal',
+  module:'M2',
+  nav:'The white-noise model',
+  title:'The white-noise model',
+  objective:'Distinguish ideal white noise from finite-band noise and explain why filtering gives finite output power.',
+  keywords:'random signal noise receiver the white-noise model',
+  slide:true,
+  steps:1,
+  blocks:[
+    {t:'eyebrow', text:'Module 2 · Random signals'},
+    {t:'title', text:'The white-noise model'},
+    {
+      t:'cols',
+      ratio:'c-5-7',
+      fill:true,
+      left:[
+        {
+          t:'fig',
+          frame:true,
+          grow:true,
+          svg:figWhiteLimit,
+          caption:'Drag $B$. The peak $2B$ grows and the lobe narrows, but the area stays $1$. As $B$ grows without limit, the curve tends to the impulse $\\delta(\\tau)$.',
+          live:{
+            controls:[
+              {k:'B', label:'$B$ (kHz)', min:0.5, max:5, step:0.05, v:1, show:v=>'$'+v.toFixed(2)+'$'}
+            ]
+          }
+        }
+      ],
+      right:[
+        {t:'note', kind:'def', head:'Ideal model', html:'Ideal white noise has a constant PSD over all frequencies. Its total power is infinite, so it is a generalized model.'},
+        {t:'eq', label:'White noise', tex:'S_w(f)=\\frac{N_0}{2},\\qquad R_w(\\tau)=\\frac{N_0}{2}\\delta(\\tau)', note:'A constant spectrum transforms to an impulse. Practical receivers admit a finite band.'},
+        {
+          t:'note',
+          kind:'def',
+          head:'Given',
+          html:'White noise enters a finite-energy receive filter.<div class="nsep"></div>Must the output noise power be infinite?',
+          ask:{
+            key:'m2-rp-white-ideal',
+            choices:['yes', 'no'],
+            answer:1,
+            why:'A finite-energy filter has finite $\\int|H(f)|^2df$, so its output noise power is finite.'
+          }
+        }
+      ]
+    }
+  ],
+  src:'book 5.3.2'
+},
+
+{
+  id:'m2-rp-mean-filter',
+  module:'M2',
+  nav:'The mean through a filter',
+  title:'The mean through a filter',
+  objective:'Compute the output mean of an LTI filter when the required output statistics exist.',
+  keywords:'random signal noise receiver the mean through a filter',
+  slide:true,
+  steps:1,
+  blocks:[
+    {t:'eyebrow', text:'Module 2 · Random signals'},
+    {t:'title', text:'The mean through a filter'},
+    {
+      t:'cols',
+      ratio:'c-5-7',
+      fill:true,
+      left:[
+        {t:'fig', frame:true, grow:true, svg:figFilterTime, caption:'A lowpass filter smooths this illustrative noise recording. Its effect on the ensemble mean depends on the DC gain.'},
+        {
+          t:'legend',
+          items:[
+            ['in', 'input'],
+            ['out', 'filtered output']
+          ],
+          at:'tr'
+        }
+      ],
+      right:[
+        {t:'note', kind:'def', head:'LTI filter', html:'An LTI filter weights delayed values of $X(t)$. For a WSS input, the mean is constant.'},
+        {t:'eq', label:'Mean', tex:'\\begin{aligned}\\mu_Y&=\\int_{-\\infty}^{\\infty}h(u)E[X(t-u)]\\,du\\\\&=\\mu_X\\int_{-\\infty}^{\\infty}h(u)\\,du=\\mu_XH(0)\\end{aligned}', note:'$H(0)$ is the DC gain. Assume the output statistics exist.'},
+        {
+          t:'note',
+          kind:'def',
+          head:'Given',
+          html:'A differentiable input with mean $3$ V enters $H(f)=j2\\pi f$.<div class="nsep"></div>What is the output mean?',
+          ask:{
+            key:'m2-rp-mean-filter',
+            choices:['$0$', '$3$ V', '$6\\pi$ V'],
+            answer:0,
+            why:'$H(0)=0$, so $\\mu_Y=3H(0)=0$.'
+          }
+        }
+      ]
+    }
+  ],
+  src:'book 5.2.4'
+},
+
+{
+  id:'m2-rp-lti',
+  module:'M2',
+  nav:'The spectrum through a filter',
+  title:'The spectrum through a filter',
+  objective:'Compute the output PSD from the input PSD and filter power gain.',
+  keywords:'random signal noise receiver the spectrum through a filter',
+  slide:true,
+  steps:1,
+  blocks:[
+    {t:'eyebrow', text:'Module 2 · Random signals'},
+    {t:'title', text:'The spectrum through a filter'},
+    {
+      t:'cols',
+      ratio:'c-5-7',
+      fill:true,
+      left:[
+        {
+          t:'fig',
+          frame:true,
+          grow:true,
+          svg:figFilterSpectrum,
+          caption:'Build the output PSD from the input PSD and the power gain $|H(f)|^2$. Low frequencies pass; high frequencies are attenuated.',
+          frames:{
+            labels:['input PSD', 'power gain', 'output PSD']
+          }
+        },
+        {
+          t:'legend',
+          items:[
+            ['in', '$S_X(f)$', true],
+            ['h', '$|H(f)|^2$', true, 1],
+            ['out', '$S_Y(f)$', false, 2]
+          ],
+          at:'tr'
+        }
+      ],
+      right:[
+        {t:'note', kind:'def', head:'Output spectrum', html:'For receiver noise, set $X(t)=w(t)$ and $Y(t)=n(t)$. The filter scales the PSD by $|H(f)|^2$.'},
+        {t:'eq', label:'LTI result', tex:'\\begin{aligned}R_Y(\\tau)&=h(\\tau)*h(-\\tau)*R_X(\\tau)\\\\S_Y(f)&=H(f)H^*(f)S_X(f)\\\\&=|H(f)|^2S_X(f)\\end{aligned}', note:'For a real filter and a WSS input, take the Fourier transform of the autocorrelation relation. Assume the output statistics exist.'},
+        {
+          t:'note',
+          kind:'def',
+          head:'Given',
+          html:'At one frequency, a filter has $|H(f)|=1/2$.<div class="nsep"></div>What fraction of the input PSD remains?',
+          ask:{
+            key:'m2-rp-lti',
+            choices:['$1/2$', '$1/4$', '$1$'],
+            answer:1,
+            why:'Power gain is the squared magnitude: $|H(f)|^2=(1/2)^2=1/4$.'
+          }
+        }
+      ]
+    }
+  ],
+  src:'book 5.2.4, 5.2.5'
+},
+
+{
+  id:'m2-rp-filtered',
+  module:'M2',
+  nav:'Filtered white noise',
+  title:'Filtered white noise',
+  objective:'Compute output white-noise power by integrating the output PSD.',
+  keywords:'random signal noise receiver filtered white noise',
+  slide:true,
+  steps:1,
+  blocks:[
+    {t:'eyebrow', text:'Module 2 · Random signals'},
+    {t:'title', text:'Filtered white noise'},
+    {
+      t:'cols',
+      ratio:'c-5-7',
+      fill:true,
+      left:[
+        {
+          t:'fig',
+          frame:true,
+          grow:true,
+          svg:figOutputNoise,
+          caption:'Drag $RC$. The output PSD follows the filter power gain. Its total area determines the output noise power.',
+          live:{
+            controls:[
+              {k:'rc', label:'$RC$ (ms)', min:0.25, max:2, step:0.05, v:1, show:v=>'$'+v.toFixed(2)+'$'}
+            ]
+          }
+        }
+      ],
+      right:[
+        {t:'note', kind:'def', head:'Noise power', html:'The admitted noise power depends on the area under $|H(f)|^2$.'},
+        {t:'eq', label:'Output power', tex:'P_n=\\frac{N_0}{2}\\int_{-\\infty}^{\\infty}|H(f)|^2\\,df', note:'For a finite-energy filter, this integral is finite.'},
+        {
+          t:'note',
+          kind:'def',
+          head:'Given',
+          html:'Two filters have the same area under $|H(f)|^2$.<div class="nsep"></div>Which passes more of the same white noise?',
+          ask:{
+            key:'m2-rp-filtered',
+            choices:['the first', 'the second', 'both pass the same power'],
+            answer:2,
+            why:'The integral is equal, so both output noise powers are equal.'
+          }
+        }
+      ]
+    }
+  ],
+  src:'book 5.3.3'
+},
+
+{
+  id:'m2-rp-noise-bandwidth',
+  module:'M2',
+  nav:'Noise-equivalent bandwidth',
+  title:'Noise-equivalent bandwidth',
+  objective:'Replace a filter by an ideal equal-area filter to compute its admitted white-noise power.',
+  keywords:'random signal noise receiver filtered white noise',
+  slide:true,
+  steps:1,
+  blocks:[
+    {t:'eyebrow', text:'Module 2 · Random signals'},
+    {t:'title', text:'Noise-equivalent bandwidth'},
+    {
+      t:'cols',
+      ratio:'c-5-7',
+      fill:true,
+      left:[
+        {
+          t:'fig',
+          frame:true,
+          grow:true,
+          svg:figNoiseBw,
+          caption:'The dashed ideal filter has the same peak gain and total area. Its half-width is the noise-equivalent bandwidth.',
+          live:{
+            controls:[
+              {k:'rc', label:'$RC$ (ms)', min:0.25, max:2, step:0.05, v:1, show:v=>'$'+v.toFixed(2)+'$'}
+            ]
+          }
+        },
+        {
+          t:'legend',
+          items:[
+            ['h', '$|H(f)|^2$'],
+            ['slate', 'equal-area ideal filter', true]
+          ],
+          at:'tr'
+        }
+      ],
+      right:[
+        {t:'note', kind:'def', head:'Equal-area filter', html:'Equal spectral areas pass equal white-noise powers.'},
+        {t:'eq', label:'Definition', tex:'\\begin{aligned}B_{\\text{neq}}&=\\frac{\\int_{-\\infty}^{\\infty}|H(f)|^2df}{2H_{\\max}^2}\\\\P_n&=N_0B_{\\text{neq}}H_{\\max}^2\\end{aligned}', note:'Here $H_{\\max}$ is the peak magnitude. The ideal filter has total width $2B_{\\text{neq}}$.'},
+        {
+          t:'note',
+          kind:'def',
+          head:'Given',
+          html:'Two filters have $B_{\\text{neq}}=1$ kHz. One has $H_{\\max}=1$, the other $H_{\\max}=2$.<div class="nsep"></div>How much more white-noise power does the second pass?',
+          ask:{
+            key:'m2-rp-noise-bandwidth',
+            choices:['the same', 'twice', 'four times'],
+            answer:2,
+            why:'$P_n=N_0B_{\\text{neq}}H_{\\max}^2$, and $H_{\\max}^2$ grows from $1$ to $4$.'
+          }
+        }
+      ]
+    }
+  ],
+  src:'book 5.3.3'
+},
+
+{
+  id:'m2-rp-rc-bandwidth',
+  module:'M2',
+  nav:'Noise bandwidth of an RC filter',
+  title:'Noise bandwidth of an RC filter',
+  objective:'Derive the RC noise-equivalent bandwidth and compute the admitted white-noise power.',
+  keywords:'random signal noise receiver noise bandwidth of an rc filter',
+  slide:true,
+  steps:1,
+  blocks:[
+    {t:'eyebrow', text:'Module 2 · Random signals'},
+    {t:'title', text:'Noise bandwidth of an RC filter'},
+    {
+      t:'cols',
+      ratio:'c-5-7',
+      fill:true,
+      left:[
+        {t:'fig', frame:true, grow:true, svg:figNoiseBw, caption:'For $RC=1$ ms, the equivalent half-width is $250$ Hz. The $3$ dB frequency is $159$ Hz.'},
+        {
+          t:'legend',
+          items:[
+            ['h', '$|H(f)|^2$'],
+            ['slate', 'equal-area ideal filter', true]
+          ],
+          at:'tr'
+        }
+      ],
+      right:[
+        {t:'note', kind:'def', head:'Method', html:'Use $|H(f)|^2=1/[1+(2\\pi fRC)^2]$, with $H_{\\max}=1$. Substitute $u=2\\pi fRC$.'},
+        {t:'eq', label:'Integrate the power gain', tex:'\\begin{aligned}\\int_{-\\infty}^{\\infty}|H(f)|^2df&=\\frac{1}{2\\pi RC}\\int_{-\\infty}^{\\infty}\\frac{du}{1+u^2}\\\\&=\\frac{\\pi}{2\\pi RC}=\\frac{1}{2RC}\\\\B_{\\text{neq}}&=\\frac{1}{4RC}\\end{aligned}', note:'The antiderivative is $\\arctan u$. Its infinite limits give $\\pi$.'},
+        {
+          t:'note',
+          kind:'def',
+          head:'Given',
+          html:'$N_0/2=10^{-8}$ W/Hz and $RC=1$ ms.<div class="nsep"></div>What is the output noise power?',
+          ask:{
+            key:'m2-rp-rc-bandwidth',
+            choices:['$3.2\\ \\mu$W', '$5\\ \\mu$W', '$10\\ \\mu$W'],
+            answer:1,
+            why:'$B_{\\text{neq}}=250$ Hz, so $P_n=(2\\times10^{-8})(250)=5\\ \\mu$W.'
+          }
+        }
+      ]
+    }
+  ],
+  src:'book 5.3.3'
+},
+
+{
+  id:'m2-rp-gauss',
+  module:'M2',
+  nav:'Gaussian noise',
+  title:'Gaussian noise',
+  objective:'Distinguish whiteness and Gaussianity and explain the Gaussian thermal-noise approximation.',
+  keywords:'random signal noise receiver gaussian noise',
+  slide:true,
+  steps:1,
+  blocks:[
+    {t:'eyebrow', text:'Module 2 · Random signals'},
+    {t:'title', text:'Gaussian noise'},
+    {
+      t:'cols',
+      ratio:'c-5-7',
+      fill:true,
+      left:[
+        {
+          t:'fig',
+          frame:true,
+          grow:true,
+          svg:figClt,
+          caption:'Add independent uniform sources, then scale the sum to unit variance. As their number grows, the density approaches the Gaussian curve.',
+          frames:{
+            labels:['one source', 'two', 'five', 'thirty']
+          }
+        },
+        {
+          t:'legend',
+          items:[
+            ['mid', 'sum of sources'],
+            ['slate', 'Gaussian', true]
+          ],
+          at:'tr'
+        }
+      ],
+      right:[
+        {t:'note', kind:'def', head:'Gaussian model', html:'Many small, independent contributions give an approximately Gaussian sum under central-limit conditions. This motivates the thermal-noise model.'},
+        {t:'note', kind:'def', head:'Two properties', html:'White describes the spectrum. Gaussian describes the joint distributions. A process can have either property without the other.'},
+        {
+          t:'note',
+          kind:'def',
+          head:'Given',
+          html:'A Gaussian noise process passes through a linear filter with finite output variance.<div class="nsep"></div>What is the distribution of one output sample?',
+          ask:{
+            key:'m2-rp-gauss',
+            choices:['Gaussian', 'uniform', 'always zero'],
+            answer:0,
+            why:'Linear combinations of jointly Gaussian values are Gaussian. Filtering changes their variance and time correlation.'
+          }
+        }
+      ]
+    }
+  ],
+  src:'book 5.3.1'
+},
+
+{
+  id:'m2-rp-sample',
+  module:'M2',
+  nav:'From a noise waveform to one sample',
+  title:'From a noise waveform to one sample',
+  objective:'Connect the filtered noise process to a Gaussian sample and compute its tail probability.',
+  keywords:'random signal noise receiver from a noise waveform to one sample',
+  slide:true,
+  steps:1,
+  blocks:[
+    {t:'eyebrow', text:'Module 2 · Random signals'},
+    {t:'title', text:'From a noise waveform to one sample'},
+    {
+      t:'cols',
+      ratio:'c-5-7',
+      fill:true,
+      left:[
+        {t:'fig', frame:true, grow:true, svg:figGaussianSample, caption:'Fix $T_b$ and repeat the receiver trial. The shaded tail is the probability of a sample above $4$ mV.'}
+      ],
+      right:[
+        {t:'note', kind:'def', head:'Receiver sample', html:'The filtered noise $n(t)$ is a random process. At the end of a bit of duration $T_b$, read $n=n(T_b)$.'},
+        {t:'eq', label:'Filtered white Gaussian noise', tex:'\\begin{aligned}n=n(T_b)&\\sim\\mathcal N(0,\\sigma_n^2)\\\\\\sigma_n^2=E[n^2]&=\\frac{N_0}{2}\\int_{-\\infty}^{\\infty}|H(f)|^2df\\end{aligned}', note:'For zero-mean noise, variance equals mean-square power. The filter therefore determines the spread of the samples.'},
+        {
+          t:'note',
+          kind:'def',
+          head:'Given',
+          html:'Here $\\sigma_n=2$ mV and $Q(x)=\\tfrac12\\operatorname{erfc}(x/\\sqrt2)$.<div class="nsep"></div>What is $P(n>4\\ \\text{mV})$?',
+          ask:{
+            key:'m2-rp-sample',
+            choices:['$Q(1)$', '$Q(2)$', '$Q(4)$'],
+            answer:1,
+            why:'Normalize by the standard deviation: $Q(4/2)=Q(2)=0.0228$. This sample model will be used to calculate decision errors.'
+          }
+        }
+      ]
+    }
+  ],
+  src:'book 5.3.1, 5.3.3'
+},
 
 REAL_RANDOM,
 

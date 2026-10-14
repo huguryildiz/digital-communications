@@ -75,7 +75,7 @@ const EN_BW=0.25, EN_LO=-3.25;
 const EN_H=(()=>{ const c=Array(26).fill(0);
   gauss(20260411,2000,1).forEach(x=>{ const k=Math.floor((x-EN_LO)/EN_BW); if(k>=0&&k<26) c[k]++; }); return c; })();
 function figEnsemble(){
-  const a=P.Axes(SZ({w:700,h:300,xr:[0,13.4],yr:[-3.5,4.1],xlabel:'t\\;(\\text{ms})',ylabel:'x(t)',
+  const a=P.Axes(SZ({w:700,h:300,xr:[0,13.4],yr:[-3.5,4.1],xlabel:'t\\;(\\text{ms})',ylabel:'X(t)',
     xticksOverride:[0,2,4,6,8],yticksOverride:[-2,0,2]}));
   a.raw('<g opacity="0.55">'); for(let i=1;i<8;i++) a.curve(path(EN_P[i],EN_DT,EN_T1),{color:C.in,width:1.3,n:700}); a.raw('</g>');
   a.curve(path(EN_P[0],EN_DT,EN_T1),{color:C.in,width:2.5,n:900});
@@ -128,15 +128,44 @@ function figWss(){
   return a.svg();
 }
 
-function figExPhase(){
-  const a=P.Axes(SZ({w:700,h:280,xr:[-1.6,1.6],yr:[-6.6,6.6],xlabel:'t,\\;\\tau\\;(\\text{ms})',ylabel:'x(t),\\;R_X(\\tau)',
-    xticksOverride:[-1.5,-1,-0.5,0.5,1,1.5],yticksOverride:[-4.5,-3,3,4.5]}));
-  a.curve(t=>3*Math.sin(2*Math.PI*t),{color:C.ink,width:1.6,dash:'6 5',n:700});
-  a.note(-1.56,-5.95,'x(t),\\;\\theta=-\\pi/2',{tex:true,fs:14,color:C.ink});
-  a.curve(t=>4.5*Math.cos(2*Math.PI*t),{color:C.mid,width:2.6,n:700});
-  a.point(0,4.5,{color:C.mid,r:5});
-  a.note(0.1,5.55,'R_X(0)=4.5',{tex:true,fs:15,color:C.mid});
+/* Stationarity: three recordings read at t and t + 1 ms (slide figWssShift). */
+function figWssShift(v){
+  const t0=v&&v.t!=null?v.t:1, tau=1;
+  const a=P.Axes(SZ({xr:[0,6],yr:[-3.4,5.4],xlabel:'t\\;(\\text{ms})',ylabel:'X(t)\\;(\\text{V})',xticksOverride:[0,1,2,3,4,5,6],yticksOverride:[-2,0,2]}));
+  AC_P.forEach((x,i)=>a.curve(path(x,AC_DT,6),{color:[C.in,C.h,C.err][i],width:1.6,n:700}));
+  [t0,t0+tau].forEach(t=>{a.vline(t,{color:C.mid,dash:'5 4',width:1.4,opacity:0.9});
+    AC_P.forEach(x=>a.point(t,path(x,AC_DT,6)(t),{color:C.mid,r:4}));});
+  a.span(t0,t0+tau,4.45,'\\tau=1\\ \\text{ms}',{tex:true,fs:15,color:C.mid});
   return a.svg();
+}
+/* The cosine product: one recording read at t = 0.6 ms and t + tau = 0.85 ms. */
+function figPhaseProduct(){
+  const x=t=>3*Math.sin(2*Math.PI*t), t1=0.6, t2=0.85;
+  const a=P.Axes(SZ({xr:[-1.6,1.6],yr:[-4,4.4],xlabel:'t\\;(\\text{ms})',ylabel:'X(t)\\;(\\text{V})',xticksOverride:[-1.5,-1,-0.5,0.5,1,1.5],yticksOverride:[-3,0,3]}));
+  a.curve(x,{color:C.in,width:2.6,n:700});
+  [t1,t2].forEach(t=>{a.poly([[t,0],[t,x(t)]],{color:C.mid,width:1.4,dash:'5 4'});a.point(t,x(t),{color:C.mid,r:5});});
+  a.span(t1,t2,3.7,'\\tau',{tex:true,fs:15,color:C.mid});
+  a.note(t1-0.06,x(t1)-0.75,'X(t)',{tex:true,fs:15,color:C.mid,anchor:'end'});
+  a.note(t2+0.06,x(t2)-0.45,'X(t+\\tau)',{tex:true,fs:15,color:C.mid});
+  return a.svg();
+}
+
+/* The white-noise limit: R_w(tau)/(N0/2) = 2B sinc(2B tau), B in kHz, tau in
+   ms. The peak 2B grows and the lobe narrows while the area stays 1, so the
+   curve tends to the impulse delta(tau) as B grows. */
+function figWhiteLimit(v){
+  const B=v&&v.B!=null?v.B:1, r=t=>2*B*sinc(2*B*t);
+  const a=P.Axes(SZ({xr:[-1.2,1.2],yr:[-2.6,11.6],xlabel:'\\tau\\;(\\text{ms})',ylabel:'R_w(\\tau)/(N_0/2)\\;(\\text{kHz})',xticksOverride:[-1,-0.5,0,0.5,1],yticksOverride:[2,4,6,8,10]}));
+  a.area(r,-1.2,1.2,{color:C.dec.mid,n:1800});a.curve(r,{color:C.mid,width:2.6,n:1800});
+  a.point(0,2*B,{color:C.mid,r:5});
+  a.note(0.08,2*B+0.35,'2B',{tex:true,fs:15,color:C.mid});
+  a.note(1.15,10.6,'\\text{area}=1',{tex:true,fs:15,color:C.ink,anchor:'end'});
+  return a.svg();
+}
+
+function figExPhase(){
+  const a=P.Axes(SZ({xr:[-1.6,1.6],yr:[-4,4],xlabel:'t\\;(\\text{ms})',ylabel:'x(t)\\;(\\text{V})',xticksOverride:[-1.5,-1,-0.5,0.5,1,1.5],yticksOverride:[-3,0,3]}));
+  a.curve(t=>3*Math.sin(2*Math.PI*t),{color:C.in,width:2.6,n:700});return a.svg();
 }
 
 const PS_DT=0.01, PS_Z=gauss(20260441,1001,1);
@@ -231,7 +260,7 @@ function figClt(){
 }
 
 /* ---- 2.2 the matched filter --------------------------------------------- */
-const RX_W=noiseFn(7,0.012,0.5,-1,4);
+const RX_W=bandNoise(7,30,0.5,-0.2,1.4);
 function figReceiver(){
   const X=x=>+(x*1.25).toFixed(1);
   const top=P.blocks({w:700,h:140,items:[
@@ -255,7 +284,8 @@ function figReceiver(){
 
 /* The filter problem, as on the slides: one rectangular pulse in white noise
    of N0 = 0.08 on a grid of dt = T/200, the same seed, through an RC filter
-   or the matched filter. The input is drawn averaged over T/25. */
+   or the matched filter. The input is drawn through a Gaussian smoothing of
+   T/50, as on the slides. */
 const FP_N0=0.08, FP_DT=1/200, FP_T0=-6, FP_T1=2.4;
 const FP_K=Math.round((FP_T1-FP_T0)/FP_DT)+1;
 const FP_W=gauss(20261209,FP_K,Math.sqrt(FP_N0/(2*FP_DT)));
@@ -267,9 +297,12 @@ function fpNoise(tau){ const n=new Float64Array(FP_K);
   if(tau){ const a=Math.exp(-FP_DT/tau); let s=0; for(let k=0;k<FP_K;k++){ s=a*s+FP_W[k]*FP_DT/tau; n[k]=s; } }
   else { let s=0; for(let k=0;k<FP_K;k++){ s+=FP_W[k]*FP_DT; if(k>=200) s-=FP_W[k-200]*FP_DT; n[k]=s; } }
   return t=>{ const x=(t-FP_T0)/FP_DT, k=Math.max(0,Math.min(FP_K-2,Math.floor(x))), f=x-k; return (1-f)*n[k]+f*n[k+1]; }; }
-const FP_X=(()=>{ const o=[]; for(let k=Math.round((-0.2-FP_T0)/FP_DT);k+8<FP_K;k+=8){
-  let s=0; for(let i=0;i<8;i++) s+=FP_W[k+i]; const t=FP_T0+(k+4)*FP_DT;
-  if(t>2.3) break; o.push([t,fpG(t)+s/8]); } return o; })();
+const FP_X=(()=>{ const R=12, w=[];
+  for(let i=-R;i<=R;i++) w.push(Math.exp(-i*i/32));
+  const sw=w.reduce((a,b)=>a+b,0), o=[];
+  for(let k=Math.round((-0.2-FP_T0)/FP_DT);k+R<FP_K;k+=2){
+    let s=0; for(let i=-R;i<=R;i++) s+=w[i+R]*FP_W[k+i]; const t=FP_T0+k*FP_DT;
+    if(t>2.3) break; o.push([t,fpG(t)+s/sw]); } return o; })();
 const fpFilter=tau=>tau
   ? {sig:t=>rcSig(t,tau),sd:Math.sqrt(FP_N0/(4*tau)),n:fpNoise(tau),ratio:rcRatio(1/tau)}
   : {sig:mfSig,sd:Math.sqrt(FP_N0/2),n:fpNoise(0),ratio:1};
@@ -400,7 +433,187 @@ function figExMf(){
   return a.svg();
 }
 
+/* Bandlimited Gaussian noise, as on the slides: K cosines over (0, B) with
+   Gaussian weights, tabulated, then set to mean 0 and RMS exactly s. */
+function bandNoise(seed,B,s,t0,t1){
+  const L=t1-t0, K=Math.max(8,Math.round(B*L)), z=gauss(seed,2*K,1);
+  const dt=1/(16*B), N=Math.ceil(L/dt)+1, x=new Float64Array(N);
+  let m=0, q=0;
+  for(let i=0;i<N;i++){ const t=i*dt; let v=0;
+    for(let k=0;k<K;k++){ const w=2*Math.PI*(k+0.5)*B/K*t; v+=z[2*k]*Math.cos(w)+z[2*k+1]*Math.sin(w); }
+    x[i]=v; m+=v; }
+  m/=N; for(let i=0;i<N;i++){ x[i]-=m; q+=x[i]*x[i]; }
+  const g=s/Math.sqrt(q/N); for(let i=0;i<N;i++) x[i]*=g;
+  return t=>{ const u=(t-t0)/dt, k=Math.max(0,Math.min(N-2,Math.floor(u))), f=u-k; return (1-f)*x[k]+f*x[k+1]; };
+}
+
+/* Additive Gaussian noise: five polar bits under sigma = 0.1, 0.5 and 1, one
+   noise realisation of RMS 1 scaled by sigma, with the band g(t) +/- sigma. */
+const AW_B=[1,0,1,0,1], AW_W=bandNoise(20261014,20,1,-0.2,5.2);
+const awG=t=>{ const k=Math.floor(t); return (k>=0&&k<5)?(AW_B[k]?1:-1):0; };
+function figAwgnPanel(s,last){
+  const a=P.Axes({w:700,h:last?150:128,xr:[-0.15,5.15],yr:[-4.4,4.4],xlabel:last?'t/T':'',ylabel:`x(t),\\;\\sigma=${s}`,
+    pad:{l:56,r:22,t:22,b:last?40:18},xticksOverride:[0,1,2,3,4,5],yticksOverride:[-4,0,4]});
+  const pts=[], N=400;
+  for(let j=0;j<=N;j++){ const t=5*j/N; pts.push([a.sx(t),a.sy(awG(t)+s)]); }
+  for(let j=N;j>=0;j--){ const t=5*j/N; pts.push([a.sx(t),a.sy(awG(t)-s)]); }
+  a.under(`<path d="M${pts.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join('L')}Z" fill="${C.noiseSoft}"/>`);
+  a.curve(t=>t>=0&&t<=5?awG(t)+s*AW_W(t):NaN,{color:C.out,width:1.2,n:2400});
+  a.poly([[-0.15,0],[0,0],[0,1],[1,1],[1,-1],[2,-1],[2,1],[3,1],[3,-1],[4,-1],[4,1],[5,1],[5,0],[5.15,0]],{color:C.in,width:2.2});
+  return a.svg();
+}
+function figAwgn(){
+  return stack(700,[[figAwgnPanel(0.1,false),128],[figAwgnPanel(0.5,false),128],[figAwgnPanel(1,true),150]]);
+}
+
+/* the output of the RC filter with tau = T/4 split into its two parts */
+function figSplit(){
+  const F=fpFilter(0.25);
+  const a=ax2({xr:[-0.2,2.3],yr:[-1.1,2.1],xlabel:'t/T',ylabel:'g_0(t),\\;n(t)',xticksOverride:[0,1,2],yticksOverride:[-1,0,1,2]});
+  const pts=[], N=250;
+  for(let i=0;i<=N;i++){ const t=-0.2+2.5*i/N; pts.push([a.sx(t),a.sy(F.sd)]); }
+  for(let i=N;i>=0;i--){ const t=-0.2+2.5*i/N; pts.push([a.sx(t),a.sy(-F.sd)]); }
+  a.under(`<path d="M${pts.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join('L')}Z" fill="${C.noiseSoft}"/>`);
+  a.curve(F.n,{color:C.muted,width:1.3,n:900});
+  a.curve(F.sig,{color:C.mid,width:2.6,n:600});
+  a.vline(1,{color:C.muted});
+  const b=ax2({xr:[-0.2,2.3],yr:[-1.1,2.1],xlabel:'t/T',ylabel:'y(t)=g_0(t)+n(t)',xticksOverride:[0,1,2],yticksOverride:[-1,0,1,2]});
+  fpOutput(b,F);
+  b.note(1.12,F.sig(1)+F.n(1)-0.05,'n(T)',{tex:true,fs:14,color:C.err});
+  return `<svg viewBox="0 0 700 230" xmlns="http://www.w3.org/2000/svg" role="img">${place(a.svg(),0,0,340,230)}${place(b.svg(),360,0,340,230)}</svg>`;
+}
+
+/* white noise through an RC filter with tau = T/4: the flat input density,
+   the output density (N0/2)|H(f)|^2 and the area under it */
+const npH2=f=>1/(1+Math.pow(2*Math.PI*f*0.25,2));
+function figNoisePower(){
+  const a=ax1({h:230,xr:[-4,4],yr:[0,1.45],xlabel:'fT',ylabel:'S(f)/(N_0/2)',xticksOverride:[-4,-2,0,2,4],yticksOverride:[0.5,1],ytickfmt:()=>''});
+  a.curve(()=>1,{color:C.in,width:1.5,dash:'6 5',n:4});
+  a.note(-3.9,1.13,'S_W(f)=\\tfrac{N_0}{2}',{tex:true,fs:14,color:C.in});
+  a.area(npH2,-4,4,{color:C.dec.out,n:400});
+  a.curve(npH2,{color:C.out,width:2.6,n:600});
+  a.note(1.0,0.45,'S_N(f)=\\tfrac{N_0}{2}|H(f)|^{2}',{tex:true,fs:14,color:C.out});
+  return a.svg();
+}
+
+/* the ramp's output with the reversal (the matched filter) and without it */
+const yRev=u=>{ const w=u<=1?u:2-u; return w<=0?0:1.5*w*w-0.5*w*w*w; };
+const yUnrev=u=>u<=0?0:u<=1?0.5*u*u*u:u<=2?3*(u/2-1/3-u*(u-1)*(u-1)/2+Math.pow(u-1,3)/3):0;
+function figNoReversal(){
+  const a=ax1({h:230,xr:[-0.2,2.3],yr:[-0.12,1.3],xlabel:'t/T',ylabel:'y(t)/E',xticksOverride:[0,0.5,1,1.5,2],yticksOverride:[0.5,1]});
+  a.curve(yRev,{color:C.mid,width:2.6,n:600});
+  a.curve(yUnrev,{color:C.err,width:2.2,dash:'7 5',n:600});
+  a.vline(1,{color:C.muted});
+  a.point(1,1,{color:C.mid,r:5}); a.point(1,0.5,{color:C.err,r:5});
+  a.note(1.06,1.14,'y(T)=E',{tex:true,fs:14,color:C.mid});
+  a.note(0.42,0.62,'h=g:\\ y(T)=0.50E',{tex:true,fs:14,color:C.err,anchor:'end'});
+  return a.svg();
+}
+
+/* the matched filter of the rectangular pulse with a gain k */
+function figGain(k){
+  const F=fpFilter(0);
+  const a=ax2({xr:[-0.2,2.3],yr:[-0.9,2.6],xlabel:'t/T',ylabel:'y(t)',xticksOverride:[0,1,2],yticksOverride:[-0.5,0,1,2]});
+  const pts=[], N=250;
+  for(let i=0;i<=N;i++){ const t=-0.2+2.5*i/N; pts.push([a.sx(t),a.sy(k*(F.sig(t)+F.sd))]); }
+  for(let i=N;i>=0;i--){ const t=-0.2+2.5*i/N; pts.push([a.sx(t),a.sy(k*(F.sig(t)-F.sd))]); }
+  a.under(`<path d="M${pts.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join('L')}Z" fill="${C.noiseSoft}"/>`);
+  a.curve(t=>k*(F.sig(t)+F.n(t)),{color:C.mid,width:1.2,opacity:0.4,n:900});
+  a.curve(t=>k*F.sig(t),{color:C.mid,width:2.6,n:600});
+  a.vline(1,{color:C.muted});
+  a.point(1,k,{color:C.mid,r:5});
+  return a.svg();
+}
+
+/* the matched filter of the ramp g(t) = sqrt(3) t/T (E = 1) in frequency:
+   |H| = |G|, and the two phases with their sum -2 pi f T, as on the slide */
+const rampG=f=>{ const w=2*Math.PI*f, r3=Math.sqrt(3);
+  if(Math.abs(w)<1e-6) return [r3/2,-r3*w/3];
+  const c=Math.cos(w), s=Math.sin(w); return [r3*(c+w*s-1)/(w*w), r3*(w*c-s)/(w*w)]; };
+const MFF=(()=>{ const N=440, F=[], mag=[], ph=new Array(N+1);
+  for(let i=0;i<=N;i++){ const f=-2.2+4.4*i/N, g=rampG(f); F.push(f); mag.push(Math.hypot(g[0],g[1])); ph[i]=Math.atan2(g[1],g[0]); }
+  const c=N/2; ph[c]=0;
+  for(let i=c+1;i<=N;i++){ let d=ph[i]-ph[i-1]; d-=2*Math.PI*Math.round(d/(2*Math.PI)); ph[i]=ph[i-1]+d; }
+  for(let i=c-1;i>=0;i--){ let d=ph[i]-ph[i+1]; d-=2*Math.PI*Math.round(d/(2*Math.PI)); ph[i]=ph[i+1]+d; }
+  return {F,mag,ph}; })();
+function figMfMag(){
+  const a=ax2({xr:[-2.2,2.2],yr:[0,1.12],xlabel:'fT',ylabel:'|G(f)|,\\;|H(f)|',xticksOverride:[-2,-1,0,1,2],yticksOverride:[0.5,1]});
+  const {F,mag}=MFF;
+  a.poly(F.map((x,i)=>[x,mag[i]]),{color:C.in,width:2.8});
+  a.poly(F.map((x,i)=>[x,mag[i]]),{color:C.h,width:2.2,dash:'7 6'});
+  return a.svg();
+}
+function figMfPhase(){
+  const a=ax2({xr:[-2.2,2.2],yr:[-4.6,4.6],xlabel:'fT',ylabel:'\\text{phase}/\\pi',xticksOverride:[-2,-1,0,1,2],yticksOverride:[-4,-2,0,2,4]});
+  const {F,ph}=MFF;
+  a.poly(F.map((x,i)=>[x,ph[i]/Math.PI]),{color:C.in,width:2.4});
+  a.poly(F.map((x,i)=>[x,(-ph[i]-2*Math.PI*x)/Math.PI]),{color:C.h,width:2.4,dash:'7 6'});
+  a.curve(x=>-2*x,{color:C.mid,width:2.8,n:4});
+  return a.svg();
+}
+
+/* the correlator output z(t)/E = (t/T)^3 for the noiseless ramp, dumped at T,
+   against the matched-filter output y(t)/E */
+function figMfCorr(){
+  const a=ax1({h:230,xr:[-0.2,2.2],yr:[-0.15,1.35],xlabel:'t/T',ylabel:'\\text{output}/E',xticksOverride:[0,0.5,1,1.5,2],yticksOverride:[0.5,1]});
+  a.curve(u=>u>=0&&u<=1?u*u*u:NaN,{color:C.mid,width:2.6,n:500});
+  a.poly([[1,1],[1,0],[2.2,0]],{color:C.mid,width:1.6,dash:'3 4'});
+  a.curve(yRev,{color:C.mid,width:2.2,dash:'8 6',n:600});
+  a.point(0.5,0.125,{color:C.mid,r:4}); a.point(0.5,yRev(0.5),{color:C.mid,r:4}); a.point(1,1,{color:C.mid,r:5});
+  a.note(0.44,0.42,'0.31E',{tex:true,fs:14,color:C.mid,anchor:'end'});
+  a.note(0.6,0.06,'0.13E',{tex:true,fs:14,color:C.mid});
+  a.note(1.06,1.18,'z(T)=y(T)=E',{tex:true,fs:14,color:C.mid});
+  return a.svg();
+}
+
+/* the SNR at the sampling instant t0 for the rectangular pulse,
+   eta(t0)/(2E/N0) = (1 - |t0 - T|/T)^2, with t0 = 1.1T marked */
+function figTiming(){
+  const r=t=>Math.pow(Math.max(0,1-Math.abs(t-1)),2);
+  const a=ax1({h:230,xr:[-0.2,2.2],yr:[-0.1,1.3],xlabel:'t_0/T',ylabel:'\\eta(t_0)\\,/\\,(2E/N_0)',xticksOverride:[0,0.5,1,1.5,2],yticksOverride:[0.5,1]});
+  a.curve(r,{color:C.mid,width:2.6,n:500});
+  a.vline(1.1,{color:C.ink,dash:'6 4',width:1.4,opacity:1});
+  a.point(1.1,r(1.1),{color:C.mid,r:5});
+  a.note(1.16,0.9,'0.81',{tex:true,fs:14,color:C.mid});
+  return a.svg();
+}
+
+/* 5000 samples y(T) for each polar bit, k = 1, E = 1, N0 = 0.5, as
+   densities on bins 0.2 wide, with the two Gaussian densities */
+const SD_N1=gauss(20261015,5000,0.5), SD_N0=gauss(20261016,5000,0.5);
+function figSampleDist(){
+  const a=ax1({h:240,xr:[-3,3],yr:[-0.04,1.0],xlabel:'y(T)',ylabel:'\\text{density}',xticksOverride:[-2,-1,0,1,2],yticksOverride:[0.4,0.8],ytickfmt:()=>''});
+  [[SD_N1,1,C.dec.mid],[SD_N0,-1,'none']].forEach(([z,m,fill])=>{ const c=new Array(30).fill(0);
+    z.forEach(v=>{ const k=Math.floor((m+v+3)/0.2); if(k>=0&&k<30) c[k]++; });
+    c.forEach((h,k)=>{ if(h) a.rect(-3+k*0.2,0,-3+(k+1)*0.2,h/(5000*0.2),{fill,stroke:C.mid,width:1}); }); });
+  a.area(y=>dens(y,1,0.5),-3,0,{color:C.dec.err});
+  a.curve(y=>dens(y,-1,0.5),{color:C.mid,width:2.4,dash:'8 5'});
+  a.curve(y=>dens(y,1,0.5),{color:C.mid,width:2.6});
+  return a.svg();
+}
+
 /* ---- 2.3 the demodulator ----------------------------------------------- */
+/* The three unit-energy pulses of the section, T_b = 1, and the matched-filter
+   output s_m R(t - T_b), tabulated exactly at multiples of 1/4. */
+const PSI={rect:t=>(t>=0&&t<1)?1:0, man:t=>(t>=0&&t<1)?(t<0.5?1:-1):0,
+  step:t=>(t>=0&&t<1)?(t<0.25||t>=0.5?1:-1):0};
+const psiR=key=>{ const p=PSI[key], v=[];
+  for(let k=-4;k<=4;k++){ let s=0; for(let q=0;q<4;q++){ const u=q/4+1/8; s+=p(u)*p(u+k/4); } v.push(s/4); }
+  return s=>{ if(s<=-1||s>=1) return 0; const x=(s+1)*4, k=Math.min(7,Math.floor(x)), f=x-k; return (1-f)*v[k]+f*v[k+1]; }; };
+const PSI_R={rect:psiR('rect'), man:psiR('man'), step:psiR('step')};
+const rectPts=(h,x1=1.45)=>[[-0.3,0],[0,0],[0,h],[1,h],[1,0],[x1,0]];
+
+function figBasisUnit(){
+  const a=ax1({h:240,xr:[-0.3,1.45],yr:[-0.3,2.9],xlabel:'t/T_b',ylabel:'\\psi(t),\\;\\psi^{2}(t)',
+    xticksOverride:[0,0.5,1],yticksOverride:[]});
+  a.area(()=>2.25,0,1,{color:C.dec.mid});
+  a.poly(rectPts(1.5),{color:C.h,width:2,dash:'6 5'});
+  a.poly(rectPts(2.25),{color:C.mid,width:2.4});
+  a.note(1.05,1.5,'\\psi(t)=1/\\sqrt{T_b}',{tex:true,fs:14,color:C.h});
+  a.note(1.05,2.25,'\\psi^{2}(t)=1/T_b',{tex:true,fs:14,color:C.mid});
+  a.note(0.5,0.9,'\\text{area}=1',{tex:true,fs:14,color:C.mid,anchor:'middle'});
+  return a.svg();
+}
 function figBasis(){
   const a=ax1({h:260,xr:[-0.3,1.35],yr:[-2.1,2.1],xlabel:'t/T_b',ylabel:'\\psi(t),\\;s_m(t)',
     xticksOverride:[0,0.5,1],ytickfmt:()=>'',yticksOverride:[-1.5,-1,0,1,1.5]});
@@ -421,7 +634,7 @@ function figSpaceWave(){
   return a.svg();
 }
 function figSpacePoints(){
-  const a=ax2({xr:[-2,2],yr:[-1,1.2],xlabel:'\\text{signal-space axis}',
+  const a=ax2({xr:[-2,2],yr:[-1,1.2],xlabel:'\\text{axis of }\\psi(t)',
     xticksOverride:[],yticksOverride:[],grid:false,arrows:false,zeroAxes:false});
   a.poly([[-2,0],[2,0]],{color:C.axis,width:1.5});
   a.point(-1.4,0,{color:C.in,r:7}); a.point(1.4,0,{color:C.in,r:7});
@@ -431,7 +644,28 @@ function figSpacePoints(){
   return a.svg();
 }
 
-const DM_W=noiseFn(29,0.012,0.45,-1,3);
+/* The convolution of the matched-filter demodulator at t = T_b/2, rectangular
+   psi, s_m = 1: the overlap is shaded above, and y(t) below is the triangle
+   with the value 0.5 marked at that time. */
+function figDemodConv(){
+  const t=0.5, tri=s=>Math.max(0,1-Math.abs(s-1));
+  const a=ax1({h:190,xr:[-1.2,2.3],yr:[-0.3,1.75],xlabel:'\\tau/T_b',ylabel:'s_m\\psi(\\tau),\\;h(t-\\tau)',
+    xticksOverride:[-1,0,1,2],yticksOverride:[0,1]});
+  a.area(()=>1,0,t,{color:C.dec.mid});
+  a.poly([[-1.2,0],[0,0],[0,1],[1,1],[1,0],[2.3,0]],{color:C.in,width:2.4});
+  a.poly([[-1.2,0],[t-1,0],[t-1,1],[t,1],[t,0],[2.3,0]],{color:C.h,width:2.2,dash:'7 5'});
+  a.note(0.55,1.2,'s_m\\psi(\\tau)',{tex:true,fs:14,color:C.in,anchor:'middle'});
+  a.note(t-0.95,1.5,'h(t-\\tau),\\ t=T_b/2',{tex:true,fs:14,color:C.h});
+  const b=ax1({h:200,xr:[-1.2,2.3],yr:[-0.2,1.45],xlabel:'t/T_b',ylabel:'y(t)',
+    xticksOverride:[-1,0,1,2],yticksOverride:[0,0.5,1]});
+  b.curve(tri,{color:C.mid,width:2.6,n:700});
+  b.vline(1,{color:C.muted});
+  b.point(t,tri(t),{color:C.mid,r:5});
+  b.note(t+0.08,tri(t)+0.1,'y(T_b/2)=0.5',{tex:true,fs:14,color:C.mid});
+  return stack(700,[[a.svg(),190],[b.svg(),200]]);
+}
+
+const DM_W=noiseFn(30,0.04,0.75,-1,3);
 function figMfDemod(){
   const X=x=>+(x*1.25).toFixed(1);
   const top=P.blocks({w:700,h:124,items:[
@@ -443,27 +677,108 @@ function figMfDemod(){
     {t:'text',x:X(430),y:104,label:'t=T_b',tex:true,fs:14}
   ]});
   const x=t=>(t>=0&&t<=1)?1+DM_W(t):0;
-  const N=400, yv=[]; for(let j=0;j<=200;j++){ const t=2*j/200; let s=0;
+  const N=600, yv=[]; for(let j=0;j<=200;j++){ const t=2*j/200; let s=0;
     for(let i=0;i<N;i++){ const u=(i+0.5)/N; if(u<=t && u>=t-1) s+=x(u); } yv.push([t,s/N]); }
-  const a=P.Axes({w:700,h:230,xr:[-0.15,2.2],yr:[-1.0,2.6],xlabel:'t/T_b',ylabel:'x(t),\\;y(t)',
-    pad:{l:56,r:22,t:24,b:42},xticksOverride:[0,0.5,1,1.5,2],ytarget:3});
-  a.curve(t=>t>=0&&t<=1?x(t):NaN,{color:C.out,width:1.4,n:900});
+  const a=P.Axes({w:700,h:250,xr:[-0.15,2.2],yr:[-1.4,3.0],xlabel:'t/T_b',ylabel:'x(t),\\;y(t)',
+    pad:{l:56,r:22,t:24,b:42},xticksOverride:[0,0.5,1,1.5,2],yticksOverride:[-1,0,1,2]});
+  a.curve(t=>t>=0&&t<=1?x(t):NaN,{color:C.out,width:1.3,n:900,opacity:0.5});
+  a.poly([[-0.15,0],[0,0],[0,1],[1,1],[1,0],[2.2,0]],{color:C.in,width:2.2});
+  a.poly([[-0.15,0],[0,0],[1,1],[2,0],[2.2,0]],{color:C.mid,width:1.6,dash:'6 5'});
   a.poly(yv,{color:C.mid,width:2.6});
   a.vline(1,{color:C.muted});
-  a.point(1,yv[100][1],{color:C.mid,r:5});
-  a.note(1.06,yv[100][1]+0.4,'y(T_b)=s_m+n',{tex:true,fs:14,color:C.mid});
-  return stack(700,[[top,124],[a.svg(),230]]);
+  a.point(1,1,{color:C.ink,r:3.5}); a.point(1,yv[100][1],{color:C.mid,r:5});
+  a.poly([[1.07,1],[1.07,yv[100][1]]],{color:C.muted,width:2.4});
+  a.note(1.06,2.35,`y(T_b)=s_m+n,\\;\\; n=${(yv[100][1]-1).toFixed(2)}`,{tex:true,fs:14,color:C.mid});
+  return stack(700,[[top,124],[a.svg(),250]]);
 }
 
-function figCorrMf(){
-  const a=ax1({xr:[-0.15,2.2],yr:[-0.2,1.35],xlabel:'t/T_b',ylabel:'\\text{output}',xticksOverride:[0,0.5,1,1.5,2]});
+/* The same noisy bit, the output split: signal part dashed, noise part
+   grey, their sum violet. */
+function figDemodSplit(){
+  const x=t=>(t>=0&&t<=1)?1+DM_W(t):0, tri=s=>Math.max(0,1-Math.abs(s-1));
+  const N=600, yv=[]; for(let j=0;j<=200;j++){ const t=2*j/200; let s=0;
+    for(let i=0;i<N;i++){ const u=(i+0.5)/N; if(u<=t && u>=t-1) s+=x(u); } yv.push([t,s/N]); }
+  const a=ax1({h:230,xr:[-0.15,2.2],yr:[-0.6,1.5],xlabel:'t/T_b',ylabel:'y(t)',
+    xticksOverride:[0,1,2],yticksOverride:[0,0.5,1]});
+  a.poly([[-0.15,0],[0,0],[1,1],[2,0],[2.2,0]],{color:C.mid,width:2,dash:'6 5'});
+  a.poly(yv.map(p=>[p[0],p[1]-tri(p[0])]),{color:C.muted,width:1.8});
+  a.poly(yv,{color:C.mid,width:2.6});
+  a.note(1.1,1.08,'\\text{signal part},\\ y(t)',{tex:true,fs:14,color:C.mid});
+  a.note(1.45,-0.42,'n(t)',{tex:true,fs:14,color:C.muted});
+  return a.svg();
+}
+
+/* The noiseless matched-filter outputs of the three pulses with s_m = 1:
+   rectangle solid, Manchester dashed, three steps dotted. All reach 1 at T_b. */
+function figShapesOut(){
+  const a=ax1({h:240,xr:[-0.2,2.2],yr:[-0.75,1.45],xlabel:'t/T_b',ylabel:'y(t)',
+    xticksOverride:[0,1,2],yticksOverride:[-0.5,0,0.5,1]});
+  a.curve(t=>PSI_R.rect(t-1),{color:C.mid,width:2.6,n:800});
+  a.curve(t=>PSI_R.man(t-1),{color:C.mid,width:2.2,dash:'8 5',n:800});
+  a.curve(t=>PSI_R.step(t-1),{color:C.mid,width:2.2,dash:'2 4',n:800});
+  a.vline(1,{color:C.muted});
+  a.point(1,1,{color:C.mid,r:5});
+  a.note(1.08,1.2,'y(T_b)=s_m=1',{tex:true,fs:14,color:C.mid});
+  return a.svg();
+}
+
+/* The ten-bit polar stream of the slide, with the same noise: the received
+   x(t) above, and below the noiseless output y0(t) dashed, the noisy output
+   y(t) and its samples at t = kT_b, with the bits read from their signs. */
+const TR_B=[0,1,0,1,1,0,0,1,0,0], TR_W=noiseFn(20261020,0.02,1.8,-1,12);
+function figTrain(){
+  const g=t=>{ const k=Math.floor(t); return (k>=0&&k<10)?(TR_B[k]?1:-1):0; };
+  const x=t=>g(t)+((t>=0&&t<10)?TR_W(t):0);
+  const y0=[], y=[], dt=0.005;
+  for(let j=0;j<=560;j++){ const t=j*0.02; let s0=0,s1=0;
+    for(let i=0;i<200;i++){ const tau=t-1+(i+0.5)*dt; if(tau<0||tau>=10) continue; s0+=g(tau)*dt; s1+=x(tau)*dt; }
+    y0.push([t,s0]); y.push([t,s1]); }
+  const a=ax1({h:190,xr:[-0.3,10.8],yr:[-6,8.4],xlabel:'t/T_b',ylabel:'g(t),\\;x(t)',
+    xticksOverride:[0,2,4,6,8,10],yticksOverride:[-4,0,4]});
+  a.curve(x,{color:C.out,width:1,n:2400});
+  a.curve(g,{color:C.in,width:2.2,n:2400});
+  TR_B.forEach((bit,k)=>a.note(k+0.5,7.2,String(bit),{tex:true,fs:13,color:C.in,anchor:'middle'}));
+  const b=ax1({h:220,xr:[-0.3,10.8],yr:[-2.0,2.4],xlabel:'t/T_b',ylabel:'y_0(t),\\;y(t)',
+    xticksOverride:[0,2,4,6,8,10],yticksOverride:[-1,0,1]});
+  b.hline(0,{color:C.muted,dash:'5 4'});
+  b.poly(y0,{color:C.mid,width:1.8,dash:'6 4'});
+  b.poly(y,{color:C.mid,width:2.2});
+  for(let k=1;k<=10;k++){ const v=y[50*k][1]; b.point(k,v,{color:C.mid,r:4.5});
+    b.note(k-0.5,2.05,v>0?'1':'0',{tex:true,fs:13,color:C.out,anchor:'middle'}); }
+  return stack(700,[[a.svg(),190],[b.svg(),220]]);
+}
+
+/* Correlator against matched filter for one noiseless bit, s_m = 1: the
+   filter output wide, the correlator dashed and reset at T_b. */
+function figCorrMf(key='rect'){
+  const lo=key==='rect'?-0.2:-0.75;
+  const a=ax1({xr:[-0.15,2.2],yr:[lo,1.35],xlabel:'t/T_b',ylabel:'\\text{output}',xticksOverride:[0,0.5,1,1.5,2]});
   a.raw('<g opacity="0.45">');
-  a.poly([[-0.15,0],[0,0],[1,1],[2,0],[2.2,0]],{color:C.mid,width:5});
+  a.curve(t=>PSI_R[key](t-1),{color:C.mid,width:5,n:800});
   a.raw('</g>');
   a.poly([[-0.15,0],[0,0],[1,1],[1,0],[2.2,0]],{color:C.mid,width:2.2,dash:'7 5'});
   a.vline(1,{color:C.muted});
   a.point(1,1,{color:C.mid,r:5});
   a.note(1.05,1.16,'s_m=1',{tex:true,fs:14,color:C.mid});
+  return a.svg();
+}
+
+/* The (t, u) square of the noise variance for the Manchester psi: the
+   product psi(t) psi(u) is +1/T_b on the shaded squares and -1/T_b on the
+   others; white noise leaves only the diagonal t = u, where it is psi^2. */
+function figNoisePlane(stage){
+  const a=ax2({w:420,h:320,xr:[-0.12,1.18],yr:[-0.12,1.3],xlabel:'t/T_b',ylabel:'u/T_b',
+    xticksOverride:[0,0.5,1],yticksOverride:[0,0.5,1],grid:false});
+  a.rect(0,0,0.5,0.5,{fill:C.dec.mid,stroke:C.mid,width:1.2});
+  a.rect(0.5,0.5,1,1,{fill:C.dec.mid,stroke:C.mid,width:1.2});
+  a.rect(0,0.5,0.5,1,{stroke:C.mid,width:1.2,dash:'4 4'});
+  a.rect(0.5,0,1,0.5,{stroke:C.mid,width:1.2,dash:'4 4'});
+  a.note(0.13,0.4,'+',{tex:true,fs:16,color:C.mid,anchor:'middle'});
+  a.note(0.63,0.9,'+',{tex:true,fs:16,color:C.mid,anchor:'middle'});
+  a.note(0.25,0.73,'-',{tex:true,fs:16,color:C.mid,anchor:'middle'});
+  a.note(0.75,0.23,'-',{tex:true,fs:16,color:C.mid,anchor:'middle'});
+  if(stage){ a.poly([[0,0],[1,1]],{color:C.mid,width:3});
+    a.note(0.5,1.15,'t=u:\\ \\psi(t)\\psi(u)=\\psi^{2}(t)',{tex:true,fs:14,color:C.mid,anchor:'middle'}); }
   return a.svg();
 }
 
@@ -881,6 +1196,69 @@ function figChain(){
   return stack(700,[[a.svg(),110],[b.svg(),110],[c.svg(),160]]);
 }
 
+/* Single-panel figures keep one observation readable at lecture distance. */
+function figMean(){
+  const a=P.Axes(SZ({xr:[0,9],yr:[-3.5,4.1],xlabel:'t\\;(\\text{ms})',ylabel:'X(t)\\;(\\text{V})',xticksOverride:[0,2,4,6,8],yticksOverride:[-2,0,2]}));
+  EN_P.forEach((x,i)=>a.curve(path(x,EN_DT,EN_T1),{color:C.in,width:i?1:2.5,n:700,opacity:i?0.3:1}));
+  a.hline(0,{color:C.slate,dash:'6 5',width:2}); return a.svg();
+}
+function figAcfPairs(v){
+  const tau=v&&v.tau!=null?v.tau:0.5, rho=Math.exp(-tau), s=Math.sqrt(1-rho*rho);
+  const a=P.Axes(SZ({xr:[-3.3,3.3],yr:[-3.3,3.3],xlabel:'X(t)\\;(\\text{V})',ylabel:'X(t+\\tau)\\;(\\text{V})',xticksOverride:[-2,0,2],yticksOverride:[-2,0,2]}));
+  AC_Z1.forEach((z,i)=>{const y=rho*z+s*AC_Z2[i];if(Math.abs(z)<3.25&&Math.abs(y)<3.25)a.point(z,y,{color:C.mid,r:2.8});});return a.svg();
+}
+function figAcfCurve(v){
+  const tau=v&&v.tau!=null?v.tau:1;
+  const a=P.Axes(SZ({xr:[-3.2,3.2],yr:[-0.08,1.4],xlabel:'\\tau\\;(\\text{ms})',ylabel:'R_X(\\tau)\\;(\\text{V}^{2})',xticksOverride:[-3,-2,-1,0,1,2,3],yticksOverride:[0.5,1]}));
+  a.curve(t=>Math.exp(-Math.abs(t)),{color:C.mid,width:2.6,n:700});a.point(tau,Math.exp(-Math.abs(tau)),{color:C.mid,r:5});return a.svg();
+}
+function figPsdOnly(v){
+  const tc=v&&v.tc!=null?v.tc:0.3, S=f=>2*tc/(1+(2*Math.PI*f*tc)**2);
+  const a=P.Axes(SZ({xr:[-4,4],yr:[0,2.4],xlabel:'f\\;(\\text{kHz})',ylabel:'S_X(f)\\;(\\text{V}^{2}/\\text{kHz})',xticksOverride:[-4,-2,0,2,4],yticksOverride:[0.5,1,1.5,2]}));
+  a.area(S,-4,4,{color:C.dec.in,n:600});a.curve(S,{color:C.in,width:2.6,n:700});return a.svg();
+}
+function figPowerArea(){
+  const a=P.Axes(SZ({xr:[-7,7],yr:[0,1.6],xlabel:'f\\;(\\text{kHz})',ylabel:'S_X(f)\\;(\\text{mW}/\\text{Hz})',xticksOverride:[-5,0,5],yticksOverride:[0.5,1]}));
+  a.rect(-5,0,5,1,{fill:C.dec.in});a.poly([[-7,0],[-5,0],[-5,1],[5,1],[5,0],[7,0]],{color:C.in,width:2.6});return a.svg();
+}
+function figWhiteSpectrum(v){
+  const B=v&&v.B!=null?v.B:2;
+  const a=P.Axes(SZ({xr:[-5,5],yr:[0,1.6],xlabel:'f\\;(\\text{kHz})',ylabel:'S_W(f)/(N_0/2)',xticksOverride:[-4,-2,0,2,4],yticksOverride:[0.5,1]}));
+  a.rect(-B,0,B,1,{fill:C.dec.in});a.poly([[-5,0],[-B,0],[-B,1],[B,1],[B,0],[5,0]],{color:C.in,width:2.6});return a.svg();
+}
+function figWhiteCorrelation(v){
+  const B=v&&v.B!=null?v.B:2;
+  const a=P.Axes(SZ({xr:[-1.2,1.2],yr:[-0.4,1.5],xlabel:'\\tau\\;(\\text{ms})',ylabel:'R_W(\\tau)/(N_0B)',xticksOverride:[-1,-0.5,0,0.5,1],yticksOverride:[0.5,1]}));
+  a.curve(t=>sinc(2*B*t),{color:C.mid,width:2.6,n:1800});[-1/(2*B),1/(2*B)].forEach(t=>a.point(t,0,{color:C.mid,r:4.5}));return a.svg();
+}
+function figFilterSpectrum(v){
+  const f=v&&v.frame!=null?v.frame:2, H2=x=>1/(1+x*x);
+  const a=P.Axes(SZ({xr:[-5,5],yr:[0,1.7],xlabel:'f\\;(\\text{kHz})',ylabel:'S(f),\\;|H(f)|^{2}',xticksOverride:[-4,-2,0,2,4],yticksOverride:[0.5,1]}));
+  a.curve(()=>0.5,{color:C.in,width:1.8,dash:'6 5',n:4});
+  if(f>=1)a.curve(H2,{color:C.h,width:2.2,dash:'7 5',n:600});
+  if(f>=2){a.area(x=>0.5*H2(x),-5,5,{color:C.dec.out,n:600});a.curve(x=>0.5*H2(x),{color:C.out,width:2.6,n:600});}return a.svg();
+}
+function figFilterTime(){
+  const a=P.Axes(SZ({xr:[0,5],yr:[-3.2,3.2],xlabel:'t\\;(\\text{ms})',ylabel:'x(t),\\;y(t)',xticksOverride:[0,1,2,3,4,5],yticksOverride:[-2,0,2]}));
+  a.curve(LT_X,{color:C.in,width:1.1,opacity:0.45,n:1000});a.curve(LT_Y,{color:C.out,width:2.6,n:800});return a.svg();
+}
+function figGaussianSample(){
+  const sigma=2, d=x=>Math.exp(-x*x/(2*sigma*sigma))/(sigma*Math.sqrt(2*Math.PI));
+  const a=P.Axes(SZ({xr:[-7,7],yr:[0,0.3],xlabel:'n\\;(\\text{mV})',ylabel:'f_n(n)\\;(\\text{mV}^{-1})',xticksOverride:[-4,-2,0,2,4,6],yticksOverride:[0.1,0.2]}));
+  a.area(d,4,7,{color:C.dec.err,n:200});a.curve(d,{color:C.mid,width:2.6,n:700});a.poly([[4,0],[4,d(4)]],{color:C.err,width:2,dash:'5 4'});return a.svg();
+}
+
+function figPhaseResult(){
+  const a=P.Axes(SZ({xr:[-1.6,1.6],yr:[-6,6],xlabel:'\\tau\\;(\\text{ms})',ylabel:'R_X(\\tau)\\;(\\text{V}^{2})',xticksOverride:[-1.5,-1,-0.5,0.5,1,1.5],yticksOverride:[-4.5,0,4.5]}));
+  a.curve(t=>4.5*Math.cos(2*Math.PI*t),{color:C.mid,width:2.6,n:700});a.point(0,4.5,{color:C.mid,r:5});return a.svg();
+}
+
+function figOutputNoise(v){
+  const rc=v&&v.rc!=null?v.rc:1, H2=f=>1/(1+(2*Math.PI*f*rc)**2);
+  const a=P.Axes(SZ({xr:[-2,2],yr:[0,1.5],xlabel:'f\\;(\\text{kHz})',ylabel:'S_n(f)/(N_0/2)',xticksOverride:[-2,-1,0,1,2],yticksOverride:[0.5,1]}));
+  a.area(H2,-2,2,{color:C.dec.out,n:600});a.curve(H2,{color:C.out,width:2.6,n:700});return a.svg();
+}
+
 window.C2 = [
 
 {t:'h1', num:'CHAPTER 2', text:'Baseband transmission of digital signals'},
@@ -890,35 +1268,54 @@ window.C2 = [
 /* ================================================================ 2.1 === */
 {t:'h2', num:'2.1', text:'Random signals'},
 
+
 {t:'h3', text:'A random signal'},
-{t:'p', text:'Noise is a random signal: its waveform is not known in advance. The receiver of this chapter is still designed against it.'},
-{t:'p', text:'A <b>random process</b> $X(t)$ gives one waveform for each outcome of an experiment. Each waveform is a <b>sample function</b>. All the sample functions together are the <b>ensemble</b>.'},
-{t:'p', text:'Fix a time $t_0$ and let the outcome vary. The values of all the sample functions at $t_0$ then spread out with some density.'},
-{t:'eqbox', cap:'At a fixed time', tex:'X(t_0)\\ \\text{is a random variable with density}\\ f_{X(t_0)}(x)',
- after:'For example, read a thousand identical receivers at the same time $t_0=2$ ms. The thousand values are draws of $X(t_0)$, not one sample function.'},
-{t:'fig', svg:()=>figEnsemble(),
- cap:'Eight sample functions of one random process (cyan), one drawn heavy. Their values at $t_0=5$ ms (violet dots) are draws of $X(t_0)$. The histogram at the right is $X(t_0)$ over $2000$ outcomes, with the Gaussian density it follows.'},
+{t:'p', text:'On each trial, send the same pulse and record the receiver noise. The pulse is fixed, but the noise waveform changes.'},
+{t:'p', text:'A <b>random process</b> $X(t)$ assigns one waveform to each outcome. A waveform is a <b>sample function</b>. Their collection is the <b>ensemble</b>.'},
+{t:'p', text:'Fix a time $t_0$ and compare trials. Each trial supplies one value of the random variable $X(t_0)$.'},
+{t:'eqbox', cap:'At a fixed time', tex:'X(t_0)\\ \\text{has density}\\ f_{X(t_0)}(x)',
+ after:'Reading a thousand trials at $t_0=5$ ms gives draws of this random variable. Reading one trial over time gives one waveform.'},
+{t:'fig', svg:()=>figEnsemble(),cap:'One recording is a sample function. Values at the same time across recordings describe the random variable $X(t_0)$.'},
 
-{t:'h3', text:'Mean and autocorrelation'},
-{t:'p', text:'Two averages over the ensemble describe a random process well enough for this course. The first is the mean.'},
-{t:'eqbox', cap:'Mean', tex:'\\mu_X(t)=E\\bigl[X(t)\\bigr]',
- after:'It is the average over the ensemble at the time $t$, not an average along one waveform.'},
-{t:'p', text:'The second is the autocorrelation. It is the average product of two values of the process, taken $\\tau$ apart.'},
-{t:'eqbox', cap:'Autocorrelation', tex:'R_X(t,t+\\tau)=E\\bigl[X(t)\\,X(t+\\tau)\\bigr]',
- after:'It is large when the two values tend to move together. For example, $R_X(\\tau)=e^{-|\\tau|/\\tau_c}$ with $\\tau_c=1$ ms gives $R_X(1\\ \\text{ms})=e^{-1}=0.37$, so values $1$ ms apart are still partly alike.'},
-{t:'fig', svg:()=>figAcf(0.5),
- cap:'Top: three sample functions, read at $t=1.5$ ms and at $t+\\tau$ with $\\tau=0.5$ ms. Left: $300$ pairs $X(t)$ and $X(t+\\tau)$ of the same process. Right: $R_X(\\tau)=e^{-|\\tau|/\\tau_c}$ with $\\tau_c=1$ ms, and the estimate from the pairs.'},
+{t:'h3', text:'The ensemble mean'},
+{t:'p', text:'At a fixed time, average the readings across trials. This defines the <b>ensemble mean</b>.'},
+{t:'eqbox',cap:'Mean',tex:'\\mu_X(t)=E[X(t)]',
+ after:'A zero ensemble mean allows positive and negative individual readings. Replacing this expectation with a time average requires additional assumptions, such as mean ergodicity.'},
+{t:'fig',svg:()=>figMean(),cap:'The recordings fluctuate while their ensemble mean is zero. The dashed line represents the population mean, not an estimate from these eight traces.'},
 
-{t:'h3', text:'Stationarity and power'},
-{t:'p', text:'A process is <b>strict-sense stationary</b> when every joint density of $X(t_1),\\dots,X(t_n)$ is unchanged by a shift $T$ of all the times, for every $n$.'},
-{t:'p', text:'A weaker test is enough here. A process is <b>wide-sense stationary</b> when its mean is a constant and $R_X(t,t+\\tau)$ depends only on the gap $\\tau$. A shift of the time origin then changes neither, and we write $R_X(\\tau)$. Strict-sense stationarity implies it.'},
-{t:'p', text:'Three properties follow from the definition. The second substitutes $s=t-\\tau$. The third expands a square, which is never negative, with both signs.'},
-{t:'eqbox', cap:'Three properties', tex:'\\begin{aligned}R_X(0)&=E\\bigl[X^{2}(t)\\bigr]=P_X\\\\R_X(-\\tau)&=E\\bigl[X(s+\\tau)\\,X(s)\\bigr]=R_X(\\tau)\\\\E\\bigl[(X(t)\\pm X(t+\\tau))^{2}\\bigr]&=2R_X(0)\\pm2R_X(\\tau)\\ge0\\end{aligned}',
- after:'The first line is the average power $P_X$. The third line, with both signs, gives $|R_X(\\tau)|\\le R_X(0)$: a value is never more alike to another value than to itself.'},
-{t:'p', text:'For example, $R_X(\\tau)=4e^{-|\\tau|/2}\\cos(2\\pi\\tau)\\ \\text{V}^{2}$, with $\\tau$ in ms, has $P_X=R_X(0)=4e^{0}\\cos0=4\\ \\text{V}^{2}$. Across $1\\ \\Omega$ that is $4$ W.'},
-{t:'fig', svg:()=>figWss(),
- cap:'$R_X(\\tau)=4e^{-|\\tau|/2}\\cos(2\\pi\\tau)$, with $\\tau$ in ms. Its value at $\\tau=0$ is the power $P_X=4$. It is even, and it stays inside the shaded band $|R_X(\\tau)|\\le R_X(0)$.'},
+{t:'h3', text:'Autocorrelation'},
+{t:'p',text:'Take two readings from each trial, separated by $\\tau$. Average their products across trials to obtain the <b>autocorrelation</b>.'},
+{t:'eqbox',cap:'Definition',tex:'R_X(t,t+\\tau)=E[X(t)X(t+\\tau)]',
+ after:'For a zero-mean process, positive autocorrelation indicates a tendency toward the same sign. Negative autocorrelation indicates the opposite tendency. Magnitudes also affect the product.'},
+{t:'p',text:'Autocorrelation is not generally a normalized correlation coefficient. For nonzero means, covariance subtracts the product of the means.'},
+{t:'eqbox',cap:'Covariance',tex:'C_X(t,u)=R_X(t,u)-\\mu_X(t)\\mu_X(u)',
+ after:'For zero-mean noise, covariance and autocorrelation are equal. Zero covariance alone does not imply independence unless additional conditions hold.'},
+{t:'fig',svg:()=>figAcfPairs({tau:0.5}),cap:'Each dot contains two readings from one trial, separated by $0.5$ ms. The correlated cloud is elongated along the diagonal.'},
 
+{t:'h3', text:'Reading the autocorrelation'},
+{t:'p',text:'In this example, autocorrelation depends only on the time gap. Its characteristic time is $\\tau_c=1$ ms.'},
+{t:'eqbox',cap:'Example',tex:'\\begin{aligned}R_X(\\tau)&=e^{-|\\tau|/\\tau_c}\\ \\text{V}^{2}\\\\R_X(1\\ \\text{ms})&=e^{-1}\\ \\text{V}^{2}\\\\&\\approx0.37\\ \\text{V}^{2}\\end{aligned}',
+ after:'At zero gap, $R_X(0)=1\\ \\text{V}^{2}$. Increasing the gap reduces the relationship between the readings in this example.'},
+{t:'fig',svg:()=>figAcfCurve({tau:1}),cap:'The autocorrelation at a gap of $1$ ms is $0.37\\ \\text{V}^{2}$. A nonzero gap can retain a nonzero correlation.'},
+
+{t:'h3', text:'Stationarity'},
+{t:'p',text:'For <b>wide-sense stationarity</b> (WSS), the finite mean is constant and the finite autocorrelation depends only on the gap.'},
+{t:'eqbox',cap:'WSS conditions',tex:'\\mu_X(t)=\\mu_X,\\qquad R_X(t,t+\\tau)=R_X(\\tau)',
+ after:'Moving the observation window preserves these ensemble statistics. It does not preserve the readings of an individual waveform.'},
+{t:'p',text:'A <b>strict-sense stationary</b> process preserves every joint distribution under a common shift of all observation times. With finite second moments, this implies WSS.'},
+{t:'fig',svg:()=>figWssShift({t:1}),cap:'Three recordings read at $t=1$ ms and $t+\\tau=2$ ms. Moving both readings by the same shift changes the values, but for a WSS process their average product stays $R_X(1\\ \\text{ms})=0.37\\ \\text{V}^{2}$.'},
+
+{t:'h3', text:'Autocorrelation and power'},
+{t:'p',text:'At zero gap, each reading is multiplied by itself. Its expectation is the mean-square power $P_X$.'},
+{t:'eqbox',cap:'Power',tex:'R_X(0)=E[X^2(t)]=P_X'},
+{t:'p',text:'For a real WSS process, exchanging the two readings leaves their product unchanged. Set $s=t-\\tau$ to obtain symmetry.'},
+{t:'eqbox',cap:'Even autocorrelation',tex:'R_X(-\\tau)=E[X(s+\\tau)X(s)]=R_X(\\tau)'},
+{t:'p',text:'The mean square of a sum or difference is nonnegative. Expand the square using both signs.'},
+{t:'eqbox',cap:'Bound',tex:'\\begin{aligned}E[(X(t)\\pm X(t+\\tau))^2]&=2R_X(0)\\pm2R_X(\\tau)\\ge0\\\\-R_X(0)\\le R_X(\\tau)&\\le R_X(0)\\\\|R_X(\\tau)|&\\le R_X(0)\\end{aligned}'},
+{t:'p',text:'For $R_X(\\tau)=4e^{-|\\tau|/2}\\cos(2\\pi\\tau)\\ \\text{V}^{2}$, with $\\tau$ in ms, $P_X=4\\ \\text{V}^{2}$. Across $1\\ \\Omega$, that corresponds to $4$ W.'},
+{t:'fig',svg:()=>figWss(),cap:'The real WSS autocorrelation is even, has value $4\\ \\text{V}^{2}$ at zero, and remains bounded by that magnitude.'},
+
+{t:'h3',text:'Worked example: a sinusoid with a random phase'},
 {t:'ex', hd:'Example 2.1 — a sinusoid with a random phase', rows:[
  ['Given','$X(t)=A\\cos(2\\pi f_0t+\\Theta)$ with $A=3$ V, $f_0=1$ kHz and $\\Theta$ uniform on $[0,2\\pi)$, so its density there is $1/(2\\pi)$.'],
  ['Find','The mean $\\mu_X$, the autocorrelation $R_X(\\tau)$ and the power $P_X$.'],
@@ -927,70 +1324,99 @@ window.C2 = [
  ['Check','The mean is constant and $R_X$ depends on $\\tau$ only, so the process is wide-sense stationary. The time average of one sample function, $A^{2}\\cos^{2}$ over a period, is also $A^{2}/2=4.5\\ \\text{V}^{2}$.']
 ]},
 {t:'fig', svg:()=>figExPhase(),
- cap:'Example 2.1: one sample function, the one with $\\theta=-\\pi/2$ (dashed), and the autocorrelation $R_X(\\tau)=4.5\\cos(2\\pi f_0\\tau)$ (violet). Its value at $\\tau=0$ is the power, $4.5\\ \\text{V}^{2}$.'},
+ cap:'Example 2.1: one recording with $\\theta=3\\pi/2$. Its voltage varies with time, while the ensemble mean over the uniform phase is zero.'},
 {t:'box', kind:'err', hd:'Common error', html:'Use $A^{2}/2$, not $A^{2}$, for the power of the sinusoid. Dropping the $\\tfrac12$ gives $9\\ \\text{V}^{2}$.'},
 
-{t:'h3', text:'Power spectral density'},
-{t:'p', text:'The autocorrelation says how fast a process changes. Its Fourier transform says the same thing in frequency. It is the <b>power spectral density</b> $S_X(f)$, the power per hertz at each frequency.'},
-{t:'eqbox', cap:'Wiener–Khinchin theorem', tex:'S_X(f)=\\int_{-\\infty}^{\\infty}R_X(\\tau)\\,e^{-j2\\pi f\\tau}\\,d\\tau',
- after:'This holds for a stationary process. The power spectral density is real, even and never negative.'},
-{t:'p', text:'Write the inverse transform and set $\\tau=0$. The power is then the area under the spectral density.'},
-{t:'eqbox', cap:'Power', tex:'\\begin{aligned}R_X(\\tau)&=\\int_{-\\infty}^{\\infty}S_X(f)\\,e^{j2\\pi f\\tau}\\,df\\\\P_X=R_X(0)&=\\int_{-\\infty}^{\\infty}S_X(f)\\,df\\end{aligned}',
- after:'For example, $S_X(f)=10^{-3}$ W/Hz on $|f|<5$ kHz gives $P_X=\\int_{-5000}^{5000}10^{-3}\\,df=10^{-3}(10^{4})=10$ W. Both halves of the band count.'},
-{t:'p', text:'A process whose values stay alike for a long time has a narrow spectrum. Take $R_X(\\tau)=e^{-|\\tau|/\\tau_c}$, where $\\tau_c$ is the correlation time. The function is even, so the transform keeps only its cosine part.'},
-{t:'eqbox', cap:'A correlation time and a bandwidth', tex:'\\begin{aligned}S_X(f)&=2\\int_0^{\\infty}e^{-\\tau/\\tau_c}\\cos(2\\pi f\\tau)\\,d\\tau\\\\&=\\frac{2\\,(1/\\tau_c)}{(1/\\tau_c)^{2}+(2\\pi f)^{2}}\\\\&=\\frac{2\\tau_c}{1+(2\\pi f\\tau_c)^{2}}\\end{aligned}',
- after:'The second line is $\\int_0^\\infty e^{-a\\tau}\\cos(b\\tau)\\,d\\tau=a/(a^{2}+b^{2})$ with $a=1/\\tau_c$ and $b=2\\pi f$. The spectrum falls to half its peak at $f=1/(2\\pi\\tau_c)$, so a short correlation time means a wide band. The area stays $R_X(0)=1$.'},
-{t:'fig', svg:()=>figPsdR(0.3),
- cap:'A process with $R_X(\\tau)=e^{-|\\tau|/\\tau_c}$ and $\\tau_c=0.3$ ms. Top: one sample function. Left: its autocorrelation. Right: its spectral density $S_X(f)=2\\tau_c/\\bigl(1+(2\\pi f\\tau_c)^{2}\\bigr)$, whose area is $P_X=1$.'},
 
-{t:'h3', text:'White noise'},
-{t:'p', text:'Thermal noise is modelled as <b>white noise</b>: its spectral density is the same constant at every frequency. The inverse transform of a constant is an impulse.'},
-{t:'eqbox', cap:'White noise', tex:'S_W(f)=\\frac{N_0}{2}\\quad\\text{for all }f,\\qquad R_W(\\tau)=\\frac{N_0}{2}\\,\\delta(\\tau)',
- after:'Two values of white noise at different times are uncorrelated, however close they are. The density is two-sided: $N_0/2$ on positive and on negative frequencies.'},
-{t:'box', kind:'warn', hd:'A model', html:'The area under a flat density is infinite, so no real noise is white. Thermal noise stays within $10\\%$ of flat up to $10^{12}$ Hz, far above any receiver band.'},
-{t:'p', text:'A receiver never sees the whole band. Noise of density $N_0/2$ on $|f|<B$ has a finite power. Its autocorrelation is the inverse transform of a rectangle.'},
-{t:'eqbox', cap:'Bandlimited white noise', tex:'\\begin{aligned}R(\\tau)&=\\int_{-B}^{B}\\frac{N_0}{2}\\,e^{j2\\pi f\\tau}\\,df\\\\&=\\frac{N_0}{2}\\cdot\\frac{\\sin(2\\pi B\\tau)}{\\pi\\tau}\\\\&=N_0B\\operatorname{sinc}(2B\\tau)\\end{aligned}',
- after:'Here $\\operatorname{sinc}(x)=\\sin(\\pi x)/(\\pi x)$. The power is $R(0)=N_0B$. The zeros fall at $\\tau=k/(2B)$. With $B=1$ MHz, two samples $0.5\\ \\mu$s apart have $2B\\tau=1$, so they are uncorrelated.'},
-{t:'fig', svg:()=>figWhite(2),
- cap:'Noise of density $N_0/2$ on $|f|<B$ with $B=2$ kHz. Top: one sample function. Left: $R(\\tau)/N_0B=\\operatorname{sinc}(2B\\tau)$, with its first zeros at $\\pm1/(2B)$. Right: the flat density inside the band. As $B$ grows, $R(\\tau)$ narrows toward an impulse.'},
+{t:'h3',text:'The cosine product'},
+{t:'p',text:'Autocorrelation multiplies two values of one recording, at $t$ and at $t+\\tau$. Both values carry the same phase $\\Theta$.'},
+{t:'eqbox',cap:'Product identity',tex:'\\cos\\alpha\\cos\\beta=\\frac12[\\cos(\\alpha-\\beta)+\\cos(\\alpha+\\beta)]',after:'Set $\\alpha=2\\pi f_0t+\\Theta$ and $\\beta=2\\pi f_0(t+\\tau)+\\Theta$.'},
+{t:'eqbox',cap:'Sum of the arguments',tex:'\\begin{aligned}\\alpha+\\beta&=2\\pi f_0[t+(t+\\tau)]+2\\Theta\\\\&=2\\pi f_0(2t+\\tau)+2\\Theta\\end{aligned}',after:'The two time arguments add to $2t+\\tau$.'},
+{t:'eqbox',cap:'Difference of the arguments',tex:'\\alpha-\\beta=-2\\pi f_0\\tau',after:'The common phase cancels. Since cosine is even, $\\cos(-2\\pi f_0\\tau)=\\cos(2\\pi f_0\\tau)$.'},
+{t:'fig',svg:()=>figPhaseProduct(),cap:'The recording with $\\theta=3\\pi/2$, read at $t=0.6$ ms and $t+\\tau=0.85$ ms. The product of these two values is averaged over the phase.'},
 
-{t:'h3', text:'A random signal through a filter'},
-{t:'p', text:'A receiver filters its input. So we need the random signal at the output of a linear time-invariant filter $h(t)$. The output is $Y(t)=\\int h(u)\\,X(t-u)\\,du$.'},
-{t:'p', text:'Take the expectation inside the integral. Only the gain at $f=0$ is left.'},
-{t:'eqbox', cap:'Mean', tex:'\\begin{aligned}\\mu_Y&=\\int_{-\\infty}^{\\infty}h(u)\\,E\\bigl[X(t-u)\\bigr]\\,du\\\\&=\\mu_X\\int_{-\\infty}^{\\infty}h(u)\\,du=\\mu_X\\,H(0)\\end{aligned}',
- after:'For example, a differentiator, $H(f)=j2\\pi f$, gives $\\mu_Y=\\mu_X(j2\\pi\\cdot0)=0$. It removes the constant part.'},
-{t:'p', text:'Write out $E[Y(t)Y(t+\\tau)]$ with the two convolution integrals. For a stationary input it depends on $\\tau$ only, so the output is stationary too. Then transform each factor.'},
-{t:'eqbox', cap:'Output spectrum', big:true, tex:'\\begin{aligned}R_Y(\\tau)&=h(\\tau)*h(-\\tau)*R_X(\\tau)\\\\S_Y(f)&=H(f)\\,H^{*}(f)\\,S_X(f)=|H(f)|^{2}S_X(f)\\end{aligned}',
- after:'For a real $h$, $h(-\\tau)$ becomes $H^{*}(f)$. The phase of the filter drops out.'},
-{t:'fig', svg:()=>figLti(),
- cap:'White noise with $N_0/2=0.5$ through an RC lowpass filter with $f_{3\\text{dB}}=1$ kHz. Top: the input density (dashed), $|H(f)|^{2}$ (amber) and the output density $S_Y(f)$ (green). Bottom: one input sample function and the filter output, which varies more slowly.'},
+{t:'h3',text:'The random-phase autocorrelation'},
+{t:'p',text:'Averaging over the phase gives zero mean. To find the autocorrelation, expand the product with the cosine product identity.'},
+{t:'eqbox',cap:'Average the product',tex:'\\begin{aligned}R_X(\\tau)&=\\frac{A^2}{2}E[\\cos(2\\pi f_0\\tau)+\\cos(\\phi+2\\Theta)]\\\\&=\\frac{A^2}{2}\\cos(2\\pi f_0\\tau)+0\\\\&=4.5\\cos(2\\pi f_0\\tau)\\ \\text{V}^{2}\\end{aligned}',after:'Here $\\phi=2\\pi f_0(2t+\\tau)$. Integrating $\\cos(\\phi+2\\theta)$ over the uniform phase interval gives zero.'},
+{t:'fig',svg:()=>figPhaseResult(),cap:'The periodic autocorrelation has zero-gap value $4.5\\ \\text{V}^{2}$. Its later peaks show the periodic relationship between readings.'},
 
-{t:'h3', text:'Filtered white noise'},
-{t:'p', text:'For white noise at the input, $S_Y(f)=\\frac{N_0}{2}|H(f)|^{2}$. Its area is the output noise power. One width describes that area.'},
-{t:'eqbox', cap:'Output power', tex:'\\begin{aligned}P_Y&=\\int_{-\\infty}^{\\infty}\\frac{N_0}{2}\\,|H(f)|^{2}\\,df=N_0\\,B_{\\text{neq}}\\,H_{\\max}^{2}\\\\B_{\\text{neq}}&=\\frac{\\int_{-\\infty}^{\\infty}|H(f)|^{2}\\,df}{2H_{\\max}^{2}}\\end{aligned}',
- after:'$B_{\\text{neq}}$ is the <b>noise-equivalent bandwidth</b>: the half-width of an ideal filter with the same peak gain that passes the same noise power.'},
-{t:'p', text:'For the RC lowpass filter, $|H(f)|^{2}=1/\\bigl(1+(2\\pi fRC)^{2}\\bigr)$ and $H_{\\max}=1$. Substitute $u=2\\pi fRC$. The integral of $1/(1+u^{2})$ over the whole line is $\\pi$.'},
-{t:'eqbox', cap:'RC lowpass', tex:'\\begin{aligned}\\int_{-\\infty}^{\\infty}\\frac{df}{1+(2\\pi fRC)^{2}}&=\\frac{1}{2\\pi RC}\\int_{-\\infty}^{\\infty}\\frac{du}{1+u^{2}}=\\frac{1}{2RC}\\\\B_{\\text{neq}}&=\\frac{1}{4RC}\\end{aligned}',
- after:'$B_{\\text{neq}}$ is $\\pi/2$ times the $3$ dB frequency $1/(2\\pi RC)$.'},
-{t:'fig', svg:()=>figNoiseBw(1),
- cap:'$|H(f)|^{2}$ of an RC filter with $RC=1$ ms (amber) and the ideal filter with the same peak and area (dashed). Its half-width $B_{\\text{neq}}=250$ Hz is wider than the $3$ dB frequency of $159$ Hz.'},
+{t:'h3',text:'Power spectral density'},
+{t:'p',text:'The <b>power spectral density</b> (PSD) describes power per unit frequency. For a WSS process, it is the Fourier transform of the autocorrelation.'},
+{t:'eqbox',cap:'Wiener–Khinchin',tex:'S_X(f)=\\int_{-\\infty}^{\\infty}R_X(\\tau)e^{-j2\\pi f\\tau}\\,d\\tau',after:'For a real process, the PSD is real, even and nonnegative. Generalized Fourier transforms include spectral lines.'},
+{t:'p',text:'For the exponential autocorrelation, symmetry cancels the odd sine term. Integrate the remaining cosine term.'},
+{t:'eqbox',cap:'Correlation time and bandwidth',tex:'\\begin{aligned}S_X(f)&=2\\int_0^\\infty e^{-\\tau/\\tau_c}\\cos(2\\pi f\\tau)\\,d\\tau\\\\&=\\frac{2(1/\\tau_c)}{(1/\\tau_c)^2+(2\\pi f)^2}\\\\&=\\frac{2\\tau_c}{1+(2\\pi f\\tau_c)^2}\\end{aligned}',after:'Use $\\int_0^\\infty e^{-a\\tau}\\cos(b\\tau)d\\tau=a/(a^2+b^2)$ with $a=1/\\tau_c>0$. The half-power frequency is $1/(2\\pi\\tau_c)$.'},
+{t:'fig',svg:()=>figPsdOnly({tc:0.3}),cap:'With $\\tau_c=0.3$ ms, the PSD spreads around zero frequency. Increasing the correlation time narrows the spectrum while preserving total power.'},
 
+{t:'h3',text:'Power from the spectrum'},
+{t:'p',text:'Set the time gap to zero in the inverse transform. The exponential becomes one, so the integral is the total power.'},
+{t:'eqbox',cap:'Spectral area',tex:'\\begin{aligned}R_X(\\tau)&=\\int_{-\\infty}^{\\infty}S_X(f)e^{j2\\pi f\\tau}\\,df\\\\P_X=R_X(0)&=\\int_{-\\infty}^{\\infty}S_X(f)\\,df\\end{aligned}'},
+{t:'p',text:'For $S_X(f)=10^{-3}$ W/Hz on $|f|<5$ kHz, integrate over both halves of the band.'},
+{t:'eqbox',cap:'Rectangle area',tex:'\\begin{aligned}P_X&=\\int_{-5000}^{5000}10^{-3}\\,df\\\\&=[10^{-3}f]_{-5000}^{5000}\\\\&=10^{-3}(5000-(-5000))=10\\ \\text{W}\\end{aligned}'},
+{t:'fig',svg:()=>figPowerArea(),cap:'The two-sided spectrum has height $10^{-3}$ W/Hz and total width $10$ kHz. Its area is $10$ W.'},
+
+{t:'h3',text:'Noise in a finite band'},
+{t:'p',text:'Begin with zero-mean noise having a flat two-sided density $N_0/2$ on $|f|<B$. The density is zero outside the band.'},
+{t:'eqbox',cap:'Noise power',tex:'\\begin{aligned}P_w&=\\int_{-B}^{B}\\frac{N_0}{2}\\,df\\\\&=\\frac{N_0}{2}(B-(-B))=N_0B\\end{aligned}',after:'The band has total width $2B$. Doubling $B$ doubles the power when the density stays fixed.'},
+{t:'fig',svg:()=>figWhiteSpectrum({B:2}),cap:'The flat spectrum occupies $|f|<2$ kHz. Both frequency halves contribute to the noise power.'},
+
+{t:'h3',text:'Bandlimited noise samples'},
+{t:'p',text:'Take the inverse transform of the finite-band spectrum. The result describes relationships between noise readings at different times.'},
+{t:'eqbox',cap:'Autocorrelation',tex:'\\begin{aligned}R_w(\\tau)&=\\int_{-B}^{B}\\frac{N_0}{2}e^{j2\\pi f\\tau}\\,df\\\\&=\\frac{N_0}{2}\\frac{\\sin(2\\pi B\\tau)}{\\pi\\tau}\\\\&=N_0B\\operatorname{sinc}(2B\\tau)\\end{aligned}',after:'Here $\\operatorname{sinc}(x)=\\sin(\\pi x)/(\\pi x)$ and $\\operatorname{sinc}(0)=1$. The value at zero follows by continuity.'},
+{t:'p',text:'The zeros occur at $\\tau=k/(2B)$ for nonzero integer $k$. For $B=1$ MHz and $\\tau=0.5\\ \\mu$s, $2B\\tau=1$, so the samples are uncorrelated.'},
+{t:'fig',svg:()=>figWhiteCorrelation({B:2}),cap:'At $B=2$ kHz, the first zeros are at $\\tau=\\pm0.25$ ms. Other nonzero gaps can retain correlation.'},
+
+{t:'h3',text:'The white-noise model'},
+{t:'p',text:'Ideal <b>white noise</b> extends the constant PSD over all frequencies. Its total power is infinite, so it is a generalized model.'},
+{t:'eqbox',cap:'Ideal white noise',tex:'S_w(f)=\\frac{N_0}{2},\\qquad R_w(\\tau)=\\frac{N_0}{2}\\delta(\\tau)',after:'A constant spectrum transforms to an impulse in the generalized sense. Ideal white noise is defined through weighted integrals rather than finite-variance point samples.'},
+{t:'box',kind:'warn',hd:'Finite receiver band',html:'At $300$ K, thermal noise stays within $10\\%$ of flat up to $10^{12}$ Hz. Practical receiver filtering admits finite noise power.'},
+{t:'fig',svg:()=>figWhiteLimit({B:4}),cap:'At $B=4$ kHz the peak is $2B=8$ kHz and the lobe is narrow, while the area stays $1$. As $B$ grows without limit, $R_w(\\tau)/(N_0/2)$ tends to the impulse $\\delta(\\tau)$.'},
+
+{t:'h3',text:'The mean through a filter'},
+{t:'p',text:'An LTI filter weights delayed input values. For a WSS input, take the expectation inside the convolution integral.'},
+{t:'eqbox',cap:'Mean',tex:'\\begin{aligned}\\mu_Y&=\\int_{-\\infty}^{\\infty}h(u)E[X(t-u)]\\,du\\\\&=\\mu_X\\int_{-\\infty}^{\\infty}h(u)\\,du\\\\&=\\mu_XH(0)\\end{aligned}',after:'Assume these integrals and output statistics exist. An ideal differentiator removes a constant mean when its output is defined for the input process.'},
+{t:'p',text:'For $\\mu_X=3$ V and $H(f)=j2\\pi f$, $\\mu_Y=3H(0)=0$.'},
+{t:'fig',svg:()=>figFilterTime(),cap:'An illustrative input recording and its RC-filtered output. The filter smooths variations. Its DC gain determines the ensemble mean.'},
+
+{t:'h3',text:'The spectrum through a filter'},
+{t:'p',text:'For a real LTI filter and a WSS input, the output autocorrelation depends on the gap. Transform the convolution relation.'},
+{t:'p',text:'For receiver noise, use $X(t)=w(t)$ and $Y(t)=n(t)$. Thus $S_n(f)=|H(f)|^2S_w(f)$.'},
+{t:'eqbox',cap:'Output spectrum',tex:'\\begin{aligned}R_Y(\\tau)&=h(\\tau)*h(-\\tau)*R_X(\\tau)\\\\S_Y(f)&=H(f)H^*(f)S_X(f)\\\\&=|H(f)|^2S_X(f)\\end{aligned}',after:'Assume the output statistics exist. A magnitude gain of $1/2$ gives a power gain of $1/4$.'},
+{t:'fig',svg:()=>figFilterSpectrum({frame:2}),cap:'The output PSD equals the input PSD multiplied by $|H(f)|^2. The RC filter passes low frequencies more strongly than high frequencies.'},
+
+{t:'h3',text:'Filtered white noise'},
+{t:'p',text:'For white input, the output PSD is $(N_0/2)|H(f)|^2$. Its area is the output noise power.'},
+{t:'eqbox',cap:'Output noise power',tex:'P_n=\\frac{N_0}{2}\\int_{-\\infty}^{\\infty}|H(f)|^2df',after:'A finite-energy filter admits finite noise power. Equal areas under the power gain give equal output noise powers.'},
+{t:'fig',svg:()=>figOutputNoise({rc:1}),cap:'The normalized output PSD follows the RC power gain. Its total area includes the tails beyond the plotted range.'},
+
+{t:'h3',text:'Noise-equivalent bandwidth'},
+{t:'p',text:'Replace the power gain by a rectangle of equal peak and area. Both filters pass equal white-noise power.'},
+{t:'eqbox',cap:'Definition',tex:'\\begin{aligned}B_{\\text{neq}}&=\\frac{\\int_{-\\infty}^{\\infty}|H(f)|^2df}{2H_{\\max}^2}\\\\P_n&=N_0B_{\\text{neq}}H_{\\max}^2\\end{aligned}',after:'$H_{\\max}=\\max_f|H(f)|$. The noise-equivalent bandwidth is the half-width of this ideal filter, whose total width is $2B_{\\text{neq}}$.'},
+{t:'fig',svg:()=>figNoiseBw(1),cap:'The RC filter and the dashed ideal filter have equal peak gain and equal total spectral area, including tails beyond the plotted range.'},
+
+{t:'h3',text:'Noise bandwidth of an RC filter'},
+{t:'p',text:'The RC filter has $|H(f)|^2=1/[1+(2\\pi fRC)^2]$ and $H_{\\max}=1$. Substitute $u=2\\pi fRC$. The infinite limits remain infinite.'},
+{t:'eqbox',cap:'RC lowpass',tex:'\\begin{aligned}\\int_{-\\infty}^{\\infty}|H(f)|^2df&=\\frac{1}{2\\pi RC}\\int_{-\\infty}^{\\infty}\\frac{du}{1+u^2}\\\\&=\\frac{1}{2\\pi RC}[\\arctan u]_{-\\infty}^{\\infty}\\\\&=\\frac{1}{2\\pi RC}(\\pi/2-(-\\pi/2))\\\\&=\\frac{1}{2RC}\\\\B_{\\text{neq}}&=\\frac{1}{4RC}\\end{aligned}',after:'The $3$ dB frequency is $1/(2\\pi RC)$. The equivalent bandwidth is $\\pi/2$ times this frequency.'},
 {t:'ex', hd:'Example 2.2 — white noise through an RC filter', rows:[
  ['Given','White noise with $N_0/2=10^{-8}$ W/Hz enters an RC lowpass filter with $RC=1$ ms.'],
- ['Find','The noise-equivalent bandwidth $B_{\\text{neq}}$ and the output noise power $P_Y$.'],
- ['Method','Use $B_{\\text{neq}}=1/(4RC)$ with $H_{\\max}=1$, then $P_Y=N_0B_{\\text{neq}}$. The formula needs only the area of $|H(f)|^{2}$.'],
- ['Solution','$B_{\\text{neq}}=1/(4\\times10^{-3})=250$ Hz. With $N_0=2\\times10^{-8}$ W/Hz, $P_Y=(2\\times10^{-8})(250)=5\\times10^{-6}$ W.'],
- ['Check','Work in time instead. The impulse response is $h(t)=\\frac{1}{RC}e^{-t/RC}$ for $t\\ge0$, so $\\int_0^{\\infty}h^{2}(t)\\,dt=\\frac{1}{R^{2}C^{2}}\\cdot\\frac{RC}{2}=\\frac{1}{2RC}=500\\ \\text{s}^{-1}$. By Parseval, $P_Y=\\frac{N_0}{2}\\int h^{2}\\,dt=(10^{-8})(500)=5\\times10^{-6}$ W.']
+ ['Find','The noise-equivalent bandwidth $B_{\\text{neq}}$ and the output noise power $P_n$.'],
+ ['Method','Use $B_{\\text{neq}}=1/(4RC)$ with $H_{\\max}=1$, then $P_n=N_0B_{\\text{neq}}$. The formula needs only the area of $|H(f)|^{2}$.'],
+ ['Solution','$B_{\\text{neq}}=1/(4\\times10^{-3})=250$ Hz. With $N_0=2\\times10^{-8}$ W/Hz, $P_n=(2\\times10^{-8})(250)=5\\times10^{-6}$ W.'],
+ ['Check','Work in time instead. The impulse response is $h(t)=\\frac{1}{RC}e^{-t/RC}$ for $t\\ge0$, so $\\int_0^{\\infty}h^{2}(t)\\,dt=\\frac{1}{R^{2}C^{2}}\\cdot\\frac{RC}{2}=\\frac{1}{2RC}=500\\ \\text{s}^{-1}$. By Parseval, $P_n=\\frac{N_0}{2}\\int h^{2}\\,dt=(10^{-8})(500)=5\\times10^{-6}$ W.']
 ]},
 {t:'box', kind:'err', hd:'Common error', html:'Use $B_{\\text{neq}}=1/(4RC)$, not the $3$ dB frequency $1/(2\\pi RC)$, for the noise power. The $3$ dB width gives $3.18\\times10^{-6}$ W, which is $\\pi/2$ too small.'},
 
-{t:'h3', text:'Gaussian noise'},
-{t:'p', text:'Thermal noise is the sum of the currents of very many electrons, each small and independent. By the <b>central limit theorem</b>, such a sum has a Gaussian density.'},
-{t:'p', text:'A linear filter keeps a Gaussian process Gaussian, because every output value is a weighted sum of input values. So one sample of filtered noise is a Gaussian variable, and its variance is the output power.'},
-{t:'eqbox', cap:'After a filter', tex:'\\begin{aligned}Y(t_0)&\\sim\\mathcal{N}\\bigl(0,\\sigma^{2}\\bigr),\\qquad\\sigma^{2}=P_Y=\\frac{N_0}{2}\\int_{-\\infty}^{\\infty}|H(f)|^{2}\\,df\\\\P\\bigl(Y(t_0)>a\\bigr)&=Q\\!\\left(\\frac{a}{\\sigma}\\right)\\end{aligned}',
- after:'This holds for zero-mean white Gaussian noise at the input. $Q(x)=\\tfrac12\\operatorname{erfc}(x/\\sqrt2)$ is the Gaussian tail. For $\\sigma=2$ mV, the chance that a sample exceeds $4$ mV is $Q(4/2)=Q(2)=0.0228$.'},
-{t:'fig', svg:()=>figClt(),
- cap:'The density of the sum $Z$ of thirty independent uniform sources, scaled to unit variance (violet), and the Gaussian density (dashed). The two curves lie on top of each other.'},
+
+{t:'h3',text:'Gaussian noise'},
+{t:'p',text:'Many small, independent contributions give an approximately Gaussian sum under central-limit conditions. This motivates a Gaussian model for thermal noise.'},
+{t:'p',text:'White describes the PSD. Gaussian describes joint distributions. These properties are distinct. A linear filter preserves Gaussianity when the output variance is finite.'},
+{t:'fig',svg:()=>figClt(),cap:'The sum of thirty independent uniform sources, scaled to unit variance, closely follows a Gaussian density.'},
+
+{t:'h3',text:'From a noise waveform to one sample'},
+{t:'p',text:'The filtered noise $n(t)$ is a random process. At the end of a bit of duration $T_b$, the receiver reads $n=n(T_b)$.'},
+{t:'eqbox',cap:'Filtered white Gaussian noise',tex:'\\begin{aligned}n=n(T_b)&\\sim\\mathcal N(0,\\sigma_n^2)\\\\\\sigma_n^2=E[n^2]&=\\frac{N_0}{2}\\int_{-\\infty}^{\\infty}|H(f)|^2df\\end{aligned}',after:'For zero-mean noise, variance equals mean-square power. The filter sets the spread of the sample distribution.'},
+{t:'p',text:'A sample above a threshold occupies a tail of the Gaussian density. Normalize the threshold by the standard deviation.'},
+{t:'eqbox',cap:'Gaussian tail',tex:'\\begin{aligned}P(n>a)&=Q(a/\\sigma_n)\\\\P(n>4\\ \\text{mV})&=Q(4/2)=Q(2)\\approx0.0228\\end{aligned}',after:'Here $\\sigma_n=2$ mV and $Q(x)=\\tfrac12\\operatorname{erfc}(x/\\sqrt2)$. This noise sample will later enter the receiver decision statistic.'},
+{t:'fig',svg:()=>figGaussianSample(),cap:'A zero-mean Gaussian sample with standard deviation $2$ mV. The shaded tail above $4$ mV has probability approximately $0.0228$.'},
 
 {t:'h3', text:'Random signals around us'},
 {t:'p', text:'Random signals appear in every resistor, in speech coders, in receiver noise floors and in scrambled data.'},
@@ -1004,6 +1430,18 @@ window.C2 = [
 
 /* ================================================================ 2.2 === */
 {t:'h2', num:'2.2', text:'The matched filter'},
+
+{t:'h3', text:'Additive Gaussian noise'},
+{t:'p', text:'Each bit is sent as a pulse, $g(t)=+1$ or $-1$ for one bit time $T$. The channel adds noise $w(t)$ to it. The receiver sees the sum.'},
+{t:'eqbox', cap:'Additive noise', tex:'x(t)=g(t)+w(t),\\qquad w(t)\\sim\\mathcal{N}(0,\\sigma^{2})',
+ after:'At each instant the noise is a Gaussian value with mean $0$ and standard deviation $\\sigma$. Its size against the pulse decides how hard the bit is to read.'},
+{t:'fig', svg:()=>figAwgn(),
+ cap:'Five polar bits $g(t)=\\pm1$ (cyan) and the received $x(t)$ (green) at three noise levels, $\\sigma=0.1$, $0.5$ and $1$. The shaded band is $g(t)\\pm\\sigma$. The noise is one bandlimited Gaussian realisation, scaled by $\\sigma$.',
+ short:'Five polar bits under noise of standard deviation 0.1, 0.5 and 1.'},
+{t:'p', text:'Read $x(t)$ at one instant $t_0$ inside a $+1$ bit. The sample is Gaussian with mean $1$ and standard deviation $\\sigma$. It has the wrong sign when the noise is below $-1$.'},
+{t:'eqbox', cap:'One sample of a $+1$ bit', tex:'P\\bigl(x(t_0)<0\\bigr)=P\\bigl(w(t_0)<-1\\bigr)=Q\\Bigl(\\frac{1}{\\sigma}\\Bigr)',
+ after:'$Q(x)$ is the Gaussian tail probability, $Q(x)=\\tfrac12\\operatorname{erfc}(x/\\sqrt2)$. At $\\sigma=0.1$ the chance is $Q(10)$, about $10^{-23}$. At $\\sigma=0.5$ it is $Q(2)=0.023$, and at $\\sigma=1$ it is $Q(1)=0.16$. At $\\sigma=0.25$ it is $Q(4)=3.2\\times10^{-5}$.'},
+{t:'p', text:'One sample is a poor guide when $\\sigma$ is near the pulse height. The receiver should use the whole bit. A filter does that, and the rest of this section finds the best one.'},
 
 {t:'h3', text:'Choosing the receive filter'},
 {t:'p', text:'The receiver reads one number, $y(T)$, and decides the bit from it. The pulse puts a value there and the noise moves it. The receive filter $h(t)$ decides how far the noise moves it.'},
@@ -1027,26 +1465,49 @@ window.C2 = [
 {t:'eqbox', cap:'Received signal', tex:'x(t)=g(t)+w(t),\\qquad 0\\le t\\le T',
  after:'$g(t)$ is the pulse of one bit. $w(t)$ is the noise the channel adds.'},
 {t:'p', text:'The noise is white and Gaussian. White means that its power spectral density is flat. Its autocorrelation is then an impulse, so noise values at two different times are uncorrelated.'},
-{t:'eqbox', cap:'White noise', tex:'S_W(f)=\\frac{N_0}{2}\\quad\\text{for all }f,\\qquad R_W(\\tau)=\\frac{N_0}{2}\\,\\delta(\\tau)',
- after:'The density is two-sided: it is $N_0/2$ at every positive and every negative frequency. For example, $S_W(f)=10^{-9}$ W/Hz means $N_0=2(10^{-9})=2\\times10^{-9}$ W/Hz.'},
+{t:'eqbox', cap:'White noise', tex:'\\begin{aligned}S_W(f)&=\\frac{N_0}{2}\\quad\\text{for all }f\\\\R_W(\\tau)&=\\frac{N_0}{2}\\,\\delta(\\tau),\\qquad N_0=k_BT_e\\end{aligned}',
+ after:'The density is two-sided: it is $N_0/2$ at every positive and every negative frequency. $k_B=1.38\\times10^{-23}$ J/K is Boltzmann\'s constant and $T_e$ is the noise temperature of the receiver in kelvin. The subscript $B$ keeps $k_B$ apart from the filter gain $k$ used below.'},
+{t:'p', text:'For example, $T_e=290$ K gives $N_0=k_BT_e=(1.38\\times10^{-23})(290)=4.0\\times10^{-21}$ W/Hz. The two-sided density is then $N_0/2=2.0\\times10^{-21}$ W/Hz.'},
+
+{t:'h3', text:'Signal part and noise part'},
+{t:'p', text:'The filter is linear. So each part of the input passes through it on its own, and the output is the sum of two outputs.'},
+{t:'eqbox', cap:'Two parts', tex:'y(t)=x(t)*h(t)=\\underbrace{g(t)*h(t)}_{g_0(t)}+\\underbrace{w(t)*h(t)}_{n(t)}',
+ after:'The <b>signal part</b> $g_0(t)$ is the output for the pulse alone. It is the same every time the bit is sent. The <b>noise part</b> $n(t)$ is the output for the noise alone, and it is random.'},
+{t:'fig', svg:()=>figSplit(),
+ cap:'The noisy pulse through an RC filter with $\\tau=T/4$. Left: the signal part $g_0(t)$ (violet) and the noise part $n(t)$ alone (grey), with a band one standard deviation wide. Right: their sum $y(t)$. At $t=T$ the noise moves the sample away from $g_0(T)$ by $n(T)$.',
+ short:'The filter output split into its signal part and its noise part.'},
+{t:'p', text:'The noise part never vanishes. The filter cannot tell noise from pulse in the band the pulse uses. A filter with $g_0(T)\\neq0$ must have $H(f)\\neq0$ where $G(f)\\neq0$, and white noise has power at those frequencies. So the filter can only make $n(T)$ small against $g_0(T)$, never zero.'},
 
 {t:'h3', text:'The peak pulse signal-to-noise ratio'},
-{t:'p', text:'The filter is linear, so its output splits into two parts. The signal part $g_0(t)$ is the output for $g(t)$ alone. The noise part $n(t)$ is the output for $w(t)$ alone.'},
 {t:'p', text:'The receiver reads one value, at $t=T$. The quality of that value is the signal power there against the noise power there.'},
 {t:'eqbox', cap:'Peak pulse SNR', tex:'\\eta=\\frac{|g_0(T)|^{2}}{E[n^{2}(T)]}',
  after:'The ratio $\\eta$ is the <b>peak pulse signal-to-noise ratio</b>. For example, $g_0(T)=2$ mV and $E[n^{2}(T)]=10^{-6}\\ \\text{V}^{2}$ give $\\eta=(2\\times10^{-3})^{2}/10^{-6}=4$.'},
-{t:'p', text:'Both parts can be written in the frequency domain. The signal part is the inverse transform of $H(f)G(f)$, read at $t=T$. The noise part integrates the output noise density $S_W(f)|H(f)|^{2}$.'},
-{t:'eqbox', cap:'Both parts in $f$', tex:'\\begin{aligned}g_0(T)&=\\int_{-\\infty}^{\\infty}H(f)\\,G(f)\\,e^{j2\\pi fT}\\,df\\\\E[n^{2}(T)]&=\\int_{-\\infty}^{\\infty}\\frac{N_0}{2}\\,|H(f)|^{2}\\,df\\end{aligned}'},
+{t:'p', text:'The instant $T$ is chosen where the signal part is largest. The signal part rises while the pulse enters the filter and falls after the pulse has passed. So it peaks at $t=T$, the end of the pulse.'},
+{t:'p', text:'Convolution in time is a product in frequency. Take the inverse transform of that product and read it at $t=T$.'},
+{t:'eqbox', cap:'Signal part in $f$', tex:'\\begin{aligned}G_0(f)&=G(f)\\,H(f)\\\\g_0(t)&=\\int_{-\\infty}^{\\infty}G(f)\\,H(f)\\,e^{j2\\pi ft}\\,df\\\\g_0(T)&=\\int_{-\\infty}^{\\infty}G(f)\\,H(f)\\,e^{j2\\pi fT}\\,df\\end{aligned}'},
 {t:'p', text:'For the RC filter and the rectangular pulse, $g_0(T)=1-e^{-T/\\tau}$ and $E[n^{2}]=N_0/(4\\tau)$, with $E=T$. Divide one by the other and write $x=T/\\tau$.'},
 {t:'eq', tex:'\\frac{\\eta}{2E/N_0}=\\frac{(1-e^{-x})^{2}}{N_0/(4\\tau)}\\cdot\\frac{N_0}{2T}=\\frac{2\\,(1-e^{-x})^{2}}{x}'},
 {t:'p', text:'This ratio is largest at $x=T/\\tau\\approx1.26$, where it is $0.81$. So the best RC filter stays $0.9$ dB below the bound $2E/N_0$ derived below.'},
 {t:'fig', svg:()=>figSnr(RC_BEST),
  cap:'The RC filter at its best, $T/\\tau=1.26$. Above: the signal part $g_0(t)$, a band one noise standard deviation wide, and one noisy output. Below: $\\eta$ as a fraction of $2E/N_0$ against $T/\\tau$. No RC filter passes $0.81$.'},
 
+{t:'h3', text:'The output noise power'},
+{t:'p', text:'A filter multiplies a power spectral density by $|H(f)|^{2}$. White noise has the same density $N_0/2$ at every frequency.'},
+{t:'eqbox', cap:'Step 1 · filtered density', tex:'S_N(f)=S_W(f)\\,|H(f)|^{2}=\\frac{N_0}{2}\\,|H(f)|^{2}'},
+{t:'p', text:'The power of a random signal is the area under its density. The noise part is stationary, so its power is the same at every $t$, and it is also $E[n^{2}(T)]$.'},
+{t:'eqbox', cap:'Step 2 · noise power', tex:'E[n^{2}(t)]=\\int_{-\\infty}^{\\infty}S_N(f)\\,df=\\frac{N_0}{2}\\int_{-\\infty}^{\\infty}|H(f)|^{2}\\,df',
+ after:'For the RC filter the area is $N_0/(4\\tau)$, which is $N_0/T$ at $\\tau=T/4$. For an ideal lowpass filter with $|H(f)|=1$ for $|f|<B$ the area is $\\frac{N_0}{2}\\cdot2B=N_0B$. For example, $B=1$ kHz and $N_0=2\\times10^{-9}$ W/Hz give $2\\times10^{-6}$ W.'},
+{t:'fig', svg:()=>figNoisePower(),
+ cap:'White noise of density $N_0/2$ (cyan, dashed) through an RC filter with $\\tau=T/4$. The output density $S_N(f)$ (green) is the input density times $|H(f)|^{2}$. The shaded area is the output noise power. The tails beyond $|f|=4/T$ hold the last tenth of it.',
+ short:'The output noise density of an RC filter and the area under it.'},
+{t:'p', text:'Both parts of $\\eta$ are now in the frequency domain. Put them into one fraction.'},
+{t:'eqbox', cap:'The problem', tex:'\\eta=\\frac{\\Bigl|\\int G(f)\\,H(f)\\,e^{j2\\pi fT}\\,df\\Bigr|^{2}}{\\frac{N_0}{2}\\int|H(f)|^{2}\\,df}',
+ after:'For a given pulse spectrum $G(f)$, find the $H(f)$ that makes $\\eta$ largest. The top wants $H$ large where $G$ is large. The bottom charges for every hertz $H$ passes.'},
+
 {t:'h3', text:'Schwarz\'s inequality'},
 {t:'p', text:'Schwarz\'s inequality bounds $\\eta$. It holds for any pair of functions.'},
 {t:'eqbox', cap:'Schwarz\'s inequality', tex:'\\Bigl|\\int\\phi_1(f)\\,\\phi_2(f)\\,df\\Bigr|^{2}\\le\\int|\\phi_1(f)|^{2}\\,df\\int|\\phi_2(f)|^{2}\\,df',
- after:'Equality holds only when $\\phi_1(f)=k\\,\\phi_2^{*}(f)$ for a constant $k$.'},
+ after:'Both functions must have finite energy. The square is on the magnitude of the whole integral, not inside it. Equality holds only when $\\phi_1(f)=k\\,\\phi_2^{*}(f)$ for a constant $k$.'},
 {t:'p', text:'Take $\\phi_1=H(f)$ and $\\phi_2=G(f)\\,e^{j2\\pi fT}$. The left side is then $|g_0(T)|^{2}$. Since $|e^{j2\\pi fT}|=1$, the right side is $\\int|H(f)|^{2}df\\int|G(f)|^{2}df$.'},
 {t:'eqbox', cap:'Apply it to $g_0(T)$', tex:'\\begin{aligned}|g_0(T)|^{2}&=\\Bigl|\\int H(f)\\,G(f)\\,e^{j2\\pi fT}\\,df\\Bigr|^{2}\\\\&\\le\\int|H(f)|^{2}df\\int|G(f)|^{2}df\\end{aligned}'},
 {t:'fig', svg:()=>figSchwarz(2),
@@ -1056,25 +1517,40 @@ window.C2 = [
 {t:'h3', text:'The bound on the output SNR'},
 {t:'p', text:'Write $\\eta$ with the noise power in the frequency domain. Put Schwarz\'s bound on the top.'},
 {t:'eqbox', cap:'The bound', tex:'\\begin{aligned}\\eta&=\\frac{|g_0(T)|^{2}}{\\frac{N_0}{2}\\int|H(f)|^{2}df}\\\\&\\le\\frac{\\int|H(f)|^{2}df\\int|G(f)|^{2}df}{\\frac{N_0}{2}\\int|H(f)|^{2}df}\\\\&=\\frac{2}{N_0}\\int|G(f)|^{2}\\,df=\\frac{2E}{N_0}\\end{aligned}',
- after:'The factor $\\int|H(f)|^{2}df$ is above and below the line, so it cancels. Parseval\'s theorem gives $\\int|G(f)|^{2}df=E$, the pulse energy, so the bound contains no $H$. For example, $E=5\\times10^{-7}$ J and $N_0=10^{-7}$ W/Hz give $\\eta_{\\max}=2(5\\times10^{-7})/10^{-7}=10$.'},
+ after:'The factor $\\int|H(f)|^{2}df$ is above and below the line, so it cancels. Parseval\'s theorem gives $\\int|G(f)|^{2}df=E$, the pulse energy, so the bound contains no $H$. It depends on the energy of the pulse, not on its shape. For example, $E=5\\times10^{-7}$ J and $N_0=10^{-7}$ W/Hz give $\\eta_{\\max}=2(5\\times10^{-7})/10^{-7}=10$.'},
+{t:'p', text:'The bound is reached when Schwarz\'s inequality holds with equality. Put $\\phi_1=H(f)$ and $\\phi_2=G(f)e^{j2\\pi fT}$ into $\\phi_1=k\\phi_2^{*}$.'},
+{t:'eqbox', cap:'The equality condition', tex:'H_{\\mathrm{opt}}(f)=k\\,\\phi_2^{*}(f)=k\\,G^{*}(f)\\,e^{-j2\\pi fT}',
+ after:'The conjugate of $e^{j2\\pi fT}$ is $e^{-j2\\pi fT}$, and $k$ is the constant of the equality condition. The best filter passes most where the pulse spectrum is largest.'},
 {t:'fig', svg:()=>figBoundCurve(),
  cap:'The SNR of the filter of width $b$ as a fraction of the bound, $2b/(1+b^{2})$. It is $0.80$ at $b=1/2$ and at $b=2$, and it reaches $1$ only at $b=1$.'},
 
 {t:'h3', text:'The matched filter'},
-{t:'p', text:'The equality condition of Schwarz\'s inequality names the best filter. Put $\\phi_1=H(f)$ and $\\phi_2=G(f)e^{j2\\pi fT}$ into $\\phi_1=k\\phi_2^{*}$.'},
-{t:'eqbox', cap:'In frequency', tex:'H_{\\mathrm{opt}}(f)=k\\,G^{*}(f)\\,e^{-j2\\pi fT}',
- after:'The conjugate of $e^{j2\\pi fT}$ is $e^{-j2\\pi fT}$, and $k$ is the constant of the equality condition.'},
-{t:'p', text:'Take the inverse transform to find the filter in time. The integral that appears is the conjugate of the inverse transform of $G(f)$, read at $T-t$.'},
-{t:'eqbox', cap:'In time', tex:'\\begin{aligned}h_{\\mathrm{opt}}(t)&=\\int_{-\\infty}^{\\infty}H_{\\mathrm{opt}}(f)\\,e^{j2\\pi ft}\\,df\\\\&=k\\int_{-\\infty}^{\\infty}G^{*}(f)\\,e^{-j2\\pi f(T-t)}\\,df\\\\&=k\\,g^{*}(T-t)\\\\&=k\\,g(T-t)\\end{aligned}',
- after:'A real pulse has $g^{*}=g$. The filter is the pulse reversed in time and shifted right by $T$. It is called the <b>matched filter</b>.'},
-{t:'p', text:'For example, the ramp $g(t)=t/T$ on $0\\le t\\le T$ with $k=1$ has $h_{\\mathrm{opt}}(0)=g(T-0)=g(T)=1$.'},
+{t:'p', text:'The impulse response is the inverse transform of $H_{\\mathrm{opt}}(f)$. It takes three steps. First substitute $H_{\\mathrm{opt}}$ and join the two exponentials.'},
+{t:'eqbox', cap:'Step 1 · inverse transform', tex:'\\begin{aligned}h_{\\mathrm{opt}}(t)&=\\int_{-\\infty}^{\\infty}H_{\\mathrm{opt}}(f)\\,e^{j2\\pi ft}\\,df\\\\&=k\\int_{-\\infty}^{\\infty}G^{*}(f)\\,e^{j2\\pi f(t-T)}\\,df\\end{aligned}'},
+{t:'p', text:'Second, use that the pulse is real. Conjugation in time gives $g^{*}(t)\\leftrightarrow G^{*}(-f)$. A real pulse has $g=g^{*}$, so $G(f)=G^{*}(-f)$. Take the conjugate of both sides.'},
+{t:'eqbox', cap:'Step 2 · a real pulse', tex:'\\begin{aligned}g(t)=g^{*}(t)\\;&\\Rightarrow\\;G(f)=G^{*}(-f)\\\\&\\Rightarrow\\;G^{*}(f)=G(-f)\\end{aligned}'},
+{t:'p', text:'Third, use time reversal, $g(-s)\\leftrightarrow G(-f)$. Its inverse transform reads $g(-s)=\\int G(-f)\\,e^{j2\\pi fs}\\,df$. Here the exponent is $j2\\pi f(t-T)$, so $s=t-T$.'},
+{t:'eqbox', cap:'Step 3 · reverse and shift', tex:'\\begin{aligned}h_{\\mathrm{opt}}(t)&=k\\int_{-\\infty}^{\\infty}G(-f)\\,e^{j2\\pi f(t-T)}\\,df\\\\&=k\\,g\\bigl(-(t-T)\\bigr)=k\\,g(T-t)\\end{aligned}',
+ after:'The filter is the pulse reversed in time and shifted right by $T$. It is called the <b>matched filter</b>. For example, the ramp $g(t)=t/T$ on $0\\le t\\le T$ with $k=1$ has $h_{\\mathrm{opt}}(0)=g(T-0)=g(T)=1$.'},
 {t:'fig', svg:()=>figMatchedBuild(),
  cap:'The matched filter of the ramp $g(t)=t/T$, built in two moves. The ramp (cyan) is reversed in time to $g(-t)$ (amber, dashed), then shifted right by $T$ to $h(t)=g(T-t)$ (amber).'},
 
+{t:'h3', text:'The matched filter in frequency'},
+{t:'p', text:'The same filter can be read in frequency. Take the magnitude and the phase of $H_{\\mathrm{opt}}(f)$ one at a time.'},
+{t:'eqbox', cap:'Magnitude and phase', tex:'\\begin{aligned}H(f)&=k\\,G^{*}(f)\\,e^{-j2\\pi fT}\\\\|H(f)|&=k\\,|G(f)|\\\\\\angle H(f)&=-\\angle G(f)-2\\pi fT\\end{aligned}',
+ after:'The magnitude response has the shape of the pulse spectrum. The filter passes the band where the pulse has energy and weights each frequency by $|G(f)|$. Where $G(f_1)=0$, also $|H(f_1)|=0$: the pulse has nothing there, so the filter lets no noise through.'},
+{t:'p', text:'Now pass the pulse through the filter. Multiply the two spectra.'},
+{t:'eqbox', cap:'The output spectrum', tex:'Y(f)=G(f)\\,H(f)=k\\,|G(f)|^{2}\\,e^{-j2\\pi fT}',
+ after:'The phase $-\\angle G$ of the filter cancels the phase of the pulse. Only the linear phase $-2\\pi fT$, a delay of $T$, is left. Every frequency component of $y(t)$ is a cosine of non-negative amplitude that peaks at $t=T$, so they all add there.'},
+{t:'figrow', n:2, items:[
+ {svg:()=>figMfMag(), cap:'The magnitudes for the ramp $g(t)=\\sqrt{3}\\,t/T$ with $E=1$ and $k=1$. $|G(f)|$ (cyan) and $|H(f)|$ (amber, dashed) lie on each other.'},
+ {svg:()=>figMfPhase(), cap:'The phases over $\\pi$: $\\angle G$ (cyan), $\\angle H$ (amber, dashed) and their sum $-2\\pi fT$ (violet), a straight line.'}
+]},
+
 {t:'h3', text:'The output of the matched filter'},
-{t:'p', text:'The matched-filter output is a sliding overlap. Write it as a convolution and substitute $h(t)=g(T-t)$, so that $h(t-\\tau)=g(T-t+\\tau)$. That is the pulse itself, moved to start at $t-T$, so the output measures how well $g$ lines up with a shifted copy of itself.'},
+{t:'p', text:'The matched-filter output is a sliding product. Write it as a convolution and substitute $h(t)=g(T-t)$, so that $h(t-\\tau)=g(T-t+\\tau)$. That is the pulse itself, moved to start at $t-T$. For each $t$, multiply the two curves and take the area of the product.'},
 {t:'eqbox', cap:'Convolution', tex:'\\begin{aligned}y(t)&=\\int_{-\\infty}^{\\infty}g(\\tau)\\,h(t-\\tau)\\,d\\tau\\\\&=\\int_{-\\infty}^{\\infty}g(\\tau)\\,g(T-t+\\tau)\\,d\\tau\\end{aligned}'},
-{t:'p', text:'At $t=T$ the two copies of $g$ lie on top of each other. The overlap is then the integral of $g^{2}$, which is the energy.'},
+{t:'p', text:'Convolution reverses $h$ once more. Because $h$ was already the reversed pulse, at $t=T$ the copy lies exactly on $g$. Every product is then $g^{2}\\ge0$, nothing cancels, and the area is the energy.'},
 {t:'eqbox', cap:'The peak', tex:'y(T)=\\int_{-\\infty}^{\\infty}g^{2}(\\tau)\\,d\\tau=E'},
 {t:'p', text:'For the ramp $g(t)=t/T$, take $T=1$, so $E=1/3$. For $0\\le t\\le1$ the copies overlap on $0\\le\\tau\\le t$.'},
 {t:'eq', tex:'\\begin{aligned}y(t)&=\\int_{0}^{t}\\tau\\,(1-t+\\tau)\\,d\\tau\\\\&=\\frac{(1-t)\\,t^{2}}{2}+\\frac{t^{3}}{3}\\end{aligned}'},
@@ -1083,24 +1559,68 @@ window.C2 = [
  {svg:()=>figConvTop(), cap:'The overlap at $t=T/2$. The ramp $g(\\tau)$ (cyan) and the copy $h(t-\\tau)$ (amber, dashed). The shaded area is their product.'},
  {svg:()=>figConvBottom(), cap:'The output $y(t)/E$, the area of that product, drawn up to $t=T/2$. The dashed rest is even about $t=T$ and peaks at $y(T)=E$.'}
 ]},
+{t:'p', text:'Leave out the reversal and use $h=g$. At $t=T$ the copy is $g(T-\\tau)=1-\\tau$, which runs the wrong way. The product is $\\tau(1-\\tau)$ and its area is $1/6=0.50E$. The output of $h=g$ peaks at $2(\\sqrt2-1)E=0.83E$, at $t=\\sqrt2\\,T$, and never reaches $E$.'},
+{t:'fig', svg:()=>figNoReversal(),
+ cap:'The ramp through its matched filter (violet) and through $h=g$, the filter without the reversal (red, dashed). Only the matched filter reaches $E$, and it does so at $t=T$.',
+ short:'The ramp output with and without the reversal.'},
+{t:'p', text:'The sampling instant follows. The output is largest at $t=T$, where the copies line up. The noise power is the same at every $t$. So $\\eta$ is largest at $t=T$, the first instant the whole pulse is inside the filter.'},
+
+{t:'h3', text:'The correlator'},
+{t:'p', text:'Only the sample at $t=T$ is used. Write that sample with $h(t)=g(T-t)$. The argument of $h$ is $T-\\tau$, so $h(T-\\tau)=g\\bigl(T-(T-\\tau)\\bigr)=g(\\tau)$.'},
+{t:'eqbox', cap:'The sample at $t=T$', tex:'\\begin{aligned}y(T)&=\\int_{-\\infty}^{\\infty}x(\\tau)\\,h(T-\\tau)\\,d\\tau\\\\&=\\int_{0}^{T}x(\\tau)\\,g(\\tau)\\,d\\tau\\end{aligned}',
+ after:'At $t=T$ the reversal is undone. The sample is the input multiplied by the pulse and integrated over the bit. A receiver that does this is a <b>correlator</b>.'},
+{t:'p', text:'The correlator starts at the start of each bit, is read at $t=T$ and is then reset to zero. This is called integrate and dump. It needs the bit timing, as the matched filter does for its sampling instant.'},
+{t:'p', text:'The two outputs are equal only at $t=T$. For the ramp $g(t)=t/T$ with no noise, the correlator gives $z(t)=\\int_0^t g^{2}\\,d\\tau=(t/T)^{3}E$. So $z(T/2)=E/8=0.13E$, while the matched filter gives $y(T/2)=0.31E$.'},
+{t:'fig', svg:()=>figMfCorr(),
+ cap:'The noiseless ramp through a correlator, $z(t)$ (solid, reset at $t=T$), and through its matched filter, $y(t)$ (dashed). The two differ before $T$ and agree at $t=T$, where both are $E$.',
+ short:'The correlator and the matched filter for the ramp.'},
 
 {t:'h3', text:'Properties of the matched filter'},
-{t:'p', text:'Two properties follow from the results above.'},
-{t:'ol', items:[
- 'The output is $y(t)=R_g(t-T)$. Here $R_g(u)=\\int g(\\tau)\\,g(\\tau-u)\\,d\\tau$ is the <b>pulse autocorrelation</b>. Its peak is $R_g(0)=E$.',
- 'The peak SNR is $2E/N_0$. It depends on the energy, not on the shape.'
+{t:'p', text:'Keep the gain $k$ and compute both parts of $\\eta$ for the matched filter. First the signal part at $t=T$.'},
+{t:'eqbox', cap:'Step 1 · signal at $t=T$', tex:'\\begin{aligned}g_0(T)&=\\int_{-\\infty}^{\\infty}G(f)\\,H(f)\\,e^{j2\\pi fT}\\,df\\\\&=k\\int_{-\\infty}^{\\infty}G(f)\\,G^{*}(f)\\,e^{-j2\\pi fT}e^{j2\\pi fT}\\,df\\\\&=k\\int_{-\\infty}^{\\infty}|G(f)|^{2}\\,df=kE\\end{aligned}',
+ after:'The two exponentials cancel and $GG^{*}=|G|^{2}$. Parseval\'s theorem turns the last integral into the energy $E$.'},
+{t:'p', text:'Then the noise power. Use $|e^{-j2\\pi fT}|=1$.'},
+{t:'eqbox', cap:'Step 2 · noise power', tex:'\\begin{aligned}E[n^{2}(t)]&=\\frac{N_0}{2}\\int_{-\\infty}^{\\infty}\\bigl|k\\,G^{*}(f)\\,e^{-j2\\pi fT}\\bigr|^{2}\\,df\\\\&=\\frac{k^{2}N_0}{2}\\int_{-\\infty}^{\\infty}|G(f)|^{2}\\,df=\\frac{k^{2}N_0E}{2}\\end{aligned}',
+ after:'The noise power is not zero. The matched filter keeps the noise that shares the band of the pulse.'},
+{t:'p', text:'The signal part grows as $k$ and the noise power as $k^{2}$, so the noise standard deviation grows as $k$. Doubling $k$ doubles both $g_0(T)$ and the noise standard deviation. In $\\eta$ the factor $k^{2}$ cancels, so every gain gives the same SNR.'},
+{t:'figrow', n:2, items:[
+ {svg:()=>figGain(0.5), cap:'The matched filter of the noisy rectangular pulse with $k=0.5$. The signal part peaks at $kE$, and the band is one noise standard deviation wide.'},
+ {svg:()=>figGain(2), cap:'The same filter with $k=2$. Every part is four times larger than at $k=0.5$, so $\\eta$ is the same, $25$ for $E=1$ and $N_0=0.08$.'}
 ]},
-{t:'p', text:'The second property can be checked in time. Parseval\'s theorem turns $\\int|H(f)|^{2}df$ into $\\int h^{2}(t)\\,dt$, and $h$ has the same energy as $g$.'},
-{t:'eqbox', cap:'Noise at the output', tex:'\\begin{aligned}E[n^{2}(T)]&=\\frac{N_0}{2}\\int_{-\\infty}^{\\infty}h^{2}(t)\\,dt\\\\&=\\frac{N_0}{2}\\int_{-\\infty}^{\\infty}g^{2}(T-t)\\,dt=\\frac{N_0E}{2}\\end{aligned}',
- after:'Then $\\eta=E^{2}/(N_0E/2)=2E/N_0$, which is the bound. For example, a rectangular pulse and a half-sine pulse with $E=10^{-6}$ J and $N_0=10^{-7}$ W/Hz both give $\\eta_{\\max}=20$.'},
+
+{t:'h3', text:'The output SNR of the matched filter'},
+{t:'p', text:'Divide the square of the signal part by the noise power.'},
+{t:'eqbox', cap:'Key result · peak SNR', tex:'\\begin{aligned}\\eta&=\\frac{|g_0(T)|^{2}}{E[n^{2}(T)]}=\\frac{(kE)^{2}}{k^{2}N_0E/2}\\\\&=\\frac{2E}{N_0}\\end{aligned}',
+ after:'The gain $k$ cancels. The matched filter reaches the bound, and the SNR depends on the pulse energy and on $N_0$, not on the shape of $g(t)$.'},
+{t:'p', text:'The ratio $E/N_0$ compares the energy of the pulse with the spectral density of the noise. It has no unit.'},
+{t:'eqbox', cap:'Units', tex:'\\frac{E}{N_0}:\\quad\\frac{\\text{J}}{\\text{W/Hz}}=\\frac{\\text{J}}{(\\text{J/s})\\cdot\\text{s}}=1'},
+{t:'box', kind:'err', hd:'Common error', html:'Common error: call $N_0/2$ the noise density at the filter output. It is the density of the white noise at the filter input. At the output the density is $\\frac{N_0}{2}|H(f)|^{2}$, which is not flat.'},
+{t:'p', text:'For example, a rectangular pulse and a half-sine pulse with $E=10^{-6}$ J and $N_0=10^{-7}$ W/Hz both give $\\eta_{\\max}=2(10^{-6})/10^{-7}=20$. The output of each is its autocorrelation $R_g(t-T)$, with $R_g(u)=\\int g(\\tau)g(\\tau-u)\\,d\\tau$, and both peak at $R_g(0)=E$.'},
 {t:'fig', svg:()=>figEqualOutputs(),
  cap:'A rectangular pulse and a half-sine pulse of the same energy $E$, each through its own matched filter. The rectangular output is solid and the half-sine output dashed. Both peak at $t=T$ with the value $E$.'},
+
+{t:'h3', text:'Sampling early or late'},
+{t:'p', text:'A receiver may sample at a time $t_0$ that is not exactly $T$. The noise power $k^{2}N_0E/2$ is the same at every $t_0$. Only the signal part changes.'},
+{t:'eqbox', cap:'SNR at $t_0$', tex:'\\begin{aligned}\\eta(t_0)&=\\frac{g_0^{2}(t_0)}{k^{2}N_0E/2}\\\\&=\\Bigl(\\frac{g_0(t_0)}{kE}\\Bigr)^{2}\\frac{2E}{N_0}\\end{aligned}'},
+{t:'p', text:'For the rectangular pulse the output is the triangle, so $g_0(t_0)/(kE)=1-|t_0-T|/T$. Sampling $0.1T$ late leaves $(1-0.1)^{2}=0.81$ of $2E/N_0$. That is a loss of $10\\log_{10}0.81=-0.92$ dB.'},
+{t:'fig', svg:()=>figTiming(),
+ cap:'The SNR at the sampling instant $t_0$ for the rectangular pulse, as a fraction of $2E/N_0$. Sampling at $t_0=1.1T$ leaves $0.81$.'},
+{t:'p', text:'An earlier peak would need another filter. A filter that peaks at $t_0<T$ is $h(t)=g(t_0-t)$. It is non-zero for some $t<0$, so it would need the input before the input arrives. Such a filter is not causal. A causal matched filter needs $t_0\\ge T$, and a later $t_0$ only adds delay.'},
+
+{t:'h3', text:'The output sample'},
+{t:'p', text:'Send polar bits, $+g(t)$ for a $1$ and $-g(t)$ for a $0$, and sample the matched filter at $t=T$. The signal part is $\\pm kE$. The noise part is filtered Gaussian noise.'},
+{t:'eqbox', cap:'The sample at $t=T$', tex:'\\begin{aligned}y(T)&=\\pm kE+n(T)\\\\n(T)&\\sim\\mathcal{N}\\bigl(0,\\ k^{2}N_0E/2\\bigr)\\end{aligned}',
+ after:'A linear filter turns Gaussian noise into Gaussian noise. So $y(T)$ is a Gaussian random variable centred on $+kE$ or $-kE$, with $\\sigma=k\\sqrt{N_0E/2}$.'},
+{t:'p', text:'Take $E=1$, $N_0=0.5$ and $k=1$. Then $\\sigma=\\sqrt{0.5/2}=0.5$. For the bit $+1$ the fraction of samples below $0$ is $Q(1/0.5)=Q(2)=0.023$. Section 2.4 chooses the threshold and computes this error probability.'},
+{t:'fig', svg:()=>figSampleDist(),
+ cap:'Histograms of $5000$ samples $y(T)$ for each bit, with $k=1$, $E=1$ and $N_0=0.5$: the bit $+1$ filled, the bit $-1$ dashed. The curves are the two Gaussian densities. The red area is $Q(2)$.',
+ short:'Histograms of the matched-filter sample for polar bits.'},
 
 {t:'ex', hd:'Example 2.3 — the matched filter of a rectangular pulse', rows:[
  ['Given','$g(t)=A$ on $[0,T]$, with $A=2$ V, $T=0.5$ ms and $N_0/2=10^{-4}$ W/Hz.'],
  ['Find','The matched filter $h(t)$, its output $y(t)$ and the largest peak SNR $\\eta_{\\max}$.'],
  ['Method','Reverse and shift the pulse to get $h(t)$. The output is the sliding overlap of $g$ and $h$. The largest SNR is $2E/N_0$, which needs only the energy.'],
- ['Solution','$h(t)=g(T-t)=A$ for $0\\le t\\le T$. The overlap gives $y(t)=A^{2}t$ for $0\\le t\\le T$ and $y(t)=A^{2}(2T-t)$ for $T\\le t\\le2T$. The energy is $E=A^{2}T=(2)^{2}(0.5\\times10^{-3})=2\\times10^{-3}$ J. Then $\\eta_{\\max}=2E/N_0=2(2\\times10^{-3})/(2\\times10^{-4})=20$.'],
+ ['Solution','$h(t)=g(T-t)=A$ for $0\\le t\\le T$. Up to $t=T$ the pulse and the reversed copy overlap on $[0,t]$, so $y(t)=\\int_0^tA^{2}\\,d\\tau=A^{2}t$. After it they overlap on $[t-T,T]$, so $y(t)=\\int_{t-T}^{T}A^{2}\\,d\\tau=A^{2}(2T-t)$ for $T\\le t\\le2T$. The limits $\\int_0^t$ hold only for $t\\le T$. The energy is $E=A^{2}T=(2)^{2}(0.5\\times10^{-3})=2\\times10^{-3}$ J. Then $\\eta_{\\max}=2E/N_0=2(2\\times10^{-3})/(2\\times10^{-4})=20$.'],
  ['Check','$10\\log_{10}20=13.0$ dB. The peak is $y(T)=A^{2}T=E$, as the general result requires.']
 ]},
 {t:'fig', svg:()=>figExMf(),
@@ -1122,49 +1642,134 @@ window.C2 = [
 /* ================================================================ 2.3 === */
 {t:'h2', num:'2.3', text:'The demodulator'},
 
-{t:'h3', text:'The unit-energy basis and antipodal signalling'},
-{t:'p', text:'Polar signalling sends $+A$ for a $1$ and $-A$ for a $0$, over a bit of length $T_b$. Both waveforms are multiples of one shape, the <b>basis function</b> $\\psi(t)$.'},
-{t:'eqbox', cap:'The basis', tex:'\\psi(t)=\\frac{1}{\\sqrt{T_b}},\\quad 0\\le t\\le T_b,\\qquad\\int_{0}^{T_b}\\psi^{2}(t)\\,dt=1',
- after:'A basis function has unit energy. Outside $[0,T_b]$ it is zero.'},
-{t:'p', text:'Each waveform is then a number times $\\psi(t)$. The number is set by the energy per bit $E_b$.'},
-{t:'eqbox', cap:'Two waveforms', tex:'\\begin{aligned}s_1(t)&=+A=+\\sqrt{E_b}\\,\\psi(t)\\\\s_0(t)&=-A=-\\sqrt{E_b}\\,\\psi(t)\\\\E_b&=\\int_0^{T_b}A^{2}\\,dt=A^{2}T_b\\end{aligned}',
- after:'Since $\\sqrt{E_b}=A\\sqrt{T_b}$, the product $\\sqrt{E_b}\\,\\psi(t)$ is $A\\sqrt{T_b}/\\sqrt{T_b}=A$. The two waveforms are negatives of each other, so the signalling is called <b>antipodal</b>. With $A=2$ V and $T_b=1$ ms in a $1\\ \\Omega$ load, $E_b=(2)^{2}(10^{-3})=4$ mJ.'},
+{t:'h3', text:'The unit-energy basis'},
+{t:'p', text:'The demodulator works with one fixed pulse shape, the <b>basis function</b> $\\psi(t)$. For a rectangular pulse it is a rectangle one bit long. $T_b$ is the bit duration in seconds.'},
+{t:'eqbox', cap:'The basis', tex:'\\psi(t)=\\begin{cases}1/\\sqrt{T_b}, & 0\\le t\\le T_b\\\\[2pt] 0, & \\text{otherwise}\\end{cases}'},
+{t:'p', text:'Its height is chosen so that its energy is $1$. Square the height, then integrate over the bit.'},
+{t:'eqbox', cap:'Step 1 · its energy', tex:'\\begin{aligned}E_\\psi&=\\int_0^{T_b}\\psi^{2}(t)\\,dt\\\\&=\\int_0^{T_b}\\frac{1}{T_b}\\,dt\\\\&=\\frac{1}{T_b}\\cdot T_b=1\\end{aligned}',
+ after:'For example, $T_b=4$ ms gives the height $1/\\sqrt{4\\times10^{-3}}=15.8\\ \\text{s}^{-1/2}$. Then $\\psi^{2}=250\\ \\text{s}^{-1}$, and $250\\times4\\times10^{-3}=1$.'},
+{t:'fig', svg:()=>figBasisUnit(),
+ cap:'The basis $\\psi(t)$ (amber, dashed) and its square $\\psi^{2}(t)$ (violet). The area under $\\psi^{2}(t)$ over one bit is $1$.'},
+
+{t:'h3', text:'Antipodal signalling'},
+{t:'p', text:'Each bit is sent as the same shape times a number. The number $s_m$ carries the bit.'},
+{t:'eqbox', cap:'One shape, two numbers', tex:'s_m(t)=s_m\\,\\psi(t),\\qquad m\\in\\{0,1\\}'},
+{t:'p', text:'Polar NRZ takes $s_1=+A\\sqrt{T_b}$ and $s_0=-A\\sqrt{T_b}$. Multiply each number by the height of $\\psi(t)$.'},
+{t:'eqbox', cap:'Polar NRZ', tex:'\\begin{aligned}s_1(t)&=+A\\sqrt{T_b}\\cdot\\frac{1}{\\sqrt{T_b}}=+A\\\\s_0(t)&=-A\\sqrt{T_b}\\cdot\\frac{1}{\\sqrt{T_b}}=-A\\end{aligned}',
+ after:'The $\\sqrt{T_b}$ cancels, so the waveforms are $\\pm A$ on $0\\le t\\le T_b$. One is the negative of the other, so the signalling is called <b>antipodal</b>.'},
+{t:'p', text:'The energy per bit $E_b$ is the energy of one waveform.'},
+{t:'eqbox', cap:'Energy per bit', tex:'\\begin{aligned}E_b&=\\int_0^{T_b}s_1^{2}(t)\\,dt=\\int_0^{T_b}A^{2}\\,dt\\\\&=A^{2}T_b\\end{aligned}',
+ after:'So $A\\sqrt{T_b}=\\sqrt{E_b}$, and the two numbers are $s_1=+\\sqrt{E_b}$ and $s_0=-\\sqrt{E_b}$. With $A=2$ V and $T_b=1$ ms in a $1\\ \\Omega$ load, $E_b=(2)^{2}(10^{-3})=4$ mJ.'},
 {t:'fig', svg:()=>figBasis(),
  cap:'The basis $\\psi(t)$ (amber) and the two waveforms of polar signalling, $s_1(t)$ (cyan) and $s_0(t)$ (cyan, dashed), drawn with $T_b=1$ and $A=1.5$. Each waveform is $\\psi(t)$ times a number.'},
 
 {t:'h3', text:'Two waveforms as two points'},
 {t:'p', text:'The number that multiplies $\\psi(t)$ is found by projection. Multiply the waveform by $\\psi(t)$ and integrate over the bit.'},
-{t:'eqbox', cap:'Coefficient on $\\psi$', tex:'\\begin{aligned}s_m&=\\int_0^{T_b}s_m(t)\\,\\psi(t)\\,dt\\\\s_1&=\\int_0^{T_b}A\\,\\frac{1}{\\sqrt{T_b}}\\,dt=A\\sqrt{T_b}=+\\sqrt{E_b}\\end{aligned}',
+{t:'eqbox', cap:'Coefficient on $\\psi$', tex:'\\begin{aligned}s_m&=\\int_0^{T_b}s_m(t)\\,\\psi(t)\\,dt\\\\s_1&=\\int_0^{T_b}A\\cdot\\frac{1}{\\sqrt{T_b}}\\,dt\\\\&=\\frac{A}{\\sqrt{T_b}}\\cdot T_b=A\\sqrt{T_b}=+\\sqrt{E_b}\\end{aligned}',
  after:'For $s_0(t)=-A$ the same steps give $s_0=-\\sqrt{E_b}$. The two waveforms have become two points on one axis, the axis of $\\psi(t)$.'},
-{t:'p', text:'The distance between the two points measures how far noise must push the received value to cause an error.'},
-{t:'eqbox', cap:'Distance', tex:'d=s_1-s_0=\\sqrt{E_b}-\\bigl(-\\sqrt{E_b}\\bigr)=2\\sqrt{E_b}',
- after:'A larger distance means noise must move the received value further before it crosses to the wrong point. For $E_b=4$ mJ, $d=2\\sqrt{4\\times10^{-3}}=2(0.0632)=0.126\\ \\sqrt{\\text{J}}$.'},
+{t:'p', text:'The distance between the two points measures how far noise must push the received number to cause an error.'},
+{t:'eqbox', cap:'Distance', tex:'\\begin{aligned}d&=s_1-s_0\\\\&=\\sqrt{E_b}-\\bigl(-\\sqrt{E_b}\\bigr)=2\\sqrt{E_b}\\end{aligned}',
+ after:'A larger distance means noise must move the received number further before it lands nearer the wrong point. For $E_b=4$ mJ, $d=2\\sqrt{4\\times10^{-3}}=2(0.0632)=0.126\\ \\sqrt{\\text{J}}$.'},
 {t:'figrow', n:2, items:[
  {svg:()=>figSpaceWave(), cap:'The two waveforms of polar signalling, $s_1(t)$ (solid) and $s_0(t)$ (dashed).'},
  {svg:()=>figSpacePoints(), cap:'The same two waveforms as points on the axis of $\\psi(t)$. The points are $2\\sqrt{E_b}$ apart.'}
 ]},
 
+{t:'h3', text:'The matched-filter demodulator'},
+{t:'p', text:'The first demodulator is a filter matched to $\\psi(t)$. Its impulse response is $\\psi$ reversed in time and delayed by one bit. Its input is one bit plus the white Gaussian noise $w(t)$ of the channel.'},
+{t:'eqbox', cap:'Filter and input', tex:'\\begin{aligned}h(t)&=\\psi(T_b-t)\\\\x(t)&=s_m\\psi(t)+w(t),\\qquad 0\\le t\\le T_b\\end{aligned}'},
+{t:'p', text:'The filter is linear, so each part of $x(t)$ passes through it on its own. The output splits into a signal part and a noise part.'},
+{t:'eqbox', cap:'Step 1 · split the output', tex:'\\begin{aligned}y(t)&=x(t)*h(t)\\\\&=\\underbrace{s_m\\psi(t)*h(t)}_{\\text{signal part}}+\\underbrace{w(t)*h(t)}_{n(t)}\\end{aligned}',
+ after:'The noise part $n(t)$ is a random process: it changes from one transmission to the next.'},
+{t:'p', text:'Send the same bit twice and only the signal part repeats. It depends on $s_m$ and $\\psi$ alone, while $n(t)$ is a new sample function every time.'},
+{t:'fig', svg:()=>figDemodSplit(),
+ cap:'One noisy bit with $s_m=+1$ through the filter matched to the rectangular $\\psi$. Shown: the signal part (dashed), the noise part $n(t)$ (grey) and their sum $y(t)$.',
+ short:'The matched-filter output split into signal and noise parts.'},
+
+{t:'h3', text:'The signal part as a convolution'},
+{t:'p', text:'Write the signal part as a convolution integral. The limits are $0$ and $T_b$, because $\\psi(\\tau)=0$ outside the bit. Then replace $h(t-\\tau)$ by $\\psi$ at $T_b-(t-\\tau)$.'},
+{t:'eqbox', cap:'Step 2 · the signal part', tex:'\\begin{aligned}s_m\\psi(t)*h(t)&=\\int_0^{T_b}s_m\\psi(\\tau)\\,h(t-\\tau)\\,d\\tau\\\\&=\\int_0^{T_b}s_m\\psi(\\tau)\\,\\psi\\bigl(T_b-(t-\\tau)\\bigr)\\,d\\tau\\end{aligned}',
+ after:'The output is defined for every $t$. Only its value at $t=T_b$ is used.'},
+{t:'box', kind:'err', hd:'Common error', html:'Common error: take the output to end with the bit at $T_b$. The bit and $h(t)$ each last $T_b$, so for the rectangular $\\psi$ the output is non-zero on $0<t<2T_b$.'},
+{t:'fig', svg:()=>figDemodConv(),
+ cap:'The convolution at $t=T_b/2$, for one noiseless bit with $s_m=1$ and the rectangular $\\psi$. The shaded overlap of $s_m\\psi(\\tau)$ and $h(t-\\tau)$ is the output $y(t)$, here $0.5$.',
+ short:'The matched-filter demodulator as a convolution.'},
+
 {t:'h3', text:'The demodulator output'},
-{t:'p', text:'The demodulator correlates the received signal $x(t)=s_m(t)+w(t)$ with $\\psi(t)$. The integral splits into a signal term and a noise term.'},
-{t:'eqbox', cap:'The sample', tex:'y(T_b)=\\int_0^{T_b}s_m(t)\\,\\psi(t)\\,dt+\\int_0^{T_b}w(t)\\,\\psi(t)\\,dt=s_m+n',
- after:'The first integral is the coefficient $s_m$ found above. The second is a noise value $n$.'},
-{t:'p', text:'The noise value $n$ is Gaussian, because it comes from a linear operation on Gaussian noise. Its mean is zero. Its variance follows from the autocorrelation of white noise.'},
-{t:'eqbox', cap:'Noise variance', tex:'\\begin{aligned}E[n^{2}]&=\\int_0^{T_b}\\!\\!\\int_0^{T_b}E[w(t)w(u)]\\,\\psi(t)\\,\\psi(u)\\,dt\\,du\\\\&=\\int_0^{T_b}\\!\\!\\int_0^{T_b}\\frac{N_0}{2}\\,\\delta(t-u)\\,\\psi(t)\\,\\psi(u)\\,dt\\,du\\\\&=\\frac{N_0}{2}\\int_0^{T_b}\\psi^{2}(t)\\,dt=\\frac{N_0}{2}\\end{aligned}',
- after:'The first line writes $n^{2}$ as a double integral and takes the expectation inside. The second uses $R_W(\\tau)=(N_0/2)\\delta(\\tau)$. The impulse then sifts $\\psi(u)$ to $\\psi(t)$, and $\\int\\psi^{2}dt=1$.'},
-{t:'p', text:'For example, $N_0=2\\times10^{-4}$ W/Hz gives $\\sigma^{2}=N_0/2=10^{-4}$, so the standard deviation of $n$ is $\\sigma=\\sqrt{10^{-4}}=0.01$.'},
+{t:'p', text:'Sample the output at the end of the bit. Put $t=T_b$ in the signal part: the reversal and the delay of the filter cancel.'},
+{t:'eqbox', cap:'Step 1 · sample at $t=T_b$', tex:'y(T_b)=\\int_0^{T_b}s_m\\psi(\\tau)\\,\\psi(\\tau)\\,d\\tau+n(T_b)',
+ after:'Here $\\psi\\bigl(T_b-(T_b-\\tau)\\bigr)=\\psi(\\tau)$.'},
+{t:'p', text:'$s_m$ is a constant, so it leaves the integral. What is left is the energy of $\\psi$, which is $1$.'},
+{t:'eqbox', cap:'Step 2 · use unit energy', tex:'\\begin{aligned}y(T_b)&=s_m\\int_0^{T_b}\\psi^{2}(\\tau)\\,d\\tau+n(T_b)\\\\&=s_m\\cdot1+n(T_b)\\end{aligned}'},
+{t:'eqbox', cap:'Key result · the demodulator output', tex:'y=s_m+n,\\qquad n=\\int_0^{T_b}w(\\tau)\\,\\psi(\\tau)\\,d\\tau',
+ after:'The waveform has become one number. $s_m$ is set by the bit. $n=n(T_b)$ is a random variable with a new value on every bit. For example, with $E_b=4$ mJ, the bit $0$ and $n=0.01$, $y=-0.0632+0.01=-0.053$.'},
 {t:'fig', svg:()=>figMfDemod(),
- cap:'The filter matched to $\\psi(t)$, and what it does to one noisy bit. The received bit is green and the filter output violet. At $t=T_b$ the output is the symbol $s_m$ plus a noise value $n$.'},
+ cap:'The filter matched to $\\psi(t)$, and what it does to one noisy bit with $s_m=+1$. The received bit is green, the output violet, and its signal part dashed. At $t=T_b$ the output is $s_m$ plus a noise value $n$.'},
+
+{t:'h3', text:'The demodulator for other pulse shapes'},
+{t:'p', text:'Step 2 above used only the unit energy of $\\psi$, never its shape. So the same result holds for any unit-energy pulse. The Manchester pulse is one: $+1$ on the first half of the bit, $-1$ on the second. A pulse of three steps is another.'},
+{t:'eqbox', cap:'Any unit-energy $\\psi$', tex:'\\begin{aligned}y(T_b)&=s_m\\int_0^{T_b}\\psi^{2}(\\tau)\\,d\\tau\\\\&=s_m=\\pm1\\end{aligned}',
+ after:'The filter is matched to $\\psi$, so one filter serves both bits of a code: the bit $0$ is the pulse $-\\psi(t)$.'},
+{t:'p', text:'The output between samples does depend on the shape. For the Manchester bit $1$ at $t=T_b/2$, the filter overlaps the first half of the bit, where $\\psi=+1$ meets $h=-1$. So $y(T_b/2)=-0.5$, and $y$ rises to $+1$ at $T_b$.'},
+{t:'box', kind:'warn', hd:'Signal part only', html:'The curves in the figure carry no noise. With noise the sample is $s_m+n$, and the curve between samples moves too.'},
+{t:'fig', svg:()=>figShapesOut(),
+ cap:'Noiseless matched-filter outputs for $s_m=1$: the rectangle (solid), the Manchester pulse (dashed) and the pulse of three steps (dotted). The shapes differ, but each reads $1$ at $t=T_b$.',
+ short:'Matched-filter outputs for three pulse shapes.'},
+
+{t:'h3', text:'A stream of bits'},
+{t:'p', text:'Bit $k$ lasts from $(k-1)T_b$ to $kT_b$. Its output peaks at $kT_b$, and the outputs of the bits before and after it are zero there. So each sample holds its own bit and its own noise value.'},
+{t:'eqbox', cap:'Bit $k$', tex:'y(kT_b)=s_{m,k}+n_k,\\qquad k=1,2,\\dots'},
+{t:'p', text:'Two equal bits in a row give a flat output between their samples. Take two polar $1$ bits. The falling side of the first triangle and the rising side of the second add to $1$ between them.'},
+{t:'box', kind:'ok', hd:'Reading the samples', html:'A sample above $0$ is read as bit $1$, and a sample below $0$ as bit $0$. Section 2.4 places this threshold and finds how often noise moves a sample across it.'},
+{t:'fig', svg:()=>figTrain(),
+ cap:'Ten polar bits through the matched filter. Above: the bits and the received $x(t)$. Below: the noiseless output $y_0(t)$ (dashed), the noisy output $y(t)$ and its samples at $t=kT_b$, with the bit read from each sign.',
+ short:'Ten polar bits through the matched-filter demodulator.'},
+
+{t:'h3', text:'The correlator demodulator'},
+{t:'p', text:'The second demodulator multiplies the input by $\\psi(t)$ and integrates from the start of the bit. It is called the <b>correlator</b>.'},
+{t:'eqbox', cap:'The correlator', tex:'y(t)=\\int_0^{t}x(\\tau)\\,\\psi(\\tau)\\,d\\tau,\\qquad 0\\le t\\le T_b'},
+{t:'p', text:'Substitute $x(\\tau)=s_m\\psi(\\tau)+w(\\tau)$, multiply out and split the integral.'},
+{t:'eqbox', cap:'Step 1 · substitute $x(\\tau)$', tex:'\\begin{aligned}y(t)&=\\int_0^{t}\\bigl[s_m\\psi(\\tau)+w(\\tau)\\bigr]\\psi(\\tau)\\,d\\tau\\\\&=s_m\\int_0^{t}\\psi^{2}(\\tau)\\,d\\tau+\\int_0^{t}w(\\tau)\\,\\psi(\\tau)\\,d\\tau\\end{aligned}',
+ after:'The first term grows through the bit. The second is the noise of the correlator.'},
+{t:'p', text:'Inside the bit the correlator and the matched filter give different curves. For the Manchester bit $1$ with no noise, the correlator gives $y(T_b/2)=\\int_0^{T_b/2}\\psi^{2}\\,d\\tau=0.5$, while the matched filter gives $-0.5$.'},
+{t:'fig', svg:()=>figCorrMf('man'),
+ cap:'One noiseless Manchester bit with $s_m=1$. The matched-filter output is the wide line and the correlator output is dashed. The correlator integrates from $0$ and is reset at $T_b$. At $t=T_b$ both read $s_m$.',
+ short:'Correlator and matched filter for a Manchester bit.'},
 
 {t:'h3', text:'Correlator and matched-filter demodulators'},
-{t:'p', text:'The number $y$ can be formed in two ways. The <b>correlator</b> multiplies by $\\psi(t)$ and integrates over the bit. It reads the result at $T_b$, then resets.'},
-{t:'eqbox', cap:'Correlator', tex:'y=\\int_0^{T_b}x(t)\\,\\psi(t)\\,dt'},
-{t:'p', text:'The <b>matched filter</b> has the impulse response $\\psi(T_b-t)$. Write its output as a convolution and put $t=T_b$.'},
+{t:'p', text:'The number $y$ can be formed in two ways. The correlator is read at the end of the bit and then reset to $0$.'},
+{t:'p', text:'Read the output at $t=T_b$ and use the unit energy of $\\psi$.'},
+{t:'eqbox', cap:'Correlator at $T_b$', tex:'\\begin{aligned}y(T_b)&=s_m\\int_0^{T_b}\\psi^{2}(\\tau)\\,d\\tau+\\int_0^{T_b}w(\\tau)\\,\\psi(\\tau)\\,d\\tau\\\\&=s_m+n\\end{aligned}',
+ after:'At $t=T_b$ the noise integral is the same $n$ as at the matched filter. At earlier times the correlator noise $\\int_0^{t}w\\psi\\,d\\tau$ and the filter noise $n(t)$ are different processes.'},
+
+{t:'p', text:'The matched filter has the impulse response $\\psi(T_b-t)$. Write its output as a convolution and put $t=T_b$.'},
 {t:'eqbox', cap:'Matched filter at $T_b$', tex:'\\begin{aligned}h(t)&=\\psi(T_b-t)\\\\y(t)&=\\int_{-\\infty}^{\\infty}x(\\tau)\\,\\psi(T_b-t+\\tau)\\,d\\tau\\\\y(T_b)&=\\int_0^{T_b}x(\\tau)\\,\\psi(\\tau)\\,d\\tau\\end{aligned}',
- after:'The last line is the correlator output, for any shape of $\\psi$. The two demodulators agree at $t=T_b$.'},
+ after:'The last line is the correlator output, for any shape of $\\psi$. Both demodulators turn the waveform into the one number $y=s_m+n$.'},
 {t:'p', text:'Away from $T_b$ the two outputs differ. Take one noiseless bit with $s_m=1$ and the rectangular $\\psi$. On $[0,T_b]$ both outputs rise along the same line.'},
 {t:'p', text:'After $T_b$ the correlator has been reset, while the matched-filter output falls as $2-t/T_b$. So $y(1.5T_b)=0.5$ at the filter. Only the value at $T_b$ is used.'},
 {t:'fig', svg:()=>figCorrMf(),
  cap:'One noiseless bit with $s_m=1$ and the rectangular $\\psi$. The matched-filter output is the wide line and the correlator output is dashed. The correlator integrates from $0$ and is reset at $T_b$. At $t=T_b$ both read $s_m$.'},
+
+{t:'h3', text:'The noise sample'},
+{t:'p', text:'The noise value $n$ decides how often the bit is read wrongly, so its mean and variance are needed. Start with the mean. The expectation moves inside the integral, and white noise has zero mean.'},
+{t:'eqbox', cap:'Step 1 · the mean', tex:'\\begin{aligned}E[n]&=\\int_0^{T_b}E[w(\\tau)]\\,\\psi(\\tau)\\,d\\tau\\\\&=0\\end{aligned}',
+ after:'So the variance of $n$ is $E[n^{2}]$.'},
+{t:'p', text:'Write $n^{2}$ as the product of two integrals with different variables, $t$ and $u$. Then take the expectation inside.'},
+{t:'eqbox', cap:'Step 2 · square and average', tex:'\\begin{aligned}E[n^{2}]&=E\\Bigl[\\int_0^{T_b}w(t)\\psi(t)\\,dt\\int_0^{T_b}w(u)\\psi(u)\\,du\\Bigr]\\\\&=\\int_0^{T_b}\\!\\!\\int_0^{T_b}E[w(t)w(u)]\\,\\psi(t)\\,\\psi(u)\\,dt\\,du\\end{aligned}'},
+{t:'fig', svg:()=>figNoisePlane(0),
+ cap:'The square of $(t,u)$ pairs in the double integral, for the Manchester $\\psi(t)$. The product $\\psi(t)\\psi(u)$ is $+1/T_b$ on the shaded squares and $-1/T_b$ on the others.',
+ short:'The square of the double integral of the noise variance.'},
+
+{t:'h3', text:'The noise variance'},
+{t:'p', text:'White noise has the autocorrelation $(N_0/2)\\delta(t-u)$. The impulse sifts $\\psi(u)$ to $\\psi(t)$, and the unit energy of $\\psi$ gives the last line.'},
+{t:'eqbox', cap:'Step 3 · white noise', tex:'\\begin{aligned}E[w(t)w(u)]&=\\frac{N_0}{2}\\,\\delta(t-u)\\\\E[n^{2}]&=\\frac{N_0}{2}\\int_0^{T_b}\\psi^{2}(t)\\,dt\\\\&=\\frac{N_0}{2}\\end{aligned}',
+ after:'The impulse leaves only the line $t=u$, where $\\psi(t)\\psi(u)=\\psi^{2}(t)$.'},
+{t:'p', text:'A linear operation on Gaussian noise gives a Gaussian random variable. Adding the constant $s_m$ moves the mean only.'},
+{t:'eqbox', cap:'Key result · the noise value', tex:'n\\sim\\mathcal{N}\\Bigl(0,\\ \\frac{N_0}{2}\\Bigr),\\qquad y\\sim\\mathcal{N}\\Bigl(s_m,\\ \\frac{N_0}{2}\\Bigr)',
+ after:'For example, $N_0=2\\times10^{-4}$ W/Hz gives $\\sigma^{2}=10^{-4}$, so $\\sigma=0.01$.'},
+{t:'fig', svg:()=>figNoisePlane(1),
+ cap:'White noise keeps only the line $t=u$ of the square. On that line the product is $\\psi^{2}(t)=1/T_b$, whatever the sign pattern of $\\psi$.',
+ short:'The line t = u that white noise leaves in the double integral.'},
 
 {t:'h3', text:'Demodulators around us'},
 {t:'p', text:'Antipodal signalling and the correlator appear in serial links and digital receivers.'},

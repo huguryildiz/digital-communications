@@ -421,6 +421,32 @@ def _m2_noise_sd(n0):
     return math.sqrt(n0 / 2 * _m2_energy(psi, Tb))
 
 
+# Section 2.3: unit-energy basis pulses on [0, 1] as step functions, the
+# demodulator output s_m int psi(u) psi(1 - t + u) du, the correlator
+# int_0^t psi^2, and the noiseless output of the ten-bit polar stream.
+_m2_rect = lambda u: np.where((u >= 0) & (u < 1), 1.0, 0.0)
+_m2_man = lambda u: np.where((u >= 0) & (u < 0.5), 1.0, np.where((u >= 0.5) & (u < 1), -1.0, 0.0))
+_m2_step = lambda u: np.where((u >= 0) & (u < 1), np.where((u >= 0.25) & (u < 0.5), -1.0, 1.0), 0.0)
+
+
+def _m2_demod_out(psi, sm, t, n=4000):
+    u = (np.arange(n) + 0.5) / n
+    return float(sm * np.sum(psi(u) * psi(1 - t + u)) / n)
+
+
+def _m2_corr_out(psi, t, n=4000):
+    u = (np.arange(n) + 0.5) / n
+    return float(np.sum(psi(u) ** 2 * (u <= t)) / n)
+
+
+def _m2_train_y0(t, bits=(0, 1, 0, 1, 1, 0, 0, 1, 0, 0), n=4000):
+    tau = t - 1 + (np.arange(n) + 0.5) / n
+    k = np.floor(tau).astype(int)
+    ok = (k >= 0) & (k < len(bits))
+    g = np.where(ok, np.where(np.array(bits)[np.clip(k, 0, len(bits) - 1)] == 1, 1.0, -1.0), 0.0)
+    return float(np.sum(g) / n)
+
+
 def _m2_density(y, m, s):
     return math.exp(-(y - m) ** 2 / (2 * s * s)) / (s * math.sqrt(2 * math.pi))
 
@@ -1105,6 +1131,67 @@ CHECKS: list[dict] = [
     {"name": "2.2.7 ramp energy 1/3 for T = 1",
      "stated": 1 / 3, "derive": lambda: _m2_energy(lambda t: t, 1.0), "tol": 1e-6},
 
+    # ---- 2.2, the matched filter: noise levels, the two output parts, the
+    # output noise power, the reversal and the gain k (scene order 2.2.1-2.2.13)
+    {"name": "2.2.1 one sample of a +1 bit below 0 at sigma = 1, Q(1)",
+     "stated": 0.16, "derive": lambda: _m2_tail(-1.0, 1.0, 0.0), "tol": 1.2e-2},
+    {"name": "2.2.1 the same at sigma = 0.5, Q(2)",
+     "stated": 0.023, "derive": lambda: _m2_tail(-1.0, 0.5, 0.0), "tol": 1.2e-2},
+    {"name": "2.2.1 the same at sigma = 0.25, Q(4)",
+     "stated": 3.2e-5, "derive": lambda: _m2_tail(-1.0, 0.25, 0.0), "tol": 1.2e-2},
+    {"name": "2.2.1 the same at sigma = 0.1 is below 1e-6 (shown as approx 0)",
+     "stated": 1.0, "derive": lambda: float(_m2_tail(-1.0, 0.1, 0.0) < 1e-6)},
+    {"name": "2.2.1 distractor 2Q(1)",
+     "stated": 0.32, "derive": lambda: 2 * _m2_tail(-1.0, 1.0, 0.0), "tol": 1e-2},
+    {"name": "2.2.3 N0 = k_B T_e at 290 K, W/Hz",
+     "stated": 4.0e-21, "derive": lambda: 1.380649e-23 * 290, "tol": 1e-3},
+    {"name": "2.2.6 RC with tau = T/4: output noise power N0/(4 tau) = N0/T (N0 = T = 1)",
+     "stated": 1.0, "derive": lambda: _m2_rc_noise(0.25), "tol": 1e-6},
+    {"name": "2.2.6 RC with tau = T/4: share of that power outside |f| < 4/T (a tenth)",
+     "stated": 0.10, "derive": lambda: 1 - integrate.quad(
+         lambda f: 0.5 / (1 + (2 * math.pi * 0.25 * f) ** 2), -4, 4)[0] / _m2_rc_noise(0.25), "tol": 1e-2},
+    {"name": "2.2.6 ideal lowpass |f| < 1 kHz, N0 = 2e-9: noise power N0 B, W",
+     "stated": 2e-6, "derive": lambda: integrate.quad(lambda f: 2e-9 / 2, -1e3, 1e3)[0], "tol": 1e-9},
+    {"name": "2.2.10 ramp without the reversal (h = g): y(T) in units of E",
+     "stated": 0.50, "derive": lambda: integrate.quad(lambda u: u * (1 - u), 0, 1)[0]
+         / _m2_energy(lambda t: t, 1.0), "tol": 1e-6},
+    {"name": "2.2.10 ramp without the reversal: the output never reaches E (peak / E)",
+     "stated": 2 * (math.sqrt(2) - 1), "derive": lambda: max(
+         integrate.quad(lambda u: u * (t - u), max(0, t - 1), min(1, t))[0]
+         for t in np.linspace(0, 2, 2001)) / (1 / 3), "tol": 1e-5},
+    {"name": "2.2.11 gain-k figure: 2E/N0 for E = 1, N0 = 0.08",
+     "stated": 25.0, "derive": lambda: 2 * _m2_energy(lambda t: np.ones_like(t), 1.0) / 0.08, "tol": 1e-6},
+    {"name": "2.2.11 gain-k figure: noise standard deviation sqrt(N0 E/2) at k = 1",
+     "stated": 0.20, "derive": lambda: math.sqrt(0.08 / 2 * _m2_energy(lambda t: np.ones_like(t), 1.0)), "tol": 1e-6},
+    {"name": "2.2.11 doubling k doubles the noise standard deviation",
+     "stated": 2.0, "derive": lambda: math.sqrt(_m2_energy(lambda t: 2 * np.ones_like(t), 1.0)
+         / _m2_energy(lambda t: np.ones_like(t), 1.0)), "tol": 1e-9},
+    {"name": "2.2.11 doubling k leaves eta unchanged (ratio of the two etas)",
+     "stated": 1.0, "derive": lambda: _m2_eta_gain(2.0) / _m2_eta_gain(1.0), "tol": 1e-9},
+    {"name": "2.2.10 matched filter in frequency: |G(0)| = sqrt(3)/2 for the unit-energy ramp",
+     "stated": math.sqrt(3) / 2, "derive": lambda: abs(integrate.quad(lambda t: math.sqrt(3) * t, 0, 1)[0]), "tol": 1e-9},
+    {"name": "2.2.10 angle G + angle H = -2 pi f T at fT = 1.3 (k = 1)",
+     "stated": -2 * math.pi * 1.3, "derive": lambda: (lambda G: (np.angle(G) + np.angle(np.conj(G) * np.exp(-2j * math.pi * 1.3))
+         - 2 * math.pi * round((np.angle(G) + np.angle(np.conj(G) * np.exp(-2j * math.pi * 1.3)) + 2 * math.pi * 1.3) / (2 * math.pi))))(
+         integrate.quad(lambda t: math.sqrt(3) * t * math.cos(2 * math.pi * 1.3 * t), 0, 1)[0]
+         - 1j * integrate.quad(lambda t: math.sqrt(3) * t * math.sin(2 * math.pi * 1.3 * t), 0, 1)[0]), "tol": 1e-6},
+    {"name": "2.2.12 correlator: z(T/2) = 0.13E for the ramp",
+     "stated": 0.125, "derive": lambda: integrate.quad(lambda t: t * t, 0, 0.5)[0] / (1 / 3), "tol": 1e-9},
+    {"name": "2.2.12 correlator and matched filter agree at t = T (z(T)/y(T))",
+     "stated": 1.0, "derive": lambda: integrate.quad(lambda t: t * t, 0, 1)[0]
+         / integrate.quad(lambda u: u * (1 - 1 + u), 0, 1)[0], "tol": 1e-9},
+    {"name": "2.2.12 matched filter at T/2 differs: y(T/2) = 0.31E",
+     "stated": 0.3125, "derive": lambda: integrate.quad(lambda u: u * (0.5 + u), 0, 0.5)[0] / (1 / 3), "tol": 1e-9},
+    {"name": "2.2.15 sampling 0.1T late keeps 0.81 of 2E/N0 (rectangle)",
+     "stated": 0.81, "derive": lambda: (integrate.quad(lambda u: 1.0, 0.1, 1)[0]
+         / integrate.quad(lambda u: 1.0, 0, 1)[0]) ** 2, "tol": 1e-9},
+    {"name": "2.2.15 that loss in dB",
+     "stated": -0.92, "derive": lambda: 10 * math.log10(0.81), "tol": 6e-3},
+    {"name": "2.2.16 output sample: sigma = sqrt(N0 E/2) = 0.5 for E = 1, N0 = 0.5, k = 1",
+     "stated": 0.5, "derive": lambda: math.sqrt(0.5 * _m2_energy(lambda t: np.ones_like(t), 1.0) / 2), "tol": 1e-9},
+    {"name": "2.2.16 fraction of +1 samples below 0: Q(2) = 0.023",
+     "stated": 0.023, "derive": lambda: _m2_tail(-1.0, 0.5, 0.0), "tol": 1.5e-2},
+
     # ---- 2.1, the matched filter ----------------------------------------
     # The matched-filter numbers are re-derived by integrating the pulses on a
     # grid, not by quoting 2E/N0.
@@ -1143,17 +1230,47 @@ CHECKS: list[dict] = [
     {"name": "2.1.8 bit time at 9600 baud, us", "stated": 104.2,
      "derive": lambda: 1e6 / 9600, "tol": 5e-4},
 
-    # ---- 2.2, the demodulator -------------------------------------------
-    {"name": "2.2.1 bit energy of A = 2 V over 1 ms, J", "stated": 4e-3,
+    # ---- 2.3, the demodulator (scene order 2.3.1-2.3.10) -------------------
+    # Pulses are integrated on a grid; the Manchester and three-step pulses
+    # are written out as numpy step functions, not through their closed-form
+    # autocorrelations.
+    {"name": "2.3.1 height of the unit-energy basis for Tb = 4 ms, 1/sqrt(s)", "stated": 15.8,
+     "derive": lambda: math.sqrt(1 / 4e-3), "tol": 3e-3},
+    {"name": "2.3.1 its square times Tb is the energy 1 (psi^2 = 250 stated)", "stated": 250,
+     "derive": lambda: _m2_energy(lambda t: np.full_like(t, 1 / math.sqrt(4e-3)), 4e-3) / 4e-3, "tol": 1e-3},
+    {"name": "2.3.1 energy of the basis by quadrature", "stated": 1.0,
+     "derive": lambda: _m2_energy(lambda t: np.full_like(t, 1 / math.sqrt(4e-3)), 4e-3), "tol": 1e-9},
+    {"name": "2.3.2 bit energy of A = 2 V over 1 ms, J", "stated": 4e-3,
      "derive": lambda: _m2_energy(lambda t: np.full_like(t, 2.0), 1e-3), "tol": 1e-6},
-    {"name": "2.2.2 distance 2 sqrt(Eb) for Eb = 4 mJ", "stated": 0.126,
-     "derive": lambda: 2 * math.sqrt(4e-3), "tol": 5e-3},
-    {"name": "2.2.3 noise standard deviation for N0 = 2e-4", "stated": 0.01,
-     "derive": lambda: _m2_noise_sd(2e-4), "tol": 3e-2},
-    {"name": "2.2.4 matched-filter output at 1.5 Tb for the rectangular basis", "stated": 0.5,
+    {"name": "2.3.3 sqrt(Eb) for Eb = 4 mJ", "stated": 0.0632,
+     "derive": lambda: integrate.quad(lambda t: 2.0 / math.sqrt(1e-3), 0, 1e-3)[0], "tol": 2e-3},
+    {"name": "2.3.3 distance 2 sqrt(Eb) for Eb = 4 mJ", "stated": 0.126,
+     "derive": lambda: 2 * integrate.quad(lambda t: 2.0 / math.sqrt(1e-3), 0, 1e-3)[0], "tol": 5e-3},
+    {"name": "2.3.4 matched-filter output of the rectangle lasts 2 Tb (support length)", "stated": 2.0,
+     "derive": lambda: (lambda ts: ts[-1] - ts[0])([t for t in np.linspace(-1, 3, 4001)
+         if _m2_demod_out(_m2_rect, 1, t) > 1e-6]), "tol": 2e-3},
+    {"name": "2.3.5 demodulator output for Eb = 4 mJ, bit 0, n = 0.01", "stated": -0.053,
+     "derive": lambda: -integrate.quad(lambda t: 2.0 / math.sqrt(1e-3), 0, 1e-3)[0] + 0.01, "tol": 6e-3},
+    {"name": "2.3.6 Manchester bit 1 through its matched filter at Tb/2", "stated": -0.5,
+     "derive": lambda: _m2_demod_out(_m2_man, 1, 0.5), "tol": 2e-3},
+    {"name": "2.3.6 y(Tb) = +1 for the Manchester bit 1", "stated": 1.0,
+     "derive": lambda: _m2_demod_out(_m2_man, 1, 1.0), "tol": 1e-3},
+    {"name": "2.3.6 y(Tb) = -1 for the Manchester bit 0", "stated": -1.0,
+     "derive": lambda: _m2_demod_out(_m2_man, -1, 1.0), "tol": 1e-3},
+    {"name": "2.3.6 y(Tb) = +1 for the three-step pulse", "stated": 1.0,
+     "derive": lambda: _m2_demod_out(_m2_step, 1, 1.0), "tol": 1e-3},
+    {"name": "2.3.7 two polar 1 bits: noiseless output between their samples", "stated": 1.0,
+     "derive": lambda: min(_m2_train_y0(t) for t in np.linspace(4.05, 4.95, 19)), "tol": 2e-3},
+    {"name": "2.3.7 bit 4 alone at t = 5 Tb: the neighbour's output is 0 at the sampling instant",
+     "stated": 1.0, "derive": lambda: 1 + _m2_demod_out(_m2_rect, 1, 2.0), "tol": 1e-3},
+    {"name": "2.3.8 correlator at Tb/2 with the Manchester basis", "stated": 0.5,
+     "derive": lambda: _m2_corr_out(_m2_man, 0.5), "tol": 2e-3},
+    {"name": "2.3.9 matched-filter output at 1.5 Tb for the rectangular basis", "stated": 0.5,
      "derive": lambda: _m2_mf_output(lambda t: np.ones_like(t), 1.5), "tol": 2e-3},
-    {"name": "2.2.5 loss of sampling 0.1 Tb early, dB", "stated": 0.92,
-     "derive": lambda: -10 * math.log10(0.9 ** 2), "tol": 6e-3},
+    {"name": "2.3.9 correlator and matched filter agree at Tb for the three-step pulse", "stated": 1.0,
+     "derive": lambda: _m2_corr_out(_m2_step, 1.0) / _m2_demod_out(_m2_step, 1, 1.0), "tol": 1e-3},
+    {"name": "2.3.10 noise standard deviation for N0 = 2e-4", "stated": 0.01,
+     "derive": lambda: _m2_noise_sd(2e-4), "tol": 3e-2},
 
     # ---- 2.3, the decision and its error ----------------------------------
     {"name": "2.3.1 spread of y for N0 = 0.5", "stated": 0.5,
@@ -1535,6 +1652,33 @@ CHECKS: list[dict] = [
      "stated": 0.675, "derive": lambda: 0.8 * 0.75 + 0.3 * 0.25, "tol": 1e-9},
 ]
 
+
+# Section 2.1: checks for the separate interpretation and calculation scenes.
+# These use waveform power or direct spectral/density integration.
+CHECKS.extend([
+    {"name": "2.1 m2-rp-lti power gain for magnitude 1/2", "stated": 0.25,
+     "derive": lambda: integrate.quad(lambda t: (0.5 * math.cos(t)) ** 2,
+                                      0, 2 * math.pi)[0]
+         / integrate.quad(lambda t: math.cos(t) ** 2, 0, 2 * math.pi)[0],
+     "tol": 1e-9},
+    {"name": "2.1 m2-rp-white doubling flat-band noise power", "stated": 2.0,
+     "derive": lambda: integrate.quad(lambda f: 0.5, -4000, 4000)[0]
+         / integrate.quad(lambda f: 0.5, -2000, 2000)[0], "tol": 1e-9},
+    {"name": "2.1 m2-rp-white-correlation first zero at 0.25 ms", "stated": 1.0,
+     "derive": lambda: float(abs(integrate.quad(
+         lambda f: math.cos(2 * math.pi * f * 0.25e-3), -2000, 2000)[0])
+         < 1e-9), "tol": 1e-9},
+    {"name": "2.1 m2-rp-noise-bandwidth peak gain 2 passes four times the power",
+     "stated": 4.0,
+     "derive": lambda: integrate.quad(lambda f: 2.0 ** 2, -1000, 1000)[0]
+         / integrate.quad(lambda f: 1.0 ** 2, -1000, 1000)[0], "tol": 1e-9},
+    {"name": "2.1 m2-rp-wss average product at a 1 ms gap", "stated": 0.37,
+     "derive": lambda: math.exp(-1.0), "tol": 1e-2},
+    {"name": "2.1 m2-rp-sample Gaussian tail above 2 sigma", "stated": 0.0228,
+     "derive": lambda: integrate.quad(
+         lambda z: math.exp(-z * z / 2) / math.sqrt(2 * math.pi), 2, np.inf)[0],
+     "tol": 3e-3},
+])
 
 DEFAULT_TOL = 5e-3
 
