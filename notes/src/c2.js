@@ -568,7 +568,7 @@ function figMfCorr(){
 
 /* the SNR at the sampling instant t0 for the rectangular pulse,
    eta(t0)/(2E/N0) = (1 - |t0 - T|/T)^2, with t0 = 1.1T marked */
-function figTiming(){
+function figSnrTiming(){
   const r=t=>Math.pow(Math.max(0,1-Math.abs(t-1)),2);
   const a=ax1({h:230,xr:[-0.2,2.2],yr:[-0.1,1.3],xlabel:'t_0/T',ylabel:'\\eta(t_0)\\,/\\,(2E/N_0)',xticksOverride:[0,0.5,1,1.5,2],yticksOverride:[0.5,1]});
   a.curve(r,{color:C.mid,width:2.6,n:500});
@@ -1655,7 +1655,7 @@ window.C2 = [
 {t:'p', text:'A receiver may sample at a time $t_0$ that is not exactly $T$. The noise power $k^{2}N_0E/2$ is the same at every $t_0$. Only the signal part changes.'},
 {t:'eqbox', cap:'SNR at $t_0$', tex:'\\begin{aligned}\\eta(t_0)&=\\frac{g_0^{2}(t_0)}{k^{2}N_0E/2}\\\\&=\\Bigl(\\frac{g_0(t_0)}{kE}\\Bigr)^{2}\\frac{2E}{N_0}\\end{aligned}'},
 {t:'p', text:'For the rectangular pulse the output is the triangle, so $g_0(t_0)/(kE)=1-|t_0-T|/T$. Sampling $0.1T$ late leaves $(1-0.1)^{2}=0.81$ of $2E/N_0$. That is a loss of $10\\log_{10}0.81=-0.92$ dB.'},
-{t:'fig', svg:()=>figTiming(),
+{t:'fig', svg:()=>figSnrTiming(),
  cap:'The SNR at the sampling instant $t_0$ for the rectangular pulse, as a fraction of $2E/N_0$. Sampling at $t_0=1.1T$ leaves $0.81$.'},
 {t:'p', text:'An earlier peak would need another filter. A filter that peaks at $t_0<T$ is $h(t)=g(t_0-t)$. It is non-zero for some $t<0$, so it would need the input before the input arrives. Such a filter is not causal. A causal matched filter needs $t_0\\ge T$, and a later $t_0$ only adds delay.'},
 
