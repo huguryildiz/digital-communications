@@ -82,8 +82,9 @@ CONTENT.SECTIONS = {
         'm2-awgn','m2-filter-choice','m2-receiver','m2-split','m2-model','m2-noise-power','m2-schwarz','m2-bound',
         'm2-matched','m2-mf-freq','m2-conv','m2-mf-correlator','m2-props','m2-props-snr','m2-sample-time','m2-sample-dist','m2-ex-mf','m2-real-matched','m2-lab-c','m2-code-matched'] },
     { n:'2.3', title:'The demodulator',                ids:[
-        'm2-basis','m2-antipodal','m2-space','m2-demod-mf','m2-demod-signal','m2-demod','m2-demod-shapes','m2-demod-train',
-        'm2-corr-out','m2-correlator','m2-demod-noise','m2-demod-noise-var','m2-real-demod','m2-lab-p','m2-code-demod'] },
+        'm2-basis','m2-antipodal','m2-space','m2-demod-mf','m2-demod-signal','m2-demod','m2-demod-shapes','m2-demod-train','m2-demod-timing',
+        'm2-corr-out','m2-corr-samples','m2-correlator','m2-demod-noise','m2-demod-noise-var',
+        'm2-demod-noise-hist','m2-demod-ppm','m2-real-demod','m2-lab-p','m2-code-demod'] },
     { n:'2.4', title:'The decision and its error',     ids:[
         'm2-stat','m2-errors','m2-threshold','m2-threshold-b','m2-q','m2-pe','m2-ex-pe','m2-ex-pe-b','m2-real-decision','m2-lab-d','m2-code-decision'] },
     { n:'2.5', title:'Intersymbol interference',       ids:[
@@ -242,7 +243,8 @@ CONTENT.BOOK = {
   'm2-ex-mf':'8.3.2', 'm2-real-matched':'8.3.2', 'm2-lab-c':'8.3.2',
   'm2-basis':'8.2.1', 'm2-antipodal':'8.2.1', 'm2-space':'8.2.1', 'm2-demod-mf':'8.3.2', 'm2-demod-signal':'8.3.2', 'm2-demod':'8.3.2',
   'm2-demod-shapes':'8.3.2', 'm2-demod-train':'8.3.2', 'm2-corr-out':'8.3.1', 'm2-correlator':'8.3.1',
-  'm2-demod-noise':'8.3.1', 'm2-demod-noise-var':'8.3.1', 'm2-real-demod':'8.3.1', 'm2-lab-p':'8.3.1',
+  'm2-demod-noise':'8.3.1', 'm2-demod-noise-var':'8.3.1', 'm2-corr-samples':'8.3.1',
+  'm2-demod-noise-hist':'8.3.1', 'm2-demod-ppm':'8.3.1', 'm2-real-demod':'8.3.1', 'm2-lab-p':'8.3.1',
   'm2-stat':'8.3.3', 'm2-errors':'8.3.3', 'm2-threshold':'8.3.3', 'm2-threshold-b':'8.3.3', 'm2-q':'8.3.3', 'm2-pe':'8.3.3',
   'm2-ex-pe':'8.3.3', 'm2-ex-pe-b':'8.3.3', 'm2-real-decision':'8.3.3', 'm2-lab-d':'8.3.3',
   'm2-isi':'10.1.1', 'm2-isi-term':'10.1.1', 'm2-ex-isi':'10.1.1', 'm2-real-isi':'10.1.1', 'm2-lab-q':'10.1.1',

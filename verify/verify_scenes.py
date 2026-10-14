@@ -434,6 +434,11 @@ def _m2_demod_out(psi, sm, t, n=4000):
     return float(sm * np.sum(psi(u) * psi(1 - t + u)) / n)
 
 
+def _m2_ppm(m):
+    lo = 0.0 if m == 1 else 0.5
+    return lambda u: np.where((u >= lo) & (u < lo + 0.5), math.sqrt(2.0), 0.0)
+
+
 def _m2_corr_out(psi, t, n=4000):
     u = (np.arange(n) + 0.5) / n
     return float(np.sum(psi(u) ** 2 * (u <= t)) / n)
@@ -1271,6 +1276,27 @@ CHECKS: list[dict] = [
      "derive": lambda: _m2_corr_out(_m2_step, 1.0) / _m2_demod_out(_m2_step, 1, 1.0), "tol": 1e-3},
     {"name": "2.3.10 noise standard deviation for N0 = 2e-4", "stated": 0.01,
      "derive": lambda: _m2_noise_sd(2e-4), "tol": 3e-2},
+    # ---- 2.3 extensions: the sampling instant, the correlator on samples,
+    # measured noise values, binary orthogonal signals
+    {"name": "2.3 m2-demod-timing: 1 then 0, sampled 0.25 Tb late", "stated": 0.5,
+     "derive": lambda: _m2_train_y0(1.25, bits=(1, 0)), "tol": 2e-3},
+    {"name": "2.3 m2-demod-timing: smallest margin of the ten-bit stream at eps = 0.25", "stated": 0.50,
+     "derive": lambda: min((1 if b else -1) * _m2_train_y0(k + 1.25) for k, b in enumerate((0, 1, 0, 1, 1, 0, 0, 1, 0, 0))),
+     "tol": 2e-3},
+    {"name": "2.3 m2-corr-samples: noise variance of the sum, N = 20, sigma^2 = 0.2 (simulated)", "stated": 0.01,
+     "derive": lambda: float(np.var(np.random.default_rng(7).normal(0, math.sqrt(0.2), (400_000, 20)).sum(axis=1) / 20)),
+     "tol": 1e-2},
+    {"name": "2.3 m2-demod-noise-hist: measured spread / sqrt(N0/2) for weighted sums of white samples", "stated": 1.0,
+     "derive": lambda: (lambda M: float(np.std((np.random.default_rng(8).normal(0, math.sqrt(0.25 * M), (200_000, M))
+         * np.where(np.arange(M) < M // 2, 1.0, -1.0)).sum(axis=1) / M) / 0.5))(40), "tol": 1e-2},
+    {"name": "2.3 m2-demod-noise-hist: four times N0 doubles sigma", "stated": 2.0,
+     "derive": lambda: math.sqrt(4 * 0.5 / 2) / math.sqrt(0.5 / 2), "tol": 1e-9},
+    {"name": "2.3 m2-demod-ppm: orthogonal bases give int psi1 psi2 = 0", "stated": 0.0,
+     "derive": lambda: abs(float(np.sum(_m2_ppm(1)(np.linspace(0, 1, 4001)[:-1] + 1 / 8000)
+         * _m2_ppm(2)(np.linspace(0, 1, 4001)[:-1] + 1 / 8000)) / 4000)) + 0.0, "tol": 1e-12},
+    {"name": "2.3 m2-demod-ppm: distance sqrt(2 Eb) for Eb = 4 mJ", "stated": 0.089,
+     "derive": lambda: math.hypot(math.sqrt(_m2_energy(lambda t: np.full_like(t, 2.0), 1e-3)),
+         math.sqrt(_m2_energy(lambda t: np.full_like(t, 2.0), 1e-3))), "tol": 6e-3},
 
     # ---- 2.3, the decision and its error ----------------------------------
     {"name": "2.3.1 spread of y for N0 = 0.5", "stated": 0.5,

@@ -782,6 +782,58 @@ function figNoisePlane(stage){
   return a.svg();
 }
 
+
+/* Static states of the four extension slides: the stream sampled 0.25 T_b
+   late, the correlator on 20 samples, 3000 measured noise values at N0 = 0.5,
+   and the two orthogonal points with their noisy outputs. */
+function figStreamTiming(){
+  const g=t=>{ const k=Math.floor(t); return (k>=0&&k<10)?(TR_B[k]?1:-1):0; };
+  const y0=t=>{ let s=0; for(let i=0;i<200;i++){ const tau=t-1+(i+0.5)/200; s+=g(tau)/200; } return s; };
+  const a=ax1({h:260,xr:[-0.3,10.8],yr:[-2.0,2.4],xlabel:'t/T_b',ylabel:'y_0(t)',
+    xticksOverride:[0,2,4,6,8,10],yticksOverride:[-1,0,1]});
+  a.hline(0,{color:C.muted,dash:'5 4'});
+  a.curve(y0,{color:C.mid,width:2.2,n:1100});
+  for(let k=1;k<=10;k++){ a.poly([[k,-1.1],[k,1.45]],{color:C.muted,width:1,dash:'3 4'});
+    a.point(k+0.25,y0(k+0.25),{color:C.mid,r:4.5});
+    a.note(k-0.5,2.05,String(TR_B[k-1]),{tex:true,fs:13,color:C.in,anchor:'middle'}); }
+  a.note(0.1,-1.7,'\\min_k s_k\\,y_0(kT_b+\\epsilon)=0.50',{tex:true,fs:14,color:C.mid});
+  return a.svg();
+}
+function figCorrSamples(){
+  const N=20, a=ax1({h:220,xr:[-0.1,1.25],yr:[-0.15,1.3],xlabel:'t/T_b',ylabel:'y(kT_s)',
+    xticksOverride:[0,0.5,1],yticksOverride:[0,0.5,1]});
+  a.poly([[0,0],[1,1]],{color:C.mid,width:1.6,dash:'6 5'});
+  a.stem([...Array(N)].map((_,n)=>[(n+1)/N,(n+1)/N]),{color:C.mid});
+  a.note(0.02,1.15,'N=20,\\;\\; T_s=T_b/20',{tex:true,fs:14,color:C.ink});
+  return a.svg();
+}
+const NH=(()=>{ const M=40, dt=1/M, z=gauss(20261021,3000*M,1), out=[];
+  for(let i=0;i<3000;i++){ let s=0; for(let j=0;j<M;j++){ const t=(j+0.5)*dt; s+=z[i*M+j]*Math.sqrt(1/dt)*(t<0.5?1:-1)*dt; } out.push(s); }
+  return out; })();
+function figNoiseHist(){
+  const s=0.5, BW=0.1, LO=-2, O=3;
+  const a=ax1({h:240,xr:[1,5],yr:[-0.04,1.0],xlabel:'n',ylabel:'\\text{density}',xticksOverride:[1,2,3,4,5],xtickfmt:x=>String(x-O),yticksOverride:[0.4,0.8]});
+  const c=new Array(40).fill(0); NH.forEach(z=>{ const k=Math.floor((s*z-LO)/BW); if(k>=0&&k<40) c[k]++; });
+  c.forEach((h,k)=>{ const d=h/(NH.length*BW); if(d<=0) return;
+    const x=a.sx(O+LO+k*BW), w=a.sx(O+LO+(k+1)*BW)-x, y=a.sy(Math.min(d,1));
+    a.raw(`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${(a.sy(0)-y).toFixed(1)}" fill="${C.dec.mid}" stroke="${C.mid}" stroke-width="1"/>`); });
+  a.curve(y=>dens(y-O,0,s),{color:C.mid,width:2.4,n:500});
+  return a.svg();
+}
+const PP_Z=gauss(20261022,240,0.18);
+function figPpm(){
+  const r=Math.SQRT2;
+  const a=ax1({h:300,xr:[-0.9,3.6],yr:[-0.7,2.1],xlabel:'y_1',ylabel:'y_2',
+    xticksOverride:[0,1],yticksOverride:[0,1],xtickfmt:()=>'',ytickfmt:()=>''});
+  for(let i=0;i<60;i++){ a.point(r+PP_Z[i],PP_Z[60+i],{color:C.out,r:2.4,ring:'none'}); a.point(PP_Z[120+i],r+PP_Z[180+i],{color:C.out,r:2.4,ring:'none'}); }
+  a.point(r,0,{color:C.in,r:6.5}); a.point(0,r,{color:C.in,r:6.5});
+  a.poly([[r,0],[0,r]],{color:C.muted,width:1.5,dash:'5 4'});
+  a.note(r+0.3,0.4,'s_1=(\\sqrt{E_b},0)',{tex:true,fs:13,color:C.in});
+  a.note(0.55,r+0.12,'s_2=(0,\\sqrt{E_b})',{tex:true,fs:13,color:C.in});
+  a.note(0.85,0.85,'d=\\sqrt{2E_b}',{tex:true,fs:13,color:C.muted});
+  return a.svg();
+}
+
 /* ---- 2.4 the decision and its error ------------------------------------- */
 const DS={A:1,s:0.5,N0:0.5};
 const densFrame=o=>ax1(Object.assign({xr:[-3,3],xlabel:'y',xticksOverride:[-2,-1,0,1,2],
@@ -1725,6 +1777,16 @@ window.C2 = [
  cap:'Ten polar bits through the matched filter. Above: the bits and the received $x(t)$. Below: the noiseless output $y_0(t)$ (dashed), the noisy output $y(t)$ and its samples at $t=kT_b$, with the bit read from each sign.',
  short:'Ten polar bits through the matched-filter demodulator.'},
 
+{t:'h3', text:'The sampling instant in a stream'},
+{t:'p', text:'Move the sampling instant of the stream by $\\epsilon$. The triangle of bit $k$ has fallen by $\\epsilon/T_b$ there, and the triangle of the next bit has risen by the same amount.'},
+{t:'eqbox', cap:'A sample taken late', tex:'y_0(kT_b+\\epsilon)=s_k\\Bigl(1-\\frac{\\epsilon}{T_b}\\Bigr)+s_{k+1}\\,\\frac{\\epsilon}{T_b},\\qquad 0\\le\\epsilon\\le T_b',
+ after:'An early sample takes $s_{k-1}$ in place of $s_{k+1}$. When the neighbour has the opposite sign, the sample shrinks to $s_k(1-2\\epsilon/T_b)$.'},
+{t:'p', text:'For example, a polar $1$ followed by a $0$ and sampled $0.25T_b$ late gives $y_0=(1)(0.75)+(-1)(0.25)=0.5$. Half the margin is lost.'},
+{t:'box', kind:'warn', hd:'A neighbour in the sample', html:'A late or early sample lets one bit disturb another. Section 2.7 meets this effect again in a band-limited channel.'},
+{t:'fig', svg:()=>figStreamTiming(),
+ cap:'The noiseless output of the ten polar bits, sampled at $kT_b+0.25T_b$ instead of at the dashed lines $kT_b$. The smallest margin falls from $1$ to $0.5$.',
+ short:'The bit stream sampled a quarter bit late.'},
+
 {t:'h3', text:'The correlator demodulator'},
 {t:'p', text:'The second demodulator multiplies the input by $\\psi(t)$ and integrates from the start of the bit. It is called the <b>correlator</b>.'},
 {t:'eqbox', cap:'The correlator', tex:'y(t)=\\int_0^{t}x(\\tau)\\,\\psi(\\tau)\\,d\\tau,\\qquad 0\\le t\\le T_b'},
@@ -1735,6 +1797,17 @@ window.C2 = [
 {t:'fig', svg:()=>figCorrMf('man'),
  cap:'One noiseless Manchester bit with $s_m=1$. The matched-filter output is the wide line and the correlator output is dashed. The correlator integrates from $0$ and is reset at $T_b$. At $t=T_b$ both read $s_m$.',
  short:'Correlator and matched filter for a Manchester bit.'},
+
+{t:'h3', text:'The correlator on samples'},
+{t:'p', text:'A digital receiver samples the input $N$ times a bit and adds the products instead of integrating. The sampling interval is $T_s=T_b/N$.'},
+{t:'eqbox', cap:'The sum', tex:'y(kT_s)=\\frac{1}{N}\\sum_{n=1}^{k}r(nT_s)\\,s(nT_s),\\qquad T_s=\\frac{T_b}{N}',
+ after:'The factor $1/N$ plays the part of $d\\tau/T_b$. For a noiseless rectangular bit the sum climbs in steps of $1/N$ and ends at $1$.'},
+{t:'p', text:'Take $s(nT_s)=1$ and independent noise of variance $\\sigma^{2}$ on each sample. The variances of independent terms add.'},
+{t:'eqbox', cap:'Noise in the sum', tex:'\\begin{aligned}\\operatorname{Var}(y)&=\\frac{1}{N^{2}}\\sum_{n=1}^{N}\\operatorname{Var}\\bigl(r(nT_s)\\bigr)\\\\&=\\frac{1}{N^{2}}\\cdot N\\sigma^{2}=\\frac{\\sigma^{2}}{N}\\end{aligned}',
+ after:'With $N=20$ and $\\sigma^{2}=0.2$, the sum has noise variance $0.2/20=0.01$.'},
+{t:'fig', svg:()=>figCorrSamples(),
+ cap:'The running sum of a noiseless rectangular bit sampled $20$ times. It follows the dashed line of the continuous correlator.',
+ short:'The correlator on 20 samples.'},
 
 {t:'h3', text:'Correlator and matched-filter demodulators'},
 {t:'p', text:'The number $y$ can be formed in two ways. The correlator is read at the end of the bit and then reset to $0$.'},
@@ -1770,6 +1843,26 @@ window.C2 = [
 {t:'fig', svg:()=>figNoisePlane(1),
  cap:'White noise keeps only the line $t=u$ of the square. On that line the product is $\\psi^{2}(t)=1/T_b$, whatever the sign pattern of $\\psi$.',
  short:'The line t = u that white noise leaves in the double integral.'},
+
+{t:'h3', text:'Measuring the noise value'},
+{t:'p', text:'The result $\\sigma=\\sqrt{N_0/2}$ can be measured. Make many noise values $n$, each the weighted sum of its own white noise samples, and look at their spread.'},
+{t:'eqbox', cap:'The prediction', tex:'\\sigma=\\sqrt{\\frac{N_0}{2}}',
+ after:'With $N_0=0.5$, $3000$ values give a measured spread of $0.505$ against the predicted $0.5$. Making $N_0$ four times larger doubles $\\sigma$.'},
+{t:'box', kind:'err', hd:'Common error', html:'Common error: take $\\sigma=N_0/2$. That is the variance. At $N_0=0.5$ the spread is $\\sqrt{0.25}=0.5$, not $0.25$.'},
+{t:'fig', svg:()=>figNoiseHist(),
+ cap:'Histogram of $3000$ noise values at $N_0=0.5$, with the Manchester $\\psi$, and the Gaussian density with $\\sigma=\\sqrt{N_0/2}=0.5$.',
+ short:'Measured noise values against the Gaussian density.'},
+
+{t:'h3', text:'Two orthogonal signals'},
+{t:'p', text:'In pulse position signalling, $s_1$ fills the first half of the bit and $s_2$ the second. The two waveforms are orthogonal, so each needs its own unit-energy basis, $\\psi_1$ and $\\psi_2$, and its own correlator.'},
+{t:'eqbox', cap:'Two correlators', tex:'\\begin{aligned}y_m&=\\int_0^{T_b}r(\\tau)\\,\\psi_m(\\tau)\\,d\\tau,\\qquad m=1,2\\\\s_1\\text{ sent:}\\quad y_1&=\\sqrt{E_b}+n_1,\\qquad y_2=n_2\\end{aligned}',
+ after:'$\\psi_2$ is zero where $s_1$ is not, so the second output holds noise only. The received point is $(y_1,y_2)$ on a plane.'},
+{t:'p', text:'The sifting step of the variance, with $\\psi_2$ in place of the second $\\psi$, gives the correlation of the two noise terms.'},
+{t:'eqbox', cap:'The two noise terms', tex:'\\begin{aligned}E[n_1n_2]&=\\frac{N_0}{2}\\int_0^{T_b}\\psi_1(t)\\,\\psi_2(t)\\,dt\\\\&=0\\end{aligned}',
+ after:'The two Gaussian noise terms are uncorrelated, and so independent. The points $(\\sqrt{E_b},0)$ and $(0,\\sqrt{E_b})$ are $\\sqrt{2E_b}$ apart. For $E_b=4$ mJ that is $0.089$, against $0.126$ for antipodal points.'},
+{t:'fig', svg:()=>figPpm(),
+ cap:'The two signal points of orthogonal signalling on the plane of the correlator outputs, with $60$ noisy outputs around each.',
+ short:'Signal points of binary orthogonal signalling.'},
 
 {t:'h3', text:'Demodulators around us'},
 {t:'p', text:'Antipodal signalling and the correlator appear in serial links and digital receivers.'},

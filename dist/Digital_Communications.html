@@ -20595,6 +20595,109 @@ function figNoisePlane(v){
 /* The second slide of the variance plays the same figure from frame 1. */
 const figNoisePlaneB = v => figNoisePlane({frame:frameOf(v, 0)+1});
 
+/* The sampling instant moved by e T_b in the ten-bit polar stream, no noise.
+   y0(kT_b + e) = s_k (1 - |e|) + s_{k+-1} |e|: a neighbour leaks in with the
+   weight |e|, so the smallest margin s_k y0 is 1 - 2|e| (a bit between two
+   opposite bits). The ideal instants are dashed, the moved ones solid. */
+const trY0 = t => { const p = TR.rect.y0, x = t/0.02, j = Math.max(0, Math.min(p.length-2, Math.floor(x))), f = x-j;
+  return (1-f)*p[j][1] + f*p[j+1][1]; };
+function figDemodTiming(v){
+  const e = v && v.e!=null ? v.e : 0.25;
+  const a = P.Axes(SZ({xr:[-0.3,10.8], yr:[-1.6,2.4], xlabel:'t/T_b', ylabel:'y_0(t)',
+    xticksOverride:[0,2,4,6,8,10], yticksOverride:[-1,0,1]}));
+  a.hline(0, {color:C.muted, dash:'5 4'});
+  a.poly(TR.rect.y0, {color:C.mid, width:2.4});
+  let mn = 9;
+  for(let k=1;k<=10;k++){ const t = k+e, y = trY0(t), s = TR_B[k-1] ? 1 : -1; mn = Math.min(mn, s*y);
+    a.poly([[k,-1.08],[k,1.45]], {color:C.muted, width:1, dash:'3 4'});
+    a.point(t, y, {color:C.mid, r:5});
+    a.note(k-0.5, 2.05, String(TR_B[k-1]), {tex:true, fs:15, color:C.in, anchor:'middle'}); }
+  a.note(0.1, -1.35, `\\min_k s_k\\,y_0(kT_b+\\epsilon)=${mn.toFixed(2)}`, {tex:true, fs:15, color:C.mid});
+  return a.svg();
+}
+
+/* The correlator on samples (book Example 8.3.3): the rectangular pulse, no
+   noise, sampled N times a bit, y(kT_s) = (1/N) sum_{n<=k} r(nT_s) s(nT_s)
+   with T_s = T_b/N. Frames N = 4, 8, 20; between frames the old stems fade
+   out and the new ones in. The continuous correlator output t/T_b is dashed. */
+const CS_N = [4, 8, 20];
+function figCorrSamples(v){
+  P.hOverride = null;
+  const f = frameOf(v, 0), i = Math.min(1, Math.floor(f)), u = clamp01(f-i);
+  const big = P.labelScale() > 1, hA = big ? 230 : 165, hB = big ? 300 : 230;
+  const a = P.Axes({w:560,h:hA,xr:[-0.1,1.25],yr:[-0.2,1.45],xlabel:'t/T_b',ylabel:'r(nT_s)',
+    pad:{l:56,r:26,t:24,b:40},xticksOverride:[0,0.5,1],yticksOverride:[0,1]});
+  const b = P.Axes({w:560,h:hB,xr:[-0.1,1.25],yr:[-0.15,1.3],xlabel:'t/T_b',ylabel:'y(kT_s)',
+    pad:{l:56,r:26,t:24,b:42},xticksOverride:[0,0.5,1],yticksOverride:[0,0.5,1]});
+  a.poly([[-0.1,0],[0,0],[0,1],[1,1],[1,0],[1.25,0]], {color:C.in, width:1.6, dash:'6 5'});
+  b.poly([[0,0],[1,1]], {color:C.mid, width:1.6, dash:'6 5'});
+  [[CS_N[i], 1-u], [CS_N[i+1], u]].forEach(([N, op]) => fade(a, op, ()=>{
+    a.stem([...Array(N)].map((_,n)=>[(n+1)/N, 1]), {color:C.in});
+    b.stem([...Array(N)].map((_,n)=>[(n+1)/N, (n+1)/N]), {color:C.mid}); }));
+  const N = CS_N[Math.round(f)];
+  b.note(0.02, 1.15, `N=${N},\\;\\; T_s=T_b/${N}`, {tex:true, fs:15, color:C.ink});
+  return stack(560, [[a.svg(),hA],[b.svg(),hB]]);
+}
+
+/* Measured noise values under an N0 slider. Each of 3000 values is the sum
+   n = sum_j w_j psi(t_j) dt over 40 samples of the Manchester psi, with w_j
+   independent Gaussian of variance N0/(2 dt): a discrete white noise. The
+   base draws are made once with unit variance and scaled by sqrt(N0/2), so the
+   slider moves one set of measurements. Histogram (density, bins 0.1 wide)
+   against the density N(0, N0/2); the readout compares the measured spread
+   with the formula. The axis runs over n + 3 and is labelled n, so the
+   density axis sits at the left edge rather than through the peak. */
+const NH = (()=>{ const M = 40, dt = 1/M, z = gauss(20261021, 3000*M, 1), out = [];
+  for(let i=0;i<3000;i++){ let s = 0; for(let j=0;j<M;j++){ const t = (j+0.5)*dt;
+    s += z[i*M+j]*Math.sqrt(1/dt)*(t<0.5 ? 1 : -1)*dt; } out.push(s); }
+  const m = out.reduce((p,q)=>p+q, 0)/out.length;
+  return {n:out, sd:Math.sqrt(out.reduce((p,q)=>p+(q-m)*(q-m), 0)/(out.length-1))}; })();
+function figNoiseHist(v){
+  const N0 = v && v.N0!=null ? v.N0 : 0.5, s = Math.sqrt(N0/2), BW = 0.1, LO = -2, O = 3;
+  const a = P.Axes(SZ({xr:[1,5], yr:[-0.06,2.2], xlabel:'n', ylabel:'\\text{density}',
+    xticksOverride:[1,2,3,4,5], xtickfmt:x=>String(x-O), yticksOverride:[0.5,1,1.5,2]}));
+  const c = new Array(40).fill(0); NH.n.forEach(z=>{ const k = Math.floor((s*z-LO)/BW); if(k>=0 && k<40) c[k]++; });
+  c.forEach((h,k)=>{ const d = h/(NH.n.length*BW); if(d <= 0) return;
+    const x = a.sx(O+LO+k*BW), w = a.sx(O+LO+(k+1)*BW)-x, y = a.sy(Math.min(d, 2.2));
+    a.raw(`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${(a.sy(0)-y).toFixed(1)}" fill="${C.dec.mid}" stroke="${C.mid}" stroke-width="1.1"/>`); });
+  a.curve(y=>dens(y-O, 0, s), {color:C.mid, width:2.6, n:500});
+  a.note(1.1, 1.95, `\\text{measured }\\sigma=${(s*NH.sd).toFixed(3)}`, {tex:true, fs:15, color:C.mid});
+  a.note(1.1, 1.7, `\\sqrt{N_0/2}=${s.toFixed(3)}`, {tex:true, fs:15, color:C.ink});
+  return a.svg();
+}
+
+/* Binary orthogonal signalling (binary PPM), T_b = 1, E_b = 2: s_1 is a
+   pulse of height 2 on the first half of the bit, s_2 the same on the second,
+   and the bases psi_1, psi_2 have height sqrt 2. Frame 0: the two waveforms.
+   Frame 1: the two bases. Frame 2: the two signal points (sqrt E_b, 0) and
+   (0, sqrt E_b) on the plane of the correlator outputs (y_1, y_2), with the
+   distance sqrt(2 E_b). Frame 3: 60 noisy outputs around each point, noise
+   standard deviation 0.18 on each axis, independent. */
+const PP_Z = gauss(20261022, 240, 0.18);
+function figPpm(v){
+  P.hOverride = null;
+  const f = frameOf(v, 0), o1 = clamp01(f), o2 = clamp01(f-1), o3 = clamp01(f-2), r = Math.SQRT2;
+  const big = P.labelScale() > 1, hA = big ? 230 : 170, hB = big ? 330 : 270;
+  const a = P.Axes({w:560,h:hA,xr:[-0.3,1.3],yr:[-0.3,2.6],xlabel:'t/T_b',ylabel:'s_m(t),\\;\\psi_m(t)',
+    pad:{l:56,r:26,t:24,b:40},xticksOverride:[0,0.5,1],yticksOverride:[]});
+  const sq = (x0, x1, h) => [[-0.3,0],[x0,0],[x0,h],[x1,h],[x1,0],[1.3,0]];
+  fade(a, 1-0.6*o1, ()=>{ a.poly(sq(0,0.5,2), {color:C.in, width:2.4}); a.poly(sq(0.5,1,2), {color:C.in, width:2.4, dash:'8 5'});
+    a.note(0.25, 2.25, 's_1(t)', {tex:true, fs:15, color:C.in, anchor:'middle'});
+    a.note(0.75, 2.25, 's_2(t)', {tex:true, fs:15, color:C.in, anchor:'middle'}); });
+  fade(a, o1, ()=>{ a.poly(sq(0,0.5,r), {color:C.h, width:2.2}); a.poly(sq(0.5,1,r), {color:C.h, width:2.2, dash:'7 5'});
+    a.note(1.05, r, '\\psi_1,\\ \\psi_2', {tex:true, fs:15, color:C.h}); });
+  const b = P.Axes({w:560,h:hB,xr:[-0.9,2.6],yr:[-0.7,2.1],xlabel:'y_1',ylabel:'y_2',
+    pad:{l:56,r:26,t:24,b:42},xticksOverride:[0,1],yticksOverride:[0,1],xtickfmt:()=>'',ytickfmt:()=>''});
+  fade(b, o3, ()=>{ for(let i=0;i<60;i++){ b.point(r+PP_Z[i], PP_Z[60+i], {color:C.out, r:2.6, ring:'none'});
+    b.point(PP_Z[120+i], r+PP_Z[180+i], {color:C.out, r:2.6, ring:'none'}); } });
+  fade(b, o2, ()=>{ b.point(r, 0, {color:C.in, r:7}); b.point(0, r, {color:C.in, r:7});
+    b.poly([[r,0],[0,r]], {color:C.muted, width:1.6, dash:'5 4'});
+    b.note(r+0.45, 0.55, 's_1=(\\sqrt{E_b},0)', {tex:true, fs:15, color:C.in});
+    b.note(0.55, r+0.12, 's_2=(0,\\sqrt{E_b})', {tex:true, fs:15, color:C.in});
+    b.note(0.85, 0.85, 'd=\\sqrt{2E_b}', {tex:true, fs:15, color:C.muted}); });
+  return stack(560, [[a.svg(),hA],[b.svg(),hB]]);
+}
+
 /* ---- 2.3 the decision and its error ------------------------------------ */
 
 /* The two conditional densities of y. The figures use E_b = 1 and N_0 = 0.5,
@@ -21845,6 +21948,29 @@ REAL_MATCHED,
   ]}
 ]},
 
+{ id:'m2-demod-timing', module:'M2', nav:'The sampling instant', title:'The sampling instant in a stream',
+  objective:'Move the sampling instant away from kTb in a stream of bits and see the neighbouring bit leak into each sample.',
+  keywords:'sampling instant timing offset epsilon bit stream neighbour leaks margin 1 - 2 epsilon intersymbol interference preview',
+  src:'CH8 s.18 (extension)', slide:true, steps:2, blocks:[
+  {t:'eyebrow', text:'Module 2 · The demodulator'},
+  {t:'title', text:'The sampling instant in a stream'},
+  {t:'cols', ratio:'c-5-7', fill:true, left:[
+    {t:'fig', frame:true, grow:true,
+      live:{controls:[{k:'e', label:'$\\epsilon/T_b$', min:-0.5, max:0.5, step:0.05, v:0.25, show:v=>'$'+v.toFixed(2)+'$'}]},
+      svg:figDemodTiming,
+      caption:'The noiseless output of the ten polar bits. Drag the offset $\\epsilon$: each sample is taken at $kT_b+\\epsilon$ instead of at the dashed line $kT_b$. The readout is the smallest margin.'}
+  ], right:[
+    {t:'eq', label:'A sample taken late', tex:'y_0(kT_b+\\epsilon)=s_k\\Bigl(1-\\frac{\\epsilon}{T_b}\\Bigr)+s_{k+1}\\,\\frac{\\epsilon}{T_b},\\qquad 0\\le\\epsilon\\le T_b',
+      note:'The triangle of bit $k$ has fallen by $\\epsilon/T_b$. The triangle of bit $k+1$ has risen by the same amount. An early sample takes $s_{k-1}$ instead.'},
+    {t:'reveal', at:1, items:[
+      {t:'note', kind:'warn', head:'A neighbour in the sample', html:'When $s_{k+1}=-s_k$, the sample shrinks to $s_k(1-2\\epsilon/T_b)$. One bit now disturbs another. Section 2.7 meets this effect again in a band-limited channel.'}]},
+    {t:'reveal', at:2, items:[
+      {t:'note', kind:'def', head:'Given', html:'A polar $1$ is followed by a $0$, with no noise. The sample is taken $0.25T_b$ late.<div class="nsep"></div>What is the sample?',
+        ask:{key:'m2-demod-timing', choices:['$0.25$','$0.5$','$0.75$'], answer:1,
+          why:'$y_0=(1)(0.75)+(-1)(0.25)=0.5$. Half the margin is lost.'}}]}
+  ]}
+]},
+
 { id:'m2-corr-out', module:'M2', nav:'The correlator demodulator', title:'The correlator demodulator',
   objective:'Build the demodulator as a multiplier and an integrator, and write its output as the symbol term plus a noise term.',
   keywords:'correlator demodulator correlation type multiply by psi integrate from 0 to t integrate and dump output s_m int psi^2 plus noise',
@@ -21866,6 +21992,30 @@ REAL_MATCHED,
       {t:'note', kind:'def', head:'Given', html:'A noiseless Manchester bit $1$.<div class="nsep"></div>What is the correlator output at $t=T_b/2$?',
         ask:{key:'m2-corr-out', choices:['$-0.5$','$0$','$+0.5$'], answer:2,
           why:'$y(T_b/2)=\\int_0^{T_b/2}\\psi^{2}\\,d\\tau=0.5$. The matched filter gives $-0.5$ at that time.'}}]}
+  ]}
+]},
+
+{ id:'m2-corr-samples', module:'M2', nav:'The correlator on samples', title:'The correlator on samples',
+  objective:'Build the correlator in discrete time: multiply N samples of the bit by samples of the pulse and add them.',
+  keywords:'discrete time correlator samples per bit sum 1/N sampling interval Ts = Tb/N noise variance sigma^2/N digital receiver',
+  src:'book Ex. 8.3.3 (extension)', slide:true, steps:2, blocks:[
+  {t:'eyebrow', text:'Module 2 · The demodulator'},
+  {t:'title', text:'The correlator on samples'},
+  {t:'cols', ratio:'c-5-7', fill:true, left:[
+    {t:'fig', frame:true, grow:true,
+      frames:{labels:['$N=4$','$N=8$','$N=20$'], ms:1100},
+      svg:figCorrSamples,
+      caption:'One noiseless bit with the rectangular pulse, sampled $N$ times. Above: the samples $r(nT_s)$. Below: the running sum. It climbs the dashed line of the continuous correlator and ends at $1$.'}
+  ], right:[
+    {t:'eq', label:'The sum', tex:'y(kT_s)=\\frac{1}{N}\\sum_{n=1}^{k}r(nT_s)\\,s(nT_s),\\qquad T_s=\\frac{T_b}{N}',
+      note:'A digital receiver adds samples instead of integrating. The factor $1/N$ plays the part of $d\\tau/T_b$.'},
+    {t:'reveal', at:1, items:[
+      {t:'eq', label:'Noise in the sum', tex:'\\begin{aligned}\\operatorname{Var}(y)&=\\frac{1}{N^{2}}\\sum_{n=1}^{N}\\operatorname{Var}\\bigl(r(nT_s)\\bigr)\\\\&=\\frac{1}{N^{2}}\\cdot N\\sigma^{2}=\\frac{\\sigma^{2}}{N}\\end{aligned}',
+        note:'Take $s(nT_s)=1$ and independent noise of variance $\\sigma^{2}$ on each sample. The variances of independent terms add.'}]},
+    {t:'reveal', at:2, items:[
+      {t:'note', kind:'def', head:'Given', html:'$N=20$ samples a bit, each with independent noise of variance $\\sigma^{2}=0.2$.<div class="nsep"></div>What is the noise variance of $y$?',
+        ask:{key:'m2-corr-samples', choices:['$0.2$','$0.01$','$0.0005$'], answer:1,
+          why:'$\\sigma^{2}/N=0.2/20=0.01$. Adding $20$ samples averages the noise down.'}}]}
   ]}
 ]},
 
@@ -21939,6 +22089,53 @@ REAL_MATCHED,
       {t:'note', kind:'def', head:'Given', html:'The noise has $N_0=2\\times10^{-4}$ W/Hz.<div class="nsep"></div>What is the standard deviation $\\sigma$ of $n$?',
         ask:{key:'m2-demod-noise-var', choices:['$10^{-4}$','$0.01$','$0.014$'], answer:1,
           why:'$\\sigma^{2}=N_0/2=10^{-4}$, so $\\sigma=\\sqrt{10^{-4}}=0.01$.'}}]}
+  ]}
+]},
+
+{ id:'m2-demod-noise-hist', module:'M2', nav:'Measuring the noise value', title:'Measuring the noise value',
+  objective:'Measure many noise values n under a slider for N0 and compare their spread with sqrt(N0/2).',
+  keywords:'noise value histogram measured standard deviation sqrt(N0/2) slider N0 gaussian density simulation',
+  src:'CH8 s.21 (extension)', slide:true, steps:2, blocks:[
+  {t:'eyebrow', text:'Module 2 · The demodulator'},
+  {t:'title', text:'Measuring the noise value'},
+  {t:'cols', ratio:'c-5-7', fill:true, left:[
+    {t:'fig', frame:true, grow:true,
+      live:{controls:[{k:'N0', label:'$N_0$', min:0.05, max:1, step:0.05, v:0.5, show:v=>'$'+v.toFixed(2)+'$'}]},
+      svg:figNoiseHist,
+      caption:'$3000$ noise values $n=\\int_0^{T_b}w\\,\\psi\\,d\\tau$, each from its own white noise, with the Manchester $\\psi$. Drag $N_0$. The curve is the Gaussian density with $\\sigma=\\sqrt{N_0/2}$.'}
+  ], right:[
+    {t:'eq', label:'The prediction', tex:'\\sigma=\\sqrt{\\frac{N_0}{2}}',
+      note:'Each value is a sum of many noise samples weighted by $\\psi$. The measured spread follows $\\sqrt{N_0/2}$ to within a few percent at every $N_0$.'},
+    {t:'reveal', at:1, items:[
+      {t:'note', kind:'err', head:'Common error', html:'Common error: take $\\sigma=N_0/2$. That is the variance. At $N_0=0.5$ the spread is $\\sqrt{0.25}=0.5$, not $0.25$.'}]},
+    {t:'reveal', at:2, items:[
+      {t:'note', kind:'def', head:'Given', html:'$N_0$ is made four times larger.<div class="nsep"></div>What happens to the spread $\\sigma$ of $n$?',
+        ask:{key:'m2-demod-noise-hist', choices:['it doubles','it grows $4$ times','it grows $16$ times'], answer:0,
+          why:'$\\sigma=\\sqrt{N_0/2}$, and $\\sqrt{4}=2$.'}}]}
+  ]}
+]},
+
+{ id:'m2-demod-ppm', module:'M2', nav:'Two orthogonal signals', title:'Two orthogonal signals',
+  objective:'Demodulate binary orthogonal signals with two correlators and find the two noise terms uncorrelated.',
+  keywords:'binary orthogonal signalling ppm pulse position two basis functions two correlators y1 y2 signal points uncorrelated independent noise distance sqrt(2Eb)',
+  src:'book 8.3.1, binary orthogonal signals (extension)', slide:true, steps:2, blocks:[
+  {t:'eyebrow', text:'Module 2 · The demodulator'},
+  {t:'title', text:'Two orthogonal signals'},
+  {t:'cols', ratio:'c-5-7', fill:true, left:[
+    {t:'fig', frame:true, grow:true,
+      frames:{labels:['$s_1(t),\\,s_2(t)$','$\\psi_1,\\,\\psi_2$','points','noise'], ms:1200},
+      svg:figPpm,
+      caption:'Pulse position: $s_1$ fills the first half of the bit and $s_2$ the second. Step through: the waveforms, the two bases, the two points on the plane $(y_1,y_2)$, and noisy outputs around them.'}
+  ], right:[
+    {t:'eq', label:'Two correlators', tex:'\\begin{aligned}y_m&=\\int_0^{T_b}r(\\tau)\\,\\psi_m(\\tau)\\,d\\tau,\\qquad m=1,2\\\\s_1\\text{ sent:}\\quad y_1&=\\sqrt{E_b}+n_1,\\qquad y_2=n_2\\end{aligned}',
+      note:'Each correlator is matched to one basis. $\\psi_2$ is zero where $s_1$ is not, so the second output holds noise only.'},
+    {t:'reveal', at:1, items:[
+      {t:'eq', label:'The two noise terms', tex:'\\begin{aligned}E[n_1n_2]&=\\frac{N_0}{2}\\int_0^{T_b}\\psi_1(t)\\,\\psi_2(t)\\,dt\\\\&=0\\end{aligned}',
+        note:'The sifting step of the variance, with $\\psi_2$ in place of the second $\\psi$. Orthogonal bases give uncorrelated, and so independent, Gaussian noise.'}]},
+    {t:'reveal', at:2, items:[
+      {t:'note', kind:'def', head:'Given', html:'Orthogonal signalling with $E_b=4$ mJ.<div class="nsep"></div>What is the distance between the two points?',
+        ask:{key:'m2-demod-ppm', choices:['$0.063\\ \\sqrt{\\text{J}}$','$0.089\\ \\sqrt{\\text{J}}$','$0.126\\ \\sqrt{\\text{J}}$'], answer:1,
+          why:'$d=\\sqrt{2E_b}=\\sqrt{8\\times10^{-3}}=0.089$. Antipodal points are $2\\sqrt{E_b}=0.126$ apart, $\\sqrt{2}$ further.'}}]}
   ]}
 ]},
 
@@ -33077,8 +33274,9 @@ CONTENT.SECTIONS = {
         'm2-awgn','m2-filter-choice','m2-receiver','m2-split','m2-model','m2-noise-power','m2-schwarz','m2-bound',
         'm2-matched','m2-mf-freq','m2-conv','m2-mf-correlator','m2-props','m2-props-snr','m2-sample-time','m2-sample-dist','m2-ex-mf','m2-real-matched','m2-lab-c','m2-code-matched'] },
     { n:'2.3', title:'The demodulator',                ids:[
-        'm2-basis','m2-antipodal','m2-space','m2-demod-mf','m2-demod-signal','m2-demod','m2-demod-shapes','m2-demod-train',
-        'm2-corr-out','m2-correlator','m2-demod-noise','m2-demod-noise-var','m2-real-demod','m2-lab-p','m2-code-demod'] },
+        'm2-basis','m2-antipodal','m2-space','m2-demod-mf','m2-demod-signal','m2-demod','m2-demod-shapes','m2-demod-train','m2-demod-timing',
+        'm2-corr-out','m2-corr-samples','m2-correlator','m2-demod-noise','m2-demod-noise-var',
+        'm2-demod-noise-hist','m2-demod-ppm','m2-real-demod','m2-lab-p','m2-code-demod'] },
     { n:'2.4', title:'The decision and its error',     ids:[
         'm2-stat','m2-errors','m2-threshold','m2-threshold-b','m2-q','m2-pe','m2-ex-pe','m2-ex-pe-b','m2-real-decision','m2-lab-d','m2-code-decision'] },
     { n:'2.5', title:'Intersymbol interference',       ids:[
@@ -33237,7 +33435,8 @@ CONTENT.BOOK = {
   'm2-ex-mf':'8.3.2', 'm2-real-matched':'8.3.2', 'm2-lab-c':'8.3.2',
   'm2-basis':'8.2.1', 'm2-antipodal':'8.2.1', 'm2-space':'8.2.1', 'm2-demod-mf':'8.3.2', 'm2-demod-signal':'8.3.2', 'm2-demod':'8.3.2',
   'm2-demod-shapes':'8.3.2', 'm2-demod-train':'8.3.2', 'm2-corr-out':'8.3.1', 'm2-correlator':'8.3.1',
-  'm2-demod-noise':'8.3.1', 'm2-demod-noise-var':'8.3.1', 'm2-real-demod':'8.3.1', 'm2-lab-p':'8.3.1',
+  'm2-demod-noise':'8.3.1', 'm2-demod-noise-var':'8.3.1', 'm2-corr-samples':'8.3.1',
+  'm2-demod-noise-hist':'8.3.1', 'm2-demod-ppm':'8.3.1', 'm2-real-demod':'8.3.1', 'm2-lab-p':'8.3.1',
   'm2-stat':'8.3.3', 'm2-errors':'8.3.3', 'm2-threshold':'8.3.3', 'm2-threshold-b':'8.3.3', 'm2-q':'8.3.3', 'm2-pe':'8.3.3',
   'm2-ex-pe':'8.3.3', 'm2-ex-pe-b':'8.3.3', 'm2-real-decision':'8.3.3', 'm2-lab-d':'8.3.3',
   'm2-isi':'10.1.1', 'm2-isi-term':'10.1.1', 'm2-ex-isi':'10.1.1', 'm2-real-isi':'10.1.1', 'm2-lab-q':'10.1.1',
