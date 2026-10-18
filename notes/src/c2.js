@@ -138,15 +138,15 @@ function figWssShift(v){
   a.span(t0,t0+tau,4.45,'\\tau=1\\ \\text{ms}',{tex:true,fs:15,color:C.mid});
   return a.svg();
 }
-/* The cosine product: one recording read at t = 0.6 ms and t + tau = 0.85 ms. */
-function figPhaseProduct(){
-  const x=t=>3*Math.sin(2*Math.PI*t), t1=0.6, t2=0.85;
-  const a=P.Axes(SZ({xr:[-1.6,1.6],yr:[-4,4.4],xlabel:'t\\;(\\text{ms})',ylabel:'X(t)\\;(\\text{V})',xticksOverride:[-1.5,-1,-0.5,0.5,1,1.5],yticksOverride:[-3,0,3]}));
-  a.curve(x,{color:C.in,width:2.6,n:700});
-  [t1,t2].forEach(t=>{a.poly([[t,0],[t,x(t)]],{color:C.mid,width:1.4,dash:'5 4'});a.point(t,x(t),{color:C.mid,r:5});});
-  a.span(t1,t2,3.7,'\\tau',{tex:true,fs:15,color:C.mid});
-  a.note(t1-0.06,x(t1)-0.75,'X(t)',{tex:true,fs:15,color:C.mid,anchor:'end'});
-  a.note(t2+0.06,x(t2)-0.45,'X(t+\\tau)',{tex:true,fs:15,color:C.mid});
+/* Strict-sense stationarity: 300 recordings read at t = 1 ms and t + 1 ms (slide figSssShift). */
+const SS_N=300;
+const SS_P=AC_P.concat([...Array(SS_N-3).keys()].map(i=>ou(gauss(20260601+i,301,1),AC_DT,AC_TC)));
+function figSssShift(v){
+  const t0=v&&v.t!=null?v.t:1, tau=1;
+  const a=P.Axes(SZ({xr:[-3.3,3.3],yr:[-3.3,3.3],xlabel:'X(t)\\;(\\text{V})',ylabel:'X(t+\\tau)\\;(\\text{V})',xticksOverride:[-2,0,2],yticksOverride:[-2,0,2]}));
+  SS_P.forEach((x,i)=>{const f=path(x,AC_DT,6),u=f(t0),w=f(t0+tau);
+    if(i>=3&&Math.abs(u)<3.25&&Math.abs(w)<3.25)a.point(u,w,{color:C.mid,r:2.8});});
+  AC_P.forEach((x,i)=>{const f=path(x,AC_DT,6);a.point(f(t0),f(t0+tau),{color:[C.in,C.h,C.err][i],r:5});});
   return a.svg();
 }
 
@@ -1270,7 +1270,7 @@ function figPsdOnly(v){
   a.area(S,-4,4,{color:C.dec.in,n:600});a.curve(S,{color:C.in,width:2.6,n:700});return a.svg();
 }
 function figPowerArea(){
-  const a=P.Axes(SZ({xr:[-7,7],yr:[0,1.6],xlabel:'f\\;(\\text{kHz})',ylabel:'S_X(f)\\;(\\text{mW}/\\text{Hz})',xticksOverride:[-5,0,5],yticksOverride:[0.5,1]}));
+  const a=P.Axes(SZ({xr:[-7,7],yr:[0,1.6],xlabel:'f\\;(\\text{kHz})',ylabel:'S_X(f)\\;(\\text{W}/\\text{Hz})',xticksOverride:[-5,0,5],yticksOverride:[0.5,1],ytickfmt:v=>v+'×10⁻³'}));
   a.rect(-5,0,5,1,{fill:C.dec.in});a.poly([[-7,0],[-5,0],[-5,1],[5,1],[5,0],[7,0]],{color:C.in,width:2.6});return a.svg();
 }
 function figWhiteSpectrum(v){
@@ -1300,10 +1300,6 @@ function figGaussianSample(){
   a.area(d,4,7,{color:C.dec.err,n:200});a.curve(d,{color:C.mid,width:2.6,n:700});a.poly([[4,0],[4,d(4)]],{color:C.err,width:2,dash:'5 4'});return a.svg();
 }
 
-function figPhaseResult(){
-  const a=P.Axes(SZ({xr:[-1.6,1.6],yr:[-6,6],xlabel:'\\tau\\;(\\text{ms})',ylabel:'R_X(\\tau)\\;(\\text{V}^{2})',xticksOverride:[-1.5,-1,-0.5,0.5,1,1.5],yticksOverride:[-4.5,0,4.5]}));
-  a.curve(t=>4.5*Math.cos(2*Math.PI*t),{color:C.mid,width:2.6,n:700});a.point(0,4.5,{color:C.mid,r:5});return a.svg();
-}
 
 function figOutputNoise(v){
   const rc=v&&v.rc!=null?v.rc:1, H2=f=>1/(1+(2*Math.PI*f*rc)**2);
@@ -1350,12 +1346,18 @@ window.C2 = [
  after:'At zero gap, $R_X(0)=1\\ \\text{V}^{2}$. Increasing the gap reduces the relationship between the readings in this example.'},
 {t:'fig',svg:()=>figAcfCurve({tau:1}),cap:'The autocorrelation at a gap of $1$ ms is $0.37\\ \\text{V}^{2}$. A nonzero gap can retain a nonzero correlation.'},
 
-{t:'h3', text:'Stationarity'},
+{t:'h3', text:'Wide-sense stationarity'},
 {t:'p',text:'For <b>wide-sense stationarity</b> (WSS), the finite mean is constant and the finite autocorrelation depends only on the gap.'},
 {t:'eqbox',cap:'WSS conditions',tex:'\\mu_X(t)=\\mu_X,\\qquad R_X(t,t+\\tau)=R_X(\\tau)',
  after:'Moving the observation window preserves these ensemble statistics. It does not preserve the readings of an individual waveform.'},
 {t:'p',text:'A <b>strict-sense stationary</b> process preserves every joint distribution under a common shift of all observation times. With finite second moments, this implies WSS.'},
 {t:'fig',svg:()=>figWssShift({t:1}),cap:'Three recordings read at $t=1$ ms and $t+\\tau=2$ ms. Moving both readings by the same shift changes the values, but for a WSS process their average product stays $R_X(1\\ \\text{ms})=0.37\\ \\text{V}^{2}$.'},
+
+{t:'h3', text:'Strict-sense stationarity'},
+{t:'p',text:'A <b>strict-sense stationary</b> (SSS) process keeps every joint distribution when all observation times move by the same shift $\\Delta$.'},
+{t:'eqbox',cap:'Shift invariance',tex:'f_{X(t_1),\\ldots,X(t_n)}=f_{X(t_1+\\Delta),\\ldots,X(t_n+\\Delta)}',
+ after:'This holds for every $n$, every choice of times and every shift $\\Delta$. With finite second moments, SSS implies WSS.'},
+{t:'fig',svg:()=>figSssShift({t:1}),cap:'Each dot holds two readings, at $t=1$ ms and $t+\\tau=2$ ms, from one of 300 recordings. Moving $t$ leaves the shape of the cloud unchanged. Two readings show only the first two orders of the joint distribution.'},
 
 {t:'h3', text:'Autocorrelation and power'},
 {t:'p',text:'At zero gap, each reading is multiplied by itself. Its expectation is the mean-square power $P_X$.'},
@@ -1379,18 +1381,6 @@ window.C2 = [
  cap:'Example 2.1: one recording with $\\theta=3\\pi/2$. Its voltage varies with time, while the ensemble mean over the uniform phase is zero.'},
 {t:'box', kind:'err', hd:'Common error', html:'Use $A^{2}/2$, not $A^{2}$, for the power of the sinusoid. Dropping the $\\tfrac12$ gives $9\\ \\text{V}^{2}$.'},
 
-
-{t:'h3',text:'The cosine product'},
-{t:'p',text:'Autocorrelation multiplies two values of one recording, at $t$ and at $t+\\tau$. Both values carry the same phase $\\Theta$.'},
-{t:'eqbox',cap:'Product identity',tex:'\\cos\\alpha\\cos\\beta=\\frac12[\\cos(\\alpha-\\beta)+\\cos(\\alpha+\\beta)]',after:'Set $\\alpha=2\\pi f_0t+\\Theta$ and $\\beta=2\\pi f_0(t+\\tau)+\\Theta$.'},
-{t:'eqbox',cap:'Sum of the arguments',tex:'\\begin{aligned}\\alpha+\\beta&=2\\pi f_0[t+(t+\\tau)]+2\\Theta\\\\&=2\\pi f_0(2t+\\tau)+2\\Theta\\end{aligned}',after:'The two time arguments add to $2t+\\tau$.'},
-{t:'eqbox',cap:'Difference of the arguments',tex:'\\alpha-\\beta=-2\\pi f_0\\tau',after:'The common phase cancels. Since cosine is even, $\\cos(-2\\pi f_0\\tau)=\\cos(2\\pi f_0\\tau)$.'},
-{t:'fig',svg:()=>figPhaseProduct(),cap:'The recording with $\\theta=3\\pi/2$, read at $t=0.6$ ms and $t+\\tau=0.85$ ms. The product of these two values is averaged over the phase.'},
-
-{t:'h3',text:'The random-phase autocorrelation'},
-{t:'p',text:'Averaging over the phase gives zero mean. To find the autocorrelation, expand the product with the cosine product identity.'},
-{t:'eqbox',cap:'Average the product',tex:'\\begin{aligned}R_X(\\tau)&=\\frac{A^2}{2}E[\\cos(2\\pi f_0\\tau)+\\cos(\\phi+2\\Theta)]\\\\&=\\frac{A^2}{2}\\cos(2\\pi f_0\\tau)+0\\\\&=4.5\\cos(2\\pi f_0\\tau)\\ \\text{V}^{2}\\end{aligned}',after:'Here $\\phi=2\\pi f_0(2t+\\tau)$. Integrating $\\cos(\\phi+2\\theta)$ over the uniform phase interval gives zero.'},
-{t:'fig',svg:()=>figPhaseResult(),cap:'The periodic autocorrelation has zero-gap value $4.5\\ \\text{V}^{2}$. Its later peaks show the periodic relationship between readings.'},
 
 {t:'h3',text:'Power spectral density'},
 {t:'p',text:'The <b>power spectral density</b> (PSD) describes power per unit frequency. For a WSS process, it is the Fourier transform of the autocorrelation.'},

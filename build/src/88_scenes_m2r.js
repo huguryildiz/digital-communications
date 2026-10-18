@@ -441,10 +441,17 @@ document.addEventListener('lostpointercapture',endAcfDrag);
 function figPsdOnly(v){
   const tc=v&&v.tc!=null?v.tc:0.3, S=f=>2*tc/(1+(2*Math.PI*f*tc)**2);
   const a=P.Axes(SZ({xr:[-4,4],yr:[0,2.4],xlabel:'f\\;(\\text{kHz})',ylabel:'S_X(f)\\;(\\text{V}^{2}/\\text{kHz})',xticksOverride:[-4,-2,0,2,4],yticksOverride:[0.5,1,1.5,2]}));
-  a.area(S,-4,4,{color:C.dec.in,n:600});a.curve(S,{color:C.in,width:2.6,n:700});return a.svg();
+  a.area(S,-4,4,{color:C.dec.in,n:600});a.curve(S,{color:C.in,width:2.6,n:700});
+  const fh=1/(2*Math.PI*tc), pk=2*tc;
+  a.poly([[-fh,0],[-fh,tc],[fh,tc],[fh,0]],{color:C.mid,width:1.4,dash:'4 5'});
+  a.point(0,pk,{color:C.in,r:4.6});[-fh,fh].forEach(x=>a.point(x,tc,{color:C.mid,r:4.4}));
+  a.note(3.9,2.2,'S_X(f)=\\dfrac{2\\tau_c}{1+(2\\pi f\\tau_c)^2}',{tex:true,fs:15,color:C.ink,anchor:'end'});
+  a.note(3.9,1.9,'S_X(0)=2\\tau_c='+pk.toFixed(2)+'\\ \\text{V}^{2}/\\text{kHz}',{tex:true,fs:15,color:C.in,anchor:'end'});
+  a.note(3.9,1.6,'f_{1/2}=\\dfrac{1}{2\\pi\\tau_c}='+fh.toFixed(2)+'\\ \\text{kHz}',{tex:true,fs:15,color:C.mid,anchor:'end'});
+  return a.svg();
 }
 function figPowerArea(){
-  const a=P.Axes(SZ({xr:[-7,7],yr:[0,1.6],xlabel:'f\\;(\\text{kHz})',ylabel:'S_X(f)\\;(\\text{mW}/\\text{Hz})',xticksOverride:[-5,0,5],yticksOverride:[0.5,1]}));
+  const a=P.Axes(SZ({xr:[-7,7],yr:[0,1.6],xlabel:'f\\;(\\text{kHz})',ylabel:'S_X(f)\\;(\\text{W}/\\text{Hz})',xticksOverride:[-5,0,5],yticksOverride:[0.5,1],ytickfmt:v=>v+'×10⁻³'}));
   a.rect(-5,0,5,1,{fill:C.dec.in});a.poly([[-7,0],[-5,0],[-5,1],[5,1],[5,0],[7,0]],{color:C.in,width:2.6});return a.svg();
 }
 function figWhiteSpectrum(v){
@@ -486,14 +493,10 @@ function figGaussianSample(){
   a.area(d,4,7,{color:C.dec.err,n:200});a.curve(d,{color:C.mid,width:2.6,n:700});a.poly([[4,0],[4,d(4)]],{color:C.err,width:2,dash:'5 4'});return a.svg();
 }
 
-function figPhaseResult(){
-  const a=P.Axes(SZ({xr:[-1.6,1.6],yr:[-6,6],xlabel:'\\tau\\;(\\text{ms})',ylabel:'R_X(\\tau)\\;(\\text{V}^{2})',xticksOverride:[-1.5,-1,-0.5,0.5,1,1.5],yticksOverride:[-4.5,0,4.5]}));
-  a.raw(`<rect class="sk-area" x="${a.x0}" y="${a.y1}" width="${a.x1-a.x0}" height="${a.y0-a.y1}" fill="none"/>`);a.raw('<g class="sk-key">');
-  a.curve(t=>4.5*Math.cos(2*Math.PI*t),{color:C.mid,width:2.6,n:700});a.point(0,4.5,{color:C.mid,r:5});a.raw('</g>');return a.svg();
-}
 /* Stationarity: the three recordings of the autocorrelation scene, read at a
    start time t that the slider moves and at t + 1 ms. The gap stays fixed, so
-   for this WSS process the average product stays R_X(1 ms) = e^-1 V^2. */
+   for this WSS process the average product stays R_X(1 ms) = e^-1 V^2. The
+   two readouts are measured from the 300 recordings SS_P (defined below). */
 function figWssShift(v){
   const t0=val(v,'t',1), tau=1;
   const a=P.Axes(SZ({xr:[0,6],yr:[-3.4,5.4],xlabel:'t\\;(\\text{ms})',ylabel:'X(t)\\;(\\text{V})',xticksOverride:[0,1,2,3,4,5,6],yticksOverride:[-2,0,2]}));
@@ -501,21 +504,39 @@ function figWssShift(v){
   [t0,t0+tau].forEach(t=>{a.vline(t,{color:C.mid,dash:'5 4',width:1.4,opacity:0.9});
     AC_P.forEach(x=>a.point(t,path(x,AC_DT,6)(t),{color:C.mid,r:4}));});
   a.span(t0,t0+tau,4.45,'\\tau=1\\ \\text{ms}',{tex:true,fs:15,color:C.mid});
+  let m=0, r=0; SS_P.forEach(x=>{ const f=path(x,AC_DT,6), u=f(t0); m+=u; r+=u*f(t0+tau); });
+  m/=SS_N; r/=SS_N;
+  a.note(5.95,5.0,'\\hat\\mu_X(t)='+m.toFixed(2)+'\\ \\text{V}',{tex:true,fs:15,color:C.mid,anchor:'end'});
+  a.note(5.95,4.35,'\\hat R_X(t,t+\\tau)='+r.toFixed(2)+'\\ \\text{V}^{2}',{tex:true,fs:15,color:C.mid,anchor:'end'});
   return a.svg();
 }
-/* The cosine product: the theta = 3pi/2 recording read at t = 0.6 ms and at
-   t + tau = 0.85 ms, the two values the product multiplies. */
-function figPhaseProduct(){
-  const th=EX_PHASES[0], x=t=>3*Math.cos(2*Math.PI*t+th), t1=0.6, t2=0.85;
-  const a=P.Axes(SZ({xr:[-1.6,1.6],yr:[-4,4.4],xlabel:'t\\;(\\text{ms})',ylabel:'X(t)\\;(\\text{V})',xticksOverride:[-1.5,-1,-0.5,0.5,1,1.5],yticksOverride:[-3,0,3]}));
-  a.curve(x,{color:C.in,width:2.6,n:700});
-  [t1,t2].forEach(t=>{a.poly([[t,0],[t,x(t)]],{color:C.mid,width:1.4,dash:'5 4'});a.point(t,x(t),{color:C.mid,r:5});});
-  a.span(t1,t2,3.7,'\\tau',{tex:true,fs:15,color:C.mid});
-  a.note(t1-0.06,x(t1)-0.75,'X(t)',{tex:true,fs:15,color:C.mid,anchor:'end'});
-  a.note(t2+0.06,x(t2)-0.45,'X(t+\\tau)',{tex:true,fs:15,color:C.mid});
-  return a.svg();
+/* Strict-sense stationarity: 300 recordings of the same process (the first
+   three are the recordings of the slide before), read at a start time t that
+   the slider moves and at t + 1 ms. The cloud of pairs and the histogram of
+   X(t) are measured from the recordings, so only sampling scatter moves. */
+const SS_N = 300, SS_TAU = 1, SS_BW = 0.5, SS_LO = -3.25;
+const SS_P = AC_P.concat([...Array(SS_N-3).keys()].map(i=>ou(gauss(20260601+i, 301, 1), AC_DT, AC_TC)));
+function figSssShift(v){
+  const t0 = val(v, 't', 1), hA = TOPH()+50, hB = 270 + extraHeight(hA+270);
+  const a = P.Axes({w:560, h:hA, xr:[0,6], yr:[-2.4,4.2], xlabel:'t\\;(\\text{ms})', ylabel:'X(t)',
+    pad:{l:56,r:26,t:22,b:40}, xticksOverride:[0,1,2,3,4,5,6], yticksOverride:[-2,0,2,4]});
+  AC_P.forEach((x,i)=>a.curve(path(x, AC_DT, 6), {color:[C.in, C.h, C.err][i], width:1.6, n:700}));
+  [t0, t0+SS_TAU].forEach(t=>{ a.vline(t, {color:C.mid, dash:'5 4', width:1.4, opacity:0.9});
+    AC_P.forEach((x,i)=>a.point(t, path(x, AC_DT, 6)(t), {color:C.mid, r:4})); });
+  const b = P.Axes({w:300, h:hB, xr:[-3.3,3.3], yr:[-3.3,3.3], xlabel:'X(t)', ylabel:'X(t+\\tau)',
+    pad:{l:52,r:14,t:24,b:42}, xticksOverride:[-2,0,2], yticksOverride:[-2,0,2]});
+  const c = P.Axes({w:260, h:hB, xr:[-3.3,3.3], yr:[0,0.62], xlabel:'X(t)', ylabel:'f(x)',
+    pad:{l:48,r:18,t:24,b:42}, xticksOverride:[-2,0,2], yticksOverride:[]});
+  const cnt = Array(13).fill(0);
+  SS_P.forEach((x,i)=>{ const f = path(x, AC_DT, 6), u = f(t0), w = f(t0+SS_TAU);
+    if(i >= 3 && Math.abs(u) < 3.25 && Math.abs(w) < 3.25)
+      b.raw(`<circle cx="${b.sx(u).toFixed(2)}" cy="${b.sy(w).toFixed(2)}" r="2.6" fill="${C.mid}" opacity="0.6"/>`);
+    const k = Math.floor((u-SS_LO)/SS_BW); if(k >= 0 && k < 13) cnt[k]++; });
+  AC_P.forEach((x,i)=>{ const f = path(x, AC_DT, 6); b.point(f(t0), f(t0+SS_TAU), {color:[C.in, C.h, C.err][i], r:5}); });
+  cnt.forEach((n,k)=>{ if(n) c.rect(SS_LO+k*SS_BW+0.02, 0, SS_LO+(k+1)*SS_BW-0.02, n/(SS_N*SS_BW), {fill:C.dec.mid, stroke:C.mid, width:1}); });
+  c.curve(dN, {color:C.mid, width:2.4, n:300});
+  return `<svg viewBox="0 0 560 ${hA+hB}" xmlns="http://www.w3.org/2000/svg" role="img">${place(a.svg(),0,0,560,hA)}${place(b.svg(),0,hA,300,hB)}${place(c.svg(),300,hA,260,hB)}</svg>`;
 }
-
 const EB = 'Module 2 · Random signals';
 function figOutputNoise(v){
   const rc=v&&v.rc!=null?v.rc:1, H2=f=>1/(1+(2*Math.PI*f*rc)**2);
@@ -736,15 +757,15 @@ const SC = [
 {
   id:'m2-rp-wss',
   module:'M2',
-  nav:'Stationarity',
-  title:'Stationarity',
+  nav:'Wide-sense stationarity',
+  title:'Wide-sense stationarity',
   objective:'State the WSS conditions and distinguish them from strict-sense stationarity.',
   keywords:'random signal noise receiver stationarity',
   slide:true,
   steps:1,
   blocks:[
     {t:'eyebrow', text:'Module 2 · Random signals'},
-    {t:'title', text:'Stationarity'},
+    {t:'title', text:'Wide-sense stationarity'},
     {
       t:'cols',
       ratio:'c-5-7',
@@ -752,7 +773,7 @@ const SC = [
       left:[
         {t:'fig', frame:true, grow:true, svg:figWssShift,
           live:{controls:[{k:'t',label:'$t$ (ms)',min:0.2,max:4.8,step:0.05,v:1,show:x=>'$'+x.toFixed(2)+'$'}]},
-          caption:'Drag the start time $t$. The readings change, but the gap stays $\\tau=1$ ms. For a WSS process their average product stays $R_X(1\\ \\text{ms})=0.37\\ \\text{V}^{2}$.'}
+          caption:'Drag the start time $t$. The three readings change. The values at the top right average 300 recordings: $\\hat\\mu_X$ stays near $0$ and $\\hat R_X$ near $R_X(1\\ \\text{ms})=0.37\\ \\text{V}^{2}$, up to sampling scatter.'}
       ],
       right:[
         {t:'note', kind:'def', head:'Stationarity', html:'Wide-sense stationarity (WSS) preserves the mean and autocorrelation under a time shift. Strict-sense stationarity preserves every joint distribution.'},
@@ -767,6 +788,48 @@ const SC = [
             choices:['the individual readings', 'their ensemble average product', 'the whole recording'],
             answer:1,
             why:'WSS fixes these statistics. Individual recordings do not have to repeat.'
+          }
+        }
+      ]
+    }
+  ],
+  src:'book 5.2.2'
+},
+
+{
+  id:'m2-rp-sss',
+  module:'M2',
+  nav:'Strict-sense stationarity',
+  title:'Strict-sense stationarity',
+  objective:'State strict-sense stationarity and see that a common time shift leaves the first two joint distributions unchanged.',
+  keywords:'random signal noise receiver strict-sense stationarity joint distribution',
+  slide:true,
+  steps:1,
+  blocks:[
+    {t:'eyebrow', text:'Module 2 · Random signals'},
+    {t:'title', text:'Strict-sense stationarity'},
+    {
+      t:'cols',
+      ratio:'c-5-7',
+      fill:true,
+      left:[
+        {t:'fig', frame:true, grow:true, svg:figSssShift,
+          live:{controls:[{k:'t',label:'$t$ (ms)',min:0.2,max:4.8,step:0.05,v:1,show:x=>'$'+x.toFixed(2)+'$'}]},
+          caption:'Drag the start time $t$. The cloud of pairs and the histogram of $X(t)$ keep their shape. Two readings show only the first two orders of the joint distribution.'}
+      ],
+      right:[
+        {t:'note', kind:'def', head:'Strict sense', html:'A process is strict-sense stationary (SSS) when a common time shift leaves every joint distribution unchanged.'},
+        {t:'eq', label:'Shift invariance', tex:'f_{X(t_1),\\ldots,X(t_n)}=f_{X(t_1+\\Delta),\\ldots,X(t_n+\\Delta)}', note:'This holds for every $n$, every choice of times and every shift $\\Delta$. With finite second moments, SSS implies WSS.'},
+        {
+          t:'note',
+          kind:'def',
+          head:'Given',
+          html:'Move the start time $t$ and watch the cloud of pairs.<div class="nsep"></div>What does the cloud do?',
+          ask:{
+            key:'m2-rp-sss',
+            choices:['it moves with $t$', 'it keeps its shape', 'it grows'],
+            answer:1,
+            why:'The joint distribution of $X(t)$ and $X(t+\\tau)$ does not depend on $t$. Only the scatter of 300 recordings changes.'
           }
         }
       ]
@@ -829,7 +892,7 @@ const SC = [
   module:'M2',
   nav:'Worked example: a sinusoid with a random phase',
   title:'Worked example: a sinusoid with a random phase',
-  objective:'Set up the random-phase sinusoid and compute its ensemble mean.',
+  objective:'Compute the mean, autocorrelation and power of a sinusoid with a random phase.',
   keywords:'random signal noise receiver worked example: a sinusoid with a random phase',
   slide:true,
   steps:1,
@@ -858,83 +921,11 @@ const SC = [
           t:'note',
           kind:'def',
           head:'Given',
-          html:'Let $X(t)=A\\cos(2\\pi f_0t+\\Theta)$, $A=3$ V, $f_0=1$ kHz. The phase is uniform on $[0,2\\pi)$. Find the mean, autocorrelation and power.<div class="nsep"></div>What is the mean-square power?',
-          ask:{
-            key:'m2-rp-ex-phase',
-            choices:['$1.5\\ \\text{V}^{2}$', '$4.5\\ \\text{V}^{2}$', '$9\\ \\text{V}^{2}$'],
-            answer:1,
-            why:'The mean square of a sinusoid is $A^2/2=4.5\\ \\text{V}^{2}$. Common error: $A^2=9\\ \\text{V}^{2}$ drops the $\\tfrac12$.'
-          }
+          html:'Let $X(t)=A\\cos(2\\pi f_0t+\\Theta)$, $A=3$ V, $f_0=1$ kHz. The phase is uniform on $[0,2\\pi)$. Find the mean, autocorrelation and power.'
         },
         {t:'eq', label:'Mean', tex:'\\mu_X=\\frac{1}{2\\pi}\\int_0^{2\\pi}A\\cos(2\\pi f_0t+\\theta)\\,d\\theta=0', note:'Average across phases. The integral covers a full cycle.'},
-      ]
-    }
-  ],
-  src:'book 5.2.1'
-},
-
-{
-  id:'m2-rp-phase-product',
-  module:'M2',
-  nav:'The cosine product',
-  title:'The cosine product',
-  objective:'Expand the sinusoid product and identify the sum and difference of its phases.',
-  keywords:'random phase autocorrelation cosine product sum identity',
-  slide:true,
-  steps:1,
-  blocks:[
-    {t:'eyebrow', text:'Module 2 · Random signals'},
-    {t:'title', text:'The cosine product'},
-    {t:'cols', ratio:'c-5-7', fill:true,
-      left:[{t:'fig', frame:true, grow:true, svg:figPhaseProduct,
-        caption:'Autocorrelation multiplies the values of one recording at $t$ and $t+\\tau$. Both values have the same phase $\\Theta$.'}],
-      right:[
-        {t:'eq', label:'Product identity', tex:'\\cos\\alpha\\cos\\beta=\\frac12[\\cos(\\alpha-\\beta)+\\cos(\\alpha+\\beta)]',
-          note:'Set $\\alpha=2\\pi f_0t+\\Theta$ and $\\beta=2\\pi f_0(t+\\tau)+\\Theta$.'},
-        {t:'eq', label:'Sum of the arguments', tex:'\\begin{aligned}\\alpha+\\beta&=2\\pi f_0[t+(t+\\tau)]+2\\Theta\\\\&=2\\pi f_0(2t+\\tau)+2\\Theta\\end{aligned}',
-          note:'The two time arguments add to $2t+\\tau$.'},
-        {t:'eq', label:'Difference of the arguments', tex:'\\alpha-\\beta=-2\\pi f_0\\tau',
-          note:'The common phase cancels. Since cosine is even, $\\cos(-2\\pi f_0\\tau)=\\cos(2\\pi f_0\\tau)$.'}
-      ]}
-  ],
-  src:'book 5.2.1'
-},
-
-{
-  id:'m2-rp-phase-result',
-  module:'M2',
-  nav:'The random-phase autocorrelation',
-  title:'The random-phase autocorrelation',
-  objective:'Derive the autocorrelation and power of the random-phase sinusoid.',
-  keywords:'random signal noise receiver the random-phase autocorrelation',
-  slide:true,
-  steps:1,
-  blocks:[
-    {t:'eyebrow', text:'Module 2 · Random signals'},
-    {t:'title', text:'The random-phase autocorrelation'},
-    {
-      t:'cols',
-      ratio:'c-5-7',
-      fill:true,
-      left:[
-        {t:'fig', frame:true, grow:true, svg:figPhaseResult,
-          sketch:{label:'Sketch $R_X(\\tau)$, then check it.'}, caption:'Sketch the autocorrelation of $X(t)=3\\cos(2\\pi f_0t+\\Theta)$, with $f_0=1$ kHz and uniform phase. Then show the answer.'}
-      ],
-      right:[
-        {t:'note', kind:'def', head:'Method', html:'Use the expanded cosine product. Average the sum term over the random phase.'},
-        {t:'eq', label:'Average the product', tex:'\\begin{aligned}R_X(\\tau)&=\\frac{A^2}{2}E[\\cos(2\\pi f_0\\tau)+\\cos(\\phi+2\\Theta)]\\\\&=\\frac{A^2}{2}\\cos(2\\pi f_0\\tau)\\end{aligned}', note:'Here $\\phi=2\\pi f_0(2t+\\tau)$. The average of $\\cos(\\phi+2\\Theta)$ is zero.'},
-        {
-          t:'note',
-          kind:'def',
-          head:'Given',
-          html:'Set $\\tau=0$ in this result.<div class="nsep"></div>Which power follows?',
-          ask:{
-            key:'m2-rp-phase-result',
-            choices:['$A^2$', '$A^2/2$', '$0$'],
-            answer:1,
-            why:'$R_X(0)=A^2/2=4.5\\ \\text{V}^{2}$. The mean is constant and $R_X$ depends only on the gap, so the process is WSS.'
-          }
-        }
+        {t:'eq', label:'Autocorrelation', tex:'\\begin{aligned}R_X(t,t+\\tau)&=A^2E[\\cos(2\\pi f_0t+\\Theta)\\cos(2\\pi f_0(t+\\tau)+\\Theta)]\\\\&=\\frac{A^2}{2}E[\\cos(2\\pi f_0\\tau)+\\cos(2\\pi f_0(2t+\\tau)+2\\Theta)]\\\\&=\\frac{A^2}{2}\\cos(2\\pi f_0\\tau)\\end{aligned}', note:'Use $\\cos\\alpha\\cos\\beta=\\tfrac12[\\cos(\\alpha-\\beta)+\\cos(\\alpha+\\beta)]$. The common phase cancels in the difference. The sum term averages to zero over $\\Theta$.'},
+        {t:'eq', label:'Power', tex:'P_X=R_X(0)=\\frac{A^2}{2}=4.5\\ \\text{V}^{2}', note:'Common error: use $A^2/2$, not $A^2=9\\ \\text{V}^{2}$, which drops the $\\tfrac12$. The mean is constant and $R_X$ depends only on $\\tau$, so the process is WSS.'},
       ]
     }
   ],

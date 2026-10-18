@@ -73,8 +73,8 @@ CONTENT.SECTIONS = {
   M2: [
     { n:'2.0', title:'Opening',                        ids:['m2-open'] },
     { n:'2.1', title:'Random signals',                 ids:[
-        'm2-rp-ensemble','m2-rp-mean','m2-rp-acf','m2-rp-acf-value','m2-rp-wss','m2-rp-power',
-        'm2-rp-ex-phase','m2-rp-phase-product','m2-rp-phase-result','m2-rp-psd','m2-rp-psd-power',
+        'm2-rp-ensemble','m2-rp-mean','m2-rp-acf','m2-rp-acf-value','m2-rp-wss','m2-rp-sss','m2-rp-power',
+        'm2-rp-ex-phase','m2-rp-psd','m2-rp-psd-power',
         'm2-rp-white','m2-rp-white-correlation','m2-rp-white-ideal','m2-rp-mean-filter','m2-rp-lti',
         'm2-rp-filtered','m2-rp-noise-bandwidth','m2-rp-rc-bandwidth','m2-rp-gauss','m2-rp-sample',
         'm2-real-random','m2-lab-t','m2-code-random'] },
@@ -232,7 +232,7 @@ CONTENT.BOOK = {
      Gaussian process is argued in the opening of 5.3), white processes 5.3.2,
      and filtered noise with the noise-equivalent bandwidth 5.3.3. */
   'm2-rp-ensemble':'5.2', 'm2-rp-mean':'5.2.1', 'm2-rp-acf':'5.2.1', 'm2-rp-acf-value':'5.2.1',
-  'm2-rp-wss':'5.2.2', 'm2-rp-power':'5.2.2', 'm2-rp-ex-phase':'5.2.1', 'm2-rp-phase-result':'5.2.1',
+  'm2-rp-wss':'5.2.2', 'm2-rp-sss':'5.2.2', 'm2-rp-power':'5.2.2', 'm2-rp-ex-phase':'5.2.1',
   'm2-rp-psd':'5.2.5', 'm2-rp-psd-power':'5.2.5', 'm2-rp-white':'5.3.2',
   'm2-rp-white-correlation':'5.3.2', 'm2-rp-white-ideal':'5.3.2',
   'm2-rp-mean-filter':'5.2.4', 'm2-rp-lti':'5.2.4, 5.2.5',
