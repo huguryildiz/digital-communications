@@ -1495,7 +1495,7 @@ window.C2 = [
  short:'Five polar bits under noise of standard deviation 0.1, 0.5 and 1.'},
 {t:'p', text:'Read $x(t)$ at one instant $t_0$ inside a $+1$ bit. The sample is Gaussian with mean $1$ and standard deviation $\\sigma$. It has the wrong sign when the noise is below $-1$.'},
 {t:'eqbox', cap:'One sample of a $+1$ bit', tex:'P\\bigl(x(t_0)<0\\bigr)=P\\bigl(w(t_0)<-1\\bigr)=Q\\Bigl(\\frac{1}{\\sigma}\\Bigr)',
- after:'$Q(x)$ is the Gaussian tail probability, $Q(x)=\\tfrac12\\operatorname{erfc}(x/\\sqrt2)$. At $\\sigma=0.1$ the chance is $Q(10)$, about $10^{-23}$. At $\\sigma=0.5$ it is $Q(2)=0.023$, and at $\\sigma=1$ it is $Q(1)=0.16$. At $\\sigma=0.25$ it is $Q(4)=3.2\\times10^{-5}$.'},
+ after:'$Q(x)$ is the chance that a standard Gaussian value exceeds $x$: $Q(x)=\\int_x^{\\infty}\\tfrac{1}{\\sqrt{2\\pi}}e^{-u^2/2}\\,du=\\tfrac12\\operatorname{erfc}(x/\\sqrt2)$. At $\\sigma=0.1$ the chance is $Q(10)$, about $10^{-23}$. At $\\sigma=0.5$ it is $Q(2)=0.023$, and at $\\sigma=1$ it is $Q(1)=0.16$. At $\\sigma=0.25$ it is $Q(4)=3.2\\times10^{-5}$.'},
 {t:'p', text:'One sample is a poor guide when $\\sigma$ is near the pulse height. The receiver should use the whole bit. A filter does that, and the rest of this section finds the best one.'},
 
 {t:'h3', text:'Choosing the receive filter'},
