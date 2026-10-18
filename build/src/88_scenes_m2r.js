@@ -496,7 +496,7 @@ function figGaussianSample(){
 /* Stationarity: the three recordings of the autocorrelation scene, read at a
    start time t that the slider moves and at t + 1 ms. The gap stays fixed, so
    for this WSS process the average product stays R_X(1 ms) = e^-1 V^2. The
-   two readouts are measured from the 300 recordings SS_P (defined below). */
+   two readouts are measured from the 3000 recordings SS_P (defined below). */
 function figWssShift(v){
   const t0=val(v,'t',1), tau=1;
   const a=P.Axes(SZ({xr:[0,6],yr:[-3.4,5.4],xlabel:'t\\;(\\text{ms})',ylabel:'X(t)\\;(\\text{V})',xticksOverride:[0,1,2,3,4,5,6],yticksOverride:[-2,0,2]}));
@@ -510,11 +510,11 @@ function figWssShift(v){
   a.note(5.95,4.35,'\\hat R_X(t,t+\\tau)='+r.toFixed(2)+'\\ \\text{V}^{2}',{tex:true,fs:15,color:C.mid,anchor:'end'});
   return a.svg();
 }
-/* Strict-sense stationarity: 300 recordings of the same process (the first
+/* Strict-sense stationarity: recordings of the same process (the first
    three are the recordings of the slide before), read at a start time t that
    the slider moves and at t + 1 ms. The cloud of pairs and the histogram of
    X(t) are measured from the recordings, so only sampling scatter moves. */
-const SS_N = 300, SS_TAU = 1, SS_BW = 0.5, SS_LO = -3.25;
+const SS_N = 3000, SS_TAU = 1, SS_BW = 0.5, SS_LO = -3.25;
 const SS_P = AC_P.concat([...Array(SS_N-3).keys()].map(i=>ou(gauss(20260601+i, 301, 1), AC_DT, AC_TC)));
 function figSssShift(v){
   const t0 = val(v, 't', 1), hA = TOPH()+50, hB = 270 + extraHeight(hA+270);
@@ -529,7 +529,7 @@ function figSssShift(v){
     pad:{l:48,r:18,t:24,b:42}, xticksOverride:[-2,0,2], yticksOverride:[]});
   const cnt = Array(13).fill(0);
   SS_P.forEach((x,i)=>{ const f = path(x, AC_DT, 6), u = f(t0), w = f(t0+SS_TAU);
-    if(i >= 3 && Math.abs(u) < 3.25 && Math.abs(w) < 3.25)
+    if(i >= 3 && i < 300 && Math.abs(u) < 3.25 && Math.abs(w) < 3.25)
       b.raw(`<circle cx="${b.sx(u).toFixed(2)}" cy="${b.sy(w).toFixed(2)}" r="2.6" fill="${C.mid}" opacity="0.6"/>`);
     const k = Math.floor((u-SS_LO)/SS_BW); if(k >= 0 && k < 13) cnt[k]++; });
   AC_P.forEach((x,i)=>{ const f = path(x, AC_DT, 6); b.point(f(t0), f(t0+SS_TAU), {color:[C.in, C.h, C.err][i], r:5}); });
@@ -773,7 +773,7 @@ const SC = [
       left:[
         {t:'fig', frame:true, grow:true, svg:figWssShift,
           live:{controls:[{k:'t',label:'$t$ (ms)',min:0.2,max:4.8,step:0.05,v:1,show:x=>'$'+x.toFixed(2)+'$'}]},
-          caption:'Drag the start time $t$. The three readings change. The values at the top right average 300 recordings: $\\hat\\mu_X$ stays near $0$ and $\\hat R_X$ near $R_X(1\\ \\text{ms})=0.37\\ \\text{V}^{2}$, up to sampling scatter.'}
+          caption:'Drag the start time $t$. The three readings change. The values at the top right average 3000 recordings: $\\hat\\mu_X$ stays near $0$ and $\\hat R_X$ near $R_X(1\\ \\text{ms})=0.37\\ \\text{V}^{2}$, up to sampling scatter.'}
       ],
       right:[
         {t:'note', kind:'def', head:'Stationarity', html:'Wide-sense stationarity (WSS) preserves the mean and autocorrelation under a time shift. Strict-sense stationarity preserves every joint distribution.'},
@@ -829,7 +829,7 @@ const SC = [
             key:'m2-rp-sss',
             choices:['it moves with $t$', 'it keeps its shape', 'it grows'],
             answer:1,
-            why:'The joint distribution of $X(t)$ and $X(t+\\tau)$ does not depend on $t$. Only the scatter of 300 recordings changes.'
+            why:'The joint distribution of $X(t)$ and $X(t+\\tau)$ does not depend on $t$. Only the sampling scatter changes.'
           }
         }
       ]
