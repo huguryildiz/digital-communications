@@ -32460,7 +32460,7 @@ const SC = [
       ],
       right:[
         {t:'note', kind:'def', head:'LTI filter', html:'An LTI filter weights delayed values of $X(t)$. For a WSS input, the mean is constant.'},
-        {t:'eq', label:'Mean', tex:'\\begin{aligned}\\mu_Y&=\\int_{-\\infty}^{\\infty}h(u)E[X(t-u)]\\,du\\\\&=\\mu_X\\int_{-\\infty}^{\\infty}h(u)\\,du=\\mu_XH(0)\\end{aligned}', note:'Line 1: $E[\\cdot]$ is linear, and $h(u)$ is not random, so $E$ acts only on $X$. Line 2: for a WSS input $E[X(t-u)]=\\mu_X$ is constant, so it leaves the integral. $H(0)$ is the DC gain. Assume the output statistics exist.'},
+        {t:'eq', label:'Mean', tex:'\\begin{aligned}\\mu_Y&=\\int_{-\\infty}^{\\infty}h(u)E[X(t-u)]\\,du\\\\&=\\mu_X\\int_{-\\infty}^{\\infty}h(u)\\,du=\\mu_XH(0)\\end{aligned}', note:'Line 1: $E[\\cdot]$ is linear, and $h(u)$ is not random, so $E$ acts only on $X$. Line 2: for a WSS input $E[X(t-u)]=\\mu_X$ is constant, so it leaves the integral. Since $H(f)=\\int h(u)e^{-j2\\pi fu}du$, setting $f=0$ makes the exponential $1$, so $\\int h(u)\\,du=H(0)$, the DC gain. Assume the output statistics exist.'},
         {
           t:'note',
           kind:'def',

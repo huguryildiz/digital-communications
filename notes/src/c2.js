@@ -1415,7 +1415,7 @@ window.C2 = [
 
 {t:'h3',text:'The mean through a filter'},
 {t:'p',text:'An LTI filter weights delayed input values. For a WSS input, take the expectation inside the convolution integral.'},
-{t:'eqbox',cap:'Mean',tex:'\\begin{aligned}\\mu_Y&=\\int_{-\\infty}^{\\infty}h(u)E[X(t-u)]\\,du\\\\&=\\mu_X\\int_{-\\infty}^{\\infty}h(u)\\,du\\\\&=\\mu_XH(0)\\end{aligned}',after:'Line 1: $E[\\cdot]$ is linear, and $h(u)$ is not random, so $E$ acts only on $X$. Line 2: for a WSS input $E[X(t-u)]=\\mu_X$ is constant, so it leaves the integral. Line 3: $\\int h(u)\\,du=H(0)$ is the DC gain. Assume these integrals and output statistics exist. An ideal differentiator removes a constant mean when its output is defined for the input process.'},
+{t:'eqbox',cap:'Mean',tex:'\\begin{aligned}\\mu_Y&=\\int_{-\\infty}^{\\infty}h(u)E[X(t-u)]\\,du\\\\&=\\mu_X\\int_{-\\infty}^{\\infty}h(u)\\,du\\\\&=\\mu_XH(0)\\end{aligned}',after:'Line 1: $E[\\cdot]$ is linear, and $h(u)$ is not random, so $E$ acts only on $X$. Line 2: for a WSS input $E[X(t-u)]=\\mu_X$ is constant, so it leaves the integral. Line 3: since $H(f)=\\int h(u)e^{-j2\\pi fu}du$, setting $f=0$ makes the exponential $1$, so $\\int h(u)\\,du=H(0)$, the DC gain. Assume these integrals and output statistics exist. An ideal differentiator removes a constant mean when its output is defined for the input process.'},
 {t:'p',text:'For $\\mu_X=3$ V and $H(f)=j2\\pi f$, $\\mu_Y=3H(0)=0$.'},
 {t:'fig',svg:()=>figFilterTime(),cap:'An illustrative input recording and its RC-filtered output. The filter smooths variations. Its DC gain determines the ensemble mean.'},
 
