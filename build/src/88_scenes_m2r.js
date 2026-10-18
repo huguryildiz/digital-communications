@@ -1579,7 +1579,7 @@ const SC = [
           t:'note',
           kind:'def',
           head:'Given',
-          html:'Here $\\sigma_n=2$ mV and $Q(x)=\\tfrac12\\operatorname{erfc}(x/\\sqrt2)$.<div class="nsep"></div>What is $P(n>4\\ \\text{mV})$?',
+          html:'Here $\\sigma_n=2$ mV. For a Gaussian $X$ with mean $\\mu$ and standard deviation $\\sigma$, $P(X>z)=Q\\bigl((z-\\mu)/\\sigma\\bigr)$.<div class="nsep"></div>What is $P(n>4\\ \\text{mV})$?',
           ask:{
             key:'m2-rp-sample',
             choices:['$Q(1)$', '$Q(2)$', '$Q(4)$'],

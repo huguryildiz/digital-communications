@@ -21341,8 +21341,8 @@ const SC = [
     {t:'eq', label:'Additive noise', tex:'x(t)=g(t)+w(t),\\qquad w(t)\\sim\\mathcal{N}(0,\\sigma^{2})',
       note:'The channel adds noise to the pulse. At each instant the noise is a Gaussian value with mean $0$ and standard deviation $\\sigma$.'},
     {t:'reveal', at:1, items:[
-      {t:'eq', label:'One sample of a $+1$ bit', tex:'\\begin{aligned}P\\bigl(x(t_0)<0\\bigr)&=P\\bigl(w(t_0)<-1\\bigr)=Q\\Bigl(\\frac{1}{\\sigma}\\Bigr)\\\\[4pt] Q(x)&=\\int_x^{\\infty}\\tfrac{1}{\\sqrt{2\\pi}}e^{-u^2/2}\\,du\\end{aligned}',
-        note:'$Q(x)$ is the chance that a standard Gaussian value exceeds $x$. At $\\sigma=1$ it is $Q(1)=0.16$, so one sample is a poor guide. A filter uses the whole bit instead.'}]},
+      {t:'eq', label:'One sample of a $+1$ bit', tex:'\\begin{aligned}P\\bigl(x(t_0)<0\\bigr)&=P\\bigl(w(t_0)<-1\\bigr)=Q\\Bigl(\\frac{1}{\\sigma}\\Bigr)\\\\[4pt] Q(x)&=\\int_x^{\\infty}\\tfrac{1}{\\sqrt{2\\pi}}e^{-u^2/2}\\,du\\\\[4pt] P(X>z)&=Q\\Bigl(\\frac{z-\\mu}{\\sigma}\\Bigr)\\end{aligned}',
+        note:'$Q(x)$ is the chance that a standard Gaussian value exceeds $x$. For a Gaussian $X$ with mean $\\mu$ and standard deviation $\\sigma$, subtract $\\mu$ and divide by $\\sigma$ first. At $\\sigma=1$ it is $Q(1)=0.16$, so one sample is a poor guide. A filter uses the whole bit instead.'}]},
     {t:'reveal', at:2, items:[
       {t:'note', kind:'def', head:'Given', html:'A $+1$ bit is read at one instant, with $\\sigma=0.25$.<div class="nsep"></div>How likely is the sample to fall below $0$?',
         ask:{key:'m2-awgn', choices:['$3.2\\times10^{-5}$','$0.023$','$0.16$'], answer:0,
@@ -32826,7 +32826,7 @@ const SC = [
           t:'note',
           kind:'def',
           head:'Given',
-          html:'Here $\\sigma_n=2$ mV and $Q(x)=\\tfrac12\\operatorname{erfc}(x/\\sqrt2)$.<div class="nsep"></div>What is $P(n>4\\ \\text{mV})$?',
+          html:'Here $\\sigma_n=2$ mV. For a Gaussian $X$ with mean $\\mu$ and standard deviation $\\sigma$, $P(X>z)=Q\\bigl((z-\\mu)/\\sigma\\bigr)$.<div class="nsep"></div>What is $P(n>4\\ \\text{mV})$?',
           ask:{
             key:'m2-rp-sample',
             choices:['$Q(1)$', '$Q(2)$', '$Q(4)$'],

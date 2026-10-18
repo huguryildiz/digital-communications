@@ -1313,10 +1313,15 @@ function figGaussianSample(){
 }
 
 
-function figOutputNoise(v){
-  const rc=v&&v.rc!=null?v.rc:1, H2=f=>1/(1+(2*Math.PI*f*rc)**2);
-  const a=P.Axes(SZ({xr:[-2,2],yr:[0,1.5],xlabel:'f\\;(\\text{kHz})',ylabel:'S_n(f)/(N_0/2)',xticksOverride:[-2,-1,0,1,2],yticksOverride:[0.5,1]}));
-  a.area(H2,-2,2,{color:C.dec.out,n:600});a.curve(H2,{color:C.out,width:2.6,n:700});return a.svg();
+function figOutputNoise(){
+  const rc=0.5, bn=1/(4*rc), H2=f=>1/(1+Math.pow(2*Math.PI*f*rc,2));
+  const a=P.Axes(SZ({xr:[-2,2],yr:[0,1.5],xlabel:'f\;(\\text{kHz})',ylabel:'S(f)/(N_0/2)',xticksOverride:[-2,-1,0,1,2],yticksOverride:[0.5,1]}));
+  a.curve(()=>1,{color:C.in,width:1.5,dash:'6 5',n:4});
+  a.curve(H2,{color:C.h,width:2.2,dash:'7 5',n:700});
+  a.area(H2,-2,2,{color:C.dec.out,n:600});a.curve(H2,{color:C.out,width:2.6,n:700});
+  a.poly([[-bn,0],[-bn,1],[bn,1],[bn,0]],{color:C.slate,width:2.2,dash:'7 5'});
+  a.note(0.62,1.12,'\\text{equal area}',{tex:true,fs:15,color:C.slate});
+  return a.svg();
 }
 
 window.C2 = [
@@ -1440,7 +1445,7 @@ window.C2 = [
 {t:'h3',text:'Filtered white noise'},
 {t:'p',text:'For white input, the output PSD is $(N_0/2)|H(f)|^2$. Its area is the output noise power.'},
 {t:'eqbox',cap:'Output noise power',tex:'P_n=\\frac{N_0}{2}\\int_{-\\infty}^{\\infty}|H(f)|^2df',after:'A finite-energy filter admits finite noise power. Equal areas under the power gain give equal output noise powers.'},
-{t:'fig',svg:()=>figOutputNoise({rc:1}),cap:'The normalized output PSD follows the RC power gain. Its total area includes the tails beyond the plotted range.'},
+{t:'fig',svg:()=>figOutputNoise(),cap:'The filter gain $|H(f)|^2$ shapes the flat input PSD. The area under the output PSD is the output noise power, and a rectangle of equal area gives the same power.'},
 
 {t:'h3',text:'Noise-equivalent bandwidth'},
 {t:'p',text:'Replace the power gain by a rectangle of equal peak and area. Both filters pass equal white-noise power.'},
@@ -1470,7 +1475,7 @@ window.C2 = [
 {t:'p',text:'The filtered noise $n(t)$ is a random process. At the end of a bit of duration $T_b$, the receiver reads $n=n(T_b)$.'},
 {t:'eqbox',cap:'Filtered white Gaussian noise',tex:'\\begin{aligned}n=n(T_b)&\\sim\\mathcal N(0,\\sigma_n^2)\\\\\\sigma_n^2=E[n^2]&=\\frac{N_0}{2}\\int_{-\\infty}^{\\infty}|H(f)|^2df\\end{aligned}',after:'For zero-mean noise, variance equals mean-square power. The filter sets the spread of the sample distribution.'},
 {t:'p',text:'A sample above a threshold occupies a tail of the Gaussian density. Normalize the threshold by the standard deviation.'},
-{t:'eqbox',cap:'Gaussian tail',tex:'\\begin{aligned}P(n>a)&=Q(a/\\sigma_n)\\\\P(n>4\\ \\text{mV})&=Q(4/2)=Q(2)\\approx0.0228\\end{aligned}',after:'Here $\\sigma_n=2$ mV and $Q(x)=\\tfrac12\\operatorname{erfc}(x/\\sqrt2)$. This noise sample will later enter the receiver decision statistic.'},
+{t:'eqbox',cap:'Gaussian tail',tex:'\\begin{aligned}P(n>a)&=Q(a/\\sigma_n)\\\\P(n>4\\ \\text{mV})&=Q(4/2)=Q(2)\\approx0.0228\\end{aligned}',after:'Here $\\sigma_n=2$ mV. For a Gaussian $X$ with mean $\\mu$ and standard deviation $\\sigma$, $P(X>z)=Q\\bigl((z-\\mu)/\\sigma\\bigr)$. This noise sample will later enter the receiver decision statistic.'},
 {t:'fig',svg:()=>figGaussianSample(),cap:'A zero-mean Gaussian sample with standard deviation $2$ mV. The shaded tail above $4$ mV has probability approximately $0.0228$.'},
 
 {t:'h3', text:'Random signals around us'},
@@ -1495,7 +1500,7 @@ window.C2 = [
  short:'Five polar bits under noise of standard deviation 0.1, 0.5 and 1.'},
 {t:'p', text:'Read $x(t)$ at one instant $t_0$ inside a $+1$ bit. The sample is Gaussian with mean $1$ and standard deviation $\\sigma$. It has the wrong sign when the noise is below $-1$.'},
 {t:'eqbox', cap:'One sample of a $+1$ bit', tex:'P\\bigl(x(t_0)<0\\bigr)=P\\bigl(w(t_0)<-1\\bigr)=Q\\Bigl(\\frac{1}{\\sigma}\\Bigr)',
- after:'$Q(x)$ is the chance that a standard Gaussian value exceeds $x$: $Q(x)=\\int_x^{\\infty}\\tfrac{1}{\\sqrt{2\\pi}}e^{-u^2/2}\\,du=\\tfrac12\\operatorname{erfc}(x/\\sqrt2)$. At $\\sigma=0.1$ the chance is $Q(10)$, about $10^{-23}$. At $\\sigma=0.5$ it is $Q(2)=0.023$, and at $\\sigma=1$ it is $Q(1)=0.16$. At $\\sigma=0.25$ it is $Q(4)=3.2\\times10^{-5}$.'},
+ after:'$Q(x)$ is the chance that a standard Gaussian value exceeds $x$: $Q(x)=\\int_x^{\\infty}\\tfrac{1}{\\sqrt{2\\pi}}e^{-u^2/2}\\,du$. For a Gaussian $X$ with mean $\\mu$ and standard deviation $\\sigma$, $P(X>z)=Q\\bigl((z-\\mu)/\\sigma\\bigr)$. At $\\sigma=0.1$ the chance is $Q(10)$, about $10^{-23}$. At $\\sigma=0.5$ it is $Q(2)=0.023$, and at $\\sigma=1$ it is $Q(1)=0.16$. At $\\sigma=0.25$ it is $Q(4)=3.2\\times10^{-5}$.'},
 {t:'p', text:'One sample is a poor guide when $\\sigma$ is near the pulse height. The receiver should use the whole bit. A filter does that, and the rest of this section finds the best one.'},
 
 {t:'h3', text:'Choosing the receive filter'},
