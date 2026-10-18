@@ -21346,7 +21346,7 @@ const SC = [
     {t:'reveal', at:2, items:[
       {t:'note', kind:'def', head:'Given', html:'A $+1$ bit is read at one instant, with $\\sigma=0.25$.<div class="nsep"></div>How likely is the sample to fall below $0$?',
         ask:{key:'m2-awgn', choices:['$3.2\\times10^{-5}$','$0.023$','$0.16$'], answer:0,
-          why:'$1/\\sigma=4$, so the chance is $Q(4)=3.2\\times10^{-5}$. Halving $\\sigma$ from $0.5$ cuts it from $0.023$.'}}]}
+          why:'The sample falls below $0$ when the noise is below $-1$, which has chance $Q(1/\\sigma)$. Here $\\sigma=0.25$, so $1/\\sigma=1/0.25=4$ and the chance is $Q(4)=3.2\\times10^{-5}$. For comparison, $\\sigma=0.5$ gives $1/\\sigma=2$ and $Q(2)=0.023$, so halving $\\sigma$ cuts the chance by a factor of about $700$.'}}]}
   ]}
 ]},
 
