@@ -1420,10 +1420,9 @@ window.C2 = [
 {t:'fig',svg:()=>figFilterTime(),cap:'An illustrative input recording and its RC-filtered output. The filter smooths variations. Its DC gain determines the ensemble mean.'},
 
 {t:'h3',text:'The spectrum through a filter'},
-{t:'p',text:'For a real LTI filter and a WSS input, the output autocorrelation depends on the gap. Transform the convolution relation.'},
+{t:'p',text:'For a real LTI filter and a WSS input, the output PSD follows from the input PSD and the filter.'},
 {t:'p',text:'For receiver noise, use $X(t)=w(t)$ and $Y(t)=n(t)$. Thus $S_n(f)=|H(f)|^2S_w(f)$.'},
-{t:'eqbox',cap:'Output spectrum',tex:'\\begin{aligned}R_Y(\\tau)&=h(\\tau)*h(-\\tau)*R_X(\\tau)\\\\S_Y(f)&=H(f)H^*(f)S_X(f)\\\\&=|H(f)|^2S_X(f)\\end{aligned}',after:'Assume the output statistics exist. A magnitude gain of $1/2$ gives a power gain of $1/4$.'},
-{t:'p',text:'$R_Y(\\tau)$ multiplies two output values, so $h$ enters twice. The second copy is reversed in time, because a correlation compares $Y(t)$ with $Y(t+\\tau)$. For a real $h$, the reversed copy has the transform $H(-f)=H^*(f)$. So the two copies give $S_Y(f)=H(f)H^*(f)S_X(f)=|H(f)|^2S_X(f)$.'},
+{t:'eqbox',cap:'Output spectrum',tex:'\\begin{aligned}S_Y(f)&=H(f)H^*(f)S_X(f)\\\\&=|H(f)|^2S_X(f)\\end{aligned}',after:'Assume the output statistics exist. A magnitude gain of $1/2$ gives a power gain of $1/4$.'},
 {t:'fig',svg:()=>figFilterSpectrum({frame:2}),cap:'The output PSD equals the input PSD multiplied by $|H(f)|^2. The RC filter passes low frequencies more strongly than high frequencies.'},
 
 {t:'h3',text:'Filtered white noise'},

@@ -1272,8 +1272,7 @@ const SC = [
       ],
       right:[
         {t:'note', kind:'def', head:'Output spectrum', html:'For receiver noise, set $X(t)=w(t)$ and $Y(t)=n(t)$. The filter scales the PSD by $|H(f)|^2$.'},
-        {t:'eq', label:'LTI result', tex:'\\begin{aligned}R_Y(\\tau)&=h(\\tau)*h(-\\tau)*R_X(\\tau)\\\\S_Y(f)&=H(f)H^*(f)S_X(f)\\\\&=|H(f)|^2S_X(f)\\end{aligned}', note:'For a real filter and a WSS input, take the Fourier transform of the autocorrelation relation. Assume the output statistics exist.'},
-        {t:'note', kind:'def', head:'The reversed copy $h(-\\tau)$', html:'$R_Y(\\tau)$ multiplies two output values, so $h$ enters twice. The second copy is reversed in time, because a correlation compares $Y(t)$ with $Y(t+\\tau)$.<div class="nsep"></div>For a real $h$, the reversed copy has the transform $H(-f)=H^*(f)$. So the two copies give $S_Y(f)=H(f)H^*(f)S_X(f)=|H(f)|^2S_X(f)$.'},
+        {t:'eq', label:'LTI result', tex:'\\begin{aligned}S_Y(f)&=H(f)H^*(f)S_X(f)\\\\&=|H(f)|^2S_X(f)\\end{aligned}', note:'For a real filter and a WSS input, the output PSD is the input PSD times $|H(f)|^2$. Assume the output statistics exist.'},
         {
           t:'note',
           kind:'def',
