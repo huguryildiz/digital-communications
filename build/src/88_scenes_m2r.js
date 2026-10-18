@@ -568,7 +568,7 @@ function figOutputNoise(v){
      3 the rectangle of equal area (half-width 1/(4RC) = 0.5 kHz). */
   const f = frameOf(v, 3), o1 = clamp01(f), o2 = clamp01(f-1), o3 = clamp01(f-2), rc = 0.5, bn = 1/(4*rc);
   const H2 = x => 1/(1+Math.pow(2*Math.PI*x*rc, 2));
-  const a = P.Axes(SZ({xr:[-2,2], yr:[0,1.5], xlabel:'f\;(\\text{kHz})', ylabel:'S(f)/(N_0/2)',
+  const a = P.Axes(SZ({xr:[-2,2], yr:[0,1.5], xlabel:'f\\;(\\text{kHz})', ylabel:'S(f)/(N_0/2)',
     xticksOverride:[-2,-1,0,1,2], yticksOverride:[0.5,1]}));
   a.curve(()=>1, {color:C.in, width:o1 > 0.01 ? 1.5 : 2.6, dash:o1 > 0.01 ? '6 5' : null, n:4});
   fade(a, o1, ()=>a.curve(H2, {color:C.h, width:2.2, dash:'7 5', n:700}));

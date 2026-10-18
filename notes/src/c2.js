@@ -1315,7 +1315,7 @@ function figGaussianSample(){
 
 function figOutputNoise(){
   const rc=0.5, bn=1/(4*rc), H2=f=>1/(1+Math.pow(2*Math.PI*f*rc,2));
-  const a=P.Axes(SZ({xr:[-2,2],yr:[0,1.5],xlabel:'f\;(\\text{kHz})',ylabel:'S(f)/(N_0/2)',xticksOverride:[-2,-1,0,1,2],yticksOverride:[0.5,1]}));
+  const a=P.Axes(SZ({xr:[-2,2],yr:[0,1.5],xlabel:'f\\;(\\text{kHz})',ylabel:'S(f)/(N_0/2)',xticksOverride:[-2,-1,0,1,2],yticksOverride:[0.5,1]}));
   a.curve(()=>1,{color:C.in,width:1.5,dash:'6 5',n:4});
   a.curve(H2,{color:C.h,width:2.2,dash:'7 5',n:700});
   a.area(H2,-2,2,{color:C.dec.out,n:600});a.curve(H2,{color:C.out,width:2.6,n:700});
