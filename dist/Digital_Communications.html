@@ -31321,20 +31321,23 @@ const EN_BW = 0.25, EN_LO = -3.25;
 const EN_H = (()=>{ const c = Array(26).fill(0);
   gauss(20260411, 2000, 1).forEach(x=>{ const k = Math.floor((x-EN_LO)/EN_BW); if(k>=0 && k<26) c[k]++; }); return c; })();
 function figEnsemble(v){
-  const f = frameOf(v, 3), o1 = clamp01(f), o2 = clamp01(f-1), o3 = clamp01(f-2);
+  const f = frameOf(v, 5), o1 = clamp01(f), o2 = clamp01(f-1), o3 = clamp01(f-2), o4 = clamp01(f-3), o5 = clamp01(f-4);
   const a = P.Axes(SZ({xr:[0,13.4], yr:[-3.5,4.1], xlabel:'t\\;(\\text{ms})', ylabel:'X(t)',
     xticksOverride:[0,2,4,6,8], yticksOverride:[-2,0,2]}));
-  fade(a, 0.32*o1, ()=>{ for(let i=1;i<8;i++) a.curve(path(EN_P[i], EN_DT, EN_T1), {color:C.in, width:0.9, n:700}); });
+  /* frames 2 and 3: a second and then a third recording laid over the first, in three hues;
+     frame 4: all eight, the extra ones faint */
+  [[1,o1],[2,o2]].forEach(([i,o])=>fade(a, o*(1-o3), ()=>a.curve(path(EN_P[i], EN_DT, EN_T1), {color:[C.in, C.h, C.err][i], width:1.9, n:700})));
+  fade(a, 0.32*o3, ()=>{ for(let i=1;i<8;i++) a.curve(path(EN_P[i], EN_DT, EN_T1), {color:C.in, width:0.9, n:700}); });
   a.curve(path(EN_P[0], EN_DT, EN_T1), {color:C.in, width:2.9, n:900});
-  fade(a, o2, ()=>{
+  fade(a, o4, ()=>{
     a.poly([[EN_T0,-3.5],[EN_T0,3.2]], {color:C.mid, width:1.6, dash:'5 4'});
-    EN_P.forEach((x,i)=>{ const y = path(x, EN_DT, EN_T1)(EN_T0); if(i || o1 > 0.5) a.point(EN_T0, y, {color:C.mid, r:4.2}); });
+    EN_P.forEach((x,i)=>{ const y = path(x, EN_DT, EN_T1)(EN_T0); a.point(EN_T0, y, {color:C.mid, r:4.2}); });
     a.note(EN_T0, 3.55, 't_0', {tex:true, fs:15, color:C.mid, anchor:'middle'});
   });
-  if(o3 > 0.01){
+  if(o5 > 0.01){
     const X0 = 9.7, L = 3.2/Math.max(...EN_H);
-    EN_H.forEach((c,k)=>{ if(c) a.rect(X0, EN_LO+k*EN_BW+0.015, X0+L*c*o3, EN_LO+(k+1)*EN_BW-0.015, {fill:C.dec.mid, stroke:C.mid, width:1}); });
-    fade(a, o3, ()=>{
+    EN_H.forEach((c,k)=>{ if(c) a.rect(X0, EN_LO+k*EN_BW+0.015, X0+L*c*o5, EN_LO+(k+1)*EN_BW-0.015, {fill:C.dec.mid, stroke:C.mid, width:1}); });
+    fade(a, o5, ()=>{
       const pts = []; for(let i=0;i<=120;i++){ const y = -3.3+6.6*i/120; pts.push([X0+L*2000*EN_BW*dN(y), y]); }
       a.poly(pts, {color:C.mid, width:2.4});
       a.note(13.3, 3.55, 'f_{X(t_0)}(x)', {tex:true, fs:15, color:C.mid, anchor:'end'});
@@ -31621,7 +31624,7 @@ const REAL_RANDOM = {
 function figMean(){
   const a=P.Axes(SZ({xr:[0,9],yr:[-3.5,4.1],xlabel:'t\\;(\\text{ms})',ylabel:'X(t)\\;(\\text{V})',xticksOverride:[0,2,4,6,8],yticksOverride:[-2,0,2]}));
   EN_P.forEach((x,i)=>a.curve(path(x,EN_DT,EN_T1),{color:C.in,width:i?1:2.5,n:700,opacity:i?0.3:1}));
-  a.hline(0,{color:C.slate,dash:'6 5',width:2}); return a.svg();
+  a.hline(0,{color:C.mid,dash:'10 6',width:3.6}); return a.svg();
 }
 function figAcfPairs(v){
   const tau=v&&v.tau!=null?v.tau:0.5, rho=Math.exp(-tau), s=Math.sqrt(1-rho*rho);
@@ -31793,7 +31796,7 @@ const SC = [
           svg:figEnsemble,
           caption:'Each trace is one noise recording. Fix $t_0$ and compare recordings to obtain the distribution of $X(t_0)$.',
           frames:{
-            labels:['one recording', 'the ensemble', 'a fixed time', 'the distribution']
+            labels:['one recording', 'two recordings', 'three recordings', 'the ensemble', 'a fixed time', 'the distribution']
           }
         }
       ],
@@ -31846,7 +31849,7 @@ const SC = [
           t:'legend',
           items:[
             ['in', 'recordings'],
-            ['slate', 'ensemble mean', true]
+            ['mid', 'ensemble mean', true]
           ],
           at:'tr'
         }
