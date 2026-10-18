@@ -276,6 +276,21 @@ function figNoiseBw(v){
   return a.svg();
 }
 
+/* The same picture with no circuit named: the slider is B_neq itself and the
+   filter is a generic lowpass with |H|^2 = 1/(1 + (f/f0)^2), whose area is
+   pi f0, so B_neq = pi f0 / 2. */
+function figNoiseBwGen(v){
+  const bn = val(v, 'b', 0.5), f0 = 2*bn/Math.PI;
+  const H2 = f => 1/(1+Math.pow(f/f0, 2));
+  const a = P.Axes(SZ({xr:[-2,2], yr:[0,1.55], xlabel:'f\\;(\\text{kHz})', ylabel:'|H(f)|^{2}',
+    xticksOverride:[-2,-1,0,1,2], yticksOverride:[0.5,1]}));
+  a.area(H2, -2, 2, {color:C.dec.h, n:600});
+  a.poly([[-bn,0],[-bn,1],[bn,1],[bn,0]], {color:C.slate, width:2, dash:'7 5'});
+  a.curve(H2, {color:C.h, width:2.6, n:900});
+  a.note(-1.95, 1.38, `B_{\\text{neq}}=${Math.round(1000*bn)}\\ \\text{Hz}`, {tex:true, fs:15, color:C.slate});
+  return a.svg();
+}
+
 /* ---- Gaussian noise ---------------------------------------------------------
    The density of the sum of n independent uniform sources on [-1, 1], scaled
    to unit variance: exact for n = 1 and 2, and for n = 5 and 30 from the
@@ -302,10 +317,17 @@ function figClt(v){
   const a = P.Axes(SZ({xr:[-3.6,3.6], yr:[0,0.62], xlabel:'z', ylabel:'f_Z(z)',
     xticksOverride:[-3,-2,-1,0,1,2,3], yticksOverride:[0.2,0.4]}));
   a.area(at, -3.6, 3.6, {color:C.dec.mid, n:720});
-  a.curve(at, {color:C.mid, width:2.6, n:720});
-  a.curve(dN, {color:C.slate, width:1.8, dash:'7 5', n:500});
+  /* one source on the same scale: the flat box every sum starts from */
+  const hw = Math.sqrt(3), hb = 1/(2*hw);
+  a.poly([[-hw,0],[-hw,hb],[hw,hb],[hw,0]], {color:C.muted, width:1.4, opacity:0.9});
+  a.note(1.95, hb+0.025, '\\text{one source}', {tex:true, fs:14, color:C.muted});
+  a.curve(dN, {color:C.slate, width:1.8, n:500});
+  a.curve(at, {color:C.mid, width:2.8, n:720});
   const n = [1,2,5,30][Math.round(f)];
-  a.note(-3.45, 0.54, `n=${n}`, {tex:true, fs:16, color:C.mid});
+  const gap = Math.max(...CL_X.map((z,i)=>Math.abs(d[i]-dN(z))));
+  a.note(-3.45, 0.6, `n=${n}`, {tex:true, fs:18, color:C.mid});
+  a.note(-3.45, 0.5, 'Z=\\dfrac{X_1+\\cdots+X_n}{\\sqrt{n/3}}', {tex:true, fs:15, color:C.slate});
+  a.note(-3.45, 0.36, `\\text{largest gap to Gaussian: }${gap.toFixed(3)}`, {tex:true, fs:14, color:C.muted});
   return a.svg();
 }
 
@@ -541,9 +563,26 @@ function figSssShift(v){
 }
 const EB = 'Module 2 · Random signals';
 function figOutputNoise(v){
-  const rc=v&&v.rc!=null?v.rc:1, H2=f=>1/(1+(2*Math.PI*f*rc)**2);
-  const a=P.Axes(SZ({xr:[-2,2],yr:[0,1.5],xlabel:'f\\;(\\text{kHz})',ylabel:'S_n(f)/(N_0/2)',xticksOverride:[-2,-1,0,1,2],yticksOverride:[0.5,1]}));
-  a.area(H2,-2,2,{color:C.dec.out,n:600});a.curve(H2,{color:C.out,width:2.6,n:700});return a.svg();
+  /* RC = 0.5 ms: the area under |H|^2 is 1/(2RC) = 1 kHz, so P_n = (N0/2)(1 kHz).
+     Frames: 0 white input, 1 filter gain, 2 output PSD with its area filling in,
+     3 the rectangle of equal area (half-width 1/(4RC) = 0.5 kHz). */
+  const f = frameOf(v, 3), o1 = clamp01(f), o2 = clamp01(f-1), o3 = clamp01(f-2), rc = 0.5, bn = 1/(4*rc);
+  const H2 = x => 1/(1+Math.pow(2*Math.PI*x*rc, 2));
+  const a = P.Axes(SZ({xr:[-2,2], yr:[0,1.5], xlabel:'f\;(\\text{kHz})', ylabel:'S(f)/(N_0/2)',
+    xticksOverride:[-2,-1,0,1,2], yticksOverride:[0.5,1]}));
+  a.curve(()=>1, {color:C.in, width:o1 > 0.01 ? 1.5 : 2.6, dash:o1 > 0.01 ? '6 5' : null, n:4});
+  fade(a, o1, ()=>a.curve(H2, {color:C.h, width:2.2, dash:'7 5', n:700}));
+  if(o2 > 0.01){
+    const hi = -2 + 4*o2;
+    a.area(H2, -2, hi, {color:C.dec.out, n:600});
+    a.curve(x=>x <= hi ? H2(x) : NaN, {color:C.out, width:2.6, n:700});
+  }
+  fade(a, o3, ()=>{
+    a.poly([[-bn,0],[-bn,1],[bn,1],[bn,0]], {color:C.slate, width:2.2, dash:'7 5'});
+    a.note(0.62, 1.12, '\\text{equal area}', {tex:true, fs:15, color:C.slate});
+  });
+  if(f < 2.01 && f > 1.01) a.note(-1.95, 1.38, '\\text{area}\\ =\\ \\text{power}', {tex:true, fs:15, color:C.out});
+  return a.svg();
 }
 
 const SC = [
@@ -1313,12 +1352,19 @@ const SC = [
           frame:true,
           grow:true,
           svg:figOutputNoise,
-          caption:'Drag $RC$. The output PSD follows the filter power gain. Its total area determines the output noise power.',
-          live:{
-            controls:[
-              {k:'rc', label:'$RC$ (ms)', min:0.25, max:2, step:0.05, v:1, show:v=>'$'+v.toFixed(2)+'$'}
-            ]
+          caption:'The filter gain $|H(f)|^2$ shapes the flat input PSD. The area under the output PSD is the output noise power, and a rectangle of equal area gives the same power.',
+          frames:{
+            labels:['white noise in', 'filter gain', 'output PSD', 'equal area']
           }
+        },
+        {
+          t:'legend',
+          items:[
+            ['in', '$N_0/2$', true],
+            ['h', '$|H(f)|^2$', true, 1],
+            ['out', '$S_n(f)$', false, 2]
+          ],
+          at:'tr'
         }
       ],
       right:[
@@ -1363,11 +1409,11 @@ const SC = [
           t:'fig',
           frame:true,
           grow:true,
-          svg:figNoiseBw,
+          svg:figNoiseBwGen,
           caption:'The dashed ideal filter has the same peak gain and total area. Its half-width is the noise-equivalent bandwidth.',
           live:{
             controls:[
-              {k:'rc', label:'$RC$ (ms)', min:0.25, max:2, step:0.05, v:1, show:v=>'$'+v.toFixed(2)+'$'}
+              {k:'b', label:'$B_{\\text{neq}}$ (kHz)', min:0.1, max:1, step:0.05, v:0.5, show:v=>'$'+v.toFixed(2)+'$'}
             ]
           }
         },
@@ -1471,22 +1517,23 @@ const SC = [
           frame:true,
           grow:true,
           svg:figClt,
-          caption:'Add independent uniform sources, then scale the sum to unit variance. As their number grows, the density approaches the Gaussian curve.',
+          caption:'Each source $X_i$ is a random number, equally likely anywhere in $[-1,1]$. Press Next to add sources. The shape of the sum rounds into the bell curve.',
           frames:{
-            labels:['one source', 'two', 'five', 'thirty']
+            labels:['1 source', '2 sources', '5 sources', '30 sources']
           }
         },
         {
           t:'legend',
           items:[
-            ['mid', 'sum of sources'],
-            ['slate', 'Gaussian', true]
+            ['mid', 'sum of the sources'],
+            ['slate', 'Gaussian bell curve']
           ],
           at:'tr'
         }
       ],
       right:[
-        {t:'note', kind:'def', head:'Gaussian model', html:'Many small, independent contributions give an approximately Gaussian sum under central-limit conditions. This motivates the thermal-noise model.'},
+        {t:'note', kind:'def', head:'Experiment', html:'Draw $n$ independent random numbers, each flat on $[-1,1]$, and add them. Scale the sum by $\\sqrt{n/3}$ so its variance is $1$. Repeat many times and plot how often each value of $Z$ occurs.'},
+        {t:'note', kind:'def', head:'Gaussian model', html:'One source gives a flat box. Two give a triangle. Five already look like a bell. Thermal noise is a sum of a huge number of tiny independent motions, so it is Gaussian.'},
         {t:'note', kind:'def', head:'Two properties', html:'White describes the spectrum. Gaussian describes the joint distributions. A process can have either property without the other.'},
         {
           t:'note',

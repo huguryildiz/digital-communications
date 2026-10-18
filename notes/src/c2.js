@@ -241,6 +241,18 @@ function figNoiseBw(rc){
   return a.svg();
 }
 
+/* a generic lowpass with |H|^2 = 1/(1+(f/f0)^2), area pi f0, so B_neq = pi f0/2 */
+function figNoiseBwGen(bn){
+  const f0=2*bn/Math.PI, H2=f=>1/(1+Math.pow(f/f0,2));
+  const a=P.Axes(SZ({w:700,h:280,xr:[-2,2],yr:[0,1.55],xlabel:'f\\;(\\text{kHz})',ylabel:'|H(f)|^{2}',
+    xticksOverride:[-2,-1,0,1,2],yticksOverride:[0.5,1]}));
+  a.area(H2,-2,2,{color:C.dec.h,n:600});
+  a.poly([[-bn,0],[-bn,1],[bn,1],[bn,0]],{color:C.slate,width:2,dash:'7 5'});
+  a.curve(H2,{color:C.h,width:2.6,n:900});
+  a.note(-1.95,1.38,`B_{\\text{neq}}=${Math.round(1000*bn)}\\ \\text{Hz}`,{tex:true,fs:15,color:C.slate});
+  return a.svg();
+}
+
 /* the sum of n independent uniform sources, scaled to unit variance */
 const CL_X=[...Array(361)].map((_,i)=>-3.6+0.02*i);
 function cltDens(n){
@@ -255,7 +267,7 @@ function figClt(){
     xticksOverride:[-3,-2,-1,0,1,2,3],yticksOverride:[0.2,0.4]}));
   a.area(at,-3.6,3.6,{color:C.dec.mid,n:720});
   a.curve(at,{color:C.mid,width:2.6,n:720});
-  a.curve(dN,{color:C.slate,width:1.8,dash:'7 5',n:500});
+  a.curve(dN,{color:C.slate,width:1.8,n:500});
   return a.svg();
 }
 
@@ -1433,7 +1445,7 @@ window.C2 = [
 {t:'h3',text:'Noise-equivalent bandwidth'},
 {t:'p',text:'Replace the power gain by a rectangle of equal peak and area. Both filters pass equal white-noise power.'},
 {t:'eqbox',cap:'Definition',tex:'\\begin{aligned}B_{\\text{neq}}&=\\frac{\\int_{-\\infty}^{\\infty}|H(f)|^2df}{2H_{\\max}^2}\\\\P_n&=N_0B_{\\text{neq}}H_{\\max}^2\\end{aligned}',after:'$H_{\\max}=\\max_f|H(f)|$. The noise-equivalent bandwidth is the half-width of this ideal filter, whose total width is $2B_{\\text{neq}}$.'},
-{t:'fig',svg:()=>figNoiseBw(1),cap:'The RC filter and the dashed ideal filter have equal peak gain and equal total spectral area, including tails beyond the plotted range.'},
+{t:'fig',svg:()=>figNoiseBwGen(0.5),cap:'A lowpass filter and the dashed ideal filter have equal peak gain and equal total spectral area, including tails beyond the plotted range.'},
 
 {t:'h3',text:'Noise bandwidth of an RC filter'},
 {t:'p',text:'The RC filter has $|H(f)|^2=1/[1+(2\\pi fRC)^2]$ and $H_{\\max}=1$. Substitute $u=2\\pi fRC$. The infinite limits remain infinite.'},
@@ -1449,7 +1461,8 @@ window.C2 = [
 
 
 {t:'h3',text:'Gaussian noise'},
-{t:'p',text:'Many small, independent contributions give an approximately Gaussian sum under central-limit conditions. This motivates a Gaussian model for thermal noise.'},
+{t:'p',text:'Draw $n$ independent random numbers, each flat on $[-1,1]$, and add them. Scale the sum by $\\sqrt{n/3}$ so its variance is $1$. Repeat many times and plot how often each value of $Z$ occurs.'},
+{t:'p',text:'One source gives a flat box. Two give a triangle. Five already look like a bell. Thermal noise is a sum of a huge number of tiny independent motions, so it is Gaussian.'},
 {t:'p',text:'White describes the PSD. Gaussian describes joint distributions. These properties are distinct. A linear filter preserves Gaussianity when the output variance is finite.'},
 {t:'fig',svg:()=>figClt(),cap:'The sum of thirty independent uniform sources, scaled to unit variance, closely follows a Gaussian density.'},
 
