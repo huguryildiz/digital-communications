@@ -1213,7 +1213,8 @@ const SC = [
       ],
       right:[
         {t:'note', kind:'def', head:'LTI filter', html:'An LTI filter weights delayed values of $X(t)$. For a WSS input, the mean is constant.'},
-        {t:'eq', label:'Mean', tex:'\\begin{aligned}\\mu_Y&=\\int_{-\\infty}^{\\infty}h(u)E[X(t-u)]\\,du\\\\&=\\mu_X\\int_{-\\infty}^{\\infty}h(u)\\,du=\\mu_XH(0)\\end{aligned}', note:'Line 1: $E[\\cdot]$ is linear, and $h(u)$ is not random, so $E$ acts only on $X$. Line 2: for a WSS input $E[X(t-u)]=\\mu_X$ is constant, so it leaves the integral. Since $H(f)=\\int h(u)e^{-j2\\pi fu}du$, setting $f=0$ makes the exponential $1$, so $\\int h(u)\\,du=H(0)$, the DC gain. Assume the output statistics exist.'},
+        {t:'eq', label:'Mean', tex:'\\begin{aligned}\\mu_Y&=\\int_{-\\infty}^{\\infty}h(u)E[X(t-u)]\\,du\\\\&=\\mu_X\\int_{-\\infty}^{\\infty}h(u)\\,du=\\mu_XH(0)\\end{aligned}', note:'$H(0)$ is the DC gain. Assume the output statistics exist.'},
+        {t:'note', kind:'def', head:'Expectation and DC gain', html:'$E[\\cdot]$ is linear, and $h(u)$ is not random, so $E$ acts only on $X$. For a WSS input $E[X(t-u)]=\\mu_X$ is constant, so it leaves the integral.<div class="nsep"></div>Since $H(f)=\\int h(u)e^{-j2\\pi fu}du$, setting $f=0$ makes the exponential $1$, so $\\int h(u)\\,du=H(0)$.'},
         {
           t:'note',
           kind:'def',
@@ -1272,6 +1273,7 @@ const SC = [
       right:[
         {t:'note', kind:'def', head:'Output spectrum', html:'For receiver noise, set $X(t)=w(t)$ and $Y(t)=n(t)$. The filter scales the PSD by $|H(f)|^2$.'},
         {t:'eq', label:'LTI result', tex:'\\begin{aligned}R_Y(\\tau)&=h(\\tau)*h(-\\tau)*R_X(\\tau)\\\\S_Y(f)&=H(f)H^*(f)S_X(f)\\\\&=|H(f)|^2S_X(f)\\end{aligned}', note:'For a real filter and a WSS input, take the Fourier transform of the autocorrelation relation. Assume the output statistics exist.'},
+        {t:'note', kind:'def', head:'The reversed copy $h(-\\tau)$', html:'$R_Y(\\tau)$ multiplies two output values, so $h$ enters twice. The second copy is reversed in time, because a correlation compares $Y(t)$ with $Y(t+\\tau)$.<div class="nsep"></div>For a real $h$, the reversed copy has the transform $H(-f)=H^*(f)$. So the two copies give $H(f)H^*(f)=|H(f)|^2$.'},
         {
           t:'note',
           kind:'def',
