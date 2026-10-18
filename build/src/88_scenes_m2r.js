@@ -481,8 +481,8 @@ function figWhiteLimit(v){
 function figFilterSpectrum(v){
   const f=v&&v.frame!=null?v.frame:2, H2=x=>1/(1+x*x);
   const a=P.Axes(SZ({xr:[-5,5],yr:[0,1.7],xlabel:'f\\;(\\text{kHz})',ylabel:'S(f),\\;|H(f)|^{2}',xticksOverride:[-4,-2,0,2,4],yticksOverride:[0.5,1]}));
-  a.curve(()=>0.5,{color:C.in,width:1.8,dash:'6 5',n:4});
-  a.raw(`<g opacity="${clamp01(f)}">`);a.curve(H2,{color:C.h,width:2.2,dash:'7 5',n:600});a.raw('</g>');
+  a.curve(()=>0.5,{color:C.in,width:2.2,n:4});
+  a.raw(`<g opacity="${clamp01(f)}">`);a.curve(H2,{color:C.h,width:2.6,n:600});a.raw('</g>');
   a.raw(`<g opacity="${clamp01(f-1)}">`);a.area(x=>0.5*H2(x),-5,5,{color:C.dec.out,n:600});a.curve(x=>0.5*H2(x),{color:C.out,width:2.6,n:600});a.raw('</g>');return a.svg();
 }
 function figFilterTime(){
@@ -1263,8 +1263,8 @@ const SC = [
         {
           t:'legend',
           items:[
-            ['in', '$S_X(f)$', true],
-            ['h', '$|H(f)|^2$', true, 1],
+            ['in', '$S_X(f)$', false],
+            ['h', '$|H(f)|^2$', false, 1],
             ['out', '$S_Y(f)$', false, 2]
           ],
           at:'tr'
