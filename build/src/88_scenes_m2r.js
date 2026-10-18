@@ -468,12 +468,14 @@ function figWhiteCorrelation(v){
    ms. The peak 2B grows and the lobe narrows while the area stays 1, so the
    curve tends to the impulse delta(tau) as B grows. */
 function figWhiteLimit(v){
-  const B=v&&v.B!=null?v.B:1, r=t=>2*B*sinc(2*B*t);
-  const a=P.Axes(SZ({xr:[-1.2,1.2],yr:[-2.6,11.6],xlabel:'\\tau\\;(\\text{ms})',ylabel:'R_w(\\tau)/(N_0/2)\\;(\\text{kHz})',xticksOverride:[-1,-0.5,0,0.5,1],yticksOverride:[2,4,6,8,10]}));
-  a.area(r,-1.2,1.2,{color:C.dec.mid,n:1800});a.curve(r,{color:C.mid,width:2.6,n:1800});
-  a.point(0,2*B,{color:C.mid,r:5});
-  a.note(0.08,2*B+0.35,'2B',{tex:true,fs:15,color:C.mid});
-  a.note(1.15,10.6,'\\text{area}=1',{tex:true,fs:15,color:C.ink,anchor:'end'});
+  const B=v&&v.B!=null?v.B:1, r=t=>2*B*sinc(2*B*t), pk=2*B, top=Math.max(11.6,pk*1.16);
+  const raw=top/5, mag=Math.pow(10,Math.floor(Math.log10(raw))), st=[1,2,5,10].map(k=>k*mag).find(x=>x>=raw);
+  const yt=[]; for(let y=st;y<=pk+1e-9;y+=st) yt.push(y);
+  const a=P.Axes(SZ({xr:[-1.2,1.2],yr:[-0.224*top,top],xlabel:'\\tau\\;(\\text{ms})',ylabel:'R_w(\\tau)/(N_0/2)\\;(\\text{kHz})',xticksOverride:[-1,-0.5,0,0.5,1],yticksOverride:yt}));
+  a.area(r,-1.2,1.2,{color:C.dec.mid,n:8000});a.curve(r,{color:C.mid,width:2.6,n:8000});
+  a.point(0,pk,{color:C.mid,r:5});
+  a.note(0.08,pk+0.03*top,'2B',{tex:true,fs:15,color:C.mid});
+  a.note(1.15,0.91*top,'\\text{area}=1',{tex:true,fs:15,color:C.ink,anchor:'end'});
   return a.svg();
 }
 function figFilterSpectrum(v){
@@ -1156,7 +1158,7 @@ const SC = [
           caption:'Drag $B$. The peak $2B$ grows and the lobe narrows, but the area stays $1$. As $B$ grows without limit, the curve tends to the impulse $\\delta(\\tau)$.',
           live:{
             controls:[
-              {k:'B', label:'$B$ (kHz)', min:0.5, max:5, step:0.05, v:1, show:v=>'$'+v.toFixed(2)+'$'}
+              {k:'B', label:'$B$ (kHz)', min:0.5, max:50, step:0.5, v:1, show:v=>'$'+v.toFixed(1)+'$'}
             ]
           }
         }
