@@ -1355,8 +1355,8 @@ window.C2 = [
 
 {t:'h3', text:'Strict-sense stationarity'},
 {t:'p',text:'A <b>strict-sense stationary</b> (SSS) process keeps every joint distribution when all observation times move by the same shift $\\Delta$.'},
-{t:'eqbox',cap:'Shift invariance',tex:'f_{X(t_1),\\ldots,X(t_n)}=f_{X(t_1+\\Delta),\\ldots,X(t_n+\\Delta)}',
- after:'This holds for every $n$, every choice of times and every shift $\\Delta$. With finite second moments, SSS implies WSS.'},
+{t:'eqbox',cap:'Shift invariance',tex:'f_{X(t_1),\\ldots,X(t_n)}(x_1,\\ldots,x_n)=f_{X(t_1+\\Delta),\\ldots,X(t_n+\\Delta)}(x_1,\\ldots,x_n)',
+ after:'Here $x_i$ is a value of $X(t_i)$. This holds for every $n$, every choice of times and every shift $\\Delta$. With finite second moments, SSS implies WSS.'},
 {t:'fig',svg:()=>figSssShift({t:1}),cap:'Each dot holds two readings, at $t=1$ ms and $t+\\tau=2$ ms, from one of 300 recordings. Moving $t$ leaves the shape of the cloud unchanged. Two readings show only the first two orders of the joint distribution.'},
 
 {t:'h3', text:'Autocorrelation and power'},

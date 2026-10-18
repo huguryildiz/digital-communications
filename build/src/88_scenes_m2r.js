@@ -819,7 +819,7 @@ const SC = [
       ],
       right:[
         {t:'note', kind:'def', head:'Strict sense', html:'A process is strict-sense stationary (SSS) when a common time shift leaves every joint distribution unchanged.'},
-        {t:'eq', label:'Shift invariance', tex:'f_{X(t_1),\\ldots,X(t_n)}=f_{X(t_1+\\Delta),\\ldots,X(t_n+\\Delta)}', note:'This holds for every $n$, every choice of times and every shift $\\Delta$. With finite second moments, SSS implies WSS.'},
+        {t:'eq', label:'Shift invariance', tex:'f_{X(t_1),\\ldots,X(t_n)}(x_1,\\ldots,x_n)=f_{X(t_1+\\Delta),\\ldots,X(t_n+\\Delta)}(x_1,\\ldots,x_n)', note:'Here $x_i$ is a value of $X(t_i)$. This holds for every $n$, every choice of times and every shift $\\Delta$. With finite second moments, SSS implies WSS.'},
         {
           t:'note',
           kind:'def',
