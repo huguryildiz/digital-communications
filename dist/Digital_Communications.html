@@ -19986,10 +19986,16 @@ function figSchwarz(v){
   const a = P.Axes(SZ({xr:[-3.2,3.2], yr:[-0.08,1.3], xlabel:'f', ylabel:'|G(f)|,\\;|H(f)|',
     xtarget:6, ytarget:3, ytickfmt:()=>''}));
   const G = f => Math.exp(-f*f), H = f => Math.exp(-f*f/(b*b));
+  const cut = b < 1;
+  a.area(f=>Math.max(G(f),H(f)), -3.2, 3.2, {color:(cut ? C.coral : C.muted)+'59'});
   a.area(f=>Math.min(G(f),H(f)), -3.2, 3.2, {color:C.dec.mid});
   a.curve(G, {color:C.in, width:2.4});
   a.curve(H, {color:C.h, width:2.2, dash:'7 5'});
-  a.note(-3.05, 1.16, `\\eta=${schwarzRatio(b).toFixed(2)}\\cdot\\dfrac{2E}{N_0}`, {tex:true, fs:16, color:C.mid});
+  const r = schwarzRatio(b), ok = Math.abs(b-1) < 0.07;
+  const verdict = ok ? '\\text{matched: best possible}'
+    : cut ? '\\text{too narrow: pulse cut}' : '\\text{too wide: extra noise}';
+  a.note(-3.05, 1.2, verdict, {tex:true, fs:17, color:ok ? C.mid : (cut ? C.coral : C.muted)});
+  a.note(-3.05, 1.06, `${Math.round(r*100)}\\%\\ \\text{of the best SNR}`, {tex:true, fs:16, color:C.mid});
   return a.svg();
 }
 
@@ -21479,7 +21485,7 @@ const SC = [
     {t:'fig', frame:true, grow:true,
       live:{controls:[{k:'b', label:'$b$', min:0.3, max:3, step:0.05, v:1, show:v=>'$'+v.toFixed(2)+'$'}]},
       svg:figSchwarz,
-      caption:'Drag $b$, the width of $|H(f)|$ against $|G(f)|$. A wider $|H|$ passes noise where the pulse has no energy. A narrower one cuts the pulse. The bound is reached only at $b=1$.'},
+      caption:'Drag $b$, the width of $|H(f)|$. Violet is the pulse that gets through. Grey is noise let in where the pulse has no energy. Red is pulse thrown away. Only $b=1$ avoids both.'},
     {t:'legend', items:[['in','$|G(f)|$'],['h','$|H(f)|$',true]], at:'tr'}
   ], right:[
     {t:'eq', label:'Schwarz\'s inequality', tex:'\\Bigl|\\int\\phi_1(f)\\,\\phi_2(f)\\,df\\Bigr|^{2}\\le\\int|\\phi_1(f)|^{2}\\,df\\int|\\phi_2(f)|^{2}\\,df',
