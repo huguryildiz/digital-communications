@@ -1813,7 +1813,7 @@ const SC = [
     {t:'fig', frame:true, grow:true,
       live:{controls:[{k:'r', label:'$T/\\tau$', min:-1, max:1, step:0.05, v:0, show:v=>'$'+(+Math.pow(10,v).toPrecision(2))+'$'}]},
       svg:figSnr,
-      caption:'Drag $T/\\tau$, the pulse length in units of the filter's time constant. Above: the filter output, with a band one noise standard deviation wide. Below: $\\eta$ against the bound $2E/N_0$, never above $0.81$.'}
+      caption:'Drag $T/\\tau$, the pulse length in units of the time constant of the filter. Above: the filter output, with a band one noise standard deviation wide. Below: $\\eta$ against the bound $2E/N_0$, never above $0.81$.'}
   ], right:[
     {t:'eq', label:'Peak pulse SNR', tex:'\\eta=\\frac{|g_0(T)|^{2}}{E[n^{2}(T)]}',
       note:'The signal part rises while the pulse enters the filter and falls after it. So it peaks at $t=T$, and the output is read there.'},
