@@ -4876,6 +4876,9 @@ def _ss_figs():
     holder.innerHTML = markup || '';
     const next = holder.querySelector('svg');
     if(next){
+      /* fitScene may have capped the figure to make the scene fit; the
+         redrawn svg keeps that cap, or it overflows its column */
+      next.style.maxHeight = old.style.maxHeight;
       old.replaceWith(next);
       if(S.layout==='phone') phoneFigures([next]);
     }
@@ -19851,10 +19854,12 @@ function figFilterChoice(v){
   a.area(t=>(t>=0&&t<1?1:0), -0.2, 2.3, {color:C.dec.in, n:600});
   a.poly(FP_X.map(([t,x])=>[t, fpG(t)+0.5*(x-fpG(t))]), {color:C.out, width:1.0});
   a.poly([[-0.2,0],[0,0],[0,1],[1,1],[1,0],[2.3,0]], {color:C.in, width:3.2});
-  a.poly([[0.8,2.3],[0.98,2.3]], {color:C.in, width:3.2});
-  a.note(1.03, 2.3, 'g(t)', {tex:true, fs:15, color:C.in});
-  a.poly([[1.38,2.3],[1.56,2.3]], {color:C.out, width:1.6});
-  a.note(1.61, 2.3, 'x(t)=g(t)+w(t)', {tex:true, fs:15, color:C.out});
+  /* the legend is laid out in pixels from the right, so larger labels keep it on one line */
+  const px = 1/(a.sx(1)-a.sx(0)), L = P.labelScale(), x2 = 2.27-112*L*px, x1 = x2-(30+34*L)*px;
+  a.poly([[x1-24*px,2.3],[x1-6*px,2.3]], {color:C.in, width:3.2});
+  a.note(x1, 2.3, 'g(t)', {tex:true, fs:15, color:C.in});
+  a.poly([[x2-24*px,2.3],[x2-6*px,2.3]], {color:C.out, width:1.6});
+  a.note(x2, 2.3, 'x(t)=g(t)+w(t)', {tex:true, fs:15, color:C.out});
   const b = P.Axes({w:560,h:hB,xr:[-0.2,2.3],yr:[-1.1,2.1],xlabel:'t/T',ylabel:'y(t)',
     pad:{l:56,r:26,t:24,b:42},xticksOverride:[0,1,2],yticksOverride:[-1,0,1,2]});
   fpOutput(b, F, -0.2, 2.3);
@@ -31723,9 +31728,11 @@ function figPsdOnly(v){
   const fh=1/(2*Math.PI*tc), pk=2*tc;
   a.poly([[-fh,0],[-fh,tc],[fh,tc],[fh,0]],{color:C.mid,width:1.4,dash:'4 5'});
   a.point(0,pk,{color:C.in,r:4.6});[-fh,fh].forEach(x=>a.point(x,tc,{color:C.mid,r:4.4}));
+  /* the three lines are spaced in pixels, so larger labels move apart */
+  const dy=40*P.labelScale()/(a.sy(0)-a.sy(1));
   a.note(3.9,2.2,'S_X(f)=\\dfrac{2\\tau_c}{1+(2\\pi f\\tau_c)^2}',{tex:true,fs:15,color:C.ink,anchor:'end'});
-  a.note(3.9,1.9,'S_X(0)=2\\tau_c='+pk.toFixed(2)+'\\ \\text{V}^{2}/\\text{kHz}',{tex:true,fs:15,color:C.in,anchor:'end'});
-  a.note(3.9,1.6,'f_{1/2}=\\dfrac{1}{2\\pi\\tau_c}='+fh.toFixed(2)+'\\ \\text{kHz}',{tex:true,fs:15,color:C.mid,anchor:'end'});
+  a.note(3.9,2.2-dy,'S_X(0)='+pk.toFixed(2)+'\\ \\text{V}^{2}/\\text{kHz}',{tex:true,fs:15,color:C.in,anchor:'end'});
+  a.note(3.9,2.2-2*dy,'f_{1/2}=\\dfrac{1}{2\\pi\\tau_c}='+fh.toFixed(2)+'\\ \\text{kHz}',{tex:true,fs:15,color:C.mid,anchor:'end'});
   return a.svg();
 }
 function figPowerArea(){

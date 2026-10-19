@@ -467,9 +467,11 @@ function figPsdOnly(v){
   const fh=1/(2*Math.PI*tc), pk=2*tc;
   a.poly([[-fh,0],[-fh,tc],[fh,tc],[fh,0]],{color:C.mid,width:1.4,dash:'4 5'});
   a.point(0,pk,{color:C.in,r:4.6});[-fh,fh].forEach(x=>a.point(x,tc,{color:C.mid,r:4.4}));
+  /* the three lines are spaced in pixels, so larger labels move apart */
+  const dy=40*P.labelScale()/(a.sy(0)-a.sy(1));
   a.note(3.9,2.2,'S_X(f)=\\dfrac{2\\tau_c}{1+(2\\pi f\\tau_c)^2}',{tex:true,fs:15,color:C.ink,anchor:'end'});
-  a.note(3.9,1.9,'S_X(0)=2\\tau_c='+pk.toFixed(2)+'\\ \\text{V}^{2}/\\text{kHz}',{tex:true,fs:15,color:C.in,anchor:'end'});
-  a.note(3.9,1.6,'f_{1/2}=\\dfrac{1}{2\\pi\\tau_c}='+fh.toFixed(2)+'\\ \\text{kHz}',{tex:true,fs:15,color:C.mid,anchor:'end'});
+  a.note(3.9,2.2-dy,'S_X(0)='+pk.toFixed(2)+'\\ \\text{V}^{2}/\\text{kHz}',{tex:true,fs:15,color:C.in,anchor:'end'});
+  a.note(3.9,2.2-2*dy,'f_{1/2}=\\dfrac{1}{2\\pi\\tau_c}='+fh.toFixed(2)+'\\ \\text{kHz}',{tex:true,fs:15,color:C.mid,anchor:'end'});
   return a.svg();
 }
 function figPowerArea(){

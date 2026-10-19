@@ -237,10 +237,12 @@ function figFilterChoice(v){
   a.area(t=>(t>=0&&t<1?1:0), -0.2, 2.3, {color:C.dec.in, n:600});
   a.poly(FP_X.map(([t,x])=>[t, fpG(t)+0.5*(x-fpG(t))]), {color:C.out, width:1.0});
   a.poly([[-0.2,0],[0,0],[0,1],[1,1],[1,0],[2.3,0]], {color:C.in, width:3.2});
-  a.poly([[0.8,2.3],[0.98,2.3]], {color:C.in, width:3.2});
-  a.note(1.03, 2.3, 'g(t)', {tex:true, fs:15, color:C.in});
-  a.poly([[1.38,2.3],[1.56,2.3]], {color:C.out, width:1.6});
-  a.note(1.61, 2.3, 'x(t)=g(t)+w(t)', {tex:true, fs:15, color:C.out});
+  /* the legend is laid out in pixels from the right, so larger labels keep it on one line */
+  const px = 1/(a.sx(1)-a.sx(0)), L = P.labelScale(), x2 = 2.27-112*L*px, x1 = x2-(30+34*L)*px;
+  a.poly([[x1-24*px,2.3],[x1-6*px,2.3]], {color:C.in, width:3.2});
+  a.note(x1, 2.3, 'g(t)', {tex:true, fs:15, color:C.in});
+  a.poly([[x2-24*px,2.3],[x2-6*px,2.3]], {color:C.out, width:1.6});
+  a.note(x2, 2.3, 'x(t)=g(t)+w(t)', {tex:true, fs:15, color:C.out});
   const b = P.Axes({w:560,h:hB,xr:[-0.2,2.3],yr:[-1.1,2.1],xlabel:'t/T',ylabel:'y(t)',
     pad:{l:56,r:26,t:24,b:42},xticksOverride:[0,1,2],yticksOverride:[-1,0,1,2]});
   fpOutput(b, F, -0.2, 2.3);
