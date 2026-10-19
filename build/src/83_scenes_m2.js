@@ -234,8 +234,9 @@ function figFilterChoice(v){
   const big = P.labelScale() > 1, hA = big ? 290 : 200, hB = big ? 330 : 230;
   const a = P.Axes({w:560,h:hA,xr:[-0.2,2.3],yr:[-3.2,4.4],xlabel:'t/T',ylabel:'x(t)',
     pad:{l:56,r:26,t:24,b:40},xticksOverride:[0,1,2],yticksOverride:[-2,0,2,4]});
-  a.poly(FP_X, {color:C.out, width:1.3});
-  a.poly([[-0.2,0],[0,0],[0,1],[1,1],[1,0],[2.3,0]], {color:C.in, width:2.4});
+  a.area(t=>(t>=0&&t<1?1:0), -0.2, 2.3, {color:C.dec.in, n:600});
+  a.poly(FP_X, {color:C.out, width:1.0});
+  a.poly([[-0.2,0],[0,0],[0,1],[1,1],[1,0],[2.3,0]], {color:C.in, width:3.2});
   const b = P.Axes({w:560,h:hB,xr:[-0.2,2.3],yr:[-1.1,2.1],xlabel:'t/T',ylabel:'y(t)',
     pad:{l:56,r:26,t:24,b:42},xticksOverride:[0,1,2],yticksOverride:[-1,0,1,2]});
   fpOutput(b, F, -0.2, 2.3);
@@ -1743,7 +1744,7 @@ const SC = [
   {t:'title', text:'Choosing the receive filter'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true,
-      frames:{labels:['$\\text{RC},\\ \\tau=T/10$','$\\text{RC},\\ \\tau=2T$','matched filter']},
+      frames:{labels:['$\\tau=T/10$','$\\tau=2T$','matched filter']},
       svg:figFilterChoice,
       caption:'The cyan pulse $g(t)$ is buried in the green input $x(t)$. Step through three filters of the same input. Each output is sampled at $t=T$.'}
   ], right:[
