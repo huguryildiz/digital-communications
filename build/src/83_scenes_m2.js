@@ -232,11 +232,15 @@ function figFilterChoice(v){
   const F = {sig:t=>(1-u)*A.sig(t)+u*B.sig(t), sd:(1-u)*A.sd+u*B.sd, n:t=>(1-u)*A.n(t)+u*B.n(t)};
   /* the phone draws larger labels, so each panel takes more height there */
   const big = P.labelScale() > 1, hA = big ? 290 : 200, hB = big ? 330 : 230;
-  const a = P.Axes({w:560,h:hA,xr:[-0.2,2.3],yr:[-3.2,4.4],xlabel:'t/T',ylabel:'x(t)',
-    pad:{l:56,r:26,t:24,b:40},xticksOverride:[0,1,2],yticksOverride:[-2,0,2,4]});
+  const a = P.Axes({w:560,h:hA,xr:[-0.2,2.3],yr:[-1.6,2.6],xlabel:'t/T',ylabel:'x(t)',
+    pad:{l:56,r:26,t:24,b:40},xticksOverride:[0,1,2],yticksOverride:[-1,0,1,2]});
   a.area(t=>(t>=0&&t<1?1:0), -0.2, 2.3, {color:C.dec.in, n:600});
-  a.poly(FP_X, {color:C.out, width:1.0});
+  a.poly(FP_X.map(([t,x])=>[t, fpG(t)+0.5*(x-fpG(t))]), {color:C.out, width:1.0});
   a.poly([[-0.2,0],[0,0],[0,1],[1,1],[1,0],[2.3,0]], {color:C.in, width:3.2});
+  a.poly([[0.8,2.3],[0.98,2.3]], {color:C.in, width:3.2});
+  a.note(1.03, 2.3, 'g(t)', {tex:true, fs:15, color:C.in});
+  a.poly([[1.38,2.3],[1.56,2.3]], {color:C.out, width:1.6});
+  a.note(1.61, 2.3, 'x(t)=g(t)+w(t)', {tex:true, fs:15, color:C.out});
   const b = P.Axes({w:560,h:hB,xr:[-0.2,2.3],yr:[-1.1,2.1],xlabel:'t/T',ylabel:'y(t)',
     pad:{l:56,r:26,t:24,b:42},xticksOverride:[0,1,2],yticksOverride:[-1,0,1,2]});
   fpOutput(b, F, -0.2, 2.3);
