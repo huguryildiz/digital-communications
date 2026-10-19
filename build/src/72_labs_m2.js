@@ -391,15 +391,18 @@ Object.assign(LABS, (function(){
       ax.vline(lamOpt,{color:P.COL.h,dash:'2 4',width:1.6});
 
       const bLo = Math.log10(Math.max(1e-12,peOpt)) - 0.2, bHi = bLo + 2.6;
-      const bx = P.Axes({w:ph?300:680,h:ph?220:gh(220),xr:[-0.85,0.85],yr:[bLo,bHi],
+      /* drawn in v = u + 0.85, so the vertical axis and its decade numbers sit
+         at the left edge and not on the dip of the curve */
+      const bx = P.Axes({w:ph?300:680,h:ph?220:gh(220),xr:[0,1.7],yr:[bLo,bHi],
         xlabel:'\\lambda/(2\\sqrt{E_b})',ylabel:'P_e',
         ytickfmt:P.decade, yticksOverride:P.decades(bLo,bHi), zeroAxes:false,
-        pad:{l:ph?44:60,r:ph?16:24,t:22,b:44}, xtarget:ph?4:5, ytarget:3});
-      bx.curve(u=>{ const Lam=u*2*A;
+        xticksOverride:[0.35,0.85,1.35], xtickfmt:v=>P.fmt(v-0.85,3),
+        pad:{l:ph?44:60,r:ph?16:24,t:22,b:44}, ytarget:3});
+      bx.curve(v=>{ const Lam=(v-0.85)*2*A;
         return Math.log10(Math.max(1e-12, p0*Qf((Lam+A)/sig)+p1*Qf((A-Lam)/sig))); },
         {color:P.COL.in,width:2.3});
-      bx.vline(st.lam/100,{color:P.COL.ink,dash:'5 4',width:1.6});
-      bx.vline(lamOpt/(2*A),{color:P.COL.h,dash:'2 4',width:1.6});
+      bx.vline(st.lam/100+0.85,{color:P.COL.ink,dash:'5 4',width:1.6});
+      bx.vline(lamOpt/(2*A)+0.85,{color:P.COL.h,dash:'2 4',width:1.6});
 
       const lg1 = `${L('mid','P(s_0)f_Y(y\\mid s_0)',true)}${L('mid','P(s_1)f_Y(y\\mid s_1)')}${L('err','\\text{error}')}`;
       root.querySelector('.plots').innerHTML = ph

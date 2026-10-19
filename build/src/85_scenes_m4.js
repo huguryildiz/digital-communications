@@ -136,7 +136,24 @@ function bottomTicks(a, vals, fmt){
     a.raw(`<text x="${X}" y="${f2(a.y0+19*L)}" font-size="${13.5*L}" fill="${C.muted}" text-anchor="middle">${f(v)}</text>`); });
   return a;
 }
-const TAx = o => { const xt = o.xt; const a = P.Axes(Object.assign({}, o, {xticksOverride:[]})); return xt ? bottomTicks(a, xt, o.xfmt) : a; };
+/* With zero inside the value range, the axis name sits one name-height under
+   the axis, which is the row these tick numbers take. In projector mode both
+   are larger and meet, so a figure that asks for it (dropName) sets the name
+   D below the axis there, under the tick row: the lower margin is made exactly
+   what that name needs, and the drop, which Axes measures from the zero line,
+   is solved for that margin. */
+const TAx = o => {
+  const xt = o.xt, L = P.labelScale(), ya = o.yr[0], yb = o.yr[1];
+  const opt = Object.assign({}, o, {xticksOverride:[]});
+  if(o.dropName && xt && L > 1 && o.xlabel && ya <= 0 && yb >= 0){
+    const t = P.Axes(opt);                 /* the drawn height and top margin */
+    const NB = (o.emphasis ? (t.W < 500 ? 24 : 26) : 21)*L;
+    const D = 41*L + 4, Pb = Math.max((o.pad||{}).b || 40, D + 0.42*NB + 1), f = -ya/(yb - ya);
+    opt.pad = Object.assign({}, o.pad||{}, {b:Pb});
+    opt.xnameDrop = D + f*(t.H - t.y1 - Pb);
+  }
+  const a = P.Axes(opt);
+  return xt ? bottomTicks(a, xt, o.xfmt) : a; };
 /* A blank drawing canvas in data coordinates: no ticks, no grid, no axes. */
 const bare = o => Object.assign({xticksOverride:[], yticksOverride:[], grid:false, zeroAxes:false, arrows:false}, o);
 
@@ -308,7 +325,7 @@ function figObserve(v){
     if(op(2) > 0.5){ lbl(b, 1.04, OB.rv[0]-0.08, 'r_1', C.mid); lbl(b, 1.04, OB.rv[1]-0.08, 'r_2', C.mid); } }
   const c = plane({h:H-ha-hb, need:[[-1.9,1.9],[-1.25,1.05]], xticksOverride:[], yticksOverride:[]});
   dot(c, OB.s[0], OB.s[1], {color:C.in, r:6.5});
-  lbl(c, OB.s[0]-0.32, OB.s[1]-0.06, '\\mathbf{s}_i', C.in, 'end');
+  lbl(c, OB.s[0]-0.32*P.labelScale(), OB.s[1]-0.06, '\\mathbf{s}_i', C.in, 'end');
   if(op(3) > 0.02){ const [x,y] = OB.rv;
     seg(c, [[x,0],[x,y],[0,y]], {color:C.mid, width:1.3, dash:'4 5', opacity:op(3)});
     seg(c, [OB.s,[x,y]], {color:C.muted, width:1.6, opacity:op(3)});
@@ -850,7 +867,7 @@ function figIntel(){
   lbl(a, 1.14, 1.3, '\\mathbf{s}_1', C.in); lbl(a, -1.2, 0.72, '\\mathbf{s}_2', C.out, 'end');
   lbl(a, -1.14, -1.52, '\\mathbf{s}_3', C.mid, 'end'); lbl(a, 1.16, -0.72, '\\mathbf{s}_4', C.h);
   lbl(a, 0.14, 1.85, '\\text{face}', C.err); lbl(a, 1.55, 0.14, '\\text{face}', C.err);
-  lbl(a, -0.75, 1.62, '\\text{no face}', C.muted, 'end');
+  lbl(a, -0.75+(P.labelScale()-1)*0.6, 1.62, '\\text{no face}', C.muted, 'end');
   return a.svg();
 }
 
@@ -937,7 +954,7 @@ function qamSim(){
 }
 function figTightness(v){
   const s0 = v ? v.snr : 6;
-  const a = TAx(SZ({xt:[0,4,8,12,16], xr:[0,20], yr:[-5,0.9], xlabel:'E_s/N_0\\;(\\text{dB})', ylabel:'P_e', ytickfmt:P.decade,
+  const a = TAx(SZ({dropName:true, xt:[0,4,8,12,16], xr:[0,20], yr:[-5,0.9], xlabel:'E_s/N_0\\;(\\text{dB})', ylabel:'P_e', ytickfmt:P.decade,
     yticksOverride:P.decades(-5,0), zeroAxes:false})); LGF = a.o.yr[0];
   a.hline(0, {color:C.muted, dash:'2 4', width:1.2});
   a.curve(db=>lg10(q16.dm(db)), {color:C.err, width:2.0, dash:'2 5'});
@@ -945,8 +962,9 @@ function figTightness(v){
   a.curve(db=>lg10(q16.nn(db)), {color:C.mid, width:2.4, dash:'7 5'});
   qamSim().forEach(([db,pe])=>{ if(pe > 0) a.point(db, Math.log10(pe), {color:C.out, r:5.5}); });
   a.vline(s0, {color:C.ink, dash:'5 4', width:1.3});
-  lbl(a, 0.4, -3.9, '\\text{union: }'+sci(q16.gen(s0)), C.err);
-  lbl(a, 0.4, -4.65, '\\text{nearest: }'+sci(q16.nn(s0)), C.mid);
+  const lx = P.labelScale() > 1 ? 0.2 : 0.4;   /* clear of the marker line at 6 dB when larger */
+  lbl(a, lx, -3.9, '\\text{union: }'+sci(q16.gen(s0)), C.err);
+  lbl(a, lx, -4.65, '\\text{nearest: }'+sci(q16.nn(s0)), C.mid);
   return a.svg();
 }
 
@@ -962,14 +980,14 @@ const REAL_UNION = realGallery({ id:'m4-real-union', nav:'Error probability arou
   objective:'Use the nearest-neighbour form and the union bound on Wi-Fi, LTE and 5G, and see how an error rate is measured.',
   keywords:'examples wifi 16-qam nearest neighbour lte qpsk union bound exact 5g link adaptation switching snr bit error rate tester',
   figs:[
-    [()=>{ const a = TAx(EXO({xt:[8,12,16,20], xr:[8,24], yr:[-7,0], xlabel:'E_s/N_0\\;(\\text{dB})', ylabel:'P_e', ytickfmt:P.decade, yticksOverride:[-6,-4,-2,0], zeroAxes:false})); LGF = a.o.yr[0];
+    [()=>{ const a = TAx(EXO({dropName:true, xt:[8,12,16,20], xr:[8,24], yr:[-7,0], xlabel:'E_s/N_0\\;(\\text{dB})', ylabel:'P_e', ytickfmt:P.decade, yticksOverride:[-6,-4,-2,0], zeroAxes:false})); LGF = a.o.yr[0];
       a.curve(db=>lg10(3*Qf(Math.sqrt(dB(db)/5))), {color:C.mid, width:2.4});
       return a.svg(); }, 'Wi-Fi 16-QAM has $d_{\\min}^{2}=0.4E_s$ and $\\bar N_{\\min}=3$. The nearest-neighbour form is $P_e\\approx3Q\\bigl(\\sqrt{E_s/5N_0}\\bigr)$.'],
-    [()=>{ const a = TAx(EXO({xt:[0,4,8], xr:[0,12], yr:[-6,0], xlabel:'E_s/N_0\\;(\\text{dB})', ylabel:'P_e', ytickfmt:P.decade, yticksOverride:[-6,-4,-2,0], zeroAxes:false})); LGF = a.o.yr[0];
+    [()=>{ const a = TAx(EXO({dropName:true, xt:[0,4,8], xr:[0,12], yr:[-6,0], xlabel:'E_s/N_0\\;(\\text{dB})', ylabel:'P_e', ytickfmt:P.decade, yticksOverride:[-6,-4,-2,0], zeroAxes:false})); LGF = a.o.yr[0];
       a.curve(db=>lg10(2*Qf(Math.sqrt(dB(db)))+Qf(Math.sqrt(2*dB(db)))), {color:C.err, width:2.4});
       a.curve(db=>lg10(1-Math.pow(1-Qf(Math.sqrt(dB(db))),2)), {color:C.ink, width:1.8, dash:'6 4'});
       return a.svg(); }, 'LTE control channels use QPSK. Solid: the union bound. Dashed: the exact $P_e$. They differ by less than $1\\%$ above $10$ dB.'],
-    [()=>{ const a = TAx(EXO({xt:[5,10,15,20], xr:[4,30], yr:[-5,0], xlabel:'E_s/N_0\\;(\\text{dB})', ylabel:'P_e', ytickfmt:P.decade, yticksOverride:[-4,-3,-2,-1,0], zeroAxes:false})); LGF = a.o.yr[0];
+    [()=>{ const a = TAx(EXO({dropName:true, xt:[5,10,15,20], xr:[4,30], yr:[-5,0], xlabel:'E_s/N_0\\;(\\text{dB})', ylabel:'P_e', ytickfmt:P.decade, yticksOverride:[-4,-3,-2,-1,0], zeroAxes:false})); LGF = a.o.yr[0];
       a.hline(-3, {color:C.muted, dash:'3 4'});
       a.curve(db=>lg10(2*Qf(Math.sqrt(dB(db)))), {color:C.mid, width:2.2});
       a.curve(db=>lg10(3*Qf(Math.sqrt(dB(db)/5))), {color:C.mid, width:2.2, dash:'7 5'});

@@ -76,7 +76,7 @@ function demod(){
     {t:'text',x:380,y:122,label:'Matched filter',fs:14},
     {t:'arrow',x1:460,y1:62,x2:556,y2:62,label:'y(t)',tex:true,color:C.mid},
     {t:'line',d:'M556,62 h22'},{t:'line',d:'M578,62 l22,-15'},
-    {t:'text',x:592,y:24,label:'\\text{sample at }t=T',tex:true,fs:13},
+    {t:'text',x:592,y:P.labelScale()>1?100:24,label:'\\text{sample at }t=T',tex:true,fs:13},
     {t:'arrow',x1:606,y1:62,x2:748,y2:62,label:'Y=y(T)',tex:true,color:C.mid}
   ]});
 }
@@ -101,7 +101,10 @@ function dens(o){
   const top = o.top, off = o.xr[0], span = o.xr[1] - o.xr[0];
   const step = o.xs || P.niceStep(span, 7);
   const xt = []; for(let v = Math.ceil(off/step - 1e-9)*step; v <= o.xr[1] + 1e-9; v += step) xt.push(v - off);
-  const a = P.Axes({w:o.w||760, h:o.h||300, xr:[0, span], yr:[-0.05*top, (o.room||1.42)*top],
+  /* in projector mode the panel reaches higher and a threshold label sits a
+     fixed number of pixels under its top, clear of the axis name */
+  const L = P.labelScale(), big = L>1, yTop = (o.room||1.42)*top*(big ? 1.1 : 1);
+  const a = P.Axes({w:o.w||760, h:o.h||300, xr:[0, span], yr:[-0.05*top, yTop],
     xlabel:o.xl||'y', ylabel:o.yl||'p_m\\,f_Y(y\\mid m)', pad:{l:66,r:28,t:24,b:42}, ytarget:3,
     xticksOverride:xt, xtickfmt: u => P.fmt(u + off, 3)});
   const g = f => u => f(u + off);
@@ -113,7 +116,8 @@ function dens(o){
   a.curve(g(o.f1), {color:C.mid, width:2.4, n:1400});
   o.lams.forEach(l => a.vline(l - off, {color:C.ink, dash:'6 4', width:1.6, opacity:1}));
   (o.notes||[]).forEach(n => { const k = n[4]==='k';
-    a.note(n[0] - off, n[1]*top, n[2], {tex:true, fs:15, anchor:k ? 'start' : (n[3]||'middle'), dx:k ? 7 : 0,
+    const y = big && k ? yTop - 18*L/(a.sy(0)-a.sy(1)) : n[1]*top;
+    a.note(n[0] - off, y, n[2], {tex:true, fs:15, anchor:k ? 'start' : (n[3]||'middle'), dx:k ? 7 : 0,
       color:k ? C.ink : C.mid}); });
   return a.svg();
 }
@@ -153,7 +157,7 @@ function filtDiag(){
     {t:'text',x:380,y:122,label:'Receive filter',fs:14},
     {t:'arrow',x1:460,y1:62,x2:556,y2:62,label:'y(t)',tex:true,color:C.mid},
     {t:'line',d:'M556,62 h22'},{t:'line',d:'M578,62 l22,-15'},
-    {t:'text',x:592,y:24,label:'\\text{sample at }t=t_0',tex:true,fs:13},
+    {t:'text',x:592,y:P.labelScale()>1?100:24,label:'\\text{sample at }t=t_0',tex:true,fs:13},
     {t:'arrow',x1:606,y1:62,x2:748,y2:62,label:'Y=y(t_0)',tex:true,color:C.mid}
   ]});
 }
@@ -205,14 +209,15 @@ function nyqFold(A, Bw, R, sumCol, tag){
   const lo = -7.6, hi = 7.6, xt = [];
   for(let v = -7; v <= 7; v++) xt.push(v - lo);
   const on = (n) => u => { const f = u + lo; return Math.abs(f - n*R) <= (A+Bw)/2 ? S(f - n*R) : NaN; };
-  const a = P.Axes({w:760, h:250, xr:[0, hi - lo], yr:[-0.03,0.4], xlabel:'f\\;(\\mathrm{kHz})',
+  const L = P.labelScale(), big = L>1, yt = big ? 0.46 : 0.4;
+  const a = P.Axes({w:760, h:250, xr:[0, hi - lo], yr:[-0.03,yt], xlabel:'f\\;(\\mathrm{kHz})',
     ylabel:'S(f-nR_b)\\;(\\mathrm{ms})', pad:{l:66,r:28,t:24,b:42},
     xticksOverride:xt, xtickfmt: u => String(Math.round(u + lo)),
     yticksOverride:[0.125,0.25], ytickfmt: v => P.fmt(v, 3)});
   [-2,-1,1,2].forEach(n => a.curve(on(n), {color:C.mid, width:1.8, dash:'6 4', n:1600}));
   a.curve(u => { let s = 0; for(let n=-3;n<=3;n++) s += S(u + lo - n*R); return s; }, {color:sumCol, width:2.8, n:1600});
   a.curve(on(0), {color:C.in, width:2.4, n:1600});
-  a.note(0.4, 0.35, tag, {tex:true, fs:15, anchor:'start', color:C.ink});
+  a.note(0.4, big ? yt-20*L/(a.sy(0)-a.sy(1)) : 0.35, tag, {tex:true, fs:15, anchor:'start', color:C.ink});
   return a.svg();
 }
 const tri = (a) => n => Math.abs(n) <= a ? (1 - Math.abs(n)/a)/a : 0;

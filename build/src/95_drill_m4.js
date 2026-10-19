@@ -45,12 +45,16 @@ function row(list, gap){
 }
 
 /* ---- a legend drawn as a small card inside the plot ---- */
-function legend(a, items, corner){
-  const L = P.labelScale(), fs = 13, rowH = 22*L, sw = 24*L, padX = 9*L;
+function legBox(a, items, corner){
+  const L = P.labelScale(), rowH = 22*L, sw = 24*L, padX = 9*L;
   const tw = Math.max(...items.map(it=>it[1].replace(/\\[a-zA-Z]+|[{}_^]/g,'').length))*7.2*L;
   const w = padX*2 + sw + 8*L + tw, h = items.length*rowH + 8*L;
   const x = (corner||'tr').includes('l') ? a.x0 + 8 : a.x1 - w - 8;
   const y = (corner||'tr').includes('b') ? a.y0 - h - 8 : a.y1 + 8;
+  return {L, rowH, sw, padX, w, h, x, y};
+}
+function legend(a, items, corner){
+  const {L, rowH, sw, padX, w, h, x, y} = legBox(a, items, corner), fs = 13;
   a.raw(`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" rx="5"
     fill="${C.plate}" stroke="${C.rule}" stroke-width="1.2"/>`);
   items.forEach((it,i)=>{
@@ -109,26 +113,40 @@ function dens(o){
   let top = 0;
   o.comps.forEach(c=>{ top = Math.max(top, (wtd?c.p:1)/(c.s*Math.sqrt(2*Math.PI))); });
   const yr = [0, top*(o.head||1.45)];
-  const a = P.Axes({w:o.w||660, h:o.h||300, xr:o.xr, yr:yr,
+  const LS = P.labelScale();
+  /* hBig and xrBig: a taller panel or a wider range in projector mode, so the
+     larger legend card clears the curves and the lines */
+  const big = LS > 1;
+  const a = P.Axes({w:o.w||660, h:(big && o.hBig) || o.h || 300, xr:(big && o.xrBig) || o.xr, yr:yr,
     xlabel:'y', ylabel: wtd ? 'P_i\\,f_Y(y\\mid i)' : 'f_Y(y\\mid i)',
     pad:{l:30,r:24,t:26,b:42}, xstep:o.xstep, yticksOverride:[]});
   const cuts = [-Infinity].concat(o.cuts, [Infinity]);
   o.comps.forEach((c,i)=>{
     const lo = cuts[i], hi = cuts[i+1];
-    if(lo > -Infinity) a.area(f(c), o.xr[0], lo, {color:C.dec.err, stroke:C.err});
-    if(hi <  Infinity) a.area(f(c), hi, o.xr[1], {color:C.dec.err, stroke:C.err});
+    if(lo > -Infinity) a.area(f(c), a.o.xr[0], lo, {color:C.dec.err, stroke:C.err});
+    if(hi <  Infinity) a.area(f(c), hi, a.o.xr[1], {color:C.dec.err, stroke:C.err});
   });
   o.comps.forEach(c=>a.curve(f(c), {color:c.col, width:2.4}));
   (o.ml||[]).forEach(t=>a.vline(t, {color:C.muted, dash:'2 4', width:1.2}));
+  const items = o.comps.map(c=>[c.col, c.tex]);
+  items.push([C.dec.err, '\\text{error area}', 'fill']);
+  (o.moreLegend||[]).forEach(it=>items.push(it));
+  const lb = legBox(a, items, o.legend||'tr');
   o.cuts.forEach((t,i)=>{
     a.vline(t, {color:C.ink, dash:'6 4', width:1.6});
     const lab = (o.cutTex && o.cutTex[i]) || '\\lambda';
     const anc = (o.cutAnchor&&o.cutAnchor[i]) || (t<0 ? 'end' : 'start');
-    a.note(t, yr[1]*0.93, lab, {tex:true, fs:14, color:C.ink, anchor:anc, dx:anc==='end'?-6:6});
+    /* In projector mode the label grows downward from the top of the plot,
+       clear of the axis name above it. Where it would then run under the
+       legend card, it is set just below the card instead. */
+    let dy = (LS-1)*16;
+    if(big){
+      const wl = (lab.replace(/\\[a-zA-Z]+|[{}_^]/g,'').length*9.6 + 7.4)*LS + 4, X = a.sx(t);
+      const lo = anc==='end' ? X - 6*LS - wl : X + 6*LS, hi = lo + wl;
+      if(hi > lb.x && lo < lb.x + lb.w) dy = lb.y + lb.h + 10 + 15*LS - 3 - a.sy(yr[1]*0.93);
+    }
+    a.note(t, yr[1]*0.93, lab, {tex:true, fs:14, color:C.ink, anchor:anc, dx:(anc==='end'?-6:6)*LS, dy});
   });
-  const items = o.comps.map(c=>[c.col, c.tex]);
-  items.push([C.dec.err, '\\text{error area}', 'fill']);
-  (o.moreLegend||[]).forEach(it=>items.push(it));
   legend(a, items, o.legend||'tr');
   if(o.over) o.over(a);
   return a.svg();
@@ -150,7 +168,7 @@ function cons(o){
     yticksOverride: o.oneD ? [] : null,
     xtickfmt: v=>(o.hideX||[]).some(h=>Math.abs(h-v)<1e-9) ? '' : P.fmt(v,3),
     ytickfmt: v=>(o.hideY||[]).some(h=>Math.abs(h-v)<1e-9) ? '' : P.fmt(v,3)});
-  const rc = REGCOL(), pc = PTCOL();
+  const rc = REGCOL(), pc = PTCOL(), LS = P.labelScale();
   const N0 = o.N0 || 0;
   const sx = (xr[1]-xr[0])/n, sy = (yr[1]-yr[0])/n;
   for(let i=0;i<n;i++) for(let j=0;j<n;j++){
@@ -192,8 +210,9 @@ function cons(o){
   const ci = (p,k)=>pc[(p.c!=null ? p.c : k) % pc.length];
   o.pts.forEach((p,k)=>a.point(p.x, p.y, {color:ci(p,k), r:6}));
   o.pts.forEach((p,k)=>{ if(p.tex) a.note(p.x, p.y, p.tex,
-    {tex:true, fs:14, color:ci(p,k), dx:p.dx!=null?p.dx:8, dy:p.dy!=null?p.dy:-12, anchor:p.anchor||'start'}); });
-  if(o.dmin && o.dminAt) a.note(o.dminAt[0], o.dminAt[1], 'd_{\\min}', {tex:true, fs:14, color:C.err, anchor:o.dminAnchor||'middle'});
+    {tex:true, fs:14, color:ci(p,k), dx:(p.dx!=null?p.dx:8)*LS, dy:(p.dy!=null?p.dy:-12)*LS, anchor:p.anchor||'start'}); });
+  const dAt = (LS > 1 && o.dminBig) || o.dminAt;   /* dminBig: clear of the lines when the label is larger */
+  if(o.dmin && dAt) a.note(dAt[0], dAt[1], 'd_{\\min}', {tex:true, fs:14, color:C.err, anchor:o.dminAnchor||'middle'});
   if(o.over) o.over(a);
   return a.svg();
 }
@@ -236,7 +255,7 @@ function erasureFig(o){
                       a.poly([[-L,e],[L,e]], {color:C.ink, width:1.5}); });
   o.pts.forEach((p,k)=>a.point(p.x, p.y, {color:pc[k % pc.length], r:6}));
   o.pts.forEach((p,k)=>a.note(p.x, p.y, p.tex, {tex:true, fs:14, color:pc[k % pc.length],
-    dx:p.x>0?10:-10, dy:-12, anchor:p.x>0?'start':'end'}));
+    dx:(p.x>0?10:-10)*P.labelScale(), dy:-12*P.labelScale(), anchor:p.x>0?'start':'end'}));
   if(o.over) o.over(a);
   return a.svg();
 }
@@ -398,7 +417,11 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
     g.curve(x=>cl(bB(x)), {color:C.mid, width:2.4});
     g.curve(x=>cl(eB(x)), {color:C.mid, width:2, dash:'6 4'});
     const at = (f, v) => { let lo = 0, hi = 20; for(let k=0;k<60;k++){ const m=(lo+hi)/2; if(f(m) > v) lo = m; else hi = m; } return lo; };
-    g.span(at(bA,1e-5), at(bB,1e-5), -5, '\\approx3\\ \\text{dB}', {tex:true, color:C.ink, fs:13});
+    /* in projector mode the larger label goes under the bracket, where the
+       two curves are further apart */
+    const sA = at(bA,1e-5), sB = at(bB,1e-5), big = P.labelScale() > 1;
+    g.span(sA, sB, -5, big ? '' : '\\approx3\\ \\text{dB}', {tex:true, color:C.ink, fs:13});
+    if(big) g.note((sA+sB)/2, -5, '\\approx3\\ \\text{dB}', {tex:true, fs:13, color:C.ink, anchor:'middle', dy:24});
     g.vline(10*Math.log10(4), {color:C.muted, dash:'2 4', width:1.2});
     legend(g, [[C.in,'\\text{A, union bound}'],[C.mid,'\\text{B, union bound}'],[C.mid,'\\text{B, exact}','6 4']], 'bl');
     return row([B, g.svg()], 18); },
@@ -423,7 +446,7 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   figSol: () => {
     const comps = g => [-6,-2,2,6].map((m,k)=>({m:m*g, s:1, p:0.25, col:[C.in,C.out,C.mid,C.h][k],
       tex:'f_Y(y\\mid '+(m<0?'{-}':'')+Math.abs(m)+')'}));
-    const panel = (g, name) => dens({xr:[-9.5,9.5], xstep:2, cuts:[-4,0,4], ml:[-6,-2,2,6], w:720, h:380,
+    const panel = (g, name) => dens({xr:[-9.5,9.5], xrBig:[-9.5,12.5], xstep:2, cuts:[-4,0,4], ml:[-6,-2,2,6], w:720, h:380, hBig:430,
       comps:comps(g), cutTex:['-4','0','4'], cutAnchor:['end','start','start'], legend:'tr', head:3.0, moreLegend:[[C.muted,'\\text{nominal sample}','2 4']],
       over:a=>a.note(-9.3, 0.4*3.0*0.84, name, {tex:true, fs:14, color:C.ink})});
     return panel(0.85, 'g=0.85') + panel(1.15, 'g=1.15'); },
@@ -568,12 +591,12 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   figSol: () => dens({xr:[-6,6], xstep:2, cuts:[0], w:620, h:260,
        comps:[{m:-2.828, s:0.9153, p:0.5, col:C.in, tex:'f_Y(y\\mid 0)'},
               {m:2.828, s:0.9153, p:0.5, col:C.out, tex:'f_Y(y\\mid 1)'}],
-       cutTex:['\\lambda=0'], legend:'tr', head:1.8,
+       cutTex:['\\lambda=0'], legend:'tr', head:1.8, hBig:340,
        over:a=>a.note(-5.8,0.66,'\\text{antipodal},\\ N_0/2=0.838',{tex:true,fs:13,color:C.ink})})
      + dens({xr:[-3,7], xstep:1, cuts:[2], w:620, h:260,
        comps:[{m:0, s:0.6472, p:0.5, col:C.in, tex:'f_Y(y\\mid 0)'},
               {m:4, s:0.6472, p:0.5, col:C.out, tex:'f_Y(y\\mid 1)'}],
-       cutTex:['\\lambda=2'], legend:'tr', head:1.8,
+       cutTex:['\\lambda=2'], legend:'tr', head:1.8, hBig:340,
        over:a=>a.note(-2.85,0.95,'\\text{on-off},\\ N_0/2=0.419',{tex:true,fs:13,color:C.ink})}),
   err:'Keeping the peak amplitude $2$ for on-off signalling. The comparison is fair only at equal average energy, which needs $A=2\\sqrt2$.',
   teach:'A reversed question: the error probability is given and the noise is asked for. The two solution panels have the same error area, which is the point of the answer.' },
@@ -595,7 +618,7 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   figSol: () => dens({xr:[-7,7], xstep:1, cuts:[-0.2281], ml:[0], weighted:true,
     comps:[{m:-2, s:1.5, p:0.4, col:C.in, tex:'0.4\\,f_Y(y\\mid 0)'},
            {m:2, s:1.5, p:0.6, col:C.out, tex:'0.6\\,f_Y(y\\mid 1)'}],
-    cutTex:['\\lambda=-0.228'], cutAnchor:['end'], legend:'tl', head:1.9}),
+    cutTex:['\\lambda=-0.228'], cutAnchor:['end'], legend:'tl', head:1.9, hBig:420}),
   err:'Using the midpoint $\\lambda=0$ with unequal priors. That is the ML threshold, and it gives $P_b=0.0918$ instead of $0.0885$.',
   teach:'This is the examination shape. The figure shows the weighted densities, so the threshold sits exactly where the two drawn curves cross.' },
 
@@ -614,7 +637,7 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   figSol: () => dens({xr:[-6,11], xstep:2, cuts:[2.8244], ml:[2.5], weighted:true,
     comps:[{m:0, s:2, p:0.6, col:C.in, tex:'0.6\\,f_Y(y\\mid 0)'},
            {m:5, s:2, p:0.4, col:C.out, tex:'0.4\\,f_Y(y\\mid 1)'}],
-    cutTex:['\\lambda=2.824'], legend:'tr', head:1.9}),
+    cutTex:['\\lambda=2.824'], legend:'tr', head:1.9, hBig:420}),
   err:'Writing $\\ln(P_1/P_0)$ in place of $\\ln(P_0/P_1)$. The threshold then lands at $2.18$, on the wrong side of the midpoint, and $P_b$ rises to $0.115$.',
   teach:'The on-off form of the examination question. Part (c) shows that the MAP gain is real but small at these priors.' },
 
@@ -678,7 +701,7 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
     comps:[{m:-2, s:Math.SQRT1_2, p:0.25, col:C.in, tex:'0.25\\,f_Y(y\\mid -2)'},
            {m:0, s:Math.SQRT1_2, p:0.5, col:C.out, tex:'0.5\\,f_Y(y\\mid 0)'},
            {m:2, s:Math.SQRT1_2, p:0.25, col:C.mid, tex:'0.25\\,f_Y(y\\mid 2)'}],
-    cutTex:['\\lambda_1','\\lambda_2'], cutAnchor:['end','start'], legend:'tr', head:1.9}),
+    cutTex:['\\lambda_1','\\lambda_2'], cutAnchor:['end','start'], legend:'tr', head:1.9, hBig:360}),
   err:'Shrinking the middle region. The middle level is the more likely one, so both thresholds move outwards, from $\\pm1$ to $\\pm1.173$.',
   teach:'A variant with three levels. Each threshold is a binary MAP problem between neighbours, which is the point to make.' },
 
@@ -697,7 +720,7 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   figSol: () => dens({xr:[-3,3], xstep:1, cuts:[-0.0866], ml:[0], weighted:true,
     comps:[{m:-1, s:0.5, p:1/3, col:C.in, tex:'\\tfrac13\\,f_Y(y\\mid 0)'},
            {m:1, s:0.5, p:2/3, col:C.out, tex:'\\tfrac23\\,f_Y(y\\mid 1)'}],
-    cutTex:['\\lambda=-0.087'], cutAnchor:['end'], legend:'tl', head:1.35}),
+    cutTex:['\\lambda=-0.087'], cutAnchor:['end'], legend:'tl', head:1.35, hBig:420}),
   err:'Taking the priors as $0.5$ and $1$. "Twice as likely" means $P_1=2P_0$, and the two priors must still add to one, so $P_0=1/3$.',
   teach:'Part (c) shows that the MAP shift scales with $\\sigma^{2}$. At low noise the MAP and ML detectors almost agree.' },
 
@@ -737,7 +760,7 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   figSol: () => dens({xr:[-3.5,3.5], xstep:1, cuts:[-0.25], ml:[0], weighted:true,
     comps:[{m:-1, s:Math.SQRT1_2, p:0.2689, col:C.in, tex:'0.269\\,f_Y(y\\mid 0)'},
            {m:1, s:Math.SQRT1_2, p:0.7311, col:C.out, tex:'0.731\\,f_Y(y\\mid 1)'}],
-    cutTex:['\\lambda=-0.25'], cutAnchor:['end'], legend:'tl', head:1.4}),
+    cutTex:['\\lambda=-0.25'], cutAnchor:['end'], legend:'tl', head:1.4, hBig:420}),
   err:'Solving $\\ln(P_0/P_1)=-1$ as $P_0=e^{-1}$. The logarithm gives the ratio $P_0/P_1=e^{-1}$, and $P_0+P_1=1$ is still needed.',
   teach:'A reversed question: the threshold is given and the priors are asked for. It tests whether the class can read the MAP formula in both directions.' },
 
@@ -888,7 +911,7 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
       a.poly([[2,1.4],[-0.4,1.4]], {color:C.err, width:2});
       a.note(1.2, 2, '1.6', {tex:true, fs:13, color:C.muted, anchor:'middle', dy:-10});
       a.note(0.8, 1.4, '2.4', {tex:true, fs:13, color:C.err, anchor:'middle', dy:18});
-      a.note(-2.45, 0.2, '\\text{erasure}', {tex:true, fs:13, color:C.ink, anchor:'middle', dy:4}); }}),
+      a.note(-2.45, 0.2, '\\text{erasure}', {tex:true, fs:13, color:C.ink, anchor:'middle', dy:4+(P.labelScale()-1)*18}); }}),
   err:'Measuring the error distance to the axis, $2/0.8=2.5$, as in ordinary QPSK. With the zone an error must pass the far edge of a strip, $2.4$ from the point, so the argument is $3.00$.',
   teach:'A decision with three outcomes. The intelligent union bound works face by face, once for the error faces and once for the erasure faces. Part (d) shows the trade: fewer wrong decisions for a few flagged ones.' },
 
@@ -909,7 +932,7 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   figSol: () => { const r=Math.SQRT2; return cons({xr:[-2.4,2.4], yr:[-2.2,2.2], w:520, h:460, xstep:1, ystep:1,
     pts:[0,1,2].map(k=>{ const th=2*Math.PI*k/3+Math.PI/2; return {x:r*Math.cos(th), y:r*Math.sin(th),
       tex:'\\mathbf{s}_'+k, dx:Math.cos(th)<-0.1?-8:8, dy:Math.sin(th)<0?20:-10, anchor:Math.cos(th)<-0.1?'end':'start'}; }),
-    dmin:[1,2], dminAt:[0.25,-0.97], dminAnchor:'start', hideX:[-1,1], hideY:[-1,1], nn:[[0,1],[0,2]]}); },
+    dmin:[1,2], dminAt:[0.25,-0.97], dminBig:[0.25,-1.06], dminAnchor:'start', hideX:[-1,1], hideY:[-1,1], nn:[[0,1],[0,2]]}); },
   err:'Using $d_{\\min}=\\sqrt2\\,r$, the chord of four points. Three points are $120^{\\circ}$ apart, so the chord is $2r\\sin60^{\\circ}=\\sqrt3\\,r$.',
   teach:'The examination shape with $M=3$. Here the nearest-neighbour form is also the full union bound, because every point neighbours every other.' },
 
@@ -928,7 +951,7 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   figSol: () => cons({xr:[-3.2,3.2], yr:[-2.9,2.9], w:540, h:480, xstep:1, ystep:1,
     pts:[{x:0,y:0,c:3,tex:'\\mathbf{s}_1',dx:18,dy:20}].concat([0,1,2,3,4,5].map(i=>{ const th=i*Math.PI/3;
       return {x:2*Math.cos(th), y:2*Math.sin(th), c:i%2, tex:'\\mathbf{s}_'+(i+2), dx:Math.cos(th)<-0.1?-8:8, dy:Math.sin(th)<-0.1?20:-10, anchor:Math.cos(th)<-0.1?'end':'start'}; })),
-    dmin:[0,1], dminAt:[1.5,0.22], hideX:[-1,1], hideY:[-2,-1,1,2],
+    dmin:[0,1], dminAt:[1.5,0.22], dminBig:[1.38,0.18], hideX:[-1,1], hideY:[-2,-1,1,2],
     nn:[[0,2],[0,3],[0,4],[0,5],[0,6],[1,2],[2,3],[3,4],[4,5],[5,6],[6,1]]}),
   err:'Counting only the centre\'s neighbours, $N_{\\min}=6$. $N_{\\min}$ is the average over all seven points, and a ring point has three neighbours.',
   teach:'A variant: the hexagonal packing. It has a large $N_{\\min}$ but also a large $d_{\\min}$ for its energy.' },
@@ -978,7 +1001,7 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
      +'<b>Check.</b> The region of $\\mathbf{s}_1$ is an exact quadrant, so its conditional error is exact: $1-(1-Q(2))(1-Q(3))=1-(0.97725)(0.99865)=0.02407$. The union bound for this point is $Q(2)+Q(3)=0.02410$, just above it, as a bound must be.',
   figSol: () => cons({xr:[-1.5,4], yr:[-1.5,4.5], w:500, h:520, xstep:1, ystep:1,
     pts:[{x:0,y:0,tex:'\\mathbf{s}_1',dx:-8,dy:18,anchor:'end'},{x:2,y:0,tex:'\\mathbf{s}_2'},{x:0,y:3,tex:'\\mathbf{s}_3',dx:-8,anchor:'end'}],
-    dmin:[0,1], dminAt:[1.15,0.2], dminAnchor:'start', hideX:[1,2], hideY:[3], nn:[[0,2],[1,2]],
+    dmin:[0,1], dminAt:[1.15,0.2], dminBig:[1.07,0.2], dminAnchor:'start', hideX:[1,2], hideY:[3], nn:[[0,2],[1,2]],
     over:a=>a.point(1,1.5,{color:C.ink,r:3})}),
   err:'Counting each pair once and not dividing by $M$. The union bound averages over the transmitted point, and each pair appears once from each end.',
   teach:'A small constellation where the three forms separate. The check uses the one region that is an exact quadrant, so the true value is known for one point.' }

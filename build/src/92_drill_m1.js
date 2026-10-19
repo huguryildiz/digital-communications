@@ -100,8 +100,11 @@ function figWave(o){
   (o.marks||[]).forEach(([t,v])=>a.point(t, v, {color:C.mid}));
   const lx = o.lx!=null ? o.lx : o.t0 + 0.02*(o.t1-o.t0);
   a.note(lx, o.max, o.maxLab, {tex:true, dy:-10, color:C.mid});
-  if(o.minTo!=null) a.note(o.minTo+0.02*(o.t1-o.t0), o.min, o.minLab, {tex:true, dy:4, color:C.mid});
-  else a.note(lx, o.min, o.minLab, {tex:true, dy:20, color:C.mid});
+  /* the distance below the minimum line grows with the label, so a label
+     drawn larger in lecture mode does not climb back onto the curve */
+  const LS = P.labelScale();
+  if(o.minTo!=null) a.note(o.minTo+0.02*(o.t1-o.t0), o.min, o.minLab, {tex:true, dy:4+30*(LS-1), color:C.mid});
+  else a.note(lx, o.min, o.minLab, {tex:true, dy:12+14*LS, color:C.mid});
   return panel(a.svg(), o.legend ? legend(o.legend) : '');
 }
 

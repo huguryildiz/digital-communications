@@ -979,7 +979,8 @@ Object.assign(LABS, (function(){
       const FO = 1, EO = 10;
       const Wt = ph ? 300 : 430, hT = ph ? 190 : gh(215);
       const df = (nc ? 1 : 0.5)/k;                                    /* tone spacing over R_b */
-      const at = P.Axes(Object.assign(compactX(), {w:Wt,h:hT,xr:[-0.3+FO,7.2+FO],yr:[0,1.4],xlabel:'(f-f_1)/R_b',ylabel:'\\text{tones}',
+      /* projected, the range reaches higher so the enlarged W over the span stays under the name */
+      const at = P.Axes(Object.assign(compactX(), {w:Wt,h:hT,xr:[-0.3+FO,7.2+FO],yr:[0,P.labelScale() > 1 ? 1.75 : 1.4],xlabel:'(f-f_1)/R_b',ylabel:'\\text{tones}',
         ytickfmt:()=>'',yticksOverride:[],zeroAxes:false,xtickfmt:()=>'',xticksOverride:[0,1,2,3,4,5,6,7].map(v=>v+FO),
         pad:{l:ph?30:34,r:ph?12:16,t:24,b:34}}));
       footTicks(at, [0,1,2,3,4,5,6,7].map(v=>v+FO), 0, v=>fmt(v-FO,2), 104);
@@ -1015,7 +1016,9 @@ Object.assign(LABS, (function(){
       /* the limit of Module 6, faint, with its name */
       ap.vline(LIMIT+EO,{color:P.COL.muted,dash:'3 5',width:1.3,opacity:0.8});
       ap.note(LIMIT+EO, -5.4, '\\text{limit }-1.6\\ \\text{dB}', {tex:true, fs:14, color:P.COL.muted, anchor:'end', dx:-8});
-      ap.note(LIMIT+EO, -6.1, '\\text{(Module 6)}', {tex:true, fs:14, color:P.COL.muted, anchor:'end', dx:-8});
+      /* the second line a label height under the first, so projected lines stay apart */
+      const bigL = P.labelScale() > 1;
+      ap.note(LIMIT+EO, bigL ? -5.4 : -6.1, '\\text{(Module 6)}', {tex:true, fs:14, color:P.COL.muted, anchor:'end', dx:-8, dy:bigL ? 26*P.labelScale() : 0});
       MS.forEach(m=>{ if(m !== Mn) ap.poly(sh(curve(st.mode, m)),{color:P.COL.noise,width:1.6}); });
       ap.curve(x=>lg1(union(st.mode, Mn, x-EO)),{color:P.COL.in,width:1.8,dash:'7 5'});
       ap.poly(sh(curve(st.mode, Mn)),{color:P.COL.in,width:2.6});

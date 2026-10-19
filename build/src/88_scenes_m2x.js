@@ -175,9 +175,12 @@ function figPsd(v){
       pts.push(a.sx(x).toFixed(2)+','+a.sy(y).toFixed(2)); }
     a.raw(`<path d="M${a.sx(x0).toFixed(2)},${a.sy(DB_LO).toFixed(2)}L${pts.join('L')}L${a.sx(x1).toFixed(2)},${a.sy(DB_LO).toFixed(2)}Z" fill="${C.dec.err}" stroke="none"/>`); };
   fill(rect); if(lo < (1+al)/2) fill(rc);
-  a.curve(f=>dB(rc(f-dl)), {color:C.slate, width:1.8, dash:'2 4', n:1200});
-  a.curve(f=>dB(rect(f)), {color:C.in, width:1.6, dash:'4 4', n:1600});
-  a.curve(f=>dB(rc(f)), {color:C.in, width:2.6, n:1200});
+  /* in projector mode a curve stops at the floor of the range instead of
+     running into the clip margin, where it met the enlarged axis name */
+  const dBc = P.labelScale()>1 ? x => { const y = dB(x); return y < DB_LO ? NaN : y; } : dB;
+  a.curve(f=>dBc(rc(f-dl)), {color:C.slate, width:1.8, dash:'2 4', n:1200});
+  a.curve(f=>dBc(rect(f)), {color:C.in, width:1.6, dash:'4 4', n:1600});
+  a.curve(f=>dBc(rc(f)), {color:C.in, width:2.6, n:1200});
   const pr = simpson(rect, lo, hi, 800);
   const prc = simpson(rc, Math.max(lo,-(1+al)/2), Math.min(hi,(1+al)/2)) / simpson(rc, -(1+al)/2, (1+al)/2);
   const pct = x => x < 0.0005 ? '0' : (100*x).toFixed(1);
@@ -216,7 +219,7 @@ function figRepeater(v){
   /* drawn at y + 2, so the time ticks sit under the frame and not on the
      edges of the waveform */
   const c = P.Axes({w:560,h:h3,xr:[-0.2,8.3],yr:[0.2,3.8],xlabel:'t/T_b',ylabel:'\\text{regenerated}',
-    pad:{l:56,r:26,t:22,b:40},xnameDrop:44*P.labelScale(),xticksOverride:[0,2,4,6,8],yticksOverride:[1,3],ytickfmt:y=>P.fmt(y-2)});
+    pad:{l:56,r:26,t:22,b:40},xnameDrop:(P.labelScale()>1?54:44)*P.labelScale(),xticksOverride:[0,2,4,6,8],yticksOverride:[1,3],ytickfmt:y=>P.fmt(y-2)});
   c.hline(2, {color:C.muted});
   const m = f > 0.02 ? Math.min(4, Math.ceil(f-1e-9)) : 0, sent = RP_R[Math.min(4, Math.floor(f+0.4))];
   if(m > 0){ const prev = lvl(RP_R[m-1]);

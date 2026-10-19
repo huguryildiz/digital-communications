@@ -314,8 +314,13 @@ function figClt(v){
   const f = frameOf(v, 3), k = Math.min(2, Math.floor(f+1e-9)), fr = f-k, D = cltDens();
   const d = CL_X.map((_,i)=> fr < 1e-9 ? D[k][i] : (1-fr)*D[k][i] + fr*D[Math.min(3,k+1)][i]);
   const at = z => { const u = (z+3.6)/0.02, i = Math.max(0, Math.min(359, Math.floor(u))), w = u-i; return d[i]*(1-w) + d[i+1]*w; };
-  const a = P.Axes(SZ({xr:[-3.6,3.6], yr:[0,0.62], xlabel:'z', ylabel:'f_Z(z)',
+  /* in projector mode the three notes at the top left grow: the panel gains
+     height and the notes are spaced in pixels above the densities */
+  const L = P.labelScale(), big = L>1;
+  const a = P.Axes(SZ({h:big?460:380, xr:[-3.6,3.6], yr:[0,big?0.95:0.62], xlabel:'z', ylabel:'f_Z(z)',
     xticksOverride:[-3,-2,-1,0,1,2,3], yticksOverride:[0.2,0.4]}));
+  const u = 1/(a.sy(0)-a.sy(1)), yn = big ? 0.95-22*L*u : 0.585,
+        yz = big ? yn-46*L*u : 0.48, yg = big ? yz-42*L*u : 0.36;
   a.area(at, -3.6, 3.6, {color:C.dec.mid, n:720});
   /* one source on the same scale: the flat box every sum starts from */
   const hw = Math.sqrt(3), hb = 1/(2*hw);
@@ -325,9 +330,9 @@ function figClt(v){
   a.curve(at, {color:C.mid, width:2.8, n:720});
   const n = [1,2,5,30][Math.round(f)];
   const gap = Math.max(...CL_X.map((z,i)=>Math.abs(d[i]-dN(z))));
-  a.note(-3.45, 0.6, `n=${n}`, {tex:true, fs:18, color:C.mid});
-  a.note(-3.45, 0.5, 'Z=\\dfrac{X_1+\\cdots+X_n}{\\sqrt{n/3}}', {tex:true, fs:15, color:C.slate});
-  a.note(-3.45, 0.36, `\\text{largest gap to Gaussian: }${gap.toFixed(3)}`, {tex:true, fs:14, color:C.muted});
+  a.note(-3.45, yn, `n=${n}`, {tex:true, fs:18, color:C.mid});
+  a.note(-3.45, yz, 'Z=\\dfrac{X_1+\\cdots+X_n}{\\sqrt{n/3}}', {tex:true, fs:15, color:C.slate});
+  a.note(-3.45, yg, `\\text{largest gap to Gaussian: }${gap.toFixed(3)}`, {tex:true, fs:14, color:C.muted});
   return a.svg();
 }
 
@@ -474,9 +479,11 @@ function figPsdOnly(v){
   a.note(3.9,2.2-2*dy,'f_{1/2}=\\dfrac{1}{2\\pi\\tau_c}='+fh.toFixed(2)+'\\ \\text{kHz}',{tex:true,fs:15,color:C.mid,anchor:'end'});
   return a.svg();
 }
+/* drawn in u = f + 7, so the vertical axis sits at the left edge and its tick
+   numbers are not written on the top of the rectangle */
 function figPowerArea(){
-  const a=P.Axes(SZ({xr:[-7,7],yr:[0,1.6],xlabel:'f\\;(\\text{kHz})',ylabel:'S_X(f)\\;(\\text{W}/\\text{Hz})',xticksOverride:[-5,0,5],yticksOverride:[0.5,1],ytickfmt:v=>v+'×10⁻³'}));
-  a.rect(-5,0,5,1,{fill:C.dec.in});a.poly([[-7,0],[-5,0],[-5,1],[5,1],[5,0],[7,0]],{color:C.in,width:2.6});return a.svg();
+  const a=P.Axes(SZ({pad:{l:P.labelScale()>1?116:88,r:26,t:24,b:42},xr:[0,14],yr:[0,1.6],xlabel:'f\\;(\\text{kHz})',ylabel:'S_X(f)\\;(\\text{W}/\\text{Hz})',xticksOverride:[2,7,12],xtickfmt:u=>String(u-7),yticksOverride:[0.5,1],ytickfmt:v=>v+'×10⁻³'}));
+  a.rect(2,0,12,1,{fill:C.dec.in});a.poly([[0,0],[2,0],[2,1],[12,1],[12,0],[14,0]],{color:C.in,width:2.6});return a.svg();
 }
 function figWhiteSpectrum(v){
   const B=v&&v.B!=null?v.B:2;
@@ -524,16 +531,19 @@ function figGaussianSample(){
    for this WSS process the average product stays R_X(1 ms) = e^-1 V^2. The
    two readouts are measured from the 3000 recordings SS_P (defined below). */
 function figWssShift(v){
-  const t0=val(v,'t',1), tau=1;
-  const a=P.Axes(SZ({xr:[0,6],yr:[-3.4,5.4],xlabel:'t\\;(\\text{ms})',ylabel:'X(t)\\;(\\text{V})',xticksOverride:[0,1,2,3,4,5,6],yticksOverride:[-2,0,2]}));
+  const t0=val(v,'t',1), tau=1, L=P.labelScale(), big=L>1, top=big?6.2:5.4;
+  const a=P.Axes(SZ({xr:[0,6],yr:[-3.4,top],xlabel:'t\\;(\\text{ms})',ylabel:'X(t)\\;(\\text{V})',xticksOverride:[0,1,2,3,4,5,6],yticksOverride:[-2,0,2]}));
   AC_P.forEach((x,i)=>a.curve(path(x,AC_DT,6),{color:[C.in,C.h,C.err][i],width:1.6,n:700}));
-  [t0,t0+tau].forEach(t=>{a.vline(t,{color:C.mid,dash:'5 4',width:1.4,opacity:0.9});
+  /* the two reading times are marked up to the tau bracket, so its label,
+     which is wider than the bracket once labels grow, crosses no line */
+  [t0,t0+tau].forEach(t=>{a.raw(`<line x1="${a.sx(t).toFixed(2)}" y1="${a.sy(4.45).toFixed(2)}" x2="${a.sx(t).toFixed(2)}" y2="${a.sy(-3.4).toFixed(2)}" stroke="${C.mid}" stroke-width="${(1.4*(1+(L-1)*0.75)).toFixed(2)}" stroke-dasharray="5 4" opacity="0.9"/>`);
     AC_P.forEach(x=>a.point(t,path(x,AC_DT,6)(t),{color:C.mid,r:4}));});
   a.span(t0,t0+tau,4.45,'\\tau=1\\ \\text{ms}',{tex:true,fs:15,color:C.mid});
   let m=0, r=0; SS_P.forEach(x=>{ const f=path(x,AC_DT,6), u=f(t0); m+=u; r+=u*f(t0+tau); });
   m/=SS_N; r/=SS_N;
-  a.note(5.95,5.0,'\\hat\\mu_X(t)='+m.toFixed(2)+'\\ \\text{V}',{tex:true,fs:15,color:C.mid,anchor:'end'});
-  a.note(5.95,4.35,'\\hat R_X(t,t+\\tau)='+r.toFixed(2)+'\\ \\text{V}^{2}',{tex:true,fs:15,color:C.mid,anchor:'end'});
+  const u=1/(a.sy(0)-a.sy(1)), ym=big?top-13*L*u:5.0, yr=big?ym-30*L*u:4.35;
+  a.note(5.95,ym,'\\hat\\mu_X(t)='+m.toFixed(2)+'\\ \\text{V}',{tex:true,fs:15,color:C.mid,anchor:'end'});
+  a.note(5.95,yr,'\\hat R_X(t,t+\\tau)='+r.toFixed(2)+'\\ \\text{V}^{2}',{tex:true,fs:15,color:C.mid,anchor:'end'});
   return a.svg();
 }
 /* Strict-sense stationarity: recordings of the same process (the first

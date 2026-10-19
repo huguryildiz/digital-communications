@@ -267,9 +267,10 @@ function figEnergy(v){
   seg(a, [p1,p2], {color:C.mid, width:2.6});
   a.point(p1[0],p1[1],{color:C.in,r:6.5}); a.point(p2[0],p2[1],{color:C.in,r:6.5});
   const out = (p,k) => [p[0]*(1+k/r), p[1]*(1+k/r)];
-  const l1 = out(p1,0.3), l2 = out(p2,0.3);
-  a.note(l1[0], l1[1]-0.08, '\\mathbf{s}_1', {tex:true, fs:15, color:C.in, anchor:'middle'});
-  a.note(l2[0], l2[1]-0.08, '\\mathbf{s}_2', {tex:true, fs:15, color:C.in, anchor:'middle'});
+  /* the gap between a point and its name grows with the label scale */
+  const L = P.labelScale(), l1 = out(p1,0.3*L), l2 = out(p2,0.3*L);
+  a.note(l1[0], l1[1]-0.08*L, '\\mathbf{s}_1', {tex:true, fs:15, color:C.in, anchor:'middle'});
+  a.note(l2[0], l2[1]-0.08*L, '\\mathbf{s}_2', {tex:true, fs:15, color:C.in, anchor:'middle'});
   const m = [(p1[0]+p2[0])/2, (p1[1]+p2[1])/2], mm = Math.hypot(m[0],m[1]);
   const dd = Math.hypot(p1[0]-p2[0], p1[1]-p2[1]);
   /* the distance label sits outside the circle, beyond the middle of the chord */
@@ -441,9 +442,12 @@ function figExGsB(v){
   const az = (v ? v.az : 30)*Math.PI/180, el = 22*Math.PI/180;
   const pr = (x,y,z) => [x*Math.cos(az) - y*Math.sin(az), z*Math.cos(el) + (x*Math.sin(az) + y*Math.cos(az))*Math.sin(el)];
   const a = plane(bare({need:[[-2.2,2.3],[-1.2,2.0]], xlabel:'', ylabel:''}));
+  /* the gap from an arrow tip to its name grows with the label scale */
+  const ls = P.labelScale();
   const ax = (p, q, name, lp) => { const P0 = pr(...p), P1 = pr(...q);
     arrow(a, P0[0],P0[1],P1[0],P1[1], {color:C.muted, width:1.6, head:0.8});
-    const L = pr(...lp); a.note(L[0], L[1]-0.06, name, {tex:true, fs:16, color:C.ink, anchor:'middle'}); };
+    const L0 = pr(...lp), L = [P1[0]+(L0[0]-P1[0])*ls, P1[1]+(L0[1]-P1[1])*ls];
+    a.note(L[0], L[1]-0.06*ls, name, {tex:true, fs:16, color:C.ink, anchor:'middle'}); };
   ax([0,0,0],[2.0,0,0],'\\psi_1',[2.22,0,0]);
   ax([0,-1.9,0],[0,1.9,0],'\\psi_2',[0,2.15,0]);
   ax([0,0,0],[0,0,1.55],'\\psi_3',[0,0,1.78]);
@@ -481,21 +485,24 @@ function figChain(v){
   const ax = (h, yr, yl, last, yt) => TAx({w:560,h,xr:[-0.1,2.3],yr,ynameAtAxis:true,xlabel:last?'t':'',ylabel:yl,
     pad:{l:56,r:26,t:24,b:last?36:12},xt:last?[0,1,2]:null,yticksOverride:yt});
   /* the basis is drawn over the waveform it will take apart */
-  const a = ax(130, [-1.2,1.9], 's(t),\\;\\psi_1,\\;\\psi_2', false, [-1,0,1]);
+  /* the panels are set taller in the projected view, where the larger names
+     and tick rows would otherwise leave the data areas no room */
+  const big = P.labelScale() > 1, H = big ? [150, 205, 250] : [130, 158, 160];
+  const a = ax(H[0], [-1.2,1.9], 's(t),\\;\\psi_1,\\;\\psi_2', false, [-1,0,1]);
   if(op(1) > 0.02){ seg(a, outline(HALF1,-0.1,2.3), {color:C.h, width:2.0, opacity:op(1)});
     seg(a, outline(HALF2,-0.1,2.3), {color:C.h, width:2.0, dash:'7 5', opacity:op(1)}); }
   a.poly(outline(CH_S,-0.1,2.3), {color:C.in, width:2.4});
-  const c = ax(158, [-1.2,1.9], 'c_1(t),\\;c_2(t)', true, [-1,0,1]);
+  const c = ax(H[1], [-1.2,1.9], 'c_1(t),\\;c_2(t)', true, [-1,0,1]);
   if(op(2) > 0.02){
     const c1 = t => t<0 ? 0 : 1.5*Math.min(t,1), c2 = t => t<1 ? 0 : -0.8*Math.min(t-1,1);
     seg(c, Array.from({length:121},(_,i)=>{ const t=-0.1+2.4*i/120; return [t, c1(t)]; }), {color:C.mid, width:2.4, opacity:op(2)});
     seg(c, Array.from({length:121},(_,i)=>{ const t=-0.1+2.4*i/120; return [t, c2(t)]; }), {color:C.mid, width:2.4, dash:'7 5', opacity:op(2)});
     if(op(2) > 0.5){ dot(c, 2, 1.5, {color:C.mid, r:5}); dot(c, 2, -0.8, {color:C.mid, r:5}); } }
-  const d = plane({h:160, need:[[-2,2],[-1.25,1.25]], xticksOverride:[-1,1], yticksOverride:[-1,1]});
+  const d = plane({h:H[2], need:[[-2,2],[-1.25,1.25]], xticksOverride:[-1,1], yticksOverride:[-1,1]});
   if(op(3) > 0.02){ seg(d, [[1.5,0],[1.5,-0.8],[0,-0.8]], {dash:'4 5', opacity:op(3)});
     dot(d, 1.5, -0.8, {r:6.5, opacity:op(3)});
     if(op(3) > 0.5) d.note(1.8, -0.58, '\\mathbf{s}=(1.5,\\,-0.8)', {tex:true, fs:15, color:C.in}); }
-  return stack(560, [[a.svg(),130],[c.svg(),158],[d.svg(),160]]);
+  return stack(560, [[a.svg(),H[0]],[c.svg(),H[1]],[d.svg(),H[2]]]);
 }
 
 /* Small sketches for the summary cards, in the dark-page signal tints. */
@@ -535,6 +542,14 @@ function realGallery(cfg){
     ], right:cfg.notes.map((n,i)=>i ? {t:'reveal', at:i, items:[n]} : n)}
   ]};
 }
+/* A gallery time axis. In the projected view its tick row, set under the data
+   area, grows down to where the axis name sits, so there the name is set one
+   row lower, under the tick numbers, and the figure keeps room for it. */
+const galT = o => { const L = P.labelScale();
+  if(L <= 1) return TAx(EXO(o));
+  const a = TAx(EXO(Object.assign({}, o, {xlabel:'', pad:{l:60,r:26,t:24,b:40+30*L}})));
+  a.note(o.xr[1], o.yr[0], o.xlabel, {tex:true, fs:16.5, color:C.ink, anchor:'end', dx:8, dy:47*L});
+  return a; };
 const galPlane = need => plane({w:520, h:250, pad:{l:60,r:26,t:24,b:40}, need, xticksOverride:[], yticksOverride:[]});
 
 /* 3.1. Two Walsh codes of IS-95 (8 of their 64 chips, 1.2288 Mchip/s), two
@@ -546,23 +561,23 @@ const REAL_VECTORS = realGallery({ id:'m3-real-vectors', nav:'Orthogonal signals
   objective:'Recognise orthogonal signal sets in mobile phones, Wi-Fi, image coding and data tapes.',
   keywords:'examples walsh codes cdma is-95 ofdm subcarriers wifi 312.5 khz dct jpeg basis kansas city standard fsk tones orthogonal',
   figs:[
-    [()=>{ const a=TAx(EXO({xt:[0,2,4,6],xr:[-0.2,7.0],yr:[-1.6,1.6],xlabel:'t\\;(\\mu\\text{s})',ylabel:'w_2(t)\\,w_5(t)',
-        xticksOverride:[],yticksOverride:[-1,0,1]}));
+    [()=>{ const a=galT({xt:[0,2,4,6],xr:[-0.2,7.0],yr:[-1.6,1.6],xlabel:'t\\;(\\mu\\text{s})',ylabel:'w_2(t)\\,w_5(t)',
+        xticksOverride:[],yticksOverride:[-1,0,1]});
       const segs = W2.map((c,n)=>[n*TC,(n+1)*TC,c*W5[n]]);
       shade(a, pwc(segs), 0, 8*TC, C.mid, 0.2);
       a.poly(outline(segs,-0.2,7.0), {color:C.mid, width:2.2});
       return a.svg(); }, 'IS-95 phones share one band, each call with its own Walsh code at $1.2288$ Mchip/s. Two codes multiply to $+1$ on four chips and $-1$ on four, so $\\sum_n w_2[n]\\,w_5[n]=0$.'],
-    [()=>{ const T = 3.2, df = 1/T, a=TAx(EXO({xt:[0,1,2,3],xr:[-0.1,3.4],yr:[-1.4,1.4],xlabel:'t\\;(\\mu\\text{s})',ylabel:'x_k(t)',
-        xticksOverride:[0,1,2,3],yticksOverride:[-1,0,1]}));
+    [()=>{ const T = 3.2, df = 1/T, a=galT({xt:[0,1,2,3],xr:[-0.1,3.4],yr:[-1.4,1.4],xlabel:'t\\;(\\mu\\text{s})',ylabel:'x_k(t)',
+        xticksOverride:[0,1,2,3],yticksOverride:[-1,0,1]});
       a.curve(t=>t>=0&&t<=T?Math.cos(2*Math.PI*3*df*t):0, {color:C.in, width:2.2, n:700});
       a.curve(t=>t>=0&&t<=T?Math.cos(2*Math.PI*4*df*t):0, {color:C.in, width:1.8, n:700, dash:'6 4'});
       return a.svg(); }, 'Wi-Fi spaces its subcarriers $\\Delta f=312.5$ kHz apart. Over one symbol of $T=1/\\Delta f=3.2\\ \\mu$s, $\\cos(2\\pi k\\Delta f t)$ for $k=3$ and $k=4$ are orthogonal.'],
-    [()=>{ const a=TAx(EXO({xt:[0,1,2,3,4,5,6,7],xr:[-0.6,8.8],yr:[-0.62,0.62],xlabel:'n\\;(\\text{pixel})',ylabel:'c_2[n]',
-        xticksOverride:[0,1,2,3,4,5,6,7],yticksOverride:[-0.5,0,0.5]}));
+    [()=>{ const a=galT({xt:[0,1,2,3,4,5,6,7],xr:[-0.6,8.8],yr:[-0.62,0.62],xlabel:'n\\;(\\text{pixel})',ylabel:'c_2[n]',
+        xticksOverride:[0,1,2,3,4,5,6,7],yticksOverride:[-0.5,0,0.5]});
       a.stem(Array.from({length:8},(_,n)=>[n, 0.5*Math.cos(Math.PI*(2*n+1)*2/16)]), {color:C.h});
       return a.svg(); }, 'JPEG writes each row of $8$ pixels against the DCT basis $c_k[n]=\\tfrac12\\cos\\bigl(\\pi(2n+1)k/16\\bigr)$, $k\\ge1$. Here $k=2$. The basis is orthonormal, so a row\'s energy is the sum of its squared coefficients.'],
-    [()=>{ const T = 1000/300, a=TAx(EXO({xt:[0,1,2,3],xr:[-0.1,3.6],yr:[-1.4,1.4],xlabel:'t\\;(\\text{ms})',ylabel:'s_0(t),\\;s_1(t)',
-        xticksOverride:[0,1,2,3],yticksOverride:[-1,0,1]}));
+    [()=>{ const T = 1000/300, a=galT({xt:[0,1,2,3],xr:[-0.1,3.6],yr:[-1.4,1.4],xlabel:'t\\;(\\text{ms})',ylabel:'s_0(t),\\;s_1(t)',
+        xticksOverride:[0,1,2,3],yticksOverride:[-1,0,1]});
       a.curve(t=>t>=0&&t<=T?Math.cos(2*Math.PI*1.2*t):0, {color:C.in, width:2.2, n:900});
       a.curve(t=>t>=0&&t<=T?Math.cos(2*Math.PI*2.4*t):0, {color:C.in, width:1.6, n:900, dash:'6 4'});
       return a.svg(); }, 'The Kansas City standard stored bits on cassette tape at $300$ baud: $4$ cycles of $1200$ Hz for a $0$, $8$ cycles of $2400$ Hz for a $1$. Whole cycles in $T=3.33$ ms make the tones orthogonal.']

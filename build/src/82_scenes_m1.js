@@ -136,7 +136,8 @@ function figCaseAt(fs){
   if(fs > 2*W + 1e-6){
     const lab = fs - 2*W >= 0.45;
     for(const c of [-1,1])
-      a.span(c*W, c*(fs-W), 0.16*fs, c>0 && lab ? '\\text{guard band}' : null, {tex:true, fs:12, color:C.muted});
+      /* raised in lecture mode, where the copies leave the grown label more room */
+      a.span(c*W, c*(fs-W), (P.labelScale()>1 ? 0.55 : 0.16)*fs, c>0 && lab ? '\\text{guard band}' : null, {tex:true, fs:12, color:C.muted});
   }
   if(nyq) a.point(W, 0, {color:C.mid, r:4.5});
   const name = nyq ? '\\text{Nyquist rate}' : fs > 2*W ? '\\text{oversampling}' : '\\text{undersampling}';
@@ -164,12 +165,14 @@ function figLpf(){
    in frequency, and the zeros are marked and labelled because the interpolation scene
    rests on them. */
 function figSinc(){
-  const a = P.Axes(SZ({xr:[-3.6,3.6], yr:[-0.42,1.30], xlabel:'t', ylabel:'h(t)',
+  /* the floor drops in lecture mode, so the grown zero labels stay under the lobes */
+  const lo = P.labelScale()>1 ? -0.62 : -0.42;
+  const a = P.Axes(SZ({xr:[-3.6,3.6], yr:[lo,1.30], xlabel:'t', ylabel:'h(t)',
     xticksOverride:[-3,-2,-1,1,2,3], xtickfmt:()=>'', ytarget:3, ytickfmt:()=>''}));
   a.curve(t=>sinc(t), {color:C.h, width:2.4});
   for(let n=-3;n<=3;n++) if(n){
     a.point(n, 0, {color:C.h, r:3.6});
-    a.note(n, -0.40, (n<0?'-':'')+'\\dfrac{'+Math.abs(n)+'}{2W}', {tex:true, anchor:'middle', fs:13, color:C.h});
+    a.note(n, lo+0.02, (n<0?'-':'')+'\\dfrac{'+Math.abs(n)+'}{2W}', {tex:true, anchor:'middle', fs:13, color:C.h});
   }
   a.note(0.14, 1.14, '\\operatorname{sinc}(2Wt)', {tex:true, fs:14, color:C.h});
   return a.svg();
@@ -284,7 +287,10 @@ function figQuantWalk(v){
     a.poly([[n,m],[n,q]], {color:C.mid, width:1.4, dash:'3 3'});
     a.point(n, m, {color:C.in, r:4}); a.point(n, q, {color:C.mid, r:4.6}); }
   a.point(f, mp, {color:C.in, r:5.4});
-  const b = P.Axes({w:600, h:270, xr:[-3.8,3.8], yr:[-3.8,3.8], xlabel:'m', ylabel:'v=\\mathbb{Q}(m)',
+  /* the lower panel is taller in lecture mode, and its two readouts are a
+     line apart in pixels, so they clear the tick numbers and each other */
+  const LS = P.labelScale(), hb = LS>1 ? 330 : 270;
+  const b = P.Axes({w:600, h:hb, xr:[-3.8,3.8], yr:[-3.8,3.8], xlabel:'m', ylabel:'v=\\mathbb{Q}(m)',
     pad:{l:56,r:26,t:26,b:40}, xticksOverride:[-2,0,2], yticksOverride:[-2,0,2]});
   b.poly([[-3.8,-3.8],[3.8,3.8]], {color:C.rule, width:1.2, dash:'3 4'});
   const pts=[]; for(let i=0;i<=1520;i++){ const m=-3.8+7.6*i/1520; pts.push([m,walkQ(m)]); }
@@ -293,9 +299,9 @@ function figQuantWalk(v){
   b.poly([[mp,vp],[0,vp]], {color:C.mid, width:1.6, dash:'4 4'});
   b.point(mp, 0, {color:C.in, r:5.4}); b.point(0, vp, {color:C.mid, r:5.4});
   b.note(1.1, -2.2, `m=${mp.toFixed(2)}`, {tex:true, fs:16, color:C.in});
-  b.note(1.1, -3.2, `v=${vp}`, {tex:true, fs:16, color:C.mid});
+  b.note(1.1, -2.2, `v=${vp}`, {tex:true, fs:16, color:C.mid, dy:27*LS});
   const nest = (svg, y, h) => svg.replace('<svg ', `<svg x="0" y="${y}" width="600" height="${h}" `);
-  return `<svg viewBox="0 0 600 470" xmlns="http://www.w3.org/2000/svg" role="img">${nest(a.svg(),0,200)}${nest(b.svg(),200,270)}</svg>`;
+  return `<svg viewBox="0 0 600 ${200+hb}" xmlns="http://www.w3.org/2000/svg" role="img">${nest(a.svg(),0,200)}${nest(b.svg(),200,hb)}</svg>`;
 }
 
 /* The Gaussian tail and density, for the quantizer that minimises the mean
@@ -324,7 +330,8 @@ function figRegions(){
     xticksOverride:[-2,-1,0,1,2], yticksOverride:[-2,-1,0,1,2]}));
   a.poly([[-X,-X],[X,X]], {color:C.muted, width:1.2, dash:'4 4'});
   for(let k=1;k<4;k++){ a.vline(b[k], {color:C.muted, dash:'4 4'});
-    a.note(b[k], 1.85, `m_{${k}}`, {tex:true, fs:14, color:C.muted, dx:5}); }
+    /* the boundary names sit at the foot, clear of the level names */
+    a.note(b[k], -1.85, `m_{${k}}`, {tex:true, fs:14, color:C.muted, dx:5}); }
   const pts = [[-X, v[0]]];
   for(let k=1;k<4;k++) pts.push([b[k], v[k-1]], [b[k], v[k]]);
   pts.push([X, v[3]]);
@@ -386,16 +393,19 @@ function figSqnrWindow(v){
   a.curve(m,{color:C.in,n:2400});
   const pts=[]; for(let i=0;i<=4800;i++){ const t=-X+2*X*i/4800; pts.push([t,q(m(t))]); }
   a.poly(pts,{color:C.mid,width:1.8});
-  const b = P.Axes({w:600,h:220,xr:[-X,X],yr:[-1.2*D,2.6*D],
+  /* the error panel is taller in lecture mode, so its two notes stay apart */
+  const hb = P.labelScale()>1 ? 270 : 220;
+  const b = P.Axes({w:600,h:hb,xr:[-X,X],yr:[-1.2*D,2.6*D],
     xlabel:'t',ylabel:'q(t)',pad:{l:54,r:26,t:20,b:44},xticksOverride:[-10,-5,5,10],xtickfmt:()=>'',yticksOverride:[]});
   b.rect(-T/2, -1.2*D, T/2, 2.6*D, {fill:C.dec.in});
   b.hline(D/2,{color:C.err,dash:'4 4'}); b.hline(-D/2,{color:C.err,dash:'4 4'});
   b.curve(t=>m(t)-q(m(t)),{color:C.err,width:1.2,n:4800});
-  b.note(X-0.2, 0.62*D, '\\pm\\Delta/2', {tex:true,fs:13,color:C.err,anchor:'end'});
+  /* the name sits a fixed number of pixels above its dashed line, clear of the error trace */
+  b.note(X-0.2, D/2, '\\pm\\Delta/2', {tex:true,fs:13,color:C.err,anchor:'end',dy:-(5+7*P.labelScale())});
   b.note(X-0.2, 1.95*D, `\\mathrm{SQNR}=${ps.toFixed(2)}/${pq.toFixed(4)}=${(10*Math.log10(ps/pq)).toFixed(2)}\\ \\text{dB}`,
     {tex:true, fs:17, color:C.err, anchor:'end'});
   const nest = (svg, y, h) => svg.replace('<svg ', `<svg x="0" y="${y}" width="600" height="${h}" `);
-  return `<svg viewBox="0 0 600 480" xmlns="http://www.w3.org/2000/svg" role="img">${nest(a.svg(),0,260)}${nest(b.svg(),260,220)}</svg>`;
+  return `<svg viewBox="0 0 600 ${260+hb}" xmlns="http://www.w3.org/2000/svg" role="img">${nest(a.svg(),0,260)}${nest(b.svg(),260,hb)}</svg>`;
 }
 
 /* The bound |q| <= Delta/2 under a slider on the input m. A four-level
@@ -411,7 +421,10 @@ function figErrBound(v){
   const Q = m => Math.max(-1.5, Math.min(1.5, Math.floor(m)+0.5));
   const k0 = Math.max(-2, Math.min(1, Math.floor(p))), vk = k0+0.5, q = p-Q(p);
   const dfmt = x => { const n = Math.round(x); return n===0 ? '0' : (n<0?'−':'')+(Math.abs(n)===1?'':Math.abs(n))+'Δ'; };
-  const a = P.Axes({w:600, h:270, xr:[-2.3,2.3], yr:[-2.3,2.5], xlabel:'m', ylabel:'\\mathbb{Q}(m)',
+  /* in lecture mode both panels are taller, so the notes placed in data units
+     stay clear of the tick labels and of each other as the labels grow */
+  const big = P.labelScale()>1, ha = big ? 310 : 270, hb = big ? 290 : 220;
+  const a = P.Axes({w:600, h:ha, xr:[-2.3,2.3], yr:[-2.3,2.5], xlabel:'m', ylabel:'\\mathbb{Q}(m)',
     pad:{l:56,r:26,t:24,b:40}, xticksOverride:[-2,-1,0,1,2], yticksOverride:[], xtickfmt:()=>''});
   a.rect(k0, -2.3, k0+1, 2.5, {fill:C.dec.mid});
   a.poly([[-2.3,-2.3],[2.3,2.3]], {color:C.in, width:1.4, dash:'4 4'});
@@ -425,7 +438,7 @@ function figErrBound(v){
   a.poly([[p,vk],[p,p]], {color:C.err, width:3});
   a.point(p, p, {color:C.in, r:5}); a.point(p, vk, {color:C.mid, r:5});
   a.note(2.25, -1.3, `|q|=${(Math.abs(q)).toFixed(2)}\\,\\Delta`, {tex:true, fs:15, color:C.err, anchor:'end'});
-  const b = P.Axes({w:600, h:220, xr:[-2.3,2.3], yr:[-0.9,0.9], xlabel:'m', ylabel:'q',
+  const b = P.Axes({w:600, h:hb, xr:[-2.3,2.3], yr:[-0.9,0.9], xlabel:'m', ylabel:'q',
     pad:{l:56,r:26,t:20,b:40}, xticksOverride:[-2,-1,0,1,2], yticksOverride:[], xtickfmt:dfmt});
   b.rect(k0, -0.9, k0+1, 0.9, {fill:C.dec.mid});
   b.hline(0.5, {color:C.err, dash:'4 4'}); b.hline(-0.5, {color:C.err, dash:'4 4'});
@@ -435,7 +448,7 @@ function figErrBound(v){
   b.vline(p, {color:C.muted});
   b.point(p, q, {color:C.err, r:5});
   const nest = (svg, y, h) => svg.replace('<svg ', `<svg x="0" y="${y}" width="600" height="${h}" `);
-  return `<svg viewBox="0 0 600 490" xmlns="http://www.w3.org/2000/svg" role="img">${nest(a.svg(),0,270)}${nest(b.svg(),270,220)}</svg>`;
+  return `<svg viewBox="0 0 600 ${ha+hb}" xmlns="http://www.w3.org/2000/svg" role="img">${nest(a.svg(),0,ha)}${nest(b.svg(),ha,hb)}</svg>`;
 }
 
 /* The error of a fine quantizer as a density: flat at 1/Delta across one
@@ -481,7 +494,7 @@ function figSqnr(v){
   a.point(R, yN(R), {color:C.err, r:4.6});
   const sq = ALPHA_SINE+lvl+20*R*Math.log10(2);
   a.note(R, (yS+yN(R))/2, '\\mathrm{SQNR}='+P.fmt(sq,1)+'\\ \\mathrm{dB}', {tex:true, fs:15, color:C.mid,
-    anchor: R>7 ? 'end' : 'start', dx: R>7 ? -10 : 10});
+    anchor: R>9 ? 'end' : 'start', dx: R>9 ? -10 : 10});
   return a.svg();
 }
 
@@ -505,9 +518,10 @@ function sqnrMeasured(R){
    Between two frames the square shrinks continuously. */
 function figNoiseBits(v){
   const f = v ? v.frame : 2, n = Math.floor(f+1e-9), R = n+1, Rs = Math.round(f)+1;
-  const a = P.Axes(SZ({xr:[0,1], yr:[0,1], pad:{l:24,r:24,t:18,b:22},
+  /* the left pad holds half of the -m_max label, which grows in lecture mode */
+  const a = P.Axes(SZ({xr:[0,1], yr:[0,1], pad:{l:P.labelScale()>1?36:24,r:24,t:18,b:22},
     grid:false, zeroAxes:false, arrows:false, xticksOverride:[], yticksOverride:[]}));
-  const X = px => (px-a.x0)/(a.x1-a.x0), Y = py => (a.y0-py)/(a.y0-a.y1);
+  const X = px => (px-a.x0)/(a.x1-a.x0), Y = py => (a.y0-py)/(a.y0-a.y1), LS = P.labelScale();
   /* range bar: 2 m_max wide; the R = 1 square has side m_max, half the bar */
   const barY = a.y1+46, top = barY+50, S = Math.min((a.x1-a.x0)*0.46, a.y0-top);
   const bx0 = a.x0+6, bx1 = bx0+2*S, D = 2*S/2**R, fx = v=>v.toFixed(2);
@@ -516,8 +530,8 @@ function figNoiseBits(v){
     a.raw(`<line x1="${fx(x)}" y1="${fx(barY-(e?8:5))}" x2="${fx(x)}" y2="${fx(barY+(e?8:5))}" stroke="${e?C.ink:C.muted}" stroke-width="${e?1.6:1.1}"/>`); }
   a.raw(`<rect x="${fx(bx0)}" y="${fx(barY-5)}" width="${fx(D)}" height="10" fill="${C.in}" fill-opacity="0.28" stroke="none"/>`);
   a.span(X(bx0), X(bx0+D), Y(barY-11), '\\Delta', {tex:true, fs:15, color:C.in});
-  a.note(X(bx0), Y(barY+24), '-m_{\\max}', {tex:true, fs:14, color:C.muted, anchor:'middle'});
-  a.note(X(bx1), Y(barY+24), 'm_{\\max}', {tex:true, fs:14, color:C.muted, anchor:'middle'});
+  a.note(X(bx0), Y(barY+12+16*LS), '-m_{\\max}', {tex:true, fs:14, color:C.muted, anchor:'middle'});
+  a.note(X(bx1), Y(barY+12+16*LS), 'm_{\\max}', {tex:true, fs:14, color:C.muted, anchor:'middle'});
   a.note(X(bx1), Y(barY-22), 'L='+2**Rs+'\\ \\text{regions}', {tex:true, fs:14, color:C.muted, anchor:'end'});
   /* squares, nested at the lower-left corner */
   const sq = (s, o) => a.raw(`<rect x="${fx(bx0)}" y="${fx(a.y0-s)}" width="${fx(s)}" height="${fx(s)}" ${o}/>`);
@@ -636,7 +650,8 @@ function figSpeechLevels(){
 function figCompanding(){
   const muL = mu => x => Math.log(1+mu*x)/Math.log(1+mu);
   P.hOverride = null;
-  const H = 235;
+  /* taller in lecture mode, so the key fits its corner with its rows a label apart */
+  const big = P.labelScale()>1, H = big ? 300 : 235, kx = big ? 0.70 : 0.66;
   const aL  = A => x => x < 1/A ? A*x/(1+Math.log(A)) : (1+Math.log(A*x))/(1+Math.log(A));
   /* The lower-right triangle under the straight line is empty, so the key
      sits there, one swatch per curve. */
@@ -644,14 +659,16 @@ function figCompanding(){
     const a = P.Axes({w:560, h:H, xr:[0,1], yr:[0,1.06], xlabel:'|x|', ylabel:'|y|',
       pad:{l:56,r:26,t:18,b:42}, xticksOverride:[0,0.2,0.4,0.6,0.8,1], yticksOverride:[0,0.5,1]});
     a.curve(x=>x, {color:C.muted, width:1.3, dash:'4 4'});
-    const key = (y, txt, st) => { a.poly([[0.66,y],[0.74,y]], st);
-      a.note(0.77, y, txt, {tex:true, fs:14, color:st.color, dy:2}); };
+    const ky = (8+18*P.labelScale())/(a.sy(0)-a.sy(1));   /* one key row, in pixels */
+    const k0 = 0.12+ky*fam.length;                     /* the rows stack up from 0.12 */
+    const key = (y, txt, st) => { a.poly([[kx,y],[kx+0.08,y]], st);
+      a.note(kx+0.11, y, txt, {tex:true, fs:14, color:st.color, dy:2}); };
     fam.forEach(([p, w, op, txt], i) => {
       const st = {color, width:w, opacity:op};
       a.curve(law(p), Object.assign({n:1600}, st));
-      key(0.46-0.17*i, txt, st);
+      key(k0-ky*i, txt, st);
     });
-    key(0.46-0.17*fam.length, id, {color:C.muted, width:1.3, dash:'4 4'});
+    key(k0-ky*fam.length, id, {color:C.muted, width:1.3, dash:'4 4'});
     return a.svg();
   };
   const top = panel(aL, C.h, [[A_LAW, 2.6, 1, 'A=87.6'], [2, 1.8, 0.65, 'A=2']], 'A=1');
@@ -679,17 +696,17 @@ function figCompander(){
     + `<path d="${pts.map(([u,v],k)=>(k?'L':'M')+(cx+gx*u).toFixed(1)+','+(cy-gy*v).toFixed(1)).join('')}"
         fill="none" stroke="${col}" stroke-width="2.2" stroke-linejoin="round"/>`;
   const it = [
-    {t:'arrow', x1:8, y1:yc, x2:xs[0], y2:yc, label:'m(t)', tex:true},
+    {t:'arrow', x1:2, y1:yc, x2:xs[0], y2:yc, label:'m(t)', tex:true},
     {t:'arrow', x1:xs[0]+bw, y1:yc, x2:xs[1], y2:yc, label:'y', tex:true},
     {t:'arrow', x1:xs[1]+bw, y1:yc, x2:xs[2], y2:yc, label:'\\hat y', tex:true},
-    {t:'arrow', x1:xs[2]+bw, y1:yc, x2:594, y2:yc, label:'\\hat m(t)', tex:true}
+    {t:'arrow', x1:xs[2]+bw, y1:yc, x2:598, y2:yc, label:'\\hat m(t)', tex:true}
   ];
   ['Compressor','Uniform quantizer','Expander'].forEach((name,i)=>{
     it.push({t:'box', x:xs[i], y:y0, w:bw, h:bh});
     it.push({t:'text', x:xs[i]+bw/2, y:y0-14, label:name, fs:15, color:C.ink});
   });
   [['high gain for weak inputs,','low gain for strong ones'],[],['undoes the compression,','restores every level']]
-    .forEach((ls,i)=>ls.forEach((L,j)=>it.push({t:'text', x:xs[i]+bw/2, y:y0+bh+26+j*19, label:L, fs:13})));
+    .forEach((ls,i)=>ls.forEach((L,j)=>it.push({t:'text', x:xs[i]+bw/2, y:y0+bh+26+j*19*P.labelScale(), label:L, fs:13})));
   /* the whole chain, m to m-hat */
   const pc = 300, py = 360, pgx = 200, pgy = 96;
   it.push({t:'text', x:pc+pgx+14, y:py+5, label:'m', tex:true, anchor:'start', fs:15});
@@ -759,18 +776,22 @@ const LINE_CODES = [
    carries a faint line at its own zero. */
 function figLineCodes(){
   const bits = [0,1,1,0,1,0,0,1], off = [9.3, 6.2, 3.1, 0];
-  const a = P.Axes(SZ({xr:[0,8], yr:[-1.3,11.6], pad:{l:20,r:20,t:14,b:24},
+  /* the top of the range rises in lecture mode to make room for the grown bit row */
+  const a = P.Axes(SZ({xr:[0,8], yr:[-1.3,P.labelScale()>1 ? 12.6 : 11.6], pad:{l:20,r:20,t:14,b:24},
     grid:false, zeroAxes:false, arrows:false, xticksOverride:[], yticksOverride:[]}));
   /* Bit boundaries, cut at each trace so they never cross its name. */
-  off.forEach(y0=>{ for(let k=0;k<=8;k++) a.poly([[k,y0-1.0],[k,y0+1.0]], {color:C.muted, width:1.4, dash:'6 4'}); });
-  bits.forEach((b,k)=>a.note(k+0.5, 11.0, String(b), {fs:15, color:C.ink, anchor:'middle', weight:600}));
+  const LS = P.labelScale(), dh = LS>1 ? 0.92 : 1.0;   /* half the height of a boundary */
+  off.forEach(y0=>{ for(let k=0;k<=8;k++) a.poly([[k,y0-dh],[k,y0+dh]], {color:C.muted, width:1.4, dash:'6 4'}); });
+  /* the names and the bit row are set in pixels above the tops of the bit
+     boundaries, so they stay apart as the labels grow */
+  bits.forEach((b,k)=>a.note(k+0.5, off[0]+dh, String(b), {fs:15, color:C.ink, anchor:'middle', weight:600, dy:-(12+14*LS)}));
   LINE_CODES.forEach(([name,f,uni],i)=>{
     const y0 = off[i], lv = x => uni ? y0-0.8+1.6*x : y0+0.8*x;
     a.poly([[0,uni?y0-0.8:y0],[8,uni?y0-0.8:y0]], {color:C.rule, width:1});
     const pts=[];
     for(let k=0;k<8;k++) for(let j=0;j<=80;j++){ const u=j/80; pts.push([k+u, lv(f(bits[k],u))]); }
     a.poly(pts, {color:C.in, width:2.2});
-    a.note(0.06, y0+1.18, name, {fs:13, color:C.muted});
+    a.note(0.06, y0+dh, name, {fs:13, color:C.muted, dy:-(4+4*LS)});
   });
   return a.svg();
 }
@@ -800,19 +821,23 @@ function figPcmStream(){
      line, where a polar waveform would run through them. */
   const a = P.Axes(SZ({xr:[0,N], yr:[-2.75,3.0], xlabel:'t\\;(\\mathrm{s})', ylabel:'\\text{polar NRZ}',
     pad:{l:56,r:40,t:24,b:42}, xticksOverride:[], yticksOverride:[-1,1]}));
-  const bw = a.sx(1)-a.sx(0);
+  const bw = a.sx(1)-a.sx(0), LS = P.labelScale();
   /* the moving boxes sit under the waveform */
   a.raw(`<g class="ps-anim" style="animation-name:psw;animation-timing-function:steps(${W},jump-none)">`);
   a.rect(0, -1.3, 3, 2.15, {fill:C.dec.mid, stroke:C.mid, width:1.6});
-  a.note(1.5, 2.55, 'T_s=3T_b=0.6\\ \\mathrm{s}', {tex:true, fs:16, color:C.mid, anchor:'middle'});
+  /* in lecture mode the two box names start at the box's left edge, so the
+     grown names do not reach back across the vertical axis */
+  const big = LS>1;
+  a.note(big ? 0 : 1.5, 2.55, 'T_s=3T_b=0.6\\ \\mathrm{s}', {tex:true, fs:16, color:C.mid, anchor:big ? 'start' : 'middle', dx:big ? 4 : 0});
   a.raw('</g>');
   a.raw(`<g class="ps-anim" style="animation-name:psb;animation-timing-function:steps(${N},jump-none)">`);
   a.rect(0, -1.3, 1, 1.3, {fill:C.dec.h, stroke:C.h, width:1.6});
-  a.note(0.5, -2.3, 'T_b=0.2\\ \\mathrm{s}', {tex:true, fs:16, color:C.h, anchor:'middle'});
+  /* the time marks and T_b hang under the stream at distances in pixels */
+  a.note(big ? 0 : 0.5, -1.3, 'T_b=0.2\\ \\mathrm{s}', {tex:true, fs:16, color:C.h, anchor:big ? 'start' : 'middle', dx:big ? 4 : 0, dy:2+38*LS});
   a.raw('</g>');
   for(let k=1;k<N;k++) if(k%3) a.poly([[k,-1.3],[k,1.3]], {color:C.rule, width:1, dash:'2 4'});
   for(let k=3;k<=N;k+=3) a.poly([[k,-1.3],[k,2.15]], {color:C.muted, width:1.4, dash:'6 4'});
-  for(let k=0;k<=N;k+=3) a.note(k, -1.7, P.fmt(0.2*k,1), {fs:13, color:C.muted, anchor:'middle'});
+  for(let k=0;k<=N;k+=3) a.note(k, -1.3, P.fmt(0.2*k,1), {fs:13, color:C.muted, anchor:'middle', dy:4+14*LS});
   const pts=[]; bits.forEach((b,k)=>{ const y=b?1:-1; pts.push([k,y],[k+1,y]); });
   a.poly(pts, {color:C.in, width:2.2});
   PCM_WORDS.forEach((w,i)=>a.note(3*i+1.5, 1.72, w, {fs:14, color:C.mid, anchor:'middle', weight:600}));
@@ -847,7 +872,7 @@ function figBanding(o){
   a.curve(x => q(x, 256), {color:C.in, width:2.0, n:1400});
   a.curve(x => q(x, 8),   {color:C.mid, width:2.4, n:1400});
   a.note(0.06, 0.96, 'L=256', {tex:true, fs:14, color:C.in});
-  a.note(0.62, 0.30, 'L=8', {tex:true, fs:14, color:C.mid});
+  a.note(0.62, 0.5625, 'L=8', {tex:true, fs:14, color:C.mid, dy:12+28*P.labelScale()});
   return a.svg();
 }
 
@@ -1052,19 +1077,20 @@ const REAL_SQNR = realGallery({ id:'m1-real-sqnr', nav:'SQNR around us',
       const a=P.Axes(EXO({xr:[-60,-1e-6],xticksOverride:[-60,-40,-20,-1e-6],xtickfmt:v=>String(Math.round(v)),yr:[0,110],xlabel:'\\text{level (dB below full scale)}',ylabel:'\\mathrm{SQNR}\\;(\\mathrm{dB})'}));
       a.curve(l=>s+l,{color:C.mid,width:2.3});
       a.point(-40,s-40,{color:C.mid,r:4.5});
-      a.note(-37,s-58,'58.1\\ \\mathrm{dB}',{tex:true,fs:14,color:C.mid});
+      /* the value sits a label height under the line, in pixels */
+      a.note(-37,s-37,'58.1\\ \\mathrm{dB}',{tex:true,fs:14,color:C.mid,dy:14+14*P.labelScale()});
       return a.svg(); }, 'CD audio uses $16$ bits: $98.1$ dB at full scale, and $58.1$ dB for a passage $40$ dB quieter.'],
     [()=>{ const s=ALPHA_SINE+6.0206*8;
       const a=P.Axes(EXO({xr:[-60,-1e-6],xticksOverride:[-60,-40,-20,-1e-6],xtickfmt:v=>String(Math.round(v)),yr:[-10,60],xlabel:'\\text{level (dB below full scale)}',ylabel:'\\mathrm{SQNR}\\;(\\mathrm{dB})'}));
       a.curve(l=>s+l,{color:C.mid,width:2.3});
       a.point(-30,s-30,{color:C.err,r:4.5});
-      a.note(-28,s-36,'19.9\\ \\mathrm{dB}',{tex:true,fs:14,color:C.err});
+      a.note(-28,s-28,'19.9\\ \\mathrm{dB}',{tex:true,fs:14,color:C.err,dy:7+14*P.labelScale()});
       return a.svg(); }, 'By $\\alpha+6.02R$, uniform $8$-bit PCM gives $49.9$ dB at full scale but only $19.9$ dB for a signal $30$ dB below it.'],
     [()=>figBanding({w:520,h:250,pad:{l:60,r:22,t:22,b:44}}), 'A row of an image at $8$ levels shows bands where the $256$-level row is smooth.'],
     [()=>{ const R=[8,12,16,24], nm=['telephone','camera','CD','studio'];
       const a=P.Axes(EXO({xr:[4,27],yr:[0,180],xlabel:'R\\;(\\text{bits})',ylabel:'\\mathrm{SQNR}\\;(\\mathrm{dB})',xticksOverride:R,ytarget:4}));
       a.stem(R.map(r=>[r,ALPHA_SINE+6.0206*r]),{color:C.mid});
-      R.forEach((r,i)=>a.note(r,ALPHA_SINE+6.0206*r+20,nm[i],{fs:13,color:C.muted,anchor:'middle'}));
+      R.forEach((r,i)=>a.note(r,ALPHA_SINE+6.0206*r,nm[i],{fs:13,color:C.muted,anchor:'middle',dy:-20*P.labelScale()}));
       return a.svg(); }, 'A full-scale sinusoid at common word lengths: $49.9$, $74.0$, $98.1$ and $146.3$ dB.']
   ],
   notes:[
@@ -1299,7 +1325,9 @@ function figHearBits(v){
     pad:{l:54,r:26,t:20,b:40}, xtarget:5, yticksOverride:[]});
   b.hline(D/2, {color:C.err, dash:'4 4'}); b.hline(-D/2, {color:C.err, dash:'4 4'});
   b.poly(stair(Q.e, i0, n), {color:C.err, width:1.4});
-  b.note(12.5, 1.5*D, `\\mathrm{SQNR}=${Q.sqnr.toFixed(1)}\\ \\text{dB over the whole recording}`, {tex:true, fs:16, color:C.err, anchor:'middle'});
+  /* in lecture mode the long line is set flush right, clear of the axis name */
+  const big = P.labelScale()>1;
+  b.note(big ? 24.8 : 12.5, 1.5*D, `\\mathrm{SQNR}=${Q.sqnr.toFixed(1)}\\ \\text{dB over the whole recording}`, {tex:true, fs:16, color:C.err, anchor:big ? 'end' : 'middle'});
   return `<svg viewBox="0 0 600 432" xmlns="http://www.w3.org/2000/svg" role="img">${place(a.svg(),0,0,600,236)}${place(b.svg(),0,236,600,196)}</svg>`;
 }
 
@@ -1320,12 +1348,15 @@ function figHearMu(v){
     return place(a.svg(), 0, y0, 600, 186)
       + P.texName(`${head}\\quad\\mathrm{SQNR}=${Qz.sqnr.toFixed(1)}\\ \\mathrm{dB}`, {xRight:574, baseline:y0-6, size:15, color:C.mid, figW:600});
   };
-  /* the key of the two traces, drawn in the strip above the upper panel */
-  const key = (x, col, t) => `<path d="M${x},14H${x+26}" stroke="${col}" stroke-width="2.4"/>`
-    + P.texName(t, {xLeft:x+32, baseline:20, size:15, color:C.ink, figW:600});
-  return `<svg viewBox="0 0 600 470" xmlns="http://www.w3.org/2000/svg" role="img">`
+  /* the key of the two traces, drawn in the strip above the upper panel; the
+     strip deepens in lecture mode so the key stays inside the figure and above
+     the head of the upper panel */
+  const LS = P.labelScale(), T = LS>1 ? 76 : 52, kb = LS>1 ? 34 : 20;
+  const key = (x, col, t) => `<path d="M${x},${kb-6}H${x+26}" stroke="${col}" stroke-width="2.4"/>`
+    + P.texName(t, {xLeft:x+32, baseline:kb, size:15, color:C.ink, figW:600});
+  return `<svg viewBox="0 0 600 ${T+418}" xmlns="http://www.w3.org/2000/svg" role="img">`
     + key(56, C.in, 'x(t)') + key(150, C.mid, '\\mathbb{Q}(x(t))')
-    + panel(U, 52, '\\text{uniform, }6\\text{ bits}') + panel(M, 284, '\\mu\\text{-law, }6\\text{ bits}') + '</svg>';
+    + panel(U, T, '\\text{uniform, }6\\text{ bits}') + panel(M, T+232, '\\mu\\text{-law, }6\\text{ bits}') + '</svg>';
 }
 
 /* The bandwidth PCM needs. Top: the message band and the least band of an
@@ -1344,7 +1375,9 @@ function figPcmBw(v){
   b.curve(x=>x>=1-1e-9 && x<=12+1e-9 ? ALPHA_SINE+6.0206*x : NaN, {color:C.mid, width:2.2, n:600});
   const s = ALPHA_SINE+6.0206*R;
   b.point(R, s, {color:C.mid, r:5.5});
-  b.note(R+(R<9?0.3:-0.3), s-15, P.fmt(s,1)+'\\ \\mathrm{dB}', {tex:true, fs:15, color:C.mid, anchor:R<9?'start':'end'});
+  /* the value hangs under the line by a distance in pixels that grows with the label */
+  const xn = R+(R<9?0.3:-0.3);
+  b.note(xn, ALPHA_SINE+6.0206*xn, P.fmt(s,1)+'\\ \\mathrm{dB}', {tex:true, fs:15, color:C.mid, anchor:R<9?'start':'end', dy:20+14*P.labelScale()});
   return `<svg viewBox="0 0 600 440" xmlns="http://www.w3.org/2000/svg" role="img">${place(a.svg(),0,0,600,210)}${place(b.svg(),0,210,600,230)}</svg>`;
 }
 
@@ -1455,7 +1488,9 @@ function figDm(v){
 function figT1(v){
   P.hOverride = null;
   const f = frameOf(v, 2), u1 = clamp01(f), u2 = clamp01(f-1);
-  const a = P.Axes({w:600, h:260, xr:[-1.05,3.1], yr:[0.1,5.1], xlabel:'t\\;(\\mu\\text{s})', ylabel:'',
+  /* taller in lecture mode, so the ellipsis fits between call 3 and call 24 */
+  const ha = P.labelScale()>1 ? 300 : 260;
+  const a = P.Axes({w:600, h:ha, xr:[-1.05,3.1], yr:[0.1,5.1], xlabel:'t\\;(\\mu\\text{s})', ylabel:'',
     pad:{l:26,r:26,t:18,b:40}, grid:false, zeroAxes:false, xticksOverride:[0,1,2,3], xtickfmt:x=>String(125*x), yticksOverride:[]});
   const rows = [[4.4,'call 1',0.4],[3.4,'call 2',1.7],[2.4,'call 3',3.1],[0.8,'call 24',4.4]];
   rows.forEach(([y0,name,ph])=>{
@@ -1465,7 +1500,9 @@ function figT1(v){
       a.poly([[t,y0],[t,s]], {color:C.mid, width:1.8}); a.point(t, s, {color:C.mid, r:3.6}); });
     a.note(-1.0, y0+0.08, name, {fs:14, color:C.ink});
   });
-  a.note(-0.72, 1.75, '⋮', {fs:18, color:C.ink});
+  /* the ellipsis is centred in pixels in the gap between call 3 and call 24 */
+  const LS = P.labelScale(), yA = a.sy(2.48)+4*LS, yB = a.sy(0.88)-14*LS;
+  a.note(-0.72, 0.88, '⋮', {fs:18, color:C.ink, dy:(yA+yB)/2+7.5*LS-a.sy(0.88)});
   const b = P.Axes({w:600, h:170, xr:[-8,199], yr:[0,3.2], xlabel:'', ylabel:'',
     pad:{l:26,r:26,t:10,b:12}, grid:false, zeroAxes:false, xticksOverride:[], yticksOverride:[]});
   const shown = u1*25;
@@ -1487,7 +1524,7 @@ function figT1(v){
     b.note(5, 2.85, '8 bits', {fs:13, color:C.mid, anchor:'start'});
     b.raw('</g>');
   }
-  return `<svg viewBox="0 0 600 430" xmlns="http://www.w3.org/2000/svg" role="img">${place(a.svg(),0,0,600,260)}${place(b.svg(),0,260,600,170)}</svg>`;
+  return `<svg viewBox="0 0 600 ${ha+170}" xmlns="http://www.w3.org/2000/svg" role="img">${place(a.svg(),0,0,600,ha)}${place(b.svg(),0,ha,600,170)}</svg>`;
 }
 
 /* The source-filter model of LPC at 8 kHz: a pulse train at 125 Hz through
@@ -1611,7 +1648,9 @@ const CH_D = 0.4, chQ = s => Math.max(0, Math.min(7, Math.floor((s+1.6)/CH_D)));
 function figChain(v){
   P.hOverride = null;
   const f = frameOf(v, 4), u = k => clamp01(f-k);
-  const bw = 120, bh = 50, y0 = 26, xs = [22, 170, 318, 466], names = ['Lowpass filter','Sampler','Quantizer','Encoder'];
+  /* in lecture mode the boxes widen to hold their grown names */
+  const big = P.labelScale()>1, bw = big ? 132 : 120, bh = 50, y0 = 26,
+    xs = big ? [6, 158, 310, 462] : [22, 170, 318, 466], names = ['Lowpass filter','Sampler','Quantizer','Encoder'];
   const it = [];
   names.forEach((nm,i)=>{ it.push({t:'box', x:xs[i], y:y0, w:bw, h:bh, label:nm, fs:15});
     if(i<3) it.push({t:'arrow', x1:xs[i]+bw, y1:y0+bh/2, x2:xs[i+1], y2:y0+bh/2}); });
@@ -1681,7 +1720,9 @@ function figOpenStems(){
    k of the sixteen steps of 0.25 on [-2, 2) is written k in binary, one digit
    to a row. The columns follow the stems above, one sample to a column. */
 function figOpenBits(){
-  const a = P.Axes({w:520,h:98,xr:[0,10],yr:[0,4],grid:false,zeroAxes:false,
+  /* each of the four rows is at least as tall as a digit's box, also when the
+     axis name above them grows in lecture mode */
+  const a = P.Axes({w:520,h:P.labelScale()>1?110:102,xr:[0,10],yr:[0,4],grid:false,zeroAxes:false,
     xlabel:'', ylabel:'\\text{4-bit code}', chrome:NAVY, pad:{l:46,r:30,t:10,b:4},
     xtickfmt:()=>'', ytickfmt:()=>''});
   const rh=a.sy(0)-a.sy(1);

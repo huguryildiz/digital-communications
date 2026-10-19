@@ -119,6 +119,9 @@ function wash(a, f, lo, hi, col, al, base){
 }
 /* A probability mass function: a stem with a round head, as every pmf in this course. */
 const pmf = (a, pairs, o={}) => pairs.forEach(([x,v])=>{ seg(a, [[x,0],[x,v]], {color:o.color||C.in, width:o.width||1.8}); a.point(x, v, {color:o.color||C.in, r:o.r||4}); });
+/* lblO: a label set off a line at yRef by the pixel gap it has at the normal
+   size, that gap grown with the labels in projector mode */
+const lblO = (a, x, yRef, y, s, col, anchor, fs) => a.note(x, yRef, s, {tex:true, fs:fs||15, color:col||C.ink, anchor:anchor||'start', dy:(a.sy(y)-a.sy(yRef))*P.labelScale()});
 const lbl = (a, x, y, s, col, anchor, fs) => a.note(x, y, s, {tex:true, fs:fs||15, color:col||C.ink, anchor:anchor||'start'});
 /* A plain label (a bit, a digit) with the halo of every figure label. */
 const txt = (a, x, y, s, col, anchor, fs, o={}) => a.note(x, y, s, Object.assign({fs:fs||14, color:col||C.muted, anchor:anchor||'middle'}, o));
@@ -138,7 +141,26 @@ function leftTicks(a, vals, fmt){
     a.raw(`<text x="${f2(a.x0-10)}" y="${f2(Y+4.5*L)}" font-size="${13.5*L}" fill="${C.muted}" text-anchor="end">${f(v)}</text>`); });
   return a;
 }
-const TAx = o => { const xt = o.xt; const a = P.Axes(Object.assign({}, o, {xticksOverride:[]})); return xt ? bottomTicks(a, xt, o.xfmt) : a; };
+const TAx = o => { const xt = o.xt;
+  const mk = q => { const a = P.Axes(Object.assign({}, q, {xticksOverride:[]})); return xt ? bottomTicks(a, xt, q.xfmt) : a; };
+  let a = mk(o);
+  /* The tick row is drawn under the data area, but Axes sets the x name under
+     the zero line, and on a slide a fixed drop below it. In the projector the
+     enlarged name then either lands on the last tick number (zero line high in
+     the figure) or leaves a wide empty strip that the data area needs. There
+     the name is set one name height below the tick row instead. */
+  const L = P.labelScale();
+  if(L > 1 && xt && xt.length && o.xlabel && o.xnameDrop == null){
+    const [ya, yb] = o.yr, H = a.H;
+    if(ya <= 0 && yb >= 0){
+      /* the drop is measured from the zero line, so the bottom margin is set
+         here to hold the name rather than grown by Axes */
+      const pad = Object.assign({l:52,r:22,t:20,b:40}, o.pad||{}), Pb = Math.max(pad.b, 64*L+2);
+      const z = a.y1 + yb/(yb-ya)*(H-a.y1-Pb);
+      a = mk(Object.assign({}, o, {h:H, pad:Object.assign({}, pad, {b:Pb}), xnameDrop: H-Pb + 50*L - z}));
+    } else a = mk(Object.assign({}, o, {h:H, xnameDrop:50*L}));
+  }
+  return a; };
 /* Axes whose x range spans zero keep their y ticks at the left edge. */
 const TAxL = o => { const a = leftTicks(TAx(Object.assign({}, o, {yticksOverride:[], zeroAxes:false})), o.yticksOverride, o.ytickfmt);
   a.raw(`<path d="M${f2(a.x0)},${f2(a.y1)}V${f2(a.y0)}H${f2(a.x1)}" fill="none" stroke="${C.axis}" stroke-width="1.5"/>`); return a; };
@@ -208,10 +230,10 @@ function drawTree(a, codes, labels, o={}){
   const kids = n => all.filter(m => m.length === n.length+1 && m.slice(0,-1) === n);
   const order = all.slice().sort((x,y)=>y.length-x.length || (x<y?-1:1));
   const leaves = all.filter(n=>!kids(n).length).sort();
-  const row = {}; leaves.forEach((n,i)=>{ row[n] = i; });
+  const row = {}; leaves.forEach((n,i)=>{ row[n] = o.leafX ? o.leafX[n] : i; });
   order.forEach(n=>{ const k = kids(n); if(k.length) row[n] = k.reduce((s,m)=>s+row[m],0)/k.length; });
   const span = Math.max(1, leaves.length-1), ox = o.x0 || 0, dx = o.dx || 1, oy = o.y0 || 0, sy = o.fitH ? o.fitH/span : (o.sy || 1);
-  const X = n => ox + n.length*dx, Y = n => oy + (span - row[n])*sy;
+  const X = n => o.vert ? row[n] : ox + n.length*dx, Y = n => o.vert ? -n.length : oy + (span - row[n])*sy;
   const op = o.opacity;
   all.forEach(n=>{ if(n === '') return; const par = n.slice(0,-1);
     seg(a, [[X(par), Y(par)], [X(n), Y(n)]], {color:C.muted, width:1.6, opacity:op});
@@ -224,7 +246,8 @@ function drawTree(a, codes, labels, o={}){
   });
   all.forEach(n=>{ const i = codes.indexOf(n), hot = i >= 0 && o.hot === n;
     dot(a, X(n), Y(n), {color: i >= 0 ? (hot ? C.mid : (o.leaf || C.in)) : C.muted, r: i >= 0 ? (hot ? 7.5 : 6) : 3.4, opacity:op});
-    if(i >= 0 && labels[i]) a.note(X(n), Y(n), labels[i], {tex:true, fs:o.fs||15, color: hot ? C.mid : C.ink, dx:12, dy: kids(n).length ? -16 : 0});
+    if(i >= 0 && labels[i]) a.note(X(n), Y(n), labels[i], o.vert ? {tex:true, fs:o.fs||15, color: hot ? C.mid : C.ink, anchor:'middle', dy:24*P.labelScale()}
+      : {tex:true, fs:o.fs||15, color: hot ? C.mid : C.ink, dx:12, dy: kids(n).length ? -16 : 0});
   });
   return {X, Y, span};
 }
@@ -290,7 +313,7 @@ function figSelfInfo(v){
   seg(a, [[p,0],[p,I],[0,I]], {color:C.ink, width:1.3, dash:'5 4'});
   dot(a, p, I, {color:C.in, r:7});
   lbl(a, 0.98, 6.9, 'p='+num(p,3), C.ink, 'end', 17);
-  lbl(a, 0.98, 6.1, 'I(p)=-\\log_2p='+num(I,2)+'\\ \\text{bits}', C.in, 'end', 17);
+  lbl(a, 0.98, 6.9-0.8*P.labelScale(), 'I(p)=-\\log_2p='+num(I,2)+'\\ \\text{bits}', C.in, 'end', 17);
   return a.svg();
 }
 
@@ -322,15 +345,16 @@ function figQuestions(v){
 
 /* The information each symbol carries and its weighted share. */
 function figEntropyBars(){
-  const a = TAx(SZ({xr:[0.4,5.3], yr:[-0.55,3.9], ylabel:'\\text{bits}', yticksOverride:[0,1,2,3]}));
+  const big = P.labelScale() > 1;
+  const a = TAx(SZ({xr:[0.4,5.3], yr:[big ? -0.75 : -0.55,3.9], ylabel:'\\text{bits}', yticksOverride:[0,1,2,3]}));
   S3.forEach((p,k)=>{
     box(a, k+0.62, 0, k+0.97, -lg(p), rgba(C.in, 0.22), {stroke:C.in, width:1.8});
     box(a, k+1.03, 0, k+1.38, -p*lg(p), rgba(C.mid, 0.3), {stroke:C.mid, width:1.8});
-    lbl(a, k+1, -0.4, 's_'+(k+1)+'\\;('+p+')', C.ink, 'middle', 15);
+    lblO(a, k+1, 0, -0.4, 's_'+(k+1)+'\\;('+p+')', C.ink, 'middle', 15);
   });
   a.hline(HS3, {color:C.ink, dash:'6 4', width:1.6, opacity:1});
   a.hline(lg(3), {color:C.muted, dash:'2 4', width:1.4, opacity:1});
-  lbl(a, 3.55, HS3-0.32, 'H(S)=1.157', C.ink, 'start', 16);
+  lblO(a, 3.55, HS3, HS3-(big ? 0.38 : 0.32), 'H(S)=1.157', C.ink, 'start', 16);
   lbl(a, 3.55, lg(3)+0.14, '\\log_2 3=1.585', C.muted, 'start', 16);
   return a.svg();
 }
@@ -360,7 +384,7 @@ function figExRate(){
   const b = TAx({w:560, h:Ht-hA, xr:[0,1.02], yr:[-1.2,1.35], xlabel:'t\\;(\\text{ms})', ylabel:'x(t)', pad:{l:56,r:26,t:24,b:42}, xt:[0,0.5], yticksOverride:[-1,0,1]});
   trace(b, rateWave, 0, 1.02, {color:C.in, width:2.4});
   b.stem(Array.from({length:7}, (_,k)=>[k/6, rateWave(k/6)]), {color:C.mid});
-  b.span(0, 1/6, 1.1, 'T_s=\\tfrac16\\ \\text{ms}', {tex:true, color:C.mid, fs:15});
+  b.span(1/6, 2/6, 1.1, 'T_s=\\tfrac16\\ \\text{ms}', {tex:true, color:C.mid, fs:15});
   return stack(560, [[a.svg(),hA],[b.svg(),Ht-hA]]);
 }
 
@@ -487,9 +511,10 @@ function figTypical(v){
   const pts = []; for(let k=0;k<=n;k++){ const s = -(k*lg(TS_P)+(n-k)*lg(1-TS_P))/n; if(s <= 1.62) pts.push([s, binom(n,k,TS_P)]); }
   pmf(a, pts, {r: n > 100 ? 2.4 : 3.6, width: n > 100 ? 1.2 : 1.8});
   a.vline(TS_H, {color:C.ink, dash:'6 4', width:1.6, opacity:1});
+  const gT = 0.2*mx*P.labelScale();
   lbl(a, 1.58, 1.5*mx, 'n='+n+',\\ \\ H=0.722', C.ink, 'end', 16);
-  lbl(a, 1.58, 1.3*mx, 'P(\\text{typical})='+num(st.Pt,4), C.mid, 'end', 16);
-  lbl(a, 1.58, 1.1*mx, '2^{nH}=2^{'+num(n*TS_H,1)+'}\\text{ of }2^{'+n+'}', C.in, 'end', 16);
+  lbl(a, 1.58, 1.5*mx-gT, 'P(\\text{typical})='+num(st.Pt,4), C.mid, 'end', 16);
+  lbl(a, 1.58, 1.5*mx-2*gT, '2^{nH}=2^{'+num(n*TS_H,1)+'}\\text{ of }2^{'+n+'}', C.in, 'end', 16);
   return a.svg();
 }
 
@@ -622,8 +647,16 @@ const REAL_CODES = realGallery({ id:'m6-real-codes', nav:'Codes around us',
       a.poly(pts, {color:C.mid, width:2.6});
       return a.svg(); },
       'UTF-8 writes a character in $1$ to $4$ bytes: $1$ for $b\\le7$, else $\\lceil(b-1)/5\\rceil$. A lead byte never starts another, so it is a prefix code.'],
-    [()=>{ const a = P.Axes(bare(EXO({xr:[-0.3,3.9], yr:[-0.6,10.6], pad:{l:16,r:16,t:12,b:12}})));
-      drawTree(a, ['1','7','30','31','33','351','358','90','91','971','972'], ['+1','+7','+30','+31','+33','+351','+358','+90','+91','+971','+972'], {dx:1.05, bits:false, leaf:C.mid, fs:13});
+    [()=>{ const CC = ['1','7','30','31','33','351','358','90','91','971','972'], CL = CC.map(c=>'+'+c);
+      /* in the projector eleven leaves stacked down the figure are closer than
+         a label is tall, so the tree is drawn from the top, leaves side by side */
+      if(P.labelScale() > 1){ const LX = {}; let cum = 0;
+        /* leaves spaced by the widths of their labels, in characters */
+        CC.slice().sort().forEach((c,i,o)=>{ if(i) cum += (c.length + o[i-1].length)/2 + 2.6; LX[c] = cum; });
+        const a = P.Axes(bare(EXO({xr:[-1.6, cum+1.6], yr:[-3.75,0.25], pad:{l:16,r:16,t:12,b:12}})));
+        drawTree(a, CC, CL, {vert:true, leafX:LX, bits:false, leaf:C.mid, fs:13}); return a.svg(); }
+      const a = P.Axes(bare(EXO({xr:[-0.3,3.9], yr:[-0.6,10.6], pad:{l:16,r:16,t:12,b:12}})));
+      drawTree(a, CC, CL, {dx:1.05, bits:false, leaf:C.mid, fs:13});
       return a.svg(); },
       'Telephone country codes: $+1$, $+30$, $+351$, $+971$. No code is the start of another, so a switch knows where the code ends without a separator.'],
     [()=>{ const a = P.Axes(bare(EXO({xr:[-0.5,11.5], yr:[-1.5,4], pad:{l:16,r:16,t:12,b:12}})));
@@ -684,21 +717,22 @@ function figHuffman(v){
 const LEN_HIGH = [2,2,2,3,3], LEN_LOW = [1,2,3,4,4];
 const lvar = ls => { const L = ls.reduce((s,l,k)=>s+FIVE[k]*l, 0); return ls.reduce((s,l,k)=>s+FIVE[k]*(l-L)*(l-L), 0); };
 function figHuffVar(v){
-  const f = Math.min(2, frameOf(v, 2)), Ht = takeH(420), hA = Math.round(0.6*Ht);
+  const big = P.labelScale() > 1, f = Math.min(2, frameOf(v, 2)), Ht = takeH(420), hA = Math.round((big ? 0.52 : 0.6)*Ht);
   const a = P.Axes(bare({w:560, h:hA, xr:[-1.55,3.95], yr:[-0.5,4.5], pad:{l:14,r:14,t:10,b:6}}));
   const oL = clamp01(f);
   if(oL < 0.98) huffTable(a, HUFF_HIGH, 4, {opacity:1-oL});
   const g1 = P.Axes(bare({w:560, h:hA, xr:[-1.55,3.95], yr:[-0.5,4.5], pad:{l:14,r:14,t:10,b:6}}));
   if(oL > 0.02) huffTable(g1, HUFF_LOW, 4, {opacity:oL});
-  const b = TAx({w:560, h:Ht-hA, xr:[0.4,5.6], yr:[0,5.7], ylabel:'l_k', pad:{l:56,r:26,t:24,b:40}, xt:[], yticksOverride:[1,2,3,4]});
+  const b = TAx({w:560, h:Ht-hA, xr:[0.4,5.6], yr:[0, big ? 6.6 : 5.7], ylabel:'l_k', pad:{l:56,r:26,t:24,b:40}, xt:[], yticksOverride:[1,2,3,4]});
   const o2 = clamp01(f-1);
-  [1,2,3,4,5].forEach(k=>lbl(b, k, -1.2, 's_'+k, C.in, 'middle', 15));
+  [1,2,3,4,5].forEach(k=>lblO(b, k, 0, -1.2, 's_'+k, C.in, 'middle', 15));
   const hi = LEN_HIGH, lo = LEN_LOW;
   if(1-oL*(1-o2) > 0.02) b.stem(hi.map((l,k)=>[k+1-0.12*o2, l]), {color:C.mid});
   if(oL > 0.02) b.stem(lo.map((l,k)=>[k+1+0.12*o2, l]), {color:C.h});
   b.hline(2.2, {color:C.ink, dash:'6 4', width:1.5, opacity:1});
-  if(o2 > 0.5){ lbl(b, 0.5, 4.85, '\\sigma^2_{\\text{high}}=0.16,\\ \\ \\sigma^2_{\\text{low}}=1.36', C.ink, 'start', 15); }
-  else lbl(b, 0.5, 4.85, '\\sigma^2='+(oL < 0.5 ? '0.16' : '1.36'), C.ink, 'start', 15);
+  const xS = big ? 1.1 : 0.5, yS = big ? 5.0 : 4.85;
+  if(o2 > 0.5){ lbl(b, xS, yS, '\\sigma^2_{\\text{high}}=0.16,\\ \\ \\sigma^2_{\\text{low}}=1.36', C.ink, 'start', 15); }
+  else lbl(b, xS, yS, '\\sigma^2='+(oL < 0.5 ? '0.16' : '1.36'), C.ink, 'start', 15);
   return `<svg viewBox="0 0 560 ${Ht}" xmlns="http://www.w3.org/2000/svg" role="img">${oL < 0.98 ? place(a.svg(),0,0,560,hA) : ''}${oL > 0.02 ? place(g1.svg(),0,0,560,hA) : ''}${place(b.svg(),0,hA,560,Ht-hA)}</svg>`;
 }
 
@@ -713,7 +747,7 @@ function figHuffExt(v){
     ring(a, n, HS3+1/n, {color:C.ink, r:8, width:2, opacity:o});
     dot(a, n, EXT_L[n-1], {color:C.mid, r:7, opacity:o});
     if(o > 0.5) lbl(a, n+0.14, HS3+1/n+0.02, 'H+\\tfrac1'+n, C.ink, 'start', 14); });
-  lbl(a, 3.45, HS3-0.24, 'H=1.157', C.in, 'end', 14);
+  lblO(a, 3.45, HS3, HS3-0.24, 'H=1.157', C.in, 'end', 14);
   const b = TAx({w:560, h:Ht-hA, xr:[0.5,3.5], yr:[1.13,1.33], xlabel:'n\\;(\\text{symbols a block})', ylabel:'\\bar{L}_n/n', pad:{l:56,r:26,t:24,b:42}, xt:[1,2,3], yticksOverride:[1.15,1.2,1.25,1.3]});
   b.hline(HS3, {color:C.in, width:2, dash:'6 4', opacity:1});
   [1,2,3].forEach(n=>{ const o = clamp01(f-n+2); if(o < 0.02) return;
@@ -728,25 +762,25 @@ const AR_P = [0.7, 0.2, 0.1], AR_SEQ = [0, 0, 1];
 const AR = (()=>{ const iv = [[0,1]]; AR_SEQ.forEach(s=>{ const [lo,hi] = iv[iv.length-1], w = hi-lo;
   const c = [0, 0.7, 0.9, 1]; iv.push([lo+w*c[s], lo+w*c[s+1]]); }); return iv; })();
 function figArith(v){
-  const f = Math.min(4, frameOf(v, 4));
+  const f = Math.min(4, frameOf(v, 4)), hh = P.labelScale() > 1 ? 0.28 : 0.22;
   const a = P.Axes(bare(SZ({xr:[-0.3,1.3], yr:[-0.8,4.4]})));
   const cuts = [0, 0.7, 0.9, 1], cols = [0.3, 0.2, 0.12];
   for(let r=0;r<4;r++){ const o = r === 0 ? 1 : clamp01(f-r+1); if(o < 0.02) continue;
     const y = 3.7 - 1.25*r, [lo, hi] = AR[r];
-    if(r < 3) for(let s=0;s<3;s++){ box(a, cuts[s], y-0.22, cuts[s+1], y+0.22, rgba(C.in, cols[s]), {stroke:C.in, width:1.4, opacity:o});
-      if(o > 0.5) lbl(a, (cuts[s]+cuts[s+1])/2, y-0.06, 's_'+(s+1), C.in, 'middle', 15); }
-    else { box(a, 0, y-0.22, 1, y+0.22, rgba(C.in, 0.22), {stroke:C.in, width:1.4, opacity:o}); }
-    if(o > 0.5){ lbl(a, -0.03, y-0.06, num(lo, 3).replace(/\.?0+$/,'') || '0', C.ink, 'end', 15); lbl(a, 1.03, y-0.06, num(hi, 3).replace(/\.?0+$/,''), C.ink, 'start', 15); }
+    if(r < 3) for(let s=0;s<3;s++){ box(a, cuts[s], y-hh, cuts[s+1], y+hh, rgba(C.in, cols[s]), {stroke:C.in, width:1.4, opacity:o});
+      if(o > 0.5) lblO(a, (cuts[s]+cuts[s+1])/2, y, y-0.06, 's_'+(s+1), C.in, 'middle', 15); }
+    else { box(a, 0, y-hh, 1, y+hh, rgba(C.in, 0.22), {stroke:C.in, width:1.4, opacity:o}); }
+    if(o > 0.5){ lblO(a, -0.03, y, y-0.06, num(lo, 3).replace(/\.?0+$/,'') || '0', C.ink, 'end', 15); lblO(a, 1.03, y, y-0.06, num(hi, 3).replace(/\.?0+$/,''), C.ink, 'start', 15); }
     if(r < 3){ const on = clamp01(f-r); if(on > 0.02){ const s = AR_SEQ[r];
-      box(a, cuts[s], y-0.22, cuts[s+1], y+0.22, 'none', {stroke:C.mid, width:3, opacity:on});
-      seg(a, [[cuts[s], y-0.26],[0, y-1.25+0.26]], {color:C.mid, width:1.3, dash:'4 4', opacity:on});
-      seg(a, [[cuts[s+1], y-0.26],[1, y-1.25+0.26]], {color:C.mid, width:1.3, dash:'4 4', opacity:on}); } }
+      box(a, cuts[s], y-hh, cuts[s+1], y+hh, 'none', {stroke:C.mid, width:3, opacity:on});
+      seg(a, [[cuts[s], y-hh-0.04],[0, y-1.25+hh+0.04]], {color:C.mid, width:1.3, dash:'4 4', opacity:on});
+      seg(a, [[cuts[s+1], y-hh-0.04],[1, y-1.25+hh+0.04]], {color:C.mid, width:1.3, dash:'4 4', opacity:on}); } }
   }
   const o4 = clamp01(f-3);
   if(o4 > 0.02){ const [lo, hi] = AR[3], y = 3.7-3*1.25, t0 = (0.375-lo)/(hi-lo), t1 = (0.40625-lo)/(hi-lo);
-    box(a, t0, y-0.22, t1, y+0.22, rgba(C.out, 0.3), {stroke:C.out, width:2.4, opacity:o4});
-    if(o4 > 0.5){ lbl(a, 0.5, 4.12, 'w=0.7\\times0.7\\times0.2=0.098,\\quad -\\log_2w=3.35', C.ink, 'middle', 15);
-      lbl(a, (t0+t1)/2, y-0.62, '0.\\mathtt{01100}_2=0.375', C.out, 'middle', 15); } }
+    box(a, t0, y-hh, t1, y+hh, rgba(C.out, 0.3), {stroke:C.out, width:2.4, opacity:o4});
+    if(o4 > 0.5){ lblO(a, 0.5, 3.7+hh, 4.12, 'w=0.7\\times0.7\\times0.2=0.098,\\quad -\\log_2w=3.35', C.ink, 'middle', 15);
+      lblO(a, (t0+t1)/2, y-hh, y-0.62, '0.\\mathtt{01100}_2=0.375', C.out, 'middle', 15); } }
   return a.svg();
 }
 
@@ -884,15 +918,19 @@ function figInputDist(v){
 
 /* Hard-decision BPSK is a binary symmetric channel with p = Q(sqrt(2Eb/N0)). */
 function figBSC(v){
-  const g = v ? v.g : 4, p = Qf(Math.sqrt(2*dB(g))), Ht = takeH(430), hA = Math.round(0.46*Ht);
+  const g = v ? v.g : 4, p = Qf(Math.sqrt(2*dB(g))), Ht = takeH(430), hA = Math.round((P.labelScale() > 1 ? 0.4 : 0.46)*Ht);
   const a = P.Axes(bare({w:560, h:hA, xr:[-0.25,1.25], yr:[-0.5,1.5], pad:{l:14,r:14,t:12,b:10}}));
   chanDiag(a, [['0',1],['1',0]], [['0',1],['1',0]], [[0,0,'keep'],[0,1,'flip'],[1,1,'keep'],[1,0,'flip']]);
-  lbl(a, 0.62, 1.13, '1-p', C.h, 'middle', 17); lbl(a, 0.62, -0.3, '1-p', C.h, 'middle', 17);
+  if(P.labelScale() > 1){
+    /* clear of the line by the descender of p above it, by the cap height below it */
+    a.note(0.62, 1, '1-p', {tex:true, fs:17, color:C.h, anchor:'middle', dy:-0.5*17*P.labelScale()});
+    a.note(0.62, 0, '1-p', {tex:true, fs:17, color:C.h, anchor:'middle', dy:37});
+  } else { lbl(a, 0.62, 1.13, '1-p', C.h, 'middle', 17); lbl(a, 0.62, -0.3, '1-p', C.h, 'middle', 17); }
   lbl(a, 0.38, 0.8, 'p', C.err, 'middle', 17); lbl(a, 0.38, 0.06, 'p', C.err, 'middle', 17);
   const b = logAx({w:560, h:Ht-hA, xr:[0,10.4], yr:[-6,-0.2], xlabel:'E_b/N_0\\;(\\text{dB})', ylabel:'p', pad:{l:62,r:26,t:24,b:42}, xt:[0,2,4,6,8,10], yticksOverride:P.decades(-6,-1)});
   b.curve(d=>lg10(Qf(Math.sqrt(2*dB(d)))), {color:C.err, width:2.6});
   dot(b, g, Math.log10(p), {color:C.err, r:7});
-  lbl(b, 0.3, -5.2, 'p=Q\\bigl(\\sqrt{2E_b/N_0}\\bigr)='+sci(p,2), C.err, 'start', 16);
+  lbl(b, 0.3, P.labelScale() > 1 ? -5.45 : -5.2, 'p=Q\\bigl(\\sqrt{2E_b/N_0}\\bigr)='+sci(p,2), C.err, 'start', 16);
   return stack(560, [[a.svg(),hA],[b.svg(),Ht-hA]]);
 }
 
@@ -1024,28 +1062,34 @@ function figBEC(v){
   const e = v ? v.e : 0.1, Ht = takeH(430), hA = Math.round(0.44*Ht);
   const a = P.Axes(bare({w:560, h:hA, xr:[-0.25,1.25], yr:[-0.35,1.35], pad:{l:14,r:14,t:12,b:10}}));
   chanDiag(a, [['0',1],['1',0]], [['0',1],['e',0.5],['1',0]], [[0,0,'keep'],[0,1,'erase'],[1,2,'keep'],[1,1,'erase']]);
-  lbl(a, 0.55, 1.1, '1-\\epsilon', C.h, 'middle', 17); lbl(a, 0.55, -0.24, '1-\\epsilon', C.h, 'middle', 17);
-  lbl(a, 0.3, 0.62, '\\epsilon', C.h, 'middle', 17); lbl(a, 0.3, 0.3, '\\epsilon', C.h, 'middle', 17);
+  lblO(a, 0.55, 1, 1.1, '1-\\epsilon', C.h, 'middle', 17); lblO(a, 0.55, 0, -0.24, '1-\\epsilon', C.h, 'middle', 17);
+  if(P.labelScale() > 1){
+    /* each epsilon a fixed gap inside its own erasure line, where the two lines are far apart */
+    const L = P.labelScale(), x = 0.2, t = 0.5*(x-CX0)/(CX1-CX0);
+    a.note(x, 1-t, '\\epsilon', {tex:true, fs:17, color:C.h, anchor:'middle', dy:3+17.6*L});
+    a.note(x, t, '\\epsilon', {tex:true, fs:17, color:C.h, anchor:'middle', dy:-9-6*L});
+  } else { lbl(a, 0.3, 0.62, '\\epsilon', C.h, 'middle', 17); lbl(a, 0.3, 0.3, '\\epsilon', C.h, 'middle', 17); }
   const b = TAx({w:560, h:Ht-hA, xr:[0,0.5], yr:[0,1.15], xlabel:'\\epsilon', ylabel:'C\\;(\\text{bits per use})', pad:{l:56,r:26,t:24,b:42}, xt:[0,0.1,0.2,0.3,0.4,0.5], yticksOverride:[0,0.5,1]});
   b.curve(u=>1-u, {color:C.out, width:2.6});
   b.curve(u=>1-hb(u), {color:C.out, width:2.6, dash:'8 5'});
   dot(b, e, 1-e, {color:C.out, r:6.5}); dot(b, e, 1-hb(e), {color:C.out, r:6.5});
-  lbl(b, 0.49, 1.03, '\\epsilon='+num(e,2)+':\\ \\text{BEC }'+num(1-e,3)+',\\ \\text{BSC }'+num(1-hb(e),3), C.ink, 'end', 16);
+  lbl(b, 0.49, P.labelScale() > 1 ? 0.98 : 1.03, '\\epsilon='+num(e,2)+':\\ \\text{BEC }'+num(1-e,3)+',\\ \\text{BSC }'+num(1-hb(e),3), C.ink, 'end', 16);
   return stack(560, [[a.svg(),hA],[b.svg(),Ht-hA]]);
 }
 
 /* The Z-channel: its diagram above its mutual-information curve. */
 function figZ(){
-  const Ht = takeH(430), hA = Math.round(0.42*Ht);
-  const a = P.Axes(bare({w:560, h:hA, xr:[-0.25,1.25], yr:[-0.4,1.4], pad:{l:14,r:14,t:12,b:10}}));
+  const big = P.labelScale() > 1, Ht = takeH(430), hA = Math.round((big ? 0.36 : 0.42)*Ht);
+  const a = P.Axes(bare({w:560, h:hA, xr:[-0.25,1.25], yr:[big ? -0.55 : -0.4,1.4], pad:{l:14,r:14,t:12,b:10}}));
   chanDiag(a, [['0',1],['1',0]], [['0',1],['1',0]], [[0,0,'keep'],[1,0,'flip'],[1,1,'keep']]);
-  lbl(a, 0.55, 1.12, '1', C.h, 'middle', 17); lbl(a, 0.55, -0.27, '\\tfrac12', C.h, 'middle', 17); lbl(a, 0.3, 0.46, '\\tfrac12', C.err, 'middle', 17);
+  lbl(a, 0.55, 1.12, '1', C.h, 'middle', 17); lblO(a, 0.55, 0, big ? -0.4 : -0.27, '\\tfrac12', C.h, 'middle', 17); lbl(a, 0.3, 0.46, '\\tfrac12', C.err, 'middle', 17);
   const b = TAx({w:560, h:Ht-hA, xr:[0,1], yr:[0,0.44], xlabel:'q=P(X=0)', ylabel:'I(X;Y)\\;(\\text{bits})', pad:{l:56,r:26,t:24,b:42}, xt:[0,0.25,0.5,0.75,1], yticksOverride:[0.1,0.2,0.3,0.4]});
   b.curve(u=>chan(ZCH,[u,1-u]).I, {color:C.out, width:2.6});
-  b.vline(0.6, {color:C.ink, dash:'5 4', width:1.3, opacity:1});
+  if(big) seg(b, [[0.6,0],[0.6,0.35]], {color:C.ink, width:1.3, dash:'5 4'});
+  else b.vline(0.6, {color:C.ink, dash:'5 4', width:1.3, opacity:1});
   dot(b, 0.6, chan(ZCH,[0.6,0.4]).I, {color:C.out, r:7});
   dot(b, 0.5, chan(ZCH,[0.5,0.5]).I, {color:C.muted, r:5});
-  lbl(b, 0.63, 0.395, 'q^{*}=0.6,\\ C=0.3219', C.out, 'start', 16);
+  lbl(b, big ? 0.99 : 0.63, 0.395, 'q^{*}=0.6,\\ C=0.3219', C.out, big ? 'end' : 'start', 16);
   return stack(560, [[a.svg(),hA],[b.svg(),Ht-hA]]);
 }
 
@@ -1110,7 +1154,7 @@ function figCodingThm(){
   a.hline(0.5, {color:C.ink, dash:'6 4', width:1.4, opacity:1});
   a.vline(0.11, {color:C.ink, dash:'3 4', width:1.2, opacity:1});
   [1,3,5,7].forEach(m=>dot(a, 0.1, 1/m, {color:C.mid, r:5.5}));
-  lbl(a, 0.22, 0.035, '\\text{reliable: }R<C', C.out, 'middle', 15);
+  lbl(a, P.labelScale() > 1 ? 0.19 : 0.22, P.labelScale() > 1 ? 0.02 : 0.035, '\\text{reliable: }R<C', C.out, 'middle', 15);
   lbl(a, 0.3, 0.9, '\\text{impossible: }R>C', C.err, 'middle', 17);
   lbl(a, 0.125, 0.57, 'p=0.11', C.ink, 'start', 15);
   return a.svg();
@@ -1129,7 +1173,7 @@ const HAM_CIRC = [[-0.62,0.3],[0.62,0.3],[0,-0.72]];
 const syn = w => [1,2,4].map(b=>[1,2,3,4,5,6,7].filter(i=>i&b).reduce((s,i)=>s^w[i-1],0));
 function figHamming(v){
   const f = Math.min(4, frameOf(v, 4)), o0 = 1-clamp01(f);
-  if(o0 > 0.5){ const big = P.labelScale() > 1, a = P.Axes(bare(SZ({xr:[0,4.2], yr:[big ? -1.5 : -0.6,8.4]})));
+  if(o0 > 0.5){ const big = P.labelScale() > 1, a = P.Axes(bare(SZ({xr:[0,4.2], yr:[big ? -1.5 : -0.6,8.4], h: big ? 460 : 380})));
     HAM.words.forEach((w,i)=>{ const col = Math.floor(i/8), row = i%8, x = 0.2+2.1*col, y = 7.6-row*1.0;
       lbl(a, x, y-0.18, '\\mathtt{'+w.join('')+'}', C.mid, 'start', 17);
       lbl(a, x+1.45, y-0.18, String(w.reduce((s,b)=>s+b,0)), C.muted, 'start', 15); });
@@ -1227,9 +1271,9 @@ function figAWGN(v){
 /* Capacity of the bandlimited channel, per hertz, against the SNR. */
 function figShannon(v){
   const s = v ? v.s : 11.76, snr = dB(s), c = lg(1+snr);
-  const a = TAxL(SZ({xr:[-10,30], yr:[0,11.8], xlabel:'\\text{SNR}\\;(\\text{dB})', ylabel:'C/W\\;(\\text{b/s/Hz})', xt:[-10,0,10,20], yticksOverride:[0,2,4,6,8,10], zeroAxes:false}));
+  const a = TAxL(SZ({xr:[P.labelScale() > 1 ? -12 : -10,30], yr:[0,11.8], xlabel:'\\text{SNR}\\;(\\text{dB})', ylabel:'C/W\\;(\\text{b/s/Hz})', xt:[-10,0,10,20], yticksOverride:[0,2,4,6,8,10], zeroAxes:false}));
   a.curve(d=>lg(1+dB(d)), {color:C.out, width:2.6});
-  seg(a, [[s,0],[s,c],[-10,c]], {color:C.ink, width:1.3, dash:'5 4'});
+  seg(a, [[s,0],[s,c],[a.o.xr[0],c]], {color:C.ink, width:1.3, dash:'5 4'});
   dot(a, s, c, {color:C.out, r:7});
   lbl(a, -9, 10.95, '\\text{SNR}='+num(snr, snr < 10 ? 2 : 1)+':\\ \\ C/W='+num(c,2), C.out, 'start', 16);
   return a.svg();
@@ -1243,23 +1287,24 @@ function figPhone(){
   dot(a, 30, 3.1*lg(1001), {color:C.out, r:7});
   lbl(a, 29, 3.1*lg(1001)+3, '30\\text{ dB}:\\ 30.9\\text{ kb/s}', C.out, 'end', 16);
   ring(a, todB(30), 3.1*lg(31), {color:C.err, r:10, width:2.2});
-  lbl(a, todB(30)+1.2, 3.1*lg(31)-4.2, '\\log_2(1+30):\\ 15.4\\text{ kb/s}', C.err, 'start', 16);
+  lblO(a, todB(30)+1.2*P.labelScale(), 3.1*lg(31), 3.1*lg(31)-4.2, '\\log_2(1+30):\\ 15.4\\text{ kb/s}', C.err, 'start', 16);
   return a.svg();
 }
 
 /* More bandwidth at the same power: C rises and levels off at 1.44 P/N0.
    More power at the same bandwidth: C keeps growing, slowly. */
 function figBandwidth(v){
-  const u = v ? v.w : 0, x = Math.pow(10, u), c = x*lg(1+1/x), Ht = takeH(430), hA = Math.round(0.56*Ht);
+  const big = P.labelScale() > 1, u = v ? v.w : 0, x = Math.pow(10, u), c = x*lg(1+1/x), Ht = takeH(430), hA = Math.round((big ? 0.5 : 0.56)*Ht);
   const a = TAxL({w:560, h:hA, xr:[-1.05,2.05], yr:[0,1.75], xlabel:'WN_0/P', ylabel:'C/(P/N_0)', pad:{l:62,r:26,t:24,b:42}, xt:[-1,0,1,2], xfmt:P.decade, yticksOverride:[0,0.5,1], zeroAxes:false});
   a.hline(1/Math.LN2, {color:C.ink, dash:'6 4', width:1.6, opacity:1});
   a.curve(t=>Math.pow(10,t)*lg(1+Math.pow(10,-t)), {color:C.out, width:2.6});
   dot(a, u, c, {color:C.out, r:7});
-  lbl(a, -0.95, 1/Math.LN2+0.1, '1/\\ln2=1.443', C.ink, 'start', 15);
-  lbl(a, 2.0, 0.2, 'WN_0/P='+num(x, x < 1 ? 2 : 1)+':\\ C='+num(c,3)+'\\,P/N_0', C.out, 'end', 16);
+  if(big) lblO(a, 2.0, 1/Math.LN2, 1/Math.LN2+0.1, '1/\\ln2=1.443', C.ink, 'end', 15);
+  else lbl(a, -0.95, 1/Math.LN2+0.1, '1/\\ln2=1.443', C.ink, 'start', 15);
+  lbl(a, 2.0, big ? 0.1 : 0.2, 'WN_0/P='+num(x, x < 1 ? 2 : 1)+':\\ C='+num(c,3)+'\\,P/N_0', C.out, 'end', 16);
   const b = TAx({w:560, h:Ht-hA, xr:[0,100], yr:[0,7.6], xlabel:'P/(N_0W)', ylabel:'C/W', pad:{l:62,r:26,t:24,b:42}, xt:[0,25,50,75,100], yticksOverride:[0,2,4,6]});
   b.curve(t=>lg(1+t), {color:C.out, width:2.4, dash:'8 5'});
-  lbl(b, 98, 2.3, '\\text{power alone: }\\log_2(1+P/N_0W)', C.out, 'end', 15);
+  lbl(b, 98, big ? 1.5 : 2.3, '\\text{power alone: }\\log_2(1+P/N_0W)', C.out, 'end', 15);
   return stack(560, [[a.svg(),hA],[b.svg(),Ht-hA]]);
 }
 
@@ -1273,8 +1318,8 @@ const PL5 = [['psk',2,1],['psk',4,2],['psk',8,3],['qam',16,4],['qam',64,6],['ort
   .map(([fam,M,r])=>({fam, M, r, g:reach(d=>PE5[fam](M, dB(d)), 1e-5, -5, 40)}));
 const limDB = r => todB((Math.pow(2,r)-1)/r);
 function figPlane6(v){
-  const u = v ? v.u : 1, r = Math.pow(2, u);
-  const a = TAx(SZ({xr:[-3,22], yr:[-3,3], xlabel:'E_b/N_0\\;(\\text{dB})', ylabel:'r=R_b/W', xt:[0,5,10,15], yticksOverride:[], grid:false, zeroAxes:false}));
+  const u = v ? v.u : 1, r = Math.pow(2, u), xR = P.labelScale() > 1 ? 25 : 22;
+  const a = TAx(SZ({xr:[-3,xR], yr:[-3,3], xlabel:'E_b/N_0\\;(\\text{dB})', ylabel:'r=R_b/W', xt:[0,5,10,15], yticksOverride:[], grid:false, zeroAxes:false}));
   leftTicks(a, [-3,-2,-1,0,1,2,3], t=>t >= 0 ? String(Math.pow(2,t)) : '1/'+Math.pow(2,-t));
   const lim = []; for(let t=-3;t<=3.001;t+=0.05) lim.push([limDB(Math.pow(2,t)), t]);
   const fillPts = lim.map(p=>f2(a.sx(p[0]))+','+f2(a.sy(p[1]))).join('L');
@@ -1283,9 +1328,9 @@ function figPlane6(v){
   a.hline(0, {color:C.muted, width:1, dash:'2 4'});
   PL5.forEach(q=>dot(a, q.g, lg(q.r), {color:C.in, r:5.5}));
   dot(a, limDB(r), u, {color:C.out, r:7});
-  lbl(a, 21.5, -2.6, 'r='+num(r, r < 1 ? 3 : 2)+':\\ E_b/N_0\\ge'+num(limDB(r),2)+'\\text{ dB}', C.out, 'end', 16);
-  lbl(a, 21.5, 0.25, '\\text{bandwidth-limited}', C.ink, 'end', 14);
-  lbl(a, 21.5, -0.7, '\\text{power-limited}', C.ink, 'end', 14);
+  lbl(a, xR-0.5, -2.6, 'r='+num(r, r < 1 ? 3 : 2)+':\\ E_b/N_0\\ge'+num(limDB(r),2)+'\\text{ dB}', C.out, 'end', 16);
+  lbl(a, xR-0.5, 0.25, '\\text{bandwidth-limited}', C.ink, 'end', 14);
+  lbl(a, xR-0.5, -0.7, '\\text{power-limited}', C.ink, 'end', 14);
   lbl(a, -2.6, 2.55, '\\text{impossible}', C.err, 'start', 15);
   return a.svg();
 }

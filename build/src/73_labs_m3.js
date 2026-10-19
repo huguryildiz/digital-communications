@@ -272,7 +272,10 @@ Object.assign(LABS, (function(){
       const segdx = pairAt[1][0]-pairAt[0][0], segdy = pairAt[1][1]-pairAt[0][1];
       const seglen = Math.hypot(segdx,segdy) || 1;
       const perpx = -segdy/seglen, perpy = segdx/seglen;
-      cx.note(midx+perpx*0.22, midy+perpy*0.22, 'd_{\\min}',{tex:true,fs:15,color:P.COL.muted,anchor:'middle'});
+      /* the label grows with the label scale, and its gap from the line with it:
+         30 px for each unit of scale above 1, so the normal view is unchanged */
+      const off = 0.22 + 30*(P.labelScale()-1)/(cx.sx(1)-cx.sx(0));
+      cx.note(midx+perpx*off, midy+perpy*off, 'd_{\\min}',{tex:true,fs:15,color:P.COL.muted,anchor:'middle'});
       pts.forEach((p,k)=>{ cx.point(p[0],p[1],{color:P.COL.in,r: k===mi?8:5.5}); });
       cx.point(mx,my,{color:P.COL.coral,r:11,ring:P.COL.coral,ringw:2});
       cx.point(mx,my,{color:P.COL.in,r:5.5});

@@ -147,6 +147,18 @@ function wash(a, f, lo, hi, col, al){
   a.raw(`<path d="M${f2(a.sx(lo))},${f2(a.sy(y0))}L${pts.join('L')}L${f2(a.sx(hi))},${f2(a.sy(y0))}Z" fill="${rgba(col, al==null?0.3:al)}" stroke="none"/>`);
 }
 const lbl = (a, x, y, s, col, anchor, fs) => a.note(x, y, s, {tex:true, fs:fs||15, color:col||C.ink, anchor:anchor||'start'});
+/* Projected, the name of a falling error curve on a log axis, set at height y
+   in the gap between it and its left neighbour fL: centred between where fL
+   passes the foot of the label and where fR passes its top, or set just left
+   of fR when nothing lies to its left. */
+const gapName = (a, fL, fR, y, t, col) => {
+  const yt = y + LPY(a, 24), yb = y - LPY(a, 9), xr = reach(fR, Math.pow(10, yt), 0, 40);
+  if(!fL) return lbl(a, xr - LPX(a, 5), y, t, col, 'end');
+  return lbl(a, (reach(fL, Math.pow(10, yb), 0, 40) + xr)/2, y, t, col, 'middle'); };
+/* Data units in `n` pixels of label height, vertically and horizontally: a
+   label spaced with these grows apart from its neighbour as the labels grow. */
+const LPY = (a, n) => n*P.labelScale()/(a.sy(0)-a.sy(1));
+const LPX = (a, n) => n*P.labelScale()/(a.sx(1)-a.sx(0));
 
 /* Tick numbers of the time axis under the lower edge of the data area, where
    no step of a waveform can cross them. An axes that takes these passes
@@ -249,7 +261,22 @@ const nearest = (pts, x, y) => { let best = 0, bd = Infinity;
    that edge, set by the figure right after it makes its axes. */
 let LGF = -99;
 const lg10 = v => { const y = Math.log10(Math.max(1e-14, v)); return y < LGF-0.02 ? NaN : y; };
-const logAx = o => { const a = TAx(Object.assign({ytickfmt:P.decade, zeroAxes:false}, o)); LGF = a.o.yr[0]; return a; };
+/* A log axis has no zero line, but a range that reaches past 10^0 still makes
+   Axes set the name of E_b/N_0 just under the data area, where the enlarged
+   tick numbers of the projector sit. There the name is set one label height
+   below the tick row, with the bottom margin widened to hold it; a first,
+   throw-away pass measures where 10^0 falls. Normal size is unchanged. */
+const logAx = o => {
+  const base = Object.assign({ytickfmt:P.decade, zeroAxes:false}, o), L = P.labelScale();
+  if(L > 1 && base.xlabel && base.xnameDrop == null){
+    if(P.hOverride){ base.h = P.hOverride; P.hOverride = null; }
+    const D = 50*L, pad = Object.assign({}, base.pad||{});
+    pad.b = Math.max(pad.b||0, D + 0.42*26*L + 2);
+    const zin = base.yr[0] <= 0 && base.yr[1] >= 0;
+    const t = zin ? P.Axes(Object.assign({}, base, {pad, xnameDrop:0})) : null;
+    Object.assign(base, {pad, xnameDrop: D + (t ? t.y0 - t.sy(0) : -1)});
+  }
+  const a = TAx(base); LGF = a.o.yr[0]; return a; };
 
 /* ---- the point sets of the module ---------------------------------------- */
 const PSKpts = (M, r=1, off=0) => Array.from({length:M}, (_,k)=>[r*Math.cos(2*Math.PI*k/M+off), r*Math.sin(2*Math.PI*k/M+off)]);
@@ -317,12 +344,14 @@ function figOpen(){
     ['\\text{frequency: FSK}', t=>Math.cos(2*Math.PI*(OPEN_BITS[Math.min(3,Math.floor(t))] ? 4 : 2)*t)]
   ];
   const parts = rows.map(([name, f], k)=>{
-    const h = k===0 ? 150 : 128;
-    const a = P.Axes(bare({w:560, h, xr:[-0.05,4.05], yr:[-1.25, k===0 ? 2.3 : 1.75], pad:{l:18,r:18,t:6,b:6}, chrome:NAVY}));
+    /* projected, the name and the bits are set in pixels above the crest */
+    const big = P.labelScale() > 1, xt = big ? (k===0 ? 22 : 14) : 0, h = (k===0 ? 150 : 128) + xt;
+    const a = P.Axes(bare({w:560, h, xr:[-0.05,4.05], yr:[-1.25, k===0 ? 2.3 : 1.75], pad:{l:18,r:18,t:6+xt,b:6}, chrome:NAVY}));
     for(let n=1;n<4;n++) seg(a, [[n,-1.2],[n,1.2]], {color:'rgba(239,231,216,.22)', width:1, dash:'2 4'});
     trace(a, f, 0, 4, {color:T_CY, width:2.3, n:900});
-    lbl(a, 0.02, 1.45, name, T_INK, 'start', 15);
-    if(k===0) OPEN_BITS.forEach((b,n)=>lbl(a, n+0.5, 2.0, String(b), T_MUT, 'middle', 16));
+    const yN = big ? 1 + LPY(a, 13) : 1.45, yB = big ? yN + LPY(a, 25) : 2.0;
+    lbl(a, 0.02, yN, name, T_INK, 'start', 15);
+    if(k===0) OPEN_BITS.forEach((b,n)=>lbl(a, n+0.5, yB, String(b), T_MUT, 'middle', 16));
     return [a.svg(), h];
   });
   return stack(560, parts);
@@ -340,7 +369,9 @@ const bump = t => Math.abs(t) < 0.2 ? Math.pow(Math.cos(Math.PI*t/0.4), 2) : 0;
 const sBase = t => CAR.an.reduce((s,a,n)=>s + 0.9*a*bump(t-0.1-0.2*n), 0);
 const specB = f => Math.abs(f) < CAR.W ? Math.pow(Math.cos(Math.PI*f/(2*CAR.W)), 2) : 0;
 function figCarrier(v){
-  const H = takeH(420), hA = Math.round(0.5*H), f = frameOf(v, 2);
+  /* projected, the spectrum takes a little more of the height so its two
+     enlarged tick numbers 0.5 and 1 stay apart */
+  const H = takeH(420), hA = Math.round((P.labelScale() > 1 ? 0.45 : 0.5)*H), f = frameOf(v, 2);
   const oM = clamp01(f), oS = clamp01(f-1);
   const a = TAx({w:560, h:hA, xr:[0,1.2], yr:[-1.3,1.45], xlabel:'t\\;(\\text{ms})', ylabel:'s(t),\\;u(t)',
     pad:{l:56,r:26,t:24,b:36}, xt:[0,0.4,0.8], yticksOverride:[-1,0,1]});
@@ -447,13 +478,16 @@ function tones(freqs, Tb){
    on one axis with its threshold halfway. */
 const BA_BITS = [1,0,1,1,0];
 function figBASK(v){
-  const H = takeH(420), hA = Math.round(0.47*H), hb = H-hA, f = frameOf(v, 2);
+  const big = P.labelScale() > 1;
+  const H = takeH(420), hA = Math.round((big ? 0.6 : 0.47)*H), hb = H-hA, f = frameOf(v, 2);
   const oE = clamp01(f)*(1-clamp01(f-1)), oC = clamp01(f-1);
-  const a = TAx({w:560, h:hA, xr:[-0.05,5.05], yr:[-2.5,3.2], xlabel:'t/T_b', ylabel:'s(t)',
+  const a = TAx({w:560, h:hA, xr:[-0.05,5.05], yr:[-2.5,big ? 3.9 : 3.2], xlabel:'t/T_b', ylabel:'s(t)',
     pad:{l:56,r:26,t:24,b:36}, xt:[0,1,2,3,4], yticksOverride:[-2,0,2]});
   for(let n=1;n<5;n++) a.vline(n, {color:C.muted, dash:'2 4', width:1});
   trace(a, t=>BA_BITS[Math.min(4,Math.floor(t))] ? 2*Math.cos(2*Math.PI*FCT*t) : 0, 0, 5, {color:C.in, width:2.4, n:1000});
-  BA_BITS.forEach((b,n)=>lbl(a, n+0.5, 2.55, String(b), C.ink, 'middle', 17));
+  /* projected, the bits sit a fixed pixel gap above the crest, clear of s(t) */
+  const yBit = big ? 2 + LPY(a, 17) : 2.55;
+  BA_BITS.forEach((b,n)=>lbl(a, n+0.5, yBit, String(b), C.ink, 'middle', 17));
   const e = P.Axes({w:560, h:hb, xr:[-0.05,5.05], yr:[0,3.1], xlabel:'\\text{bit }n', ylabel:'E_n',
     pad:{l:56,r:26,t:24,b:42}, xticksOverride:[], yticksOverride:[1,2]});
   BA_BITS.forEach((b,n)=>{ if(!b) return; const X0 = e.sx(n+0.2), X1 = e.sx(n+0.8), Y0 = e.sy(0), Y1 = e.sy(2);
@@ -491,7 +525,7 @@ function figBinaryPe(v){
   if(Math.log10(pb) > -7) dot(a, x0, Math.log10(pb), {color:C.err, r:5.5});
   if(Math.log10(pf) > -7) dot(a, x0, Math.log10(pf), {color:C.err, r:5.5});
   lbl(a, 0.4, -5.95, '\\text{BPSK: }P_b='+sci(pb), C.err);
-  lbl(a, 0.4, -6.65, '\\text{BFSK, BASK: }P_b='+sci(pf), C.err);
+  lbl(a, 0.4, P.labelScale() > 1 ? -5.95-LPY(a, 27) : -6.65, '\\text{BFSK, BASK: }P_b='+sci(pf), C.err);
   return a.svg();
 }
 
@@ -605,15 +639,22 @@ function figPSKDetect(v){
 const MS_PSK = [2,4,8,16,32];
 const PSK_DASH = {2:null, 4:'2 4', 8:'7 5', 16:'12 5 3 5', 32:'3 3'};
 function figMPSKPe(v){
-  const x0 = v ? v.g : 10;
-  const a = logAx(SZ({xr:[0,26], yr:[-7,1.7], xlabel:'E_b/N_0\\;(\\text{dB})', ylabel:'P_e', xt:[0,5,10,15,20], yticksOverride:P.decades(-7,0)}));
+  /* projected, a wider and taller box keeps the enlarged M labels inside the
+     gaps between the curves (cf. figIQ), and the range above 10^0 holds the
+     two readings on two lines */
+  const x0 = v ? v.g : 10, big = P.labelScale() > 1;
+  const a = logAx(SZ({w:big ? 680 : 560, h:big ? 600 : 380, xr:[0,26], yr:[-7,big ? 2.1 : 1.7], xlabel:'E_b/N_0\\;(\\text{dB})', ylabel:'P_e', xt:[0,5,10,15,20], yticksOverride:P.decades(-7,0)}));
   MS_PSK.forEach(M=>a.curve(d=>lg10(PE.psk(M, dB(d))), {color:C.err, width:M===2 ? 2.8 : 2.2, dash:PSK_DASH[M]}));
   [[4,'M=2,\\,4'],[8,'M=8'],[16,'M=16'],[32,'M=32']].forEach(([M,t])=>{
+    if(big) return gapName(a, M===4 ? null : d=>PE.psk(M/2, dB(d)), d=>PE.psk(M===4 ? 2 : M, dB(d)), -6.72, t, C.err);
     const x = reach(d=>PE.psk(M, dB(d)), 1e-6, 0, 40); lbl(a, x-0.6, -6.3, t, C.err, 'end'); });
-  seg(a, [[x0,-5.8],[x0,0.05]], {color:C.ink, dash:'5 4', width:1.3});
+  /* projected, the reading line stops above the enlarged M labels */
+  seg(a, [[x0, big ? -6.6+LPY(a, 26) : -5.8],[x0,0.05]], {color:C.ink, dash:'5 4', width:1.3});
   [4,8].forEach(M=>{ const y = Math.log10(PE.psk(M, dB(x0))); if(y > -5.8) dot(a, x0, y, {color:C.err, r:5.5}); });
-  lbl(a, 0.4, 1.2, 'M=4:\\ P_e='+sci(PE.psk(4, dB(x0))), C.err, 'start');
-  lbl(a, 13.4, 1.2, 'M=8:\\ P_e='+sci(PE.psk(8, dB(x0))), C.err, 'start');
+  const yR = big ? a.o.yr[1]-LPY(a, 24) : 1.2;
+  lbl(a, 0.4, yR, 'M=4:\\ P_e='+sci(PE.psk(4, dB(x0))), C.err, 'start');
+  if(big) lbl(a, 0.4, yR-LPY(a, 28), 'M=8:\\ P_e='+sci(PE.psk(8, dB(x0))), C.err, 'start');
+  else lbl(a, 13.4, 1.2, 'M=8:\\ P_e='+sci(PE.psk(8, dB(x0))), C.err, 'start');
   return a.svg();
 }
 
@@ -723,7 +764,7 @@ function figDPSKPe(v){
   if(Math.log10(pb) > -7) dot(a, x0, Math.log10(pb), {color:C.err, r:5.5});
   if(Math.log10(pd) > -7) dot(a, x0, Math.log10(pd), {color:C.err, r:5.5});
   lbl(a, 0.4, -5.95, '\\text{BPSK: }P_b='+sci(pb), C.err);
-  lbl(a, 0.4, -6.65, '\\text{DPSK: }P_b='+sci(pd), C.err);
+  lbl(a, 0.4, P.labelScale() > 1 ? -5.95-LPY(a, 27) : -6.65, '\\text{DPSK: }P_b='+sci(pd), C.err);
   return a.svg();
 }
 
@@ -798,7 +839,9 @@ function figExASK4(v){
   A4.forEach((x,k)=>{ const o = clamp01(f-k), cur = o*(1-clamp01(f-k-1));
     if(cur > 0.02){ if(k > 0) hump(A4[k-1], x, cur); if(k < 3) hump(x, A4[k+1], cur); }
     if(o > 0.5) lbl(a, x, 1.25, String(NB4[k]), C.mid, 'middle', 17); });
-  A4.forEach((x,k)=>{ dot(a, x, 0, {color:C.in, r:7}); lbl(a, x, -0.72, '\\mathbf{s}_'+(k+1), C.in, 'middle'); });
+  /* projected, the point names sit a fixed pixel gap under the enlarged tick numbers */
+  const yS = P.labelScale() > 1 ? -LPY(a, 44) : -0.72;
+  A4.forEach((x,k)=>{ dot(a, x, 0, {color:C.in, r:7}); lbl(a, x, yS, '\\mathbf{s}_'+(k+1), C.in, 'middle'); });
   if(f > 4.5) lbl(a, 0.3, 2.2, '\\bar N_{\\min}=\\tfrac{1+2+2+1}{4}=1.5', C.ink, 'start', 17);   /* right of the axis */
   return a.svg();
 }
@@ -828,17 +871,18 @@ function figQAM(v){
    form, against E_b/N_0. */
 const MS_QAM = [4,16,64];
 function figQAMPe(v){
-  const x0 = v ? v.g : 12;
-  const a = logAx(SZ({xr:[0,24], yr:[-7,2.5], xlabel:'E_b/N_0\\;(\\text{dB})', ylabel:'P_e', xt:[0,5,10,15], yticksOverride:P.decades(-7,0)}));
+  const x0 = v ? v.g : 12, big = P.labelScale() > 1;   /* wider, taller box projected, as in figMPSKPe */
+  const a = logAx(SZ({w:big ? 640 : 560, h:big ? 560 : 380, xr:[0,24], yr:[-7,2.5], xlabel:'E_b/N_0\\;(\\text{dB})', ylabel:'P_e', xt:[0,5,10,15], yticksOverride:P.decades(-7,0)}));
   MS_QAM.forEach(M=>{
     a.curve(d=>lg10(PE.qamNN(M, dB(d))), {color:C.mid, width:2.0, dash:'3 4'});
     a.curve(d=>lg10(PE.qam(M, dB(d))), {color:C.err, width:2.5});
+    if(big) return gapName(a, M===4 ? null : d=>PE.qamNN(M/4, dB(d)), d=>PE.qam(M, dB(d)), -6.72, 'M='+M, C.err);
     const x = reach(d=>PE.qam(M, dB(d)), 1e-6, 0, 40); lbl(a, x-0.35, -6.3, 'M='+M, C.err, 'end'); });
-  seg(a, [[x0,-5.8],[x0,0.05]], {color:C.ink, dash:'5 4', width:1.3});
+  seg(a, [[x0, big ? -6.6+LPY(a, 26) : -5.8],[x0,0.05]], {color:C.ink, dash:'5 4', width:1.3});
   const pe = PE.qam(16, dB(x0)), pn = PE.qamNN(16, dB(x0));
   if(Math.log10(pe) > -5.8) dot(a, x0, Math.log10(pe), {color:C.err, r:5.5});
   lbl(a, 0.4, 1.95, '16\\text{-QAM exact: }'+sci(pe), C.err, 'start');
-  lbl(a, 0.4, 1.15, '\\text{nearest neighbour: }'+sci(pn), C.mid, 'start');
+  lbl(a, 0.4, big ? 1.95-LPY(a, 28) : 1.15, '\\text{nearest neighbour: }'+sci(pn), C.mid, 'start');
   return a.svg();
 }
 
@@ -855,7 +899,8 @@ const SH = [
 const Eav = pts => pts.reduce((s,p)=>s+p[0]*p[0]+p[1]*p[1], 0)/pts.length;
 function figShapes(v){
   const f = frameOf(v, 3), i0 = Math.min(2, Math.floor(f)), u = clamp01(f-i0);
-  const a = plane({need:[[-3.8,3.8],[-3.8,4.3]], xticksOverride:[-2,0,2], yticksOverride:[-2,0,2]});
+  const big = P.labelScale() > 1;
+  const a = plane({need:[[-3.8,3.8],[-3.8,big ? 4.6 : 4.3]], xticksOverride:[-2,0,2], yticksOverride:[-2,0,2]});
   const draw = (S, o) => { if(o < 0.02) return;
     const radii = [...new Set(S.pts.map(p=>Math.hypot(p[0],p[1]).toFixed(4)))].map(Number);
     radii.forEach(r=>circle(a, r, {color:C.muted, width:1.1, opacity:o}));
@@ -863,7 +908,8 @@ function figShapes(v){
     S.pts.forEach(p=>dot(a, p[0], p[1], {color:C.in, r:6.5, opacity:o})); };
   draw(SH[i0], 1-u); draw(SH[i0+1], u);
   const S = SH[Math.round(f)];
-  lbl(a, a.o.xr[0]+0.1, a.o.yr[1]-0.32, '\\text{'+S.n+'}\\quad E_{\\text{av}}='+num(Eav(S.pts),2)+',\\ \\ d_{\\min}=2', C.ink);
+  /* projected, the line is set a pixel gap under the top, clear of the name psi_2 */
+  lbl(a, a.o.xr[0]+0.1, a.o.yr[1]-(big ? LPY(a, 24) : 0.32), '\\text{'+S.n+'}\\quad E_{\\text{av}}='+num(Eav(S.pts),2)+',\\ \\ d_{\\min}=2', C.ink);
   return a.svg();
 }
 
@@ -888,17 +934,19 @@ const advQ = M => 10*Math.log10((3/(M-1))/(2*Math.pow(Math.sin(Math.PI/M), 2)));
 function figQAMvsPSK(v){
   const k = v ? v.k : 2, M = Math.pow(4, k), q = qamSq(M), ps = PSKpts(M);
   const dq = Math.sqrt(6/(M-1)), dp = 2*Math.sin(Math.PI/M);
-  const a = plane({need:[[-1.65,1.65],[-1.6,2.2]], xticksOverride:[], yticksOverride:[]});
+  const big = P.labelScale() > 1;
+  const a = plane({need:[[-1.65,1.65],[-1.6,big ? 3.0 : 2.2]], xticksOverride:[], yticksOverride:[]});
   circle(a, 1, {color:C.muted, width:1.1});
   ps.forEach(p=>ring(a, p[0], p[1], {color:C.in, r:M > 16 ? 3.5 : 5.5, width:1.8}));
   q.forEach(p=>dot(a, p[0], p[1], {color:C.in, r:M > 16 ? 3 : 5}));
   seg(a, [ps[0], ps[1]], {color:C.err, width:2.6, dash:'5 3'});
   seg(a, [q[0], q[1]], {color:C.err, width:2.6});
-  const x0 = a.o.xr[0]+0.06, y0 = a.o.yr[1]-0.2;
+ /* projected, the lines are spaced in pixels and the plane reaches higher to hold them */
+  const x0 = a.o.xr[0]+0.06, y0 = a.o.yr[1]-(big ? LPY(a, 22) : 0.2), dy = big ? LPY(a, 27) : 0.3;
   /* three short lines, all left of the vertical axis */
   lbl(a, x0, y0, 'M='+M+':\\ d_{\\text{QAM}}='+num(dq,3), C.err);
-  lbl(a, x0, y0-0.3, 'd_{\\text{PSK}}='+num(dp,3), C.err);
-  lbl(a, x0, y0-0.6, '10\\log_{10}\\bigl(d_{\\text{QAM}}^{2}/d_{\\text{PSK}}^{2}\\bigr)='+num(advQ(M),2)+'\\text{ dB}', C.ink);
+  lbl(a, x0, y0-dy, 'd_{\\text{PSK}}='+num(dp,3), C.err);
+  lbl(a, x0, y0-2*dy, '10\\log_{10}\\bigl(d_{\\text{QAM}}^{2}/d_{\\text{PSK}}^{2}\\bigr)='+num(advQ(M),2)+'\\text{ dB}', C.ink);
   return a.svg();
 }
 
@@ -944,7 +992,8 @@ const iso = p => [(p[0]-p[1])*0.866, p[2]-0.5*(p[0]+p[1])];
 const RX3 = [0.82, 0.34, 0.22];
 function figMFSK(v){
   const f = frameOf(v, 2), o1 = clamp01(f), o2 = clamp01(f-1);
-  const a = plane(bare({need:[[-1.6,1.6],[-1.05,1.55]], xlabel:'', ylabel:''}));
+  /* projected, the plane reaches higher so the enlarged name of psi_3 stays inside */
+  const a = plane(bare({need:[[-1.6,1.6],[-1.05,P.labelScale() > 1 ? 1.75 : 1.55]], xlabel:'', ylabel:''}));
   const E = [[1,0,0],[0,1,0],[0,0,1]];
   E.forEach((e,j)=>{ const q = iso(e.map(x=>1.45*x));
     arrow(a, 0, 0, q[0], q[1], {color:C.h, width:1.8, head:0.7});
@@ -973,16 +1022,19 @@ const orthLook = (M, d) => { const t = orthTab(M), u = (d-ORTH_X0)/ORTH_DX, i = 
   const y = t[i]*(1-w)+t[i+1]*w; return y < LGF-0.02 ? NaN : y; };
 const WALL = 10*Math.log10(Math.LN2);
 function figOrthM(v){
-  const f = frameOf(v, 5), n = Math.min(5, Math.round(f));
+  /* projected, the two notes no longer fit on one line: the note on the
+     limit moves to the foot of the wall, where no curve reaches */
+  const f = frameOf(v, 5), n = Math.min(5, Math.round(f)), big = P.labelScale() > 1;
   const a = leftTicks(logAx(SZ({xr:[-4,16], yr:[-7,0.3], xlabel:'E_b/N_0\\;(\\text{dB})', ylabel:'P_b', xt:[-4,0,4,8,12], yticksOverride:[], grid:false})), P.decades(-7,-1), P.decade);
-  a.rect(-4, -7, WALL, 0.3, {fill:rgba(C.muted, 0.12)});
+  a.rect(-4, -7, WALL, a.o.yr[1], {fill:rgba(C.muted, 0.12)});
   a.vline(WALL, {color:C.muted, width:1.4, dash:'3 4'});
-  lbl(a, WALL+0.25, -0.55, '\\text{limit, Module 6}', C.muted, 'start', 13);
+  const yM = -0.45;
+  lbl(a, WALL+0.25, big ? -7+LPY(a, 9) : -0.55, '\\text{limit, Module 6}', C.muted, 'start', 13);
   for(let i=0;i<=n;i++){ const M = ORTH_MS[i];
     a.curve(d=>orthLook(M, d), {color:C.err, width:i===n ? 2.8 : 1.5, opacity:i===n ? 1 : 0.45, n:240}); }
   const M = ORTH_MS[n], x = orthAt(M);
   dot(a, x, -5, {color:C.err, r:5.5});
-  lbl(a, 15.6, -0.45, 'M='+M+':\\ E_b/N_0='+num(x,1)+'\\text{ dB at }10^{-5}', C.err, 'end');
+  lbl(a, 15.6, yM, 'M='+M+':\\ E_b/N_0='+num(x,1)+'\\text{ dB at }10^{-5}', C.err, 'end');
   return a.svg();
 }
 
@@ -991,7 +1043,8 @@ function figOrthM(v){
    the price: 12.6 dB coherent against 13.4 dB noncoherent at 1e-5. */
 const G_NC = reach(d=>PE.ncfsk(dB(d)), 1e-5, 0, 20);
 function figNoncoh(v){
-  const phi = v ? v.phi : 60, t = phi*Math.PI/180, H = takeH(430), hA = Math.round(0.58*H);
+  /* projected, the error plot takes more of the height for its widened margin */
+  const phi = v ? v.phi : 60, t = phi*Math.PI/180, H = takeH(430), hA = Math.round((P.labelScale() > 1 ? 0.48 : 0.58)*H);
   const a = plane({h:hA, need:[[-1.5,1.5],[-1.3,1.45]], xlabel:'y_c', ylabel:'y_s', xticksOverride:[], yticksOverride:[], pad:{l:56,r:26,t:24,b:36}});
   circle(a, 1, {color:C.muted, width:1.1});
   const x = Math.cos(t), y = Math.sin(t);
@@ -1043,9 +1096,10 @@ const REAL_FSK = realGallery({ id:'m5-real-fsk', nav:'Frequency keying around us
       a.curve(u=>gPulse(u, 0.3), {color:C.in, width:2.5, n:500});
       return a.svg(); },
       'GSM sends GMSK: MSK whose frequency pulse passes a Gaussian filter with $BT_b=0.3$. The dashed pulse is plain MSK. The Gaussian one spreads over about three bits.'],
-    [()=>{ const a = TAx(EXO({xt:[0,4,8], xr:[-0.8,12], yr:[-3.8,3.8], xlabel:'n', ylabel:'f[n]', yticksOverride:[]}));
+    /* projected, the range runs one step further so the level names clear the last stem */
+    [()=>{ const a = TAx(EXO({xt:[0,4,8], xr:[-0.8,P.labelScale() > 1 ? 13 : 12], yr:[-3.8,3.8], xlabel:'n', ylabel:'f[n]', yticksOverride:[]}));
       a.stem(DMR.map((y,n)=>[n,y]), {color:C.in});
-      [-3,-1,1,3].forEach(y=>lbl(a, 11.9, y+0.25, (y > 0 ? '+' : '-')+(Math.abs(y)===3 ? '3d' : 'd'), C.muted, 'end', 13));
+      [-3,-1,1,3].forEach(y=>lbl(a, a.o.xr[1]-0.1, y+0.25, (y > 0 ? '+' : '-')+(Math.abs(y)===3 ? '3d' : 'd'), C.muted, 'end', 13));
       return a.svg(); },
       'Digital mobile radio (DMR) uses four-level FSK. Each symbol shifts the carrier by one of four offsets $\\{\\pm d,\\pm3d\\}$ and carries $2$ bits.']
   ],
@@ -1062,7 +1116,8 @@ const REAL_FSK = realGallery({ id:'m5-real-fsk', nav:'Frequency keying around us
    family at this k. */
 const bwOf = k => { const M = 1 << k; return [['\\text{PAM (SSB)}', 1/(2*k), C.in], ['\\text{PSK, QAM}', 1/k, C.in], ['\\text{orthogonal}', M/(2*k), C.in]]; };
 function figSpectrum(v){
-  const k = v ? v.k : 2, M = 1 << k, H = takeH(430), hA = Math.round(0.56*H);
+  /* projected, the bar chart takes more of the height so its three lines stay apart */
+  const k = v ? v.k : 2, M = 1 << k, H = takeH(430), hA = Math.round((P.labelScale() > 1 ? 0.52 : 0.56)*H);
   const a = P.Axes({w:560, h:hA, xr:[-2.2,2.2], yr:[0,6.6], xlabel:'f/R_b', ylabel:'S(f)',
     pad:{l:56,r:26,t:24,b:40}, xticksOverride:[-2,-1,0,1,2], yticksOverride:[]});
   a.curve(x=>Math.pow(sincF(x), 2), {color:C.muted, width:1.4, dash:'5 4', n:800});
@@ -1097,7 +1152,8 @@ const mskPsd = x => { const den = 1-16*x*x; return Math.abs(den) < 1e-6 ? Math.p
 function figMSK(v){
   const f = frameOf(v, 3), H = takeH(430), hA = Math.round(0.6*H);
   const w3 = clamp01(f-2), i0 = Math.min(1, Math.floor(Math.min(f, 2))), u = clamp01(Math.min(f, 2)-i0);
-  const a = plane({h:hA, need:[[-1.4,1.4],[-1.3,1.45]], xlabel:'I', ylabel:'Q', xticksOverride:[-1,1], yticksOverride:[-1,1], pad:{l:56,r:26,t:24,b:36}});
+  const big = P.labelScale() > 1;
+  const a = plane({h:hA, need:[[-1.4,1.4],[-1.3,big ? 1.7 : 1.45]], xlabel:'I', ylabel:'Q', xticksOverride:[-1,1], yticksOverride:[-1,1], pad:{l:56,r:26,t:24,b:36}});
   circle(a, 1, {color:C.muted, width:1.1});
   const b = TAx({w:560, h:H-hA, xr:[0,8], yr:[0,1.35], xlabel:'t/T_b', ylabel:'|s(t)|',
     pad:{l:56,r:26,t:20,b:40}, xt:[0,2,4,6,8], yticksOverride:[0,1]});
@@ -1106,7 +1162,7 @@ function figMSK(v){
     seg(b, Array.from({length:801}, (_,i)=>{ const t = 8*i/800, p = way(t); return [t, Math.hypot(p[0], p[1])]; }), {color:C.in, width:2.4, opacity:o}); });
   QPSK.forEach(p=>dot(a, p[0]/Math.SQRT2, p[1]/Math.SQRT2, {color:C.in, r:5}));
   const j = u < 0.5 ? i0 : i0+1;
-  lbl(a, a.o.xr[0]+0.05, a.o.yr[1]-0.15, MSK_NAME[j], C.in);
+  lbl(a, a.o.xr[0]+0.05, a.o.yr[1]-(big ? LPY(a, 24) : 0.15), MSK_NAME[j], C.in);   /* clear of the name Q, projected */
   const top = stack(560, [[a.svg(),hA],[b.svg(),H-hA]]);
   if(w3 < 0.02) return top;
   const c = logAx({w:560, h:H, xr:[0,2], yr:[-4,0.2], xlabel:'fT_b', ylabel:'S(f)/S(0)',
@@ -1132,17 +1188,18 @@ const needAt = (fam, M, tgt) => reach(d=>fam.pe(M, dB(d)), tgt, -5, 60);
 function figPlane(v){
   const e = v ? v.e : -5, tgt = Math.pow(10, e);
   /* Projected, the family names grow 1.36 times and would touch their curves;
-     the plane is then drawn on a wider box of the same shape, so it takes the
-     same room on the page and the names give back that part of the growth. */
+     the plane is then drawn on a wider box, a little taller than the normal
+     shape so the name QAM fits between its line and the limit, and the names
+     give back that part of the growth. */
   const big = P.labelScale() > 1;
-  const a = TAx(SZ({w:big ? 640 : 560, h:big ? 434 : 380, xr:[-4,36], yr:[-3,4.4], xlabel:'E_b/N_0\\;(\\text{dB})', ylabel:'R_b/W', xt:[0,10,20],
+  const a = TAx(SZ({w:big ? 640 : 560, h:big ? 510 : 380, xr:[-4,36], yr:[-3,4.4], xlabel:'E_b/N_0\\;(\\text{dB})', ylabel:'R_b/W', xt:[0,10,20],
     yticksOverride:[], grid:false, zeroAxes:false}));
   leftTicks(a, [-3,-2,-1,0,1,2,3,4], u=>u >= 0 ? String(Math.pow(2,u)) : '1/'+Math.pow(2,-u));
   a.hline(0, {color:C.muted, width:1, dash:'2 4'});
   const lim = []; for(let u=-3;u<=4.001;u+=0.05){ const r = Math.pow(2,u); lim.push([todB((Math.pow(2,r)-1)/r), u]); }
   seg(a, lim, {color:C.muted, width:1.6, dash:'3 4'});
   lbl(a, -3.6, 3.55, '\\text{limit, Module 6}', C.muted, 'start', 13);
-  const LB = {PAM:big ? [0.4,-0.62,'end'] : [-0.2,-0.5,'end'], PSK:[0.6,-0.12,'start'], QAM:big ? [-0.9,0.05,'end'] : [-0.8,0.2,'end'], orthogonal:[0.6,-0.12,'start']};
+  const LB = {PAM:big ? [0.4,-0.82,'end'] : [-0.2,-0.5,'end'], PSK:big ? [0.6,-0.45,'start'] : [0.6,-0.12,'start'], QAM:big ? [-0.9,0.0,'end'] : [-0.8,0.2,'end'], orthogonal:[0.6,-0.12,'start']};
   FAM.forEach(fm=>{ const pts = fm.Ms.map(M=>[needAt(fm, M, tgt), L2(fm.r(M))]), p = pts[fm.n==='QAM' ? 0 : pts.length-1], L = LB[fm.n];
     seg(a, pts, {color:C.in, width:2.2, dash:fm.dash});
     pts.forEach(q=>dot(a, q[0], q[1], {color:C.in, r:5}));

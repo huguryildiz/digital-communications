@@ -151,7 +151,9 @@ function cfig(pts, o){
   if(o.xr) xr = o.xr; if(o.yr) yr = o.yr;
   /* equal scales on the two axes, so a perpendicular bisector looks perpendicular */
   const kpx = o.k || Math.min(560/(xr[1]-xr[0]), oneD ? 1e9 : 440/(yr[1]-yr[0]));
-  if(oneD){ const hh = 62/kpx; yr = [-hh, hh]; }
+  /* projected, a one-dimensional set is drawn taller: the two rows of enlarged
+     numbers under the line and the name d_min need the room */
+  if(oneD){ const hh = (P.labelScale() > 1 ? 96 : 62)/kpx; yr = [-hh, hh]; }
   /* the regions first, in data units, so the ticks can keep clear of them */
   const box = [xr[0], xr[1], yr[0], yr[1]];
   const polys = regionsOf(pts, box);
@@ -190,7 +192,10 @@ function cfig(pts, o){
     w = Math.round(w+ex); h = Math.round(h+ey);
   }
   const X = v => a.sx(v), Y = v => a.sy(v);
-  xtSide.forEach(v=>a.raw(`<text x="${(X(v)+5*LS0).toFixed(2)}" y="${(Y(0)+20*LS0).toFixed(2)}" paint-order="stroke" stroke="var(--fig-halo,#FCF9F3)" stroke-width="3.4" stroke-linejoin="round" font-size="${13*LS0}" fill="${C.muted}" text-anchor="start">${P.fmt(v,3)}</text>`));
+  /* Projected, a number written beside a threshold drops to a second row, so
+     the enlarged numbers of the points and of the thresholds cannot meet. */
+  const SIDE = (LS0 > 1 ? 37 : 20)*LS0;
+  xtSide.forEach(v=>a.raw(`<text x="${(X(v)+5*LS0).toFixed(2)}" y="${(Y(0)+SIDE).toFixed(2)}" paint-order="stroke" stroke="var(--fig-halo,#FCF9F3)" stroke-width="3.4" stroke-linejoin="round" font-size="${13*LS0}" fill="${C.muted}" text-anchor="start">${P.fmt(v,3)}</text>`));
   /* a one-dimensional axis still names its origin */
   const zeroLab = oneD && xr[0]<0 && xr[1]>0 && !xt.includes(0) && (o.zeroTick || pts.some(p=>Math.abs(p[0])<1e-9));
   if(zeroLab)
@@ -245,11 +250,13 @@ function cfig(pts, o){
   const ob = { box:[a.x0+2, a.y1+2, a.x1-2, a.y0-2], segs, rects:[],
     circ: o.hide ? [] : pts.map(p=>[X(p[0]), Y(p[1]), rp*1.25+3]) };
   const TS = 13*LS;
-  xt.forEach(v=>{ const s=P.fmt(v,3), tw=7.6*String(s).length*LS; const yb=(oneD?Y(0):(yr[0]<=0&&yr[1]>=0?Y(0):a.y0));
+  /* projected, a tick number is held a little wider: its minus sign and point grow too */
+  const CW = LS > 1 ? 8.4 : 7.6;
+  xt.forEach(v=>{ const s=P.fmt(v,3), tw=CW*String(s).length*LS; const yb=(oneD?Y(0):(yr[0]<=0&&yr[1]>=0?Y(0):a.y0));
     ob.rects.push([X(v)-tw/2-2, yb+6, X(v)+tw/2+2, yb+20*LS+5]); });
   if(zeroLab) ob.rects.push([X(0)-6, Y(0)+6, X(0)+6, Y(0)+20*LS+5]);
-  xtSide.forEach(v=>{ const tw=7.6*P.fmt(v,3).length*LS; ob.rects.push([X(v)+3, Y(0)+6, X(v)+7+tw, Y(0)+20*LS+5]); });
-  yt.forEach(v=>{ const s=P.fmt(v,3), tw=7.6*String(s).length*LS; const xb=(xr[0]<=0&&xr[1]>=0?X(0):a.x0);
+  xtSide.forEach(v=>{ const tw=CW*P.fmt(v,3).length*LS; ob.rects.push([X(v)+3, Y(0)+SIDE-14*LS, X(v)+7+tw, Y(0)+SIDE+5]); });
+  yt.forEach(v=>{ const s=P.fmt(v,3), tw=CW*String(s).length*LS; const xb=(xr[0]<=0&&xr[1]>=0?X(0):a.x0);
     ob.rects.push([xb-10-tw-2, Y(v)-TS*0.75, xb-6, Y(v)+TS*0.5]); });
   const FS = 15;
   const labels = [];
@@ -273,13 +280,32 @@ function cfig(pts, o){
         cands.push([X(p[0]) + ux*dist, Y(p[1]) + uy*dist]);
       });
     }
+    /* Projected, a name also tries the four corners beside its point, set just
+       clear of the point and of the lines through it: in a dense grid the
+       rings above step over the narrow spot where an enlarged name still fits. */
+    if(LS > 1){
+      [[1,1],[-1,1],[-1,-1],[1,-1]].forEach(([sx,sy])=>[[6,10],[5,12],[8,8],[10,6],[7,11],[12,5],[4,14]].forEach(([ex,ey])=>
+        cands.push([X(p[0]) + sx*(lw/2+3+ex), Y(p[1]) - sy*(lh/2+3+ey)])));
+      /* and, in a narrow wedge, the directions between those of the rings, further out */
+      for(let g=2; g<=110; g+=4) for(let k=-7; k<=7; k+=2){
+        const th = th0 + k*Math.PI/32, ux = Math.cos(th), uy = -Math.sin(th);
+        const dist = Math.abs(ux)*lw/2 + Math.abs(uy)*lh/2 + rp + g;
+        cands.push([X(p[0]) + ux*dist, Y(p[1]) + uy*dist]); }
+    }
     /* a name belongs inside its own region, so it cannot be read as a neighbour's */
     const pg = polys[i];
     const own = c => { const xd = xr[0]+(c[0]-a.x0)/kpx, yd = yr[0]+(a.y0-c[1])/kpx;
       for(let q=0;q<pg.length;q++){ const A=pg[q], B=pg[(q+1)%pg.length];
         if((B[0]-A[0])*(yd-A[1])-(B[1]-A[1])*(xd-A[0]) < -1e-9) return 25; }
       return 0; };
-    texAt(names[i], place(cands, lw, lh, ob, own), C[SYM[col[i]]]);
+    /* projected, when nothing is clear at the estimated width, the estimate is
+       taken closer to the drawn width of a subscripted name, which it overstates */
+    const fits = ww => cands.some(c=>rectCost([c[0]-ww/2, c[1]-lh/2, c[0]+ww/2, c[1]+lh/2], ob) + own(c) === 0);
+    const lwU = LS > 1 && !fits(lw) && fits(0.82*lw) ? 0.82*lw : lw;
+    /* a point on an axis whose wedge is too narrow beside it may set its name
+       across the axis line (o.onAxis), clear of the boundaries either side */
+    const obi = (o.onAxis||[]).includes(i) && LS > 1 ? Object.assign({}, ob, {segs:ob.segs.filter(sg=>sg[2]!==8)}) : ob;
+    texAt(names[i], place(cands, lwU, lh, obi, own), C[SYM[col[i]]]);
   });
   /* region names for a figure that gives the regions */
   if(o.regionNames) polys.forEach((pg,i)=>{
@@ -291,6 +317,7 @@ function cfig(pts, o){
     texAt(o.regionNames[i], place(cands, lw, lh, ob), C[SYM[col[i]]]);
   });
   /* d_min beside one nearest-neighbour pair */
+  let titleR = a.x1;
   if(showNN && o.dTex !== false){
     const txt = 'd_{\\min}' + (o.dTex ? '='+o.dTex : '');
     const lw = texW(txt, FS)*LS, lh = 23*LS;
@@ -300,13 +327,19 @@ function cfig(pts, o){
       const A = [X(pts[i][0]),Y(pts[i][1])], B = [X(pts[j][0]),Y(pts[j][1])];
       const L = Math.hypot(B[0]-A[0], B[1]-A[1]), nx = -(B[1]-A[1])/L, ny = (B[0]-A[0])/L;
       const off = Math.abs(nx)*lw/2 + Math.abs(ny)*lh/2 + 7;
-      [0.5,0.32,0.68,0.2,0.8,0.1,0.9,0,1,-0.15,1.15,-0.3,1.3,-0.45,1.45].forEach(t=>[1,-1].forEach(sg=>[0,10,22,36].forEach(g=>
+      /* projected, the name may also stand further off, past the enlarged tick rows */
+      [0.5,0.32,0.68,0.2,0.8,0.1,0.9,0,1,-0.15,1.15,-0.3,1.3,-0.45,1.45].forEach(t=>[1,-1].forEach(sg=>(LS > 1 ? [0,10,22,36,50,64] : [0,10,22,36]).forEach(g=>
         cands.push([A[0]+t*(B[0]-A[0])+sg*nx*(off+g), A[1]+t*(B[1]-A[1])+sg*ny*(off+g)]))));
     });
-    texAt(txt, place(cands, lw, lh, ob), C.coral);
+    /* Projected, when no spot beside a pair is clear of every line, the name
+       is written above the data area at the right, where a title would go;
+       the coral pairs still show which distance it is. A title moves left of it. */
+    const clearAt = cands.some(c=>rectCost([c[0]-lw/2, c[1]-lh/2, c[0]+lw/2, c[1]+lh/2], ob) === 0);
+    if(LS > 1 && !clearAt){ labels.push(P.texName(txt, { xRight:a.x1, baseline:a.y1-5*LS, size:FS, color:C.coral, figW:w })); titleR = a.x1 - lw - 14*LS; }
+    else texAt(txt, place(cands, lw, lh, ob), C.coral);
   }
   /* a panel title sits above the data area, right-aligned, clear of the psi2 name */
-  if(o.title) labels.push(P.texName(o.title, { xRight:a.x1, baseline:a.y1-5*LS, size:FS, color:C.ink, figW:w }));
+  if(o.title) labels.push(P.texName(o.title, { xRight:titleR, baseline:a.y1-5*LS, size:FS, color:C.ink, figW:w }));
   a.raw(labels.join(''));
   return a.svg().replace('<svg ', `<svg style="max-width:${o.maxw||Math.round(w*1.45)}px;margin:0 auto" `);
 }
@@ -381,8 +414,10 @@ function figPhase(deg, o){
   a.poly([[0,s],[c,s]], {color: c>0 ? C.coral : C.err, width:2.4});
   a.point(c, s, {color:C.in, r:6.2, ring:C.plate, ringw:1.6});
   a.point(-c, -s, {color:C.out, r:6.2, ring:C.plate, ringw:1.6});
-  a.note(1.34*c, 1.34*s-0.07, 's_1', {tex:true, fs:15, color:C.in, anchor:'middle'});
-  a.note(-1.34*c, -1.34*s-0.07, 's_2', {tex:true, fs:15, color:C.out, anchor:'middle'});
+  /* projected, the names stand a little further out, clear of their enlarged points */
+  const rn = P.labelScale() > 1 ? 1.45 : 1.34;
+  a.note(rn*c, rn*s-0.07, 's_1', {tex:true, fs:15, color:C.in, anchor:'middle'});
+  a.note(-rn*c, -rn*s-0.07, 's_2', {tex:true, fs:15, color:C.out, anchor:'middle'});
   a.note(o.dAt[0], o.dAt[1], o.dTex, {tex:true, fs:14, color: c>0 ? C.coral : C.err, anchor:o.dAt[2]});
   a.raw(P.texName('\\varphi='+deg+'^{\\circ}', { xRight:a.x1, baseline:a.y1-5, size:15, color:C.mid, figW:330 }));
   return a.svg();
@@ -420,6 +455,10 @@ function figCorr(){
 
 const tx = (a, x, y, s, col, anchor) => a.note(x, y, s, {tex:true, fs:13, color:col||C.ink, anchor:anchor||'start'});
 const lg = v => Math.log10(Math.max(v, 1e-14));
+/* Data units in n pixels of label height, and whether labels are projected:
+   these four figures are drawn taller there and space their lines in pixels. */
+const upx = (a, n) => n*P.labelScale()/(a.sy(0)-a.sy(1));
+const BIGL = () => P.labelScale() > 1;
 /* a vertical arrow in data coordinates, for a gain or a loss in dB */
 function varrow(a, x, y0, y1, col){
   const X = a.sx(x), Y0 = a.sy(y0), Y1 = a.sy(y1), s = Y1 < Y0 ? 1 : -1, h = 8;
@@ -437,28 +476,28 @@ function figPb35(){
   const S = [['\\text{QPSK}', g=>Qd(Math.sqrt(2*g)), 10.53, null],
              ['8\\text{-PSK}', g=>2/3*Qd(Math.sqrt(0.8787*g)), 13.95, '7 5'],
              ['16\\text{-QAM}', g=>0.75*Qd(Math.sqrt(0.8*g)), 14.40, '2 4']];
-  const a = P.Axes({w:460, h:290, xr:[4,18], yr:[-8,-1], xlabel:'E_b/N_0\\;(\\mathrm{dB})', ylabel:'P_b',
+  const a = P.Axes({w:460, h:BIGL() ? 390 : 290, xr:[4,18], yr:[-8,BIGL() ? -0.1 : -1], xlabel:'E_b/N_0\\;(\\mathrm{dB})', ylabel:'P_b',
     pad:{l:52,r:22,t:22,b:44}, xticksOverride:[4,8,12,16], yticksOverride:[-8,-6,-4,-2], ytickfmt:P.decade, zeroAxes:false});
   a.hline(-6, {color:C.ink, dash:'6 4', width:1.2});
   S.forEach(([n, f, x, dash])=>a.curve(d=>lg(f(Math.pow(10, d/10))), {color:C.err, width:2.2, dash}));
   S.forEach(([n, f, x])=>a.point(x, -6, {color:C.err, r:4.6, ring:C.plate}));
   ['\\text{solid: QPSK, }10.53\\text{ dB}', '\\text{dashed: 8-PSK, }13.95\\text{ dB}', '\\text{dotted: 16-QAM, }14.40\\text{ dB}']
-    .forEach((s,i)=>tx(a, 17.7, -1.55-0.55*i, s, C.err, 'end'));
+    .forEach((s,i)=>tx(a, 17.7, BIGL() ? -upx(a, 15)-upx(a, 22)*i : -1.55-0.55*i, s, C.err, 'end'));
   return a.svg();
 }
 
 /* D5-20: the three sensitivities against the bit rate, above the noise in
    the 6 MHz band. The bracket is the SNR at the QPSK sensitivity. */
 function figSens35(){
-  const a = P.Axes({w:460, h:290, xr:[7,23], yr:[-104,-76], xlabel:'R_b\\;(\\mathrm{Mb/s})', ylabel:'P_{\\min}\\;(\\mathrm{dBm})',
+  const a = P.Axes({w:460, h:BIGL() ? 390 : 290, xr:[7,23], yr:[BIGL() ? -107 : -104,-76], xlabel:'R_b\\;(\\mathrm{Mb/s})', ylabel:'P_{\\min}\\;(\\mathrm{dBm})',
     pad:{l:52,r:22,t:22,b:44}, xticksOverride:[10,15,20], yticksOverride:[-100,-90,-80], zeroAxes:false});
   a.hline(-100.22, {color:C.muted, dash:'6 4', width:1.3});
-  tx(a, 22.7, -102.6, 'N=-100.22\\text{ dBm in }6\\text{ MHz}', C.muted, 'end');
+  tx(a, 22.7, BIGL() ? -100.22-upx(a, 20) : -102.6, 'N=-100.22\\text{ dBm in }6\\text{ MHz}', C.muted, 'end');
   a.poly([[10,-100.22],[10,-87.47]], {color:C.mid, width:2});
   tx(a, 9.6, -94.5, '12.75\\text{ dB}', C.mid, 'end');
   [[10,-87.47,'\\text{QPSK: }{-}87.47',10.5,-88.4,'start'],[15,-82.29,'8\\text{-PSK: }{-}82.29',15.5,-83.2,'start'],
    [20,-80.59,'16\\text{-QAM: }{-}80.59',20.3,-78.4,'end']].forEach(([x,y,s,lx,ly,an])=>{
-    a.point(x, y, {color:C.out, r:5, ring:C.plate}); tx(a, lx, ly, s, C.out, an); });
+    a.point(x, y, {color:C.out, r:5, ring:C.plate}); tx(a, lx, BIGL() && an==='start' ? ly-upx(a, 6) : ly, s, C.out, an); });
   return a.svg();
 }
 
@@ -467,12 +506,12 @@ function figSens35(){
    against the sensitivity and the noise in the band. */
 function figWater38(){
   const lv = [20, 30, 30-109.94, 40-109.94], pr = lv[3], pm = -91.37, cx = [0.6, 1.8, 3.0, 4.2, 5.5];
-  const a = P.Axes({w:460, h:320, xr:[0.2,7.4], yr:[-128,36], xlabel:'', ylabel:'\\text{power}\\;(\\mathrm{dBm})',
+  const a = P.Axes({w:460, h:BIGL() ? 420 : 320, xr:[0.2,7.4], yr:[BIGL() ? -136 : -128,36], xlabel:'', ylabel:'\\text{power}\\;(\\mathrm{dBm})',
     pad:{l:52,r:22,t:22,b:30}, xticksOverride:[], yticksOverride:[-100,-80,-60,-40,-20,0,20], grid:false, zeroAxes:false});
   a.hline(pm, {color:C.ink, dash:'6 4', width:1.3});
   a.hline(-103.01, {color:C.muted, dash:'2 4', width:1.2});
   tx(a, 0.3, pm+5.5, 'P_{\\min}=-91.37', C.ink);
-  tx(a, 7.25, -112, 'N=-103.01', C.muted, 'end');
+  tx(a, 7.25, BIGL() ? -103.01-upx(a, 18) : -112, 'N=-103.01', C.muted, 'end');
   a.poly([[cx[0]-0.3,lv[0]],[cx[0]+0.3,lv[0]]], {color:C.in, width:4});
   tx(a, 0.35, lv[0]+5, '20', C.in);
   varrow(a, cx[1], lv[0], lv[1], C.h); tx(a, cx[1]+0.12, 23, '+10', C.h);
@@ -481,8 +520,8 @@ function figWater38(){
   a.poly([[cx[4]-0.3,pr],[cx[4]+0.3,pr]], {color:C.out, width:4});
   tx(a, cx[4], pr+6, '-69.94', C.out, 'middle');
   a.poly([[cx[4],pm],[cx[4],pr]], {color:C.mid, width:2});
-  tx(a, cx[4]+0.15, (pm+pr)/2-2, '21.43\\text{ dB}', C.mid);
-  ['P_t','G_t','L_p','G_r','P_r'].forEach((n,i)=>tx(a, cx[i], -123, n, C.ink, 'middle'));
+  tx(a, cx[4]+0.15, BIGL() ? (pm+pr)/2-upx(a, 7) : (pm+pr)/2-2, '21.43\\text{ dB}', C.mid);
+  ['P_t','G_t','L_p','G_r','P_r'].forEach((n,i)=>tx(a, cx[i], BIGL() ? a.o.yr[0]+upx(a, 10) : -123, n, C.ink, 'middle'));
   return a.svg();
 }
 
@@ -493,18 +532,18 @@ function figRange38(){
   const Lp = (x, f) => 20*Math.log10(4*Math.PI*Math.pow(10, x)*f/3e8);
   const T = [[x=>40-Lp(x,1.5e9), null], [x=>40-Lp(x,6e9), '7 5'], [x=>40+24.08-Lp(x,6e9), '2 4']];
   const km = [0.5,1.25,2.5,5,10,20,50];
-  const a = P.Axes({w:460, h:320, xr:[2.6,4.8], yr:[-106,-32], xlabel:'d\\;(\\mathrm{km})', ylabel:'P_r\\;(\\mathrm{dBm})',
+  const a = P.Axes({w:460, h:BIGL() ? 420 : 320, xr:[2.6,4.8], yr:[-106,BIGL() ? -20 : -32], xlabel:'d\\;(\\mathrm{km})', ylabel:'P_r\\;(\\mathrm{dBm})',
     pad:{l:52,r:22,t:22,b:44}, xticksOverride:km.map(k=>3+Math.log10(k)), xtickfmt:x=>String(+Math.pow(10,x-3).toFixed(2)),
     yticksOverride:[-100,-80,-60,-40], zeroAxes:false});
   a.hline(-69.94, {color:C.ink, dash:'6 4', width:1.2});
   a.hline(-63.92, {color:C.ink, dash:'10 3 2 3', width:1.2});
-  tx(a, 2.63, -77, '8\\text{ Mb/s}', C.ink, 'start');
+  tx(a, 2.63, BIGL() ? -69.94-upx(a, 22) : -77, '8\\text{ Mb/s}', C.ink, 'start');
   tx(a, 4.78, -61.0, '32\\text{ Mb/s}', C.ink, 'end');
   T.forEach(([f, dash])=>a.curve(f, {color:C.out, width:2.2, dash}));
   [[1.25,-69.94],[5,-69.94],[20,-69.94],[2.5,-63.92]].forEach(([d,y])=>{ const x = 3+Math.log10(d);
     a.poly([[x,-106],[x,y]], {color:C.muted, width:1, dash:'3 4'}); a.point(x, y, {color:C.out, r:4.6, ring:C.plate}); });
   ['\\text{solid: }1.5\\text{ GHz}', '\\text{dashed: }6\\text{ GHz, same gains}', '\\text{dotted: }6\\text{ GHz, same size}']
-    .forEach((s,i)=>tx(a, 4.78, -38-6.5*i, s, C.out, 'end'));
+    .forEach((s,i)=>tx(a, 4.78, BIGL() ? -20-upx(a, 22)-upx(a, 25)*i : -38-6.5*i, s, C.out, 'end'));
   return a.svg();
 }
 
@@ -1309,7 +1348,7 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
      +'<b>Check.</b> For set A, $d_{\\min}=2\\sqrt{10}\\sin11.25^{\\circ}=6.325(0.1951)=1.234$, and $1.234^{2}=1.522$. This is $0.1522\\times10$.',
   err:'Comparing the $Q$ arguments in decibels with $10\\log_{10}$ of their ratio. The arguments are square roots, so the energy ratio is the ratio of $d_{\\min}^{2}$ values.',
   teach:'The comparison the module makes between PSK and QAM, worked with two examination-style sets. The ring wastes the inside of the circle.',
-  figSol:()=>pair(cfig(onCircle(Math.sqrt(10), range(1,16).map(k=>k*Math.PI/8)), {dTex:false, tick:1, margin:2.3, title:'\\text{A:}\\ d_{\\min}=1.234'}),
+  figSol:()=>pair(cfig(onCircle(Math.sqrt(10), range(1,16).map(k=>k*Math.PI/8)), {dTex:false, tick:1, margin:2.3, onAxis:[11], yticks:P.labelScale()>1 ? [-5,-2,2,5] : undefined, title:'\\text{A:}\\ d_{\\min}=1.234'}),
                   cfig(grid([-3,-1,1,3],[3,1,-1,-3]), {names:gridNames(4,4), dTex:'2', tick:1, margin:1.5, title:'\\text{B}'})) },
 
 { id:'D5-27', module:'M5', type:'fsk', src:'Final Q3 (variant)',

@@ -113,10 +113,15 @@ const OPEN_W = noiseFn(20260925, 0.05, 0.55, -1, 11);
 const openY = k => { let s = 0; const N = 200;
   for(let i=0;i<N;i++){ const t = k+(i+0.5)/N; s += openS(t)+OPEN_W(t); } return s/N; };
 function figOpenTx(){
-  const a = P.Axes({w:520,h:130,xr:[0,10],yr:[-1.6,1.6],grid:false,
-    xlabel:'t/T_b', ylabel:'s(t)', chrome:NAVY, pad:{l:46,r:30,t:22,b:34}, xstep:2, ytarget:3});
+  /* in projector mode the bit labels grow: the panel gains height and the
+     labels sit a fixed number of pixels above the pulse top */
+  const big = P.labelScale()>1;
+  const a = P.Axes({w:520,h:big?156:130,xr:[0,10],yr:[-1.6,big?2.3:1.6],grid:false,
+    xlabel:'t/T_b', ylabel:'s(t)', chrome:NAVY, pad:{l:46,r:30,t:22,b:34}, xstep:2, ytarget:3,
+    ...(big ? {yticksOverride:[-1,0,1]} : {})});
   a.curve(openS, {color:T_CY, width:2.4, n:2000, anim:{delay:0, sweep:'#D9F3F7'}});
-  OPEN_B.forEach((b,k)=>a.note(k+0.5, 1.32, String(b), {fs:14, color:'#9EACB9', anchor:'middle'}));
+  const yb = big ? 1 + 9*P.labelScale()/(a.sy(0)-a.sy(1)) : 1.32;
+  OPEN_B.forEach((b,k)=>a.note(k+0.5, yb, String(b), {fs:14, color:'#9EACB9', anchor:'middle'}));
   return a.svg();
 }
 function figOpenRx(){
@@ -371,7 +376,8 @@ function figNoisePower(v){
 const schwarzRatio = b => 2*b/(1+b*b);
 function figSchwarz(v){
   const b = v && v.b!=null ? v.b : 1;
-  const a = P.Axes(SZ({xr:[-3.2,3.2], yr:[-0.08,1.3], xlabel:'f', ylabel:'|G(f)|,\\;|H(f)|',
+  const L = P.labelScale(), big = L>1, top = big ? 1.5 : 1.3;
+  const a = P.Axes(SZ({xr:[-3.2,3.2], yr:[-0.08,top], xlabel:'f', ylabel:'|G(f)|,\\;|H(f)|',
     xtarget:6, ytarget:3, ytickfmt:()=>''}));
   const G = f => Math.exp(-f*f), H = f => Math.exp(-f*f/(b*b));
   const cut = b < 1;
@@ -382,8 +388,9 @@ function figSchwarz(v){
   const r = schwarzRatio(b), ok = Math.abs(b-1) < 0.07;
   const verdict = ok ? '\\text{matched: best possible}'
     : cut ? '\\text{too narrow: pulse cut}' : '\\text{too wide: extra noise}';
-  a.note(-3.05, 1.2, verdict, {tex:true, fs:17, color:ok ? C.mid : (cut ? C.coral : C.muted)});
-  a.note(-3.05, 1.06, `${Math.round(r*100)}\\%\\ \\text{of the best SNR}`, {tex:true, fs:16, color:C.mid});
+  const u = 1/(a.sy(0)-a.sy(1)), y1 = big ? top-18*L*u : 1.2, y2 = big ? y1-23*L*u : 1.06;
+  a.note(-3.05, y1, verdict, {tex:true, fs:17, color:ok ? C.mid : (cut ? C.coral : C.muted)});
+  a.note(-3.05, y2, `${Math.round(r*100)}\\%\\ \\text{of the best SNR}`, {tex:true, fs:16, color:C.mid});
   return a.svg();
 }
 
@@ -501,7 +508,8 @@ function figEqualOutputs(){
    the picture only changes its vertical size, and eta stays 25. */
 function figGain(v){
   const k = v && v.k!=null ? v.k : 1, F = FP_FILTERS[2];
-  const a = P.Axes(SZ({xr:[-0.2,2.3], yr:[-1.2,4.9], xlabel:'t/T', ylabel:'y(t)',
+  const L = P.labelScale(), big = L>1, top = big ? 5.6 : 4.9;
+  const a = P.Axes(SZ({xr:[-0.2,2.3], yr:[-1.2,top], xlabel:'t/T', ylabel:'y(t)',
     xticksOverride:[0,1,2], yticksOverride:[-1,0,1,2,3]}));
   const pts = [], N = 250;
   for(let i=0;i<=N;i++){ const t = -0.2+2.5*i/N; pts.push([a.sx(t), a.sy(k*(F.sig(t)+F.sd))]); }
@@ -511,9 +519,11 @@ function figGain(v){
   a.curve(t=>k*F.sig(t), {color:C.mid, width:2.6, n:600});
   a.vline(1, {color:C.muted});
   a.point(1, k, {color:C.mid, r:5});
-  a.note(2.26, 4.45, `g_0(T)=kE=${k.toFixed(2)}`, {tex:true, fs:15, color:C.mid, anchor:'end'});
-  a.note(2.26, 3.9, `\\sqrt{E[n^{2}]}=0.20k=${(0.2*k).toFixed(2)}`, {tex:true, fs:15, color:C.muted, anchor:'end'});
-  a.note(2.26, 3.25, `\\eta=\\frac{(${k.toFixed(2)})^{2}}{(${(0.2*k).toFixed(2)})^{2}}=25`, {tex:true, fs:15, color:C.mid, anchor:'end'});
+  const u = 1/(a.sy(0)-a.sy(1)), y1 = big ? top-16*L*u : 4.45, y2 = big ? y1-28*L*u : 3.9,
+        y3 = big ? y2-34*L*u : 3.25;
+  a.note(2.26, y1, `g_0(T)=kE=${k.toFixed(2)}`, {tex:true, fs:15, color:C.mid, anchor:'end'});
+  a.note(2.26, y2, `\\sqrt{E[n^{2}]}=0.20k=${(0.2*k).toFixed(2)}`, {tex:true, fs:15, color:C.muted, anchor:'end'});
+  a.note(2.26, y3, `\\eta=\\frac{(${k.toFixed(2)})^{2}}{(${(0.2*k).toFixed(2)})^{2}}=25`, {tex:true, fs:15, color:C.mid, anchor:'end'});
   return a.svg();
 }
 
@@ -604,7 +614,10 @@ function figTiming(v){
   a.vline(t0, {color:C.ink, dash:'6 4', width:1.6, opacity:1});
   a.point(t0, mfSig(t0), {color:C.mid, r:5});
   b.curve(t=>Math.pow(Math.max(0, 1-Math.abs(t-1)), 2), {color:C.mid, width:2.6, n:500});
-  b.vline(t0, {color:C.ink, dash:'6 4', width:1.6, opacity:1});
+  /* in projector mode the line stops under the enlarged eta readout */
+  if(big){ const L = P.labelScale(), yt = 1.2-18*L/(b.sy(0)-b.sy(1));
+    b.raw(`<line x1="${b.sx(t0).toFixed(2)}" y1="${b.sy(yt).toFixed(2)}" x2="${b.sx(t0).toFixed(2)}" y2="${b.sy(-0.1).toFixed(2)}" stroke="${C.ink}" stroke-width="${(1.6*(1+(L-1)*0.75)).toFixed(2)}" stroke-dasharray="6 4"/>`); }
+  else b.vline(t0, {color:C.ink, dash:'6 4', width:1.6, opacity:1});
   b.point(t0, r, {color:C.mid, r:5});
   const db = r > 1e-3 ? `\\;(${(10*Math.log10(r)).toFixed(2)}\\ \\text{dB})` : '';
   b.note(2.16, 1.2, etaNote(r) + db, {tex:true, fs:15, color:C.mid, anchor:'end'});
@@ -708,7 +721,9 @@ function figAntipodal(v){
   a.poly(rectPts(1), {color:C.h, width:2.2});
   if(f > 1.01) fade(a, 0.4, ()=>a.poly(rectPts(A), {color:C.in, width:2.2}));
   fade(a, clamp01(f), ()=>a.poly(rectPts(c), {color:C.in, width:2.6, dash:c < 0 ? '8 5' : null}));
-  a.note(0.5, 0.55, '\\psi(t)', {tex:true, fs:16, color:C.h, anchor:'middle'});
+  /* in projector mode the label is centred between the axis and the top of psi */
+  const L = P.labelScale(), yp = L>1 ? 0.5-4*L/(a.sy(0)-a.sy(1)) : 0.55;
+  a.note(0.5, yp, '\\psi(t)', {tex:true, fs:16, color:C.h, anchor:'middle'});
   fade(a, f < 1.5 ? near(f, 1) : 0.4, ()=>a.note(0.5, A+0.3, 's_1(t)=+A\\sqrt{T_b}\\,\\psi(t)=+A', {tex:true, fs:15, color:C.in, anchor:'middle'}));
   fade(a, near(f, 2), ()=>a.note(0.5, -A-0.4, 's_0(t)=-A\\sqrt{T_b}\\,\\psi(t)=-A', {tex:true, fs:15, color:C.in, anchor:'middle'}));
   return a.svg();
@@ -1002,7 +1017,8 @@ const trY0 = t => { const p = TR.rect.y0, x = t/0.02, j = Math.max(0, Math.min(p
   return (1-f)*p[j][1] + f*p[j+1][1]; };
 function figDemodTiming(v){
   const e = v && v.e!=null ? v.e : 0.25;
-  const a = P.Axes(SZ({xr:[-0.3,10.8], yr:[-1.6,2.4], xlabel:'t/T_b', ylabel:'y_0(t)',
+  const L = P.labelScale(), big = L>1;
+  const a = P.Axes(SZ({xr:[-0.3,10.8], yr:[big?-1.9:-1.6,2.4], xlabel:'t/T_b', ylabel:'y_0(t)',
     xticksOverride:[0,2,4,6,8,10], yticksOverride:[-1,0,1]}));
   a.hline(0, {color:C.muted, dash:'5 4'});
   a.poly(TR.rect.y0, {color:C.mid, width:2.4});
@@ -1011,7 +1027,8 @@ function figDemodTiming(v){
     a.poly([[k,-1.08],[k,1.45]], {color:C.muted, width:1, dash:'3 4'});
     a.point(t, y, {color:C.mid, r:5});
     a.note(k-0.5, 2.05, String(TR_B[k-1]), {tex:true, fs:15, color:C.in, anchor:'middle'}); }
-  a.note(0.1, -1.35, `\\min_k s_k\\,y_0(kT_b+\\epsilon)=${mn.toFixed(2)}`, {tex:true, fs:15, color:C.mid});
+  /* in projector mode the readout keeps a fixed pixel gap under the troughs */
+  a.note(0.1, big ? -1-26*L/(a.sy(0)-a.sy(1)) : -1.35, `\\min_k s_k\\,y_0(kT_b+\\epsilon)=${mn.toFixed(2)}`, {tex:true, fs:15, color:C.mid});
   return a.svg();
 }
 
@@ -1061,7 +1078,8 @@ function figNoiseHist(v){
     a.raw(`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${(a.sy(0)-y).toFixed(1)}" fill="${C.dec.mid}" stroke="${C.mid}" stroke-width="1.1"/>`); });
   a.curve(y=>dens(y-O, 0, s), {color:C.mid, width:2.6, n:500});
   a.note(1.1, 1.95, `\\text{measured }\\sigma=${(s*NH.sd).toFixed(3)}`, {tex:true, fs:15, color:C.mid});
-  a.note(1.1, 1.7, `\\sqrt{N_0/2}=${s.toFixed(3)}`, {tex:true, fs:15, color:C.ink});
+  const L = P.labelScale(), y2 = L>1 ? 1.95-27*L/(a.sy(0)-a.sy(1)) : 1.7;
+  a.note(1.1, y2, `\\sqrt{N_0/2}=${s.toFixed(3)}`, {tex:true, fs:15, color:C.ink});
   return a.svg();
 }
 
@@ -1077,12 +1095,14 @@ function figPpm(v){
   P.hOverride = null;
   const f = frameOf(v, 0), o1 = clamp01(f), o2 = clamp01(f-1), o3 = clamp01(f-2), r = Math.SQRT2;
   const big = P.labelScale() > 1, hA = big ? 230 : 170, hB = big ? 330 : 270;
-  const a = P.Axes({w:560,h:hA,xr:[-0.3,1.3],yr:[-0.3,2.6],xlabel:'t/T_b',ylabel:'s_m(t),\\;\\psi_m(t)',
+  const a = P.Axes({w:560,h:hA,xr:[-0.3,1.3],yr:[-0.3,big?3.0:2.6],xlabel:'t/T_b',ylabel:'s_m(t),\\;\\psi_m(t)',
     pad:{l:56,r:26,t:24,b:40},xticksOverride:[0,0.5,1],yticksOverride:[]});
   const sq = (x0, x1, h) => [[-0.3,0],[x0,0],[x0,h],[x1,h],[x1,0],[1.3,0]];
+  /* the pulse names sit a fixed number of pixels above the pulse tops */
+  const ys = big ? 2+8*P.labelScale()/(a.sy(0)-a.sy(1)) : 2.25;
   fade(a, 1-0.6*o1, ()=>{ a.poly(sq(0,0.5,2), {color:C.in, width:2.4}); a.poly(sq(0.5,1,2), {color:C.in, width:2.4, dash:'8 5'});
-    a.note(0.25, 2.25, 's_1(t)', {tex:true, fs:15, color:C.in, anchor:'middle'});
-    a.note(0.75, 2.25, 's_2(t)', {tex:true, fs:15, color:C.in, anchor:'middle'}); });
+    a.note(0.25, ys, 's_1(t)', {tex:true, fs:15, color:C.in, anchor:'middle'});
+    a.note(0.75, ys, 's_2(t)', {tex:true, fs:15, color:C.in, anchor:'middle'}); });
   fade(a, o1, ()=>{ a.poly(sq(0,0.5,r), {color:C.h, width:2.2}); a.poly(sq(0.5,1,r), {color:C.h, width:2.2, dash:'7 5'});
     a.note(1.05, r, '\\psi_1,\\ \\psi_2', {tex:true, fs:15, color:C.h}); });
   const b = P.Axes({w:560,h:hB,xr:[-0.9,2.6],yr:[-0.7,2.1],xlabel:'y_1',ylabel:'y_2',
@@ -1124,15 +1144,17 @@ function figStat(){
 }
 function figErrors(v){
   const {A,s} = DS, top = dens(0,0,s), lam = v && v.lam!=null ? v.lam : 0;
-  const a = densFrame({yr:[-0.06*top,1.42*top], ylabel:'f_Y(y\\mid s_m)'});
+  const L = P.labelScale(), big = L>1, yt = (big ? 1.6 : 1.42)*top;
+  const a = densFrame({yr:[-0.06*top,yt], ylabel:'f_Y(y\\mid s_m)'});
   a.area(y=>dens(y,-A,s), lam, 3, {color:C.dec.err});
   a.area(y=>dens(y, A,s), -3, lam, {color:C.dec.err});
   a.curve(y=>dens(y,-A,s), {color:C.mid, width:2.4, dash:'8 5'});
   a.curve(y=>dens(y, A,s), {color:C.mid, width:2.4});
   a.vline(lam, {color:C.ink, dash:'6 4', width:1.6, opacity:1});
   markMeans(a, 0.1*top);
-  a.note(-2.9, 1.3*top, `P(\\text{err}\\mid s_0)=${sci(Qf((lam+A)/s))}`, {tex:true, fs:15, color:C.err});
-  a.note(-2.9, 1.14*top, `P(\\text{err}\\mid s_1)=${sci(Qf((A-lam)/s))}`, {tex:true, fs:15, color:C.err});
+  const u = 1/(a.sy(0)-a.sy(1)), y1 = big ? yt-18*L*u : 1.3*top, y2 = big ? y1-24*L*u : 1.14*top;
+  a.note(-2.9, y1, `P(\\text{err}\\mid s_0)=${sci(Qf((lam+A)/s))}`, {tex:true, fs:15, color:C.err});
+  a.note(-2.9, y2, `P(\\text{err}\\mid s_1)=${sci(Qf((A-lam)/s))}`, {tex:true, fs:15, color:C.err});
   return a.svg();
 }
 /* The optimal threshold for P(s_0) = 0.7: where the two weighted densities
@@ -1189,8 +1211,8 @@ function figPe(v){
   if(dB!=null){ const p = pbDb(dB);
     a.vline(dB, {color:C.muted});
     a.point(dB, Math.log10(p), {color:C.in, r:5.5});
-    const hi = dB >= 9;
-    a.note(hi ? dB-0.35 : dB+0.35, Math.log10(p)+(hi ? -0.7 : 0.5), `P_b=${sci(p)}`, {tex:true, fs:16, color:C.in, anchor:hi ? 'end' : 'start'}); }
+    const hi = dB >= 9, L = P.labelScale(), dn = L>1 ? 28*L/(a.sy(0)-a.sy(1)) : 0.7;
+    a.note(hi ? dB-0.35 : dB+0.35, Math.log10(p)+(hi ? -dn : 0.5), `P_b=${sci(p)}`, {tex:true, fs:16, color:C.in, anchor:hi ? 'end' : 'start'}); }
   return a.svg();
 }
 
@@ -1278,7 +1300,9 @@ function figIsiTerm(){
   a.point(4, y(4), {color:C.mid, r:5});
   a.note(3.1, 1.25, `y=${y(4).toFixed(3)}`, {tex:true, fs:15, color:C.mid});
   const cont = [0,1,2,3,4].map(m=>[m, (m===0?1:-1)*(1-q)*Math.pow(q,m)]);
-  const b = P.Axes({w:560,h:220,xr:[-0.5,5],yr:[-0.35,1.0],xlabel:'m\\;(\\text{bits back})',ylabel:'\\text{share of the sample}',
+  /* in projector mode the panel reaches higher, so the 1-q label stays
+     clear of the axis name above it */
+  const b = P.Axes({w:560,h:220,xr:[-0.5,5],yr:[-0.35,P.labelScale()>1?1.35:1.0],xlabel:'m\\;(\\text{bits back})',ylabel:'\\text{share of the sample}',
     pad:{l:56,r:26,t:24,b:42},xticksOverride:[0,1,2,3,4],ytarget:3});
   b.stem([cont[0]], {color:C.mid});
   b.stem(cont.slice(1), {color:C.err});
@@ -1429,7 +1453,7 @@ function figRcPulse(v){
 /* Worked example: R_b = 20 kb/s, so W = 10 kHz. The given trace is the ideal
    rectangle; the answer is the raised cosine with alpha = 0.5. */
 function figExRc(){
-  const a = P.Axes(SZ({xr:[-22,22], yr:[-0.12,1.35], xlabel:'f\\;(\\text{kHz})', ylabel:'2W\\,P(f)',
+  const a = P.Axes(SZ({xr:[-22,22], yr:[-0.12,P.labelScale()>1?1.5:1.35], xlabel:'f\\;(\\text{kHz})', ylabel:'2W\\,P(f)',
     xticksOverride:[-20,-15,-10,-5,0,5,10,15,20], ytarget:3}));
   a.raw(`<rect class="sk-area" x="${a.x0}" y="${a.y1}" width="${a.x1-a.x0}" height="${a.y0-a.y1}" fill="none"/>`);
   a.poly([[-22,0],[-10,0],[-10,1],[10,1],[10,0],[22,0]], {color:C.ink, width:1.6, dash:'6 5'});
@@ -1603,11 +1627,14 @@ const REAL_DECISION = realGallery({ id:'m2-real-decision', nav:'Error rates arou
   objective:'Relate the error probability to link targets, rare events and measured error counts.',
   keywords:'examples bit error rate target ethernet 1e-10 q function table rare event sensor prior threshold error counter poisson',
   figs:[
-    [()=>{ const a=P.Axes(EXO({xr:[0,16],yr:[-12,-0.02],xlabel:'E_b/N_0\\;(\\mathrm{dB})',ylabel:'P_b',ytickfmt:P.decade,
+    [()=>{ const L=P.labelScale(), big=L>1;
+      /* in projector mode the panel is taller and reaches lower, so the 13.1 dB
+         label fits under the target line */
+      const a=P.Axes(EXO({h:big?290:250,xr:[0,16],yr:[big?-13:-12,-0.02],xlabel:'E_b/N_0\\;(\\mathrm{dB})',ylabel:'P_b',ytickfmt:P.decade,
         yticksOverride:[-12,-9,-6,-3],zeroAxes:false,pad:{l:64,r:26,t:24,b:44},xtarget:5}));
       a.curve(d=>{ const p=pbDb(d); return p>1.5e-12 ? Math.log10(p) : NaN; },{color:C.in,width:2.2});
       a.hline(-10,{color:C.muted}); a.point(13.06,-10,{color:C.in,r:4.5});
-      a.note(12.6,-11.3,'13.1\\ \\mathrm{dB}',{tex:true,fs:14,color:C.in,anchor:'end'});
+      a.note(12.6,big ? -11.5-5*L/(a.sy(0)-a.sy(1)) : -11.3,'13.1\\ \\mathrm{dB}',{tex:true,fs:14,color:C.in,anchor:'end'});
       return a.svg(); }, 'Wired Ethernet asks for $P_b<10^{-10}$. Polar signalling reaches it at $E_b/N_0=13.1$ dB, where $\\sqrt{2E_b/N_0}=6.36$.'],
     [()=>{ const p0 = 0.9, s = 0.5, lo = lamOpt(0.5,1,p0), a=P.Axes(EXO({xr:[-2.5,2.5],yr:[-0.04,0.8],xlabel:'y',ylabel:'P(s_m)\\,f_Y(y\\mid s_m)',xticksOverride:[-2,-1,0,1,2],ytickfmt:()=>'',ytarget:3}));
       a.curve(y=>p0*dens(y,-1,s),{color:C.mid,width:2.2,dash:'7 5'});
@@ -1687,7 +1714,9 @@ const REAL_NYQUIST = realGallery({ id:'m2-real-nyquist', nav:'Pulse shaping arou
       a.curve(e=>tmIsi(e,0),{color:C.err,width:2.2,dash:'7 5',n:200});
       a.curve(e=>tmIsi(e,0.5),{color:C.err,width:2.2,n:200});
       a.note(0.15,1.5,'\\alpha=0',{tex:true,fs:14,color:C.err,anchor:'end'});
-      a.note(0.3,0.2,'\\alpha=0.5',{tex:true,fs:14,color:C.err,anchor:'end'});
+      /* in projector mode the label grows into the solid curve; it sits above it instead */
+      const L=P.labelScale(), ya=L>1 ? tmIsi(0.3,0.5)+10*L/(a.sy(0)-a.sy(1)) : 0.2;
+      a.note(0.3,ya,'\\alpha=0.5',{tex:true,fs:14,color:C.err,anchor:'end'});
       return a.svg(); }, 'Interference collected by a sample taken $\\epsilon$ late, summed over $1\\le|k|\\le30$. The raised cosine with $\\alpha=0.5$ collects far less than the sinc pulse.']
   ],
   notes:[

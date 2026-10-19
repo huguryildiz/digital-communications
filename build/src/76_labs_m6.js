@@ -156,7 +156,7 @@ Object.assign(LABS, (function(){
       /* ---- the information of each symbol and its share of H ---- */
       const W = ph ? 300 : 880;
       const a = P.Axes({w:W,h:hA,xr:[0,K+1.15],yr:[0,top],ylabel:'\\text{bits}',
-        pad:{l:ph?40:54,r:ph?10:18,t:26,b:62*ls}, xticksOverride:[], arrows:false, ytarget:5});
+        pad:{l:ph?40:54,r:ph?10:(ls > 1 ? 76 : 18),t:26,b:62*ls}, xticksOverride:[], arrows:false, ytarget:5});
       const b1 = 0.12, b2 = 0.52, bw = 0.36;
       ps.forEach((p,i)=>{
         if(p > 0){
@@ -170,7 +170,10 @@ Object.assign(LABS, (function(){
       a.hline(H,   {color:P.COL.coral, dash:'7 4', width:1.8, opacity:1});
       /* both names in the empty strip right of the last symbol: H(S) under its
          line, the ceiling over its own, so the two never meet */
-      a.note(K+1.1, H, 'H(S)', {tex:true, fs:14, color:P.COL.coral, anchor:'end', dy:18*ls});
+      /* in the projector the data area is too short for a name under the line,
+         so H(S) is set at the end of its line, in the margin kept for it */
+      if(ls > 1 && !ph) a.note(K+1.15, H, 'H(S)', {tex:true, fs:14, color:P.COL.coral, anchor:'start', dx:6, dy:7.7*ls});
+      else a.note(K+1.1, H, 'H(S)', {tex:true, fs:14, color:P.COL.coral, anchor:'end', dy:18*ls});
       a.note(K+1.1, cap, '\\log_2 K', {tex:true, fs:14, color:P.COL.slate, anchor:'end', dy:-9*ls});
 
       /* ---- the bits a symbol: H built from its pieces, against a fixed code ---- */
@@ -706,7 +709,8 @@ Object.assign(LABS, (function(){
 
       /* ---- the transition diagram, edges drawn to p(x,y) ---- */
       const W = ph ? 300 : 880;
-      const a = P.Axes({w:W,h:ph?230:gh(180),xr:[0,10],yr:[0,6],pad:{l:8,r:8,t:10,b:10},
+      const big = ls > 1;
+      const a = P.Axes({w:W,h:ph?230:gh(180),xr:[0,10],yr:[0,6],pad:big ? {l:8,r:8,t:20,b:16} : {l:8,r:8,t:10,b:10},
         xticksOverride:[], yticksOverride:[], grid:false, zeroAxes:false, arrows:false});
       const X = [[2.7,4.85],[2.7,1.15]], Yn = [[7.3,4.85],[7.3,1.15]];
       const rN = p => (9 + 13*Math.sqrt(p))*(1 + (ls-1)*0.4);
@@ -752,8 +756,10 @@ Object.assign(LABS, (function(){
       /* ---- the information bar, exact and counted ---- */
       const XM = 2.8;
       const b = P.Axes({w:W,h:ph?190:gh(170),xr:[0,XM],yr:[0,1],xlabel:'\\text{bits}',
-        pad:{l:(ph?70:84)*ls,r:ph?10:18,t:14,b:30}, yticksOverride:[], ytickfmt:()=>'', zeroAxes:false,
+        pad:{l:(ph?70:84)*ls,r:ph?10:18,t:big ? 30 : 14,b:30}, yticksOverride:[], ytickfmt:()=>'', zeroAxes:false,
         xticksOverride:[0,0.5,1,1.5,2], xnameDrop:26*ls});
+      /* in the projector the exact bar is drawn taller, so its names fit inside it */
+      const bLo = big ? 0.46 : 0.5, bHi = big ? 0.84 : 0.74, bMid = (bLo+bHi)/2, cLo = big ? 0.39 : 0.4, cHi = big ? 0.45 : 0.47;
       const seg3 = (G, y0, y1, op) => {
         const cuts = [0, G.HXgY, G.HXgY + G.I, G.HXY];
         const fills = [tint(P.COL.in,0.32), tint(P.COL.out,0.3), P.COL.noiseSoft];
@@ -763,22 +769,22 @@ Object.assign(LABS, (function(){
           s += `<rect x="${b.sx(cuts[k]).toFixed(2)}" y="${b.sy(y1).toFixed(2)}" width="${(b.sx(cuts[k+1])-b.sx(cuts[k])).toFixed(2)}" height="${(b.sy(y0)-b.sy(y1)).toFixed(2)}" fill="${fills[k]}" fill-opacity="${op}" stroke="${strokes[k]}" stroke-opacity="${op}" stroke-width="1.5"/>`; }
         return s;
       };
-      b.raw(seg3(E, 0.5, 0.74, 1));
-      if(Cn) b.raw(seg3(Cn, 0.4, 0.47, 0.55));
+      b.raw(seg3(E, bLo, bHi, 1));
+      if(Cn) b.raw(seg3(Cn, cLo, cHi, 0.55));
       const names = [['H(X|Y)', E.HXgY, 0], ['I(X;Y)', E.I, E.HXgY], ['H(Y|X)', E.HYgX, E.HXgY + E.I]];
       names.forEach(([t, w, x0])=>{
         const px = b.sx(x0 + w) - b.sx(x0);
-        if(px > 74*ls) b.note(x0 + w/2, 0.62, t, {tex:true, fs:13, color:P.COL.ink, anchor:'middle', dy:5*ls});
-        else if(t === 'I(X;Y)' && px > 22*ls) b.note(x0 + w/2, 0.62, 'I', {tex:true, fs:13, color:P.COL.ink, anchor:'middle', dy:5*ls});
+        if(px > 74*ls) b.note(x0 + w/2, bMid, t, {tex:true, fs:13, color:P.COL.ink, anchor:'middle', dy:5*ls + (big ? 3 : 0)});
+        else if(t === 'I(X;Y)' && px > 22*ls) b.note(x0 + w/2, bMid, 'I', {tex:true, fs:13, color:P.COL.ink, anchor:'middle', dy:5*ls + (big ? 3 : 0)});
       });
-      if(E.HX > 0.02) b.span(0, E.HX, 0.84, 'H(X)', {tex:true, color:P.COL.in, fs:13.5});
+      if(E.HX > 0.02) b.span(0, E.HX, big ? 0.88 : 0.84, 'H(X)', {tex:true, color:P.COL.in, fs:13.5});
       if(E.HY > 0.02){
         const yb = b.sy(0.32), xa = b.sx(E.HXgY), xb = b.sx(E.HXY);
         b.raw(`<path d="M${xa.toFixed(2)},${(yb-5).toFixed(2)} v5 H${xb.toFixed(2)} v-5" fill="none" stroke="${P.COL.out}" stroke-width="${(1.4*(1+(ls-1)*0.75)).toFixed(2)}"/>`);
         b.note((E.HXgY + E.HXY)/2, 0.32, 'H(Y)', {tex:true, fs:13.5, color:P.COL.out, anchor:'middle', dy:19*ls});
       }
-      b.note(0, 0.62, '\\text{exact}', {tex:true, fs:13, color:P.COL.muted, anchor:'end', dx:-8, dy:5*ls});
-      if(Cn) b.note(0, 0.435, '\\text{counted}', {tex:true, fs:13, color:P.COL.muted, anchor:'end', dx:-8, dy:5*ls});
+      b.note(0, bMid, '\\text{exact}', {tex:true, fs:13, color:P.COL.muted, anchor:'end', dx:-8, dy:5*ls - 10*(ls-1)});
+      if(Cn) b.note(0, (cLo+cHi)/2, '\\text{counted}', {tex:true, fs:13, color:P.COL.muted, anchor:'end', dx:-8, dy:5*ls + 14*(ls-1)});
 
       const lgB = `${L('in','H(X|Y)')}${L('out','I(X;Y)')}<i style="--lg-c:var(--rule-strong)">${T('H(Y|X)',false)}</i>`;
       root.querySelector('.plots').innerHTML = ph
@@ -904,7 +910,9 @@ Object.assign(LABS, (function(){
       /* the two regions are named at the left, where every curve starts at
          zero; a name the rate line would cross is left out */
       const yRel = C.I/2, yImp = (C.I + top)/2;
-      if(C.I > 0.2 && Math.abs(R - yRel) > 0.09) a.note(0.02, yRel, 'reliable', {fs:14.5, color:P.COL.out, dy:5*ls});
+      if(ls > 1){ const yB = C.I - 16*ls/(a.sy(0)-a.sy(1));
+        if(C.I > 0.2 && Math.abs(R - yB) > 0.09) a.note(0.02, yB, 'reliable', {fs:14.5, color:P.COL.out, dy:5*ls}); }
+      else if(C.I > 0.2 && Math.abs(R - yRel) > 0.09) a.note(0.02, yRel, 'reliable', {fs:14.5, color:P.COL.out, dy:5*ls});
       if(top - C.I > 0.24 && Math.abs(R - yImp) > 0.09) a.note(0.02, yImp, 'impossible', {fs:14.5, color:P.COL.err, dy:5*ls});
       a.curve(t=>use(Pyx, t).I, {color:P.COL.out, width:2.6});
       a.hline(R, {color:P.COL.slate, dash:'7 4', width:1.8, opacity:1});

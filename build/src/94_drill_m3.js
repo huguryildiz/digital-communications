@@ -90,7 +90,11 @@ function wave(segs, o){
   const T = o.T, hs = segs.map(s=>s[2]);
   const lo = Math.min(0,...hs), hi = Math.max(0,...hs), sp = (hi-lo)||1;
   const negLab = (o.lab||[]).some((l,i)=>l && segs[i][2]<0);
-  const yr = o.yr || [lo<0 ? lo-(negLab?0.5:0.22)*sp : -0.12*sp, hi>0 ? hi+0.28*sp : 0.12*sp];
+  /* In the projected view the labels are larger: the value over the top piece
+     needs more headroom to stay below the name, and the tick row and the name
+     under a negative waveform are set further down, all in label units. */
+  const k = P.labelScale(), big = k > 1;
+  const yr = o.yr || [lo<0 ? lo-(negLab?(big?0.7:0.5):0.22)*sp : -0.12*sp, hi>0 ? hi+(big?0.6:0.28)*sp : 0.12*sp];
   const xt = o.xt || Array.from({length:T+1},(_,i)=>i);
   const yt = o.yt || [...new Set(hs.concat([0]))].sort((a,b)=>a-b);
   /* A waveform that goes negative has its jumps cross the zero line, where
@@ -98,18 +102,19 @@ function wave(segs, o){
      data area instead, so no trace runs through them. */
   const neg = lo < 0;
   const opt = {w:o.w||360,h:o.h||(neg?240:220),xr:[-0.3,T+0.5],yr:yr,
-    xlabel:neg?'':'t\\;(\\mathrm{s})',ylabel:o.name,pad:{l:46,r:16,t:22,b:neg?58:36},
+    xlabel:neg?'':'t\\;(\\mathrm{s})',ylabel:o.name,pad:{l:46,r:16,t:22,b:neg?58*k:36},
     xticksOverride:xt,yticksOverride:yt};
+  if(big && !neg) opt.xnameDrop = 52*k;
   if(neg) opt.xtickfmt = () => '';
   const a = P.Axes(opt);
-  if(neg){ xt.forEach(v=>a.note(v, yr[0], P.fmt(v,3), {fs:13, anchor:'middle', dy:19}));
-    a.note(T+0.5, yr[0], 't\\;(\\mathrm{s})', {tex:true, fs:15, color:C.ink, anchor:'end', dy:47}); }
+  if(neg){ xt.forEach(v=>a.note(v, yr[0], P.fmt(v,3), {fs:13, anchor:'middle', dy:19*k}));
+    a.note(T+0.5, yr[0], 't\\;(\\mathrm{s})', {tex:true, fs:15, color:C.ink, anchor:'end', dy:47*k}); }
   const pts = [[-0.3,0],[segs[0][0],0]];
   segs.forEach(s=>{ pts.push([s[0],s[2]],[s[1],s[2]]); });
   pts.push([segs[segs.length-1][1],0],[T+0.5,0]);
   a.poly(pts,{color:o.color||C.in,width:2.3});
   if(o.lab) segs.forEach((s,i)=>{ if(o.lab[i]) a.note((s[0]+s[1])/2, s[2], o.lab[i],
-    {tex:true,fs:14,color:o.color||C.in,anchor:'middle',dy:s[2]>=0?-9:30}); });
+    {tex:true,fs:14,color:o.color||C.in,anchor:'middle',dy:(s[2]>=0?-9:30)*k}); });
   return a.svg();
 }
 
@@ -117,6 +122,10 @@ const OFF = { n:{dy:-12,anchor:'middle'}, s:{dy:27,anchor:'middle'},
   e:{dx:12,dy:7,anchor:'start'}, w:{dx:-12,dy:7,anchor:'end'},
   ne:{dx:8,dy:-9,anchor:'start'}, nw:{dx:-8,dy:-9,anchor:'end'},
   se:{dx:8,dy:25,anchor:'start'}, sw:{dx:-8,dy:25,anchor:'end'} };
+/* The offsets are pixels at the ordinary label size. The point and its label
+   both grow with the label scale, so the gap between them grows with it. */
+const offM3 = w => { const o = OFF[w], k = P.labelScale();
+  return {dx:(o.dx||0)*k, dy:(o.dy||0)*k, anchor:o.anchor}; };
 
 /* A constellation: pts are [x, y, label, where]; `d` lists the pairs at the
    minimum distance, drawn in the error colour; `dl` places the d_min label. */
@@ -131,8 +140,11 @@ function cons(pts, o){
     a.poly(c,{color:C.rule,width:1.2,dash:'4 5'}); }
   (o.d||[]).forEach(([i,j])=>a.poly([[pts[i][0],pts[i][1]],[pts[j][0],pts[j][1]]],{color:C.err,width:2.4}));
   pts.forEach(p=>{ a.point(p[0],p[1],{color:C.in,r:6});
-    if(p[2]) a.note(p[0],p[1],p[2],Object.assign({tex:true,fs:15,color:C.in},OFF[p[3]||'n'])); });
-  if(o.dl) a.note(o.dl[0],o.dl[1],o.dl[2],{tex:true,fs:14,color:C.err,anchor:o.dl[3]||'start'});
+    if(p[2]) a.note(p[0],p[1],p[2],Object.assign({tex:true,fs:15,color:C.in},offM3(p[3]||'n'))); });
+  /* in the projected view the distance label is moved 7 px further from the
+     point beside it, in the direction its anchor lets it grow */
+  if(o.dl){ const an = o.dl[3]||'start', g = 20*(P.labelScale()-1);
+    a.note(o.dl[0],o.dl[1],o.dl[2],{tex:true,fs:14,color:C.err,anchor:an,dx:an==='start'?g:an==='end'?-g:0}); }
   return BOX(a.svg(), o.w||560);
 }
 
@@ -144,12 +156,12 @@ function cons3(pts, o){
     grid:false,zeroAxes:false,arrows:false,xticksOverride:[],yticksOverride:[]});
   const ax = [[pr(2.0,0,0),'\\psi_1','s'],[pr(0,1.75,0),'\\psi_2','e'],[pr(0,0,2.0),'\\psi_3','w']];
   ax.forEach(([q,l,w])=>{ a.poly([[0,0],q],{color:C.axis,width:1.5});
-    a.note(q[0],q[1],l,Object.assign({tex:true,fs:15,color:C.ink},OFF[w])); });
+    a.note(q[0],q[1],l,Object.assign({tex:true,fs:15,color:C.ink},offM3(w))); });
   pts.forEach(p=>{ const q = pr(p[0],p[1],p[2]), f = pr(p[0],0,p[2]);
     if(Math.abs(p[1])>1e-9) a.poly([f,q],{color:C.rule,width:1,dash:'3 4'}); });
   (o.d||[]).forEach(([i,j])=>a.poly([pr(...pts[i]),pr(...pts[j])],{color:C.err,width:2.2}));
   pts.forEach(p=>{ const q = pr(p[0],p[1],p[2]); a.point(q[0],q[1],{color:C.in,r:6});
-    a.note(q[0],q[1],p[3],Object.assign({tex:true,fs:15,color:C.in},OFF[p[4]||'n'])); });
+    a.note(q[0],q[1],p[3],Object.assign({tex:true,fs:15,color:C.in},offM3(p[4]||'n'))); });
   if(o.dl) a.note(o.dl[0],o.dl[1],o.dl[2],{tex:true,fs:14,color:C.err,anchor:o.dl[3]||'start'});
   return BOX(a.svg(), 560);
 }
@@ -161,12 +173,14 @@ function cons3(pts, o){
 function simplex3(S, m, o){
   const k = o.k, pr = (x,y,z) => [k*(x-0.3*z), k*(y-0.6*z)];
   const Uv = S.map(s=>s.map((v,j)=>v-m[j]));
-  const a = P.Axes({w:600,h:470,xr:o.xr,yr:o.yr,pad:{l:20,r:20,t:20,b:20},
+  /* headroom above the top axis name, grown with the label scale */
+  const yr = [o.yr[0], o.yr[1] + 0.8*(P.labelScale()-1)];
+  const a = P.Axes({w:600,h:470,xr:o.xr,yr,pad:{l:20,r:20,t:20,b:20},
     grid:false,zeroAxes:false,arrows:false,xticksOverride:[],yticksOverride:[]});
   const L = o.len;
   [[pr(L[0],0,0),'\\psi_1','e'],[pr(0,L[1],0),'\\psi_2','n'],[pr(0,0,L[2]),'\\psi_3','s']].forEach(([q,l,w])=>{
     a.poly([[0,0],q],{color:C.axis,width:1.5});
-    a.note(q[0],q[1],l,Object.assign({tex:true,fs:15,color:C.ink},OFF[w])); });
+    a.note(q[0],q[1],l,Object.assign({tex:true,fs:15,color:C.ink},offM3(w))); });
   const tri = P3 => [0,1,2,0].map(i=>pr(...P3[i]));
   a.poly(tri(S),{color:C.rule,width:1.2,dash:'4 5'});
   a.poly(tri(Uv),{color:C.rule,width:1.2});
@@ -176,11 +190,11 @@ function simplex3(S, m, o){
   a.poly([pr(...Uv[0]),pr(...Uv[1])],{color:C.err,width:2.2});
   a.point(0,0,{color:C.ink,r:3});
   const pm = pr(...m); a.point(pm[0],pm[1],{color:C.mid,r:5.5});
-  a.note(pm[0],pm[1],'\\bar{\\mathbf{s}}',Object.assign({tex:true,fs:15,color:C.mid},OFF[o.mw||'e']));
+  a.note(pm[0],pm[1],'\\bar{\\mathbf{s}}',Object.assign({tex:true,fs:15,color:C.mid},offM3(o.mw||'e')));
   S.forEach((s,i)=>{ const q = pr(...s); a.point(q[0],q[1],{color:C.in,r:6});
-    a.note(q[0],q[1],'\\mathbf{s}_'+(i+1),Object.assign({tex:true,fs:15,color:C.in},OFF[o.sw[i]])); });
+    a.note(q[0],q[1],'\\mathbf{s}_'+(i+1),Object.assign({tex:true,fs:15,color:C.in},offM3(o.sw[i]))); });
   Uv.forEach((u,i)=>{ const q = pr(...u); a.point(q[0],q[1],{color:C.in,r:6});
-    a.note(q[0],q[1],'\\mathbf{u}_'+(i+1),Object.assign({tex:true,fs:15,color:C.in},OFF[o.uw[i]])); });
+    a.note(q[0],q[1],'\\mathbf{u}_'+(i+1),Object.assign({tex:true,fs:15,color:C.in},offM3(o.uw[i]))); });
   if(o.dl) a.note(o.dl[0],o.dl[1],o.dl[2],{tex:true,fs:14,color:C.err,anchor:o.dl[3]||'start'});
   return BOX(a.svg(), 600);
 }

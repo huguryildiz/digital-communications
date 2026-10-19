@@ -58,7 +58,10 @@ function figChain(){
     it.push({t:'arrow',x1:xb-10,y1:y0,x2:xb,y2:y0});
     defs.push(`<mask id="tsig-${id}" maskUnits="userSpaceOnUse" x="${xa}" y="${y0-24}" width="${xb-xa-10}" height="48">
       <rect x="${xa}" y="${y0-24}" width="${xb-xa-10}" height="48" fill="url(#tsig-fade)"/></mask>`);
-    extra.push(`<g mask="url(#tsig-${id})"><g class="tsig-flow">${body(xa-L, xb)}</g></g>`);
+    /* each stream sits in its own nested svg, which clips it to the figure as
+       the mask already hides it; the part of the period waiting off the wire is
+       then not geometry under the block labels */
+    extra.push(`<svg x="0" y="0" width="940" height="170" overflow="hidden"><g mask="url(#tsig-${id})"><g class="tsig-flow">${body(xa-L, xb)}</g></g></svg>`);
   };
   wire('in', 20, 150, (a,b) => digits(a, b, k => [bits[k]], C.in));
   wire('s', 282, 432, (a,b) => `<path d="${wave(a,b,s)}" fill="none" stroke="${C.in}" stroke-width="1.7" stroke-linejoin="round"/>`);
@@ -303,7 +306,7 @@ function conceptMap(){
     const x1=cx+(R-nodeR-4)*Math.cos(a), y1=cy+(R-nodeR-4)*Math.sin(a);
     g.push(`<line class="course-spoke" style="--i:${i}" x1="${x0.toFixed(1)}" y1="${y0.toFixed(1)}" x2="${x1.toFixed(1)}" y2="${y1.toFixed(1)}"/>`);
     const lines=n.label||[n.t];
-    const title=lines.map((line,j)=>`<text class="course-node-title" ${MAPHALO} x="${x.toFixed(1)}" y="${(y-(lines.length===1?4:17)+j*26).toFixed(1)}" text-anchor="middle">${line}</text>`).join('');
+    const title=lines.map((line,j)=>`<text class="course-node-title" ${MAPHALO} x="${x.toFixed(1)}" y="${(y-(lines.length===1?4:18)+j*28).toFixed(1)}" text-anchor="middle">${line}</text>`).join('');
     const idY=y+(lines.length===1?25:40);
     g.push(`<g class="course-node${i===0?' is-active':''}" style="--i:${i}" data-course-node="${n.m}" role="button" tabindex="0" aria-label="${n.m}: ${n.t}" aria-pressed="${i===0?'true':'false'}">
       <circle class="course-node-disc" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${nodeR}"/>
@@ -420,7 +423,7 @@ const SC = [
       /* three hops: two repeaters between the two ends. Each station is a
          sphere in its own colour, lit from the upper left, with its name and
          its job under it; the hop number rides on a pill above the span. */
-      const r = 25, step = 182, cy = 62, it = [], extra = [];
+      const r = 25, step = 182, cy = 62, it = [], extra = [], L = P.labelScale();
       const nodes = [['Transmitter','sends','in'], ['Repeater','regenerates','h'],
                      ['Repeater','regenerates','h'], ['Receiver','decides','out']];
       nodes.forEach(([name,gloss,k],i)=>{
@@ -429,16 +432,18 @@ const SC = [
           `<circle cx="${x}" cy="${cy}" r="${r}" fill="${C[k]}"/>`,
           `<circle cx="${x}" cy="${cy}" r="${r}" fill="url(#hopshade)"/>`,
           `<circle cx="${x}" cy="${cy}" r="${r}" fill="url(#hophi)"/>`);
-        it.push({t:'text',x,y:cy+r+26,label:name,fs:14,color:C.ink});
-        it.push({t:'text',x,y:cy+r+43,label:gloss,fs:11.5});
+        /* the name and its gloss are spaced in label sizes, so they stay apart
+           when the labels grow in lecture mode */
+        it.push({t:'text',x,y:cy+r+12+14*L,label:name,fs:14,color:C.ink});
+        it.push({t:'text',x,y:cy+r+12+31*L,label:gloss,fs:11.5});
         if(i<3){
           const a = x+r, b = x+step-r, m = (a+b)/2;
           it.push({t:'arrow',x1:a+6,y1:cy,x2:b-6,y2:cy,color:C.muted});
-          extra.push(`<rect x="${m-23}" y="${cy-34}" width="46" height="20" rx="10" fill="${C.plate}" stroke="${C.ruleStrong}" stroke-width="1"/>`);
-          it.push({t:'text',x:m,y:cy-20,label:'hop '+(i+1),fs:12,color:C.h});
+          extra.push(`<rect x="${m-23*L}" y="${cy-14-20*L}" width="${46*L}" height="${20*L}" rx="${10*L}" fill="${C.plate}" stroke="${C.ruleStrong}" stroke-width="1"/>`);
+          it.push({t:'text',x:m,y:cy-14-6*L,label:'hop '+(i+1),fs:12,color:C.h});
         }
       });
-      const svg = P.blocks({w:668,h:cy+r+52,items:it});
+      const svg = P.blocks({w:668,h:cy+r+12+40*L,items:it});
       const at = svg.indexOf('>')+1;
       return svg.slice(0,at)
         + `<defs><radialGradient id="hophi" cx=".36" cy=".3" r=".5"><stop offset="0" stop-color="#fff" stop-opacity=".75"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>`

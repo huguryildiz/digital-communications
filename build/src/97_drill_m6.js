@@ -33,6 +33,10 @@
 (function(){
 const P = PLOT, C = P.COL;
 const fr = (n,D) => '\\tfrac{'+n+'}{'+D+'}';
+/* A worked solution scrolls, so in the projector its figures are drawn taller
+   by the label scale: every offset given in data units then grows with the
+   labels it separates. */
+const HS = h => Math.round(h*P.labelScale());
 
 /* The pmf of a derived source. One stem a symbol with a round head, as a
    sequence of probabilities is drawn, in the order of the
@@ -43,7 +47,7 @@ const fr = (n,D) => '\\tfrac{'+n+'}{'+D+'}';
 function figPmf(o){
   const K = o.v.length, top = Math.max(...o.n)/o.D;
   const sm = o.name.toLowerCase(), xs = o.v.map((_,i)=>i+1);
-  const a = P.Axes({w:720, h:230, xr:[0.3, K+0.7], yr:[0, top*1.36],
+  const a = P.Axes({w:720, h:HS(230), xr:[0.3, K+0.7], yr:[0, top*1.36],
     xlabel:sm, ylabel:'P('+o.name+'='+sm+')', pad:{l:24,r:30,t:24,b:44},
     xticksOverride:xs, xtickfmt:(v=>String(o.v[Math.round(v)-1])), yticksOverride:[], grid:false});
   xs.forEach((x,i)=>{ const p = o.n[i]/o.D;
@@ -59,7 +63,7 @@ function figPmf(o){
 function figGiven(o){
   const K = o.v.length, top = Math.max(...o.h);
   const sm = o.name.toLowerCase(), xs = o.v.map((_,i)=>i+1);
-  const a = P.Axes({w:720, h:200, xr:[0.3, K+0.7], yr:[0, top*1.36],
+  const a = P.Axes({w:720, h:HS(200), xr:[0.3, K+0.7], yr:[0, top*1.36],
     xlabel:sm, ylabel:'p_'+o.name+'('+sm+')', pad:{l:24,r:26,t:24,b:44},
     xticksOverride:xs, xtickfmt:(v=>String(o.v[Math.round(v)-1])), yticksOverride:[], grid:false});
   xs.forEach((x,i)=>{ a.poly([[x,0],[x,o.h[i]]], {color:C.in, width:2});
@@ -76,29 +80,33 @@ function figGiven(o){
    node carries the probability of the sum. Reading a leaf's labels from the
    root back gives its codeword, which the table repeats. */
 function figHuff(o){
-  const K = o.n.length, W = 720, rh = 30, top = o.head ? 66 : 46, H = top + K*rh + 10;
+  /* in the projector the rows and the head are spaced by the label scale, and
+     the columns of the table move apart to hold the larger heads */
+  const L = P.labelScale(), big = L > 1;
+  const K = o.n.length, W = 720, rh = Math.round(30*L), top = Math.round((o.head ? 66 : 46)*L), H = top + K*rh + 10;
+  const cP = big ? 90 : 94, cC = big ? 190 : 172, cL = big ? 248 : 232;
   const a = P.Axes({w:W, h:H, xr:[0,W], yr:[0,H], pad:{l:0,r:0,t:0,b:0},
     xticksOverride:[], yticksOverride:[], grid:false, zeroAxes:false, arrows:false});
   const up = y => H - y;
   const rows = o.codes.map((c,i)=>i).sort((i,j)=> o.codes[i] < o.codes[j] ? -1 : 1);
-  const X0 = 270, X1 = W - 44, step = (X1 - X0)/Math.max(1, K-1);
+  const X0 = big ? 284 : 270, X1 = W - 44, step = (X1 - X0)/Math.max(1, K-1);
   const X = {}, Y = {}, pr = {};
   rows.forEach((i,r)=>{ const c = o.codes[i]; X[c] = X0; Y[c] = top + r*rh + rh/2; pr[c] = o.n[i]; });
   o.order.forEach((p,k)=>{ X[p] = X0 + (k+1)*step; Y[p] = (Y[p+'0'] + Y[p+'1'])/2; pr[p] = pr[p+'0'] + pr[p+'1']; });
-  const sm = o.name.toLowerCase(), hy = top - 14;
-  if(o.head) a.note(10, up(20), o.head, {tex:true, fs:14, color:C.ink});
+  const sm = o.name.toLowerCase(), hy = top - Math.round(14*L);
+  if(o.head) a.note(10, up(Math.round(20*L)), o.head, {tex:true, fs:14, color:C.ink});
   a.note(30, up(hy-3), sm, {tex:true, fs:14, color:C.ink, anchor:'middle'});
-  a.note(94, up(hy-3), 'P('+o.name+'='+sm+')', {tex:true, fs:14, color:C.ink, anchor:'middle'});
-  a.note(172, up(hy), 'codeword', {fs:13, color:C.ink, anchor:'middle'});
-  a.note(232, up(hy-3), 'l', {tex:true, fs:14, color:C.ink, anchor:'middle'});
+  a.note(cP, up(hy-3), 'P('+o.name+'='+sm+')', {tex:true, fs:14, color:C.ink, anchor:'middle'});
+  a.note(cC, up(hy), 'codeword', {fs:13, color:C.ink, anchor:'middle'});
+  a.note(cL, up(hy-3), 'l', {tex:true, fs:14, color:C.ink, anchor:'middle'});
   a.note(X0, up(hy), 'merge', {fs:12, color:C.muted, anchor:'middle'});
   o.order.forEach((p,k)=>a.note(X[p], up(hy), String(k+1), {fs:12, color:C.muted, anchor:'middle'}));
   a.poly([[8, up(top-4)], [W-8, up(top-4)]], {color:C.grid, width:1});
   rows.forEach(i=>{ const c = o.codes[i], y = Y[c];
     a.note(30, up(y+2), o.lab[i], {tex:true, fs:14, color:C.in, anchor:'middle'});
-    a.note(94, up(y+2), fr(o.n[i], o.D), {tex:true, fs:14, color:C.in, anchor:'middle'});
-    a.note(172, up(y+5), c, {fs:14, color:C.out, anchor:'middle', weight:600});
-    a.note(232, up(y+5), String(c.length), {fs:14, color:C.ink, anchor:'middle'});
+    a.note(cP, up(y+2), fr(o.n[i], o.D), {tex:true, fs:14, color:C.in, anchor:'middle'});
+    a.note(cC, up(y+5), c, {fs:14, color:C.out, anchor:'middle', weight:600});
+    a.note(cL, up(y+5), String(c.length), {fs:14, color:C.ink, anchor:'middle'});
   });
   o.order.forEach(p=>{ const xp = X[p];
     ['0','1'].forEach(b=>{ const c = p+b;
@@ -123,8 +131,8 @@ function figHuff(o){
    crowded); the boundary end is a small cyan dot. */
 const limDB = r => 10*Math.log10((Math.pow(2,r)-1)/r);
 function figLimit(o){
-  const [xa,xb] = o.xr, rt = o.yr[1];
-  const a = P.Axes({w:720, h:o.h||300, xr:o.xr, yr:[0,rt],
+  const L = P.labelScale(), xa = o.xr[0] - (L > 1 && o.floor ? 0.8 : 0), xb = o.xr[1], rt = o.yr[1];
+  const a = P.Axes({w:720, h:HS(o.h||300), xr:[xa,xb], yr:[0,rt],
     xlabel:'E_b/N_0\\;(\\mathrm{dB})', ylabel:'r\\;(\\mathrm{b/s/Hz})',
     pad:{l:58,r:30,t:40,b:46}, xstep:2, ystep:1});
   const pts = [];
@@ -134,16 +142,17 @@ function figLimit(o){
   a.under('<path d="M'+reg.map(p=>a.sx(p[0]).toFixed(2)+','+a.sy(p[1]).toFixed(2)).join('L')+'Z" fill="'+C.dec.err+'"/>');
   a.vline(10*Math.log10(Math.log(2)), {color:C.err, width:1.6, dash:'5 4'});
   a.poly(pts, {color:C.in, width:2.3});
-  if(o.imp) a.note(o.imp[0], o.imp[1], '\\text{no reliable system}', {tex:true, fs:13, color:C.err, anchor:'middle'});
+  const imp = L > 1 && o.impBig ? o.impBig : o.imp;
+  if(imp) a.note(imp[0], imp[1], '\\text{no reliable system}', {tex:true, fs:13, color:C.err, anchor:'middle'});
   if(o.floor) a.note(10*Math.log10(Math.log(2))-0.2, o.floor, '-1.59\\ \\mathrm{dB}', {tex:true, fs:12, color:C.err, anchor:'end'});
-  (o.gaps||[]).forEach(g=>{ const x0 = limDB(g.r);
+  (o.gaps||[]).forEach(g=>{ if(L > 1 && g.big) g = Object.assign({}, g, g.big); const x0 = limDB(g.r);
     a.poly([[x0,g.r],[g.x,g.r]], {color:g.c, width:2, dash:'6 4'});
     a.point(x0, g.r, {color:C.in, r:3.4});
     if(g.pos) a.note(g.pos[0], g.pos[1], g.lab, {tex:true, fs:12, color:g.c, anchor:g.pos[2]});
     else a.note((x0+g.x)/2 + (g.dx||0), g.r + (g.dy==null ? 0.24 : g.dy), g.lab, {tex:true, fs:12, color:g.c, anchor:'middle'}); });
-  (o.pts||[]).forEach(p=>{
+  (o.pts||[]).forEach(p=>{ if(L > 1 && p.big) p = Object.assign({}, p, p.big);
     a.point(p.x, p.r, {color:p.c, r:5});
-    a.note(p.x + (p.dx==null ? 0.25 : p.dx), p.r + (p.dy||0), p.lab, {tex:true, fs:13, color:p.c, anchor:p.anchor||'start'}); });
+    a.note(p.lx != null ? p.lx : p.x + (p.dx==null ? 0.25 : p.dx)*L, p.r + (p.dy||0), p.lab, {tex:true, fs:13, color:p.c, anchor:p.anchor||'start'}); });
   return a.svg();
 }
 
@@ -152,7 +161,7 @@ function figLimit(o){
    each range marked by a dashed drop to the axis. The dot is the user's
    distance on the scheme chosen there. */
 function figRange(o){
-  const a = P.Axes({w:720, h:260, xr:[0,o.dmax], yr:[0,o.Rmax],
+  const a = P.Axes({w:720, h:HS(260), xr:[0,o.dmax], yr:[0,o.Rmax],
     xlabel:'d\\;(\\mathrm{km})', ylabel:'R_b\\;(\\mathrm{Mb/s})',
     pad:{l:58,r:30,t:24,b:46}, xstep:0.5, ystep:6});
   let d0 = 0;
@@ -180,7 +189,7 @@ function figFlips(o){
   const pk = k => comb(n,k)*Math.pow(p,k)*Math.pow(1-p,n-k);
   const lo = Math.floor(Math.log10(pk(n))) - 0.6;
   const y = k => Math.log10(pk(k)) - lo, top = -lo + (o.room || 2.0);
-  const a = P.Axes({w:720, h:o.h||240, xr:[0.3, n+1.7], yr:[0, top],
+  const a = P.Axes({w:720, h:HS(o.h||240), xr:[0.3, n+1.7], yr:[0, top],
     xlabel:'k', ylabel:'P(K=k)\\;\\text{on a log scale}', pad:{l:24,r:30,t:24,b:44},
     xticksOverride:Array.from({length:n+1},(_,k)=>k+1), xtickfmt:(v=>String(Math.round(v)-1)),
     yticksOverride:[], grid:false});
@@ -188,10 +197,10 @@ function figFlips(o){
   for(let k=0;k<=n;k++){ const col = k>=t ? C.err : C.in;
     a.poly([[k+1,0],[k+1,y(k)]], {color:col, width:2});
     a.point(k+1, y(k), {color:col, r:4.5});
-    a.note(k+1, y(k), o.lab[k], {tex:true, fs:12, color:col, anchor:'middle', dy:-16}); }
+    a.note(k+1, y(k), o.lab[k], {tex:true, fs:12, color:col, anchor:'middle', dy:-16*P.labelScale()}); }
   const xm = (t+0.5+n+1.7)/2;
   a.note(xm, top-1.0, o.head || 'n='+n+'\\text{: the vote fails}', {tex:true, fs:13, color:C.err, anchor:'middle'});
-  a.note(xm, top-1.0, o.fail, {tex:true, fs:13, color:C.err, anchor:'middle', dy:26});
+  a.note(xm, top-1.0, o.fail, {tex:true, fs:13, color:C.err, anchor:'middle', dy:26*P.labelScale()});
   return a.svg();
 }
 
@@ -219,7 +228,7 @@ function figHard(o){
   const R = o.R, X = x => x + 2.5, lin = x => Math.pow(10, x/10);
   const soft = x => 0.5*Math.log2(1 + 2*R*lin(x));
   const hard = x => 1 - Hb(Qfn(Math.sqrt(2*R*lin(x))));
-  const a = P.Axes({w:720, h:300, xr:[X(-2),X(4.5)], yr:[0,1.2],
+  const a = P.Axes({w:720, h:HS(300), xr:[X(-2),X(4.5)], yr:[0,1.2],
     xlabel:'E_b/N_0\\;(\\mathrm{dB})', ylabel:'C\\;(\\text{bits per use})',
     pad:{l:58,r:30,t:40,b:46}, ystep:0.2,
     xticksOverride:[-2,-1,0,1,2,3,4].map(X), xtickfmt:(u=>String(Math.round(u-2.5)))});
@@ -251,10 +260,10 @@ function figHard(o){
    red, which names the position. The last row is the decoded codeword, with
    the corrected bit on a green cell, and its data bits at the right. */
 function figSyn(o){
-  const W = 720, H = 268, X0 = 236, dx = 52, XS = 650;
+  const W = 720, k = P.labelScale() > 1 ? 1.2 : 1, H = Math.round(268*k), X0 = 236, dx = 52, XS = 650;
   const a = P.Axes({w:W, h:H, xr:[0,W], yr:[0,H], pad:{l:0,r:0,t:0,b:0},
     xticksOverride:[], yticksOverride:[], grid:false, zeroAxes:false, arrows:false});
-  const up = y => H - y, xs = i => X0 + (i-1)*dx, e = o.err;
+  const up = y => H - y*k, xs = i => X0 + (i-1)*dx, e = o.err;
   const bit = (i, y, b, col, w) => a.note(xs(i), up(y+6), b, {fs:17, color:col, anchor:'middle', weight:w||400});
   a.note(20, up(30), 'position', {fs:12, color:C.muted});
   for(let i=1;i<=7;i++) a.note(xs(i), up(30), String(i), {fs:12, color:C.muted, anchor:'middle'});
@@ -858,9 +867,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
          'The company then says the modem uses two separate channels at once, for example two pairs of antennas. Each has bandwidth $10$ MHz and the same $N_0$, and the power and the bits are split equally. Repeat the test for one channel and give the new verdict.'],
   figSol: () => figLimit({xr:[-4,14], yr:[0,7], h:320, imp:[3.2,4.9], floor:0.45,
     gaps:[{r:6, x:8.75, c:C.err, lab:'1.46\\ \\mathrm{dB}\\ \\text{short}', pos:[10.6, 5.5, 'start']},
-          {r:3, x:8.75, c:C.mid, lab:'5.07\\ \\mathrm{dB}\\ \\text{to spare}', dx:0.7}],
+          {r:3, x:8.75, c:C.mid, lab:'5.07\\ \\mathrm{dB}\\ \\text{to spare}', dx:0.7, big:{dx:1.6, dy:0.36}}],
     pts:[{x:8.75, r:6, c:C.err, lab:'\\text{one channel},\\ r=6', dx:-0.3, dy:-0.08, anchor:'end'},
-         {x:8.75, r:3, c:C.out, lab:'\\text{each of two channels},\\ r=3', dy:-0.42}]}),
+         {x:8.75, r:3, c:C.out, lab:'\\text{each of two channels},\\ r=3', dy:-0.42, big:{anchor:'end', lx:13.9, dy:-0.7}}]}),
   sol:'<b>Given.</b> $R_b=60$ Mb/s, $W=10$ MHz, $P=1.8\\times10^{-11}$ W and $N_0=4.0\\times10^{-20}$ W/Hz, on an ideal bandlimited channel with white Gaussian noise.<br>'
      +'<b>Find.</b> The spectral efficiency and its Shannon limit, the actual $E_b/N_0$, the verdict with its margin, and the verdict for two parallel channels.<br>'
      +'<b>Method.</b> The spectral efficiency is $r=R_b/W$ in b/s/Hz. A reliable link at efficiency $r$ needs'
@@ -2085,7 +2094,7 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
          'Find the minimum $E_s/N_0$ in dB that each scheme needs, where $E_s$ is the energy per symbol.',
          'QPSK reaches the largest range, $2.4$ km. Find the ranges of the other two schemes.',
          'A user is at $d=1.2$ km. Which scheme gives the highest bit rate there, and with how many dB to spare?'],
-  figSol: () => figLimit({xr:[-4,8], yr:[0,4], h:300, imp:[0.2,3.3], floor:0.3,
+  figSol: () => figLimit({xr:[-4,8], yr:[0,4], h:300, imp:[0.2,3.3], impBig:[2.0,3.35], floor:0.3,
     gaps:[{r:1, x:1.50, c:C.mid, lab:'1.5\\ \\mathrm{dB}', dy:-0.32},
           {r:2, x:3.26, c:C.mid, lab:'1.5\\ \\mathrm{dB}', dy:-0.32},
           {r:3, x:5.18, c:C.mid, lab:'1.5\\ \\mathrm{dB}', dy:-0.32}],

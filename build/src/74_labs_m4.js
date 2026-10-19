@@ -357,7 +357,7 @@ Object.assign(LABS, (function(){
       a2.poly(y[1],{color:P.COL.mid,width:2.2,dash:'7 5'});
       if(landed){
         /* the two end labels are pushed apart when the values are close */
-        const need = 20*P.labelScale(), y1p = a2.sy(last.r[0]), y2p = a2.sy(last.r[1]);
+        const need = 21*P.labelScale(), y1p = a2.sy(last.r[0]), y2p = a2.sy(last.r[1]);
         const mid = (y1p+y2p)/2, sep = Math.max(need, Math.abs(y1p-y2p));
         const at = [y1p <= y2p ? mid-sep/2 : mid+sep/2, y1p <= y2p ? mid+sep/2 : mid-sep/2];
         [0,1].forEach(j=>{ a2.point(1, last.r[j], {color:P.COL.mid, r:4.5});

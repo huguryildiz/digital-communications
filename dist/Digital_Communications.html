@@ -2734,14 +2734,39 @@ const PLOT = (() => {
            They are drawn after the data, so the halo interrupts the trace and the
            number stays readable. */
         const tl=[];
+        /* Tick numbers grow with the labels (LBLS) but their spacing does not,
+           so where neighbours would touch only every n-th number is written,
+           counted from zero when zero is a tick. The tick marks all stay. */
+        const TW = L => String(L).length*0.58*TICK_SIZE;
+        const thin = (vals, fmt, pos, need) => {
+          const k = vals.map((v,i)=>i).filter(i=>fmt(vals[i])!=='');
+          let n = 1;
+          for(; n < k.length; n++){
+            let ok = true;
+            for(let j=n; j<k.length && ok; j++){ const a=vals[k[j-n]], b=vals[k[j]];
+              if(Math.abs(pos(b)-pos(a)) < need(fmt(a), fmt(b))) ok = false; }
+            if(ok) break; }
+          const z = vals.findIndex(v=>Math.abs(v)<1e-12), r0 = z>=0 ? z : k[0];
+          const keep = new Set(k.filter(i=>((i-r0)%n+n)%n===0));
+          return v => keep.has(vals.indexOf(v));
+        };
+        const showX = thin(xt, o.xtickfmt, sx, (a,b)=>(TW(a)+TW(b))/2+6*LBLS);
+        const showY = thin(yt, o.ytickfmt, sy, ()=>TICK_SIZE*1.15);
+        const xBoxes=[];
         xt.forEach(v=>{ const L=o.xtickfmt(v); if(L==='')return;
           if(Math.abs(v)<1e-12 && xz!=null && yz!=null) return;
           g.push(`<line x1="${sx(v).toFixed(2)}" y1="${yBase.toFixed(2)}" x2="${sx(v).toFixed(2)}" y2="${(yBase+5).toFixed(2)}" stroke="${CH.axis}" stroke-width="${1.2*STRW}"/>`);
+          if(!showX(v)) return;
+          xBoxes.push([sx(v)-TW(L)/2, yBase+20*LBLS-TICK_SIZE*0.8, sx(v)+TW(L)/2, yBase+20*LBLS+TICK_SIZE*0.2]);
           tl.push(`<text x="${sx(v).toFixed(2)}" y="${(yBase+20*LBLS).toFixed(2)}" ${halo(3.4)} font-size="${TICK_SIZE}" fill="${CH.tick}" text-anchor="middle">${esc(L)}</text>`); });
         const xBase = xz!=null? xz : x0;
         yt.forEach(v=>{ const L=o.ytickfmt(v); if(L==='')return;
           if(Math.abs(v)<1e-12 && xz!=null && yz!=null) return;
           g.push(`<line x1="${xBase.toFixed(2)}" y1="${sy(v).toFixed(2)}" x2="${(xBase-5).toFixed(2)}" y2="${sy(v).toFixed(2)}" stroke="${CH.axis}" stroke-width="${1.2*STRW}"/>`);
+          if(!showY(v)) return;
+          /* a y number that would sit on an x number near the corner is left out */
+          const yb = [xBase-10-TW(L), sy(v)+4.5-TICK_SIZE*0.8, xBase-10, sy(v)+4.5+TICK_SIZE*0.2];
+          if(xBoxes.some(b=>b[0]<yb[2] && yb[0]<b[2] && b[1]<yb[3] && yb[1]<b[3])) return;
           g.push(`<text x="${(xBase-10).toFixed(2)}" y="${(sy(v)+4.5).toFixed(2)}" ${halo(3.4)} font-size="${TICK_SIZE}" fill="${CH.tick}" text-anchor="end">${esc(L)}</text>`); });
         /* axis names — below the data area for the independent variable, above
            it for the dependent one. They are drawn after the data, so a signal
@@ -6681,15 +6706,18 @@ Object.assign(LABS, (function(){
       ax.vline(lamOpt,{color:P.COL.h,dash:'2 4',width:1.6});
 
       const bLo = Math.log10(Math.max(1e-12,peOpt)) - 0.2, bHi = bLo + 2.6;
-      const bx = P.Axes({w:ph?300:680,h:ph?220:gh(220),xr:[-0.85,0.85],yr:[bLo,bHi],
+      /* drawn in v = u + 0.85, so the vertical axis and its decade numbers sit
+         at the left edge and not on the dip of the curve */
+      const bx = P.Axes({w:ph?300:680,h:ph?220:gh(220),xr:[0,1.7],yr:[bLo,bHi],
         xlabel:'\\lambda/(2\\sqrt{E_b})',ylabel:'P_e',
         ytickfmt:P.decade, yticksOverride:P.decades(bLo,bHi), zeroAxes:false,
-        pad:{l:ph?44:60,r:ph?16:24,t:22,b:44}, xtarget:ph?4:5, ytarget:3});
-      bx.curve(u=>{ const Lam=u*2*A;
+        xticksOverride:[0.35,0.85,1.35], xtickfmt:v=>P.fmt(v-0.85,3),
+        pad:{l:ph?44:60,r:ph?16:24,t:22,b:44}, ytarget:3});
+      bx.curve(v=>{ const Lam=(v-0.85)*2*A;
         return Math.log10(Math.max(1e-12, p0*Qf((Lam+A)/sig)+p1*Qf((A-Lam)/sig))); },
         {color:P.COL.in,width:2.3});
-      bx.vline(st.lam/100,{color:P.COL.ink,dash:'5 4',width:1.6});
-      bx.vline(lamOpt/(2*A),{color:P.COL.h,dash:'2 4',width:1.6});
+      bx.vline(st.lam/100+0.85,{color:P.COL.ink,dash:'5 4',width:1.6});
+      bx.vline(lamOpt/(2*A)+0.85,{color:P.COL.h,dash:'2 4',width:1.6});
 
       const lg1 = `${L('mid','P(s_0)f_Y(y\\mid s_0)',true)}${L('mid','P(s_1)f_Y(y\\mid s_1)')}${L('err','\\text{error}')}`;
       root.querySelector('.plots').innerHTML = ph
@@ -7643,7 +7671,10 @@ Object.assign(LABS, (function(){
       const segdx = pairAt[1][0]-pairAt[0][0], segdy = pairAt[1][1]-pairAt[0][1];
       const seglen = Math.hypot(segdx,segdy) || 1;
       const perpx = -segdy/seglen, perpy = segdx/seglen;
-      cx.note(midx+perpx*0.22, midy+perpy*0.22, 'd_{\\min}',{tex:true,fs:15,color:P.COL.muted,anchor:'middle'});
+      /* the label grows with the label scale, and its gap from the line with it:
+         30 px for each unit of scale above 1, so the normal view is unchanged */
+      const off = 0.22 + 30*(P.labelScale()-1)/(cx.sx(1)-cx.sx(0));
+      cx.note(midx+perpx*off, midy+perpy*off, 'd_{\\min}',{tex:true,fs:15,color:P.COL.muted,anchor:'middle'});
       pts.forEach((p,k)=>{ cx.point(p[0],p[1],{color:P.COL.in,r: k===mi?8:5.5}); });
       cx.point(mx,my,{color:P.COL.coral,r:11,ring:P.COL.coral,ringw:2});
       cx.point(mx,my,{color:P.COL.in,r:5.5});
@@ -8288,7 +8319,7 @@ Object.assign(LABS, (function(){
       a2.poly(y[1],{color:P.COL.mid,width:2.2,dash:'7 5'});
       if(landed){
         /* the two end labels are pushed apart when the values are close */
-        const need = 20*P.labelScale(), y1p = a2.sy(last.r[0]), y2p = a2.sy(last.r[1]);
+        const need = 21*P.labelScale(), y1p = a2.sy(last.r[0]), y2p = a2.sy(last.r[1]);
         const mid = (y1p+y2p)/2, sep = Math.max(need, Math.abs(y1p-y2p));
         const at = [y1p <= y2p ? mid-sep/2 : mid+sep/2, y1p <= y2p ? mid+sep/2 : mid-sep/2];
         [0,1].forEach(j=>{ a2.point(1, last.r[j], {color:P.COL.mid, r:4.5});
@@ -9853,7 +9884,8 @@ Object.assign(LABS, (function(){
       const FO = 1, EO = 10;
       const Wt = ph ? 300 : 430, hT = ph ? 190 : gh(215);
       const df = (nc ? 1 : 0.5)/k;                                    /* tone spacing over R_b */
-      const at = P.Axes(Object.assign(compactX(), {w:Wt,h:hT,xr:[-0.3+FO,7.2+FO],yr:[0,1.4],xlabel:'(f-f_1)/R_b',ylabel:'\\text{tones}',
+      /* projected, the range reaches higher so the enlarged W over the span stays under the name */
+      const at = P.Axes(Object.assign(compactX(), {w:Wt,h:hT,xr:[-0.3+FO,7.2+FO],yr:[0,P.labelScale() > 1 ? 1.75 : 1.4],xlabel:'(f-f_1)/R_b',ylabel:'\\text{tones}',
         ytickfmt:()=>'',yticksOverride:[],zeroAxes:false,xtickfmt:()=>'',xticksOverride:[0,1,2,3,4,5,6,7].map(v=>v+FO),
         pad:{l:ph?30:34,r:ph?12:16,t:24,b:34}}));
       footTicks(at, [0,1,2,3,4,5,6,7].map(v=>v+FO), 0, v=>fmt(v-FO,2), 104);
@@ -9889,7 +9921,9 @@ Object.assign(LABS, (function(){
       /* the limit of Module 6, faint, with its name */
       ap.vline(LIMIT+EO,{color:P.COL.muted,dash:'3 5',width:1.3,opacity:0.8});
       ap.note(LIMIT+EO, -5.4, '\\text{limit }-1.6\\ \\text{dB}', {tex:true, fs:14, color:P.COL.muted, anchor:'end', dx:-8});
-      ap.note(LIMIT+EO, -6.1, '\\text{(Module 6)}', {tex:true, fs:14, color:P.COL.muted, anchor:'end', dx:-8});
+      /* the second line a label height under the first, so projected lines stay apart */
+      const bigL = P.labelScale() > 1;
+      ap.note(LIMIT+EO, bigL ? -5.4 : -6.1, '\\text{(Module 6)}', {tex:true, fs:14, color:P.COL.muted, anchor:'end', dx:-8, dy:bigL ? 26*P.labelScale() : 0});
       MS.forEach(m=>{ if(m !== Mn) ap.poly(sh(curve(st.mode, m)),{color:P.COL.noise,width:1.6}); });
       ap.curve(x=>lg1(union(st.mode, Mn, x-EO)),{color:P.COL.in,width:1.8,dash:'7 5'});
       ap.poly(sh(curve(st.mode, Mn)),{color:P.COL.in,width:2.6});
@@ -11222,7 +11256,7 @@ Object.assign(LABS, (function(){
       /* ---- the information of each symbol and its share of H ---- */
       const W = ph ? 300 : 880;
       const a = P.Axes({w:W,h:hA,xr:[0,K+1.15],yr:[0,top],ylabel:'\\text{bits}',
-        pad:{l:ph?40:54,r:ph?10:18,t:26,b:62*ls}, xticksOverride:[], arrows:false, ytarget:5});
+        pad:{l:ph?40:54,r:ph?10:(ls > 1 ? 76 : 18),t:26,b:62*ls}, xticksOverride:[], arrows:false, ytarget:5});
       const b1 = 0.12, b2 = 0.52, bw = 0.36;
       ps.forEach((p,i)=>{
         if(p > 0){
@@ -11236,7 +11270,10 @@ Object.assign(LABS, (function(){
       a.hline(H,   {color:P.COL.coral, dash:'7 4', width:1.8, opacity:1});
       /* both names in the empty strip right of the last symbol: H(S) under its
          line, the ceiling over its own, so the two never meet */
-      a.note(K+1.1, H, 'H(S)', {tex:true, fs:14, color:P.COL.coral, anchor:'end', dy:18*ls});
+      /* in the projector the data area is too short for a name under the line,
+         so H(S) is set at the end of its line, in the margin kept for it */
+      if(ls > 1 && !ph) a.note(K+1.15, H, 'H(S)', {tex:true, fs:14, color:P.COL.coral, anchor:'start', dx:6, dy:7.7*ls});
+      else a.note(K+1.1, H, 'H(S)', {tex:true, fs:14, color:P.COL.coral, anchor:'end', dy:18*ls});
       a.note(K+1.1, cap, '\\log_2 K', {tex:true, fs:14, color:P.COL.slate, anchor:'end', dy:-9*ls});
 
       /* ---- the bits a symbol: H built from its pieces, against a fixed code ---- */
@@ -11772,7 +11809,8 @@ Object.assign(LABS, (function(){
 
       /* ---- the transition diagram, edges drawn to p(x,y) ---- */
       const W = ph ? 300 : 880;
-      const a = P.Axes({w:W,h:ph?230:gh(180),xr:[0,10],yr:[0,6],pad:{l:8,r:8,t:10,b:10},
+      const big = ls > 1;
+      const a = P.Axes({w:W,h:ph?230:gh(180),xr:[0,10],yr:[0,6],pad:big ? {l:8,r:8,t:20,b:16} : {l:8,r:8,t:10,b:10},
         xticksOverride:[], yticksOverride:[], grid:false, zeroAxes:false, arrows:false});
       const X = [[2.7,4.85],[2.7,1.15]], Yn = [[7.3,4.85],[7.3,1.15]];
       const rN = p => (9 + 13*Math.sqrt(p))*(1 + (ls-1)*0.4);
@@ -11818,8 +11856,10 @@ Object.assign(LABS, (function(){
       /* ---- the information bar, exact and counted ---- */
       const XM = 2.8;
       const b = P.Axes({w:W,h:ph?190:gh(170),xr:[0,XM],yr:[0,1],xlabel:'\\text{bits}',
-        pad:{l:(ph?70:84)*ls,r:ph?10:18,t:14,b:30}, yticksOverride:[], ytickfmt:()=>'', zeroAxes:false,
+        pad:{l:(ph?70:84)*ls,r:ph?10:18,t:big ? 30 : 14,b:30}, yticksOverride:[], ytickfmt:()=>'', zeroAxes:false,
         xticksOverride:[0,0.5,1,1.5,2], xnameDrop:26*ls});
+      /* in the projector the exact bar is drawn taller, so its names fit inside it */
+      const bLo = big ? 0.46 : 0.5, bHi = big ? 0.84 : 0.74, bMid = (bLo+bHi)/2, cLo = big ? 0.39 : 0.4, cHi = big ? 0.45 : 0.47;
       const seg3 = (G, y0, y1, op) => {
         const cuts = [0, G.HXgY, G.HXgY + G.I, G.HXY];
         const fills = [tint(P.COL.in,0.32), tint(P.COL.out,0.3), P.COL.noiseSoft];
@@ -11829,22 +11869,22 @@ Object.assign(LABS, (function(){
           s += `<rect x="${b.sx(cuts[k]).toFixed(2)}" y="${b.sy(y1).toFixed(2)}" width="${(b.sx(cuts[k+1])-b.sx(cuts[k])).toFixed(2)}" height="${(b.sy(y0)-b.sy(y1)).toFixed(2)}" fill="${fills[k]}" fill-opacity="${op}" stroke="${strokes[k]}" stroke-opacity="${op}" stroke-width="1.5"/>`; }
         return s;
       };
-      b.raw(seg3(E, 0.5, 0.74, 1));
-      if(Cn) b.raw(seg3(Cn, 0.4, 0.47, 0.55));
+      b.raw(seg3(E, bLo, bHi, 1));
+      if(Cn) b.raw(seg3(Cn, cLo, cHi, 0.55));
       const names = [['H(X|Y)', E.HXgY, 0], ['I(X;Y)', E.I, E.HXgY], ['H(Y|X)', E.HYgX, E.HXgY + E.I]];
       names.forEach(([t, w, x0])=>{
         const px = b.sx(x0 + w) - b.sx(x0);
-        if(px > 74*ls) b.note(x0 + w/2, 0.62, t, {tex:true, fs:13, color:P.COL.ink, anchor:'middle', dy:5*ls});
-        else if(t === 'I(X;Y)' && px > 22*ls) b.note(x0 + w/2, 0.62, 'I', {tex:true, fs:13, color:P.COL.ink, anchor:'middle', dy:5*ls});
+        if(px > 74*ls) b.note(x0 + w/2, bMid, t, {tex:true, fs:13, color:P.COL.ink, anchor:'middle', dy:5*ls + (big ? 3 : 0)});
+        else if(t === 'I(X;Y)' && px > 22*ls) b.note(x0 + w/2, bMid, 'I', {tex:true, fs:13, color:P.COL.ink, anchor:'middle', dy:5*ls + (big ? 3 : 0)});
       });
-      if(E.HX > 0.02) b.span(0, E.HX, 0.84, 'H(X)', {tex:true, color:P.COL.in, fs:13.5});
+      if(E.HX > 0.02) b.span(0, E.HX, big ? 0.88 : 0.84, 'H(X)', {tex:true, color:P.COL.in, fs:13.5});
       if(E.HY > 0.02){
         const yb = b.sy(0.32), xa = b.sx(E.HXgY), xb = b.sx(E.HXY);
         b.raw(`<path d="M${xa.toFixed(2)},${(yb-5).toFixed(2)} v5 H${xb.toFixed(2)} v-5" fill="none" stroke="${P.COL.out}" stroke-width="${(1.4*(1+(ls-1)*0.75)).toFixed(2)}"/>`);
         b.note((E.HXgY + E.HXY)/2, 0.32, 'H(Y)', {tex:true, fs:13.5, color:P.COL.out, anchor:'middle', dy:19*ls});
       }
-      b.note(0, 0.62, '\\text{exact}', {tex:true, fs:13, color:P.COL.muted, anchor:'end', dx:-8, dy:5*ls});
-      if(Cn) b.note(0, 0.435, '\\text{counted}', {tex:true, fs:13, color:P.COL.muted, anchor:'end', dx:-8, dy:5*ls});
+      b.note(0, bMid, '\\text{exact}', {tex:true, fs:13, color:P.COL.muted, anchor:'end', dx:-8, dy:5*ls - 10*(ls-1)});
+      if(Cn) b.note(0, (cLo+cHi)/2, '\\text{counted}', {tex:true, fs:13, color:P.COL.muted, anchor:'end', dx:-8, dy:5*ls + 14*(ls-1)});
 
       const lgB = `${L('in','H(X|Y)')}${L('out','I(X;Y)')}<i style="--lg-c:var(--rule-strong)">${T('H(Y|X)',false)}</i>`;
       root.querySelector('.plots').innerHTML = ph
@@ -11970,7 +12010,9 @@ Object.assign(LABS, (function(){
       /* the two regions are named at the left, where every curve starts at
          zero; a name the rate line would cross is left out */
       const yRel = C.I/2, yImp = (C.I + top)/2;
-      if(C.I > 0.2 && Math.abs(R - yRel) > 0.09) a.note(0.02, yRel, 'reliable', {fs:14.5, color:P.COL.out, dy:5*ls});
+      if(ls > 1){ const yB = C.I - 16*ls/(a.sy(0)-a.sy(1));
+        if(C.I > 0.2 && Math.abs(R - yB) > 0.09) a.note(0.02, yB, 'reliable', {fs:14.5, color:P.COL.out, dy:5*ls}); }
+      else if(C.I > 0.2 && Math.abs(R - yRel) > 0.09) a.note(0.02, yRel, 'reliable', {fs:14.5, color:P.COL.out, dy:5*ls});
       if(top - C.I > 0.24 && Math.abs(R - yImp) > 0.09) a.note(0.02, yImp, 'impossible', {fs:14.5, color:P.COL.err, dy:5*ls});
       a.curve(t=>use(Pyx, t).I, {color:P.COL.out, width:2.6});
       a.hline(R, {color:P.COL.slate, dash:'7 4', width:1.8, opacity:1});
@@ -15882,7 +15924,10 @@ function figChain(){
     it.push({t:'arrow',x1:xb-10,y1:y0,x2:xb,y2:y0});
     defs.push(`<mask id="tsig-${id}" maskUnits="userSpaceOnUse" x="${xa}" y="${y0-24}" width="${xb-xa-10}" height="48">
       <rect x="${xa}" y="${y0-24}" width="${xb-xa-10}" height="48" fill="url(#tsig-fade)"/></mask>`);
-    extra.push(`<g mask="url(#tsig-${id})"><g class="tsig-flow">${body(xa-L, xb)}</g></g>`);
+    /* each stream sits in its own nested svg, which clips it to the figure as
+       the mask already hides it; the part of the period waiting off the wire is
+       then not geometry under the block labels */
+    extra.push(`<svg x="0" y="0" width="940" height="170" overflow="hidden"><g mask="url(#tsig-${id})"><g class="tsig-flow">${body(xa-L, xb)}</g></g></svg>`);
   };
   wire('in', 20, 150, (a,b) => digits(a, b, k => [bits[k]], C.in));
   wire('s', 282, 432, (a,b) => `<path d="${wave(a,b,s)}" fill="none" stroke="${C.in}" stroke-width="1.7" stroke-linejoin="round"/>`);
@@ -16127,7 +16172,7 @@ function conceptMap(){
     const x1=cx+(R-nodeR-4)*Math.cos(a), y1=cy+(R-nodeR-4)*Math.sin(a);
     g.push(`<line class="course-spoke" style="--i:${i}" x1="${x0.toFixed(1)}" y1="${y0.toFixed(1)}" x2="${x1.toFixed(1)}" y2="${y1.toFixed(1)}"/>`);
     const lines=n.label||[n.t];
-    const title=lines.map((line,j)=>`<text class="course-node-title" ${MAPHALO} x="${x.toFixed(1)}" y="${(y-(lines.length===1?4:17)+j*26).toFixed(1)}" text-anchor="middle">${line}</text>`).join('');
+    const title=lines.map((line,j)=>`<text class="course-node-title" ${MAPHALO} x="${x.toFixed(1)}" y="${(y-(lines.length===1?4:18)+j*28).toFixed(1)}" text-anchor="middle">${line}</text>`).join('');
     const idY=y+(lines.length===1?25:40);
     g.push(`<g class="course-node${i===0?' is-active':''}" style="--i:${i}" data-course-node="${n.m}" role="button" tabindex="0" aria-label="${n.m}: ${n.t}" aria-pressed="${i===0?'true':'false'}">
       <circle class="course-node-disc" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${nodeR}"/>
@@ -16244,7 +16289,7 @@ const SC = [
       /* three hops: two repeaters between the two ends. Each station is a
          sphere in its own colour, lit from the upper left, with its name and
          its job under it; the hop number rides on a pill above the span. */
-      const r = 25, step = 182, cy = 62, it = [], extra = [];
+      const r = 25, step = 182, cy = 62, it = [], extra = [], L = P.labelScale();
       const nodes = [['Transmitter','sends','in'], ['Repeater','regenerates','h'],
                      ['Repeater','regenerates','h'], ['Receiver','decides','out']];
       nodes.forEach(([name,gloss,k],i)=>{
@@ -16253,16 +16298,18 @@ const SC = [
           `<circle cx="${x}" cy="${cy}" r="${r}" fill="${C[k]}"/>`,
           `<circle cx="${x}" cy="${cy}" r="${r}" fill="url(#hopshade)"/>`,
           `<circle cx="${x}" cy="${cy}" r="${r}" fill="url(#hophi)"/>`);
-        it.push({t:'text',x,y:cy+r+26,label:name,fs:14,color:C.ink});
-        it.push({t:'text',x,y:cy+r+43,label:gloss,fs:11.5});
+        /* the name and its gloss are spaced in label sizes, so they stay apart
+           when the labels grow in lecture mode */
+        it.push({t:'text',x,y:cy+r+12+14*L,label:name,fs:14,color:C.ink});
+        it.push({t:'text',x,y:cy+r+12+31*L,label:gloss,fs:11.5});
         if(i<3){
           const a = x+r, b = x+step-r, m = (a+b)/2;
           it.push({t:'arrow',x1:a+6,y1:cy,x2:b-6,y2:cy,color:C.muted});
-          extra.push(`<rect x="${m-23}" y="${cy-34}" width="46" height="20" rx="10" fill="${C.plate}" stroke="${C.ruleStrong}" stroke-width="1"/>`);
-          it.push({t:'text',x:m,y:cy-20,label:'hop '+(i+1),fs:12,color:C.h});
+          extra.push(`<rect x="${m-23*L}" y="${cy-14-20*L}" width="${46*L}" height="${20*L}" rx="${10*L}" fill="${C.plate}" stroke="${C.ruleStrong}" stroke-width="1"/>`);
+          it.push({t:'text',x:m,y:cy-14-6*L,label:'hop '+(i+1),fs:12,color:C.h});
         }
       });
-      const svg = P.blocks({w:668,h:cy+r+52,items:it});
+      const svg = P.blocks({w:668,h:cy+r+12+40*L,items:it});
       const at = svg.indexOf('>')+1;
       return svg.slice(0,at)
         + `<defs><radialGradient id="hophi" cx=".36" cy=".3" r=".5"><stop offset="0" stop-color="#fff" stop-opacity=".75"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>`
@@ -16515,7 +16562,8 @@ function figCaseAt(fs){
   if(fs > 2*W + 1e-6){
     const lab = fs - 2*W >= 0.45;
     for(const c of [-1,1])
-      a.span(c*W, c*(fs-W), 0.16*fs, c>0 && lab ? '\\text{guard band}' : null, {tex:true, fs:12, color:C.muted});
+      /* raised in lecture mode, where the copies leave the grown label more room */
+      a.span(c*W, c*(fs-W), (P.labelScale()>1 ? 0.55 : 0.16)*fs, c>0 && lab ? '\\text{guard band}' : null, {tex:true, fs:12, color:C.muted});
   }
   if(nyq) a.point(W, 0, {color:C.mid, r:4.5});
   const name = nyq ? '\\text{Nyquist rate}' : fs > 2*W ? '\\text{oversampling}' : '\\text{undersampling}';
@@ -16543,12 +16591,14 @@ function figLpf(){
    in frequency, and the zeros are marked and labelled because the interpolation scene
    rests on them. */
 function figSinc(){
-  const a = P.Axes(SZ({xr:[-3.6,3.6], yr:[-0.42,1.30], xlabel:'t', ylabel:'h(t)',
+  /* the floor drops in lecture mode, so the grown zero labels stay under the lobes */
+  const lo = P.labelScale()>1 ? -0.62 : -0.42;
+  const a = P.Axes(SZ({xr:[-3.6,3.6], yr:[lo,1.30], xlabel:'t', ylabel:'h(t)',
     xticksOverride:[-3,-2,-1,1,2,3], xtickfmt:()=>'', ytarget:3, ytickfmt:()=>''}));
   a.curve(t=>sinc(t), {color:C.h, width:2.4});
   for(let n=-3;n<=3;n++) if(n){
     a.point(n, 0, {color:C.h, r:3.6});
-    a.note(n, -0.40, (n<0?'-':'')+'\\dfrac{'+Math.abs(n)+'}{2W}', {tex:true, anchor:'middle', fs:13, color:C.h});
+    a.note(n, lo+0.02, (n<0?'-':'')+'\\dfrac{'+Math.abs(n)+'}{2W}', {tex:true, anchor:'middle', fs:13, color:C.h});
   }
   a.note(0.14, 1.14, '\\operatorname{sinc}(2Wt)', {tex:true, fs:14, color:C.h});
   return a.svg();
@@ -16663,7 +16713,10 @@ function figQuantWalk(v){
     a.poly([[n,m],[n,q]], {color:C.mid, width:1.4, dash:'3 3'});
     a.point(n, m, {color:C.in, r:4}); a.point(n, q, {color:C.mid, r:4.6}); }
   a.point(f, mp, {color:C.in, r:5.4});
-  const b = P.Axes({w:600, h:270, xr:[-3.8,3.8], yr:[-3.8,3.8], xlabel:'m', ylabel:'v=\\mathbb{Q}(m)',
+  /* the lower panel is taller in lecture mode, and its two readouts are a
+     line apart in pixels, so they clear the tick numbers and each other */
+  const LS = P.labelScale(), hb = LS>1 ? 330 : 270;
+  const b = P.Axes({w:600, h:hb, xr:[-3.8,3.8], yr:[-3.8,3.8], xlabel:'m', ylabel:'v=\\mathbb{Q}(m)',
     pad:{l:56,r:26,t:26,b:40}, xticksOverride:[-2,0,2], yticksOverride:[-2,0,2]});
   b.poly([[-3.8,-3.8],[3.8,3.8]], {color:C.rule, width:1.2, dash:'3 4'});
   const pts=[]; for(let i=0;i<=1520;i++){ const m=-3.8+7.6*i/1520; pts.push([m,walkQ(m)]); }
@@ -16672,9 +16725,9 @@ function figQuantWalk(v){
   b.poly([[mp,vp],[0,vp]], {color:C.mid, width:1.6, dash:'4 4'});
   b.point(mp, 0, {color:C.in, r:5.4}); b.point(0, vp, {color:C.mid, r:5.4});
   b.note(1.1, -2.2, `m=${mp.toFixed(2)}`, {tex:true, fs:16, color:C.in});
-  b.note(1.1, -3.2, `v=${vp}`, {tex:true, fs:16, color:C.mid});
+  b.note(1.1, -2.2, `v=${vp}`, {tex:true, fs:16, color:C.mid, dy:27*LS});
   const nest = (svg, y, h) => svg.replace('<svg ', `<svg x="0" y="${y}" width="600" height="${h}" `);
-  return `<svg viewBox="0 0 600 470" xmlns="http://www.w3.org/2000/svg" role="img">${nest(a.svg(),0,200)}${nest(b.svg(),200,270)}</svg>`;
+  return `<svg viewBox="0 0 600 ${200+hb}" xmlns="http://www.w3.org/2000/svg" role="img">${nest(a.svg(),0,200)}${nest(b.svg(),200,hb)}</svg>`;
 }
 
 /* The Gaussian tail and density, for the quantizer that minimises the mean
@@ -16703,7 +16756,8 @@ function figRegions(){
     xticksOverride:[-2,-1,0,1,2], yticksOverride:[-2,-1,0,1,2]}));
   a.poly([[-X,-X],[X,X]], {color:C.muted, width:1.2, dash:'4 4'});
   for(let k=1;k<4;k++){ a.vline(b[k], {color:C.muted, dash:'4 4'});
-    a.note(b[k], 1.85, `m_{${k}}`, {tex:true, fs:14, color:C.muted, dx:5}); }
+    /* the boundary names sit at the foot, clear of the level names */
+    a.note(b[k], -1.85, `m_{${k}}`, {tex:true, fs:14, color:C.muted, dx:5}); }
   const pts = [[-X, v[0]]];
   for(let k=1;k<4;k++) pts.push([b[k], v[k-1]], [b[k], v[k]]);
   pts.push([X, v[3]]);
@@ -16765,16 +16819,19 @@ function figSqnrWindow(v){
   a.curve(m,{color:C.in,n:2400});
   const pts=[]; for(let i=0;i<=4800;i++){ const t=-X+2*X*i/4800; pts.push([t,q(m(t))]); }
   a.poly(pts,{color:C.mid,width:1.8});
-  const b = P.Axes({w:600,h:220,xr:[-X,X],yr:[-1.2*D,2.6*D],
+  /* the error panel is taller in lecture mode, so its two notes stay apart */
+  const hb = P.labelScale()>1 ? 270 : 220;
+  const b = P.Axes({w:600,h:hb,xr:[-X,X],yr:[-1.2*D,2.6*D],
     xlabel:'t',ylabel:'q(t)',pad:{l:54,r:26,t:20,b:44},xticksOverride:[-10,-5,5,10],xtickfmt:()=>'',yticksOverride:[]});
   b.rect(-T/2, -1.2*D, T/2, 2.6*D, {fill:C.dec.in});
   b.hline(D/2,{color:C.err,dash:'4 4'}); b.hline(-D/2,{color:C.err,dash:'4 4'});
   b.curve(t=>m(t)-q(m(t)),{color:C.err,width:1.2,n:4800});
-  b.note(X-0.2, 0.62*D, '\\pm\\Delta/2', {tex:true,fs:13,color:C.err,anchor:'end'});
+  /* the name sits a fixed number of pixels above its dashed line, clear of the error trace */
+  b.note(X-0.2, D/2, '\\pm\\Delta/2', {tex:true,fs:13,color:C.err,anchor:'end',dy:-(5+7*P.labelScale())});
   b.note(X-0.2, 1.95*D, `\\mathrm{SQNR}=${ps.toFixed(2)}/${pq.toFixed(4)}=${(10*Math.log10(ps/pq)).toFixed(2)}\\ \\text{dB}`,
     {tex:true, fs:17, color:C.err, anchor:'end'});
   const nest = (svg, y, h) => svg.replace('<svg ', `<svg x="0" y="${y}" width="600" height="${h}" `);
-  return `<svg viewBox="0 0 600 480" xmlns="http://www.w3.org/2000/svg" role="img">${nest(a.svg(),0,260)}${nest(b.svg(),260,220)}</svg>`;
+  return `<svg viewBox="0 0 600 ${260+hb}" xmlns="http://www.w3.org/2000/svg" role="img">${nest(a.svg(),0,260)}${nest(b.svg(),260,hb)}</svg>`;
 }
 
 /* The bound |q| <= Delta/2 under a slider on the input m. A four-level
@@ -16790,7 +16847,10 @@ function figErrBound(v){
   const Q = m => Math.max(-1.5, Math.min(1.5, Math.floor(m)+0.5));
   const k0 = Math.max(-2, Math.min(1, Math.floor(p))), vk = k0+0.5, q = p-Q(p);
   const dfmt = x => { const n = Math.round(x); return n===0 ? '0' : (n<0?'−':'')+(Math.abs(n)===1?'':Math.abs(n))+'Δ'; };
-  const a = P.Axes({w:600, h:270, xr:[-2.3,2.3], yr:[-2.3,2.5], xlabel:'m', ylabel:'\\mathbb{Q}(m)',
+  /* in lecture mode both panels are taller, so the notes placed in data units
+     stay clear of the tick labels and of each other as the labels grow */
+  const big = P.labelScale()>1, ha = big ? 310 : 270, hb = big ? 290 : 220;
+  const a = P.Axes({w:600, h:ha, xr:[-2.3,2.3], yr:[-2.3,2.5], xlabel:'m', ylabel:'\\mathbb{Q}(m)',
     pad:{l:56,r:26,t:24,b:40}, xticksOverride:[-2,-1,0,1,2], yticksOverride:[], xtickfmt:()=>''});
   a.rect(k0, -2.3, k0+1, 2.5, {fill:C.dec.mid});
   a.poly([[-2.3,-2.3],[2.3,2.3]], {color:C.in, width:1.4, dash:'4 4'});
@@ -16804,7 +16864,7 @@ function figErrBound(v){
   a.poly([[p,vk],[p,p]], {color:C.err, width:3});
   a.point(p, p, {color:C.in, r:5}); a.point(p, vk, {color:C.mid, r:5});
   a.note(2.25, -1.3, `|q|=${(Math.abs(q)).toFixed(2)}\\,\\Delta`, {tex:true, fs:15, color:C.err, anchor:'end'});
-  const b = P.Axes({w:600, h:220, xr:[-2.3,2.3], yr:[-0.9,0.9], xlabel:'m', ylabel:'q',
+  const b = P.Axes({w:600, h:hb, xr:[-2.3,2.3], yr:[-0.9,0.9], xlabel:'m', ylabel:'q',
     pad:{l:56,r:26,t:20,b:40}, xticksOverride:[-2,-1,0,1,2], yticksOverride:[], xtickfmt:dfmt});
   b.rect(k0, -0.9, k0+1, 0.9, {fill:C.dec.mid});
   b.hline(0.5, {color:C.err, dash:'4 4'}); b.hline(-0.5, {color:C.err, dash:'4 4'});
@@ -16814,7 +16874,7 @@ function figErrBound(v){
   b.vline(p, {color:C.muted});
   b.point(p, q, {color:C.err, r:5});
   const nest = (svg, y, h) => svg.replace('<svg ', `<svg x="0" y="${y}" width="600" height="${h}" `);
-  return `<svg viewBox="0 0 600 490" xmlns="http://www.w3.org/2000/svg" role="img">${nest(a.svg(),0,270)}${nest(b.svg(),270,220)}</svg>`;
+  return `<svg viewBox="0 0 600 ${ha+hb}" xmlns="http://www.w3.org/2000/svg" role="img">${nest(a.svg(),0,ha)}${nest(b.svg(),ha,hb)}</svg>`;
 }
 
 /* The error of a fine quantizer as a density: flat at 1/Delta across one
@@ -16860,7 +16920,7 @@ function figSqnr(v){
   a.point(R, yN(R), {color:C.err, r:4.6});
   const sq = ALPHA_SINE+lvl+20*R*Math.log10(2);
   a.note(R, (yS+yN(R))/2, '\\mathrm{SQNR}='+P.fmt(sq,1)+'\\ \\mathrm{dB}', {tex:true, fs:15, color:C.mid,
-    anchor: R>7 ? 'end' : 'start', dx: R>7 ? -10 : 10});
+    anchor: R>9 ? 'end' : 'start', dx: R>9 ? -10 : 10});
   return a.svg();
 }
 
@@ -16884,9 +16944,10 @@ function sqnrMeasured(R){
    Between two frames the square shrinks continuously. */
 function figNoiseBits(v){
   const f = v ? v.frame : 2, n = Math.floor(f+1e-9), R = n+1, Rs = Math.round(f)+1;
-  const a = P.Axes(SZ({xr:[0,1], yr:[0,1], pad:{l:24,r:24,t:18,b:22},
+  /* the left pad holds half of the -m_max label, which grows in lecture mode */
+  const a = P.Axes(SZ({xr:[0,1], yr:[0,1], pad:{l:P.labelScale()>1?36:24,r:24,t:18,b:22},
     grid:false, zeroAxes:false, arrows:false, xticksOverride:[], yticksOverride:[]}));
-  const X = px => (px-a.x0)/(a.x1-a.x0), Y = py => (a.y0-py)/(a.y0-a.y1);
+  const X = px => (px-a.x0)/(a.x1-a.x0), Y = py => (a.y0-py)/(a.y0-a.y1), LS = P.labelScale();
   /* range bar: 2 m_max wide; the R = 1 square has side m_max, half the bar */
   const barY = a.y1+46, top = barY+50, S = Math.min((a.x1-a.x0)*0.46, a.y0-top);
   const bx0 = a.x0+6, bx1 = bx0+2*S, D = 2*S/2**R, fx = v=>v.toFixed(2);
@@ -16895,8 +16956,8 @@ function figNoiseBits(v){
     a.raw(`<line x1="${fx(x)}" y1="${fx(barY-(e?8:5))}" x2="${fx(x)}" y2="${fx(barY+(e?8:5))}" stroke="${e?C.ink:C.muted}" stroke-width="${e?1.6:1.1}"/>`); }
   a.raw(`<rect x="${fx(bx0)}" y="${fx(barY-5)}" width="${fx(D)}" height="10" fill="${C.in}" fill-opacity="0.28" stroke="none"/>`);
   a.span(X(bx0), X(bx0+D), Y(barY-11), '\\Delta', {tex:true, fs:15, color:C.in});
-  a.note(X(bx0), Y(barY+24), '-m_{\\max}', {tex:true, fs:14, color:C.muted, anchor:'middle'});
-  a.note(X(bx1), Y(barY+24), 'm_{\\max}', {tex:true, fs:14, color:C.muted, anchor:'middle'});
+  a.note(X(bx0), Y(barY+12+16*LS), '-m_{\\max}', {tex:true, fs:14, color:C.muted, anchor:'middle'});
+  a.note(X(bx1), Y(barY+12+16*LS), 'm_{\\max}', {tex:true, fs:14, color:C.muted, anchor:'middle'});
   a.note(X(bx1), Y(barY-22), 'L='+2**Rs+'\\ \\text{regions}', {tex:true, fs:14, color:C.muted, anchor:'end'});
   /* squares, nested at the lower-left corner */
   const sq = (s, o) => a.raw(`<rect x="${fx(bx0)}" y="${fx(a.y0-s)}" width="${fx(s)}" height="${fx(s)}" ${o}/>`);
@@ -17015,7 +17076,8 @@ function figSpeechLevels(){
 function figCompanding(){
   const muL = mu => x => Math.log(1+mu*x)/Math.log(1+mu);
   P.hOverride = null;
-  const H = 235;
+  /* taller in lecture mode, so the key fits its corner with its rows a label apart */
+  const big = P.labelScale()>1, H = big ? 300 : 235, kx = big ? 0.70 : 0.66;
   const aL  = A => x => x < 1/A ? A*x/(1+Math.log(A)) : (1+Math.log(A*x))/(1+Math.log(A));
   /* The lower-right triangle under the straight line is empty, so the key
      sits there, one swatch per curve. */
@@ -17023,14 +17085,16 @@ function figCompanding(){
     const a = P.Axes({w:560, h:H, xr:[0,1], yr:[0,1.06], xlabel:'|x|', ylabel:'|y|',
       pad:{l:56,r:26,t:18,b:42}, xticksOverride:[0,0.2,0.4,0.6,0.8,1], yticksOverride:[0,0.5,1]});
     a.curve(x=>x, {color:C.muted, width:1.3, dash:'4 4'});
-    const key = (y, txt, st) => { a.poly([[0.66,y],[0.74,y]], st);
-      a.note(0.77, y, txt, {tex:true, fs:14, color:st.color, dy:2}); };
+    const ky = (8+18*P.labelScale())/(a.sy(0)-a.sy(1));   /* one key row, in pixels */
+    const k0 = 0.12+ky*fam.length;                     /* the rows stack up from 0.12 */
+    const key = (y, txt, st) => { a.poly([[kx,y],[kx+0.08,y]], st);
+      a.note(kx+0.11, y, txt, {tex:true, fs:14, color:st.color, dy:2}); };
     fam.forEach(([p, w, op, txt], i) => {
       const st = {color, width:w, opacity:op};
       a.curve(law(p), Object.assign({n:1600}, st));
-      key(0.46-0.17*i, txt, st);
+      key(k0-ky*i, txt, st);
     });
-    key(0.46-0.17*fam.length, id, {color:C.muted, width:1.3, dash:'4 4'});
+    key(k0-ky*fam.length, id, {color:C.muted, width:1.3, dash:'4 4'});
     return a.svg();
   };
   const top = panel(aL, C.h, [[A_LAW, 2.6, 1, 'A=87.6'], [2, 1.8, 0.65, 'A=2']], 'A=1');
@@ -17058,17 +17122,17 @@ function figCompander(){
     + `<path d="${pts.map(([u,v],k)=>(k?'L':'M')+(cx+gx*u).toFixed(1)+','+(cy-gy*v).toFixed(1)).join('')}"
         fill="none" stroke="${col}" stroke-width="2.2" stroke-linejoin="round"/>`;
   const it = [
-    {t:'arrow', x1:8, y1:yc, x2:xs[0], y2:yc, label:'m(t)', tex:true},
+    {t:'arrow', x1:2, y1:yc, x2:xs[0], y2:yc, label:'m(t)', tex:true},
     {t:'arrow', x1:xs[0]+bw, y1:yc, x2:xs[1], y2:yc, label:'y', tex:true},
     {t:'arrow', x1:xs[1]+bw, y1:yc, x2:xs[2], y2:yc, label:'\\hat y', tex:true},
-    {t:'arrow', x1:xs[2]+bw, y1:yc, x2:594, y2:yc, label:'\\hat m(t)', tex:true}
+    {t:'arrow', x1:xs[2]+bw, y1:yc, x2:598, y2:yc, label:'\\hat m(t)', tex:true}
   ];
   ['Compressor','Uniform quantizer','Expander'].forEach((name,i)=>{
     it.push({t:'box', x:xs[i], y:y0, w:bw, h:bh});
     it.push({t:'text', x:xs[i]+bw/2, y:y0-14, label:name, fs:15, color:C.ink});
   });
   [['high gain for weak inputs,','low gain for strong ones'],[],['undoes the compression,','restores every level']]
-    .forEach((ls,i)=>ls.forEach((L,j)=>it.push({t:'text', x:xs[i]+bw/2, y:y0+bh+26+j*19, label:L, fs:13})));
+    .forEach((ls,i)=>ls.forEach((L,j)=>it.push({t:'text', x:xs[i]+bw/2, y:y0+bh+26+j*19*P.labelScale(), label:L, fs:13})));
   /* the whole chain, m to m-hat */
   const pc = 300, py = 360, pgx = 200, pgy = 96;
   it.push({t:'text', x:pc+pgx+14, y:py+5, label:'m', tex:true, anchor:'start', fs:15});
@@ -17138,18 +17202,22 @@ const LINE_CODES = [
    carries a faint line at its own zero. */
 function figLineCodes(){
   const bits = [0,1,1,0,1,0,0,1], off = [9.3, 6.2, 3.1, 0];
-  const a = P.Axes(SZ({xr:[0,8], yr:[-1.3,11.6], pad:{l:20,r:20,t:14,b:24},
+  /* the top of the range rises in lecture mode to make room for the grown bit row */
+  const a = P.Axes(SZ({xr:[0,8], yr:[-1.3,P.labelScale()>1 ? 12.6 : 11.6], pad:{l:20,r:20,t:14,b:24},
     grid:false, zeroAxes:false, arrows:false, xticksOverride:[], yticksOverride:[]}));
   /* Bit boundaries, cut at each trace so they never cross its name. */
-  off.forEach(y0=>{ for(let k=0;k<=8;k++) a.poly([[k,y0-1.0],[k,y0+1.0]], {color:C.muted, width:1.4, dash:'6 4'}); });
-  bits.forEach((b,k)=>a.note(k+0.5, 11.0, String(b), {fs:15, color:C.ink, anchor:'middle', weight:600}));
+  const LS = P.labelScale(), dh = LS>1 ? 0.92 : 1.0;   /* half the height of a boundary */
+  off.forEach(y0=>{ for(let k=0;k<=8;k++) a.poly([[k,y0-dh],[k,y0+dh]], {color:C.muted, width:1.4, dash:'6 4'}); });
+  /* the names and the bit row are set in pixels above the tops of the bit
+     boundaries, so they stay apart as the labels grow */
+  bits.forEach((b,k)=>a.note(k+0.5, off[0]+dh, String(b), {fs:15, color:C.ink, anchor:'middle', weight:600, dy:-(12+14*LS)}));
   LINE_CODES.forEach(([name,f,uni],i)=>{
     const y0 = off[i], lv = x => uni ? y0-0.8+1.6*x : y0+0.8*x;
     a.poly([[0,uni?y0-0.8:y0],[8,uni?y0-0.8:y0]], {color:C.rule, width:1});
     const pts=[];
     for(let k=0;k<8;k++) for(let j=0;j<=80;j++){ const u=j/80; pts.push([k+u, lv(f(bits[k],u))]); }
     a.poly(pts, {color:C.in, width:2.2});
-    a.note(0.06, y0+1.18, name, {fs:13, color:C.muted});
+    a.note(0.06, y0+dh, name, {fs:13, color:C.muted, dy:-(4+4*LS)});
   });
   return a.svg();
 }
@@ -17179,19 +17247,23 @@ function figPcmStream(){
      line, where a polar waveform would run through them. */
   const a = P.Axes(SZ({xr:[0,N], yr:[-2.75,3.0], xlabel:'t\\;(\\mathrm{s})', ylabel:'\\text{polar NRZ}',
     pad:{l:56,r:40,t:24,b:42}, xticksOverride:[], yticksOverride:[-1,1]}));
-  const bw = a.sx(1)-a.sx(0);
+  const bw = a.sx(1)-a.sx(0), LS = P.labelScale();
   /* the moving boxes sit under the waveform */
   a.raw(`<g class="ps-anim" style="animation-name:psw;animation-timing-function:steps(${W},jump-none)">`);
   a.rect(0, -1.3, 3, 2.15, {fill:C.dec.mid, stroke:C.mid, width:1.6});
-  a.note(1.5, 2.55, 'T_s=3T_b=0.6\\ \\mathrm{s}', {tex:true, fs:16, color:C.mid, anchor:'middle'});
+  /* in lecture mode the two box names start at the box's left edge, so the
+     grown names do not reach back across the vertical axis */
+  const big = LS>1;
+  a.note(big ? 0 : 1.5, 2.55, 'T_s=3T_b=0.6\\ \\mathrm{s}', {tex:true, fs:16, color:C.mid, anchor:big ? 'start' : 'middle', dx:big ? 4 : 0});
   a.raw('</g>');
   a.raw(`<g class="ps-anim" style="animation-name:psb;animation-timing-function:steps(${N},jump-none)">`);
   a.rect(0, -1.3, 1, 1.3, {fill:C.dec.h, stroke:C.h, width:1.6});
-  a.note(0.5, -2.3, 'T_b=0.2\\ \\mathrm{s}', {tex:true, fs:16, color:C.h, anchor:'middle'});
+  /* the time marks and T_b hang under the stream at distances in pixels */
+  a.note(big ? 0 : 0.5, -1.3, 'T_b=0.2\\ \\mathrm{s}', {tex:true, fs:16, color:C.h, anchor:big ? 'start' : 'middle', dx:big ? 4 : 0, dy:2+38*LS});
   a.raw('</g>');
   for(let k=1;k<N;k++) if(k%3) a.poly([[k,-1.3],[k,1.3]], {color:C.rule, width:1, dash:'2 4'});
   for(let k=3;k<=N;k+=3) a.poly([[k,-1.3],[k,2.15]], {color:C.muted, width:1.4, dash:'6 4'});
-  for(let k=0;k<=N;k+=3) a.note(k, -1.7, P.fmt(0.2*k,1), {fs:13, color:C.muted, anchor:'middle'});
+  for(let k=0;k<=N;k+=3) a.note(k, -1.3, P.fmt(0.2*k,1), {fs:13, color:C.muted, anchor:'middle', dy:4+14*LS});
   const pts=[]; bits.forEach((b,k)=>{ const y=b?1:-1; pts.push([k,y],[k+1,y]); });
   a.poly(pts, {color:C.in, width:2.2});
   PCM_WORDS.forEach((w,i)=>a.note(3*i+1.5, 1.72, w, {fs:14, color:C.mid, anchor:'middle', weight:600}));
@@ -17226,7 +17298,7 @@ function figBanding(o){
   a.curve(x => q(x, 256), {color:C.in, width:2.0, n:1400});
   a.curve(x => q(x, 8),   {color:C.mid, width:2.4, n:1400});
   a.note(0.06, 0.96, 'L=256', {tex:true, fs:14, color:C.in});
-  a.note(0.62, 0.30, 'L=8', {tex:true, fs:14, color:C.mid});
+  a.note(0.62, 0.5625, 'L=8', {tex:true, fs:14, color:C.mid, dy:12+28*P.labelScale()});
   return a.svg();
 }
 
@@ -17431,19 +17503,20 @@ const REAL_SQNR = realGallery({ id:'m1-real-sqnr', nav:'SQNR around us',
       const a=P.Axes(EXO({xr:[-60,-1e-6],xticksOverride:[-60,-40,-20,-1e-6],xtickfmt:v=>String(Math.round(v)),yr:[0,110],xlabel:'\\text{level (dB below full scale)}',ylabel:'\\mathrm{SQNR}\\;(\\mathrm{dB})'}));
       a.curve(l=>s+l,{color:C.mid,width:2.3});
       a.point(-40,s-40,{color:C.mid,r:4.5});
-      a.note(-37,s-58,'58.1\\ \\mathrm{dB}',{tex:true,fs:14,color:C.mid});
+      /* the value sits a label height under the line, in pixels */
+      a.note(-37,s-37,'58.1\\ \\mathrm{dB}',{tex:true,fs:14,color:C.mid,dy:14+14*P.labelScale()});
       return a.svg(); }, 'CD audio uses $16$ bits: $98.1$ dB at full scale, and $58.1$ dB for a passage $40$ dB quieter.'],
     [()=>{ const s=ALPHA_SINE+6.0206*8;
       const a=P.Axes(EXO({xr:[-60,-1e-6],xticksOverride:[-60,-40,-20,-1e-6],xtickfmt:v=>String(Math.round(v)),yr:[-10,60],xlabel:'\\text{level (dB below full scale)}',ylabel:'\\mathrm{SQNR}\\;(\\mathrm{dB})'}));
       a.curve(l=>s+l,{color:C.mid,width:2.3});
       a.point(-30,s-30,{color:C.err,r:4.5});
-      a.note(-28,s-36,'19.9\\ \\mathrm{dB}',{tex:true,fs:14,color:C.err});
+      a.note(-28,s-28,'19.9\\ \\mathrm{dB}',{tex:true,fs:14,color:C.err,dy:7+14*P.labelScale()});
       return a.svg(); }, 'By $\\alpha+6.02R$, uniform $8$-bit PCM gives $49.9$ dB at full scale but only $19.9$ dB for a signal $30$ dB below it.'],
     [()=>figBanding({w:520,h:250,pad:{l:60,r:22,t:22,b:44}}), 'A row of an image at $8$ levels shows bands where the $256$-level row is smooth.'],
     [()=>{ const R=[8,12,16,24], nm=['telephone','camera','CD','studio'];
       const a=P.Axes(EXO({xr:[4,27],yr:[0,180],xlabel:'R\\;(\\text{bits})',ylabel:'\\mathrm{SQNR}\\;(\\mathrm{dB})',xticksOverride:R,ytarget:4}));
       a.stem(R.map(r=>[r,ALPHA_SINE+6.0206*r]),{color:C.mid});
-      R.forEach((r,i)=>a.note(r,ALPHA_SINE+6.0206*r+20,nm[i],{fs:13,color:C.muted,anchor:'middle'}));
+      R.forEach((r,i)=>a.note(r,ALPHA_SINE+6.0206*r,nm[i],{fs:13,color:C.muted,anchor:'middle',dy:-20*P.labelScale()}));
       return a.svg(); }, 'A full-scale sinusoid at common word lengths: $49.9$, $74.0$, $98.1$ and $146.3$ dB.']
   ],
   notes:[
@@ -17678,7 +17751,9 @@ function figHearBits(v){
     pad:{l:54,r:26,t:20,b:40}, xtarget:5, yticksOverride:[]});
   b.hline(D/2, {color:C.err, dash:'4 4'}); b.hline(-D/2, {color:C.err, dash:'4 4'});
   b.poly(stair(Q.e, i0, n), {color:C.err, width:1.4});
-  b.note(12.5, 1.5*D, `\\mathrm{SQNR}=${Q.sqnr.toFixed(1)}\\ \\text{dB over the whole recording}`, {tex:true, fs:16, color:C.err, anchor:'middle'});
+  /* in lecture mode the long line is set flush right, clear of the axis name */
+  const big = P.labelScale()>1;
+  b.note(big ? 24.8 : 12.5, 1.5*D, `\\mathrm{SQNR}=${Q.sqnr.toFixed(1)}\\ \\text{dB over the whole recording}`, {tex:true, fs:16, color:C.err, anchor:big ? 'end' : 'middle'});
   return `<svg viewBox="0 0 600 432" xmlns="http://www.w3.org/2000/svg" role="img">${place(a.svg(),0,0,600,236)}${place(b.svg(),0,236,600,196)}</svg>`;
 }
 
@@ -17699,12 +17774,15 @@ function figHearMu(v){
     return place(a.svg(), 0, y0, 600, 186)
       + P.texName(`${head}\\quad\\mathrm{SQNR}=${Qz.sqnr.toFixed(1)}\\ \\mathrm{dB}`, {xRight:574, baseline:y0-6, size:15, color:C.mid, figW:600});
   };
-  /* the key of the two traces, drawn in the strip above the upper panel */
-  const key = (x, col, t) => `<path d="M${x},14H${x+26}" stroke="${col}" stroke-width="2.4"/>`
-    + P.texName(t, {xLeft:x+32, baseline:20, size:15, color:C.ink, figW:600});
-  return `<svg viewBox="0 0 600 470" xmlns="http://www.w3.org/2000/svg" role="img">`
+  /* the key of the two traces, drawn in the strip above the upper panel; the
+     strip deepens in lecture mode so the key stays inside the figure and above
+     the head of the upper panel */
+  const LS = P.labelScale(), T = LS>1 ? 76 : 52, kb = LS>1 ? 34 : 20;
+  const key = (x, col, t) => `<path d="M${x},${kb-6}H${x+26}" stroke="${col}" stroke-width="2.4"/>`
+    + P.texName(t, {xLeft:x+32, baseline:kb, size:15, color:C.ink, figW:600});
+  return `<svg viewBox="0 0 600 ${T+418}" xmlns="http://www.w3.org/2000/svg" role="img">`
     + key(56, C.in, 'x(t)') + key(150, C.mid, '\\mathbb{Q}(x(t))')
-    + panel(U, 52, '\\text{uniform, }6\\text{ bits}') + panel(M, 284, '\\mu\\text{-law, }6\\text{ bits}') + '</svg>';
+    + panel(U, T, '\\text{uniform, }6\\text{ bits}') + panel(M, T+232, '\\mu\\text{-law, }6\\text{ bits}') + '</svg>';
 }
 
 /* The bandwidth PCM needs. Top: the message band and the least band of an
@@ -17723,7 +17801,9 @@ function figPcmBw(v){
   b.curve(x=>x>=1-1e-9 && x<=12+1e-9 ? ALPHA_SINE+6.0206*x : NaN, {color:C.mid, width:2.2, n:600});
   const s = ALPHA_SINE+6.0206*R;
   b.point(R, s, {color:C.mid, r:5.5});
-  b.note(R+(R<9?0.3:-0.3), s-15, P.fmt(s,1)+'\\ \\mathrm{dB}', {tex:true, fs:15, color:C.mid, anchor:R<9?'start':'end'});
+  /* the value hangs under the line by a distance in pixels that grows with the label */
+  const xn = R+(R<9?0.3:-0.3);
+  b.note(xn, ALPHA_SINE+6.0206*xn, P.fmt(s,1)+'\\ \\mathrm{dB}', {tex:true, fs:15, color:C.mid, anchor:R<9?'start':'end', dy:20+14*P.labelScale()});
   return `<svg viewBox="0 0 600 440" xmlns="http://www.w3.org/2000/svg" role="img">${place(a.svg(),0,0,600,210)}${place(b.svg(),0,210,600,230)}</svg>`;
 }
 
@@ -17834,7 +17914,9 @@ function figDm(v){
 function figT1(v){
   P.hOverride = null;
   const f = frameOf(v, 2), u1 = clamp01(f), u2 = clamp01(f-1);
-  const a = P.Axes({w:600, h:260, xr:[-1.05,3.1], yr:[0.1,5.1], xlabel:'t\\;(\\mu\\text{s})', ylabel:'',
+  /* taller in lecture mode, so the ellipsis fits between call 3 and call 24 */
+  const ha = P.labelScale()>1 ? 300 : 260;
+  const a = P.Axes({w:600, h:ha, xr:[-1.05,3.1], yr:[0.1,5.1], xlabel:'t\\;(\\mu\\text{s})', ylabel:'',
     pad:{l:26,r:26,t:18,b:40}, grid:false, zeroAxes:false, xticksOverride:[0,1,2,3], xtickfmt:x=>String(125*x), yticksOverride:[]});
   const rows = [[4.4,'call 1',0.4],[3.4,'call 2',1.7],[2.4,'call 3',3.1],[0.8,'call 24',4.4]];
   rows.forEach(([y0,name,ph])=>{
@@ -17844,7 +17926,9 @@ function figT1(v){
       a.poly([[t,y0],[t,s]], {color:C.mid, width:1.8}); a.point(t, s, {color:C.mid, r:3.6}); });
     a.note(-1.0, y0+0.08, name, {fs:14, color:C.ink});
   });
-  a.note(-0.72, 1.75, '⋮', {fs:18, color:C.ink});
+  /* the ellipsis is centred in pixels in the gap between call 3 and call 24 */
+  const LS = P.labelScale(), yA = a.sy(2.48)+4*LS, yB = a.sy(0.88)-14*LS;
+  a.note(-0.72, 0.88, '⋮', {fs:18, color:C.ink, dy:(yA+yB)/2+7.5*LS-a.sy(0.88)});
   const b = P.Axes({w:600, h:170, xr:[-8,199], yr:[0,3.2], xlabel:'', ylabel:'',
     pad:{l:26,r:26,t:10,b:12}, grid:false, zeroAxes:false, xticksOverride:[], yticksOverride:[]});
   const shown = u1*25;
@@ -17866,7 +17950,7 @@ function figT1(v){
     b.note(5, 2.85, '8 bits', {fs:13, color:C.mid, anchor:'start'});
     b.raw('</g>');
   }
-  return `<svg viewBox="0 0 600 430" xmlns="http://www.w3.org/2000/svg" role="img">${place(a.svg(),0,0,600,260)}${place(b.svg(),0,260,600,170)}</svg>`;
+  return `<svg viewBox="0 0 600 ${ha+170}" xmlns="http://www.w3.org/2000/svg" role="img">${place(a.svg(),0,0,600,ha)}${place(b.svg(),0,ha,600,170)}</svg>`;
 }
 
 /* The source-filter model of LPC at 8 kHz: a pulse train at 125 Hz through
@@ -17990,7 +18074,9 @@ const CH_D = 0.4, chQ = s => Math.max(0, Math.min(7, Math.floor((s+1.6)/CH_D)));
 function figChain(v){
   P.hOverride = null;
   const f = frameOf(v, 4), u = k => clamp01(f-k);
-  const bw = 120, bh = 50, y0 = 26, xs = [22, 170, 318, 466], names = ['Lowpass filter','Sampler','Quantizer','Encoder'];
+  /* in lecture mode the boxes widen to hold their grown names */
+  const big = P.labelScale()>1, bw = big ? 132 : 120, bh = 50, y0 = 26,
+    xs = big ? [6, 158, 310, 462] : [22, 170, 318, 466], names = ['Lowpass filter','Sampler','Quantizer','Encoder'];
   const it = [];
   names.forEach((nm,i)=>{ it.push({t:'box', x:xs[i], y:y0, w:bw, h:bh, label:nm, fs:15});
     if(i<3) it.push({t:'arrow', x1:xs[i]+bw, y1:y0+bh/2, x2:xs[i+1], y2:y0+bh/2}); });
@@ -18060,7 +18146,9 @@ function figOpenStems(){
    k of the sixteen steps of 0.25 on [-2, 2) is written k in binary, one digit
    to a row. The columns follow the stems above, one sample to a column. */
 function figOpenBits(){
-  const a = P.Axes({w:520,h:98,xr:[0,10],yr:[0,4],grid:false,zeroAxes:false,
+  /* each of the four rows is at least as tall as a digit's box, also when the
+     axis name above them grows in lecture mode */
+  const a = P.Axes({w:520,h:P.labelScale()>1?110:102,xr:[0,10],yr:[0,4],grid:false,zeroAxes:false,
     xlabel:'', ylabel:'\\text{4-bit code}', chrome:NAVY, pad:{l:46,r:30,t:10,b:4},
     xtickfmt:()=>'', ytickfmt:()=>''});
   const rh=a.sy(0)-a.sy(1);
@@ -19730,10 +19818,15 @@ const OPEN_W = noiseFn(20260925, 0.05, 0.55, -1, 11);
 const openY = k => { let s = 0; const N = 200;
   for(let i=0;i<N;i++){ const t = k+(i+0.5)/N; s += openS(t)+OPEN_W(t); } return s/N; };
 function figOpenTx(){
-  const a = P.Axes({w:520,h:130,xr:[0,10],yr:[-1.6,1.6],grid:false,
-    xlabel:'t/T_b', ylabel:'s(t)', chrome:NAVY, pad:{l:46,r:30,t:22,b:34}, xstep:2, ytarget:3});
+  /* in projector mode the bit labels grow: the panel gains height and the
+     labels sit a fixed number of pixels above the pulse top */
+  const big = P.labelScale()>1;
+  const a = P.Axes({w:520,h:big?156:130,xr:[0,10],yr:[-1.6,big?2.3:1.6],grid:false,
+    xlabel:'t/T_b', ylabel:'s(t)', chrome:NAVY, pad:{l:46,r:30,t:22,b:34}, xstep:2, ytarget:3,
+    ...(big ? {yticksOverride:[-1,0,1]} : {})});
   a.curve(openS, {color:T_CY, width:2.4, n:2000, anim:{delay:0, sweep:'#D9F3F7'}});
-  OPEN_B.forEach((b,k)=>a.note(k+0.5, 1.32, String(b), {fs:14, color:'#9EACB9', anchor:'middle'}));
+  const yb = big ? 1 + 9*P.labelScale()/(a.sy(0)-a.sy(1)) : 1.32;
+  OPEN_B.forEach((b,k)=>a.note(k+0.5, yb, String(b), {fs:14, color:'#9EACB9', anchor:'middle'}));
   return a.svg();
 }
 function figOpenRx(){
@@ -19988,7 +20081,8 @@ function figNoisePower(v){
 const schwarzRatio = b => 2*b/(1+b*b);
 function figSchwarz(v){
   const b = v && v.b!=null ? v.b : 1;
-  const a = P.Axes(SZ({xr:[-3.2,3.2], yr:[-0.08,1.3], xlabel:'f', ylabel:'|G(f)|,\\;|H(f)|',
+  const L = P.labelScale(), big = L>1, top = big ? 1.5 : 1.3;
+  const a = P.Axes(SZ({xr:[-3.2,3.2], yr:[-0.08,top], xlabel:'f', ylabel:'|G(f)|,\\;|H(f)|',
     xtarget:6, ytarget:3, ytickfmt:()=>''}));
   const G = f => Math.exp(-f*f), H = f => Math.exp(-f*f/(b*b));
   const cut = b < 1;
@@ -19999,8 +20093,9 @@ function figSchwarz(v){
   const r = schwarzRatio(b), ok = Math.abs(b-1) < 0.07;
   const verdict = ok ? '\\text{matched: best possible}'
     : cut ? '\\text{too narrow: pulse cut}' : '\\text{too wide: extra noise}';
-  a.note(-3.05, 1.2, verdict, {tex:true, fs:17, color:ok ? C.mid : (cut ? C.coral : C.muted)});
-  a.note(-3.05, 1.06, `${Math.round(r*100)}\\%\\ \\text{of the best SNR}`, {tex:true, fs:16, color:C.mid});
+  const u = 1/(a.sy(0)-a.sy(1)), y1 = big ? top-18*L*u : 1.2, y2 = big ? y1-23*L*u : 1.06;
+  a.note(-3.05, y1, verdict, {tex:true, fs:17, color:ok ? C.mid : (cut ? C.coral : C.muted)});
+  a.note(-3.05, y2, `${Math.round(r*100)}\\%\\ \\text{of the best SNR}`, {tex:true, fs:16, color:C.mid});
   return a.svg();
 }
 
@@ -20118,7 +20213,8 @@ function figEqualOutputs(){
    the picture only changes its vertical size, and eta stays 25. */
 function figGain(v){
   const k = v && v.k!=null ? v.k : 1, F = FP_FILTERS[2];
-  const a = P.Axes(SZ({xr:[-0.2,2.3], yr:[-1.2,4.9], xlabel:'t/T', ylabel:'y(t)',
+  const L = P.labelScale(), big = L>1, top = big ? 5.6 : 4.9;
+  const a = P.Axes(SZ({xr:[-0.2,2.3], yr:[-1.2,top], xlabel:'t/T', ylabel:'y(t)',
     xticksOverride:[0,1,2], yticksOverride:[-1,0,1,2,3]}));
   const pts = [], N = 250;
   for(let i=0;i<=N;i++){ const t = -0.2+2.5*i/N; pts.push([a.sx(t), a.sy(k*(F.sig(t)+F.sd))]); }
@@ -20128,9 +20224,11 @@ function figGain(v){
   a.curve(t=>k*F.sig(t), {color:C.mid, width:2.6, n:600});
   a.vline(1, {color:C.muted});
   a.point(1, k, {color:C.mid, r:5});
-  a.note(2.26, 4.45, `g_0(T)=kE=${k.toFixed(2)}`, {tex:true, fs:15, color:C.mid, anchor:'end'});
-  a.note(2.26, 3.9, `\\sqrt{E[n^{2}]}=0.20k=${(0.2*k).toFixed(2)}`, {tex:true, fs:15, color:C.muted, anchor:'end'});
-  a.note(2.26, 3.25, `\\eta=\\frac{(${k.toFixed(2)})^{2}}{(${(0.2*k).toFixed(2)})^{2}}=25`, {tex:true, fs:15, color:C.mid, anchor:'end'});
+  const u = 1/(a.sy(0)-a.sy(1)), y1 = big ? top-16*L*u : 4.45, y2 = big ? y1-28*L*u : 3.9,
+        y3 = big ? y2-34*L*u : 3.25;
+  a.note(2.26, y1, `g_0(T)=kE=${k.toFixed(2)}`, {tex:true, fs:15, color:C.mid, anchor:'end'});
+  a.note(2.26, y2, `\\sqrt{E[n^{2}]}=0.20k=${(0.2*k).toFixed(2)}`, {tex:true, fs:15, color:C.muted, anchor:'end'});
+  a.note(2.26, y3, `\\eta=\\frac{(${k.toFixed(2)})^{2}}{(${(0.2*k).toFixed(2)})^{2}}=25`, {tex:true, fs:15, color:C.mid, anchor:'end'});
   return a.svg();
 }
 
@@ -20221,7 +20319,10 @@ function figTiming(v){
   a.vline(t0, {color:C.ink, dash:'6 4', width:1.6, opacity:1});
   a.point(t0, mfSig(t0), {color:C.mid, r:5});
   b.curve(t=>Math.pow(Math.max(0, 1-Math.abs(t-1)), 2), {color:C.mid, width:2.6, n:500});
-  b.vline(t0, {color:C.ink, dash:'6 4', width:1.6, opacity:1});
+  /* in projector mode the line stops under the enlarged eta readout */
+  if(big){ const L = P.labelScale(), yt = 1.2-18*L/(b.sy(0)-b.sy(1));
+    b.raw(`<line x1="${b.sx(t0).toFixed(2)}" y1="${b.sy(yt).toFixed(2)}" x2="${b.sx(t0).toFixed(2)}" y2="${b.sy(-0.1).toFixed(2)}" stroke="${C.ink}" stroke-width="${(1.6*(1+(L-1)*0.75)).toFixed(2)}" stroke-dasharray="6 4"/>`); }
+  else b.vline(t0, {color:C.ink, dash:'6 4', width:1.6, opacity:1});
   b.point(t0, r, {color:C.mid, r:5});
   const db = r > 1e-3 ? `\\;(${(10*Math.log10(r)).toFixed(2)}\\ \\text{dB})` : '';
   b.note(2.16, 1.2, etaNote(r) + db, {tex:true, fs:15, color:C.mid, anchor:'end'});
@@ -20325,7 +20426,9 @@ function figAntipodal(v){
   a.poly(rectPts(1), {color:C.h, width:2.2});
   if(f > 1.01) fade(a, 0.4, ()=>a.poly(rectPts(A), {color:C.in, width:2.2}));
   fade(a, clamp01(f), ()=>a.poly(rectPts(c), {color:C.in, width:2.6, dash:c < 0 ? '8 5' : null}));
-  a.note(0.5, 0.55, '\\psi(t)', {tex:true, fs:16, color:C.h, anchor:'middle'});
+  /* in projector mode the label is centred between the axis and the top of psi */
+  const L = P.labelScale(), yp = L>1 ? 0.5-4*L/(a.sy(0)-a.sy(1)) : 0.55;
+  a.note(0.5, yp, '\\psi(t)', {tex:true, fs:16, color:C.h, anchor:'middle'});
   fade(a, f < 1.5 ? near(f, 1) : 0.4, ()=>a.note(0.5, A+0.3, 's_1(t)=+A\\sqrt{T_b}\\,\\psi(t)=+A', {tex:true, fs:15, color:C.in, anchor:'middle'}));
   fade(a, near(f, 2), ()=>a.note(0.5, -A-0.4, 's_0(t)=-A\\sqrt{T_b}\\,\\psi(t)=-A', {tex:true, fs:15, color:C.in, anchor:'middle'}));
   return a.svg();
@@ -20619,7 +20722,8 @@ const trY0 = t => { const p = TR.rect.y0, x = t/0.02, j = Math.max(0, Math.min(p
   return (1-f)*p[j][1] + f*p[j+1][1]; };
 function figDemodTiming(v){
   const e = v && v.e!=null ? v.e : 0.25;
-  const a = P.Axes(SZ({xr:[-0.3,10.8], yr:[-1.6,2.4], xlabel:'t/T_b', ylabel:'y_0(t)',
+  const L = P.labelScale(), big = L>1;
+  const a = P.Axes(SZ({xr:[-0.3,10.8], yr:[big?-1.9:-1.6,2.4], xlabel:'t/T_b', ylabel:'y_0(t)',
     xticksOverride:[0,2,4,6,8,10], yticksOverride:[-1,0,1]}));
   a.hline(0, {color:C.muted, dash:'5 4'});
   a.poly(TR.rect.y0, {color:C.mid, width:2.4});
@@ -20628,7 +20732,8 @@ function figDemodTiming(v){
     a.poly([[k,-1.08],[k,1.45]], {color:C.muted, width:1, dash:'3 4'});
     a.point(t, y, {color:C.mid, r:5});
     a.note(k-0.5, 2.05, String(TR_B[k-1]), {tex:true, fs:15, color:C.in, anchor:'middle'}); }
-  a.note(0.1, -1.35, `\\min_k s_k\\,y_0(kT_b+\\epsilon)=${mn.toFixed(2)}`, {tex:true, fs:15, color:C.mid});
+  /* in projector mode the readout keeps a fixed pixel gap under the troughs */
+  a.note(0.1, big ? -1-26*L/(a.sy(0)-a.sy(1)) : -1.35, `\\min_k s_k\\,y_0(kT_b+\\epsilon)=${mn.toFixed(2)}`, {tex:true, fs:15, color:C.mid});
   return a.svg();
 }
 
@@ -20678,7 +20783,8 @@ function figNoiseHist(v){
     a.raw(`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${(a.sy(0)-y).toFixed(1)}" fill="${C.dec.mid}" stroke="${C.mid}" stroke-width="1.1"/>`); });
   a.curve(y=>dens(y-O, 0, s), {color:C.mid, width:2.6, n:500});
   a.note(1.1, 1.95, `\\text{measured }\\sigma=${(s*NH.sd).toFixed(3)}`, {tex:true, fs:15, color:C.mid});
-  a.note(1.1, 1.7, `\\sqrt{N_0/2}=${s.toFixed(3)}`, {tex:true, fs:15, color:C.ink});
+  const L = P.labelScale(), y2 = L>1 ? 1.95-27*L/(a.sy(0)-a.sy(1)) : 1.7;
+  a.note(1.1, y2, `\\sqrt{N_0/2}=${s.toFixed(3)}`, {tex:true, fs:15, color:C.ink});
   return a.svg();
 }
 
@@ -20694,12 +20800,14 @@ function figPpm(v){
   P.hOverride = null;
   const f = frameOf(v, 0), o1 = clamp01(f), o2 = clamp01(f-1), o3 = clamp01(f-2), r = Math.SQRT2;
   const big = P.labelScale() > 1, hA = big ? 230 : 170, hB = big ? 330 : 270;
-  const a = P.Axes({w:560,h:hA,xr:[-0.3,1.3],yr:[-0.3,2.6],xlabel:'t/T_b',ylabel:'s_m(t),\\;\\psi_m(t)',
+  const a = P.Axes({w:560,h:hA,xr:[-0.3,1.3],yr:[-0.3,big?3.0:2.6],xlabel:'t/T_b',ylabel:'s_m(t),\\;\\psi_m(t)',
     pad:{l:56,r:26,t:24,b:40},xticksOverride:[0,0.5,1],yticksOverride:[]});
   const sq = (x0, x1, h) => [[-0.3,0],[x0,0],[x0,h],[x1,h],[x1,0],[1.3,0]];
+  /* the pulse names sit a fixed number of pixels above the pulse tops */
+  const ys = big ? 2+8*P.labelScale()/(a.sy(0)-a.sy(1)) : 2.25;
   fade(a, 1-0.6*o1, ()=>{ a.poly(sq(0,0.5,2), {color:C.in, width:2.4}); a.poly(sq(0.5,1,2), {color:C.in, width:2.4, dash:'8 5'});
-    a.note(0.25, 2.25, 's_1(t)', {tex:true, fs:15, color:C.in, anchor:'middle'});
-    a.note(0.75, 2.25, 's_2(t)', {tex:true, fs:15, color:C.in, anchor:'middle'}); });
+    a.note(0.25, ys, 's_1(t)', {tex:true, fs:15, color:C.in, anchor:'middle'});
+    a.note(0.75, ys, 's_2(t)', {tex:true, fs:15, color:C.in, anchor:'middle'}); });
   fade(a, o1, ()=>{ a.poly(sq(0,0.5,r), {color:C.h, width:2.2}); a.poly(sq(0.5,1,r), {color:C.h, width:2.2, dash:'7 5'});
     a.note(1.05, r, '\\psi_1,\\ \\psi_2', {tex:true, fs:15, color:C.h}); });
   const b = P.Axes({w:560,h:hB,xr:[-0.9,2.6],yr:[-0.7,2.1],xlabel:'y_1',ylabel:'y_2',
@@ -20741,15 +20849,17 @@ function figStat(){
 }
 function figErrors(v){
   const {A,s} = DS, top = dens(0,0,s), lam = v && v.lam!=null ? v.lam : 0;
-  const a = densFrame({yr:[-0.06*top,1.42*top], ylabel:'f_Y(y\\mid s_m)'});
+  const L = P.labelScale(), big = L>1, yt = (big ? 1.6 : 1.42)*top;
+  const a = densFrame({yr:[-0.06*top,yt], ylabel:'f_Y(y\\mid s_m)'});
   a.area(y=>dens(y,-A,s), lam, 3, {color:C.dec.err});
   a.area(y=>dens(y, A,s), -3, lam, {color:C.dec.err});
   a.curve(y=>dens(y,-A,s), {color:C.mid, width:2.4, dash:'8 5'});
   a.curve(y=>dens(y, A,s), {color:C.mid, width:2.4});
   a.vline(lam, {color:C.ink, dash:'6 4', width:1.6, opacity:1});
   markMeans(a, 0.1*top);
-  a.note(-2.9, 1.3*top, `P(\\text{err}\\mid s_0)=${sci(Qf((lam+A)/s))}`, {tex:true, fs:15, color:C.err});
-  a.note(-2.9, 1.14*top, `P(\\text{err}\\mid s_1)=${sci(Qf((A-lam)/s))}`, {tex:true, fs:15, color:C.err});
+  const u = 1/(a.sy(0)-a.sy(1)), y1 = big ? yt-18*L*u : 1.3*top, y2 = big ? y1-24*L*u : 1.14*top;
+  a.note(-2.9, y1, `P(\\text{err}\\mid s_0)=${sci(Qf((lam+A)/s))}`, {tex:true, fs:15, color:C.err});
+  a.note(-2.9, y2, `P(\\text{err}\\mid s_1)=${sci(Qf((A-lam)/s))}`, {tex:true, fs:15, color:C.err});
   return a.svg();
 }
 /* The optimal threshold for P(s_0) = 0.7: where the two weighted densities
@@ -20806,8 +20916,8 @@ function figPe(v){
   if(dB!=null){ const p = pbDb(dB);
     a.vline(dB, {color:C.muted});
     a.point(dB, Math.log10(p), {color:C.in, r:5.5});
-    const hi = dB >= 9;
-    a.note(hi ? dB-0.35 : dB+0.35, Math.log10(p)+(hi ? -0.7 : 0.5), `P_b=${sci(p)}`, {tex:true, fs:16, color:C.in, anchor:hi ? 'end' : 'start'}); }
+    const hi = dB >= 9, L = P.labelScale(), dn = L>1 ? 28*L/(a.sy(0)-a.sy(1)) : 0.7;
+    a.note(hi ? dB-0.35 : dB+0.35, Math.log10(p)+(hi ? -dn : 0.5), `P_b=${sci(p)}`, {tex:true, fs:16, color:C.in, anchor:hi ? 'end' : 'start'}); }
   return a.svg();
 }
 
@@ -20895,7 +21005,9 @@ function figIsiTerm(){
   a.point(4, y(4), {color:C.mid, r:5});
   a.note(3.1, 1.25, `y=${y(4).toFixed(3)}`, {tex:true, fs:15, color:C.mid});
   const cont = [0,1,2,3,4].map(m=>[m, (m===0?1:-1)*(1-q)*Math.pow(q,m)]);
-  const b = P.Axes({w:560,h:220,xr:[-0.5,5],yr:[-0.35,1.0],xlabel:'m\\;(\\text{bits back})',ylabel:'\\text{share of the sample}',
+  /* in projector mode the panel reaches higher, so the 1-q label stays
+     clear of the axis name above it */
+  const b = P.Axes({w:560,h:220,xr:[-0.5,5],yr:[-0.35,P.labelScale()>1?1.35:1.0],xlabel:'m\\;(\\text{bits back})',ylabel:'\\text{share of the sample}',
     pad:{l:56,r:26,t:24,b:42},xticksOverride:[0,1,2,3,4],ytarget:3});
   b.stem([cont[0]], {color:C.mid});
   b.stem(cont.slice(1), {color:C.err});
@@ -21046,7 +21158,7 @@ function figRcPulse(v){
 /* Worked example: R_b = 20 kb/s, so W = 10 kHz. The given trace is the ideal
    rectangle; the answer is the raised cosine with alpha = 0.5. */
 function figExRc(){
-  const a = P.Axes(SZ({xr:[-22,22], yr:[-0.12,1.35], xlabel:'f\\;(\\text{kHz})', ylabel:'2W\\,P(f)',
+  const a = P.Axes(SZ({xr:[-22,22], yr:[-0.12,P.labelScale()>1?1.5:1.35], xlabel:'f\\;(\\text{kHz})', ylabel:'2W\\,P(f)',
     xticksOverride:[-20,-15,-10,-5,0,5,10,15,20], ytarget:3}));
   a.raw(`<rect class="sk-area" x="${a.x0}" y="${a.y1}" width="${a.x1-a.x0}" height="${a.y0-a.y1}" fill="none"/>`);
   a.poly([[-22,0],[-10,0],[-10,1],[10,1],[10,0],[22,0]], {color:C.ink, width:1.6, dash:'6 5'});
@@ -21220,11 +21332,14 @@ const REAL_DECISION = realGallery({ id:'m2-real-decision', nav:'Error rates arou
   objective:'Relate the error probability to link targets, rare events and measured error counts.',
   keywords:'examples bit error rate target ethernet 1e-10 q function table rare event sensor prior threshold error counter poisson',
   figs:[
-    [()=>{ const a=P.Axes(EXO({xr:[0,16],yr:[-12,-0.02],xlabel:'E_b/N_0\\;(\\mathrm{dB})',ylabel:'P_b',ytickfmt:P.decade,
+    [()=>{ const L=P.labelScale(), big=L>1;
+      /* in projector mode the panel is taller and reaches lower, so the 13.1 dB
+         label fits under the target line */
+      const a=P.Axes(EXO({h:big?290:250,xr:[0,16],yr:[big?-13:-12,-0.02],xlabel:'E_b/N_0\\;(\\mathrm{dB})',ylabel:'P_b',ytickfmt:P.decade,
         yticksOverride:[-12,-9,-6,-3],zeroAxes:false,pad:{l:64,r:26,t:24,b:44},xtarget:5}));
       a.curve(d=>{ const p=pbDb(d); return p>1.5e-12 ? Math.log10(p) : NaN; },{color:C.in,width:2.2});
       a.hline(-10,{color:C.muted}); a.point(13.06,-10,{color:C.in,r:4.5});
-      a.note(12.6,-11.3,'13.1\\ \\mathrm{dB}',{tex:true,fs:14,color:C.in,anchor:'end'});
+      a.note(12.6,big ? -11.5-5*L/(a.sy(0)-a.sy(1)) : -11.3,'13.1\\ \\mathrm{dB}',{tex:true,fs:14,color:C.in,anchor:'end'});
       return a.svg(); }, 'Wired Ethernet asks for $P_b<10^{-10}$. Polar signalling reaches it at $E_b/N_0=13.1$ dB, where $\\sqrt{2E_b/N_0}=6.36$.'],
     [()=>{ const p0 = 0.9, s = 0.5, lo = lamOpt(0.5,1,p0), a=P.Axes(EXO({xr:[-2.5,2.5],yr:[-0.04,0.8],xlabel:'y',ylabel:'P(s_m)\\,f_Y(y\\mid s_m)',xticksOverride:[-2,-1,0,1,2],ytickfmt:()=>'',ytarget:3}));
       a.curve(y=>p0*dens(y,-1,s),{color:C.mid,width:2.2,dash:'7 5'});
@@ -21304,7 +21419,9 @@ const REAL_NYQUIST = realGallery({ id:'m2-real-nyquist', nav:'Pulse shaping arou
       a.curve(e=>tmIsi(e,0),{color:C.err,width:2.2,dash:'7 5',n:200});
       a.curve(e=>tmIsi(e,0.5),{color:C.err,width:2.2,n:200});
       a.note(0.15,1.5,'\\alpha=0',{tex:true,fs:14,color:C.err,anchor:'end'});
-      a.note(0.3,0.2,'\\alpha=0.5',{tex:true,fs:14,color:C.err,anchor:'end'});
+      /* in projector mode the label grows into the solid curve; it sits above it instead */
+      const L=P.labelScale(), ya=L>1 ? tmIsi(0.3,0.5)+10*L/(a.sy(0)-a.sy(1)) : 0.2;
+      a.note(0.3,ya,'\\alpha=0.5',{tex:true,fs:14,color:C.err,anchor:'end'});
       return a.svg(); }, 'Interference collected by a sample taken $\\epsilon$ late, summed over $1\\le|k|\\le30$. The raised cosine with $\\alpha=0.5$ collects far less than the sinc pulse.']
   ],
   notes:[
@@ -23169,9 +23286,10 @@ function figEnergy(v){
   seg(a, [p1,p2], {color:C.mid, width:2.6});
   a.point(p1[0],p1[1],{color:C.in,r:6.5}); a.point(p2[0],p2[1],{color:C.in,r:6.5});
   const out = (p,k) => [p[0]*(1+k/r), p[1]*(1+k/r)];
-  const l1 = out(p1,0.3), l2 = out(p2,0.3);
-  a.note(l1[0], l1[1]-0.08, '\\mathbf{s}_1', {tex:true, fs:15, color:C.in, anchor:'middle'});
-  a.note(l2[0], l2[1]-0.08, '\\mathbf{s}_2', {tex:true, fs:15, color:C.in, anchor:'middle'});
+  /* the gap between a point and its name grows with the label scale */
+  const L = P.labelScale(), l1 = out(p1,0.3*L), l2 = out(p2,0.3*L);
+  a.note(l1[0], l1[1]-0.08*L, '\\mathbf{s}_1', {tex:true, fs:15, color:C.in, anchor:'middle'});
+  a.note(l2[0], l2[1]-0.08*L, '\\mathbf{s}_2', {tex:true, fs:15, color:C.in, anchor:'middle'});
   const m = [(p1[0]+p2[0])/2, (p1[1]+p2[1])/2], mm = Math.hypot(m[0],m[1]);
   const dd = Math.hypot(p1[0]-p2[0], p1[1]-p2[1]);
   /* the distance label sits outside the circle, beyond the middle of the chord */
@@ -23343,9 +23461,12 @@ function figExGsB(v){
   const az = (v ? v.az : 30)*Math.PI/180, el = 22*Math.PI/180;
   const pr = (x,y,z) => [x*Math.cos(az) - y*Math.sin(az), z*Math.cos(el) + (x*Math.sin(az) + y*Math.cos(az))*Math.sin(el)];
   const a = plane(bare({need:[[-2.2,2.3],[-1.2,2.0]], xlabel:'', ylabel:''}));
+  /* the gap from an arrow tip to its name grows with the label scale */
+  const ls = P.labelScale();
   const ax = (p, q, name, lp) => { const P0 = pr(...p), P1 = pr(...q);
     arrow(a, P0[0],P0[1],P1[0],P1[1], {color:C.muted, width:1.6, head:0.8});
-    const L = pr(...lp); a.note(L[0], L[1]-0.06, name, {tex:true, fs:16, color:C.ink, anchor:'middle'}); };
+    const L0 = pr(...lp), L = [P1[0]+(L0[0]-P1[0])*ls, P1[1]+(L0[1]-P1[1])*ls];
+    a.note(L[0], L[1]-0.06*ls, name, {tex:true, fs:16, color:C.ink, anchor:'middle'}); };
   ax([0,0,0],[2.0,0,0],'\\psi_1',[2.22,0,0]);
   ax([0,-1.9,0],[0,1.9,0],'\\psi_2',[0,2.15,0]);
   ax([0,0,0],[0,0,1.55],'\\psi_3',[0,0,1.78]);
@@ -23383,21 +23504,24 @@ function figChain(v){
   const ax = (h, yr, yl, last, yt) => TAx({w:560,h,xr:[-0.1,2.3],yr,ynameAtAxis:true,xlabel:last?'t':'',ylabel:yl,
     pad:{l:56,r:26,t:24,b:last?36:12},xt:last?[0,1,2]:null,yticksOverride:yt});
   /* the basis is drawn over the waveform it will take apart */
-  const a = ax(130, [-1.2,1.9], 's(t),\\;\\psi_1,\\;\\psi_2', false, [-1,0,1]);
+  /* the panels are set taller in the projected view, where the larger names
+     and tick rows would otherwise leave the data areas no room */
+  const big = P.labelScale() > 1, H = big ? [150, 205, 250] : [130, 158, 160];
+  const a = ax(H[0], [-1.2,1.9], 's(t),\\;\\psi_1,\\;\\psi_2', false, [-1,0,1]);
   if(op(1) > 0.02){ seg(a, outline(HALF1,-0.1,2.3), {color:C.h, width:2.0, opacity:op(1)});
     seg(a, outline(HALF2,-0.1,2.3), {color:C.h, width:2.0, dash:'7 5', opacity:op(1)}); }
   a.poly(outline(CH_S,-0.1,2.3), {color:C.in, width:2.4});
-  const c = ax(158, [-1.2,1.9], 'c_1(t),\\;c_2(t)', true, [-1,0,1]);
+  const c = ax(H[1], [-1.2,1.9], 'c_1(t),\\;c_2(t)', true, [-1,0,1]);
   if(op(2) > 0.02){
     const c1 = t => t<0 ? 0 : 1.5*Math.min(t,1), c2 = t => t<1 ? 0 : -0.8*Math.min(t-1,1);
     seg(c, Array.from({length:121},(_,i)=>{ const t=-0.1+2.4*i/120; return [t, c1(t)]; }), {color:C.mid, width:2.4, opacity:op(2)});
     seg(c, Array.from({length:121},(_,i)=>{ const t=-0.1+2.4*i/120; return [t, c2(t)]; }), {color:C.mid, width:2.4, dash:'7 5', opacity:op(2)});
     if(op(2) > 0.5){ dot(c, 2, 1.5, {color:C.mid, r:5}); dot(c, 2, -0.8, {color:C.mid, r:5}); } }
-  const d = plane({h:160, need:[[-2,2],[-1.25,1.25]], xticksOverride:[-1,1], yticksOverride:[-1,1]});
+  const d = plane({h:H[2], need:[[-2,2],[-1.25,1.25]], xticksOverride:[-1,1], yticksOverride:[-1,1]});
   if(op(3) > 0.02){ seg(d, [[1.5,0],[1.5,-0.8],[0,-0.8]], {dash:'4 5', opacity:op(3)});
     dot(d, 1.5, -0.8, {r:6.5, opacity:op(3)});
     if(op(3) > 0.5) d.note(1.8, -0.58, '\\mathbf{s}=(1.5,\\,-0.8)', {tex:true, fs:15, color:C.in}); }
-  return stack(560, [[a.svg(),130],[c.svg(),158],[d.svg(),160]]);
+  return stack(560, [[a.svg(),H[0]],[c.svg(),H[1]],[d.svg(),H[2]]]);
 }
 
 /* Small sketches for the summary cards, in the dark-page signal tints. */
@@ -23437,6 +23561,14 @@ function realGallery(cfg){
     ], right:cfg.notes.map((n,i)=>i ? {t:'reveal', at:i, items:[n]} : n)}
   ]};
 }
+/* A gallery time axis. In the projected view its tick row, set under the data
+   area, grows down to where the axis name sits, so there the name is set one
+   row lower, under the tick numbers, and the figure keeps room for it. */
+const galT = o => { const L = P.labelScale();
+  if(L <= 1) return TAx(EXO(o));
+  const a = TAx(EXO(Object.assign({}, o, {xlabel:'', pad:{l:60,r:26,t:24,b:40+30*L}})));
+  a.note(o.xr[1], o.yr[0], o.xlabel, {tex:true, fs:16.5, color:C.ink, anchor:'end', dx:8, dy:47*L});
+  return a; };
 const galPlane = need => plane({w:520, h:250, pad:{l:60,r:26,t:24,b:40}, need, xticksOverride:[], yticksOverride:[]});
 
 /* 3.1. Two Walsh codes of IS-95 (8 of their 64 chips, 1.2288 Mchip/s), two
@@ -23448,23 +23580,23 @@ const REAL_VECTORS = realGallery({ id:'m3-real-vectors', nav:'Orthogonal signals
   objective:'Recognise orthogonal signal sets in mobile phones, Wi-Fi, image coding and data tapes.',
   keywords:'examples walsh codes cdma is-95 ofdm subcarriers wifi 312.5 khz dct jpeg basis kansas city standard fsk tones orthogonal',
   figs:[
-    [()=>{ const a=TAx(EXO({xt:[0,2,4,6],xr:[-0.2,7.0],yr:[-1.6,1.6],xlabel:'t\\;(\\mu\\text{s})',ylabel:'w_2(t)\\,w_5(t)',
-        xticksOverride:[],yticksOverride:[-1,0,1]}));
+    [()=>{ const a=galT({xt:[0,2,4,6],xr:[-0.2,7.0],yr:[-1.6,1.6],xlabel:'t\\;(\\mu\\text{s})',ylabel:'w_2(t)\\,w_5(t)',
+        xticksOverride:[],yticksOverride:[-1,0,1]});
       const segs = W2.map((c,n)=>[n*TC,(n+1)*TC,c*W5[n]]);
       shade(a, pwc(segs), 0, 8*TC, C.mid, 0.2);
       a.poly(outline(segs,-0.2,7.0), {color:C.mid, width:2.2});
       return a.svg(); }, 'IS-95 phones share one band, each call with its own Walsh code at $1.2288$ Mchip/s. Two codes multiply to $+1$ on four chips and $-1$ on four, so $\\sum_n w_2[n]\\,w_5[n]=0$.'],
-    [()=>{ const T = 3.2, df = 1/T, a=TAx(EXO({xt:[0,1,2,3],xr:[-0.1,3.4],yr:[-1.4,1.4],xlabel:'t\\;(\\mu\\text{s})',ylabel:'x_k(t)',
-        xticksOverride:[0,1,2,3],yticksOverride:[-1,0,1]}));
+    [()=>{ const T = 3.2, df = 1/T, a=galT({xt:[0,1,2,3],xr:[-0.1,3.4],yr:[-1.4,1.4],xlabel:'t\\;(\\mu\\text{s})',ylabel:'x_k(t)',
+        xticksOverride:[0,1,2,3],yticksOverride:[-1,0,1]});
       a.curve(t=>t>=0&&t<=T?Math.cos(2*Math.PI*3*df*t):0, {color:C.in, width:2.2, n:700});
       a.curve(t=>t>=0&&t<=T?Math.cos(2*Math.PI*4*df*t):0, {color:C.in, width:1.8, n:700, dash:'6 4'});
       return a.svg(); }, 'Wi-Fi spaces its subcarriers $\\Delta f=312.5$ kHz apart. Over one symbol of $T=1/\\Delta f=3.2\\ \\mu$s, $\\cos(2\\pi k\\Delta f t)$ for $k=3$ and $k=4$ are orthogonal.'],
-    [()=>{ const a=TAx(EXO({xt:[0,1,2,3,4,5,6,7],xr:[-0.6,8.8],yr:[-0.62,0.62],xlabel:'n\\;(\\text{pixel})',ylabel:'c_2[n]',
-        xticksOverride:[0,1,2,3,4,5,6,7],yticksOverride:[-0.5,0,0.5]}));
+    [()=>{ const a=galT({xt:[0,1,2,3,4,5,6,7],xr:[-0.6,8.8],yr:[-0.62,0.62],xlabel:'n\\;(\\text{pixel})',ylabel:'c_2[n]',
+        xticksOverride:[0,1,2,3,4,5,6,7],yticksOverride:[-0.5,0,0.5]});
       a.stem(Array.from({length:8},(_,n)=>[n, 0.5*Math.cos(Math.PI*(2*n+1)*2/16)]), {color:C.h});
       return a.svg(); }, 'JPEG writes each row of $8$ pixels against the DCT basis $c_k[n]=\\tfrac12\\cos\\bigl(\\pi(2n+1)k/16\\bigr)$, $k\\ge1$. Here $k=2$. The basis is orthonormal, so a row\'s energy is the sum of its squared coefficients.'],
-    [()=>{ const T = 1000/300, a=TAx(EXO({xt:[0,1,2,3],xr:[-0.1,3.6],yr:[-1.4,1.4],xlabel:'t\\;(\\text{ms})',ylabel:'s_0(t),\\;s_1(t)',
-        xticksOverride:[0,1,2,3],yticksOverride:[-1,0,1]}));
+    [()=>{ const T = 1000/300, a=galT({xt:[0,1,2,3],xr:[-0.1,3.6],yr:[-1.4,1.4],xlabel:'t\\;(\\text{ms})',ylabel:'s_0(t),\\;s_1(t)',
+        xticksOverride:[0,1,2,3],yticksOverride:[-1,0,1]});
       a.curve(t=>t>=0&&t<=T?Math.cos(2*Math.PI*1.2*t):0, {color:C.in, width:2.2, n:900});
       a.curve(t=>t>=0&&t<=T?Math.cos(2*Math.PI*2.4*t):0, {color:C.in, width:1.6, n:900, dash:'6 4'});
       return a.svg(); }, 'The Kansas City standard stored bits on cassette tape at $300$ baud: $4$ cycles of $1200$ Hz for a $0$, $8$ cycles of $2400$ Hz for a $1$. Whole cycles in $T=3.33$ ms make the tones orthogonal.']
@@ -24319,7 +24451,24 @@ function bottomTicks(a, vals, fmt){
     a.raw(`<text x="${X}" y="${f2(a.y0+19*L)}" font-size="${13.5*L}" fill="${C.muted}" text-anchor="middle">${f(v)}</text>`); });
   return a;
 }
-const TAx = o => { const xt = o.xt; const a = P.Axes(Object.assign({}, o, {xticksOverride:[]})); return xt ? bottomTicks(a, xt, o.xfmt) : a; };
+/* With zero inside the value range, the axis name sits one name-height under
+   the axis, which is the row these tick numbers take. In projector mode both
+   are larger and meet, so a figure that asks for it (dropName) sets the name
+   D below the axis there, under the tick row: the lower margin is made exactly
+   what that name needs, and the drop, which Axes measures from the zero line,
+   is solved for that margin. */
+const TAx = o => {
+  const xt = o.xt, L = P.labelScale(), ya = o.yr[0], yb = o.yr[1];
+  const opt = Object.assign({}, o, {xticksOverride:[]});
+  if(o.dropName && xt && L > 1 && o.xlabel && ya <= 0 && yb >= 0){
+    const t = P.Axes(opt);                 /* the drawn height and top margin */
+    const NB = (o.emphasis ? (t.W < 500 ? 24 : 26) : 21)*L;
+    const D = 41*L + 4, Pb = Math.max((o.pad||{}).b || 40, D + 0.42*NB + 1), f = -ya/(yb - ya);
+    opt.pad = Object.assign({}, o.pad||{}, {b:Pb});
+    opt.xnameDrop = D + f*(t.H - t.y1 - Pb);
+  }
+  const a = P.Axes(opt);
+  return xt ? bottomTicks(a, xt, o.xfmt) : a; };
 /* A blank drawing canvas in data coordinates: no ticks, no grid, no axes. */
 const bare = o => Object.assign({xticksOverride:[], yticksOverride:[], grid:false, zeroAxes:false, arrows:false}, o);
 
@@ -24491,7 +24640,7 @@ function figObserve(v){
     if(op(2) > 0.5){ lbl(b, 1.04, OB.rv[0]-0.08, 'r_1', C.mid); lbl(b, 1.04, OB.rv[1]-0.08, 'r_2', C.mid); } }
   const c = plane({h:H-ha-hb, need:[[-1.9,1.9],[-1.25,1.05]], xticksOverride:[], yticksOverride:[]});
   dot(c, OB.s[0], OB.s[1], {color:C.in, r:6.5});
-  lbl(c, OB.s[0]-0.32, OB.s[1]-0.06, '\\mathbf{s}_i', C.in, 'end');
+  lbl(c, OB.s[0]-0.32*P.labelScale(), OB.s[1]-0.06, '\\mathbf{s}_i', C.in, 'end');
   if(op(3) > 0.02){ const [x,y] = OB.rv;
     seg(c, [[x,0],[x,y],[0,y]], {color:C.mid, width:1.3, dash:'4 5', opacity:op(3)});
     seg(c, [OB.s,[x,y]], {color:C.muted, width:1.6, opacity:op(3)});
@@ -25033,7 +25182,7 @@ function figIntel(){
   lbl(a, 1.14, 1.3, '\\mathbf{s}_1', C.in); lbl(a, -1.2, 0.72, '\\mathbf{s}_2', C.out, 'end');
   lbl(a, -1.14, -1.52, '\\mathbf{s}_3', C.mid, 'end'); lbl(a, 1.16, -0.72, '\\mathbf{s}_4', C.h);
   lbl(a, 0.14, 1.85, '\\text{face}', C.err); lbl(a, 1.55, 0.14, '\\text{face}', C.err);
-  lbl(a, -0.75, 1.62, '\\text{no face}', C.muted, 'end');
+  lbl(a, -0.75+(P.labelScale()-1)*0.6, 1.62, '\\text{no face}', C.muted, 'end');
   return a.svg();
 }
 
@@ -25120,7 +25269,7 @@ function qamSim(){
 }
 function figTightness(v){
   const s0 = v ? v.snr : 6;
-  const a = TAx(SZ({xt:[0,4,8,12,16], xr:[0,20], yr:[-5,0.9], xlabel:'E_s/N_0\\;(\\text{dB})', ylabel:'P_e', ytickfmt:P.decade,
+  const a = TAx(SZ({dropName:true, xt:[0,4,8,12,16], xr:[0,20], yr:[-5,0.9], xlabel:'E_s/N_0\\;(\\text{dB})', ylabel:'P_e', ytickfmt:P.decade,
     yticksOverride:P.decades(-5,0), zeroAxes:false})); LGF = a.o.yr[0];
   a.hline(0, {color:C.muted, dash:'2 4', width:1.2});
   a.curve(db=>lg10(q16.dm(db)), {color:C.err, width:2.0, dash:'2 5'});
@@ -25128,8 +25277,9 @@ function figTightness(v){
   a.curve(db=>lg10(q16.nn(db)), {color:C.mid, width:2.4, dash:'7 5'});
   qamSim().forEach(([db,pe])=>{ if(pe > 0) a.point(db, Math.log10(pe), {color:C.out, r:5.5}); });
   a.vline(s0, {color:C.ink, dash:'5 4', width:1.3});
-  lbl(a, 0.4, -3.9, '\\text{union: }'+sci(q16.gen(s0)), C.err);
-  lbl(a, 0.4, -4.65, '\\text{nearest: }'+sci(q16.nn(s0)), C.mid);
+  const lx = P.labelScale() > 1 ? 0.2 : 0.4;   /* clear of the marker line at 6 dB when larger */
+  lbl(a, lx, -3.9, '\\text{union: }'+sci(q16.gen(s0)), C.err);
+  lbl(a, lx, -4.65, '\\text{nearest: }'+sci(q16.nn(s0)), C.mid);
   return a.svg();
 }
 
@@ -25145,14 +25295,14 @@ const REAL_UNION = realGallery({ id:'m4-real-union', nav:'Error probability arou
   objective:'Use the nearest-neighbour form and the union bound on Wi-Fi, LTE and 5G, and see how an error rate is measured.',
   keywords:'examples wifi 16-qam nearest neighbour lte qpsk union bound exact 5g link adaptation switching snr bit error rate tester',
   figs:[
-    [()=>{ const a = TAx(EXO({xt:[8,12,16,20], xr:[8,24], yr:[-7,0], xlabel:'E_s/N_0\\;(\\text{dB})', ylabel:'P_e', ytickfmt:P.decade, yticksOverride:[-6,-4,-2,0], zeroAxes:false})); LGF = a.o.yr[0];
+    [()=>{ const a = TAx(EXO({dropName:true, xt:[8,12,16,20], xr:[8,24], yr:[-7,0], xlabel:'E_s/N_0\\;(\\text{dB})', ylabel:'P_e', ytickfmt:P.decade, yticksOverride:[-6,-4,-2,0], zeroAxes:false})); LGF = a.o.yr[0];
       a.curve(db=>lg10(3*Qf(Math.sqrt(dB(db)/5))), {color:C.mid, width:2.4});
       return a.svg(); }, 'Wi-Fi 16-QAM has $d_{\\min}^{2}=0.4E_s$ and $\\bar N_{\\min}=3$. The nearest-neighbour form is $P_e\\approx3Q\\bigl(\\sqrt{E_s/5N_0}\\bigr)$.'],
-    [()=>{ const a = TAx(EXO({xt:[0,4,8], xr:[0,12], yr:[-6,0], xlabel:'E_s/N_0\\;(\\text{dB})', ylabel:'P_e', ytickfmt:P.decade, yticksOverride:[-6,-4,-2,0], zeroAxes:false})); LGF = a.o.yr[0];
+    [()=>{ const a = TAx(EXO({dropName:true, xt:[0,4,8], xr:[0,12], yr:[-6,0], xlabel:'E_s/N_0\\;(\\text{dB})', ylabel:'P_e', ytickfmt:P.decade, yticksOverride:[-6,-4,-2,0], zeroAxes:false})); LGF = a.o.yr[0];
       a.curve(db=>lg10(2*Qf(Math.sqrt(dB(db)))+Qf(Math.sqrt(2*dB(db)))), {color:C.err, width:2.4});
       a.curve(db=>lg10(1-Math.pow(1-Qf(Math.sqrt(dB(db))),2)), {color:C.ink, width:1.8, dash:'6 4'});
       return a.svg(); }, 'LTE control channels use QPSK. Solid: the union bound. Dashed: the exact $P_e$. They differ by less than $1\\%$ above $10$ dB.'],
-    [()=>{ const a = TAx(EXO({xt:[5,10,15,20], xr:[4,30], yr:[-5,0], xlabel:'E_s/N_0\\;(\\text{dB})', ylabel:'P_e', ytickfmt:P.decade, yticksOverride:[-4,-3,-2,-1,0], zeroAxes:false})); LGF = a.o.yr[0];
+    [()=>{ const a = TAx(EXO({dropName:true, xt:[5,10,15,20], xr:[4,30], yr:[-5,0], xlabel:'E_s/N_0\\;(\\text{dB})', ylabel:'P_e', ytickfmt:P.decade, yticksOverride:[-4,-3,-2,-1,0], zeroAxes:false})); LGF = a.o.yr[0];
       a.hline(-3, {color:C.muted, dash:'3 4'});
       a.curve(db=>lg10(2*Qf(Math.sqrt(dB(db)))), {color:C.mid, width:2.2});
       a.curve(db=>lg10(3*Qf(Math.sqrt(dB(db)/5))), {color:C.mid, width:2.2, dash:'7 5'});
@@ -26272,6 +26422,18 @@ function wash(a, f, lo, hi, col, al){
   a.raw(`<path d="M${f2(a.sx(lo))},${f2(a.sy(y0))}L${pts.join('L')}L${f2(a.sx(hi))},${f2(a.sy(y0))}Z" fill="${rgba(col, al==null?0.3:al)}" stroke="none"/>`);
 }
 const lbl = (a, x, y, s, col, anchor, fs) => a.note(x, y, s, {tex:true, fs:fs||15, color:col||C.ink, anchor:anchor||'start'});
+/* Projected, the name of a falling error curve on a log axis, set at height y
+   in the gap between it and its left neighbour fL: centred between where fL
+   passes the foot of the label and where fR passes its top, or set just left
+   of fR when nothing lies to its left. */
+const gapName = (a, fL, fR, y, t, col) => {
+  const yt = y + LPY(a, 24), yb = y - LPY(a, 9), xr = reach(fR, Math.pow(10, yt), 0, 40);
+  if(!fL) return lbl(a, xr - LPX(a, 5), y, t, col, 'end');
+  return lbl(a, (reach(fL, Math.pow(10, yb), 0, 40) + xr)/2, y, t, col, 'middle'); };
+/* Data units in `n` pixels of label height, vertically and horizontally: a
+   label spaced with these grows apart from its neighbour as the labels grow. */
+const LPY = (a, n) => n*P.labelScale()/(a.sy(0)-a.sy(1));
+const LPX = (a, n) => n*P.labelScale()/(a.sx(1)-a.sx(0));
 
 /* Tick numbers of the time axis under the lower edge of the data area, where
    no step of a waveform can cross them. An axes that takes these passes
@@ -26374,7 +26536,22 @@ const nearest = (pts, x, y) => { let best = 0, bd = Infinity;
    that edge, set by the figure right after it makes its axes. */
 let LGF = -99;
 const lg10 = v => { const y = Math.log10(Math.max(1e-14, v)); return y < LGF-0.02 ? NaN : y; };
-const logAx = o => { const a = TAx(Object.assign({ytickfmt:P.decade, zeroAxes:false}, o)); LGF = a.o.yr[0]; return a; };
+/* A log axis has no zero line, but a range that reaches past 10^0 still makes
+   Axes set the name of E_b/N_0 just under the data area, where the enlarged
+   tick numbers of the projector sit. There the name is set one label height
+   below the tick row, with the bottom margin widened to hold it; a first,
+   throw-away pass measures where 10^0 falls. Normal size is unchanged. */
+const logAx = o => {
+  const base = Object.assign({ytickfmt:P.decade, zeroAxes:false}, o), L = P.labelScale();
+  if(L > 1 && base.xlabel && base.xnameDrop == null){
+    if(P.hOverride){ base.h = P.hOverride; P.hOverride = null; }
+    const D = 50*L, pad = Object.assign({}, base.pad||{});
+    pad.b = Math.max(pad.b||0, D + 0.42*26*L + 2);
+    const zin = base.yr[0] <= 0 && base.yr[1] >= 0;
+    const t = zin ? P.Axes(Object.assign({}, base, {pad, xnameDrop:0})) : null;
+    Object.assign(base, {pad, xnameDrop: D + (t ? t.y0 - t.sy(0) : -1)});
+  }
+  const a = TAx(base); LGF = a.o.yr[0]; return a; };
 
 /* ---- the point sets of the module ---------------------------------------- */
 const PSKpts = (M, r=1, off=0) => Array.from({length:M}, (_,k)=>[r*Math.cos(2*Math.PI*k/M+off), r*Math.sin(2*Math.PI*k/M+off)]);
@@ -26442,12 +26619,14 @@ function figOpen(){
     ['\\text{frequency: FSK}', t=>Math.cos(2*Math.PI*(OPEN_BITS[Math.min(3,Math.floor(t))] ? 4 : 2)*t)]
   ];
   const parts = rows.map(([name, f], k)=>{
-    const h = k===0 ? 150 : 128;
-    const a = P.Axes(bare({w:560, h, xr:[-0.05,4.05], yr:[-1.25, k===0 ? 2.3 : 1.75], pad:{l:18,r:18,t:6,b:6}, chrome:NAVY}));
+    /* projected, the name and the bits are set in pixels above the crest */
+    const big = P.labelScale() > 1, xt = big ? (k===0 ? 22 : 14) : 0, h = (k===0 ? 150 : 128) + xt;
+    const a = P.Axes(bare({w:560, h, xr:[-0.05,4.05], yr:[-1.25, k===0 ? 2.3 : 1.75], pad:{l:18,r:18,t:6+xt,b:6}, chrome:NAVY}));
     for(let n=1;n<4;n++) seg(a, [[n,-1.2],[n,1.2]], {color:'rgba(239,231,216,.22)', width:1, dash:'2 4'});
     trace(a, f, 0, 4, {color:T_CY, width:2.3, n:900});
-    lbl(a, 0.02, 1.45, name, T_INK, 'start', 15);
-    if(k===0) OPEN_BITS.forEach((b,n)=>lbl(a, n+0.5, 2.0, String(b), T_MUT, 'middle', 16));
+    const yN = big ? 1 + LPY(a, 13) : 1.45, yB = big ? yN + LPY(a, 25) : 2.0;
+    lbl(a, 0.02, yN, name, T_INK, 'start', 15);
+    if(k===0) OPEN_BITS.forEach((b,n)=>lbl(a, n+0.5, yB, String(b), T_MUT, 'middle', 16));
     return [a.svg(), h];
   });
   return stack(560, parts);
@@ -26465,7 +26644,9 @@ const bump = t => Math.abs(t) < 0.2 ? Math.pow(Math.cos(Math.PI*t/0.4), 2) : 0;
 const sBase = t => CAR.an.reduce((s,a,n)=>s + 0.9*a*bump(t-0.1-0.2*n), 0);
 const specB = f => Math.abs(f) < CAR.W ? Math.pow(Math.cos(Math.PI*f/(2*CAR.W)), 2) : 0;
 function figCarrier(v){
-  const H = takeH(420), hA = Math.round(0.5*H), f = frameOf(v, 2);
+  /* projected, the spectrum takes a little more of the height so its two
+     enlarged tick numbers 0.5 and 1 stay apart */
+  const H = takeH(420), hA = Math.round((P.labelScale() > 1 ? 0.45 : 0.5)*H), f = frameOf(v, 2);
   const oM = clamp01(f), oS = clamp01(f-1);
   const a = TAx({w:560, h:hA, xr:[0,1.2], yr:[-1.3,1.45], xlabel:'t\\;(\\text{ms})', ylabel:'s(t),\\;u(t)',
     pad:{l:56,r:26,t:24,b:36}, xt:[0,0.4,0.8], yticksOverride:[-1,0,1]});
@@ -26572,13 +26753,16 @@ function tones(freqs, Tb){
    on one axis with its threshold halfway. */
 const BA_BITS = [1,0,1,1,0];
 function figBASK(v){
-  const H = takeH(420), hA = Math.round(0.47*H), hb = H-hA, f = frameOf(v, 2);
+  const big = P.labelScale() > 1;
+  const H = takeH(420), hA = Math.round((big ? 0.6 : 0.47)*H), hb = H-hA, f = frameOf(v, 2);
   const oE = clamp01(f)*(1-clamp01(f-1)), oC = clamp01(f-1);
-  const a = TAx({w:560, h:hA, xr:[-0.05,5.05], yr:[-2.5,3.2], xlabel:'t/T_b', ylabel:'s(t)',
+  const a = TAx({w:560, h:hA, xr:[-0.05,5.05], yr:[-2.5,big ? 3.9 : 3.2], xlabel:'t/T_b', ylabel:'s(t)',
     pad:{l:56,r:26,t:24,b:36}, xt:[0,1,2,3,4], yticksOverride:[-2,0,2]});
   for(let n=1;n<5;n++) a.vline(n, {color:C.muted, dash:'2 4', width:1});
   trace(a, t=>BA_BITS[Math.min(4,Math.floor(t))] ? 2*Math.cos(2*Math.PI*FCT*t) : 0, 0, 5, {color:C.in, width:2.4, n:1000});
-  BA_BITS.forEach((b,n)=>lbl(a, n+0.5, 2.55, String(b), C.ink, 'middle', 17));
+  /* projected, the bits sit a fixed pixel gap above the crest, clear of s(t) */
+  const yBit = big ? 2 + LPY(a, 17) : 2.55;
+  BA_BITS.forEach((b,n)=>lbl(a, n+0.5, yBit, String(b), C.ink, 'middle', 17));
   const e = P.Axes({w:560, h:hb, xr:[-0.05,5.05], yr:[0,3.1], xlabel:'\\text{bit }n', ylabel:'E_n',
     pad:{l:56,r:26,t:24,b:42}, xticksOverride:[], yticksOverride:[1,2]});
   BA_BITS.forEach((b,n)=>{ if(!b) return; const X0 = e.sx(n+0.2), X1 = e.sx(n+0.8), Y0 = e.sy(0), Y1 = e.sy(2);
@@ -26616,7 +26800,7 @@ function figBinaryPe(v){
   if(Math.log10(pb) > -7) dot(a, x0, Math.log10(pb), {color:C.err, r:5.5});
   if(Math.log10(pf) > -7) dot(a, x0, Math.log10(pf), {color:C.err, r:5.5});
   lbl(a, 0.4, -5.95, '\\text{BPSK: }P_b='+sci(pb), C.err);
-  lbl(a, 0.4, -6.65, '\\text{BFSK, BASK: }P_b='+sci(pf), C.err);
+  lbl(a, 0.4, P.labelScale() > 1 ? -5.95-LPY(a, 27) : -6.65, '\\text{BFSK, BASK: }P_b='+sci(pf), C.err);
   return a.svg();
 }
 
@@ -26730,15 +26914,22 @@ function figPSKDetect(v){
 const MS_PSK = [2,4,8,16,32];
 const PSK_DASH = {2:null, 4:'2 4', 8:'7 5', 16:'12 5 3 5', 32:'3 3'};
 function figMPSKPe(v){
-  const x0 = v ? v.g : 10;
-  const a = logAx(SZ({xr:[0,26], yr:[-7,1.7], xlabel:'E_b/N_0\\;(\\text{dB})', ylabel:'P_e', xt:[0,5,10,15,20], yticksOverride:P.decades(-7,0)}));
+  /* projected, a wider and taller box keeps the enlarged M labels inside the
+     gaps between the curves (cf. figIQ), and the range above 10^0 holds the
+     two readings on two lines */
+  const x0 = v ? v.g : 10, big = P.labelScale() > 1;
+  const a = logAx(SZ({w:big ? 680 : 560, h:big ? 600 : 380, xr:[0,26], yr:[-7,big ? 2.1 : 1.7], xlabel:'E_b/N_0\\;(\\text{dB})', ylabel:'P_e', xt:[0,5,10,15,20], yticksOverride:P.decades(-7,0)}));
   MS_PSK.forEach(M=>a.curve(d=>lg10(PE.psk(M, dB(d))), {color:C.err, width:M===2 ? 2.8 : 2.2, dash:PSK_DASH[M]}));
   [[4,'M=2,\\,4'],[8,'M=8'],[16,'M=16'],[32,'M=32']].forEach(([M,t])=>{
+    if(big) return gapName(a, M===4 ? null : d=>PE.psk(M/2, dB(d)), d=>PE.psk(M===4 ? 2 : M, dB(d)), -6.72, t, C.err);
     const x = reach(d=>PE.psk(M, dB(d)), 1e-6, 0, 40); lbl(a, x-0.6, -6.3, t, C.err, 'end'); });
-  seg(a, [[x0,-5.8],[x0,0.05]], {color:C.ink, dash:'5 4', width:1.3});
+  /* projected, the reading line stops above the enlarged M labels */
+  seg(a, [[x0, big ? -6.6+LPY(a, 26) : -5.8],[x0,0.05]], {color:C.ink, dash:'5 4', width:1.3});
   [4,8].forEach(M=>{ const y = Math.log10(PE.psk(M, dB(x0))); if(y > -5.8) dot(a, x0, y, {color:C.err, r:5.5}); });
-  lbl(a, 0.4, 1.2, 'M=4:\\ P_e='+sci(PE.psk(4, dB(x0))), C.err, 'start');
-  lbl(a, 13.4, 1.2, 'M=8:\\ P_e='+sci(PE.psk(8, dB(x0))), C.err, 'start');
+  const yR = big ? a.o.yr[1]-LPY(a, 24) : 1.2;
+  lbl(a, 0.4, yR, 'M=4:\\ P_e='+sci(PE.psk(4, dB(x0))), C.err, 'start');
+  if(big) lbl(a, 0.4, yR-LPY(a, 28), 'M=8:\\ P_e='+sci(PE.psk(8, dB(x0))), C.err, 'start');
+  else lbl(a, 13.4, 1.2, 'M=8:\\ P_e='+sci(PE.psk(8, dB(x0))), C.err, 'start');
   return a.svg();
 }
 
@@ -26848,7 +27039,7 @@ function figDPSKPe(v){
   if(Math.log10(pb) > -7) dot(a, x0, Math.log10(pb), {color:C.err, r:5.5});
   if(Math.log10(pd) > -7) dot(a, x0, Math.log10(pd), {color:C.err, r:5.5});
   lbl(a, 0.4, -5.95, '\\text{BPSK: }P_b='+sci(pb), C.err);
-  lbl(a, 0.4, -6.65, '\\text{DPSK: }P_b='+sci(pd), C.err);
+  lbl(a, 0.4, P.labelScale() > 1 ? -5.95-LPY(a, 27) : -6.65, '\\text{DPSK: }P_b='+sci(pd), C.err);
   return a.svg();
 }
 
@@ -26923,7 +27114,9 @@ function figExASK4(v){
   A4.forEach((x,k)=>{ const o = clamp01(f-k), cur = o*(1-clamp01(f-k-1));
     if(cur > 0.02){ if(k > 0) hump(A4[k-1], x, cur); if(k < 3) hump(x, A4[k+1], cur); }
     if(o > 0.5) lbl(a, x, 1.25, String(NB4[k]), C.mid, 'middle', 17); });
-  A4.forEach((x,k)=>{ dot(a, x, 0, {color:C.in, r:7}); lbl(a, x, -0.72, '\\mathbf{s}_'+(k+1), C.in, 'middle'); });
+  /* projected, the point names sit a fixed pixel gap under the enlarged tick numbers */
+  const yS = P.labelScale() > 1 ? -LPY(a, 44) : -0.72;
+  A4.forEach((x,k)=>{ dot(a, x, 0, {color:C.in, r:7}); lbl(a, x, yS, '\\mathbf{s}_'+(k+1), C.in, 'middle'); });
   if(f > 4.5) lbl(a, 0.3, 2.2, '\\bar N_{\\min}=\\tfrac{1+2+2+1}{4}=1.5', C.ink, 'start', 17);   /* right of the axis */
   return a.svg();
 }
@@ -26953,17 +27146,18 @@ function figQAM(v){
    form, against E_b/N_0. */
 const MS_QAM = [4,16,64];
 function figQAMPe(v){
-  const x0 = v ? v.g : 12;
-  const a = logAx(SZ({xr:[0,24], yr:[-7,2.5], xlabel:'E_b/N_0\\;(\\text{dB})', ylabel:'P_e', xt:[0,5,10,15], yticksOverride:P.decades(-7,0)}));
+  const x0 = v ? v.g : 12, big = P.labelScale() > 1;   /* wider, taller box projected, as in figMPSKPe */
+  const a = logAx(SZ({w:big ? 640 : 560, h:big ? 560 : 380, xr:[0,24], yr:[-7,2.5], xlabel:'E_b/N_0\\;(\\text{dB})', ylabel:'P_e', xt:[0,5,10,15], yticksOverride:P.decades(-7,0)}));
   MS_QAM.forEach(M=>{
     a.curve(d=>lg10(PE.qamNN(M, dB(d))), {color:C.mid, width:2.0, dash:'3 4'});
     a.curve(d=>lg10(PE.qam(M, dB(d))), {color:C.err, width:2.5});
+    if(big) return gapName(a, M===4 ? null : d=>PE.qamNN(M/4, dB(d)), d=>PE.qam(M, dB(d)), -6.72, 'M='+M, C.err);
     const x = reach(d=>PE.qam(M, dB(d)), 1e-6, 0, 40); lbl(a, x-0.35, -6.3, 'M='+M, C.err, 'end'); });
-  seg(a, [[x0,-5.8],[x0,0.05]], {color:C.ink, dash:'5 4', width:1.3});
+  seg(a, [[x0, big ? -6.6+LPY(a, 26) : -5.8],[x0,0.05]], {color:C.ink, dash:'5 4', width:1.3});
   const pe = PE.qam(16, dB(x0)), pn = PE.qamNN(16, dB(x0));
   if(Math.log10(pe) > -5.8) dot(a, x0, Math.log10(pe), {color:C.err, r:5.5});
   lbl(a, 0.4, 1.95, '16\\text{-QAM exact: }'+sci(pe), C.err, 'start');
-  lbl(a, 0.4, 1.15, '\\text{nearest neighbour: }'+sci(pn), C.mid, 'start');
+  lbl(a, 0.4, big ? 1.95-LPY(a, 28) : 1.15, '\\text{nearest neighbour: }'+sci(pn), C.mid, 'start');
   return a.svg();
 }
 
@@ -26980,7 +27174,8 @@ const SH = [
 const Eav = pts => pts.reduce((s,p)=>s+p[0]*p[0]+p[1]*p[1], 0)/pts.length;
 function figShapes(v){
   const f = frameOf(v, 3), i0 = Math.min(2, Math.floor(f)), u = clamp01(f-i0);
-  const a = plane({need:[[-3.8,3.8],[-3.8,4.3]], xticksOverride:[-2,0,2], yticksOverride:[-2,0,2]});
+  const big = P.labelScale() > 1;
+  const a = plane({need:[[-3.8,3.8],[-3.8,big ? 4.6 : 4.3]], xticksOverride:[-2,0,2], yticksOverride:[-2,0,2]});
   const draw = (S, o) => { if(o < 0.02) return;
     const radii = [...new Set(S.pts.map(p=>Math.hypot(p[0],p[1]).toFixed(4)))].map(Number);
     radii.forEach(r=>circle(a, r, {color:C.muted, width:1.1, opacity:o}));
@@ -26988,7 +27183,8 @@ function figShapes(v){
     S.pts.forEach(p=>dot(a, p[0], p[1], {color:C.in, r:6.5, opacity:o})); };
   draw(SH[i0], 1-u); draw(SH[i0+1], u);
   const S = SH[Math.round(f)];
-  lbl(a, a.o.xr[0]+0.1, a.o.yr[1]-0.32, '\\text{'+S.n+'}\\quad E_{\\text{av}}='+num(Eav(S.pts),2)+',\\ \\ d_{\\min}=2', C.ink);
+  /* projected, the line is set a pixel gap under the top, clear of the name psi_2 */
+  lbl(a, a.o.xr[0]+0.1, a.o.yr[1]-(big ? LPY(a, 24) : 0.32), '\\text{'+S.n+'}\\quad E_{\\text{av}}='+num(Eav(S.pts),2)+',\\ \\ d_{\\min}=2', C.ink);
   return a.svg();
 }
 
@@ -27013,17 +27209,19 @@ const advQ = M => 10*Math.log10((3/(M-1))/(2*Math.pow(Math.sin(Math.PI/M), 2)));
 function figQAMvsPSK(v){
   const k = v ? v.k : 2, M = Math.pow(4, k), q = qamSq(M), ps = PSKpts(M);
   const dq = Math.sqrt(6/(M-1)), dp = 2*Math.sin(Math.PI/M);
-  const a = plane({need:[[-1.65,1.65],[-1.6,2.2]], xticksOverride:[], yticksOverride:[]});
+  const big = P.labelScale() > 1;
+  const a = plane({need:[[-1.65,1.65],[-1.6,big ? 3.0 : 2.2]], xticksOverride:[], yticksOverride:[]});
   circle(a, 1, {color:C.muted, width:1.1});
   ps.forEach(p=>ring(a, p[0], p[1], {color:C.in, r:M > 16 ? 3.5 : 5.5, width:1.8}));
   q.forEach(p=>dot(a, p[0], p[1], {color:C.in, r:M > 16 ? 3 : 5}));
   seg(a, [ps[0], ps[1]], {color:C.err, width:2.6, dash:'5 3'});
   seg(a, [q[0], q[1]], {color:C.err, width:2.6});
-  const x0 = a.o.xr[0]+0.06, y0 = a.o.yr[1]-0.2;
+ /* projected, the lines are spaced in pixels and the plane reaches higher to hold them */
+  const x0 = a.o.xr[0]+0.06, y0 = a.o.yr[1]-(big ? LPY(a, 22) : 0.2), dy = big ? LPY(a, 27) : 0.3;
   /* three short lines, all left of the vertical axis */
   lbl(a, x0, y0, 'M='+M+':\\ d_{\\text{QAM}}='+num(dq,3), C.err);
-  lbl(a, x0, y0-0.3, 'd_{\\text{PSK}}='+num(dp,3), C.err);
-  lbl(a, x0, y0-0.6, '10\\log_{10}\\bigl(d_{\\text{QAM}}^{2}/d_{\\text{PSK}}^{2}\\bigr)='+num(advQ(M),2)+'\\text{ dB}', C.ink);
+  lbl(a, x0, y0-dy, 'd_{\\text{PSK}}='+num(dp,3), C.err);
+  lbl(a, x0, y0-2*dy, '10\\log_{10}\\bigl(d_{\\text{QAM}}^{2}/d_{\\text{PSK}}^{2}\\bigr)='+num(advQ(M),2)+'\\text{ dB}', C.ink);
   return a.svg();
 }
 
@@ -27069,7 +27267,8 @@ const iso = p => [(p[0]-p[1])*0.866, p[2]-0.5*(p[0]+p[1])];
 const RX3 = [0.82, 0.34, 0.22];
 function figMFSK(v){
   const f = frameOf(v, 2), o1 = clamp01(f), o2 = clamp01(f-1);
-  const a = plane(bare({need:[[-1.6,1.6],[-1.05,1.55]], xlabel:'', ylabel:''}));
+  /* projected, the plane reaches higher so the enlarged name of psi_3 stays inside */
+  const a = plane(bare({need:[[-1.6,1.6],[-1.05,P.labelScale() > 1 ? 1.75 : 1.55]], xlabel:'', ylabel:''}));
   const E = [[1,0,0],[0,1,0],[0,0,1]];
   E.forEach((e,j)=>{ const q = iso(e.map(x=>1.45*x));
     arrow(a, 0, 0, q[0], q[1], {color:C.h, width:1.8, head:0.7});
@@ -27098,16 +27297,19 @@ const orthLook = (M, d) => { const t = orthTab(M), u = (d-ORTH_X0)/ORTH_DX, i = 
   const y = t[i]*(1-w)+t[i+1]*w; return y < LGF-0.02 ? NaN : y; };
 const WALL = 10*Math.log10(Math.LN2);
 function figOrthM(v){
-  const f = frameOf(v, 5), n = Math.min(5, Math.round(f));
+  /* projected, the two notes no longer fit on one line: the note on the
+     limit moves to the foot of the wall, where no curve reaches */
+  const f = frameOf(v, 5), n = Math.min(5, Math.round(f)), big = P.labelScale() > 1;
   const a = leftTicks(logAx(SZ({xr:[-4,16], yr:[-7,0.3], xlabel:'E_b/N_0\\;(\\text{dB})', ylabel:'P_b', xt:[-4,0,4,8,12], yticksOverride:[], grid:false})), P.decades(-7,-1), P.decade);
-  a.rect(-4, -7, WALL, 0.3, {fill:rgba(C.muted, 0.12)});
+  a.rect(-4, -7, WALL, a.o.yr[1], {fill:rgba(C.muted, 0.12)});
   a.vline(WALL, {color:C.muted, width:1.4, dash:'3 4'});
-  lbl(a, WALL+0.25, -0.55, '\\text{limit, Module 6}', C.muted, 'start', 13);
+  const yM = -0.45;
+  lbl(a, WALL+0.25, big ? -7+LPY(a, 9) : -0.55, '\\text{limit, Module 6}', C.muted, 'start', 13);
   for(let i=0;i<=n;i++){ const M = ORTH_MS[i];
     a.curve(d=>orthLook(M, d), {color:C.err, width:i===n ? 2.8 : 1.5, opacity:i===n ? 1 : 0.45, n:240}); }
   const M = ORTH_MS[n], x = orthAt(M);
   dot(a, x, -5, {color:C.err, r:5.5});
-  lbl(a, 15.6, -0.45, 'M='+M+':\\ E_b/N_0='+num(x,1)+'\\text{ dB at }10^{-5}', C.err, 'end');
+  lbl(a, 15.6, yM, 'M='+M+':\\ E_b/N_0='+num(x,1)+'\\text{ dB at }10^{-5}', C.err, 'end');
   return a.svg();
 }
 
@@ -27116,7 +27318,8 @@ function figOrthM(v){
    the price: 12.6 dB coherent against 13.4 dB noncoherent at 1e-5. */
 const G_NC = reach(d=>PE.ncfsk(dB(d)), 1e-5, 0, 20);
 function figNoncoh(v){
-  const phi = v ? v.phi : 60, t = phi*Math.PI/180, H = takeH(430), hA = Math.round(0.58*H);
+  /* projected, the error plot takes more of the height for its widened margin */
+  const phi = v ? v.phi : 60, t = phi*Math.PI/180, H = takeH(430), hA = Math.round((P.labelScale() > 1 ? 0.48 : 0.58)*H);
   const a = plane({h:hA, need:[[-1.5,1.5],[-1.3,1.45]], xlabel:'y_c', ylabel:'y_s', xticksOverride:[], yticksOverride:[], pad:{l:56,r:26,t:24,b:36}});
   circle(a, 1, {color:C.muted, width:1.1});
   const x = Math.cos(t), y = Math.sin(t);
@@ -27168,9 +27371,10 @@ const REAL_FSK = realGallery({ id:'m5-real-fsk', nav:'Frequency keying around us
       a.curve(u=>gPulse(u, 0.3), {color:C.in, width:2.5, n:500});
       return a.svg(); },
       'GSM sends GMSK: MSK whose frequency pulse passes a Gaussian filter with $BT_b=0.3$. The dashed pulse is plain MSK. The Gaussian one spreads over about three bits.'],
-    [()=>{ const a = TAx(EXO({xt:[0,4,8], xr:[-0.8,12], yr:[-3.8,3.8], xlabel:'n', ylabel:'f[n]', yticksOverride:[]}));
+    /* projected, the range runs one step further so the level names clear the last stem */
+    [()=>{ const a = TAx(EXO({xt:[0,4,8], xr:[-0.8,P.labelScale() > 1 ? 13 : 12], yr:[-3.8,3.8], xlabel:'n', ylabel:'f[n]', yticksOverride:[]}));
       a.stem(DMR.map((y,n)=>[n,y]), {color:C.in});
-      [-3,-1,1,3].forEach(y=>lbl(a, 11.9, y+0.25, (y > 0 ? '+' : '-')+(Math.abs(y)===3 ? '3d' : 'd'), C.muted, 'end', 13));
+      [-3,-1,1,3].forEach(y=>lbl(a, a.o.xr[1]-0.1, y+0.25, (y > 0 ? '+' : '-')+(Math.abs(y)===3 ? '3d' : 'd'), C.muted, 'end', 13));
       return a.svg(); },
       'Digital mobile radio (DMR) uses four-level FSK. Each symbol shifts the carrier by one of four offsets $\\{\\pm d,\\pm3d\\}$ and carries $2$ bits.']
   ],
@@ -27187,7 +27391,8 @@ const REAL_FSK = realGallery({ id:'m5-real-fsk', nav:'Frequency keying around us
    family at this k. */
 const bwOf = k => { const M = 1 << k; return [['\\text{PAM (SSB)}', 1/(2*k), C.in], ['\\text{PSK, QAM}', 1/k, C.in], ['\\text{orthogonal}', M/(2*k), C.in]]; };
 function figSpectrum(v){
-  const k = v ? v.k : 2, M = 1 << k, H = takeH(430), hA = Math.round(0.56*H);
+  /* projected, the bar chart takes more of the height so its three lines stay apart */
+  const k = v ? v.k : 2, M = 1 << k, H = takeH(430), hA = Math.round((P.labelScale() > 1 ? 0.52 : 0.56)*H);
   const a = P.Axes({w:560, h:hA, xr:[-2.2,2.2], yr:[0,6.6], xlabel:'f/R_b', ylabel:'S(f)',
     pad:{l:56,r:26,t:24,b:40}, xticksOverride:[-2,-1,0,1,2], yticksOverride:[]});
   a.curve(x=>Math.pow(sincF(x), 2), {color:C.muted, width:1.4, dash:'5 4', n:800});
@@ -27222,7 +27427,8 @@ const mskPsd = x => { const den = 1-16*x*x; return Math.abs(den) < 1e-6 ? Math.p
 function figMSK(v){
   const f = frameOf(v, 3), H = takeH(430), hA = Math.round(0.6*H);
   const w3 = clamp01(f-2), i0 = Math.min(1, Math.floor(Math.min(f, 2))), u = clamp01(Math.min(f, 2)-i0);
-  const a = plane({h:hA, need:[[-1.4,1.4],[-1.3,1.45]], xlabel:'I', ylabel:'Q', xticksOverride:[-1,1], yticksOverride:[-1,1], pad:{l:56,r:26,t:24,b:36}});
+  const big = P.labelScale() > 1;
+  const a = plane({h:hA, need:[[-1.4,1.4],[-1.3,big ? 1.7 : 1.45]], xlabel:'I', ylabel:'Q', xticksOverride:[-1,1], yticksOverride:[-1,1], pad:{l:56,r:26,t:24,b:36}});
   circle(a, 1, {color:C.muted, width:1.1});
   const b = TAx({w:560, h:H-hA, xr:[0,8], yr:[0,1.35], xlabel:'t/T_b', ylabel:'|s(t)|',
     pad:{l:56,r:26,t:20,b:40}, xt:[0,2,4,6,8], yticksOverride:[0,1]});
@@ -27231,7 +27437,7 @@ function figMSK(v){
     seg(b, Array.from({length:801}, (_,i)=>{ const t = 8*i/800, p = way(t); return [t, Math.hypot(p[0], p[1])]; }), {color:C.in, width:2.4, opacity:o}); });
   QPSK.forEach(p=>dot(a, p[0]/Math.SQRT2, p[1]/Math.SQRT2, {color:C.in, r:5}));
   const j = u < 0.5 ? i0 : i0+1;
-  lbl(a, a.o.xr[0]+0.05, a.o.yr[1]-0.15, MSK_NAME[j], C.in);
+  lbl(a, a.o.xr[0]+0.05, a.o.yr[1]-(big ? LPY(a, 24) : 0.15), MSK_NAME[j], C.in);   /* clear of the name Q, projected */
   const top = stack(560, [[a.svg(),hA],[b.svg(),H-hA]]);
   if(w3 < 0.02) return top;
   const c = logAx({w:560, h:H, xr:[0,2], yr:[-4,0.2], xlabel:'fT_b', ylabel:'S(f)/S(0)',
@@ -27257,17 +27463,18 @@ const needAt = (fam, M, tgt) => reach(d=>fam.pe(M, dB(d)), tgt, -5, 60);
 function figPlane(v){
   const e = v ? v.e : -5, tgt = Math.pow(10, e);
   /* Projected, the family names grow 1.36 times and would touch their curves;
-     the plane is then drawn on a wider box of the same shape, so it takes the
-     same room on the page and the names give back that part of the growth. */
+     the plane is then drawn on a wider box, a little taller than the normal
+     shape so the name QAM fits between its line and the limit, and the names
+     give back that part of the growth. */
   const big = P.labelScale() > 1;
-  const a = TAx(SZ({w:big ? 640 : 560, h:big ? 434 : 380, xr:[-4,36], yr:[-3,4.4], xlabel:'E_b/N_0\\;(\\text{dB})', ylabel:'R_b/W', xt:[0,10,20],
+  const a = TAx(SZ({w:big ? 640 : 560, h:big ? 510 : 380, xr:[-4,36], yr:[-3,4.4], xlabel:'E_b/N_0\\;(\\text{dB})', ylabel:'R_b/W', xt:[0,10,20],
     yticksOverride:[], grid:false, zeroAxes:false}));
   leftTicks(a, [-3,-2,-1,0,1,2,3,4], u=>u >= 0 ? String(Math.pow(2,u)) : '1/'+Math.pow(2,-u));
   a.hline(0, {color:C.muted, width:1, dash:'2 4'});
   const lim = []; for(let u=-3;u<=4.001;u+=0.05){ const r = Math.pow(2,u); lim.push([todB((Math.pow(2,r)-1)/r), u]); }
   seg(a, lim, {color:C.muted, width:1.6, dash:'3 4'});
   lbl(a, -3.6, 3.55, '\\text{limit, Module 6}', C.muted, 'start', 13);
-  const LB = {PAM:big ? [0.4,-0.62,'end'] : [-0.2,-0.5,'end'], PSK:[0.6,-0.12,'start'], QAM:big ? [-0.9,0.05,'end'] : [-0.8,0.2,'end'], orthogonal:[0.6,-0.12,'start']};
+  const LB = {PAM:big ? [0.4,-0.82,'end'] : [-0.2,-0.5,'end'], PSK:big ? [0.6,-0.45,'start'] : [0.6,-0.12,'start'], QAM:big ? [-0.9,0.0,'end'] : [-0.8,0.2,'end'], orthogonal:[0.6,-0.12,'start']};
   FAM.forEach(fm=>{ const pts = fm.Ms.map(M=>[needAt(fm, M, tgt), L2(fm.r(M))]), p = pts[fm.n==='QAM' ? 0 : pts.length-1], L = LB[fm.n];
     seg(a, pts, {color:C.in, width:2.2, dash:fm.dash});
     pts.forEach(q=>dot(a, q[0], q[1], {color:C.in, r:5}));
@@ -28709,6 +28916,9 @@ function wash(a, f, lo, hi, col, al, base){
 }
 /* A probability mass function: a stem with a round head, as every pmf in this course. */
 const pmf = (a, pairs, o={}) => pairs.forEach(([x,v])=>{ seg(a, [[x,0],[x,v]], {color:o.color||C.in, width:o.width||1.8}); a.point(x, v, {color:o.color||C.in, r:o.r||4}); });
+/* lblO: a label set off a line at yRef by the pixel gap it has at the normal
+   size, that gap grown with the labels in projector mode */
+const lblO = (a, x, yRef, y, s, col, anchor, fs) => a.note(x, yRef, s, {tex:true, fs:fs||15, color:col||C.ink, anchor:anchor||'start', dy:(a.sy(y)-a.sy(yRef))*P.labelScale()});
 const lbl = (a, x, y, s, col, anchor, fs) => a.note(x, y, s, {tex:true, fs:fs||15, color:col||C.ink, anchor:anchor||'start'});
 /* A plain label (a bit, a digit) with the halo of every figure label. */
 const txt = (a, x, y, s, col, anchor, fs, o={}) => a.note(x, y, s, Object.assign({fs:fs||14, color:col||C.muted, anchor:anchor||'middle'}, o));
@@ -28728,7 +28938,26 @@ function leftTicks(a, vals, fmt){
     a.raw(`<text x="${f2(a.x0-10)}" y="${f2(Y+4.5*L)}" font-size="${13.5*L}" fill="${C.muted}" text-anchor="end">${f(v)}</text>`); });
   return a;
 }
-const TAx = o => { const xt = o.xt; const a = P.Axes(Object.assign({}, o, {xticksOverride:[]})); return xt ? bottomTicks(a, xt, o.xfmt) : a; };
+const TAx = o => { const xt = o.xt;
+  const mk = q => { const a = P.Axes(Object.assign({}, q, {xticksOverride:[]})); return xt ? bottomTicks(a, xt, q.xfmt) : a; };
+  let a = mk(o);
+  /* The tick row is drawn under the data area, but Axes sets the x name under
+     the zero line, and on a slide a fixed drop below it. In the projector the
+     enlarged name then either lands on the last tick number (zero line high in
+     the figure) or leaves a wide empty strip that the data area needs. There
+     the name is set one name height below the tick row instead. */
+  const L = P.labelScale();
+  if(L > 1 && xt && xt.length && o.xlabel && o.xnameDrop == null){
+    const [ya, yb] = o.yr, H = a.H;
+    if(ya <= 0 && yb >= 0){
+      /* the drop is measured from the zero line, so the bottom margin is set
+         here to hold the name rather than grown by Axes */
+      const pad = Object.assign({l:52,r:22,t:20,b:40}, o.pad||{}), Pb = Math.max(pad.b, 64*L+2);
+      const z = a.y1 + yb/(yb-ya)*(H-a.y1-Pb);
+      a = mk(Object.assign({}, o, {h:H, pad:Object.assign({}, pad, {b:Pb}), xnameDrop: H-Pb + 50*L - z}));
+    } else a = mk(Object.assign({}, o, {h:H, xnameDrop:50*L}));
+  }
+  return a; };
 /* Axes whose x range spans zero keep their y ticks at the left edge. */
 const TAxL = o => { const a = leftTicks(TAx(Object.assign({}, o, {yticksOverride:[], zeroAxes:false})), o.yticksOverride, o.ytickfmt);
   a.raw(`<path d="M${f2(a.x0)},${f2(a.y1)}V${f2(a.y0)}H${f2(a.x1)}" fill="none" stroke="${C.axis}" stroke-width="1.5"/>`); return a; };
@@ -28798,10 +29027,10 @@ function drawTree(a, codes, labels, o={}){
   const kids = n => all.filter(m => m.length === n.length+1 && m.slice(0,-1) === n);
   const order = all.slice().sort((x,y)=>y.length-x.length || (x<y?-1:1));
   const leaves = all.filter(n=>!kids(n).length).sort();
-  const row = {}; leaves.forEach((n,i)=>{ row[n] = i; });
+  const row = {}; leaves.forEach((n,i)=>{ row[n] = o.leafX ? o.leafX[n] : i; });
   order.forEach(n=>{ const k = kids(n); if(k.length) row[n] = k.reduce((s,m)=>s+row[m],0)/k.length; });
   const span = Math.max(1, leaves.length-1), ox = o.x0 || 0, dx = o.dx || 1, oy = o.y0 || 0, sy = o.fitH ? o.fitH/span : (o.sy || 1);
-  const X = n => ox + n.length*dx, Y = n => oy + (span - row[n])*sy;
+  const X = n => o.vert ? row[n] : ox + n.length*dx, Y = n => o.vert ? -n.length : oy + (span - row[n])*sy;
   const op = o.opacity;
   all.forEach(n=>{ if(n === '') return; const par = n.slice(0,-1);
     seg(a, [[X(par), Y(par)], [X(n), Y(n)]], {color:C.muted, width:1.6, opacity:op});
@@ -28814,7 +29043,8 @@ function drawTree(a, codes, labels, o={}){
   });
   all.forEach(n=>{ const i = codes.indexOf(n), hot = i >= 0 && o.hot === n;
     dot(a, X(n), Y(n), {color: i >= 0 ? (hot ? C.mid : (o.leaf || C.in)) : C.muted, r: i >= 0 ? (hot ? 7.5 : 6) : 3.4, opacity:op});
-    if(i >= 0 && labels[i]) a.note(X(n), Y(n), labels[i], {tex:true, fs:o.fs||15, color: hot ? C.mid : C.ink, dx:12, dy: kids(n).length ? -16 : 0});
+    if(i >= 0 && labels[i]) a.note(X(n), Y(n), labels[i], o.vert ? {tex:true, fs:o.fs||15, color: hot ? C.mid : C.ink, anchor:'middle', dy:24*P.labelScale()}
+      : {tex:true, fs:o.fs||15, color: hot ? C.mid : C.ink, dx:12, dy: kids(n).length ? -16 : 0});
   });
   return {X, Y, span};
 }
@@ -28880,7 +29110,7 @@ function figSelfInfo(v){
   seg(a, [[p,0],[p,I],[0,I]], {color:C.ink, width:1.3, dash:'5 4'});
   dot(a, p, I, {color:C.in, r:7});
   lbl(a, 0.98, 6.9, 'p='+num(p,3), C.ink, 'end', 17);
-  lbl(a, 0.98, 6.1, 'I(p)=-\\log_2p='+num(I,2)+'\\ \\text{bits}', C.in, 'end', 17);
+  lbl(a, 0.98, 6.9-0.8*P.labelScale(), 'I(p)=-\\log_2p='+num(I,2)+'\\ \\text{bits}', C.in, 'end', 17);
   return a.svg();
 }
 
@@ -28912,15 +29142,16 @@ function figQuestions(v){
 
 /* The information each symbol carries and its weighted share. */
 function figEntropyBars(){
-  const a = TAx(SZ({xr:[0.4,5.3], yr:[-0.55,3.9], ylabel:'\\text{bits}', yticksOverride:[0,1,2,3]}));
+  const big = P.labelScale() > 1;
+  const a = TAx(SZ({xr:[0.4,5.3], yr:[big ? -0.75 : -0.55,3.9], ylabel:'\\text{bits}', yticksOverride:[0,1,2,3]}));
   S3.forEach((p,k)=>{
     box(a, k+0.62, 0, k+0.97, -lg(p), rgba(C.in, 0.22), {stroke:C.in, width:1.8});
     box(a, k+1.03, 0, k+1.38, -p*lg(p), rgba(C.mid, 0.3), {stroke:C.mid, width:1.8});
-    lbl(a, k+1, -0.4, 's_'+(k+1)+'\\;('+p+')', C.ink, 'middle', 15);
+    lblO(a, k+1, 0, -0.4, 's_'+(k+1)+'\\;('+p+')', C.ink, 'middle', 15);
   });
   a.hline(HS3, {color:C.ink, dash:'6 4', width:1.6, opacity:1});
   a.hline(lg(3), {color:C.muted, dash:'2 4', width:1.4, opacity:1});
-  lbl(a, 3.55, HS3-0.32, 'H(S)=1.157', C.ink, 'start', 16);
+  lblO(a, 3.55, HS3, HS3-(big ? 0.38 : 0.32), 'H(S)=1.157', C.ink, 'start', 16);
   lbl(a, 3.55, lg(3)+0.14, '\\log_2 3=1.585', C.muted, 'start', 16);
   return a.svg();
 }
@@ -28950,7 +29181,7 @@ function figExRate(){
   const b = TAx({w:560, h:Ht-hA, xr:[0,1.02], yr:[-1.2,1.35], xlabel:'t\\;(\\text{ms})', ylabel:'x(t)', pad:{l:56,r:26,t:24,b:42}, xt:[0,0.5], yticksOverride:[-1,0,1]});
   trace(b, rateWave, 0, 1.02, {color:C.in, width:2.4});
   b.stem(Array.from({length:7}, (_,k)=>[k/6, rateWave(k/6)]), {color:C.mid});
-  b.span(0, 1/6, 1.1, 'T_s=\\tfrac16\\ \\text{ms}', {tex:true, color:C.mid, fs:15});
+  b.span(1/6, 2/6, 1.1, 'T_s=\\tfrac16\\ \\text{ms}', {tex:true, color:C.mid, fs:15});
   return stack(560, [[a.svg(),hA],[b.svg(),Ht-hA]]);
 }
 
@@ -29077,9 +29308,10 @@ function figTypical(v){
   const pts = []; for(let k=0;k<=n;k++){ const s = -(k*lg(TS_P)+(n-k)*lg(1-TS_P))/n; if(s <= 1.62) pts.push([s, binom(n,k,TS_P)]); }
   pmf(a, pts, {r: n > 100 ? 2.4 : 3.6, width: n > 100 ? 1.2 : 1.8});
   a.vline(TS_H, {color:C.ink, dash:'6 4', width:1.6, opacity:1});
+  const gT = 0.2*mx*P.labelScale();
   lbl(a, 1.58, 1.5*mx, 'n='+n+',\\ \\ H=0.722', C.ink, 'end', 16);
-  lbl(a, 1.58, 1.3*mx, 'P(\\text{typical})='+num(st.Pt,4), C.mid, 'end', 16);
-  lbl(a, 1.58, 1.1*mx, '2^{nH}=2^{'+num(n*TS_H,1)+'}\\text{ of }2^{'+n+'}', C.in, 'end', 16);
+  lbl(a, 1.58, 1.5*mx-gT, 'P(\\text{typical})='+num(st.Pt,4), C.mid, 'end', 16);
+  lbl(a, 1.58, 1.5*mx-2*gT, '2^{nH}=2^{'+num(n*TS_H,1)+'}\\text{ of }2^{'+n+'}', C.in, 'end', 16);
   return a.svg();
 }
 
@@ -29212,8 +29444,16 @@ const REAL_CODES = realGallery({ id:'m6-real-codes', nav:'Codes around us',
       a.poly(pts, {color:C.mid, width:2.6});
       return a.svg(); },
       'UTF-8 writes a character in $1$ to $4$ bytes: $1$ for $b\\le7$, else $\\lceil(b-1)/5\\rceil$. A lead byte never starts another, so it is a prefix code.'],
-    [()=>{ const a = P.Axes(bare(EXO({xr:[-0.3,3.9], yr:[-0.6,10.6], pad:{l:16,r:16,t:12,b:12}})));
-      drawTree(a, ['1','7','30','31','33','351','358','90','91','971','972'], ['+1','+7','+30','+31','+33','+351','+358','+90','+91','+971','+972'], {dx:1.05, bits:false, leaf:C.mid, fs:13});
+    [()=>{ const CC = ['1','7','30','31','33','351','358','90','91','971','972'], CL = CC.map(c=>'+'+c);
+      /* in the projector eleven leaves stacked down the figure are closer than
+         a label is tall, so the tree is drawn from the top, leaves side by side */
+      if(P.labelScale() > 1){ const LX = {}; let cum = 0;
+        /* leaves spaced by the widths of their labels, in characters */
+        CC.slice().sort().forEach((c,i,o)=>{ if(i) cum += (c.length + o[i-1].length)/2 + 2.6; LX[c] = cum; });
+        const a = P.Axes(bare(EXO({xr:[-1.6, cum+1.6], yr:[-3.75,0.25], pad:{l:16,r:16,t:12,b:12}})));
+        drawTree(a, CC, CL, {vert:true, leafX:LX, bits:false, leaf:C.mid, fs:13}); return a.svg(); }
+      const a = P.Axes(bare(EXO({xr:[-0.3,3.9], yr:[-0.6,10.6], pad:{l:16,r:16,t:12,b:12}})));
+      drawTree(a, CC, CL, {dx:1.05, bits:false, leaf:C.mid, fs:13});
       return a.svg(); },
       'Telephone country codes: $+1$, $+30$, $+351$, $+971$. No code is the start of another, so a switch knows where the code ends without a separator.'],
     [()=>{ const a = P.Axes(bare(EXO({xr:[-0.5,11.5], yr:[-1.5,4], pad:{l:16,r:16,t:12,b:12}})));
@@ -29274,21 +29514,22 @@ function figHuffman(v){
 const LEN_HIGH = [2,2,2,3,3], LEN_LOW = [1,2,3,4,4];
 const lvar = ls => { const L = ls.reduce((s,l,k)=>s+FIVE[k]*l, 0); return ls.reduce((s,l,k)=>s+FIVE[k]*(l-L)*(l-L), 0); };
 function figHuffVar(v){
-  const f = Math.min(2, frameOf(v, 2)), Ht = takeH(420), hA = Math.round(0.6*Ht);
+  const big = P.labelScale() > 1, f = Math.min(2, frameOf(v, 2)), Ht = takeH(420), hA = Math.round((big ? 0.52 : 0.6)*Ht);
   const a = P.Axes(bare({w:560, h:hA, xr:[-1.55,3.95], yr:[-0.5,4.5], pad:{l:14,r:14,t:10,b:6}}));
   const oL = clamp01(f);
   if(oL < 0.98) huffTable(a, HUFF_HIGH, 4, {opacity:1-oL});
   const g1 = P.Axes(bare({w:560, h:hA, xr:[-1.55,3.95], yr:[-0.5,4.5], pad:{l:14,r:14,t:10,b:6}}));
   if(oL > 0.02) huffTable(g1, HUFF_LOW, 4, {opacity:oL});
-  const b = TAx({w:560, h:Ht-hA, xr:[0.4,5.6], yr:[0,5.7], ylabel:'l_k', pad:{l:56,r:26,t:24,b:40}, xt:[], yticksOverride:[1,2,3,4]});
+  const b = TAx({w:560, h:Ht-hA, xr:[0.4,5.6], yr:[0, big ? 6.6 : 5.7], ylabel:'l_k', pad:{l:56,r:26,t:24,b:40}, xt:[], yticksOverride:[1,2,3,4]});
   const o2 = clamp01(f-1);
-  [1,2,3,4,5].forEach(k=>lbl(b, k, -1.2, 's_'+k, C.in, 'middle', 15));
+  [1,2,3,4,5].forEach(k=>lblO(b, k, 0, -1.2, 's_'+k, C.in, 'middle', 15));
   const hi = LEN_HIGH, lo = LEN_LOW;
   if(1-oL*(1-o2) > 0.02) b.stem(hi.map((l,k)=>[k+1-0.12*o2, l]), {color:C.mid});
   if(oL > 0.02) b.stem(lo.map((l,k)=>[k+1+0.12*o2, l]), {color:C.h});
   b.hline(2.2, {color:C.ink, dash:'6 4', width:1.5, opacity:1});
-  if(o2 > 0.5){ lbl(b, 0.5, 4.85, '\\sigma^2_{\\text{high}}=0.16,\\ \\ \\sigma^2_{\\text{low}}=1.36', C.ink, 'start', 15); }
-  else lbl(b, 0.5, 4.85, '\\sigma^2='+(oL < 0.5 ? '0.16' : '1.36'), C.ink, 'start', 15);
+  const xS = big ? 1.1 : 0.5, yS = big ? 5.0 : 4.85;
+  if(o2 > 0.5){ lbl(b, xS, yS, '\\sigma^2_{\\text{high}}=0.16,\\ \\ \\sigma^2_{\\text{low}}=1.36', C.ink, 'start', 15); }
+  else lbl(b, xS, yS, '\\sigma^2='+(oL < 0.5 ? '0.16' : '1.36'), C.ink, 'start', 15);
   return `<svg viewBox="0 0 560 ${Ht}" xmlns="http://www.w3.org/2000/svg" role="img">${oL < 0.98 ? place(a.svg(),0,0,560,hA) : ''}${oL > 0.02 ? place(g1.svg(),0,0,560,hA) : ''}${place(b.svg(),0,hA,560,Ht-hA)}</svg>`;
 }
 
@@ -29303,7 +29544,7 @@ function figHuffExt(v){
     ring(a, n, HS3+1/n, {color:C.ink, r:8, width:2, opacity:o});
     dot(a, n, EXT_L[n-1], {color:C.mid, r:7, opacity:o});
     if(o > 0.5) lbl(a, n+0.14, HS3+1/n+0.02, 'H+\\tfrac1'+n, C.ink, 'start', 14); });
-  lbl(a, 3.45, HS3-0.24, 'H=1.157', C.in, 'end', 14);
+  lblO(a, 3.45, HS3, HS3-0.24, 'H=1.157', C.in, 'end', 14);
   const b = TAx({w:560, h:Ht-hA, xr:[0.5,3.5], yr:[1.13,1.33], xlabel:'n\\;(\\text{symbols a block})', ylabel:'\\bar{L}_n/n', pad:{l:56,r:26,t:24,b:42}, xt:[1,2,3], yticksOverride:[1.15,1.2,1.25,1.3]});
   b.hline(HS3, {color:C.in, width:2, dash:'6 4', opacity:1});
   [1,2,3].forEach(n=>{ const o = clamp01(f-n+2); if(o < 0.02) return;
@@ -29318,25 +29559,25 @@ const AR_P = [0.7, 0.2, 0.1], AR_SEQ = [0, 0, 1];
 const AR = (()=>{ const iv = [[0,1]]; AR_SEQ.forEach(s=>{ const [lo,hi] = iv[iv.length-1], w = hi-lo;
   const c = [0, 0.7, 0.9, 1]; iv.push([lo+w*c[s], lo+w*c[s+1]]); }); return iv; })();
 function figArith(v){
-  const f = Math.min(4, frameOf(v, 4));
+  const f = Math.min(4, frameOf(v, 4)), hh = P.labelScale() > 1 ? 0.28 : 0.22;
   const a = P.Axes(bare(SZ({xr:[-0.3,1.3], yr:[-0.8,4.4]})));
   const cuts = [0, 0.7, 0.9, 1], cols = [0.3, 0.2, 0.12];
   for(let r=0;r<4;r++){ const o = r === 0 ? 1 : clamp01(f-r+1); if(o < 0.02) continue;
     const y = 3.7 - 1.25*r, [lo, hi] = AR[r];
-    if(r < 3) for(let s=0;s<3;s++){ box(a, cuts[s], y-0.22, cuts[s+1], y+0.22, rgba(C.in, cols[s]), {stroke:C.in, width:1.4, opacity:o});
-      if(o > 0.5) lbl(a, (cuts[s]+cuts[s+1])/2, y-0.06, 's_'+(s+1), C.in, 'middle', 15); }
-    else { box(a, 0, y-0.22, 1, y+0.22, rgba(C.in, 0.22), {stroke:C.in, width:1.4, opacity:o}); }
-    if(o > 0.5){ lbl(a, -0.03, y-0.06, num(lo, 3).replace(/\.?0+$/,'') || '0', C.ink, 'end', 15); lbl(a, 1.03, y-0.06, num(hi, 3).replace(/\.?0+$/,''), C.ink, 'start', 15); }
+    if(r < 3) for(let s=0;s<3;s++){ box(a, cuts[s], y-hh, cuts[s+1], y+hh, rgba(C.in, cols[s]), {stroke:C.in, width:1.4, opacity:o});
+      if(o > 0.5) lblO(a, (cuts[s]+cuts[s+1])/2, y, y-0.06, 's_'+(s+1), C.in, 'middle', 15); }
+    else { box(a, 0, y-hh, 1, y+hh, rgba(C.in, 0.22), {stroke:C.in, width:1.4, opacity:o}); }
+    if(o > 0.5){ lblO(a, -0.03, y, y-0.06, num(lo, 3).replace(/\.?0+$/,'') || '0', C.ink, 'end', 15); lblO(a, 1.03, y, y-0.06, num(hi, 3).replace(/\.?0+$/,''), C.ink, 'start', 15); }
     if(r < 3){ const on = clamp01(f-r); if(on > 0.02){ const s = AR_SEQ[r];
-      box(a, cuts[s], y-0.22, cuts[s+1], y+0.22, 'none', {stroke:C.mid, width:3, opacity:on});
-      seg(a, [[cuts[s], y-0.26],[0, y-1.25+0.26]], {color:C.mid, width:1.3, dash:'4 4', opacity:on});
-      seg(a, [[cuts[s+1], y-0.26],[1, y-1.25+0.26]], {color:C.mid, width:1.3, dash:'4 4', opacity:on}); } }
+      box(a, cuts[s], y-hh, cuts[s+1], y+hh, 'none', {stroke:C.mid, width:3, opacity:on});
+      seg(a, [[cuts[s], y-hh-0.04],[0, y-1.25+hh+0.04]], {color:C.mid, width:1.3, dash:'4 4', opacity:on});
+      seg(a, [[cuts[s+1], y-hh-0.04],[1, y-1.25+hh+0.04]], {color:C.mid, width:1.3, dash:'4 4', opacity:on}); } }
   }
   const o4 = clamp01(f-3);
   if(o4 > 0.02){ const [lo, hi] = AR[3], y = 3.7-3*1.25, t0 = (0.375-lo)/(hi-lo), t1 = (0.40625-lo)/(hi-lo);
-    box(a, t0, y-0.22, t1, y+0.22, rgba(C.out, 0.3), {stroke:C.out, width:2.4, opacity:o4});
-    if(o4 > 0.5){ lbl(a, 0.5, 4.12, 'w=0.7\\times0.7\\times0.2=0.098,\\quad -\\log_2w=3.35', C.ink, 'middle', 15);
-      lbl(a, (t0+t1)/2, y-0.62, '0.\\mathtt{01100}_2=0.375', C.out, 'middle', 15); } }
+    box(a, t0, y-hh, t1, y+hh, rgba(C.out, 0.3), {stroke:C.out, width:2.4, opacity:o4});
+    if(o4 > 0.5){ lblO(a, 0.5, 3.7+hh, 4.12, 'w=0.7\\times0.7\\times0.2=0.098,\\quad -\\log_2w=3.35', C.ink, 'middle', 15);
+      lblO(a, (t0+t1)/2, y-hh, y-0.62, '0.\\mathtt{01100}_2=0.375', C.out, 'middle', 15); } }
   return a.svg();
 }
 
@@ -29474,15 +29715,19 @@ function figInputDist(v){
 
 /* Hard-decision BPSK is a binary symmetric channel with p = Q(sqrt(2Eb/N0)). */
 function figBSC(v){
-  const g = v ? v.g : 4, p = Qf(Math.sqrt(2*dB(g))), Ht = takeH(430), hA = Math.round(0.46*Ht);
+  const g = v ? v.g : 4, p = Qf(Math.sqrt(2*dB(g))), Ht = takeH(430), hA = Math.round((P.labelScale() > 1 ? 0.4 : 0.46)*Ht);
   const a = P.Axes(bare({w:560, h:hA, xr:[-0.25,1.25], yr:[-0.5,1.5], pad:{l:14,r:14,t:12,b:10}}));
   chanDiag(a, [['0',1],['1',0]], [['0',1],['1',0]], [[0,0,'keep'],[0,1,'flip'],[1,1,'keep'],[1,0,'flip']]);
-  lbl(a, 0.62, 1.13, '1-p', C.h, 'middle', 17); lbl(a, 0.62, -0.3, '1-p', C.h, 'middle', 17);
+  if(P.labelScale() > 1){
+    /* clear of the line by the descender of p above it, by the cap height below it */
+    a.note(0.62, 1, '1-p', {tex:true, fs:17, color:C.h, anchor:'middle', dy:-0.5*17*P.labelScale()});
+    a.note(0.62, 0, '1-p', {tex:true, fs:17, color:C.h, anchor:'middle', dy:37});
+  } else { lbl(a, 0.62, 1.13, '1-p', C.h, 'middle', 17); lbl(a, 0.62, -0.3, '1-p', C.h, 'middle', 17); }
   lbl(a, 0.38, 0.8, 'p', C.err, 'middle', 17); lbl(a, 0.38, 0.06, 'p', C.err, 'middle', 17);
   const b = logAx({w:560, h:Ht-hA, xr:[0,10.4], yr:[-6,-0.2], xlabel:'E_b/N_0\\;(\\text{dB})', ylabel:'p', pad:{l:62,r:26,t:24,b:42}, xt:[0,2,4,6,8,10], yticksOverride:P.decades(-6,-1)});
   b.curve(d=>lg10(Qf(Math.sqrt(2*dB(d)))), {color:C.err, width:2.6});
   dot(b, g, Math.log10(p), {color:C.err, r:7});
-  lbl(b, 0.3, -5.2, 'p=Q\\bigl(\\sqrt{2E_b/N_0}\\bigr)='+sci(p,2), C.err, 'start', 16);
+  lbl(b, 0.3, P.labelScale() > 1 ? -5.45 : -5.2, 'p=Q\\bigl(\\sqrt{2E_b/N_0}\\bigr)='+sci(p,2), C.err, 'start', 16);
   return stack(560, [[a.svg(),hA],[b.svg(),Ht-hA]]);
 }
 
@@ -29614,28 +29859,34 @@ function figBEC(v){
   const e = v ? v.e : 0.1, Ht = takeH(430), hA = Math.round(0.44*Ht);
   const a = P.Axes(bare({w:560, h:hA, xr:[-0.25,1.25], yr:[-0.35,1.35], pad:{l:14,r:14,t:12,b:10}}));
   chanDiag(a, [['0',1],['1',0]], [['0',1],['e',0.5],['1',0]], [[0,0,'keep'],[0,1,'erase'],[1,2,'keep'],[1,1,'erase']]);
-  lbl(a, 0.55, 1.1, '1-\\epsilon', C.h, 'middle', 17); lbl(a, 0.55, -0.24, '1-\\epsilon', C.h, 'middle', 17);
-  lbl(a, 0.3, 0.62, '\\epsilon', C.h, 'middle', 17); lbl(a, 0.3, 0.3, '\\epsilon', C.h, 'middle', 17);
+  lblO(a, 0.55, 1, 1.1, '1-\\epsilon', C.h, 'middle', 17); lblO(a, 0.55, 0, -0.24, '1-\\epsilon', C.h, 'middle', 17);
+  if(P.labelScale() > 1){
+    /* each epsilon a fixed gap inside its own erasure line, where the two lines are far apart */
+    const L = P.labelScale(), x = 0.2, t = 0.5*(x-CX0)/(CX1-CX0);
+    a.note(x, 1-t, '\\epsilon', {tex:true, fs:17, color:C.h, anchor:'middle', dy:3+17.6*L});
+    a.note(x, t, '\\epsilon', {tex:true, fs:17, color:C.h, anchor:'middle', dy:-9-6*L});
+  } else { lbl(a, 0.3, 0.62, '\\epsilon', C.h, 'middle', 17); lbl(a, 0.3, 0.3, '\\epsilon', C.h, 'middle', 17); }
   const b = TAx({w:560, h:Ht-hA, xr:[0,0.5], yr:[0,1.15], xlabel:'\\epsilon', ylabel:'C\\;(\\text{bits per use})', pad:{l:56,r:26,t:24,b:42}, xt:[0,0.1,0.2,0.3,0.4,0.5], yticksOverride:[0,0.5,1]});
   b.curve(u=>1-u, {color:C.out, width:2.6});
   b.curve(u=>1-hb(u), {color:C.out, width:2.6, dash:'8 5'});
   dot(b, e, 1-e, {color:C.out, r:6.5}); dot(b, e, 1-hb(e), {color:C.out, r:6.5});
-  lbl(b, 0.49, 1.03, '\\epsilon='+num(e,2)+':\\ \\text{BEC }'+num(1-e,3)+',\\ \\text{BSC }'+num(1-hb(e),3), C.ink, 'end', 16);
+  lbl(b, 0.49, P.labelScale() > 1 ? 0.98 : 1.03, '\\epsilon='+num(e,2)+':\\ \\text{BEC }'+num(1-e,3)+',\\ \\text{BSC }'+num(1-hb(e),3), C.ink, 'end', 16);
   return stack(560, [[a.svg(),hA],[b.svg(),Ht-hA]]);
 }
 
 /* The Z-channel: its diagram above its mutual-information curve. */
 function figZ(){
-  const Ht = takeH(430), hA = Math.round(0.42*Ht);
-  const a = P.Axes(bare({w:560, h:hA, xr:[-0.25,1.25], yr:[-0.4,1.4], pad:{l:14,r:14,t:12,b:10}}));
+  const big = P.labelScale() > 1, Ht = takeH(430), hA = Math.round((big ? 0.36 : 0.42)*Ht);
+  const a = P.Axes(bare({w:560, h:hA, xr:[-0.25,1.25], yr:[big ? -0.55 : -0.4,1.4], pad:{l:14,r:14,t:12,b:10}}));
   chanDiag(a, [['0',1],['1',0]], [['0',1],['1',0]], [[0,0,'keep'],[1,0,'flip'],[1,1,'keep']]);
-  lbl(a, 0.55, 1.12, '1', C.h, 'middle', 17); lbl(a, 0.55, -0.27, '\\tfrac12', C.h, 'middle', 17); lbl(a, 0.3, 0.46, '\\tfrac12', C.err, 'middle', 17);
+  lbl(a, 0.55, 1.12, '1', C.h, 'middle', 17); lblO(a, 0.55, 0, big ? -0.4 : -0.27, '\\tfrac12', C.h, 'middle', 17); lbl(a, 0.3, 0.46, '\\tfrac12', C.err, 'middle', 17);
   const b = TAx({w:560, h:Ht-hA, xr:[0,1], yr:[0,0.44], xlabel:'q=P(X=0)', ylabel:'I(X;Y)\\;(\\text{bits})', pad:{l:56,r:26,t:24,b:42}, xt:[0,0.25,0.5,0.75,1], yticksOverride:[0.1,0.2,0.3,0.4]});
   b.curve(u=>chan(ZCH,[u,1-u]).I, {color:C.out, width:2.6});
-  b.vline(0.6, {color:C.ink, dash:'5 4', width:1.3, opacity:1});
+  if(big) seg(b, [[0.6,0],[0.6,0.35]], {color:C.ink, width:1.3, dash:'5 4'});
+  else b.vline(0.6, {color:C.ink, dash:'5 4', width:1.3, opacity:1});
   dot(b, 0.6, chan(ZCH,[0.6,0.4]).I, {color:C.out, r:7});
   dot(b, 0.5, chan(ZCH,[0.5,0.5]).I, {color:C.muted, r:5});
-  lbl(b, 0.63, 0.395, 'q^{*}=0.6,\\ C=0.3219', C.out, 'start', 16);
+  lbl(b, big ? 0.99 : 0.63, 0.395, 'q^{*}=0.6,\\ C=0.3219', C.out, big ? 'end' : 'start', 16);
   return stack(560, [[a.svg(),hA],[b.svg(),Ht-hA]]);
 }
 
@@ -29700,7 +29951,7 @@ function figCodingThm(){
   a.hline(0.5, {color:C.ink, dash:'6 4', width:1.4, opacity:1});
   a.vline(0.11, {color:C.ink, dash:'3 4', width:1.2, opacity:1});
   [1,3,5,7].forEach(m=>dot(a, 0.1, 1/m, {color:C.mid, r:5.5}));
-  lbl(a, 0.22, 0.035, '\\text{reliable: }R<C', C.out, 'middle', 15);
+  lbl(a, P.labelScale() > 1 ? 0.19 : 0.22, P.labelScale() > 1 ? 0.02 : 0.035, '\\text{reliable: }R<C', C.out, 'middle', 15);
   lbl(a, 0.3, 0.9, '\\text{impossible: }R>C', C.err, 'middle', 17);
   lbl(a, 0.125, 0.57, 'p=0.11', C.ink, 'start', 15);
   return a.svg();
@@ -29719,7 +29970,7 @@ const HAM_CIRC = [[-0.62,0.3],[0.62,0.3],[0,-0.72]];
 const syn = w => [1,2,4].map(b=>[1,2,3,4,5,6,7].filter(i=>i&b).reduce((s,i)=>s^w[i-1],0));
 function figHamming(v){
   const f = Math.min(4, frameOf(v, 4)), o0 = 1-clamp01(f);
-  if(o0 > 0.5){ const big = P.labelScale() > 1, a = P.Axes(bare(SZ({xr:[0,4.2], yr:[big ? -1.5 : -0.6,8.4]})));
+  if(o0 > 0.5){ const big = P.labelScale() > 1, a = P.Axes(bare(SZ({xr:[0,4.2], yr:[big ? -1.5 : -0.6,8.4], h: big ? 460 : 380})));
     HAM.words.forEach((w,i)=>{ const col = Math.floor(i/8), row = i%8, x = 0.2+2.1*col, y = 7.6-row*1.0;
       lbl(a, x, y-0.18, '\\mathtt{'+w.join('')+'}', C.mid, 'start', 17);
       lbl(a, x+1.45, y-0.18, String(w.reduce((s,b)=>s+b,0)), C.muted, 'start', 15); });
@@ -29817,9 +30068,9 @@ function figAWGN(v){
 /* Capacity of the bandlimited channel, per hertz, against the SNR. */
 function figShannon(v){
   const s = v ? v.s : 11.76, snr = dB(s), c = lg(1+snr);
-  const a = TAxL(SZ({xr:[-10,30], yr:[0,11.8], xlabel:'\\text{SNR}\\;(\\text{dB})', ylabel:'C/W\\;(\\text{b/s/Hz})', xt:[-10,0,10,20], yticksOverride:[0,2,4,6,8,10], zeroAxes:false}));
+  const a = TAxL(SZ({xr:[P.labelScale() > 1 ? -12 : -10,30], yr:[0,11.8], xlabel:'\\text{SNR}\\;(\\text{dB})', ylabel:'C/W\\;(\\text{b/s/Hz})', xt:[-10,0,10,20], yticksOverride:[0,2,4,6,8,10], zeroAxes:false}));
   a.curve(d=>lg(1+dB(d)), {color:C.out, width:2.6});
-  seg(a, [[s,0],[s,c],[-10,c]], {color:C.ink, width:1.3, dash:'5 4'});
+  seg(a, [[s,0],[s,c],[a.o.xr[0],c]], {color:C.ink, width:1.3, dash:'5 4'});
   dot(a, s, c, {color:C.out, r:7});
   lbl(a, -9, 10.95, '\\text{SNR}='+num(snr, snr < 10 ? 2 : 1)+':\\ \\ C/W='+num(c,2), C.out, 'start', 16);
   return a.svg();
@@ -29833,23 +30084,24 @@ function figPhone(){
   dot(a, 30, 3.1*lg(1001), {color:C.out, r:7});
   lbl(a, 29, 3.1*lg(1001)+3, '30\\text{ dB}:\\ 30.9\\text{ kb/s}', C.out, 'end', 16);
   ring(a, todB(30), 3.1*lg(31), {color:C.err, r:10, width:2.2});
-  lbl(a, todB(30)+1.2, 3.1*lg(31)-4.2, '\\log_2(1+30):\\ 15.4\\text{ kb/s}', C.err, 'start', 16);
+  lblO(a, todB(30)+1.2*P.labelScale(), 3.1*lg(31), 3.1*lg(31)-4.2, '\\log_2(1+30):\\ 15.4\\text{ kb/s}', C.err, 'start', 16);
   return a.svg();
 }
 
 /* More bandwidth at the same power: C rises and levels off at 1.44 P/N0.
    More power at the same bandwidth: C keeps growing, slowly. */
 function figBandwidth(v){
-  const u = v ? v.w : 0, x = Math.pow(10, u), c = x*lg(1+1/x), Ht = takeH(430), hA = Math.round(0.56*Ht);
+  const big = P.labelScale() > 1, u = v ? v.w : 0, x = Math.pow(10, u), c = x*lg(1+1/x), Ht = takeH(430), hA = Math.round((big ? 0.5 : 0.56)*Ht);
   const a = TAxL({w:560, h:hA, xr:[-1.05,2.05], yr:[0,1.75], xlabel:'WN_0/P', ylabel:'C/(P/N_0)', pad:{l:62,r:26,t:24,b:42}, xt:[-1,0,1,2], xfmt:P.decade, yticksOverride:[0,0.5,1], zeroAxes:false});
   a.hline(1/Math.LN2, {color:C.ink, dash:'6 4', width:1.6, opacity:1});
   a.curve(t=>Math.pow(10,t)*lg(1+Math.pow(10,-t)), {color:C.out, width:2.6});
   dot(a, u, c, {color:C.out, r:7});
-  lbl(a, -0.95, 1/Math.LN2+0.1, '1/\\ln2=1.443', C.ink, 'start', 15);
-  lbl(a, 2.0, 0.2, 'WN_0/P='+num(x, x < 1 ? 2 : 1)+':\\ C='+num(c,3)+'\\,P/N_0', C.out, 'end', 16);
+  if(big) lblO(a, 2.0, 1/Math.LN2, 1/Math.LN2+0.1, '1/\\ln2=1.443', C.ink, 'end', 15);
+  else lbl(a, -0.95, 1/Math.LN2+0.1, '1/\\ln2=1.443', C.ink, 'start', 15);
+  lbl(a, 2.0, big ? 0.1 : 0.2, 'WN_0/P='+num(x, x < 1 ? 2 : 1)+':\\ C='+num(c,3)+'\\,P/N_0', C.out, 'end', 16);
   const b = TAx({w:560, h:Ht-hA, xr:[0,100], yr:[0,7.6], xlabel:'P/(N_0W)', ylabel:'C/W', pad:{l:62,r:26,t:24,b:42}, xt:[0,25,50,75,100], yticksOverride:[0,2,4,6]});
   b.curve(t=>lg(1+t), {color:C.out, width:2.4, dash:'8 5'});
-  lbl(b, 98, 2.3, '\\text{power alone: }\\log_2(1+P/N_0W)', C.out, 'end', 15);
+  lbl(b, 98, big ? 1.5 : 2.3, '\\text{power alone: }\\log_2(1+P/N_0W)', C.out, 'end', 15);
   return stack(560, [[a.svg(),hA],[b.svg(),Ht-hA]]);
 }
 
@@ -29863,8 +30115,8 @@ const PL5 = [['psk',2,1],['psk',4,2],['psk',8,3],['qam',16,4],['qam',64,6],['ort
   .map(([fam,M,r])=>({fam, M, r, g:reach(d=>PE5[fam](M, dB(d)), 1e-5, -5, 40)}));
 const limDB = r => todB((Math.pow(2,r)-1)/r);
 function figPlane6(v){
-  const u = v ? v.u : 1, r = Math.pow(2, u);
-  const a = TAx(SZ({xr:[-3,22], yr:[-3,3], xlabel:'E_b/N_0\\;(\\text{dB})', ylabel:'r=R_b/W', xt:[0,5,10,15], yticksOverride:[], grid:false, zeroAxes:false}));
+  const u = v ? v.u : 1, r = Math.pow(2, u), xR = P.labelScale() > 1 ? 25 : 22;
+  const a = TAx(SZ({xr:[-3,xR], yr:[-3,3], xlabel:'E_b/N_0\\;(\\text{dB})', ylabel:'r=R_b/W', xt:[0,5,10,15], yticksOverride:[], grid:false, zeroAxes:false}));
   leftTicks(a, [-3,-2,-1,0,1,2,3], t=>t >= 0 ? String(Math.pow(2,t)) : '1/'+Math.pow(2,-t));
   const lim = []; for(let t=-3;t<=3.001;t+=0.05) lim.push([limDB(Math.pow(2,t)), t]);
   const fillPts = lim.map(p=>f2(a.sx(p[0]))+','+f2(a.sy(p[1]))).join('L');
@@ -29873,9 +30125,9 @@ function figPlane6(v){
   a.hline(0, {color:C.muted, width:1, dash:'2 4'});
   PL5.forEach(q=>dot(a, q.g, lg(q.r), {color:C.in, r:5.5}));
   dot(a, limDB(r), u, {color:C.out, r:7});
-  lbl(a, 21.5, -2.6, 'r='+num(r, r < 1 ? 3 : 2)+':\\ E_b/N_0\\ge'+num(limDB(r),2)+'\\text{ dB}', C.out, 'end', 16);
-  lbl(a, 21.5, 0.25, '\\text{bandwidth-limited}', C.ink, 'end', 14);
-  lbl(a, 21.5, -0.7, '\\text{power-limited}', C.ink, 'end', 14);
+  lbl(a, xR-0.5, -2.6, 'r='+num(r, r < 1 ? 3 : 2)+':\\ E_b/N_0\\ge'+num(limDB(r),2)+'\\text{ dB}', C.out, 'end', 16);
+  lbl(a, xR-0.5, 0.25, '\\text{bandwidth-limited}', C.ink, 'end', 14);
+  lbl(a, xR-0.5, -0.7, '\\text{power-limited}', C.ink, 'end', 14);
   lbl(a, -2.6, 2.55, '\\text{impossible}', C.err, 'start', 15);
   return a.svg();
 }
@@ -31575,8 +31827,13 @@ function figClt(v){
   const f = frameOf(v, 3), k = Math.min(2, Math.floor(f+1e-9)), fr = f-k, D = cltDens();
   const d = CL_X.map((_,i)=> fr < 1e-9 ? D[k][i] : (1-fr)*D[k][i] + fr*D[Math.min(3,k+1)][i]);
   const at = z => { const u = (z+3.6)/0.02, i = Math.max(0, Math.min(359, Math.floor(u))), w = u-i; return d[i]*(1-w) + d[i+1]*w; };
-  const a = P.Axes(SZ({xr:[-3.6,3.6], yr:[0,0.62], xlabel:'z', ylabel:'f_Z(z)',
+  /* in projector mode the three notes at the top left grow: the panel gains
+     height and the notes are spaced in pixels above the densities */
+  const L = P.labelScale(), big = L>1;
+  const a = P.Axes(SZ({h:big?460:380, xr:[-3.6,3.6], yr:[0,big?0.95:0.62], xlabel:'z', ylabel:'f_Z(z)',
     xticksOverride:[-3,-2,-1,0,1,2,3], yticksOverride:[0.2,0.4]}));
+  const u = 1/(a.sy(0)-a.sy(1)), yn = big ? 0.95-22*L*u : 0.585,
+        yz = big ? yn-46*L*u : 0.48, yg = big ? yz-42*L*u : 0.36;
   a.area(at, -3.6, 3.6, {color:C.dec.mid, n:720});
   /* one source on the same scale: the flat box every sum starts from */
   const hw = Math.sqrt(3), hb = 1/(2*hw);
@@ -31586,9 +31843,9 @@ function figClt(v){
   a.curve(at, {color:C.mid, width:2.8, n:720});
   const n = [1,2,5,30][Math.round(f)];
   const gap = Math.max(...CL_X.map((z,i)=>Math.abs(d[i]-dN(z))));
-  a.note(-3.45, 0.6, `n=${n}`, {tex:true, fs:18, color:C.mid});
-  a.note(-3.45, 0.5, 'Z=\\dfrac{X_1+\\cdots+X_n}{\\sqrt{n/3}}', {tex:true, fs:15, color:C.slate});
-  a.note(-3.45, 0.36, `\\text{largest gap to Gaussian: }${gap.toFixed(3)}`, {tex:true, fs:14, color:C.muted});
+  a.note(-3.45, yn, `n=${n}`, {tex:true, fs:18, color:C.mid});
+  a.note(-3.45, yz, 'Z=\\dfrac{X_1+\\cdots+X_n}{\\sqrt{n/3}}', {tex:true, fs:15, color:C.slate});
+  a.note(-3.45, yg, `\\text{largest gap to Gaussian: }${gap.toFixed(3)}`, {tex:true, fs:14, color:C.muted});
   return a.svg();
 }
 
@@ -31735,9 +31992,11 @@ function figPsdOnly(v){
   a.note(3.9,2.2-2*dy,'f_{1/2}=\\dfrac{1}{2\\pi\\tau_c}='+fh.toFixed(2)+'\\ \\text{kHz}',{tex:true,fs:15,color:C.mid,anchor:'end'});
   return a.svg();
 }
+/* drawn in u = f + 7, so the vertical axis sits at the left edge and its tick
+   numbers are not written on the top of the rectangle */
 function figPowerArea(){
-  const a=P.Axes(SZ({xr:[-7,7],yr:[0,1.6],xlabel:'f\\;(\\text{kHz})',ylabel:'S_X(f)\\;(\\text{W}/\\text{Hz})',xticksOverride:[-5,0,5],yticksOverride:[0.5,1],ytickfmt:v=>v+'×10⁻³'}));
-  a.rect(-5,0,5,1,{fill:C.dec.in});a.poly([[-7,0],[-5,0],[-5,1],[5,1],[5,0],[7,0]],{color:C.in,width:2.6});return a.svg();
+  const a=P.Axes(SZ({pad:{l:P.labelScale()>1?116:88,r:26,t:24,b:42},xr:[0,14],yr:[0,1.6],xlabel:'f\\;(\\text{kHz})',ylabel:'S_X(f)\\;(\\text{W}/\\text{Hz})',xticksOverride:[2,7,12],xtickfmt:u=>String(u-7),yticksOverride:[0.5,1],ytickfmt:v=>v+'×10⁻³'}));
+  a.rect(2,0,12,1,{fill:C.dec.in});a.poly([[0,0],[2,0],[2,1],[12,1],[12,0],[14,0]],{color:C.in,width:2.6});return a.svg();
 }
 function figWhiteSpectrum(v){
   const B=v&&v.B!=null?v.B:2;
@@ -31785,16 +32044,19 @@ function figGaussianSample(){
    for this WSS process the average product stays R_X(1 ms) = e^-1 V^2. The
    two readouts are measured from the 3000 recordings SS_P (defined below). */
 function figWssShift(v){
-  const t0=val(v,'t',1), tau=1;
-  const a=P.Axes(SZ({xr:[0,6],yr:[-3.4,5.4],xlabel:'t\\;(\\text{ms})',ylabel:'X(t)\\;(\\text{V})',xticksOverride:[0,1,2,3,4,5,6],yticksOverride:[-2,0,2]}));
+  const t0=val(v,'t',1), tau=1, L=P.labelScale(), big=L>1, top=big?6.2:5.4;
+  const a=P.Axes(SZ({xr:[0,6],yr:[-3.4,top],xlabel:'t\\;(\\text{ms})',ylabel:'X(t)\\;(\\text{V})',xticksOverride:[0,1,2,3,4,5,6],yticksOverride:[-2,0,2]}));
   AC_P.forEach((x,i)=>a.curve(path(x,AC_DT,6),{color:[C.in,C.h,C.err][i],width:1.6,n:700}));
-  [t0,t0+tau].forEach(t=>{a.vline(t,{color:C.mid,dash:'5 4',width:1.4,opacity:0.9});
+  /* the two reading times are marked up to the tau bracket, so its label,
+     which is wider than the bracket once labels grow, crosses no line */
+  [t0,t0+tau].forEach(t=>{a.raw(`<line x1="${a.sx(t).toFixed(2)}" y1="${a.sy(4.45).toFixed(2)}" x2="${a.sx(t).toFixed(2)}" y2="${a.sy(-3.4).toFixed(2)}" stroke="${C.mid}" stroke-width="${(1.4*(1+(L-1)*0.75)).toFixed(2)}" stroke-dasharray="5 4" opacity="0.9"/>`);
     AC_P.forEach(x=>a.point(t,path(x,AC_DT,6)(t),{color:C.mid,r:4}));});
   a.span(t0,t0+tau,4.45,'\\tau=1\\ \\text{ms}',{tex:true,fs:15,color:C.mid});
   let m=0, r=0; SS_P.forEach(x=>{ const f=path(x,AC_DT,6), u=f(t0); m+=u; r+=u*f(t0+tau); });
   m/=SS_N; r/=SS_N;
-  a.note(5.95,5.0,'\\hat\\mu_X(t)='+m.toFixed(2)+'\\ \\text{V}',{tex:true,fs:15,color:C.mid,anchor:'end'});
-  a.note(5.95,4.35,'\\hat R_X(t,t+\\tau)='+r.toFixed(2)+'\\ \\text{V}^{2}',{tex:true,fs:15,color:C.mid,anchor:'end'});
+  const u=1/(a.sy(0)-a.sy(1)), ym=big?top-13*L*u:5.0, yr=big?ym-30*L*u:4.35;
+  a.note(5.95,ym,'\\hat\\mu_X(t)='+m.toFixed(2)+'\\ \\text{V}',{tex:true,fs:15,color:C.mid,anchor:'end'});
+  a.note(5.95,yr,'\\hat R_X(t,t+\\tau)='+r.toFixed(2)+'\\ \\text{V}^{2}',{tex:true,fs:15,color:C.mid,anchor:'end'});
   return a.svg();
 }
 /* Strict-sense stationarity: recordings of the same process (the first
@@ -33062,9 +33324,12 @@ function figPsd(v){
       pts.push(a.sx(x).toFixed(2)+','+a.sy(y).toFixed(2)); }
     a.raw(`<path d="M${a.sx(x0).toFixed(2)},${a.sy(DB_LO).toFixed(2)}L${pts.join('L')}L${a.sx(x1).toFixed(2)},${a.sy(DB_LO).toFixed(2)}Z" fill="${C.dec.err}" stroke="none"/>`); };
   fill(rect); if(lo < (1+al)/2) fill(rc);
-  a.curve(f=>dB(rc(f-dl)), {color:C.slate, width:1.8, dash:'2 4', n:1200});
-  a.curve(f=>dB(rect(f)), {color:C.in, width:1.6, dash:'4 4', n:1600});
-  a.curve(f=>dB(rc(f)), {color:C.in, width:2.6, n:1200});
+  /* in projector mode a curve stops at the floor of the range instead of
+     running into the clip margin, where it met the enlarged axis name */
+  const dBc = P.labelScale()>1 ? x => { const y = dB(x); return y < DB_LO ? NaN : y; } : dB;
+  a.curve(f=>dBc(rc(f-dl)), {color:C.slate, width:1.8, dash:'2 4', n:1200});
+  a.curve(f=>dBc(rect(f)), {color:C.in, width:1.6, dash:'4 4', n:1600});
+  a.curve(f=>dBc(rc(f)), {color:C.in, width:2.6, n:1200});
   const pr = simpson(rect, lo, hi, 800);
   const prc = simpson(rc, Math.max(lo,-(1+al)/2), Math.min(hi,(1+al)/2)) / simpson(rc, -(1+al)/2, (1+al)/2);
   const pct = x => x < 0.0005 ? '0' : (100*x).toFixed(1);
@@ -33103,7 +33368,7 @@ function figRepeater(v){
   /* drawn at y + 2, so the time ticks sit under the frame and not on the
      edges of the waveform */
   const c = P.Axes({w:560,h:h3,xr:[-0.2,8.3],yr:[0.2,3.8],xlabel:'t/T_b',ylabel:'\\text{regenerated}',
-    pad:{l:56,r:26,t:22,b:40},xnameDrop:44*P.labelScale(),xticksOverride:[0,2,4,6,8],yticksOverride:[1,3],ytickfmt:y=>P.fmt(y-2)});
+    pad:{l:56,r:26,t:22,b:40},xnameDrop:(P.labelScale()>1?54:44)*P.labelScale(),xticksOverride:[0,2,4,6,8],yticksOverride:[1,3],ytickfmt:y=>P.fmt(y-2)});
   c.hline(2, {color:C.muted});
   const m = f > 0.02 ? Math.min(4, Math.ceil(f-1e-9)) : 0, sent = RP_R[Math.min(4, Math.floor(f+0.4))];
   if(m > 0){ const prev = lvl(RP_R[m-1]);
@@ -33785,8 +34050,11 @@ function figWave(o){
   (o.marks||[]).forEach(([t,v])=>a.point(t, v, {color:C.mid}));
   const lx = o.lx!=null ? o.lx : o.t0 + 0.02*(o.t1-o.t0);
   a.note(lx, o.max, o.maxLab, {tex:true, dy:-10, color:C.mid});
-  if(o.minTo!=null) a.note(o.minTo+0.02*(o.t1-o.t0), o.min, o.minLab, {tex:true, dy:4, color:C.mid});
-  else a.note(lx, o.min, o.minLab, {tex:true, dy:20, color:C.mid});
+  /* the distance below the minimum line grows with the label, so a label
+     drawn larger in lecture mode does not climb back onto the curve */
+  const LS = P.labelScale();
+  if(o.minTo!=null) a.note(o.minTo+0.02*(o.t1-o.t0), o.min, o.minLab, {tex:true, dy:4+30*(LS-1), color:C.mid});
+  else a.note(lx, o.min, o.minLab, {tex:true, dy:12+14*LS, color:C.mid});
   return panel(a.svg(), o.legend ? legend(o.legend) : '');
 }
 
@@ -34677,7 +34945,7 @@ function demod(){
     {t:'text',x:380,y:122,label:'Matched filter',fs:14},
     {t:'arrow',x1:460,y1:62,x2:556,y2:62,label:'y(t)',tex:true,color:C.mid},
     {t:'line',d:'M556,62 h22'},{t:'line',d:'M578,62 l22,-15'},
-    {t:'text',x:592,y:24,label:'\\text{sample at }t=T',tex:true,fs:13},
+    {t:'text',x:592,y:P.labelScale()>1?100:24,label:'\\text{sample at }t=T',tex:true,fs:13},
     {t:'arrow',x1:606,y1:62,x2:748,y2:62,label:'Y=y(T)',tex:true,color:C.mid}
   ]});
 }
@@ -34702,7 +34970,10 @@ function dens(o){
   const top = o.top, off = o.xr[0], span = o.xr[1] - o.xr[0];
   const step = o.xs || P.niceStep(span, 7);
   const xt = []; for(let v = Math.ceil(off/step - 1e-9)*step; v <= o.xr[1] + 1e-9; v += step) xt.push(v - off);
-  const a = P.Axes({w:o.w||760, h:o.h||300, xr:[0, span], yr:[-0.05*top, (o.room||1.42)*top],
+  /* in projector mode the panel reaches higher and a threshold label sits a
+     fixed number of pixels under its top, clear of the axis name */
+  const L = P.labelScale(), big = L>1, yTop = (o.room||1.42)*top*(big ? 1.1 : 1);
+  const a = P.Axes({w:o.w||760, h:o.h||300, xr:[0, span], yr:[-0.05*top, yTop],
     xlabel:o.xl||'y', ylabel:o.yl||'p_m\\,f_Y(y\\mid m)', pad:{l:66,r:28,t:24,b:42}, ytarget:3,
     xticksOverride:xt, xtickfmt: u => P.fmt(u + off, 3)});
   const g = f => u => f(u + off);
@@ -34714,7 +34985,8 @@ function dens(o){
   a.curve(g(o.f1), {color:C.mid, width:2.4, n:1400});
   o.lams.forEach(l => a.vline(l - off, {color:C.ink, dash:'6 4', width:1.6, opacity:1}));
   (o.notes||[]).forEach(n => { const k = n[4]==='k';
-    a.note(n[0] - off, n[1]*top, n[2], {tex:true, fs:15, anchor:k ? 'start' : (n[3]||'middle'), dx:k ? 7 : 0,
+    const y = big && k ? yTop - 18*L/(a.sy(0)-a.sy(1)) : n[1]*top;
+    a.note(n[0] - off, y, n[2], {tex:true, fs:15, anchor:k ? 'start' : (n[3]||'middle'), dx:k ? 7 : 0,
       color:k ? C.ink : C.mid}); });
   return a.svg();
 }
@@ -34754,7 +35026,7 @@ function filtDiag(){
     {t:'text',x:380,y:122,label:'Receive filter',fs:14},
     {t:'arrow',x1:460,y1:62,x2:556,y2:62,label:'y(t)',tex:true,color:C.mid},
     {t:'line',d:'M556,62 h22'},{t:'line',d:'M578,62 l22,-15'},
-    {t:'text',x:592,y:24,label:'\\text{sample at }t=t_0',tex:true,fs:13},
+    {t:'text',x:592,y:P.labelScale()>1?100:24,label:'\\text{sample at }t=t_0',tex:true,fs:13},
     {t:'arrow',x1:606,y1:62,x2:748,y2:62,label:'Y=y(t_0)',tex:true,color:C.mid}
   ]});
 }
@@ -34806,14 +35078,15 @@ function nyqFold(A, Bw, R, sumCol, tag){
   const lo = -7.6, hi = 7.6, xt = [];
   for(let v = -7; v <= 7; v++) xt.push(v - lo);
   const on = (n) => u => { const f = u + lo; return Math.abs(f - n*R) <= (A+Bw)/2 ? S(f - n*R) : NaN; };
-  const a = P.Axes({w:760, h:250, xr:[0, hi - lo], yr:[-0.03,0.4], xlabel:'f\\;(\\mathrm{kHz})',
+  const L = P.labelScale(), big = L>1, yt = big ? 0.46 : 0.4;
+  const a = P.Axes({w:760, h:250, xr:[0, hi - lo], yr:[-0.03,yt], xlabel:'f\\;(\\mathrm{kHz})',
     ylabel:'S(f-nR_b)\\;(\\mathrm{ms})', pad:{l:66,r:28,t:24,b:42},
     xticksOverride:xt, xtickfmt: u => String(Math.round(u + lo)),
     yticksOverride:[0.125,0.25], ytickfmt: v => P.fmt(v, 3)});
   [-2,-1,1,2].forEach(n => a.curve(on(n), {color:C.mid, width:1.8, dash:'6 4', n:1600}));
   a.curve(u => { let s = 0; for(let n=-3;n<=3;n++) s += S(u + lo - n*R); return s; }, {color:sumCol, width:2.8, n:1600});
   a.curve(on(0), {color:C.in, width:2.4, n:1600});
-  a.note(0.4, 0.35, tag, {tex:true, fs:15, anchor:'start', color:C.ink});
+  a.note(0.4, big ? yt-20*L/(a.sy(0)-a.sy(1)) : 0.35, tag, {tex:true, fs:15, anchor:'start', color:C.ink});
   return a.svg();
 }
 const tri = (a) => n => Math.abs(n) <= a ? (1 - Math.abs(n)/a)/a : 0;
@@ -35781,7 +36054,11 @@ function wave(segs, o){
   const T = o.T, hs = segs.map(s=>s[2]);
   const lo = Math.min(0,...hs), hi = Math.max(0,...hs), sp = (hi-lo)||1;
   const negLab = (o.lab||[]).some((l,i)=>l && segs[i][2]<0);
-  const yr = o.yr || [lo<0 ? lo-(negLab?0.5:0.22)*sp : -0.12*sp, hi>0 ? hi+0.28*sp : 0.12*sp];
+  /* In the projected view the labels are larger: the value over the top piece
+     needs more headroom to stay below the name, and the tick row and the name
+     under a negative waveform are set further down, all in label units. */
+  const k = P.labelScale(), big = k > 1;
+  const yr = o.yr || [lo<0 ? lo-(negLab?(big?0.7:0.5):0.22)*sp : -0.12*sp, hi>0 ? hi+(big?0.6:0.28)*sp : 0.12*sp];
   const xt = o.xt || Array.from({length:T+1},(_,i)=>i);
   const yt = o.yt || [...new Set(hs.concat([0]))].sort((a,b)=>a-b);
   /* A waveform that goes negative has its jumps cross the zero line, where
@@ -35789,18 +36066,19 @@ function wave(segs, o){
      data area instead, so no trace runs through them. */
   const neg = lo < 0;
   const opt = {w:o.w||360,h:o.h||(neg?240:220),xr:[-0.3,T+0.5],yr:yr,
-    xlabel:neg?'':'t\\;(\\mathrm{s})',ylabel:o.name,pad:{l:46,r:16,t:22,b:neg?58:36},
+    xlabel:neg?'':'t\\;(\\mathrm{s})',ylabel:o.name,pad:{l:46,r:16,t:22,b:neg?58*k:36},
     xticksOverride:xt,yticksOverride:yt};
+  if(big && !neg) opt.xnameDrop = 52*k;
   if(neg) opt.xtickfmt = () => '';
   const a = P.Axes(opt);
-  if(neg){ xt.forEach(v=>a.note(v, yr[0], P.fmt(v,3), {fs:13, anchor:'middle', dy:19}));
-    a.note(T+0.5, yr[0], 't\\;(\\mathrm{s})', {tex:true, fs:15, color:C.ink, anchor:'end', dy:47}); }
+  if(neg){ xt.forEach(v=>a.note(v, yr[0], P.fmt(v,3), {fs:13, anchor:'middle', dy:19*k}));
+    a.note(T+0.5, yr[0], 't\\;(\\mathrm{s})', {tex:true, fs:15, color:C.ink, anchor:'end', dy:47*k}); }
   const pts = [[-0.3,0],[segs[0][0],0]];
   segs.forEach(s=>{ pts.push([s[0],s[2]],[s[1],s[2]]); });
   pts.push([segs[segs.length-1][1],0],[T+0.5,0]);
   a.poly(pts,{color:o.color||C.in,width:2.3});
   if(o.lab) segs.forEach((s,i)=>{ if(o.lab[i]) a.note((s[0]+s[1])/2, s[2], o.lab[i],
-    {tex:true,fs:14,color:o.color||C.in,anchor:'middle',dy:s[2]>=0?-9:30}); });
+    {tex:true,fs:14,color:o.color||C.in,anchor:'middle',dy:(s[2]>=0?-9:30)*k}); });
   return a.svg();
 }
 
@@ -35808,6 +36086,10 @@ const OFF = { n:{dy:-12,anchor:'middle'}, s:{dy:27,anchor:'middle'},
   e:{dx:12,dy:7,anchor:'start'}, w:{dx:-12,dy:7,anchor:'end'},
   ne:{dx:8,dy:-9,anchor:'start'}, nw:{dx:-8,dy:-9,anchor:'end'},
   se:{dx:8,dy:25,anchor:'start'}, sw:{dx:-8,dy:25,anchor:'end'} };
+/* The offsets are pixels at the ordinary label size. The point and its label
+   both grow with the label scale, so the gap between them grows with it. */
+const offM3 = w => { const o = OFF[w], k = P.labelScale();
+  return {dx:(o.dx||0)*k, dy:(o.dy||0)*k, anchor:o.anchor}; };
 
 /* A constellation: pts are [x, y, label, where]; `d` lists the pairs at the
    minimum distance, drawn in the error colour; `dl` places the d_min label. */
@@ -35822,8 +36104,11 @@ function cons(pts, o){
     a.poly(c,{color:C.rule,width:1.2,dash:'4 5'}); }
   (o.d||[]).forEach(([i,j])=>a.poly([[pts[i][0],pts[i][1]],[pts[j][0],pts[j][1]]],{color:C.err,width:2.4}));
   pts.forEach(p=>{ a.point(p[0],p[1],{color:C.in,r:6});
-    if(p[2]) a.note(p[0],p[1],p[2],Object.assign({tex:true,fs:15,color:C.in},OFF[p[3]||'n'])); });
-  if(o.dl) a.note(o.dl[0],o.dl[1],o.dl[2],{tex:true,fs:14,color:C.err,anchor:o.dl[3]||'start'});
+    if(p[2]) a.note(p[0],p[1],p[2],Object.assign({tex:true,fs:15,color:C.in},offM3(p[3]||'n'))); });
+  /* in the projected view the distance label is moved 7 px further from the
+     point beside it, in the direction its anchor lets it grow */
+  if(o.dl){ const an = o.dl[3]||'start', g = 20*(P.labelScale()-1);
+    a.note(o.dl[0],o.dl[1],o.dl[2],{tex:true,fs:14,color:C.err,anchor:an,dx:an==='start'?g:an==='end'?-g:0}); }
   return BOX(a.svg(), o.w||560);
 }
 
@@ -35835,12 +36120,12 @@ function cons3(pts, o){
     grid:false,zeroAxes:false,arrows:false,xticksOverride:[],yticksOverride:[]});
   const ax = [[pr(2.0,0,0),'\\psi_1','s'],[pr(0,1.75,0),'\\psi_2','e'],[pr(0,0,2.0),'\\psi_3','w']];
   ax.forEach(([q,l,w])=>{ a.poly([[0,0],q],{color:C.axis,width:1.5});
-    a.note(q[0],q[1],l,Object.assign({tex:true,fs:15,color:C.ink},OFF[w])); });
+    a.note(q[0],q[1],l,Object.assign({tex:true,fs:15,color:C.ink},offM3(w))); });
   pts.forEach(p=>{ const q = pr(p[0],p[1],p[2]), f = pr(p[0],0,p[2]);
     if(Math.abs(p[1])>1e-9) a.poly([f,q],{color:C.rule,width:1,dash:'3 4'}); });
   (o.d||[]).forEach(([i,j])=>a.poly([pr(...pts[i]),pr(...pts[j])],{color:C.err,width:2.2}));
   pts.forEach(p=>{ const q = pr(p[0],p[1],p[2]); a.point(q[0],q[1],{color:C.in,r:6});
-    a.note(q[0],q[1],p[3],Object.assign({tex:true,fs:15,color:C.in},OFF[p[4]||'n'])); });
+    a.note(q[0],q[1],p[3],Object.assign({tex:true,fs:15,color:C.in},offM3(p[4]||'n'))); });
   if(o.dl) a.note(o.dl[0],o.dl[1],o.dl[2],{tex:true,fs:14,color:C.err,anchor:o.dl[3]||'start'});
   return BOX(a.svg(), 560);
 }
@@ -35852,12 +36137,14 @@ function cons3(pts, o){
 function simplex3(S, m, o){
   const k = o.k, pr = (x,y,z) => [k*(x-0.3*z), k*(y-0.6*z)];
   const Uv = S.map(s=>s.map((v,j)=>v-m[j]));
-  const a = P.Axes({w:600,h:470,xr:o.xr,yr:o.yr,pad:{l:20,r:20,t:20,b:20},
+  /* headroom above the top axis name, grown with the label scale */
+  const yr = [o.yr[0], o.yr[1] + 0.8*(P.labelScale()-1)];
+  const a = P.Axes({w:600,h:470,xr:o.xr,yr,pad:{l:20,r:20,t:20,b:20},
     grid:false,zeroAxes:false,arrows:false,xticksOverride:[],yticksOverride:[]});
   const L = o.len;
   [[pr(L[0],0,0),'\\psi_1','e'],[pr(0,L[1],0),'\\psi_2','n'],[pr(0,0,L[2]),'\\psi_3','s']].forEach(([q,l,w])=>{
     a.poly([[0,0],q],{color:C.axis,width:1.5});
-    a.note(q[0],q[1],l,Object.assign({tex:true,fs:15,color:C.ink},OFF[w])); });
+    a.note(q[0],q[1],l,Object.assign({tex:true,fs:15,color:C.ink},offM3(w))); });
   const tri = P3 => [0,1,2,0].map(i=>pr(...P3[i]));
   a.poly(tri(S),{color:C.rule,width:1.2,dash:'4 5'});
   a.poly(tri(Uv),{color:C.rule,width:1.2});
@@ -35867,11 +36154,11 @@ function simplex3(S, m, o){
   a.poly([pr(...Uv[0]),pr(...Uv[1])],{color:C.err,width:2.2});
   a.point(0,0,{color:C.ink,r:3});
   const pm = pr(...m); a.point(pm[0],pm[1],{color:C.mid,r:5.5});
-  a.note(pm[0],pm[1],'\\bar{\\mathbf{s}}',Object.assign({tex:true,fs:15,color:C.mid},OFF[o.mw||'e']));
+  a.note(pm[0],pm[1],'\\bar{\\mathbf{s}}',Object.assign({tex:true,fs:15,color:C.mid},offM3(o.mw||'e')));
   S.forEach((s,i)=>{ const q = pr(...s); a.point(q[0],q[1],{color:C.in,r:6});
-    a.note(q[0],q[1],'\\mathbf{s}_'+(i+1),Object.assign({tex:true,fs:15,color:C.in},OFF[o.sw[i]])); });
+    a.note(q[0],q[1],'\\mathbf{s}_'+(i+1),Object.assign({tex:true,fs:15,color:C.in},offM3(o.sw[i]))); });
   Uv.forEach((u,i)=>{ const q = pr(...u); a.point(q[0],q[1],{color:C.in,r:6});
-    a.note(q[0],q[1],'\\mathbf{u}_'+(i+1),Object.assign({tex:true,fs:15,color:C.in},OFF[o.uw[i]])); });
+    a.note(q[0],q[1],'\\mathbf{u}_'+(i+1),Object.assign({tex:true,fs:15,color:C.in},offM3(o.uw[i]))); });
   if(o.dl) a.note(o.dl[0],o.dl[1],o.dl[2],{tex:true,fs:14,color:C.err,anchor:o.dl[3]||'start'});
   return BOX(a.svg(), 600);
 }
@@ -36859,12 +37146,16 @@ function row(list, gap){
 }
 
 /* ---- a legend drawn as a small card inside the plot ---- */
-function legend(a, items, corner){
-  const L = P.labelScale(), fs = 13, rowH = 22*L, sw = 24*L, padX = 9*L;
+function legBox(a, items, corner){
+  const L = P.labelScale(), rowH = 22*L, sw = 24*L, padX = 9*L;
   const tw = Math.max(...items.map(it=>it[1].replace(/\\[a-zA-Z]+|[{}_^]/g,'').length))*7.2*L;
   const w = padX*2 + sw + 8*L + tw, h = items.length*rowH + 8*L;
   const x = (corner||'tr').includes('l') ? a.x0 + 8 : a.x1 - w - 8;
   const y = (corner||'tr').includes('b') ? a.y0 - h - 8 : a.y1 + 8;
+  return {L, rowH, sw, padX, w, h, x, y};
+}
+function legend(a, items, corner){
+  const {L, rowH, sw, padX, w, h, x, y} = legBox(a, items, corner), fs = 13;
   a.raw(`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" rx="5"
     fill="${C.plate}" stroke="${C.rule}" stroke-width="1.2"/>`);
   items.forEach((it,i)=>{
@@ -36923,26 +37214,40 @@ function dens(o){
   let top = 0;
   o.comps.forEach(c=>{ top = Math.max(top, (wtd?c.p:1)/(c.s*Math.sqrt(2*Math.PI))); });
   const yr = [0, top*(o.head||1.45)];
-  const a = P.Axes({w:o.w||660, h:o.h||300, xr:o.xr, yr:yr,
+  const LS = P.labelScale();
+  /* hBig and xrBig: a taller panel or a wider range in projector mode, so the
+     larger legend card clears the curves and the lines */
+  const big = LS > 1;
+  const a = P.Axes({w:o.w||660, h:(big && o.hBig) || o.h || 300, xr:(big && o.xrBig) || o.xr, yr:yr,
     xlabel:'y', ylabel: wtd ? 'P_i\\,f_Y(y\\mid i)' : 'f_Y(y\\mid i)',
     pad:{l:30,r:24,t:26,b:42}, xstep:o.xstep, yticksOverride:[]});
   const cuts = [-Infinity].concat(o.cuts, [Infinity]);
   o.comps.forEach((c,i)=>{
     const lo = cuts[i], hi = cuts[i+1];
-    if(lo > -Infinity) a.area(f(c), o.xr[0], lo, {color:C.dec.err, stroke:C.err});
-    if(hi <  Infinity) a.area(f(c), hi, o.xr[1], {color:C.dec.err, stroke:C.err});
+    if(lo > -Infinity) a.area(f(c), a.o.xr[0], lo, {color:C.dec.err, stroke:C.err});
+    if(hi <  Infinity) a.area(f(c), hi, a.o.xr[1], {color:C.dec.err, stroke:C.err});
   });
   o.comps.forEach(c=>a.curve(f(c), {color:c.col, width:2.4}));
   (o.ml||[]).forEach(t=>a.vline(t, {color:C.muted, dash:'2 4', width:1.2}));
+  const items = o.comps.map(c=>[c.col, c.tex]);
+  items.push([C.dec.err, '\\text{error area}', 'fill']);
+  (o.moreLegend||[]).forEach(it=>items.push(it));
+  const lb = legBox(a, items, o.legend||'tr');
   o.cuts.forEach((t,i)=>{
     a.vline(t, {color:C.ink, dash:'6 4', width:1.6});
     const lab = (o.cutTex && o.cutTex[i]) || '\\lambda';
     const anc = (o.cutAnchor&&o.cutAnchor[i]) || (t<0 ? 'end' : 'start');
-    a.note(t, yr[1]*0.93, lab, {tex:true, fs:14, color:C.ink, anchor:anc, dx:anc==='end'?-6:6});
+    /* In projector mode the label grows downward from the top of the plot,
+       clear of the axis name above it. Where it would then run under the
+       legend card, it is set just below the card instead. */
+    let dy = (LS-1)*16;
+    if(big){
+      const wl = (lab.replace(/\\[a-zA-Z]+|[{}_^]/g,'').length*9.6 + 7.4)*LS + 4, X = a.sx(t);
+      const lo = anc==='end' ? X - 6*LS - wl : X + 6*LS, hi = lo + wl;
+      if(hi > lb.x && lo < lb.x + lb.w) dy = lb.y + lb.h + 10 + 15*LS - 3 - a.sy(yr[1]*0.93);
+    }
+    a.note(t, yr[1]*0.93, lab, {tex:true, fs:14, color:C.ink, anchor:anc, dx:(anc==='end'?-6:6)*LS, dy});
   });
-  const items = o.comps.map(c=>[c.col, c.tex]);
-  items.push([C.dec.err, '\\text{error area}', 'fill']);
-  (o.moreLegend||[]).forEach(it=>items.push(it));
   legend(a, items, o.legend||'tr');
   if(o.over) o.over(a);
   return a.svg();
@@ -36964,7 +37269,7 @@ function cons(o){
     yticksOverride: o.oneD ? [] : null,
     xtickfmt: v=>(o.hideX||[]).some(h=>Math.abs(h-v)<1e-9) ? '' : P.fmt(v,3),
     ytickfmt: v=>(o.hideY||[]).some(h=>Math.abs(h-v)<1e-9) ? '' : P.fmt(v,3)});
-  const rc = REGCOL(), pc = PTCOL();
+  const rc = REGCOL(), pc = PTCOL(), LS = P.labelScale();
   const N0 = o.N0 || 0;
   const sx = (xr[1]-xr[0])/n, sy = (yr[1]-yr[0])/n;
   for(let i=0;i<n;i++) for(let j=0;j<n;j++){
@@ -37006,8 +37311,9 @@ function cons(o){
   const ci = (p,k)=>pc[(p.c!=null ? p.c : k) % pc.length];
   o.pts.forEach((p,k)=>a.point(p.x, p.y, {color:ci(p,k), r:6}));
   o.pts.forEach((p,k)=>{ if(p.tex) a.note(p.x, p.y, p.tex,
-    {tex:true, fs:14, color:ci(p,k), dx:p.dx!=null?p.dx:8, dy:p.dy!=null?p.dy:-12, anchor:p.anchor||'start'}); });
-  if(o.dmin && o.dminAt) a.note(o.dminAt[0], o.dminAt[1], 'd_{\\min}', {tex:true, fs:14, color:C.err, anchor:o.dminAnchor||'middle'});
+    {tex:true, fs:14, color:ci(p,k), dx:(p.dx!=null?p.dx:8)*LS, dy:(p.dy!=null?p.dy:-12)*LS, anchor:p.anchor||'start'}); });
+  const dAt = (LS > 1 && o.dminBig) || o.dminAt;   /* dminBig: clear of the lines when the label is larger */
+  if(o.dmin && dAt) a.note(dAt[0], dAt[1], 'd_{\\min}', {tex:true, fs:14, color:C.err, anchor:o.dminAnchor||'middle'});
   if(o.over) o.over(a);
   return a.svg();
 }
@@ -37050,7 +37356,7 @@ function erasureFig(o){
                       a.poly([[-L,e],[L,e]], {color:C.ink, width:1.5}); });
   o.pts.forEach((p,k)=>a.point(p.x, p.y, {color:pc[k % pc.length], r:6}));
   o.pts.forEach((p,k)=>a.note(p.x, p.y, p.tex, {tex:true, fs:14, color:pc[k % pc.length],
-    dx:p.x>0?10:-10, dy:-12, anchor:p.x>0?'start':'end'}));
+    dx:(p.x>0?10:-10)*P.labelScale(), dy:-12*P.labelScale(), anchor:p.x>0?'start':'end'}));
   if(o.over) o.over(a);
   return a.svg();
 }
@@ -37212,7 +37518,11 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
     g.curve(x=>cl(bB(x)), {color:C.mid, width:2.4});
     g.curve(x=>cl(eB(x)), {color:C.mid, width:2, dash:'6 4'});
     const at = (f, v) => { let lo = 0, hi = 20; for(let k=0;k<60;k++){ const m=(lo+hi)/2; if(f(m) > v) lo = m; else hi = m; } return lo; };
-    g.span(at(bA,1e-5), at(bB,1e-5), -5, '\\approx3\\ \\text{dB}', {tex:true, color:C.ink, fs:13});
+    /* in projector mode the larger label goes under the bracket, where the
+       two curves are further apart */
+    const sA = at(bA,1e-5), sB = at(bB,1e-5), big = P.labelScale() > 1;
+    g.span(sA, sB, -5, big ? '' : '\\approx3\\ \\text{dB}', {tex:true, color:C.ink, fs:13});
+    if(big) g.note((sA+sB)/2, -5, '\\approx3\\ \\text{dB}', {tex:true, fs:13, color:C.ink, anchor:'middle', dy:24});
     g.vline(10*Math.log10(4), {color:C.muted, dash:'2 4', width:1.2});
     legend(g, [[C.in,'\\text{A, union bound}'],[C.mid,'\\text{B, union bound}'],[C.mid,'\\text{B, exact}','6 4']], 'bl');
     return row([B, g.svg()], 18); },
@@ -37237,7 +37547,7 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   figSol: () => {
     const comps = g => [-6,-2,2,6].map((m,k)=>({m:m*g, s:1, p:0.25, col:[C.in,C.out,C.mid,C.h][k],
       tex:'f_Y(y\\mid '+(m<0?'{-}':'')+Math.abs(m)+')'}));
-    const panel = (g, name) => dens({xr:[-9.5,9.5], xstep:2, cuts:[-4,0,4], ml:[-6,-2,2,6], w:720, h:380,
+    const panel = (g, name) => dens({xr:[-9.5,9.5], xrBig:[-9.5,12.5], xstep:2, cuts:[-4,0,4], ml:[-6,-2,2,6], w:720, h:380, hBig:430,
       comps:comps(g), cutTex:['-4','0','4'], cutAnchor:['end','start','start'], legend:'tr', head:3.0, moreLegend:[[C.muted,'\\text{nominal sample}','2 4']],
       over:a=>a.note(-9.3, 0.4*3.0*0.84, name, {tex:true, fs:14, color:C.ink})});
     return panel(0.85, 'g=0.85') + panel(1.15, 'g=1.15'); },
@@ -37382,12 +37692,12 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   figSol: () => dens({xr:[-6,6], xstep:2, cuts:[0], w:620, h:260,
        comps:[{m:-2.828, s:0.9153, p:0.5, col:C.in, tex:'f_Y(y\\mid 0)'},
               {m:2.828, s:0.9153, p:0.5, col:C.out, tex:'f_Y(y\\mid 1)'}],
-       cutTex:['\\lambda=0'], legend:'tr', head:1.8,
+       cutTex:['\\lambda=0'], legend:'tr', head:1.8, hBig:340,
        over:a=>a.note(-5.8,0.66,'\\text{antipodal},\\ N_0/2=0.838',{tex:true,fs:13,color:C.ink})})
      + dens({xr:[-3,7], xstep:1, cuts:[2], w:620, h:260,
        comps:[{m:0, s:0.6472, p:0.5, col:C.in, tex:'f_Y(y\\mid 0)'},
               {m:4, s:0.6472, p:0.5, col:C.out, tex:'f_Y(y\\mid 1)'}],
-       cutTex:['\\lambda=2'], legend:'tr', head:1.8,
+       cutTex:['\\lambda=2'], legend:'tr', head:1.8, hBig:340,
        over:a=>a.note(-2.85,0.95,'\\text{on-off},\\ N_0/2=0.419',{tex:true,fs:13,color:C.ink})}),
   err:'Keeping the peak amplitude $2$ for on-off signalling. The comparison is fair only at equal average energy, which needs $A=2\\sqrt2$.',
   teach:'A reversed question: the error probability is given and the noise is asked for. The two solution panels have the same error area, which is the point of the answer.' },
@@ -37409,7 +37719,7 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   figSol: () => dens({xr:[-7,7], xstep:1, cuts:[-0.2281], ml:[0], weighted:true,
     comps:[{m:-2, s:1.5, p:0.4, col:C.in, tex:'0.4\\,f_Y(y\\mid 0)'},
            {m:2, s:1.5, p:0.6, col:C.out, tex:'0.6\\,f_Y(y\\mid 1)'}],
-    cutTex:['\\lambda=-0.228'], cutAnchor:['end'], legend:'tl', head:1.9}),
+    cutTex:['\\lambda=-0.228'], cutAnchor:['end'], legend:'tl', head:1.9, hBig:420}),
   err:'Using the midpoint $\\lambda=0$ with unequal priors. That is the ML threshold, and it gives $P_b=0.0918$ instead of $0.0885$.',
   teach:'This is the examination shape. The figure shows the weighted densities, so the threshold sits exactly where the two drawn curves cross.' },
 
@@ -37428,7 +37738,7 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   figSol: () => dens({xr:[-6,11], xstep:2, cuts:[2.8244], ml:[2.5], weighted:true,
     comps:[{m:0, s:2, p:0.6, col:C.in, tex:'0.6\\,f_Y(y\\mid 0)'},
            {m:5, s:2, p:0.4, col:C.out, tex:'0.4\\,f_Y(y\\mid 1)'}],
-    cutTex:['\\lambda=2.824'], legend:'tr', head:1.9}),
+    cutTex:['\\lambda=2.824'], legend:'tr', head:1.9, hBig:420}),
   err:'Writing $\\ln(P_1/P_0)$ in place of $\\ln(P_0/P_1)$. The threshold then lands at $2.18$, on the wrong side of the midpoint, and $P_b$ rises to $0.115$.',
   teach:'The on-off form of the examination question. Part (c) shows that the MAP gain is real but small at these priors.' },
 
@@ -37492,7 +37802,7 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
     comps:[{m:-2, s:Math.SQRT1_2, p:0.25, col:C.in, tex:'0.25\\,f_Y(y\\mid -2)'},
            {m:0, s:Math.SQRT1_2, p:0.5, col:C.out, tex:'0.5\\,f_Y(y\\mid 0)'},
            {m:2, s:Math.SQRT1_2, p:0.25, col:C.mid, tex:'0.25\\,f_Y(y\\mid 2)'}],
-    cutTex:['\\lambda_1','\\lambda_2'], cutAnchor:['end','start'], legend:'tr', head:1.9}),
+    cutTex:['\\lambda_1','\\lambda_2'], cutAnchor:['end','start'], legend:'tr', head:1.9, hBig:360}),
   err:'Shrinking the middle region. The middle level is the more likely one, so both thresholds move outwards, from $\\pm1$ to $\\pm1.173$.',
   teach:'A variant with three levels. Each threshold is a binary MAP problem between neighbours, which is the point to make.' },
 
@@ -37511,7 +37821,7 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   figSol: () => dens({xr:[-3,3], xstep:1, cuts:[-0.0866], ml:[0], weighted:true,
     comps:[{m:-1, s:0.5, p:1/3, col:C.in, tex:'\\tfrac13\\,f_Y(y\\mid 0)'},
            {m:1, s:0.5, p:2/3, col:C.out, tex:'\\tfrac23\\,f_Y(y\\mid 1)'}],
-    cutTex:['\\lambda=-0.087'], cutAnchor:['end'], legend:'tl', head:1.35}),
+    cutTex:['\\lambda=-0.087'], cutAnchor:['end'], legend:'tl', head:1.35, hBig:420}),
   err:'Taking the priors as $0.5$ and $1$. "Twice as likely" means $P_1=2P_0$, and the two priors must still add to one, so $P_0=1/3$.',
   teach:'Part (c) shows that the MAP shift scales with $\\sigma^{2}$. At low noise the MAP and ML detectors almost agree.' },
 
@@ -37551,7 +37861,7 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   figSol: () => dens({xr:[-3.5,3.5], xstep:1, cuts:[-0.25], ml:[0], weighted:true,
     comps:[{m:-1, s:Math.SQRT1_2, p:0.2689, col:C.in, tex:'0.269\\,f_Y(y\\mid 0)'},
            {m:1, s:Math.SQRT1_2, p:0.7311, col:C.out, tex:'0.731\\,f_Y(y\\mid 1)'}],
-    cutTex:['\\lambda=-0.25'], cutAnchor:['end'], legend:'tl', head:1.4}),
+    cutTex:['\\lambda=-0.25'], cutAnchor:['end'], legend:'tl', head:1.4, hBig:420}),
   err:'Solving $\\ln(P_0/P_1)=-1$ as $P_0=e^{-1}$. The logarithm gives the ratio $P_0/P_1=e^{-1}$, and $P_0+P_1=1$ is still needed.',
   teach:'A reversed question: the threshold is given and the priors are asked for. It tests whether the class can read the MAP formula in both directions.' },
 
@@ -37702,7 +38012,7 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
       a.poly([[2,1.4],[-0.4,1.4]], {color:C.err, width:2});
       a.note(1.2, 2, '1.6', {tex:true, fs:13, color:C.muted, anchor:'middle', dy:-10});
       a.note(0.8, 1.4, '2.4', {tex:true, fs:13, color:C.err, anchor:'middle', dy:18});
-      a.note(-2.45, 0.2, '\\text{erasure}', {tex:true, fs:13, color:C.ink, anchor:'middle', dy:4}); }}),
+      a.note(-2.45, 0.2, '\\text{erasure}', {tex:true, fs:13, color:C.ink, anchor:'middle', dy:4+(P.labelScale()-1)*18}); }}),
   err:'Measuring the error distance to the axis, $2/0.8=2.5$, as in ordinary QPSK. With the zone an error must pass the far edge of a strip, $2.4$ from the point, so the argument is $3.00$.',
   teach:'A decision with three outcomes. The intelligent union bound works face by face, once for the error faces and once for the erasure faces. Part (d) shows the trade: fewer wrong decisions for a few flagged ones.' },
 
@@ -37723,7 +38033,7 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   figSol: () => { const r=Math.SQRT2; return cons({xr:[-2.4,2.4], yr:[-2.2,2.2], w:520, h:460, xstep:1, ystep:1,
     pts:[0,1,2].map(k=>{ const th=2*Math.PI*k/3+Math.PI/2; return {x:r*Math.cos(th), y:r*Math.sin(th),
       tex:'\\mathbf{s}_'+k, dx:Math.cos(th)<-0.1?-8:8, dy:Math.sin(th)<0?20:-10, anchor:Math.cos(th)<-0.1?'end':'start'}; }),
-    dmin:[1,2], dminAt:[0.25,-0.97], dminAnchor:'start', hideX:[-1,1], hideY:[-1,1], nn:[[0,1],[0,2]]}); },
+    dmin:[1,2], dminAt:[0.25,-0.97], dminBig:[0.25,-1.06], dminAnchor:'start', hideX:[-1,1], hideY:[-1,1], nn:[[0,1],[0,2]]}); },
   err:'Using $d_{\\min}=\\sqrt2\\,r$, the chord of four points. Three points are $120^{\\circ}$ apart, so the chord is $2r\\sin60^{\\circ}=\\sqrt3\\,r$.',
   teach:'The examination shape with $M=3$. Here the nearest-neighbour form is also the full union bound, because every point neighbours every other.' },
 
@@ -37742,7 +38052,7 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
   figSol: () => cons({xr:[-3.2,3.2], yr:[-2.9,2.9], w:540, h:480, xstep:1, ystep:1,
     pts:[{x:0,y:0,c:3,tex:'\\mathbf{s}_1',dx:18,dy:20}].concat([0,1,2,3,4,5].map(i=>{ const th=i*Math.PI/3;
       return {x:2*Math.cos(th), y:2*Math.sin(th), c:i%2, tex:'\\mathbf{s}_'+(i+2), dx:Math.cos(th)<-0.1?-8:8, dy:Math.sin(th)<-0.1?20:-10, anchor:Math.cos(th)<-0.1?'end':'start'}; })),
-    dmin:[0,1], dminAt:[1.5,0.22], hideX:[-1,1], hideY:[-2,-1,1,2],
+    dmin:[0,1], dminAt:[1.5,0.22], dminBig:[1.38,0.18], hideX:[-1,1], hideY:[-2,-1,1,2],
     nn:[[0,2],[0,3],[0,4],[0,5],[0,6],[1,2],[2,3],[3,4],[4,5],[5,6],[6,1]]}),
   err:'Counting only the centre\'s neighbours, $N_{\\min}=6$. $N_{\\min}$ is the average over all seven points, and a ring point has three neighbours.',
   teach:'A variant: the hexagonal packing. It has a large $N_{\\min}$ but also a large $d_{\\min}$ for its energy.' },
@@ -37792,7 +38102,7 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
      +'<b>Check.</b> The region of $\\mathbf{s}_1$ is an exact quadrant, so its conditional error is exact: $1-(1-Q(2))(1-Q(3))=1-(0.97725)(0.99865)=0.02407$. The union bound for this point is $Q(2)+Q(3)=0.02410$, just above it, as a bound must be.',
   figSol: () => cons({xr:[-1.5,4], yr:[-1.5,4.5], w:500, h:520, xstep:1, ystep:1,
     pts:[{x:0,y:0,tex:'\\mathbf{s}_1',dx:-8,dy:18,anchor:'end'},{x:2,y:0,tex:'\\mathbf{s}_2'},{x:0,y:3,tex:'\\mathbf{s}_3',dx:-8,anchor:'end'}],
-    dmin:[0,1], dminAt:[1.15,0.2], dminAnchor:'start', hideX:[1,2], hideY:[3], nn:[[0,2],[1,2]],
+    dmin:[0,1], dminAt:[1.15,0.2], dminBig:[1.07,0.2], dminAnchor:'start', hideX:[1,2], hideY:[3], nn:[[0,2],[1,2]],
     over:a=>a.point(1,1.5,{color:C.ink,r:3})}),
   err:'Counting each pair once and not dividing by $M$. The union bound averages over the transmitted point, and each pair appears once from each end.',
   teach:'A small constellation where the three forms separate. The check uses the one region that is an exact quadrant, so the true value is known for one point.' }
@@ -37975,7 +38285,9 @@ function cfig(pts, o){
   if(o.xr) xr = o.xr; if(o.yr) yr = o.yr;
   /* equal scales on the two axes, so a perpendicular bisector looks perpendicular */
   const kpx = o.k || Math.min(560/(xr[1]-xr[0]), oneD ? 1e9 : 440/(yr[1]-yr[0]));
-  if(oneD){ const hh = 62/kpx; yr = [-hh, hh]; }
+  /* projected, a one-dimensional set is drawn taller: the two rows of enlarged
+     numbers under the line and the name d_min need the room */
+  if(oneD){ const hh = (P.labelScale() > 1 ? 96 : 62)/kpx; yr = [-hh, hh]; }
   /* the regions first, in data units, so the ticks can keep clear of them */
   const box = [xr[0], xr[1], yr[0], yr[1]];
   const polys = regionsOf(pts, box);
@@ -38014,7 +38326,10 @@ function cfig(pts, o){
     w = Math.round(w+ex); h = Math.round(h+ey);
   }
   const X = v => a.sx(v), Y = v => a.sy(v);
-  xtSide.forEach(v=>a.raw(`<text x="${(X(v)+5*LS0).toFixed(2)}" y="${(Y(0)+20*LS0).toFixed(2)}" paint-order="stroke" stroke="var(--fig-halo,#FCF9F3)" stroke-width="3.4" stroke-linejoin="round" font-size="${13*LS0}" fill="${C.muted}" text-anchor="start">${P.fmt(v,3)}</text>`));
+  /* Projected, a number written beside a threshold drops to a second row, so
+     the enlarged numbers of the points and of the thresholds cannot meet. */
+  const SIDE = (LS0 > 1 ? 37 : 20)*LS0;
+  xtSide.forEach(v=>a.raw(`<text x="${(X(v)+5*LS0).toFixed(2)}" y="${(Y(0)+SIDE).toFixed(2)}" paint-order="stroke" stroke="var(--fig-halo,#FCF9F3)" stroke-width="3.4" stroke-linejoin="round" font-size="${13*LS0}" fill="${C.muted}" text-anchor="start">${P.fmt(v,3)}</text>`));
   /* a one-dimensional axis still names its origin */
   const zeroLab = oneD && xr[0]<0 && xr[1]>0 && !xt.includes(0) && (o.zeroTick || pts.some(p=>Math.abs(p[0])<1e-9));
   if(zeroLab)
@@ -38069,11 +38384,13 @@ function cfig(pts, o){
   const ob = { box:[a.x0+2, a.y1+2, a.x1-2, a.y0-2], segs, rects:[],
     circ: o.hide ? [] : pts.map(p=>[X(p[0]), Y(p[1]), rp*1.25+3]) };
   const TS = 13*LS;
-  xt.forEach(v=>{ const s=P.fmt(v,3), tw=7.6*String(s).length*LS; const yb=(oneD?Y(0):(yr[0]<=0&&yr[1]>=0?Y(0):a.y0));
+  /* projected, a tick number is held a little wider: its minus sign and point grow too */
+  const CW = LS > 1 ? 8.4 : 7.6;
+  xt.forEach(v=>{ const s=P.fmt(v,3), tw=CW*String(s).length*LS; const yb=(oneD?Y(0):(yr[0]<=0&&yr[1]>=0?Y(0):a.y0));
     ob.rects.push([X(v)-tw/2-2, yb+6, X(v)+tw/2+2, yb+20*LS+5]); });
   if(zeroLab) ob.rects.push([X(0)-6, Y(0)+6, X(0)+6, Y(0)+20*LS+5]);
-  xtSide.forEach(v=>{ const tw=7.6*P.fmt(v,3).length*LS; ob.rects.push([X(v)+3, Y(0)+6, X(v)+7+tw, Y(0)+20*LS+5]); });
-  yt.forEach(v=>{ const s=P.fmt(v,3), tw=7.6*String(s).length*LS; const xb=(xr[0]<=0&&xr[1]>=0?X(0):a.x0);
+  xtSide.forEach(v=>{ const tw=CW*P.fmt(v,3).length*LS; ob.rects.push([X(v)+3, Y(0)+SIDE-14*LS, X(v)+7+tw, Y(0)+SIDE+5]); });
+  yt.forEach(v=>{ const s=P.fmt(v,3), tw=CW*String(s).length*LS; const xb=(xr[0]<=0&&xr[1]>=0?X(0):a.x0);
     ob.rects.push([xb-10-tw-2, Y(v)-TS*0.75, xb-6, Y(v)+TS*0.5]); });
   const FS = 15;
   const labels = [];
@@ -38097,13 +38414,32 @@ function cfig(pts, o){
         cands.push([X(p[0]) + ux*dist, Y(p[1]) + uy*dist]);
       });
     }
+    /* Projected, a name also tries the four corners beside its point, set just
+       clear of the point and of the lines through it: in a dense grid the
+       rings above step over the narrow spot where an enlarged name still fits. */
+    if(LS > 1){
+      [[1,1],[-1,1],[-1,-1],[1,-1]].forEach(([sx,sy])=>[[6,10],[5,12],[8,8],[10,6],[7,11],[12,5],[4,14]].forEach(([ex,ey])=>
+        cands.push([X(p[0]) + sx*(lw/2+3+ex), Y(p[1]) - sy*(lh/2+3+ey)])));
+      /* and, in a narrow wedge, the directions between those of the rings, further out */
+      for(let g=2; g<=110; g+=4) for(let k=-7; k<=7; k+=2){
+        const th = th0 + k*Math.PI/32, ux = Math.cos(th), uy = -Math.sin(th);
+        const dist = Math.abs(ux)*lw/2 + Math.abs(uy)*lh/2 + rp + g;
+        cands.push([X(p[0]) + ux*dist, Y(p[1]) + uy*dist]); }
+    }
     /* a name belongs inside its own region, so it cannot be read as a neighbour's */
     const pg = polys[i];
     const own = c => { const xd = xr[0]+(c[0]-a.x0)/kpx, yd = yr[0]+(a.y0-c[1])/kpx;
       for(let q=0;q<pg.length;q++){ const A=pg[q], B=pg[(q+1)%pg.length];
         if((B[0]-A[0])*(yd-A[1])-(B[1]-A[1])*(xd-A[0]) < -1e-9) return 25; }
       return 0; };
-    texAt(names[i], place(cands, lw, lh, ob, own), C[SYM[col[i]]]);
+    /* projected, when nothing is clear at the estimated width, the estimate is
+       taken closer to the drawn width of a subscripted name, which it overstates */
+    const fits = ww => cands.some(c=>rectCost([c[0]-ww/2, c[1]-lh/2, c[0]+ww/2, c[1]+lh/2], ob) + own(c) === 0);
+    const lwU = LS > 1 && !fits(lw) && fits(0.82*lw) ? 0.82*lw : lw;
+    /* a point on an axis whose wedge is too narrow beside it may set its name
+       across the axis line (o.onAxis), clear of the boundaries either side */
+    const obi = (o.onAxis||[]).includes(i) && LS > 1 ? Object.assign({}, ob, {segs:ob.segs.filter(sg=>sg[2]!==8)}) : ob;
+    texAt(names[i], place(cands, lwU, lh, obi, own), C[SYM[col[i]]]);
   });
   /* region names for a figure that gives the regions */
   if(o.regionNames) polys.forEach((pg,i)=>{
@@ -38115,6 +38451,7 @@ function cfig(pts, o){
     texAt(o.regionNames[i], place(cands, lw, lh, ob), C[SYM[col[i]]]);
   });
   /* d_min beside one nearest-neighbour pair */
+  let titleR = a.x1;
   if(showNN && o.dTex !== false){
     const txt = 'd_{\\min}' + (o.dTex ? '='+o.dTex : '');
     const lw = texW(txt, FS)*LS, lh = 23*LS;
@@ -38124,13 +38461,19 @@ function cfig(pts, o){
       const A = [X(pts[i][0]),Y(pts[i][1])], B = [X(pts[j][0]),Y(pts[j][1])];
       const L = Math.hypot(B[0]-A[0], B[1]-A[1]), nx = -(B[1]-A[1])/L, ny = (B[0]-A[0])/L;
       const off = Math.abs(nx)*lw/2 + Math.abs(ny)*lh/2 + 7;
-      [0.5,0.32,0.68,0.2,0.8,0.1,0.9,0,1,-0.15,1.15,-0.3,1.3,-0.45,1.45].forEach(t=>[1,-1].forEach(sg=>[0,10,22,36].forEach(g=>
+      /* projected, the name may also stand further off, past the enlarged tick rows */
+      [0.5,0.32,0.68,0.2,0.8,0.1,0.9,0,1,-0.15,1.15,-0.3,1.3,-0.45,1.45].forEach(t=>[1,-1].forEach(sg=>(LS > 1 ? [0,10,22,36,50,64] : [0,10,22,36]).forEach(g=>
         cands.push([A[0]+t*(B[0]-A[0])+sg*nx*(off+g), A[1]+t*(B[1]-A[1])+sg*ny*(off+g)]))));
     });
-    texAt(txt, place(cands, lw, lh, ob), C.coral);
+    /* Projected, when no spot beside a pair is clear of every line, the name
+       is written above the data area at the right, where a title would go;
+       the coral pairs still show which distance it is. A title moves left of it. */
+    const clearAt = cands.some(c=>rectCost([c[0]-lw/2, c[1]-lh/2, c[0]+lw/2, c[1]+lh/2], ob) === 0);
+    if(LS > 1 && !clearAt){ labels.push(P.texName(txt, { xRight:a.x1, baseline:a.y1-5*LS, size:FS, color:C.coral, figW:w })); titleR = a.x1 - lw - 14*LS; }
+    else texAt(txt, place(cands, lw, lh, ob), C.coral);
   }
   /* a panel title sits above the data area, right-aligned, clear of the psi2 name */
-  if(o.title) labels.push(P.texName(o.title, { xRight:a.x1, baseline:a.y1-5*LS, size:FS, color:C.ink, figW:w }));
+  if(o.title) labels.push(P.texName(o.title, { xRight:titleR, baseline:a.y1-5*LS, size:FS, color:C.ink, figW:w }));
   a.raw(labels.join(''));
   return a.svg().replace('<svg ', `<svg style="max-width:${o.maxw||Math.round(w*1.45)}px;margin:0 auto" `);
 }
@@ -38205,8 +38548,10 @@ function figPhase(deg, o){
   a.poly([[0,s],[c,s]], {color: c>0 ? C.coral : C.err, width:2.4});
   a.point(c, s, {color:C.in, r:6.2, ring:C.plate, ringw:1.6});
   a.point(-c, -s, {color:C.out, r:6.2, ring:C.plate, ringw:1.6});
-  a.note(1.34*c, 1.34*s-0.07, 's_1', {tex:true, fs:15, color:C.in, anchor:'middle'});
-  a.note(-1.34*c, -1.34*s-0.07, 's_2', {tex:true, fs:15, color:C.out, anchor:'middle'});
+  /* projected, the names stand a little further out, clear of their enlarged points */
+  const rn = P.labelScale() > 1 ? 1.45 : 1.34;
+  a.note(rn*c, rn*s-0.07, 's_1', {tex:true, fs:15, color:C.in, anchor:'middle'});
+  a.note(-rn*c, -rn*s-0.07, 's_2', {tex:true, fs:15, color:C.out, anchor:'middle'});
   a.note(o.dAt[0], o.dAt[1], o.dTex, {tex:true, fs:14, color: c>0 ? C.coral : C.err, anchor:o.dAt[2]});
   a.raw(P.texName('\\varphi='+deg+'^{\\circ}', { xRight:a.x1, baseline:a.y1-5, size:15, color:C.mid, figW:330 }));
   return a.svg();
@@ -38244,6 +38589,10 @@ function figCorr(){
 
 const tx = (a, x, y, s, col, anchor) => a.note(x, y, s, {tex:true, fs:13, color:col||C.ink, anchor:anchor||'start'});
 const lg = v => Math.log10(Math.max(v, 1e-14));
+/* Data units in n pixels of label height, and whether labels are projected:
+   these four figures are drawn taller there and space their lines in pixels. */
+const upx = (a, n) => n*P.labelScale()/(a.sy(0)-a.sy(1));
+const BIGL = () => P.labelScale() > 1;
 /* a vertical arrow in data coordinates, for a gain or a loss in dB */
 function varrow(a, x, y0, y1, col){
   const X = a.sx(x), Y0 = a.sy(y0), Y1 = a.sy(y1), s = Y1 < Y0 ? 1 : -1, h = 8;
@@ -38261,28 +38610,28 @@ function figPb35(){
   const S = [['\\text{QPSK}', g=>Qd(Math.sqrt(2*g)), 10.53, null],
              ['8\\text{-PSK}', g=>2/3*Qd(Math.sqrt(0.8787*g)), 13.95, '7 5'],
              ['16\\text{-QAM}', g=>0.75*Qd(Math.sqrt(0.8*g)), 14.40, '2 4']];
-  const a = P.Axes({w:460, h:290, xr:[4,18], yr:[-8,-1], xlabel:'E_b/N_0\\;(\\mathrm{dB})', ylabel:'P_b',
+  const a = P.Axes({w:460, h:BIGL() ? 390 : 290, xr:[4,18], yr:[-8,BIGL() ? -0.1 : -1], xlabel:'E_b/N_0\\;(\\mathrm{dB})', ylabel:'P_b',
     pad:{l:52,r:22,t:22,b:44}, xticksOverride:[4,8,12,16], yticksOverride:[-8,-6,-4,-2], ytickfmt:P.decade, zeroAxes:false});
   a.hline(-6, {color:C.ink, dash:'6 4', width:1.2});
   S.forEach(([n, f, x, dash])=>a.curve(d=>lg(f(Math.pow(10, d/10))), {color:C.err, width:2.2, dash}));
   S.forEach(([n, f, x])=>a.point(x, -6, {color:C.err, r:4.6, ring:C.plate}));
   ['\\text{solid: QPSK, }10.53\\text{ dB}', '\\text{dashed: 8-PSK, }13.95\\text{ dB}', '\\text{dotted: 16-QAM, }14.40\\text{ dB}']
-    .forEach((s,i)=>tx(a, 17.7, -1.55-0.55*i, s, C.err, 'end'));
+    .forEach((s,i)=>tx(a, 17.7, BIGL() ? -upx(a, 15)-upx(a, 22)*i : -1.55-0.55*i, s, C.err, 'end'));
   return a.svg();
 }
 
 /* D5-20: the three sensitivities against the bit rate, above the noise in
    the 6 MHz band. The bracket is the SNR at the QPSK sensitivity. */
 function figSens35(){
-  const a = P.Axes({w:460, h:290, xr:[7,23], yr:[-104,-76], xlabel:'R_b\\;(\\mathrm{Mb/s})', ylabel:'P_{\\min}\\;(\\mathrm{dBm})',
+  const a = P.Axes({w:460, h:BIGL() ? 390 : 290, xr:[7,23], yr:[BIGL() ? -107 : -104,-76], xlabel:'R_b\\;(\\mathrm{Mb/s})', ylabel:'P_{\\min}\\;(\\mathrm{dBm})',
     pad:{l:52,r:22,t:22,b:44}, xticksOverride:[10,15,20], yticksOverride:[-100,-90,-80], zeroAxes:false});
   a.hline(-100.22, {color:C.muted, dash:'6 4', width:1.3});
-  tx(a, 22.7, -102.6, 'N=-100.22\\text{ dBm in }6\\text{ MHz}', C.muted, 'end');
+  tx(a, 22.7, BIGL() ? -100.22-upx(a, 20) : -102.6, 'N=-100.22\\text{ dBm in }6\\text{ MHz}', C.muted, 'end');
   a.poly([[10,-100.22],[10,-87.47]], {color:C.mid, width:2});
   tx(a, 9.6, -94.5, '12.75\\text{ dB}', C.mid, 'end');
   [[10,-87.47,'\\text{QPSK: }{-}87.47',10.5,-88.4,'start'],[15,-82.29,'8\\text{-PSK: }{-}82.29',15.5,-83.2,'start'],
    [20,-80.59,'16\\text{-QAM: }{-}80.59',20.3,-78.4,'end']].forEach(([x,y,s,lx,ly,an])=>{
-    a.point(x, y, {color:C.out, r:5, ring:C.plate}); tx(a, lx, ly, s, C.out, an); });
+    a.point(x, y, {color:C.out, r:5, ring:C.plate}); tx(a, lx, BIGL() && an==='start' ? ly-upx(a, 6) : ly, s, C.out, an); });
   return a.svg();
 }
 
@@ -38291,12 +38640,12 @@ function figSens35(){
    against the sensitivity and the noise in the band. */
 function figWater38(){
   const lv = [20, 30, 30-109.94, 40-109.94], pr = lv[3], pm = -91.37, cx = [0.6, 1.8, 3.0, 4.2, 5.5];
-  const a = P.Axes({w:460, h:320, xr:[0.2,7.4], yr:[-128,36], xlabel:'', ylabel:'\\text{power}\\;(\\mathrm{dBm})',
+  const a = P.Axes({w:460, h:BIGL() ? 420 : 320, xr:[0.2,7.4], yr:[BIGL() ? -136 : -128,36], xlabel:'', ylabel:'\\text{power}\\;(\\mathrm{dBm})',
     pad:{l:52,r:22,t:22,b:30}, xticksOverride:[], yticksOverride:[-100,-80,-60,-40,-20,0,20], grid:false, zeroAxes:false});
   a.hline(pm, {color:C.ink, dash:'6 4', width:1.3});
   a.hline(-103.01, {color:C.muted, dash:'2 4', width:1.2});
   tx(a, 0.3, pm+5.5, 'P_{\\min}=-91.37', C.ink);
-  tx(a, 7.25, -112, 'N=-103.01', C.muted, 'end');
+  tx(a, 7.25, BIGL() ? -103.01-upx(a, 18) : -112, 'N=-103.01', C.muted, 'end');
   a.poly([[cx[0]-0.3,lv[0]],[cx[0]+0.3,lv[0]]], {color:C.in, width:4});
   tx(a, 0.35, lv[0]+5, '20', C.in);
   varrow(a, cx[1], lv[0], lv[1], C.h); tx(a, cx[1]+0.12, 23, '+10', C.h);
@@ -38305,8 +38654,8 @@ function figWater38(){
   a.poly([[cx[4]-0.3,pr],[cx[4]+0.3,pr]], {color:C.out, width:4});
   tx(a, cx[4], pr+6, '-69.94', C.out, 'middle');
   a.poly([[cx[4],pm],[cx[4],pr]], {color:C.mid, width:2});
-  tx(a, cx[4]+0.15, (pm+pr)/2-2, '21.43\\text{ dB}', C.mid);
-  ['P_t','G_t','L_p','G_r','P_r'].forEach((n,i)=>tx(a, cx[i], -123, n, C.ink, 'middle'));
+  tx(a, cx[4]+0.15, BIGL() ? (pm+pr)/2-upx(a, 7) : (pm+pr)/2-2, '21.43\\text{ dB}', C.mid);
+  ['P_t','G_t','L_p','G_r','P_r'].forEach((n,i)=>tx(a, cx[i], BIGL() ? a.o.yr[0]+upx(a, 10) : -123, n, C.ink, 'middle'));
   return a.svg();
 }
 
@@ -38317,18 +38666,18 @@ function figRange38(){
   const Lp = (x, f) => 20*Math.log10(4*Math.PI*Math.pow(10, x)*f/3e8);
   const T = [[x=>40-Lp(x,1.5e9), null], [x=>40-Lp(x,6e9), '7 5'], [x=>40+24.08-Lp(x,6e9), '2 4']];
   const km = [0.5,1.25,2.5,5,10,20,50];
-  const a = P.Axes({w:460, h:320, xr:[2.6,4.8], yr:[-106,-32], xlabel:'d\\;(\\mathrm{km})', ylabel:'P_r\\;(\\mathrm{dBm})',
+  const a = P.Axes({w:460, h:BIGL() ? 420 : 320, xr:[2.6,4.8], yr:[-106,BIGL() ? -20 : -32], xlabel:'d\\;(\\mathrm{km})', ylabel:'P_r\\;(\\mathrm{dBm})',
     pad:{l:52,r:22,t:22,b:44}, xticksOverride:km.map(k=>3+Math.log10(k)), xtickfmt:x=>String(+Math.pow(10,x-3).toFixed(2)),
     yticksOverride:[-100,-80,-60,-40], zeroAxes:false});
   a.hline(-69.94, {color:C.ink, dash:'6 4', width:1.2});
   a.hline(-63.92, {color:C.ink, dash:'10 3 2 3', width:1.2});
-  tx(a, 2.63, -77, '8\\text{ Mb/s}', C.ink, 'start');
+  tx(a, 2.63, BIGL() ? -69.94-upx(a, 22) : -77, '8\\text{ Mb/s}', C.ink, 'start');
   tx(a, 4.78, -61.0, '32\\text{ Mb/s}', C.ink, 'end');
   T.forEach(([f, dash])=>a.curve(f, {color:C.out, width:2.2, dash}));
   [[1.25,-69.94],[5,-69.94],[20,-69.94],[2.5,-63.92]].forEach(([d,y])=>{ const x = 3+Math.log10(d);
     a.poly([[x,-106],[x,y]], {color:C.muted, width:1, dash:'3 4'}); a.point(x, y, {color:C.out, r:4.6, ring:C.plate}); });
   ['\\text{solid: }1.5\\text{ GHz}', '\\text{dashed: }6\\text{ GHz, same gains}', '\\text{dotted: }6\\text{ GHz, same size}']
-    .forEach((s,i)=>tx(a, 4.78, -38-6.5*i, s, C.out, 'end'));
+    .forEach((s,i)=>tx(a, 4.78, BIGL() ? -20-upx(a, 22)-upx(a, 25)*i : -38-6.5*i, s, C.out, 'end'));
   return a.svg();
 }
 
@@ -39133,7 +39482,7 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
      +'<b>Check.</b> For set A, $d_{\\min}=2\\sqrt{10}\\sin11.25^{\\circ}=6.325(0.1951)=1.234$, and $1.234^{2}=1.522$. This is $0.1522\\times10$.',
   err:'Comparing the $Q$ arguments in decibels with $10\\log_{10}$ of their ratio. The arguments are square roots, so the energy ratio is the ratio of $d_{\\min}^{2}$ values.',
   teach:'The comparison the module makes between PSK and QAM, worked with two examination-style sets. The ring wastes the inside of the circle.',
-  figSol:()=>pair(cfig(onCircle(Math.sqrt(10), range(1,16).map(k=>k*Math.PI/8)), {dTex:false, tick:1, margin:2.3, title:'\\text{A:}\\ d_{\\min}=1.234'}),
+  figSol:()=>pair(cfig(onCircle(Math.sqrt(10), range(1,16).map(k=>k*Math.PI/8)), {dTex:false, tick:1, margin:2.3, onAxis:[11], yticks:P.labelScale()>1 ? [-5,-2,2,5] : undefined, title:'\\text{A:}\\ d_{\\min}=1.234'}),
                   cfig(grid([-3,-1,1,3],[3,1,-1,-3]), {names:gridNames(4,4), dTex:'2', tick:1, margin:1.5, title:'\\text{B}'})) },
 
 { id:'D5-27', module:'M5', type:'fsk', src:'Final Q3 (variant)',
@@ -39290,6 +39639,10 @@ window.DRILL_M5 = [
 (function(){
 const P = PLOT, C = P.COL;
 const fr = (n,D) => '\\tfrac{'+n+'}{'+D+'}';
+/* A worked solution scrolls, so in the projector its figures are drawn taller
+   by the label scale: every offset given in data units then grows with the
+   labels it separates. */
+const HS = h => Math.round(h*P.labelScale());
 
 /* The pmf of a derived source. One stem a symbol with a round head, as a
    sequence of probabilities is drawn, in the order of the
@@ -39300,7 +39653,7 @@ const fr = (n,D) => '\\tfrac{'+n+'}{'+D+'}';
 function figPmf(o){
   const K = o.v.length, top = Math.max(...o.n)/o.D;
   const sm = o.name.toLowerCase(), xs = o.v.map((_,i)=>i+1);
-  const a = P.Axes({w:720, h:230, xr:[0.3, K+0.7], yr:[0, top*1.36],
+  const a = P.Axes({w:720, h:HS(230), xr:[0.3, K+0.7], yr:[0, top*1.36],
     xlabel:sm, ylabel:'P('+o.name+'='+sm+')', pad:{l:24,r:30,t:24,b:44},
     xticksOverride:xs, xtickfmt:(v=>String(o.v[Math.round(v)-1])), yticksOverride:[], grid:false});
   xs.forEach((x,i)=>{ const p = o.n[i]/o.D;
@@ -39316,7 +39669,7 @@ function figPmf(o){
 function figGiven(o){
   const K = o.v.length, top = Math.max(...o.h);
   const sm = o.name.toLowerCase(), xs = o.v.map((_,i)=>i+1);
-  const a = P.Axes({w:720, h:200, xr:[0.3, K+0.7], yr:[0, top*1.36],
+  const a = P.Axes({w:720, h:HS(200), xr:[0.3, K+0.7], yr:[0, top*1.36],
     xlabel:sm, ylabel:'p_'+o.name+'('+sm+')', pad:{l:24,r:26,t:24,b:44},
     xticksOverride:xs, xtickfmt:(v=>String(o.v[Math.round(v)-1])), yticksOverride:[], grid:false});
   xs.forEach((x,i)=>{ a.poly([[x,0],[x,o.h[i]]], {color:C.in, width:2});
@@ -39333,29 +39686,33 @@ function figGiven(o){
    node carries the probability of the sum. Reading a leaf's labels from the
    root back gives its codeword, which the table repeats. */
 function figHuff(o){
-  const K = o.n.length, W = 720, rh = 30, top = o.head ? 66 : 46, H = top + K*rh + 10;
+  /* in the projector the rows and the head are spaced by the label scale, and
+     the columns of the table move apart to hold the larger heads */
+  const L = P.labelScale(), big = L > 1;
+  const K = o.n.length, W = 720, rh = Math.round(30*L), top = Math.round((o.head ? 66 : 46)*L), H = top + K*rh + 10;
+  const cP = big ? 90 : 94, cC = big ? 190 : 172, cL = big ? 248 : 232;
   const a = P.Axes({w:W, h:H, xr:[0,W], yr:[0,H], pad:{l:0,r:0,t:0,b:0},
     xticksOverride:[], yticksOverride:[], grid:false, zeroAxes:false, arrows:false});
   const up = y => H - y;
   const rows = o.codes.map((c,i)=>i).sort((i,j)=> o.codes[i] < o.codes[j] ? -1 : 1);
-  const X0 = 270, X1 = W - 44, step = (X1 - X0)/Math.max(1, K-1);
+  const X0 = big ? 284 : 270, X1 = W - 44, step = (X1 - X0)/Math.max(1, K-1);
   const X = {}, Y = {}, pr = {};
   rows.forEach((i,r)=>{ const c = o.codes[i]; X[c] = X0; Y[c] = top + r*rh + rh/2; pr[c] = o.n[i]; });
   o.order.forEach((p,k)=>{ X[p] = X0 + (k+1)*step; Y[p] = (Y[p+'0'] + Y[p+'1'])/2; pr[p] = pr[p+'0'] + pr[p+'1']; });
-  const sm = o.name.toLowerCase(), hy = top - 14;
-  if(o.head) a.note(10, up(20), o.head, {tex:true, fs:14, color:C.ink});
+  const sm = o.name.toLowerCase(), hy = top - Math.round(14*L);
+  if(o.head) a.note(10, up(Math.round(20*L)), o.head, {tex:true, fs:14, color:C.ink});
   a.note(30, up(hy-3), sm, {tex:true, fs:14, color:C.ink, anchor:'middle'});
-  a.note(94, up(hy-3), 'P('+o.name+'='+sm+')', {tex:true, fs:14, color:C.ink, anchor:'middle'});
-  a.note(172, up(hy), 'codeword', {fs:13, color:C.ink, anchor:'middle'});
-  a.note(232, up(hy-3), 'l', {tex:true, fs:14, color:C.ink, anchor:'middle'});
+  a.note(cP, up(hy-3), 'P('+o.name+'='+sm+')', {tex:true, fs:14, color:C.ink, anchor:'middle'});
+  a.note(cC, up(hy), 'codeword', {fs:13, color:C.ink, anchor:'middle'});
+  a.note(cL, up(hy-3), 'l', {tex:true, fs:14, color:C.ink, anchor:'middle'});
   a.note(X0, up(hy), 'merge', {fs:12, color:C.muted, anchor:'middle'});
   o.order.forEach((p,k)=>a.note(X[p], up(hy), String(k+1), {fs:12, color:C.muted, anchor:'middle'}));
   a.poly([[8, up(top-4)], [W-8, up(top-4)]], {color:C.grid, width:1});
   rows.forEach(i=>{ const c = o.codes[i], y = Y[c];
     a.note(30, up(y+2), o.lab[i], {tex:true, fs:14, color:C.in, anchor:'middle'});
-    a.note(94, up(y+2), fr(o.n[i], o.D), {tex:true, fs:14, color:C.in, anchor:'middle'});
-    a.note(172, up(y+5), c, {fs:14, color:C.out, anchor:'middle', weight:600});
-    a.note(232, up(y+5), String(c.length), {fs:14, color:C.ink, anchor:'middle'});
+    a.note(cP, up(y+2), fr(o.n[i], o.D), {tex:true, fs:14, color:C.in, anchor:'middle'});
+    a.note(cC, up(y+5), c, {fs:14, color:C.out, anchor:'middle', weight:600});
+    a.note(cL, up(y+5), String(c.length), {fs:14, color:C.ink, anchor:'middle'});
   });
   o.order.forEach(p=>{ const xp = X[p];
     ['0','1'].forEach(b=>{ const c = p+b;
@@ -39380,8 +39737,8 @@ function figHuff(o){
    crowded); the boundary end is a small cyan dot. */
 const limDB = r => 10*Math.log10((Math.pow(2,r)-1)/r);
 function figLimit(o){
-  const [xa,xb] = o.xr, rt = o.yr[1];
-  const a = P.Axes({w:720, h:o.h||300, xr:o.xr, yr:[0,rt],
+  const L = P.labelScale(), xa = o.xr[0] - (L > 1 && o.floor ? 0.8 : 0), xb = o.xr[1], rt = o.yr[1];
+  const a = P.Axes({w:720, h:HS(o.h||300), xr:[xa,xb], yr:[0,rt],
     xlabel:'E_b/N_0\\;(\\mathrm{dB})', ylabel:'r\\;(\\mathrm{b/s/Hz})',
     pad:{l:58,r:30,t:40,b:46}, xstep:2, ystep:1});
   const pts = [];
@@ -39391,16 +39748,17 @@ function figLimit(o){
   a.under('<path d="M'+reg.map(p=>a.sx(p[0]).toFixed(2)+','+a.sy(p[1]).toFixed(2)).join('L')+'Z" fill="'+C.dec.err+'"/>');
   a.vline(10*Math.log10(Math.log(2)), {color:C.err, width:1.6, dash:'5 4'});
   a.poly(pts, {color:C.in, width:2.3});
-  if(o.imp) a.note(o.imp[0], o.imp[1], '\\text{no reliable system}', {tex:true, fs:13, color:C.err, anchor:'middle'});
+  const imp = L > 1 && o.impBig ? o.impBig : o.imp;
+  if(imp) a.note(imp[0], imp[1], '\\text{no reliable system}', {tex:true, fs:13, color:C.err, anchor:'middle'});
   if(o.floor) a.note(10*Math.log10(Math.log(2))-0.2, o.floor, '-1.59\\ \\mathrm{dB}', {tex:true, fs:12, color:C.err, anchor:'end'});
-  (o.gaps||[]).forEach(g=>{ const x0 = limDB(g.r);
+  (o.gaps||[]).forEach(g=>{ if(L > 1 && g.big) g = Object.assign({}, g, g.big); const x0 = limDB(g.r);
     a.poly([[x0,g.r],[g.x,g.r]], {color:g.c, width:2, dash:'6 4'});
     a.point(x0, g.r, {color:C.in, r:3.4});
     if(g.pos) a.note(g.pos[0], g.pos[1], g.lab, {tex:true, fs:12, color:g.c, anchor:g.pos[2]});
     else a.note((x0+g.x)/2 + (g.dx||0), g.r + (g.dy==null ? 0.24 : g.dy), g.lab, {tex:true, fs:12, color:g.c, anchor:'middle'}); });
-  (o.pts||[]).forEach(p=>{
+  (o.pts||[]).forEach(p=>{ if(L > 1 && p.big) p = Object.assign({}, p, p.big);
     a.point(p.x, p.r, {color:p.c, r:5});
-    a.note(p.x + (p.dx==null ? 0.25 : p.dx), p.r + (p.dy||0), p.lab, {tex:true, fs:13, color:p.c, anchor:p.anchor||'start'}); });
+    a.note(p.lx != null ? p.lx : p.x + (p.dx==null ? 0.25 : p.dx)*L, p.r + (p.dy||0), p.lab, {tex:true, fs:13, color:p.c, anchor:p.anchor||'start'}); });
   return a.svg();
 }
 
@@ -39409,7 +39767,7 @@ function figLimit(o){
    each range marked by a dashed drop to the axis. The dot is the user's
    distance on the scheme chosen there. */
 function figRange(o){
-  const a = P.Axes({w:720, h:260, xr:[0,o.dmax], yr:[0,o.Rmax],
+  const a = P.Axes({w:720, h:HS(260), xr:[0,o.dmax], yr:[0,o.Rmax],
     xlabel:'d\\;(\\mathrm{km})', ylabel:'R_b\\;(\\mathrm{Mb/s})',
     pad:{l:58,r:30,t:24,b:46}, xstep:0.5, ystep:6});
   let d0 = 0;
@@ -39437,7 +39795,7 @@ function figFlips(o){
   const pk = k => comb(n,k)*Math.pow(p,k)*Math.pow(1-p,n-k);
   const lo = Math.floor(Math.log10(pk(n))) - 0.6;
   const y = k => Math.log10(pk(k)) - lo, top = -lo + (o.room || 2.0);
-  const a = P.Axes({w:720, h:o.h||240, xr:[0.3, n+1.7], yr:[0, top],
+  const a = P.Axes({w:720, h:HS(o.h||240), xr:[0.3, n+1.7], yr:[0, top],
     xlabel:'k', ylabel:'P(K=k)\\;\\text{on a log scale}', pad:{l:24,r:30,t:24,b:44},
     xticksOverride:Array.from({length:n+1},(_,k)=>k+1), xtickfmt:(v=>String(Math.round(v)-1)),
     yticksOverride:[], grid:false});
@@ -39445,10 +39803,10 @@ function figFlips(o){
   for(let k=0;k<=n;k++){ const col = k>=t ? C.err : C.in;
     a.poly([[k+1,0],[k+1,y(k)]], {color:col, width:2});
     a.point(k+1, y(k), {color:col, r:4.5});
-    a.note(k+1, y(k), o.lab[k], {tex:true, fs:12, color:col, anchor:'middle', dy:-16}); }
+    a.note(k+1, y(k), o.lab[k], {tex:true, fs:12, color:col, anchor:'middle', dy:-16*P.labelScale()}); }
   const xm = (t+0.5+n+1.7)/2;
   a.note(xm, top-1.0, o.head || 'n='+n+'\\text{: the vote fails}', {tex:true, fs:13, color:C.err, anchor:'middle'});
-  a.note(xm, top-1.0, o.fail, {tex:true, fs:13, color:C.err, anchor:'middle', dy:26});
+  a.note(xm, top-1.0, o.fail, {tex:true, fs:13, color:C.err, anchor:'middle', dy:26*P.labelScale()});
   return a.svg();
 }
 
@@ -39476,7 +39834,7 @@ function figHard(o){
   const R = o.R, X = x => x + 2.5, lin = x => Math.pow(10, x/10);
   const soft = x => 0.5*Math.log2(1 + 2*R*lin(x));
   const hard = x => 1 - Hb(Qfn(Math.sqrt(2*R*lin(x))));
-  const a = P.Axes({w:720, h:300, xr:[X(-2),X(4.5)], yr:[0,1.2],
+  const a = P.Axes({w:720, h:HS(300), xr:[X(-2),X(4.5)], yr:[0,1.2],
     xlabel:'E_b/N_0\\;(\\mathrm{dB})', ylabel:'C\\;(\\text{bits per use})',
     pad:{l:58,r:30,t:40,b:46}, ystep:0.2,
     xticksOverride:[-2,-1,0,1,2,3,4].map(X), xtickfmt:(u=>String(Math.round(u-2.5)))});
@@ -39508,10 +39866,10 @@ function figHard(o){
    red, which names the position. The last row is the decoded codeword, with
    the corrected bit on a green cell, and its data bits at the right. */
 function figSyn(o){
-  const W = 720, H = 268, X0 = 236, dx = 52, XS = 650;
+  const W = 720, k = P.labelScale() > 1 ? 1.2 : 1, H = Math.round(268*k), X0 = 236, dx = 52, XS = 650;
   const a = P.Axes({w:W, h:H, xr:[0,W], yr:[0,H], pad:{l:0,r:0,t:0,b:0},
     xticksOverride:[], yticksOverride:[], grid:false, zeroAxes:false, arrows:false});
-  const up = y => H - y, xs = i => X0 + (i-1)*dx, e = o.err;
+  const up = y => H - y*k, xs = i => X0 + (i-1)*dx, e = o.err;
   const bit = (i, y, b, col, w) => a.note(xs(i), up(y+6), b, {fs:17, color:col, anchor:'middle', weight:w||400});
   a.note(20, up(30), 'position', {fs:12, color:C.muted});
   for(let i=1;i<=7;i++) a.note(xs(i), up(30), String(i), {fs:12, color:C.muted, anchor:'middle'});
@@ -40115,9 +40473,9 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
          'The company then says the modem uses two separate channels at once, for example two pairs of antennas. Each has bandwidth $10$ MHz and the same $N_0$, and the power and the bits are split equally. Repeat the test for one channel and give the new verdict.'],
   figSol: () => figLimit({xr:[-4,14], yr:[0,7], h:320, imp:[3.2,4.9], floor:0.45,
     gaps:[{r:6, x:8.75, c:C.err, lab:'1.46\\ \\mathrm{dB}\\ \\text{short}', pos:[10.6, 5.5, 'start']},
-          {r:3, x:8.75, c:C.mid, lab:'5.07\\ \\mathrm{dB}\\ \\text{to spare}', dx:0.7}],
+          {r:3, x:8.75, c:C.mid, lab:'5.07\\ \\mathrm{dB}\\ \\text{to spare}', dx:0.7, big:{dx:1.6, dy:0.36}}],
     pts:[{x:8.75, r:6, c:C.err, lab:'\\text{one channel},\\ r=6', dx:-0.3, dy:-0.08, anchor:'end'},
-         {x:8.75, r:3, c:C.out, lab:'\\text{each of two channels},\\ r=3', dy:-0.42}]}),
+         {x:8.75, r:3, c:C.out, lab:'\\text{each of two channels},\\ r=3', dy:-0.42, big:{anchor:'end', lx:13.9, dy:-0.7}}]}),
   sol:'<b>Given.</b> $R_b=60$ Mb/s, $W=10$ MHz, $P=1.8\\times10^{-11}$ W and $N_0=4.0\\times10^{-20}$ W/Hz, on an ideal bandlimited channel with white Gaussian noise.<br>'
      +'<b>Find.</b> The spectral efficiency and its Shannon limit, the actual $E_b/N_0$, the verdict with its margin, and the verdict for two parallel channels.<br>'
      +'<b>Method.</b> The spectral efficiency is $r=R_b/W$ in b/s/Hz. A reliable link at efficiency $r$ needs'
@@ -41342,7 +41700,7 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
          'Find the minimum $E_s/N_0$ in dB that each scheme needs, where $E_s$ is the energy per symbol.',
          'QPSK reaches the largest range, $2.4$ km. Find the ranges of the other two schemes.',
          'A user is at $d=1.2$ km. Which scheme gives the highest bit rate there, and with how many dB to spare?'],
-  figSol: () => figLimit({xr:[-4,8], yr:[0,4], h:300, imp:[0.2,3.3], floor:0.3,
+  figSol: () => figLimit({xr:[-4,8], yr:[0,4], h:300, imp:[0.2,3.3], impBig:[2.0,3.35], floor:0.3,
     gaps:[{r:1, x:1.50, c:C.mid, lab:'1.5\\ \\mathrm{dB}', dy:-0.32},
           {r:2, x:3.26, c:C.mid, lab:'1.5\\ \\mathrm{dB}', dy:-0.32},
           {r:3, x:5.18, c:C.mid, lab:'1.5\\ \\mathrm{dB}', dy:-0.32}],
