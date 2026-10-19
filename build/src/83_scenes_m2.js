@@ -336,8 +336,8 @@ function figSnr(v){
 /* The output noise power, built in frames for an RC filter with tau = T/4,
    |H(f)|^2 = 1/(1 + (2 pi f tau)^2) with f in units of 1/T. Frame 0 is the
    flat input density N0/2; frame 1 lays |H(f)|^2 over it; frame 2 multiplies
-   the two into S_N(f); frame 3 sweeps the area under S_N(f) from the left and
-   prints the running integral in units of N0/T. The whole area is
+   the two into S_N(f); frame 3 sweeps the area under S_N(f) from the left
+   (no number is printed). The whole area is
    (N0/2)/(2 tau) = N0/(4 tau) = N0/T for tau = T/4. */
 const NP_TAU = 0.25, npH2 = f => 1/(1+Math.pow(2*Math.PI*f*NP_TAU, 2));
 const npCum = f => (Math.atan(2*Math.PI*NP_TAU*f) + Math.PI/2)/(2*Math.PI*NP_TAU)/2;
@@ -354,8 +354,7 @@ function figNoisePower(v){
     a.note(1.0, 0.45, 'S_N(f)=\\tfrac{N_0}{2}|H(f)|^{2}', {tex:true, fs:15, color:C.out}); });
   if(o3 > 0.01){ const x1 = -4 + 8*o3;
     a.area(npH2, -4, x1, {color:C.dec.out, n:400});
-    a.vline(x1, {color:C.out, dash:'4 4'});
-    a.note(-3.9, 1.42, `\\int_{-4/T}^{f}S_N\\,df'=${(npCum(x1)-npCum(-4)).toFixed(2)}\\,\\tfrac{N_0}{T}`, {tex:true, fs:15, color:C.out}); }
+    a.vline(x1, {color:C.out, dash:'4 4'}); }
   return a.svg();
 }
 
