@@ -19931,24 +19931,18 @@ const RC_BEST = 1.2564;
 function figSnr(v){
   P.hOverride = null;
   const r = v && v.r!=null ? v.r : 0, tau = Math.pow(10, -r), F = fpFilter(+tau.toPrecision(6));
-  const big = P.labelScale() > 1, hA = big ? 330 : 215, hB = big ? 290 : 200;
-  const a = P.Axes({w:560,h:hA,xr:[-0.2,2.3],yr:[-1.1,1.9],xlabel:'t/T',ylabel:'y(t)',
-    pad:{l:56,r:26,t:24,b:42},xticksOverride:[0,1,2],yticksOverride:[-1,0,1]});
-  fpOutput(a, F, -0.2, 2.3);
-  a.note(1.06, F.sig(1)+F.sd+0.28, 'g_0(T)', {tex:true, fs:15, color:C.mid});
-  a.note(0.06, 1.6, etaNote(F.ratio), {tex:true, fs:16, color:C.mid});
-  /* the axis variable is log10(T/tau) + 1.2, so the vertical axis sits just
-     left of the first decade */
-  const b = P.Axes({w:560,h:hB,xr:[0,2.3],yr:[0,1.3],xlabel:'T/\\tau',ylabel:'\\eta\\,/\\,(2E/N_0)',
-    pad:{l:56,r:26,t:20,b:42},xticksOverride:[0.2,1.2,2.2],xtickfmt:u=>u<1?'0.1':u<2?'1':'10',yticksOverride:[0.5,1]});
-  b.hline(1, {color:C.muted, dash:'5 4'});
-  b.note(1.72, 1.07, '\\text{the bound}', {tex:true, fs:14, color:C.muted});
-  b.curve(u=>rcRatio(Math.pow(10,u-1.2)), {color:C.h, width:2.4, n:400});
-  const ub = Math.log10(RC_BEST)+1.2;
-  b.point(ub, rcRatio(RC_BEST), {color:C.h, r:3.5});
-  b.note(ub+0.08, 0.48, '0.81', {tex:true, fs:14, color:C.h});
-  b.point(r+1.2, F.ratio, {color:C.mid, r:5.5});
-  return stack(560, [[a.svg(),hA],[b.svg(),hB]]);
+  const big = P.labelScale() > 1, hA = big ? 420 : 300;
+  const g0 = F.sig(1), sd = F.sd, eta = Math.pow(g0/sd, 2);
+  const a = P.Axes({w:560,h:hA,xr:[-0.2,2.3],yr:[-0.9,1.9],xlabel:'t/T',ylabel:'y(t)',
+    pad:{l:56,r:26,t:24,b:42},xticksOverride:[0,1,2],yticksOverride:[0,1]});
+  a.curve(F.sig, {color:C.mid, width:2.4, n:600});
+  a.vline(1, {color:C.muted, dash:'4 4'});
+  a.poly([[1,0],[1,g0]], {color:C.mid, width:6});
+  a.poly([[1.3,-sd],[1.3,sd]], {color:C.muted, width:6});
+  a.note(0.94, Math.max(g0, 0.15)+0.12, '\\text{signal}\\;g_0(T)', {tex:true, fs:15, color:C.mid, anchor:'end'});
+  a.note(1.38, -sd-0.18, '\\text{noise}\\;\\pm\\sigma', {tex:true, fs:15, color:C.muted});
+  a.note(0.06, 1.65, `\\eta=\\Bigl(\\dfrac{\\text{signal}}{\\text{noise}}\\Bigr)^{2}=${eta.toFixed(1)}`, {tex:true, fs:16, color:C.mid});
+  return stack(560, [[a.svg(),hA]]);
 }
 
 /* The output noise power, built in frames for an RC filter with tau = T/4,
@@ -21431,7 +21425,7 @@ const SC = [
     {t:'fig', frame:true, grow:true,
       live:{controls:[{k:'r', label:'$T/\\tau$', min:-1, max:1, step:0.05, v:0, show:v=>'$'+(+Math.pow(10,v).toPrecision(2))+'$'}]},
       svg:figSnr,
-      caption:'Drag $T/\\tau$, the pulse length in units of the time constant of the filter. Above: the filter output, with a band one noise standard deviation wide. Below: $\\eta$ against the bound $2E/N_0$, never above $0.81$.'}
+      caption:'Drag $T/\\tau$. A slow filter (small $T/\\tau$) smooths the noise, but the pulse barely rises. A fast one lets the pulse through, and the noise with it. $\\eta$ compares the violet bar to the grey bar, squared.'}
   ], right:[
     {t:'eq', label:'Peak pulse SNR', tex:'\\eta=\\frac{|g_0(T)|^{2}}{E[n^{2}(T)]}',
       note:'The signal part rises while the pulse enters the filter and falls after it. So it peaks at $t=T$, and the output is read there.'},
