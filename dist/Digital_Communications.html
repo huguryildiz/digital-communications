@@ -19942,6 +19942,12 @@ function figSnr(v){
   a.note(0.94, Math.max(g0, 0.15)+0.12, '\\text{signal}\\;g_0(T)', {tex:true, fs:15, color:C.mid, anchor:'end'});
   a.note(1.38, -sd-0.18, '\\text{noise}\\;\\pm\\sigma', {tex:true, fs:15, color:C.muted});
   a.note(0.06, 1.65, `\\eta=\\Bigl(\\dfrac{\\text{signal}}{\\text{noise}}\\Bigr)^{2}=${eta.toFixed(1)}`, {tex:true, fs:16, color:C.mid});
+  /* what the bars say at this speed: a slow filter has little noise but no
+     signal, a fast one has all the signal and keeps adding noise */
+  const x = 1/tau, why = x < 0.7 ? '\\text{slow: the pulse barely rises}'
+                      : x < 2.2 ? '\\text{near the best: both are fair}'
+                      :           '\\text{fast: noise keeps growing}';
+  a.note(-0.12, -0.74, why, {tex:true, fs:15, color:C.mid});
   return stack(560, [[a.svg(),hA]]);
 }
 
@@ -21429,8 +21435,6 @@ const SC = [
   ], right:[
     {t:'eq', label:'Peak pulse SNR', tex:'\\eta=\\frac{|g_0(T)|^{2}}{E[n^{2}(T)]}',
       note:'The signal part rises while the pulse enters the filter and falls after it. So it peaks at $t=T$, and the output is read there.'},
-    {t:'note', kind:'warn', head:'Why $\\eta$ falls',
-      html:'A faster filter, a larger $T/\\tau$, changes two things.<div class="nsep"></div>The signal at $t=T$ rises, then stops near $1$ once the filter follows the pulse. The noise power $N_0/(4\\tau)$ keeps growing, because a faster filter lets in more noise bandwidth.<div class="nsep"></div>So past $T/\\tau\\approx1.3$ the noise wins and $\\eta$ falls. A slower filter fails the other way: the pulse barely rises.'},
     {t:'reveal', at:1, items:[
       {t:'eq', label:'Signal part in $f$', tex:'\\begin{aligned}G_0(f)&=G(f)\\,H(f)\\\\g_0(T)&=\\int_{-\\infty}^{\\infty}G(f)\\,H(f)\\,e^{j2\\pi fT}\\,df\\end{aligned}',
         note:'Convolution in time is a product in frequency. The inverse transform, read at $t=T$, gives the second line.'}]},
