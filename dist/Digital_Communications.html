@@ -21429,6 +21429,8 @@ const SC = [
   ], right:[
     {t:'eq', label:'Peak pulse SNR', tex:'\\eta=\\frac{|g_0(T)|^{2}}{E[n^{2}(T)]}',
       note:'The signal part rises while the pulse enters the filter and falls after it. So it peaks at $t=T$, and the output is read there.'},
+    {t:'note', kind:'warn', head:'Why $\\eta$ falls',
+      html:'A faster filter, a larger $T/\\tau$, changes two things.<div class="nsep"></div>The signal at $t=T$ rises, then stops near $1$ once the filter follows the pulse. The noise power $N_0/(4\\tau)$ keeps growing, because a faster filter lets in more noise bandwidth.<div class="nsep"></div>So past $T/\\tau\\approx1.3$ the noise wins and $\\eta$ falls. A slower filter fails the other way: the pulse barely rises.'},
     {t:'reveal', at:1, items:[
       {t:'eq', label:'Signal part in $f$', tex:'\\begin{aligned}G_0(f)&=G(f)\\,H(f)\\\\g_0(T)&=\\int_{-\\infty}^{\\infty}G(f)\\,H(f)\\,e^{j2\\pi fT}\\,df\\end{aligned}',
         note:'Convolution in time is a product in frequency. The inverse transform, read at $t=T$, gives the second line.'}]},
