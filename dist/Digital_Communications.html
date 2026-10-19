@@ -19931,7 +19931,7 @@ const RC_BEST = 1.2564;
 function figSnr(v){
   P.hOverride = null;
   const r = v && v.r!=null ? v.r : 0, tau = Math.pow(10, -r), F = fpFilter(+tau.toPrecision(6));
-  const big = P.labelScale() > 1, hA = big ? 420 : 300;
+  const big = P.labelScale() > 1, hA = big ? 480 : 400;
   const g0 = F.sig(1), sd = F.sd, eta = Math.pow(g0/sd, 2);
   const a = P.Axes({w:560,h:hA,xr:[-0.2,2.3],yr:[-0.9,1.9],xlabel:'t/T',ylabel:'y(t)',
     pad:{l:56,r:26,t:24,b:42},xticksOverride:[0,1,2],yticksOverride:[0,1]});
@@ -19947,7 +19947,7 @@ function figSnr(v){
   const x = 1/tau, why = x < 0.7 ? '\\text{slow: the pulse barely rises}'
                       : x < 2.2 ? '\\text{near the best: both are fair}'
                       :           '\\text{fast: noise keeps growing}';
-  a.note(-0.12, -0.74, why, {tex:true, fs:15, color:C.mid});
+  a.note(0.08, -0.74, why, {tex:true, fs:15, color:C.mid});
   return stack(560, [[a.svg(),hA]]);
 }
 
