@@ -340,7 +340,6 @@ function figFpOut(tau){
   const F=fpFilter(tau);
   const a=ax2({xr:[-0.2,2.3],yr:[-1.1,2.1],xlabel:'t/T',ylabel:'y(t)',xticksOverride:[0,1,2],yticksOverride:[-1,0,1,2]});
   fpOutput(a,F);
-  a.note(0.95,1.82,etaNote(F.ratio),{tex:true,fs:14,color:C.mid});
   return a.svg();
 }
 
