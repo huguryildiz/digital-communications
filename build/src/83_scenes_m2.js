@@ -659,8 +659,9 @@ function figSampleDist(v){
 function figExMf(v){
   const f = frameOf(v, 2), u1 = clamp01(f), u2 = clamp01(f-1);
   const X = t => (t-u1)*(1-2*u2);
-  const a = P.Axes(SZ({xr:[-1.4,2.4], yr:[-0.12,1.45], xlabel:'t/T', ylabel:'g(t)/A,\\;y(t)/(A^{2}T)',
-    xticksOverride:[-1,0,0.5,1,1.5,2], ytarget:4}));
+  const TL = {'-1':'-T','0':'0','0.5':'T/2','1':'T','1.5':'3T/2','2':'2T'};
+  const a = P.Axes(SZ({xr:[-1.4,2.4], yr:[-0.12,1.45], xlabel:'t', ylabel:'',
+    xticksOverride:[-1,0,0.5,1,1.5,2], xtickfmt:v=>TL[String(v)]||'', yticksOverride:[1], ytickfmt:()=>'A'}));
   a.raw(`<rect class="sk-area" x="${a.x0}" y="${a.y1}" width="${a.x1-a.x0}" height="${a.y0-a.y1}" fill="none"/>`);
   a.poly([[-1.4,0],[0,0],[0,1],[1,1],[1,0],[2.4,0]], {color:C.ink, width:1.6});
   if(f < 0.02) a.note(0.06, 1.1, 'g(t)/A', {tex:true, fs:14, color:C.ink});
