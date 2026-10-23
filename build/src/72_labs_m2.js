@@ -55,9 +55,11 @@ Object.assign(LABS, (function(){
   const C = (() => {
     const NS = 256, TB = 1, DT = TB/NS, T0 = -8, T1 = 2.2, RC_TAU = 0.8;
     const NK = Math.round((T1-T0)/DT);
-    let st = { shape:'rect', filt:'mf', snr:6, samp:100, phase:40 };
+    let st = { shape:'rect', filt:'mf', n0i:4, samp:100, phase:40 };
+    /* the noise density N0, chosen from a short list of round values */
+    const N0S = [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1];
     /* One seeded realisation of unit white samples on the grid. The noise of
-       density N0/2 is sqrt(N0/(2 dt)) times it, so moving the E/N0 slider
+       density N0/2 is sqrt(N0/(2 dt)) times it, so moving the N0 slider
        scales the same noise rather than drawing a new one. */
     const Z = gauss(20261285, NK, 1);
     const tz = j => T0 + (j+0.5)*DT;
@@ -109,7 +111,7 @@ Object.assign(LABS, (function(){
 
     function draw(root){
       const { E, hsq, sig, n1 } = outputs();
-      const N0 = E/Math.pow(10, st.snr/10), sw = Math.sqrt(N0/(2*DT));
+      const N0 = N0S[st.n0i], sw = Math.sqrt(N0/(2*DT));
       const sweeping = st.phase <= 20, swept = Math.min(1, st.phase/20);
       const k = Math.round(st.samp/100*NS), ys = sig[k];
       const snrMax = 2*E/N0, snrHere = ys*ys/(N0/2*hsq), ratio = snrHere/snrMax;
@@ -155,7 +157,7 @@ Object.assign(LABS, (function(){
       root.querySelector('.lab-eq').innerHTML = ph ? T(heq, true) : T(`${heq},\\quad E=${N(E,3)}`, true);
 
       root.querySelector('.ro').innerHTML = `
-        <div><dt>Noise density N₀</dt><dd>${N(N0,4)}</dd></div>
+        <div><dt>E/N₀</dt><dd>${N(10*Math.log10(E/N0),2)} dB</dd></div>
         <div><dt>Bound 2E/N₀</dt><dd>${N(10*Math.log10(snrMax),2)} dB</dd></div>
         <div><dt>SNR at that instant</dt><dd class="${lossDb<-0.5?'warnv':'okv'}">${N(10*Math.log10(Math.max(1e-12,snrHere)),2)} dB</dd></div>`;
 
@@ -169,7 +171,7 @@ Object.assign(LABS, (function(){
           ? `The bound $2E/N_0$ is reached exactly, for all three shapes, since all three carry the same energy.`
           : `Losing ${T(fmt(-lossDb,2),false)} dB here is losing it for nothing.`}</div>`);
 
-      root.querySelectorAll('[data-out]').forEach(o=>{ o.textContent = String(st[o.dataset.out]); });
+      root.querySelectorAll('[data-out]').forEach(o=>{ o.textContent = o.dataset.out==='n0' ? String(N0) : String(st[o.dataset.out]); });
       root.querySelectorAll('[data-seg]').forEach(b=>
         b.setAttribute('aria-pressed', String(b.dataset.val===st[b.dataset.seg])));
     }
@@ -188,8 +190,8 @@ Object.assign(LABS, (function(){
               <div class="ctrl" style="grid-column:1/-1"><label>Filter <span class="seg">
                 <button data-seg="filt" data-val="mf">matched</button>
                 <button data-seg="filt" data-val="rc">RC, τ = 0.8T</button></span></label></div>
-              <div class="ctrl"><label>E/N₀, dB <span class="val" data-out="snr">6</span></label>
-                <input type="range" data-v="snr" min="0" max="20" step="1" value="6"></div>
+              <div class="ctrl"><label>Noise density N₀ <span class="val" data-out="n0">0.2</span></label>
+                <input type="range" data-v="n0i" min="0" max="6" step="1" value="4"></div>
               <div class="ctrl"><label>Sampling instant, % of T <span class="val" data-out="samp">100</span></label>
                 <input type="range" data-v="samp" min="20" max="180" step="5" value="100"></div>
               <div class="ctrl" style="grid-column:1/-1"><label>Sweep and scan <span class="val" data-out="phase">40</span></label>
