@@ -2415,7 +2415,7 @@ REAL_MATCHED,
       caption:'One noiseless bit with $s_m=1$, for three shapes of $\\psi$. The wide line is the matched-filter output, the dashed line the correlator output, reset at $T_b$. At $t=T_b$ both read $s_m$.'},
     {t:'legend', items:[['mid','matched filter'],['mid','correlator',true]], at:'tr'}
   ], right:[
-    {t:'eq', label:'Correlator at $T_b$', tex:'\\begin{aligned}y(T_b)&=s_m\\int_0^{T_b}\\psi^{2}(\\tau)\\,d\\tau+\\int_0^{T_b}w(\\tau)\\,\\psi(\\tau)\\,d\\tau\\\\&=s_m+n\\end{aligned}',
+    {t:'eq', label:'Correlator at $T_b$', tex:'\\begin{aligned}y(T_b)&=s_m\\underbrace{\\int_0^{T_b}\\psi^{2}(\\tau)\\,d\\tau}_{1}+\\int_0^{T_b}w(\\tau)\\,\\psi(\\tau)\\,d\\tau\\\\&=s_m+n\\end{aligned}',
       note:'This $n$ equals the filter noise $n(T_b)$. Before $T_b$ the two noise terms differ.'},
     {t:'reveal', at:1, items:[
       {t:'eq', label:'Matched filter at $T_b$', tex:'\\begin{aligned}h(t)&=\\psi(T_b-t)\\\\y(t)&=\\int_{-\\infty}^{\\infty}x(\\tau)\\,\\psi(T_b-t+\\tau)\\,d\\tau\\\\y(T_b)&=\\int_0^{T_b}x(\\tau)\\,\\psi(\\tau)\\,d\\tau\\end{aligned}',

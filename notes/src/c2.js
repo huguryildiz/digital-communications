@@ -1773,7 +1773,7 @@ window.C2 = [
 {t:'h3', text:'Correlator and matched-filter demodulators'},
 {t:'p', text:'The number $y$ can be formed in two ways. The correlator is read at the end of the bit and then reset to $0$.'},
 {t:'p', text:'Read the output at $t=T_b$ and use the unit energy of $\\psi$.'},
-{t:'eqbox', cap:'Correlator at $T_b$', tex:'\\begin{aligned}y(T_b)&=s_m\\int_0^{T_b}\\psi^{2}(\\tau)\\,d\\tau+\\int_0^{T_b}w(\\tau)\\,\\psi(\\tau)\\,d\\tau\\\\&=s_m+n\\end{aligned}',
+{t:'eqbox', cap:'Correlator at $T_b$', tex:'\\begin{aligned}y(T_b)&=s_m\\underbrace{\\int_0^{T_b}\\psi^{2}(\\tau)\\,d\\tau}_{1}+\\int_0^{T_b}w(\\tau)\\,\\psi(\\tau)\\,d\\tau\\\\&=s_m+n\\end{aligned}',
  after:'At $t=T_b$ the noise integral is the same $n$ as at the matched filter. At earlier times the correlator noise $\\int_0^{t}w\\psi\\,d\\tau$ and the filter noise $n(t)$ are different processes.'},
 
 {t:'p', text:'The matched filter has the impulse response $\\psi(T_b-t)$. Write its output as a convolution and put $t=T_b$.'},
