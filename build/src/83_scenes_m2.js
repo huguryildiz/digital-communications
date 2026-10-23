@@ -710,10 +710,9 @@ const near = (f, k) => clamp01(1-2*Math.abs(f-k));
 function figBasisUnit(v){
   const f = frameOf(v, 0), u1 = clamp01(f), u2 = clamp01(f-1);
   const H1 = 1.5, H2 = 2.25, h = H1+u1*(H2-H1);
-  const a = P.Axes(SZ({xr:[-0.3,1.45], yr:[-0.3,2.9], xlabel:'t/T_b', ylabel:'\\psi(t),\\;\\psi^{2}(t)',
+  const a = P.Axes(SZ({xr:[-0.3,1.45], yr:[-0.3,2.9], xlabel:'t/T_b', ylabel:'\\psi(t),\\;\\psi^{2}(t)', ynameAtAxis:true,
     xticksOverride:[0,0.5,1], yticksOverride:[], ytarget:3}));
   if(u2 > 0.005) a.area(()=>h, 0, u2, {color:C.dec.mid});
-  if(u1 > 0.01) a.poly(rectPts(H1), {color:C.h, width:1.6, dash:'6 5'});
   a.poly(rectPts(h), {color:u1 < 0.5 ? C.h : C.mid, width:2.6});
   fade(a, 1-u1, ()=>a.note(0.5, H1+0.3, '\\psi(t)=1/\\sqrt{T_b}', {tex:true, fs:16, color:C.h, anchor:'middle'}));
   fade(a, u1, ()=>a.note(0.5, H2+0.3, '\\psi^{2}(t)=1/T_b', {tex:true, fs:16, color:C.mid, anchor:'middle'}));
@@ -727,7 +726,7 @@ function figBasisUnit(v){
 function figAntipodal(v){
   const f = frameOf(v, 0), A = 1.5;
   const c = f <= 1 ? 1+(A-1)*clamp01(f) : A-2*A*clamp01(f-1);
-  const a = P.Axes(SZ({xr:[-0.3,1.45], yr:[-2.2,2.3], xlabel:'t/T_b', ylabel:'\\psi(t),\\;s_m(t)',
+  const a = P.Axes(SZ({xr:[-0.3,1.45], yr:[-2.2,2.3], xlabel:'t/T_b', ylabel:'\\psi(t),\\;s_m(t)', ynameAtAxis:true,
     xticksOverride:[0,0.5,1], yticksOverride:[-1.5,-1,0,1,1.5], ytickfmt:()=>''}));
   a.poly(rectPts(1), {color:C.h, width:2.2});
   if(f > 1.01) fade(a, 0.4, ()=>a.poly(rectPts(A), {color:C.in, width:2.2}));
@@ -2200,7 +2199,8 @@ REAL_MATCHED,
     {t:'fig', frame:true, grow:true,
       frames:{labels:['$\\psi(t)$','$\\psi^{2}(t)$','$\\int\\psi^{2}\\,d\\tau$'], ms:1100},
       svg:figBasisUnit,
-      caption:'The basis $\\psi(t)$ is a pulse of height $1/\\sqrt{T_b}$ on one bit. Step through: square it, then sweep the area under $\\psi^{2}(t)$. The area ends at $1$.'}
+      caption:'The basis $\\psi(t)$ is a pulse of height $1/\\sqrt{T_b}$ on one bit. Step through: square it, then sweep the area under $\\psi^{2}(t)$. The area ends at $1$.'},
+    {t:'legend', items:[['h','$\\psi(t)$',0,0,0],['mid','$\\psi^{2}(t)$',0,1]], at:'tr'}
   ], right:[
     {t:'eq', label:'The basis', tex:'\\psi(t)=\\begin{cases}1/\\sqrt{T_b}, & 0\\le t\\le T_b\\\\[2pt] 0, & \\text{otherwise}\\end{cases}',
       note:'A basis function is one fixed pulse shape. Here it is a rectangle one bit long, and $T_b$ is the bit duration in seconds.'},
@@ -2230,8 +2230,8 @@ REAL_MATCHED,
     {t:'eq', label:'One shape, two numbers', tex:'s_m(t)=s_m\\,\\psi(t),\\qquad m\\in\\{0,1\\}',
       note:'Both bits use the same shape. The number $s_m$ carries the bit.'},
     {t:'reveal', at:1, items:[
-      {t:'eq', label:'Polar NRZ', tex:'s_{1,0}(t)=\\pm A\\sqrt{T_b}\\cdot\\frac{1}{\\sqrt{T_b}}=\\pm A',
-        note:'Take $s_{1,0}=\\pm A\\sqrt{T_b}$. The $\\sqrt{T_b}$ cancels. One waveform is the negative of the other: the signalling is antipodal.'}]},
+      {t:'eq', label:'Polar NRZ', tex:'\\begin{aligned}s_1(t)&=+A\\sqrt{T_b}\\cdot\\frac{1}{\\sqrt{T_b}}=+A\\\\[4pt]s_0(t)&=-A\\sqrt{T_b}\\cdot\\frac{1}{\\sqrt{T_b}}=-A\\end{aligned}',
+        note:'Take $s_1=+A\\sqrt{T_b}$ and $s_0=-A\\sqrt{T_b}$. The $\\sqrt{T_b}$ cancels. One waveform is the negative of the other: the signalling is antipodal.'}]},
     {t:'reveal', at:2, items:[
       {t:'eq', label:'Energy per bit', tex:'\\begin{aligned}E_b&=\\int_0^{T_b}s_1^{2}(t)\\,dt=\\int_0^{T_b}A^{2}\\,dt\\\\&=A^{2}T_b\\end{aligned}',
         note:'So $A\\sqrt{T_b}=\\sqrt{E_b}$, and the two numbers are $s_1=+\\sqrt{E_b}$ and $s_0=-\\sqrt{E_b}$.'}]},
