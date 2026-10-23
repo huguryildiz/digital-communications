@@ -654,23 +654,22 @@ function figSampleDist(v){
 
 /* Worked example: the pulse g(t) = A on [0, T] and, as the answer, the output
    of its matched filter, both scaled so the axes are the same for the two.
-   Frames 0-2 build h(t) = g(T - t) from g(t): the pulse is mirrored about
-   t = 0, then moved right by T. For a rectangle the result is the pulse again. */
+   Frames 0-2 build h(t) = g(T - t) from g(t): shift left by T to g(t + T),
+   then mirror about t = 0. For a rectangle the result is the pulse again. */
 function figExMf(v){
   const f = frameOf(v, 2), u1 = clamp01(f), u2 = clamp01(f-1);
-  const X = t => t*(1-2*u1) + u2;
+  const X = t => (t-u1)*(1-2*u2);
   const a = P.Axes(SZ({xr:[-1.4,2.4], yr:[-0.12,1.45], xlabel:'t/T', ylabel:'g(t)/A,\\;y(t)/(A^{2}T)',
     xticksOverride:[-1,0,0.5,1,1.5,2], ytarget:4}));
   a.raw(`<rect class="sk-area" x="${a.x0}" y="${a.y1}" width="${a.x1-a.x0}" height="${a.y0-a.y1}" fill="none"/>`);
-  a.poly([[-0.2,0],[0,0],[0,1],[1,1],[1,0],[2.4,0]], {color:C.ink, width:1.6, dash:'6 5'});
+  a.poly([[-1.4,0],[0,0],[0,1],[1,1],[1,0],[2.4,0]], {color:C.ink, width:1.6});
   if(f < 0.02) a.note(0.06, 1.1, 'g(t)/A', {tex:true, fs:14, color:C.ink});
-  if(f > 0.02 && f < 1.15) fade(a, Math.min(1, 1.15-f), ()=>{ a.vline(0, {color:C.coral, dash:'6 4', width:1.6});
+  if(u1 > 0.02 && u2 < 0.98) fade(a, 1-u2, ()=>a.span(-u1, 0, 1.3, u1 > 0.5 ? '-T' : '', {tex:true, color:C.h, fs:15}));
+  if(u2 > 0.02 && u2 < 0.98) fade(a, Math.sin(Math.PI*u2), ()=>{ a.vline(0, {color:C.coral, width:1.6});
     a.note(-0.05, 1.3, '\\text{mirror at }t=0', {tex:true, fs:14, color:C.coral, anchor:'end'}); });
-  if(u2 > 0.02) a.poly([[-0.2,0],[-1,0],[-1,1],[0,1],[0,0]], {color:C.h, width:1.4, dash:'5 5'});
-  if(u2 > 0.02) a.span(-1, -1+u2, 1.18, u2 > 0.5 ? '+T' : '', {tex:true, color:C.h, fs:15});
   if(f > 0.02){ const x0 = X(0), x1 = X(1), l = Math.min(x0, x1), r = Math.max(x0, x1);
     a.poly([[-1.4,0],[l,0],[l,1],[r,1],[r,0],[2.4,0]], {color:C.h, width:2.6}); }
-  if(f > 0.9 && u2 < 0.15) a.note(-0.5, 1.1, 'g(-t)', {tex:true, fs:15, color:C.h, anchor:'middle'});
+  if(f > 0.9 && u2 < 0.15) a.note(-0.5, 1.1, 'g(t+T)', {tex:true, fs:15, color:C.h, anchor:'middle'});
   if(u2 > 0.85) a.note(0.5, 1.1, 'h(t)=g(T-t)', {tex:true, fs:15, color:C.h, anchor:'middle'});
   a.raw('<g class="sk-key">');
   a.poly([[-0.2,0],[0,0],[1,1],[2,0],[2.4,0]], {color:C.mid, width:2.6});
@@ -2154,8 +2153,8 @@ const SC = [
   {t:'title', text:'Worked example: the matched filter of a rectangular pulse'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true, sketch:{label:'Sketch $y(t)$ on the axes, then check it.'},
-      frames:{labels:['$g(t)$','reverse: $g(-t)$','shift: $h(t)=g(T-t)$'], ms:1100}, svg:figExMf,
-      caption:'Step through: mirror $g(t)$ about $t=0$, then move it right by $T$ to get $h(t)$. Then draw the output $y(t)$ and show the answer.'}
+      frames:{labels:['$g(t)$','shift: $g(t+T)$','reverse: $h(t)=g(T-t)$'], ms:1100}, svg:figExMf,
+      caption:'Step through: move $g(t)$ left by $T$, then mirror it about $t=0$ to get $h(t)$. Then draw the output $y(t)$ and show the answer.'}
   ], right:[
     {t:'note', kind:'def', head:'Given', html:'$g(t)=A$ on $[0,T]$, $A=2$ V, $T=0.5$ ms, $N_0/2=10^{-4}$ W/Hz.<div class="nsep"></div>Find $h(t)$, $y(t)$ and the largest peak SNR.',
       ask:{key:'m2-ex-mf', choices:['$10$','$20$','$40$'], answer:1,
