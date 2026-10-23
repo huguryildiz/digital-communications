@@ -1701,14 +1701,14 @@ window.C2 = [
 /* ================================================================ 2.3 === */
 {t:'h2', num:'2.3', text:'The demodulator'},
 
-{t:'h3', text:'The unit-energy basis'},
-{t:'p', text:'The demodulator works with one fixed pulse shape, the <b>basis function</b> $\\psi(t)$. For a rectangular pulse it is a rectangle one bit long. $T_b$ is the bit duration in seconds.'},
-{t:'eqbox', cap:'The basis', tex:'\\psi(t)=\\begin{cases}1/\\sqrt{T_b}, & 0\\le t\\le T_b\\\\[2pt] 0, & \\text{otherwise}\\end{cases}'},
+{t:'h3', text:'The unit-energy pulse'},
+{t:'p', text:'The demodulator works with one fixed pulse shape $\\psi(t)$, a rectangle one bit long. $T_b$ is the bit duration in seconds. From here on $\\psi(t)$ is called the <b>basis function</b>. Module 3 builds one for any signal set (Gram–Schmidt).'},
+{t:'eqbox', cap:'The pulse', tex:'\\psi(t)=\\begin{cases}1/\\sqrt{T_b}, & 0\\le t\\le T_b\\\\[2pt] 0, & \\text{otherwise}\\end{cases}'},
 {t:'p', text:'Its height is chosen so that its energy is $1$. Square the height, then integrate over the bit.'},
 {t:'eqbox', cap:'Step 1 · its energy', tex:'\\begin{aligned}E_\\psi&=\\int_0^{T_b}\\psi^{2}(t)\\,dt\\\\&=\\int_0^{T_b}\\frac{1}{T_b}\\,dt\\\\&=\\frac{1}{T_b}\\cdot T_b=1\\end{aligned}',
  after:'For example, $T_b=4$ ms gives the height $1/\\sqrt{4\\times10^{-3}}=15.8\\ \\text{s}^{-1/2}$. Then $\\psi^{2}=250\\ \\text{s}^{-1}$, and $250\\times4\\times10^{-3}=1$.'},
 {t:'fig', svg:()=>figBasisUnit(),
- cap:'The basis $\\psi(t)$ (amber, dashed) and its square $\\psi^{2}(t)$ (violet). The area under $\\psi^{2}(t)$ over one bit is $1$.'},
+ cap:'The pulse $\\psi(t)$ (amber, dashed) and its square $\\psi^{2}(t)$ (violet). The area under $\\psi^{2}(t)$ over one bit is $1$.'},
 
 {t:'h3', text:'Antipodal signalling'},
 {t:'p', text:'Each bit is sent as the same shape times a number. The number $s_m$ carries the bit.'},
@@ -1725,7 +1725,7 @@ window.C2 = [
 {t:'h3', text:'Two waveforms as two points'},
 {t:'p', text:'The number that multiplies $\\psi(t)$ is found by projection. Multiply the waveform by $\\psi(t)$ and integrate over the bit.'},
 {t:'eqbox', cap:'Coefficient on $\\psi$', tex:'\\begin{aligned}s_m&=\\int_0^{T_b}s_m(t)\\,\\psi(t)\\,dt\\\\s_1&=\\int_0^{T_b}A\\cdot\\frac{1}{\\sqrt{T_b}}\\,dt\\\\&=\\frac{A}{\\sqrt{T_b}}\\cdot T_b=A\\sqrt{T_b}=+\\sqrt{E_b}\\end{aligned}',
- after:'For $s_0(t)=-A$ the same steps give $s_0=-\\sqrt{E_b}$. The two waveforms have become two points on one axis, the axis of $\\psi(t)$.'},
+ after:'For $s_0(t)=-A$ the same steps give $s_0=-\\sqrt{E_b}$. The two waveforms have become two points on one axis, the axis of $\\psi(t)$. Module 3 draws any signal set this way.'},
 {t:'p', text:'The distance between the two points measures how far noise must push the received number to cause an error.'},
 {t:'eqbox', cap:'Distance', tex:'\\begin{aligned}d&=s_1-s_0\\\\&=\\sqrt{E_b}-\\bigl(-\\sqrt{E_b}\\bigr)=2\\sqrt{E_b}\\end{aligned}',
  after:'A larger distance means noise must move the received number further before it lands nearer the wrong point. For $E_b=4$ mJ, $d=2\\sqrt{4\\times10^{-3}}=2(0.0632)=0.126\\ \\sqrt{\\text{J}}$.'},

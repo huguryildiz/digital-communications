@@ -21931,21 +21931,21 @@ REAL_MATCHED,
 ]},
 
 /* ---------------------------------------------------------------- 2.3 ---- */
-{ id:'m2-basis', module:'M2', nav:'The unit-energy basis', title:'The unit-energy basis',
-  objective:'Define the rectangular basis function of one bit and show that its energy is one.',
+{ id:'m2-basis', module:'M2', nav:'The unit-energy pulse', title:'The unit-energy pulse',
+  objective:'Define the rectangular unit-energy pulse of one bit, show that its energy is one, and name it the basis function.',
   keywords:'basis function unit energy rectangular pulse one bit psi height 1/sqrt(Tb) area of psi squared',
   src:'CH8 s.14', slide:true, steps:2, blocks:[
   {t:'eyebrow', text:'Module 2 · The demodulator'},
-  {t:'title', text:'The unit-energy basis'},
+  {t:'title', text:'The unit-energy pulse'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true,
       frames:{labels:['$\\psi(t)$','$\\psi^{2}(t)$','$\\int\\psi^{2}\\,d\\tau$'], ms:1100},
       svg:figBasisUnit,
-      caption:'The basis $\\psi(t)$ is a pulse of height $1/\\sqrt{T_b}$ on one bit. Step through: square it, then sweep the area under $\\psi^{2}(t)$. The area ends at $1$.'},
+      caption:'The pulse $\\psi(t)$ has height $1/\\sqrt{T_b}$ on one bit. Step through: square it, then sweep the area under $\\psi^{2}(t)$. The area ends at $1$.'},
     {t:'legend', items:[['h','$\\psi(t)$',0,0,0],['mid','$\\psi^{2}(t)$',0,1]], at:'tr'}
   ], right:[
-    {t:'eq', label:'The basis', tex:'\\psi(t)=\\begin{cases}1/\\sqrt{T_b}, & 0\\le t\\le T_b\\\\[2pt] 0, & \\text{otherwise}\\end{cases}',
-      note:'A basis function is one fixed pulse shape. Here it is a rectangle one bit long, and $T_b$ is the bit duration in seconds.'},
+    {t:'eq', label:'The pulse', tex:'\\psi(t)=\\begin{cases}1/\\sqrt{T_b}, & 0\\le t\\le T_b\\\\[2pt] 0, & \\text{otherwise}\\end{cases}',
+      note:'A rectangle one bit long; $T_b$ is the bit duration. We call $\\psi(t)$ the <b>basis function</b>; Module 3 builds them by Gram–Schmidt.'},
     {t:'reveal', at:1, items:[
       {t:'eq', label:'Step 1 · its energy', tex:'\\begin{aligned}E_\\psi&=\\int_0^{T_b}\\psi^{2}(t)\\,dt\\\\&=\\int_0^{T_b}\\frac{1}{T_b}\\,dt\\\\&=\\frac{1}{T_b}\\cdot T_b=1\\end{aligned}',
         note:'Square the height, then integrate over the bit. The height $1/\\sqrt{T_b}$ is chosen so that the energy is exactly $1$.'}]},
@@ -21997,7 +21997,7 @@ REAL_MATCHED,
       caption:'Step through: the two waveforms, and their products with $\\psi(t)$, whose areas are the two numbers. Then the numbers as points on the axis of $\\psi(t)$, and their distance.'}
   ], right:[
     {t:'eq', label:'Coefficient on $\\psi$', tex:'\\begin{aligned}s_m&=\\int_0^{T_b}s_m(t)\\,\\psi(t)\\,dt\\\\s_1&=\\int_0^{T_b}A\\cdot\\frac{1}{\\sqrt{T_b}}\\,dt\\\\&=\\frac{A}{\\sqrt{T_b}}\\cdot T_b=A\\sqrt{T_b}=+\\sqrt{E_b}\\end{aligned}',
-      note:'Multiply by $\\psi(t)$ and integrate over the bit. For $s_0(t)=-A$ the same steps give $-\\sqrt{E_b}$.'},
+      note:'Multiply by $\\psi(t)$ and integrate over the bit; $s_0(t)=-A$ gives $-\\sqrt{E_b}$. Module 3 draws any signal set this way.'},
     {t:'reveal', at:1, items:[
       {t:'eq', label:'Distance', tex:'\\begin{aligned}d&=s_1-s_0\\\\&=\\sqrt{E_b}-\\bigl(-\\sqrt{E_b}\\bigr)=2\\sqrt{E_b}\\end{aligned}',
         note:'A larger distance means noise must move the received number further before it lands nearer the wrong point.'}]},
