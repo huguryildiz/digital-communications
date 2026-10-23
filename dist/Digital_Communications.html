@@ -21998,8 +21998,8 @@ REAL_MATCHED,
 ]},
 
 { id:'m2-demod-signal', module:'M2', nav:'The signal part', title:'The signal part as a convolution',
-  objective:'Write the signal part of the matched-filter output as a convolution integral and see how long the output lasts.',
-  keywords:'signal part convolution integral limits 0 Tb h(t-tau) psi(Tb-(t-tau)) sliding overlap output lasts 2Tb',
+  objective:'Write the signal part and the noise part of the matched-filter output as convolution integrals and see how long the output lasts.',
+  keywords:'signal part noise part n(t) convolution integral limits 0 Tb h(t-tau) psi(Tb-(t-tau)) sliding overlap output lasts 2Tb',
   src:'CH8 s.15', slide:true, steps:2, blocks:[
   {t:'eyebrow', text:'Module 2 · The demodulator'},
   {t:'title', text:'The signal part as a convolution'},
@@ -22012,11 +22012,10 @@ REAL_MATCHED,
     {t:'eq', label:'Step 2 · the signal part', tex:'\\begin{aligned}s_m\\psi(t)*h(t)&=\\int_0^{T_b}s_m\\psi(\\tau)\\,h(t-\\tau)\\,d\\tau\\\\&=\\int_0^{T_b}s_m\\psi(\\tau)\\,\\psi\\bigl(T_b-(t-\\tau)\\bigr)\\,d\\tau\\end{aligned}',
       note:'The limits are $0$ and $T_b$ because $\\psi(\\tau)=0$ outside the bit. Then replace $h(t-\\tau)$ by $\\psi$ at $T_b-(t-\\tau)$.'},
     {t:'reveal', at:1, items:[
-      {t:'note', kind:'err', head:'Common error', html:'Common error: take the output to end with the bit at $T_b$. The bit and $h(t)$ each last $T_b$, so the output lasts $2T_b$.'}]},
+      {t:'eq', label:'Step 3 · the noise part and the sum', tex:'\\begin{aligned}n(t)&=w(t)*h(t)\\\\&=\\int_0^{T_b}w(\\tau)\\,\\psi\\bigl(T_b-(t-\\tau)\\bigr)\\,d\\tau\\\\[4pt]y(t)&=\\int_0^{T_b}s_m\\psi(\\tau)\\,\\psi\\bigl(T_b-(t-\\tau)\\bigr)\\,d\\tau+n(t)\\end{aligned}',
+        note:'The noise part takes the same steps, with $w(\\tau)$ in place of $s_m\\psi(\\tau)$. The receiver uses $x(t)$ only over the bit, so the limits are again $0$ and $T_b$. The signal part is fixed. $n(t)$ is a random process.'}]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'def', head:'Given', html:'A noiseless bit, rectangular $\\psi(t)$.<div class="nsep"></div>Over which times is $y(t)$ non-zero?',
-        ask:{key:'m2-demod-signal', choices:['$0<t<T_b$','$0<t<2T_b$','$T_b<t<2T_b$'], answer:1,
-          why:'The overlap of the two rectangles is non-zero for $0<t<2T_b$. Only its value at $t=T_b$ is used.'}}]}
+      {t:'note', kind:'err', head:'Common error', html:'Common error: take the output to end with the bit at $T_b$. The bit and $h(t)$ each last $T_b$, so the output lasts $2T_b$.'}]}
   ]}
 ]},
 
