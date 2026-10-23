@@ -937,13 +937,13 @@ function figDemodTrain(v){
      the edge of the axes so the filter and the product stay readable */
   const zoom = T < 10.79, x0 = zoom ? Math.min(Math.max(-0.3, T-2.6), 6.8) : -0.3, x1 = zoom ? x0+4 : 10.8;
   const xt = zoom ? [Math.ceil(x0), Math.ceil(x0)+1, Math.ceil(x0)+2, Math.ceil(x0)+3].filter(k=>k>=0 && k<=x1) : [0,2,4,6,8,10];
-  const a = P.Axes({w:560,h:hA,xr:[x0,x1],yr:zoom ? [-2.0,3.2] : [-6,8.4],xlabel:'\\tau/T_b',ylabel:'g(\\tau),\\;x(\\tau)',
-    pad:{l:56,r:26,t:24,b:40},xticksOverride:xt,yticksOverride:zoom ? [-1,0,1] : [-4,0,4]});
+  const a = P.Axes({w:560,h:hA,xr:[x0,x1],yr:[-2.0,3.2],xlabel:'\\tau/T_b',ylabel:'g(\\tau),\\;x(\\tau)',
+    pad:{l:56,r:26,t:24,b:40},xticksOverride:xt,yticksOverride:[-1,0,1]});
   fade(a, o1, ()=>a.curve(mixF(R.x, M.x), {color:zoom ? C.out+'59' : C.out, width:1.1, n:2400}));
   if(zoom) a.area(tau=>gT(tau)*hT(tau), x0, x1, {color:C.mid+'59', n:1600});
   a.curve(gT, {color:C.in, width:2.4, n:2400});
   if(zoom) a.curve(hT, {color:C.h, width:2.4, dash:'7 5', n:1600});
-  TR_B.forEach((bit, k)=>{ if(k+0.5 > x0 && k+0.5 < x1) a.note(k+0.5, zoom ? 2.2 : 7.2, String(bit), {tex:true, fs:15, color:C.in, anchor:'middle'}); });
+  TR_B.forEach((bit, k)=>{ if(k+0.5 > x0 && k+0.5 < x1) a.note(k+0.5, 2.2, String(bit), {tex:true, fs:15, color:C.in, anchor:'middle'}); });
   const b = P.Axes({w:560,h:hB,xr:[-0.3,10.8],yr:[-2.0,2.4],xlabel:'t/T_b',ylabel:'y_0(t),\\;y(t)',
     pad:{l:56,r:26,t:24,b:42},xticksOverride:[0,2,4,6,8,10],yticksOverride:[-1,0,1]});
   b.hline(0, {color:C.muted, dash:'5 4'});

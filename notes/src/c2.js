@@ -744,11 +744,11 @@ function figTrain(){
   for(let j=0;j<=560;j++){ const t=j*0.02; let s0=0,s1=0;
     for(let i=0;i<200;i++){ const tau=t-1+(i+0.5)*dt; if(tau<0||tau>=10) continue; s0+=g(tau)*dt; s1+=x(tau)*dt; }
     y0.push([t,s0]); y.push([t,s1]); }
-  const a=ax1({h:190,xr:[-0.3,10.8],yr:[-6,8.4],xlabel:'t/T_b',ylabel:'g(t),\\;x(t)',
-    xticksOverride:[0,2,4,6,8,10],yticksOverride:[-4,0,4]});
+  const a=ax1({h:190,xr:[-0.3,10.8],yr:[-2.0,3.2],xlabel:'t/T_b',ylabel:'g(t),\\;x(t)',
+    xticksOverride:[0,2,4,6,8,10],yticksOverride:[-1,0,1]});
   a.curve(x,{color:C.out,width:1,n:2400});
   a.curve(g,{color:C.in,width:2.2,n:2400});
-  TR_B.forEach((bit,k)=>a.note(k+0.5,7.2,String(bit),{tex:true,fs:13,color:C.in,anchor:'middle'}));
+  TR_B.forEach((bit,k)=>a.note(k+0.5,2.2,String(bit),{tex:true,fs:13,color:C.in,anchor:'middle'}));
   const b=ax1({h:220,xr:[-0.3,10.8],yr:[-2.0,2.4],xlabel:'t/T_b',ylabel:'y_0(t),\\;y(t)',
     xticksOverride:[0,2,4,6,8,10],yticksOverride:[-1,0,1]});
   b.hline(0,{color:C.muted,dash:'5 4'});
