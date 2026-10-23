@@ -776,7 +776,7 @@ function figDemodConv(v){
   P.hOverride = null;
   const f = frameOf(v, 0), t = f/2;
   const big = P.labelScale() > 1, hA = big ? 270 : 205, hB = big ? 290 : 225;
-  const a = P.Axes({w:560,h:hA,xr:[-1.2,2.3],yr:[-0.3,1.75],xlabel:'\\tau/T_b',ylabel:'s_m\\psi(\\tau),\\;h(t-\\tau)',
+  const a = P.Axes({w:560,h:hA,xr:[-1.2,2.3],yr:[-0.3,1.75],xlabel:'\\tau/T_b',ylabel:'\\text{amplitude}', ynameAtAxis:true,
     pad:{l:56,r:26,t:24,b:40},xticksOverride:[-1,0,1,2],yticksOverride:[0,1]});
   const lo = Math.max(0, t-1), hi = Math.min(1, t);
   if(hi-lo > 0.005) a.area(()=>1, lo, hi, {color:C.dec.mid});
