@@ -1054,29 +1054,6 @@ function figNoisePlane(v){
 /* The second slide of the variance plays the same figure from frame 1. */
 const figNoisePlaneB = v => figNoisePlane({frame:frameOf(v, 0)+1});
 
-/* The sampling instant moved by e T_b in the ten-bit polar stream, no noise.
-   y0(kT_b + e) = s_k (1 - |e|) + s_{k+-1} |e|: a neighbour leaks in with the
-   weight |e|, so the smallest margin s_k y0 is 1 - 2|e| (a bit between two
-   opposite bits). The ideal instants are dashed, the moved ones solid. */
-const trY0 = t => { const p = TR.rect.y0, x = t/0.02, j = Math.max(0, Math.min(p.length-2, Math.floor(x))), f = x-j;
-  return (1-f)*p[j][1] + f*p[j+1][1]; };
-function figDemodTiming(v){
-  const e = v && v.e!=null ? v.e : 0.25;
-  const L = P.labelScale(), big = L>1;
-  const a = P.Axes(SZ({xr:[-0.3,10.8], yr:[big?-1.9:-1.6,2.4], xlabel:'t/T_b', ylabel:'y_0(t)',
-    xticksOverride:[0,2,4,6,8,10], yticksOverride:[-1,0,1]}));
-  a.hline(0, {color:C.muted, dash:'5 4'});
-  a.poly(TR.rect.y0, {color:C.mid, width:2.4});
-  let mn = 9;
-  for(let k=1;k<=10;k++){ const t = k+e, y = trY0(t), s = TR_B[k-1] ? 1 : -1; mn = Math.min(mn, s*y);
-    a.poly([[k,-1.08],[k,1.45]], {color:C.muted, width:1, dash:'3 4'});
-    a.point(t, y, {color:C.mid, r:5});
-    a.note(k-0.5, 2.05, String(TR_B[k-1]), {tex:true, fs:15, color:C.in, anchor:'middle'}); }
-  /* in projector mode the readout keeps a fixed pixel gap under the troughs */
-  a.note(0.1, big ? -1-26*L/(a.sy(0)-a.sy(1)) : -1.35, `\\min_k s_k\\,y_0(kT_b+\\epsilon)=${mn.toFixed(2)}`, {tex:true, fs:15, color:C.mid});
-  return a.svg();
-}
-
 /* The correlator on samples (book Example 8.3.3): the rectangular pulse, no
    noise, sampled N times a bit, y(kT_s) = (1/N) sum_{n<=k} r(nT_s) s(nT_s)
    with T_s = T_b/N. Frames N = 4, 8, 20; between frames the old stems fade
@@ -2421,29 +2398,6 @@ REAL_MATCHED,
       {t:'note', kind:'def', head:'Given', html:'Two polar $1$ bits follow each other, with no noise.<div class="nsep"></div>What does $y_0(t)$ do between their two sampling instants?',
         ask:{key:'m2-demod-train', choices:['it falls to $0$','it stays at $+1$','it rises to $+2$'], answer:1,
           why:'The falling side of the first triangle and the rising side of the second add to $1$ at every $t$ between them.'}}]}
-  ]}
-]},
-
-{ id:'m2-demod-timing', module:'M2', nav:'The sampling instant', title:'The sampling instant in a stream',
-  objective:'Move the sampling instant away from kTb in a stream of bits and see the neighbouring bit leak into each sample.',
-  keywords:'sampling instant timing offset epsilon bit stream neighbour leaks margin 1 - 2 epsilon intersymbol interference preview',
-  src:'CH8 s.18 (extension)', slide:true, steps:2, blocks:[
-  {t:'eyebrow', text:'Module 2 · The demodulator'},
-  {t:'title', text:'The sampling instant in a stream'},
-  {t:'cols', ratio:'c-5-7', fill:true, left:[
-    {t:'fig', frame:true, grow:true,
-      live:{controls:[{k:'e', label:'$\\epsilon/T_b$', min:-0.5, max:0.5, step:0.05, v:0.25, show:v=>'$'+v.toFixed(2)+'$'}]},
-      svg:figDemodTiming,
-      caption:'The noiseless output of the ten polar bits. Drag the offset $\\epsilon$: each sample is taken at $kT_b+\\epsilon$ instead of at the dashed line $kT_b$. The readout is the smallest margin.'}
-  ], right:[
-    {t:'eq', label:'A sample taken late', tex:'y_0(kT_b+\\epsilon)=s_k\\Bigl(1-\\frac{\\epsilon}{T_b}\\Bigr)+s_{k+1}\\,\\frac{\\epsilon}{T_b},\\qquad 0\\le\\epsilon\\le T_b',
-      note:'The triangle of bit $k$ has fallen by $\\epsilon/T_b$. The triangle of bit $k+1$ has risen by the same amount. An early sample takes $s_{k-1}$ instead.'},
-    {t:'reveal', at:1, items:[
-      {t:'note', kind:'warn', head:'A neighbour in the sample', html:'When $s_{k+1}=-s_k$, the sample shrinks to $s_k(1-2\\epsilon/T_b)$. One bit now disturbs another. Section 2.7 meets this effect again in a band-limited channel.'}]},
-    {t:'reveal', at:2, items:[
-      {t:'note', kind:'def', head:'Given', html:'A polar $1$ is followed by a $0$, with no noise. The sample is taken $0.25T_b$ late.<div class="nsep"></div>What is the sample?',
-        ask:{key:'m2-demod-timing', choices:['$0.25$','$0.5$','$0.75$'], answer:1,
-          why:'$y_0=(1)(0.75)+(-1)(0.25)=0.5$. Half the margin is lost.'}}]}
   ]}
 ]},
 

@@ -82,7 +82,7 @@ CONTENT.SECTIONS = {
         'm2-awgn','m2-filter-choice','m2-receiver','m2-split','m2-model','m2-noise-power','m2-schwarz','m2-bound',
         'm2-matched','m2-mf-freq','m2-conv','m2-mf-correlator','m2-props','m2-props-snr','m2-sample-time','m2-sample-dist','m2-ex-mf','m2-real-matched','m2-lab-c','m2-code-matched'] },
     { n:'2.3', title:'The demodulator',                ids:[
-        'm2-basis','m2-antipodal','m2-space','m2-demod-mf','m2-demod-signal','m2-demod','m2-demod-shapes','m2-demod-train','m2-demod-timing',
+        'm2-basis','m2-antipodal','m2-space','m2-demod-mf','m2-demod-signal','m2-demod','m2-demod-shapes','m2-demod-train',
         'm2-corr-out','m2-corr-samples','m2-correlator','m2-demod-noise','m2-demod-noise-var',
         'm2-demod-noise-hist','m2-demod-ppm','m2-real-demod','m2-lab-p','m2-code-demod'] },
     { n:'2.4', title:'The decision and its error',     ids:[

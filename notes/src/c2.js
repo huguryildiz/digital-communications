@@ -794,22 +794,8 @@ function figNoisePlane(stage){
 }
 
 
-/* Static states of the four extension slides: the stream sampled 0.25 T_b
-   late, the correlator on 20 samples, 3000 measured noise values at N0 = 0.5,
+/* Static states of the three extension slides: the correlator on 20 samples, 3000 measured noise values at N0 = 0.5,
    and the two orthogonal points with their noisy outputs. */
-function figStreamTiming(){
-  const g=t=>{ const k=Math.floor(t); return (k>=0&&k<10)?(TR_B[k]?1:-1):0; };
-  const y0=t=>{ let s=0; for(let i=0;i<200;i++){ const tau=t-1+(i+0.5)/200; s+=g(tau)/200; } return s; };
-  const a=ax1({h:260,xr:[-0.3,10.8],yr:[-2.0,2.4],xlabel:'t/T_b',ylabel:'y_0(t)',
-    xticksOverride:[0,2,4,6,8,10],yticksOverride:[-1,0,1]});
-  a.hline(0,{color:C.muted,dash:'5 4'});
-  a.curve(y0,{color:C.mid,width:2.2,n:1100});
-  for(let k=1;k<=10;k++){ a.poly([[k,-1.1],[k,1.45]],{color:C.muted,width:1,dash:'3 4'});
-    a.point(k+0.25,y0(k+0.25),{color:C.mid,r:4.5});
-    a.note(k-0.5,2.05,String(TR_B[k-1]),{tex:true,fs:13,color:C.in,anchor:'middle'}); }
-  a.note(0.1,-1.7,'\\min_k s_k\\,y_0(kT_b+\\epsilon)=0.50',{tex:true,fs:14,color:C.mid});
-  return a.svg();
-}
 function figCorrSamples(){
   const N=20, a=ax1({h:220,xr:[-0.1,1.25],yr:[-0.15,1.3],xlabel:'t/T_b',ylabel:'y(kT_s)',
     xticksOverride:[0,0.5,1],yticksOverride:[0,0.5,1]});
@@ -1783,16 +1769,6 @@ window.C2 = [
 {t:'fig', svg:()=>figTrain(),
  cap:'Ten polar bits through the matched filter. Above: the bits and the received $x(t)$. Below: the noiseless output $y_0(t)$ (dashed), the noisy output $y(t)$ and its samples at $t=kT_b$, with the bit read from each sign.',
  short:'Ten polar bits through the matched-filter demodulator.'},
-
-{t:'h3', text:'The sampling instant in a stream'},
-{t:'p', text:'Move the sampling instant of the stream by $\\epsilon$. The triangle of bit $k$ has fallen by $\\epsilon/T_b$ there, and the triangle of the next bit has risen by the same amount.'},
-{t:'eqbox', cap:'A sample taken late', tex:'y_0(kT_b+\\epsilon)=s_k\\Bigl(1-\\frac{\\epsilon}{T_b}\\Bigr)+s_{k+1}\\,\\frac{\\epsilon}{T_b},\\qquad 0\\le\\epsilon\\le T_b',
- after:'An early sample takes $s_{k-1}$ in place of $s_{k+1}$. When the neighbour has the opposite sign, the sample shrinks to $s_k(1-2\\epsilon/T_b)$.'},
-{t:'p', text:'For example, a polar $1$ followed by a $0$ and sampled $0.25T_b$ late gives $y_0=(1)(0.75)+(-1)(0.25)=0.5$. Half the margin is lost.'},
-{t:'box', kind:'warn', hd:'A neighbour in the sample', html:'A late or early sample lets one bit disturb another. Section 2.7 meets this effect again in a band-limited channel.'},
-{t:'fig', svg:()=>figStreamTiming(),
- cap:'The noiseless output of the ten polar bits, sampled at $kT_b+0.25T_b$ instead of at the dashed lines $kT_b$. The smallest margin falls from $1$ to $0.5$.',
- short:'The bit stream sampled a quarter bit late.'},
 
 {t:'h3', text:'The correlator demodulator'},
 {t:'p', text:'The second demodulator multiplies the input by $\\psi(t)$ and integrates from the start of the bit. It is called the <b>correlator</b>.'},
