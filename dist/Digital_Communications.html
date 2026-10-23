@@ -20454,7 +20454,7 @@ function figSignalSpace(v){
   P.hOverride = null;
   const f = frameOf(v, 0), u1 = clamp01(f), u2 = clamp01(f-1), u3 = clamp01(f-2);
   const big = P.labelScale() > 1, hA = big ? 290 : 230, hB = big ? 230 : 180;
-  const a = P.Axes({w:560,h:hA,xr:[-0.3,1.45],yr:[-2.2,2.2],xlabel:'t/T_b',ylabel:'s_m(t),\\;s_m(t)\\,\\psi(t)',
+  const a = P.Axes({w:560,h:hA,xr:[-0.3,1.45],yr:[-2.2,2.2],xlabel:'t/T_b',ylabel:'\\text{amplitude}', ynameAtAxis:true,
     pad:{l:56,r:26,t:24,b:40},xticksOverride:[0,0.5,1],yticksOverride:[],ytarget:2});
   if(u1 > 0.005){ a.area(()=>1.5, 0, u1, {color:C.dec.mid}); a.area(()=>-1.5, 0, u1, {color:C.dec.mid}); }
   a.poly(rectPts(1.5), {color:C.in, width:2.4});
