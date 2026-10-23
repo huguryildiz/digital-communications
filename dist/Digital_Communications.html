@@ -20535,9 +20535,17 @@ function figDemodSplit(v){
   return stack(560, [[a.svg(),hA],[b.svg(),hB]]);
 }
 
+/* The demodulator on one noisy bit. The slider sets N0: the drawn noise,
+   samples of s.d. 0.75 every 0.04 T_b, integrates against psi to a variance
+   of 0.75^2 x 0.04 = N0/2 with N0 = 0.045, so at N0 = DM_N0 the trace is the
+   one drawn; any other N0 scales the same draw, and with it n, by
+   sqrt(N0/DM_N0). The signal part, the dashed triangle, does not move. */
+const DM_N0 = 0.045;
 function figMfDemod(v){
   P.hOverride = null;
   const f = frameOf(v, 0), u1 = clamp01(f), u2 = clamp01(f-1);
+  const k = Math.sqrt((v && v.n0!=null ? v.n0 : DM_N0)/DM_N0);
+  const xk = t => 1 + k*DM_W(t), yk = DM_Y.map(([t, y])=>[t, tri1(t) + k*(y - tri1(t))]);
   const top = P.blocks({w:560,h:130,items:[
     {t:'arrow',x1:16,y1:58,x2:150,y2:58,label:'x(t)',tex:true,color:C.out},
     {t:'box',x:150,y:26,w:150,h:64,label:'\\psi(T_b-t)',tex:true,color:C.h},
@@ -20546,17 +20554,17 @@ function figMfDemod(v){
     {t:'arrow',x1:448,y1:58,x2:548,y2:58,label:'y(T_b)',tex:true,color:C.mid},
     {t:'text',x:430,y:104,label:'t=T_b',tex:true,fs:14}
   ]});
-  const big = P.labelScale() > 1, hA = big ? 340 : 290;
+  const big = P.labelScale() > 1, hA = big ? 320 : 260;
   const a = P.Axes({w:560,h:hA,xr:[-0.15,2.2],yr:[-1.4,3.0],xlabel:'t/T_b',ylabel:'x(t),\\;y(t)',
     pad:{l:56,r:26,t:24,b:42},xticksOverride:[0,0.5,1,1.5,2],yticksOverride:[-1,0,1,2]});
-  a.curve(t=>t>=0 && t<=1 ? DM_X(t) : NaN, {color:C.out, width:1.4, n:900, opacity:(1-0.55*u1).toFixed(3)});
+  a.curve(t=>t>=0 && t<=1 ? xk(t) : NaN, {color:C.out, width:1.4, n:900, opacity:(1-0.55*u1).toFixed(3)});
   a.poly(rectPts(1, 2.2).map(p=>[Math.max(p[0],-0.15), p[1]]), {color:C.in, width:2.2});
   fade(a, u1, ()=>a.poly([[-0.15,0],[0,0],[1,1],[2,0],[2.2,0]], {color:C.mid, width:1.6, dash:'6 5'}));
-  const T = 2*u1; if(T > 0.01) a.poly(DM_Y.filter(p=>p[0] <= T+1e-9), {color:C.mid, width:2.6});
+  const T = 2*u1; if(T > 0.01) a.poly(yk.filter(p=>p[0] <= T+1e-9), {color:C.mid, width:2.6});
   a.vline(1, {color:C.muted});
-  const yT = DM_Y[100][1];
+  const yT = yk[100][1];
   fade(a, u2, ()=>{ a.point(1, 1, {color:C.ink, r:3.5}); a.point(1, yT, {color:C.mid, r:5.5});
-    a.poly([[1.07,1],[1.07,yT]], {color:C.muted, width:2.4});
+    if(Math.abs(yT-1) > 0.01) a.poly([[1.07,1],[1.07,yT]], {color:C.muted, width:2.4});
     a.note(1.06, 2.35, `y(T_b)=s_m+n,\\;\\; n=${(yT-1).toFixed(2)}`, {tex:true, fs:16, color:C.mid}); });
   return stack(560, [[top,130],[a.svg(),hA]]);
 }
@@ -22028,8 +22036,9 @@ REAL_MATCHED,
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true,
       frames:{labels:['$x(t)$','$y(t)$','$y(T_b)$'], ms:1200},
+      live:{controls:[{k:'n0', label:'$N_0$', min:0, max:0.12, step:0.005, v:0.045, show:v=>'$'+v.toFixed(3)+'$'}]},
       svg:figMfDemod,
-      caption:'One noisy bit with $s_m=+1$ through the filter matched to $\\psi(t)$. Step through: the input, the output over two bits of time, and its sample at $t=T_b$. The dashed line is the signal part alone.'}
+      caption:'One noisy bit with $s_m=+1$. Step through the input, the output and its sample at $t=T_b$. The dashed line is the signal part. Raise $N_0$ and $n$ grows as $\\sqrt{N_0}$.'}
   ], right:[
     {t:'eq', label:'Step 1 · sample at $t=T_b$', tex:'y(T_b)=\\int_0^{T_b}s_m\\psi(\\tau)\\,\\psi(\\tau)\\,d\\tau+n(T_b)',
       note:'Put $t=T_b$. Then $\\psi\\bigl(T_b-(T_b-\\tau)\\bigr)=\\psi(\\tau)$: the reversal and the delay cancel.'},
