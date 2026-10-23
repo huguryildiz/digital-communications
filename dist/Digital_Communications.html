@@ -20572,9 +20572,11 @@ function figMfDemod(v){
 /* Five unit-energy pulses g(t) = s_m psi(t), T_b = 1: polar 1 and 0, the
    Manchester 1 and 0, and the pulse of three steps. The filter is always
    matched to psi, so it is the same for the 1 and the 0 of a code. Between
-   frames the pulse, the filter and the output blend into the next. Top: g(t)
-   and h(t) = psi(T_b - t). Below: the noiseless output s_m R(t - T_b), which
-   reads s_m = +-1 at t = T_b for every shape. */
+   frames the pulse, the filter and the output blend into the next. The slider
+   sets t. Top: g(tau), the reversed and shifted filter h(t - tau) =
+   psi(tau + T_b - t), and their product shaded. Below: the noiseless output
+   s_m R(t - T_b), drawn solid up to t, which reads s_m = +-1 at t = T_b for
+   every shape. */
 const SH = [['rect',1],['rect',-1],['man',1],['man',-1],['step',1]];
 function figDemodShapes(v){
   P.hOverride = null;
@@ -20584,18 +20586,23 @@ function figDemodShapes(v){
   const g = mix(t=>sa*PSI[ka](t), t=>sb*PSI[kb](t));
   const h = mix(t=>PSI[ka](1-t), t=>PSI[kb](1-t));
   const y = mix(t=>sa*PSI_R[ka](t-1), t=>sb*PSI_R[kb](t-1));
-  const big = P.labelScale() > 1, hA = big ? 270 : 205, hB = big ? 300 : 235;
-  const a = P.Axes({w:560,h:hA,xr:[-0.2,2.2],yr:[-1.5,1.5],xlabel:'t/T_b',ylabel:'g(t),\\;h(t)',
+  const T = v && v.t!=null ? v.t : 1, hs = tau => h(T-tau);
+  const big = P.labelScale() > 1, hA = big ? 270 : 170, hB = big ? 300 : 195;
+  const a = P.Axes({w:560,h:hA,xr:[-0.2,2.2],yr:[-1.5,1.5],xlabel:'\\tau/T_b',ylabel:'g(\\tau),\\;h(t-\\tau)',
     pad:{l:56,r:26,t:24,b:40},xticksOverride:[0,1,2],yticksOverride:[-1,0,1]});
-  a.curve(h, {color:C.h, width:2.2, dash:'7 5', n:1200});
+  a.area(tau=>g(tau)*hs(tau), -0.2, 2.2, {color:C.mid+'40', n:1200});
+  a.curve(hs, {color:C.h, width:2.2, dash:'7 5', n:1200});
   a.curve(g, {color:C.in, width:2.6, n:1200});
   const b = P.Axes({w:560,h:hB,xr:[-0.2,2.2],yr:[-1.4,1.6],xlabel:'t/T_b',ylabel:'y(t)',
     pad:{l:56,r:26,t:24,b:42},xticksOverride:[0,1,2],yticksOverride:[-1,-0.5,0,0.5,1]});
-  b.curve(y, {color:C.mid, width:2.6, n:800});
+  b.curve(y, {color:C.mid+'73', width:1.6, dash:'6 5', n:800});
+  b.curve(t=>t <= T ? y(t) : NaN, {color:C.mid, width:2.6, n:800});
   b.vline(1, {color:C.muted});
-  b.point(1, y(1), {color:C.mid, r:5});
-  const s = y(1), lbl = Math.abs(s) > 0.98 ? `y(T_b)=${s > 0 ? '+1' : '-1'}` : `y(T_b)=${s.toFixed(2)}`;
-  b.note(1.08, s > 0 ? Math.min(1.35, s+0.12) : Math.max(-1.2, s-0.05), lbl, {tex:true, fs:16, color:C.mid});
+  const s = y(T), on = Math.abs(T-1) < 0.011;
+  const val = Math.abs(Math.abs(s)-1) < 0.02 ? (s > 0 ? '+1' : '-1') : (s >= 0 ? '+' : '')+s.toFixed(2);
+  b.point(T, s, {color:C.mid, r:5});
+  b.note(0.06, 1.38,
+    `${on ? 'y(T_b)' : 'y('+T.toFixed(2)+')'}=${val}`, {tex:true, fs:16, color:C.mid});
   return stack(560, [[a.svg(),hA],[b.svg(),hB]]);
 }
 
@@ -20606,7 +20613,10 @@ function figDemodShapes(v){
    the sampling instants of its neighbours. With this seed every sample keeps
    its sign: the smallest margin s_m y(kT_b) is 0.51 (polar) and 0.73
    (Manchester), and the sample noise has an RMS of 0.20 and 0.24. Frames:
-   bits, received x(t), y0(t), y(t), its samples at t = kT_b, Manchester. */
+   bits, received x(t), y0(t), y(t), its samples at t = kT_b, Manchester.
+   The slider sets t: the filter h(t - tau) covers [t - T_b, t] on the top
+   axes, its product with the signal part g is shaded, and the outputs are
+   solid up to t and faint after it. */
 const TR_B = [0,1,0,1,1,0,0,1,0,0];
 const TR_W = noiseFn(20261020, 0.02, 1.8, -1, 12);
 const TR = (()=>{ const out = {};
@@ -20626,19 +20636,36 @@ function figDemodTrain(v){
   const f = frameOf(v, 0), o1 = clamp01(f), o2 = clamp01(f-1), o3 = clamp01(f-2), o4 = clamp01(f-3), m = clamp01(f-4);
   const R = TR.rect, M = TR.man, mixF = (p, q) => t => (1-m)*p(t)+m*q(t);
   const mixP = (p, q) => p.map((pt, j)=>[pt[0], (1-m)*pt[1]+m*q[j][1]]);
-  const big = P.labelScale() > 1, hA = big ? 280 : 185, hB = big ? 300 : 215;
-  const a = P.Axes({w:560,h:hA,xr:[-0.3,10.8],yr:[-6,8.4],xlabel:'t/T_b',ylabel:'g(t),\\;x(t)',
-    pad:{l:56,r:26,t:24,b:40},xticksOverride:[0,2,4,6,8,10],yticksOverride:[-4,0,4]});
-  fade(a, o1, ()=>a.curve(mixF(R.x, M.x), {color:C.out, width:1.1, n:2400}));
-  a.curve(mixF(R.g, M.g), {color:C.in, width:2.2, n:2400});
-  TR_B.forEach((bit, k)=>a.note(k+0.5, 7.2, String(bit), {tex:true, fs:15, color:C.in, anchor:'middle'}));
+  const T = v && v.t!=null ? v.t : 10.8;
+  const hT = tau => (1-m)*PSI.rect(1-T+tau)+m*PSI.man(1-T+tau), gT = mixF(R.g, M.g);
+  const big = P.labelScale() > 1, hA = big ? 280 : 165, hB = big ? 300 : 190;
+  /* at the end of the slider the top axes show all ten bits; anywhere else
+     they zoom to four bits around t, and the noise is drawn faint and cut at
+     the edge of the axes so the filter and the product stay readable */
+  const zoom = T < 10.79, x0 = zoom ? Math.min(Math.max(-0.3, T-2.6), 6.8) : -0.3, x1 = zoom ? x0+4 : 10.8;
+  const xt = zoom ? [Math.ceil(x0), Math.ceil(x0)+1, Math.ceil(x0)+2, Math.ceil(x0)+3].filter(k=>k>=0 && k<=x1) : [0,2,4,6,8,10];
+  const a = P.Axes({w:560,h:hA,xr:[x0,x1],yr:zoom ? [-2.0,3.2] : [-6,8.4],xlabel:'\\tau/T_b',ylabel:'g(\\tau),\\;x(\\tau)',
+    pad:{l:56,r:26,t:24,b:40},xticksOverride:xt,yticksOverride:zoom ? [-1,0,1] : [-4,0,4]});
+  fade(a, o1, ()=>a.curve(mixF(R.x, M.x), {color:zoom ? C.out+'59' : C.out, width:1.1, n:2400}));
+  if(zoom) a.area(tau=>gT(tau)*hT(tau), x0, x1, {color:C.mid+'59', n:1600});
+  a.curve(gT, {color:C.in, width:2.4, n:2400});
+  if(zoom) a.curve(hT, {color:C.h, width:2.4, dash:'7 5', n:1600});
+  TR_B.forEach((bit, k)=>{ if(k+0.5 > x0 && k+0.5 < x1) a.note(k+0.5, zoom ? 2.2 : 7.2, String(bit), {tex:true, fs:15, color:C.in, anchor:'middle'}); });
   const b = P.Axes({w:560,h:hB,xr:[-0.3,10.8],yr:[-2.0,2.4],xlabel:'t/T_b',ylabel:'y_0(t),\\;y(t)',
     pad:{l:56,r:26,t:24,b:42},xticksOverride:[0,2,4,6,8,10],yticksOverride:[-1,0,1]});
   b.hline(0, {color:C.muted, dash:'5 4'});
-  fade(b, o2*(1-0.55*o3), ()=>b.poly(mixP(R.y0, M.y0), {color:C.mid, width:2.0, dash:'6 4'}));
-  fade(b, o3, ()=>b.poly(mixP(R.y, M.y), {color:C.mid, width:2.4}));
+  if(zoom) b.rect(Math.max(-0.3, T-1), -2.0, T, 2.4, {fill:C.h+'1F'});
+  const cut = (Y, after) => Y.filter(p=>after ? p[0] >= T-0.02 : p[0] <= T+1e-9);
+  const Y0 = mixP(R.y0, M.y0), Y1 = mixP(R.y, M.y);
+  fade(b, o2*(1-0.55*o3), ()=>{ b.poly(cut(Y0), {color:C.mid, width:2.0, dash:'6 4'});
+    b.poly(cut(Y0, true), {color:C.mid+'59', width:1.4, dash:'6 4'}); });
+  fade(b, o3, ()=>{ b.poly(cut(Y1), {color:C.mid, width:2.4}); b.poly(cut(Y1, true), {color:C.mid+'59', width:1.4}); });
+  if(T < 10.79 && o2 > 0.01){ const j = Math.min(Y0.length-1, Math.round(T/0.02)), yv = (1-o3)*Y0[j][1]+o3*Y1[j][1];
+    b.vline(T, {color:C.muted}); b.point(T, yv, {color:C.mid, r:5});
+    const yr = Math.abs(yv) < 0.005 ? '0.00' : (yv > 0 ? '+' : '')+yv.toFixed(2);
+    b.note(0.1, -1.6, `${o3 < 0.5 ? 'y_0' : 'y'}(${T.toFixed(2)})=${yr}`, {tex:true, fs:15, color:C.mid}); }
   fade(b, o4, ()=>{ const Y = mixP(R.y, M.y);
-    for(let k=1;k<=10;k++){ const yk = Y[50*k][1]; b.point(k, yk, {color:C.mid, r:5});
+    for(let k=1;k<=Math.min(10, Math.floor(T+1e-9));k++){ const yk = Y[50*k][1]; b.point(k, yk, {color:C.mid, r:5});
       b.note(k-0.5, 2.05, yk > 0 ? '1' : '0', {tex:true, fs:15, color:C.out, anchor:'middle'}); } });
   return stack(560, [[a.svg(),hA],[b.svg(),hB]]);
 }
@@ -22064,9 +22091,10 @@ REAL_MATCHED,
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true,
       frames:{labels:['polar $1$','polar $0$','Manchester $1$','Manchester $0$','three steps'], ms:1100},
+      live:{controls:[{k:'t', label:'$t/T_b$', min:0, max:2, step:0.01, v:1, show:v=>'$'+v.toFixed(2)+'$'}]},
       svg:figDemodShapes,
-      caption:'Five unit-energy pulses $g(t)=s_m\\psi(t)$ with $s_m=\\pm1$ and $T_b=1$. Top: the pulse and its filter $h(t)=\\psi(T_b-t)$. Below: the noiseless output. Its shape changes, but $y(T_b)=s_m$ every time.'},
-    {t:'legend', items:[['in','$g(t)$'],['h','$h(t)$',true]], at:'tr'}
+      caption:'Five unit-energy pulses $g(t)=s_m\\psi(t)$, $T_b=1$. Drag $t$: $h(t-\\tau)$ slides over $g(\\tau)$, and the shaded product integrates to $y(t)$. At $t=T_b$, $y=s_m$.'},
+    {t:'legend', items:[['in','$g(\\tau)$'],['h','$h(t-\\tau)$',true]], at:'tr'}
   ], right:[
     {t:'eq', label:'Any unit-energy $\\psi$', tex:'\\begin{aligned}y(T_b)&=s_m\\int_0^{T_b}\\psi^{2}(\\tau)\\,d\\tau\\\\&=s_m=\\pm1\\end{aligned}',
       note:'Step 2 of the last slide used only the unit energy of $\\psi$, never its shape. The filter matched to $\\psi$ serves both bits of a code.'},
@@ -22088,8 +22116,9 @@ REAL_MATCHED,
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true,
       frames:{labels:['bits','$x(t)$','$y_0(t)$','$y(t)$','samples','Manchester'], ms:1200},
+      live:{controls:[{k:'t', label:'$t/T_b$', min:0, max:10.8, step:0.02, v:10.8, show:v=>'$'+v.toFixed(2)+'$'}]},
       svg:figDemodTrain,
-      caption:'Ten polar bits through the matched filter: the bits, $x(t)$, the noiseless $y_0(t)$, the noisy $y(t)$ and its samples at $t=kT_b$. The last frame uses Manchester pulses.'}
+      caption:'Ten polar bits, then Manchester, through the matched filter. Drag $t$: the top axes zoom in, $h(t-\\tau)$ covers $[t-T_b,t]$, and the shaded product of the signal part integrates to $y_0(t)$.'}
   ], right:[
     {t:'eq', label:'Bit $k$', tex:'y(kT_b)=s_{m,k}+n_k,\\qquad k=1,2,\\dots',
       note:'Bit $k$ lasts from $(k-1)T_b$ to $kT_b$. Its output peaks at $kT_b$. The outputs of the bits before and after it are zero there.'},
