@@ -726,16 +726,16 @@ function figBasisUnit(v){
 function figAntipodal(v){
   const f = frameOf(v, 0), A = 1.5;
   const c = f <= 1 ? 1+(A-1)*clamp01(f) : A-2*A*clamp01(f-1);
-  const a = P.Axes(SZ({xr:[-0.3,1.45], yr:[-2.2,2.3], xlabel:'t/T_b', ylabel:'\\psi(t),\\;s_m(t)', ynameAtAxis:true,
+  const a = P.Axes(SZ({xr:[-0.3,1.45], yr:[-2.2,2.3], xlabel:'t/T_b', ylabel:'\\text{amplitude}', ynameAtAxis:true,
     xticksOverride:[0,0.5,1], yticksOverride:[-1.5,-1,0,1,1.5], ytickfmt:()=>''}));
   a.poly(rectPts(1), {color:C.h, width:2.2});
   if(f > 1.01) fade(a, 0.4, ()=>a.poly(rectPts(A), {color:C.in, width:2.2}));
-  fade(a, clamp01(f), ()=>a.poly(rectPts(c), {color:C.in, width:2.6, dash:c < 0 ? '8 5' : null}));
+  fade(a, clamp01(f), ()=>a.poly(rectPts(c), {color:c < 0 ? C.mid : C.in, width:2.6, dash:c < 0 ? '8 5' : null}));
   /* in projector mode the label is centred between the axis and the top of psi */
   const L = P.labelScale(), yp = L>1 ? 0.5-4*L/(a.sy(0)-a.sy(1)) : 0.55;
   a.note(0.5, yp, '\\psi(t)', {tex:true, fs:16, color:C.h, anchor:'middle'});
   fade(a, f < 1.5 ? near(f, 1) : 0.4, ()=>a.note(0.5, A+0.3, 's_1(t)=+A\\sqrt{T_b}\\,\\psi(t)=+A', {tex:true, fs:15, color:C.in, anchor:'middle'}));
-  fade(a, near(f, 2), ()=>a.note(0.5, -A-0.4, 's_0(t)=-A\\sqrt{T_b}\\,\\psi(t)=-A', {tex:true, fs:15, color:C.in, anchor:'middle'}));
+  fade(a, near(f, 2), ()=>a.note(0.5, -A-0.4, 's_0(t)=-A\\sqrt{T_b}\\,\\psi(t)=-A', {tex:true, fs:15, color:C.mid, anchor:'middle'}));
   return a.svg();
 }
 
@@ -2225,7 +2225,7 @@ REAL_MATCHED,
       frames:{labels:['$\\psi(t)$','$s_1(t)$','$s_0(t)$'], ms:1100},
       svg:figAntipodal,
       caption:'Step through: the basis $\\psi(t)$, then $\\psi(t)$ times $+A\\sqrt{T_b}$, then times $-A\\sqrt{T_b}$. Drawn with $T_b=1$ and $A=1.5$.'},
-    {t:'legend', items:[['h','$\\psi(t)$'],['in','$s_m(t)$']], at:'tr'}
+    {t:'legend', items:[['h','$\\psi(t)$'],['in','$s_1(t)$',0,1],['mid','$s_0(t)$',1,2]], at:'tr'}
   ], right:[
     {t:'eq', label:'One shape, two numbers', tex:'s_m(t)=s_m\\,\\psi(t),\\qquad m\\in\\{0,1\\}',
       note:'Both bits use the same shape. The number $s_m$ carries the bit.'},
