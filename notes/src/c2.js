@@ -794,19 +794,8 @@ function figNoisePlane(stage){
 }
 
 
-/* Static states of the three extension slides: the correlator on 20 samples, 3000 measured noise values at N0 = 0.5,
+/* Static states of the two extension slides: 3000 measured noise values at N0 = 0.5
    and the two orthogonal points with their noisy outputs. */
-function figCorrSamples(){
-  const N=20, a=ax1({h:220,xr:[-0.1,1.25],yr:[-0.15,1.3],xlabel:'t/T_b',ylabel:'y(kT_s)',
-    xticksOverride:[0,0.5,1],yticksOverride:[0,0.5,1]});
-  a.poly([[0,0],[1,1]],{color:C.mid,width:1.6,dash:'6 5'});
-  a.stem([...Array(N)].map((_,n)=>[(n+1)/N,(n+1)/N]),{color:C.mid});
-  a.note(0.02,1.15,'N=20,\\;\\; T_s=T_b/20',{tex:true,fs:14,color:C.ink});
-  return a.svg();
-}
-const NH=(()=>{ const M=40, dt=1/M, z=gauss(20261021,3000*M,1), out=[];
-  for(let i=0;i<3000;i++){ let s=0; for(let j=0;j<M;j++){ const t=(j+0.5)*dt; s+=z[i*M+j]*Math.sqrt(1/dt)*(t<0.5?1:-1)*dt; } out.push(s); }
-  return out; })();
 function figNoiseHist(){
   const s=0.5, BW=0.1, LO=-2, O=3;
   const a=ax1({h:240,xr:[1,5],yr:[-0.04,1.0],xlabel:'n',ylabel:'\\text{density}',xticksOverride:[1,2,3,4,5],xtickfmt:x=>String(x-O),yticksOverride:[0.4,0.8]});
@@ -1780,17 +1769,6 @@ window.C2 = [
 {t:'fig', svg:()=>figCorrMf('man'),
  cap:'One noiseless Manchester bit with $s_m=1$. The matched-filter output is the wide line and the correlator output is dashed. The correlator integrates from $0$ and is reset at $T_b$. At $t=T_b$ both read $s_m$.',
  short:'Correlator and matched filter for a Manchester bit.'},
-
-{t:'h3', text:'The correlator on samples'},
-{t:'p', text:'A digital receiver samples the input $N$ times a bit and adds the products instead of integrating. The sampling interval is $T_s=T_b/N$.'},
-{t:'eqbox', cap:'The sum', tex:'y(kT_s)=\\frac{1}{N}\\sum_{n=1}^{k}r(nT_s)\\,s(nT_s),\\qquad T_s=\\frac{T_b}{N}',
- after:'The factor $1/N$ plays the part of $d\\tau/T_b$. For a noiseless rectangular bit the sum climbs in steps of $1/N$ and ends at $1$.'},
-{t:'p', text:'Take $s(nT_s)=1$ and independent noise of variance $\\sigma^{2}$ on each sample. The variances of independent terms add.'},
-{t:'eqbox', cap:'Noise in the sum', tex:'\\begin{aligned}\\operatorname{Var}(y)&=\\frac{1}{N^{2}}\\sum_{n=1}^{N}\\operatorname{Var}\\bigl(r(nT_s)\\bigr)\\\\&=\\frac{1}{N^{2}}\\cdot N\\sigma^{2}=\\frac{\\sigma^{2}}{N}\\end{aligned}',
- after:'With $N=20$ and $\\sigma^{2}=0.2$, the sum has noise variance $0.2/20=0.01$.'},
-{t:'fig', svg:()=>figCorrSamples(),
- cap:'The running sum of a noiseless rectangular bit sampled $20$ times. It follows the dashed line of the continuous correlator.',
- short:'The correlator on 20 samples.'},
 
 {t:'h3', text:'Correlator and matched-filter demodulators'},
 {t:'p', text:'The number $y$ can be formed in two ways. The correlator is read at the end of the bit and then reset to $0$.'},

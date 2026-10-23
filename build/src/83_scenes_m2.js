@@ -1054,29 +1054,6 @@ function figNoisePlane(v){
 /* The second slide of the variance plays the same figure from frame 1. */
 const figNoisePlaneB = v => figNoisePlane({frame:frameOf(v, 0)+1});
 
-/* The correlator on samples (book Example 8.3.3): the rectangular pulse, no
-   noise, sampled N times a bit, y(kT_s) = (1/N) sum_{n<=k} r(nT_s) s(nT_s)
-   with T_s = T_b/N. Frames N = 4, 8, 20; between frames the old stems fade
-   out and the new ones in. The continuous correlator output t/T_b is dashed. */
-const CS_N = [4, 8, 20];
-function figCorrSamples(v){
-  P.hOverride = null;
-  const f = frameOf(v, 0), i = Math.min(1, Math.floor(f)), u = clamp01(f-i);
-  const big = P.labelScale() > 1, hA = big ? 230 : 165, hB = big ? 300 : 230;
-  const a = P.Axes({w:560,h:hA,xr:[-0.1,1.25],yr:[-0.2,1.45],xlabel:'t/T_b',ylabel:'r(nT_s)',
-    pad:{l:56,r:26,t:24,b:40},xticksOverride:[0,0.5,1],yticksOverride:[0,1]});
-  const b = P.Axes({w:560,h:hB,xr:[-0.1,1.25],yr:[-0.15,1.3],xlabel:'t/T_b',ylabel:'y(kT_s)',
-    pad:{l:56,r:26,t:24,b:42},xticksOverride:[0,0.5,1],yticksOverride:[0,0.5,1]});
-  a.poly([[-0.1,0],[0,0],[0,1],[1,1],[1,0],[1.25,0]], {color:C.in, width:1.6, dash:'6 5'});
-  b.poly([[0,0],[1,1]], {color:C.mid, width:1.6, dash:'6 5'});
-  [[CS_N[i], 1-u], [CS_N[i+1], u]].forEach(([N, op]) => fade(a, op, ()=>{
-    a.stem([...Array(N)].map((_,n)=>[(n+1)/N, 1]), {color:C.in});
-    b.stem([...Array(N)].map((_,n)=>[(n+1)/N, (n+1)/N]), {color:C.mid}); }));
-  const N = CS_N[Math.round(f)];
-  b.note(0.02, 1.15, `N=${N},\\;\\; T_s=T_b/${N}`, {tex:true, fs:15, color:C.ink});
-  return stack(560, [[a.svg(),hA],[b.svg(),hB]]);
-}
-
 /* Measured noise values under an N0 slider. Each of 3000 values is the sum
    n = sum_j w_j psi(t_j) dt over 40 samples of the Manchester psi, with w_j
    independent Gaussian of variance N0/(2 dt): a discrete white noise. The
@@ -2422,30 +2399,6 @@ REAL_MATCHED,
       {t:'note', kind:'def', head:'Given', html:'A noiseless Manchester bit $1$.<div class="nsep"></div>What is the correlator output at $t=T_b/2$?',
         ask:{key:'m2-corr-out', choices:['$-0.5$','$0$','$+0.5$'], answer:2,
           why:'$y(T_b/2)=\\int_0^{T_b/2}\\psi^{2}\\,d\\tau=0.5$. The matched filter gives $-0.5$ at that time.'}}]}
-  ]}
-]},
-
-{ id:'m2-corr-samples', module:'M2', nav:'The correlator on samples', title:'The correlator on samples',
-  objective:'Build the correlator in discrete time: multiply N samples of the bit by samples of the pulse and add them.',
-  keywords:'discrete time correlator samples per bit sum 1/N sampling interval Ts = Tb/N noise variance sigma^2/N digital receiver',
-  src:'book Ex. 8.3.3 (extension)', slide:true, steps:2, blocks:[
-  {t:'eyebrow', text:'Module 2 · The demodulator'},
-  {t:'title', text:'The correlator on samples'},
-  {t:'cols', ratio:'c-5-7', fill:true, left:[
-    {t:'fig', frame:true, grow:true,
-      frames:{labels:['$N=4$','$N=8$','$N=20$'], ms:1100},
-      svg:figCorrSamples,
-      caption:'One noiseless bit with the rectangular pulse, sampled $N$ times. Above: the samples $r(nT_s)$. Below: the running sum. It climbs the dashed line of the continuous correlator and ends at $1$.'}
-  ], right:[
-    {t:'eq', label:'The sum', tex:'y(kT_s)=\\frac{1}{N}\\sum_{n=1}^{k}r(nT_s)\\,s(nT_s),\\qquad T_s=\\frac{T_b}{N}',
-      note:'A digital receiver adds samples instead of integrating. The factor $1/N$ plays the part of $d\\tau/T_b$.'},
-    {t:'reveal', at:1, items:[
-      {t:'eq', label:'Noise in the sum', tex:'\\begin{aligned}\\operatorname{Var}(y)&=\\frac{1}{N^{2}}\\sum_{n=1}^{N}\\operatorname{Var}\\bigl(r(nT_s)\\bigr)\\\\&=\\frac{1}{N^{2}}\\cdot N\\sigma^{2}=\\frac{\\sigma^{2}}{N}\\end{aligned}',
-        note:'Take $s(nT_s)=1$ and independent noise of variance $\\sigma^{2}$ on each sample. The variances of independent terms add.'}]},
-    {t:'reveal', at:2, items:[
-      {t:'note', kind:'def', head:'Given', html:'$N=20$ samples a bit, each with independent noise of variance $\\sigma^{2}=0.2$.<div class="nsep"></div>What is the noise variance of $y$?',
-        ask:{key:'m2-corr-samples', choices:['$0.2$','$0.01$','$0.0005$'], answer:1,
-          why:'$\\sigma^{2}/N=0.2/20=0.01$. Adding $20$ samples averages the noise down.'}}]}
   ]}
 ]},
 

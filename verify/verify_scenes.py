@@ -1276,11 +1276,7 @@ CHECKS: list[dict] = [
      "derive": lambda: _m2_corr_out(_m2_step, 1.0) / _m2_demod_out(_m2_step, 1, 1.0), "tol": 1e-3},
     {"name": "2.3.10 noise standard deviation for N0 = 2e-4", "stated": 0.01,
      "derive": lambda: _m2_noise_sd(2e-4), "tol": 3e-2},
-    # ---- 2.3 extensions: the correlator on samples,
-    # measured noise values, binary orthogonal signals
-    {"name": "2.3 m2-corr-samples: noise variance of the sum, N = 20, sigma^2 = 0.2 (simulated)", "stated": 0.01,
-     "derive": lambda: float(np.var(np.random.default_rng(7).normal(0, math.sqrt(0.2), (400_000, 20)).sum(axis=1) / 20)),
-     "tol": 1e-2},
+    # ---- 2.3 extensions: measured noise values, binary orthogonal signals
     {"name": "2.3 m2-demod-noise-hist: measured spread / sqrt(N0/2) for weighted sums of white samples", "stated": 1.0,
      "derive": lambda: (lambda M: float(np.std((np.random.default_rng(8).normal(0, math.sqrt(0.25 * M), (200_000, M))
          * np.where(np.arange(M) < M // 2, 1.0, -1.0)).sum(axis=1) / M) / 0.5))(40), "tol": 1e-2},
