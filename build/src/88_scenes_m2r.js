@@ -517,7 +517,7 @@ function figFilterSpectrum(v){
   a.raw(`<g opacity="${clamp01(f-1)}">`);a.area(x=>0.5*H2(x),-5,5,{color:C.dec.out,n:600});a.curve(x=>0.5*H2(x),{color:C.out,width:2.6,n:600});a.raw('</g>');return a.svg();
 }
 function figFilterTime(){
-  const a=P.Axes(SZ({xr:[0,5],yr:[-3.2,3.2],xlabel:'t\\;(\\text{ms})',ylabel:'x(t),\\;y(t)',xticksOverride:[0,1,2,3,4,5],yticksOverride:[-2,0,2]}));
+  const a=P.Axes(SZ({xr:[0,5],yr:[-3.2,3.2],xlabel:'t\\;(\\text{ms})',ylabel:'\\text{amplitude}', ynameAtAxis:true,xticksOverride:[0,1,2,3,4,5],yticksOverride:[-2,0,2]}));
   a.curve(LT_X,{color:C.in,width:1.1,opacity:0.45,n:1000});a.curve(LT_Y,{color:C.out,width:2.6,n:800});return a.svg();
 }
 function figGaussianSample(){
