@@ -2416,7 +2416,7 @@ REAL_MATCHED,
     {t:'eq', label:'The correlator', tex:'y(t)=\\int_0^{t}x(\\tau)\\,\\psi(\\tau)\\,d\\tau,\\qquad 0\\le t\\le T_b',
       note:'Multiply by $\\psi(t)$ and integrate from the start of the bit.'},
     {t:'reveal', at:1, items:[
-      {t:'eq', label:'Step 1 · substitute $x(\\tau)$', tex:'\\begin{aligned}y(t)&=\\int_0^{t}\\bigl[s_m\\psi(\\tau)+w(\\tau)\\bigr]\\psi(\\tau)\\,d\\tau\\\\&=s_m\\int_0^{t}\\psi^{2}(\\tau)\\,d\\tau+\\int_0^{t}w(\\tau)\\,\\psi(\\tau)\\,d\\tau\\end{aligned}',
+      {t:'eq', label:'Step 1 · substitute $x(\\tau)$', tex:'\\begin{aligned}y(t)&=\\int_0^{t}\\bigl[\\underbrace{s_m\\psi(\\tau)+w(\\tau)}_{x(\\tau)}\\bigr]\\psi(\\tau)\\,d\\tau\\\\&=s_m\\int_0^{t}\\psi^{2}(\\tau)\\,d\\tau+\\int_0^{t}w(\\tau)\\,\\psi(\\tau)\\,d\\tau\\end{aligned}',
         note:'Multiply out and split the integral.'}]},
     {t:'reveal', at:2, items:[
       {t:'note', kind:'def', head:'Given', html:'A noiseless Manchester bit $1$.<div class="nsep"></div>What is the correlator output at $t=T_b/2$?',

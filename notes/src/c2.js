@@ -1774,7 +1774,7 @@ window.C2 = [
 {t:'p', text:'The second demodulator multiplies the input by $\\psi(t)$ and integrates from the start of the bit. It is called the <b>correlator</b>.'},
 {t:'eqbox', cap:'The correlator', tex:'y(t)=\\int_0^{t}x(\\tau)\\,\\psi(\\tau)\\,d\\tau,\\qquad 0\\le t\\le T_b'},
 {t:'p', text:'Substitute $x(\\tau)=s_m\\psi(\\tau)+w(\\tau)$, multiply out and split the integral.'},
-{t:'eqbox', cap:'Step 1 · substitute $x(\\tau)$', tex:'\\begin{aligned}y(t)&=\\int_0^{t}\\bigl[s_m\\psi(\\tau)+w(\\tau)\\bigr]\\psi(\\tau)\\,d\\tau\\\\&=s_m\\int_0^{t}\\psi^{2}(\\tau)\\,d\\tau+\\int_0^{t}w(\\tau)\\,\\psi(\\tau)\\,d\\tau\\end{aligned}',
+{t:'eqbox', cap:'Step 1 · substitute $x(\\tau)$', tex:'\\begin{aligned}y(t)&=\\int_0^{t}\\bigl[\\underbrace{s_m\\psi(\\tau)+w(\\tau)}_{x(\\tau)}\\bigr]\\psi(\\tau)\\,d\\tau\\\\&=s_m\\int_0^{t}\\psi^{2}(\\tau)\\,d\\tau+\\int_0^{t}w(\\tau)\\,\\psi(\\tau)\\,d\\tau\\end{aligned}',
  after:'The first term grows through the bit. The second is the noise of the correlator.'},
 {t:'p', text:'Inside the bit the correlator and the matched filter give different curves. For the Manchester bit $1$ with no noise, the correlator gives $y(T_b/2)=\\int_0^{T_b/2}\\psi^{2}\\,d\\tau=0.5$, while the matched filter gives $-0.5$.'},
 {t:'fig', svg:()=>figCorrMf('man'),
