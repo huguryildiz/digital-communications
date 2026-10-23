@@ -662,15 +662,17 @@ function figExMf(v){
   const TL = {'-1':'-T','0':'0','0.5':'T/2','1':'T','1.5':'3T/2','2':'2T'};
   const a = P.Axes(SZ({xr:[-1.4,2.4], yr:[-0.12,1.45], xlabel:'t', ylabel:'',
     xticksOverride:[-1,0,0.5,1,1.5,2], xtickfmt:v=>TL[String(v)]||'', yticksOverride:[1], ytickfmt:()=>'A'}));
-  a.poly([[-1.4,0],[0,0],[0,1],[1,1],[1,0],[2.4,0]], {color:C.ink, width:1.6});
-  if(f < 0.02) a.note(0.06, 1.1, 'g(t)', {tex:true, fs:14, color:C.ink});
-  if(u1 > 0.02 && u2 < 0.98) fade(a, 1-u2, ()=>a.span(-u1, 0, 1.3, u1 > 0.5 ? '-T' : '', {tex:true, color:C.h, fs:15}));
-  if(u2 > 0.02 && u2 < 0.98) fade(a, Math.sin(Math.PI*u2), ()=>{ a.vline(0, {color:C.coral, width:1.6});
-    a.note(-0.05, 1.3, '\\text{mirror at }t=0', {tex:true, fs:14, color:C.coral, anchor:'end'}); });
-  if(f > 0.02){ const x0 = X(0), x1 = X(1), l = Math.min(x0, x1), r = Math.max(x0, x1);
-    a.poly([[-1.4,0],[l,0],[l,1],[r,1],[r,0],[2.4,0]], {color:C.h, width:2.6}); }
-  if(f > 0.9 && u2 < 0.15) a.note(-0.5, 1.1, 'g(t+T)', {tex:true, fs:15, color:C.h, anchor:'middle'});
-  if(u2 > 0.85) a.note(0.5, 1.1, 'h(t)=g(T-t)', {tex:true, fs:15, color:C.h, anchor:'middle'});
+  fade(a, 1-u3, ()=>{
+    a.poly([[-1.4,0],[0,0],[0,1],[1,1],[1,0],[2.4,0]], {color:C.ink, width:1.6});
+    if(f < 0.02) a.note(0.06, 1.1, 'g(t)', {tex:true, fs:14, color:C.ink});
+    if(u1 > 0.02 && u2 < 0.98) fade(a, 1-u2, ()=>a.span(-u1, 0, 1.3, u1 > 0.5 ? '-T' : '', {tex:true, color:C.h, fs:15}));
+    if(u2 > 0.02 && u2 < 0.98) fade(a, Math.sin(Math.PI*u2), ()=>{ a.vline(0, {color:C.coral, width:1.6});
+      a.note(-0.05, 1.3, '\\text{mirror at }t=0', {tex:true, fs:14, color:C.coral, anchor:'end'}); });
+    if(f > 0.02){ const x0 = X(0), x1 = X(1), l = Math.min(x0, x1), r = Math.max(x0, x1);
+      a.poly([[-1.4,0],[l,0],[l,1],[r,1],[r,0],[2.4,0]], {color:C.h, width:2.6}); }
+    if(f > 0.9 && u2 < 0.15) a.note(-0.5, 1.1, 'g(t+T)', {tex:true, fs:15, color:C.h, anchor:'middle'});
+    if(u2 > 0.85) a.note(0.5, 1.1, 'h(t)=g(T-t)', {tex:true, fs:15, color:C.h, anchor:'middle'});
+  });
   fade(a, u3, ()=>{ a.poly([[-0.2,0],[0,0],[1,1],[2,0],[2.4,0]], {color:C.mid, width:2.6});
     a.point(1, 1, {color:C.mid, r:5});
     a.note(1.08, 1.12, 'y(T)=A^{2}T', {tex:true, fs:15, color:C.mid}); });
