@@ -203,12 +203,26 @@ const PLOT = (() => {
     return out;
   }
 
+  /* unitTick(v,u) writes v as a multiple of the TeX unit u: 0, u/2, u, 3u/2,
+     -2u. Other values keep two decimals in front of the unit. */
+  function unitTick(v, u){
+    if(Math.abs(v) < 1e-9) return '0';
+    const sg = v < 0 ? '-' : '', a = Math.abs(v), h = Math.round(2*a);
+    if(Math.abs(2*a-h) < 1e-6){
+      if(h % 2 === 0){ const n = h/2; return sg + (n === 1 ? '' : n) + u; }
+      return sg + (h === 1 ? '' : h) + u + '/2';
+    }
+    return sg + fmt(a, 2) + u;
+  }
   /* ======================================================================
      Axes — a plotting frame with mathematical coordinates.
      opt: {w,h,xr,yr,xlabel,ylabel,xticks,yticks,pad,grid,xstep,ystep,
            xnameDrop,
-           xtickfmt,ytickfmt,zeroAxes}
+           xtickfmt,ytickfmt,zeroAxes,xunit}
      xlabel and ylabel are TeX source — see texName above.
+     xunit: a time axis drawn in a unit such as T_b. The x numbers are then
+     typeset multiples of that unit (0, T_b/2, T_b, 2T_b), so the axis name
+     is plain t rather than t/T_b. An explicit xtickfmt still wins.
      ====================================================================== */
   function Axes(opt){
     /* A slide figure is drawn again, taller, to fill the spare height of its
@@ -223,6 +237,7 @@ const PLOT = (() => {
       xtickfmt:v=>fmt(v,3), ytickfmt:v=>fmt(v,3),
       xticksOverride:null, yticksOverride:null, arrows:true
     }, opt);
+    if(o.xunit && !opt.xtickfmt) o.xtickfmt = v => unitTick(v, o.xunit);
     const [xa,xb]=o.xr, [ya,yb]=o.yr;
     /* A scene that carries its own page colour — a navy module opening — needs
        the axis, the tick numbers and the axis names in that page's ink, not in
@@ -469,7 +484,7 @@ const PLOT = (() => {
         /* Tick numbers grow with the labels (LBLS) but their spacing does not,
            so where neighbours would touch only every n-th number is written,
            counted from zero when zero is a tick. The tick marks all stay. */
-        const TW = L => String(L).length*0.58*TICK_SIZE;
+        const TW = L => (o.xunit ? String(L).replace(/[_{}\\]/g,'') : String(L)).length*0.58*TICK_SIZE;
         const thin = (vals, fmt, pos, need) => {
           const k = vals.map((v,i)=>i).filter(i=>fmt(vals[i])!=='');
           let n = 1;
@@ -490,7 +505,8 @@ const PLOT = (() => {
           g.push(`<line x1="${sx(v).toFixed(2)}" y1="${yBase.toFixed(2)}" x2="${sx(v).toFixed(2)}" y2="${(yBase+5).toFixed(2)}" stroke="${CH.axis}" stroke-width="${1.2*STRW}"/>`);
           if(!showX(v)) return;
           xBoxes.push([sx(v)-TW(L)/2, yBase+20*LBLS-TICK_SIZE*0.8, sx(v)+TW(L)/2, yBase+20*LBLS+TICK_SIZE*0.2]);
-          tl.push(`<text x="${sx(v).toFixed(2)}" y="${(yBase+20*LBLS).toFixed(2)}" ${halo(3.4)} font-size="${TICK_SIZE}" fill="${CH.tick}" text-anchor="middle">${esc(L)}</text>`); });
+          if(o.xunit && L !== '0') tl.push(texName(L, { xMid:sx(v), baseline:yBase+22*LBLS+4, size:TICK_SIZE/LBLS*1.1, color:CH.tick, role:'tick', figW:W }));
+          else tl.push(`<text x="${sx(v).toFixed(2)}" y="${(yBase+20*LBLS).toFixed(2)}" ${halo(3.4)} font-size="${TICK_SIZE}" fill="${CH.tick}" text-anchor="middle">${esc(L)}</text>`); });
         const xBase = xz!=null? xz : x0;
         yt.forEach(v=>{ const L=o.ytickfmt(v); if(L==='')return;
           if(Math.abs(v)<1e-12 && xz!=null && yz!=null) return;

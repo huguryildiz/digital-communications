@@ -227,7 +227,8 @@ const AXIS = ['#8A939C', '#7C858F'];
     if (worse) seen.set(k, r);
   }
   const rows = Array.from(seen.values()).sort((a, b) => b.cf - a.cf);
-  /* A haloed tick number, or any haloed label of one or two symbols, crossed by a
+  /* A haloed tick number (a typeset multiple of a unit, role tick, included), or
+     any haloed label of one or two symbols, crossed by a
      curve is acceptable: the halo cuts the curve around the glyphs and both stay
      readable. A word, an equation or a caption running under a signal is not, and
      neither is one label sitting on another, nor any label drawn without a halo,
@@ -239,7 +240,7 @@ const AXIS = ['#8A939C', '#7C858F'];
   const numeric = t => /^[-−]?[\d.,]+$/.test(t.trim());
   const isAxisName = r => r.role === 'axisname';
   const isSoft = r => r.halo && !r.tt && !r.cut && !isAxisName(r)
-    && (numeric(r.text) || r.text.trim().length <= 2);
+    && (numeric(r.text) || r.text.trim().length <= 2 || r.role === 'tick');
   const bad = r => r.cf > 0 || r.tt || r.cut || (isAxisName(r) && r.af > 0);
   const hard = rows.filter(r => bad(r) && !isSoft(r));
   const soft = rows.filter(r => bad(r) && isSoft(r));

@@ -117,7 +117,7 @@ function figOpenTx(){
      labels sit a fixed number of pixels above the pulse top */
   const big = P.labelScale()>1;
   const a = P.Axes({w:520,h:big?156:130,xr:[0,10],yr:[-1.6,big?2.3:1.6],grid:false,
-    xlabel:'t/T_b', ylabel:'s(t)', chrome:NAVY, pad:{l:46,r:30,t:22,b:34}, xstep:2, ytarget:3,
+    xlabel:'t', xunit:'T_b', ylabel:'s(t)', chrome:NAVY, pad:{l:46,r:30,t:22,b:34}, xstep:2, ytarget:3,
     ...(big ? {yticksOverride:[-1,0,1]} : {})});
   a.curve(openS, {color:T_CY, width:2.4, n:2000, anim:{delay:0, sweep:'#D9F3F7'}});
   const yb = big ? 1 + 9*P.labelScale()/(a.sy(0)-a.sy(1)) : 1.32;
@@ -126,13 +126,13 @@ function figOpenTx(){
 }
 function figOpenRx(){
   const a = P.Axes({w:520,h:130,xr:[0,10],yr:[-2.6,2.6],grid:false,
-    xlabel:'t/T_b', ylabel:'x(t)', chrome:NAVY, pad:{l:46,r:30,t:22,b:34}, xstep:2, ytarget:3});
+    xlabel:'t', xunit:'T_b', ylabel:'x(t)', chrome:NAVY, pad:{l:46,r:30,t:22,b:34}, xstep:2, ytarget:3});
   a.curve(t=>openS(t)+OPEN_W(t), {color:T_GR, width:1.6, n:2000, anim:{delay:0.5}});
   return a.svg();
 }
 function figOpenDecide(){
   const a = P.Axes({w:520,h:130,xr:[0,10],yr:[-1.9,1.9],grid:false,
-    xlabel:'t/T_b', ylabel:'y_k', chrome:NAVY, pad:{l:46,r:30,t:22,b:34}, xstep:2, ytarget:3});
+    xlabel:'t', xunit:'T_b', ylabel:'y_k', chrome:NAVY, pad:{l:46,r:30,t:22,b:34}, xstep:2, ytarget:3});
   a.hline(0, {color:'rgba(239,231,216,.30)', dash:'4 5'});
   a.stem(OPEN_B.map((_,k)=>[k+1, openY(k)]), {color:T_VI, anim:{delay:1.2, step:0.09, tip:true}});
   OPEN_B.forEach((_,k)=>{ const d = openY(k) > 0 ? 1 : 0;
@@ -214,7 +214,7 @@ const awQ = s => { const q = Qf(1/s); return q < 1e-6 ? '\\approx 0' : '='+q.toF
 function figAwgn(v){
   const f = frameOf(v, 0), i = Math.min(1, Math.floor(f)), u = clamp01(f-i);
   const s = Math.exp((1-u)*Math.log(AW_S[i]) + u*Math.log(AW_S[i+1]));
-  const a = P.Axes(SZ({xr:[-0.15,5.15], yr:[-4.6,6.6], xlabel:'t/T', ylabel:'x(t)=g(t)+w(t)',
+  const a = P.Axes(SZ({xr:[-0.15,5.15], yr:[-4.6,6.6], xlabel:'t', xunit:'T', ylabel:'x(t)=g(t)+w(t)',
     xticksOverride:[0,1,2,3,4,5], yticksOverride:[-4,-2,0,2,4]}));
   const pts = [], N = 400;
   for(let j=0;j<=N;j++){ const t = 5*j/N; pts.push([a.sx(t), a.sy(awG(t)+s)]); }
@@ -237,7 +237,7 @@ function figFilterChoice(v){
   const F = {sig:t=>(1-u)*A.sig(t)+u*B.sig(t), sd:(1-u)*A.sd+u*B.sd, n:t=>(1-u)*A.n(t)+u*B.n(t)};
   /* the phone draws larger labels, so each panel takes more height there */
   const big = P.labelScale() > 1, hA = big ? 290 : 200, hB = big ? 330 : 230;
-  const a = P.Axes({w:560,h:hA,xr:[-0.2,2.3],yr:[-1.6,2.6],xlabel:'t/T',ylabel:'x(t)',
+  const a = P.Axes({w:560,h:hA,xr:[-0.2,2.3],yr:[-1.6,2.6],xlabel:'t', xunit:'T',ylabel:'x(t)',
     pad:{l:56,r:26,t:24,b:40},xticksOverride:[0,1,2],yticksOverride:[-1,0,1,2]});
   a.area(t=>(t>=0&&t<1?1:0), -0.2, 2.3, {color:C.dec.in, n:600});
   a.poly(FP_X.map(([t,x])=>[t, fpG(t)+0.5*(x-fpG(t))]), {color:C.out, width:1.0});
@@ -248,7 +248,7 @@ function figFilterChoice(v){
   a.note(x1, 2.3, 'g(t)', {tex:true, fs:15, color:C.in});
   a.poly([[x2-24*px,2.3],[x2-6*px,2.3]], {color:C.out, width:1.6});
   a.note(x2, 2.3, 'x(t)=g(t)+w(t)', {tex:true, fs:15, color:C.out});
-  const b = P.Axes({w:560,h:hB,xr:[-0.2,2.3],yr:[-1.1,2.1],xlabel:'t/T',ylabel:'y(t)',
+  const b = P.Axes({w:560,h:hB,xr:[-0.2,2.3],yr:[-1.1,2.1],xlabel:'t', xunit:'T',ylabel:'y(t)',
     pad:{l:56,r:26,t:24,b:42},xticksOverride:[0,1,2],yticksOverride:[-1,0,1,2]});
   fpOutput(b, F, -0.2, 2.3);
   return stack(560, [[a.svg(),hA],[b.svg(),hB]]);
@@ -272,7 +272,7 @@ function figReceiver(){
     {t:'arrow',x1:488,y1:62,x2:548,y2:62,label:'y(T)',tex:true,color:C.mid},
     {t:'text',x:470,y:104,label:'t=T',tex:true,fs:14}
   ]});
-  const a = P.Axes({w:560,h:250,xr:[-0.2,1.4],yr:[-1.2,2.6],xlabel:'t/T',ylabel:'x(t)',
+  const a = P.Axes({w:560,h:250,xr:[-0.2,1.4],yr:[-1.2,2.6],xlabel:'t', xunit:'T',ylabel:'x(t)',
     pad:{l:56,r:26,t:24,b:42},xticksOverride:[0,0.5,1],ytarget:3});
   a.curve(t=>(t>=0&&t<=1?1:0)+RX_W(t), {color:C.out, width:1.5, n:900});
   a.poly([[-0.2,0],[0,0],[0,1],[1,1],[1,0],[1.4,0]], {color:C.in, width:2.4});
@@ -291,11 +291,11 @@ function figSplit(v){
   P.hOverride = null;
   const f = frameOf(v, 3), o1 = clamp01(f), o2 = clamp01(f-1), o3 = clamp01(f-2);
   const big = P.labelScale() > 1, hA = big ? 290 : 200, hB = big ? 330 : 230;
-  const a = P.Axes({w:560,h:hA,xr:[-0.2,2.3],yr:[-3.2,4.4],xlabel:'t/T',ylabel:'x(t)',
+  const a = P.Axes({w:560,h:hA,xr:[-0.2,2.3],yr:[-3.2,4.4],xlabel:'t', xunit:'T',ylabel:'x(t)',
     pad:{l:56,r:26,t:24,b:40},xticksOverride:[0,1,2],yticksOverride:[-2,0,2,4]});
   a.poly(FP_X, {color:C.out, width:1.3});
   a.poly([[-0.2,0],[0,0],[0,1],[1,1],[1,0],[2.3,0]], {color:C.in, width:2.4});
-  const b = P.Axes({w:560,h:hB,xr:[-0.2,2.3],yr:[-1.1,2.2],xlabel:'t/T',ylabel:'g_0(t),\\;n(t),\\;y(t)',
+  const b = P.Axes({w:560,h:hB,xr:[-0.2,2.3],yr:[-1.1,2.2],xlabel:'t', xunit:'T',ylabel:'g_0(t),\\;n(t),\\;y(t)',
     pad:{l:56,r:26,t:24,b:42},xticksOverride:[0,1,2],yticksOverride:[-1,0,1,2]});
   const sd = SP_F.sd, lift = t => o3*SP_F.sig(t);
   if(o2 > 0.01){ const pts = [], N = 250;
@@ -326,7 +326,7 @@ function figSnr(v){
   const r = v && v.r!=null ? v.r : 0, tau = Math.pow(10, -r), F = fpFilter(+tau.toPrecision(6));
   const big = P.labelScale() > 1, hA = big ? 480 : 400;
   const g0 = F.sig(1), sd = F.sd, eta = Math.pow(g0/sd, 2);
-  const a = P.Axes({w:560,h:hA,xr:[-0.2,2.3],yr:[-0.9,1.9],xlabel:'t/T',ylabel:'y(t)',
+  const a = P.Axes({w:560,h:hA,xr:[-0.2,2.3],yr:[-0.9,1.9],xlabel:'t', xunit:'T',ylabel:'y(t)',
     pad:{l:56,r:26,t:24,b:42},xticksOverride:[0,1,2],yticksOverride:[0,1]});
   a.curve(F.sig, {color:C.mid, width:2.4, n:600});
   a.vline(1, {color:C.muted, dash:'4 4'});
@@ -417,7 +417,7 @@ function figBoundCurve(){
 function figMatchedBuild(v){
   const f = frameOf(v, 2), u1 = clamp01(f), u2 = clamp01(f-1);
   const X = t => t*(1-2*u1) + u2;
-  const a = P.Axes(SZ({xr:[-1.35,1.35], yr:[-0.2,1.75], xlabel:'t/T', ylabel:'g(t),\\;h(t)',
+  const a = P.Axes(SZ({xr:[-1.35,1.35], yr:[-0.2,1.75], xlabel:'t', xunit:'T', ylabel:'g(t),\\;h(t)',
     xticksOverride:[-1,-0.5,0,0.5,1], yticksOverride:[0.5,1]}));
   a.poly([[0,0],[0,0],[1,1],[1,0]], {color:C.in, width:f>0.05?1.6:2.6});
   a.note(1.04, 0.72, 'g(t)', {tex:true, fs:15, color:C.in});
@@ -452,7 +452,7 @@ function figConvSweep(v){
     pad:{l:56,r:26,t:24,b:24},xticksOverride:[-1,0,1,2],yticksOverride:[0,1]});
   const b = P.Axes({w:560,h:hB,xr:[-1.2,2.3],yr:[-0.15,1.25],xlabel:'',ylabel:'g(\\tau)\\,h(t-\\tau)',
     pad:{l:56,r:26,t:24,b:24},xticksOverride:[-1,0,1,2],yticksOverride:[0,1]});
-  const c = P.Axes({w:560,h:hC,xr:[-1.2,2.3],yr:[-0.2,1.5],xlabel:'t/T',ylabel:'y(t)/E',
+  const c = P.Axes({w:560,h:hC,xr:[-1.2,2.3],yr:[-0.2,1.5],xlabel:'t', xunit:'T',ylabel:'y(t)/E',
     pad:{l:56,r:26,t:24,b:42},xticksOverride:[-1,0,1,2],yticksOverride:[0,0.5,1]});
   a.poly([[-1.2,0],[0,0],[1,1],[1,0],[2.3,0]], {color:C.in, width:2.4});
   /* the reversed copy, sliding */
@@ -491,7 +491,7 @@ function mfOut(k){
   return MF_OUT[k];
 }
 function figEqualOutputs(){
-  const a = P.Axes(SZ({xr:[-0.2,2.2], yr:[-0.12,1.3], xlabel:'t/T', ylabel:'y(t)/E',
+  const a = P.Axes(SZ({xr:[-0.2,2.2], yr:[-0.12,1.3], xlabel:'t', xunit:'T', ylabel:'y(t)/E',
     xticksOverride:[0,0.5,1,1.5,2], ytarget:3}));
   a.poly(mfOut(0), {color:C.mid, width:2.4});
   a.poly(mfOut(1), {color:C.mid, width:2.4, dash:'8 5'});
@@ -509,7 +509,7 @@ function figEqualOutputs(){
 function figGain(v){
   const k = v && v.k!=null ? v.k : 1, F = FP_FILTERS[2];
   const L = P.labelScale(), big = L>1, top = big ? 5.6 : 4.9;
-  const a = P.Axes(SZ({xr:[-0.2,2.3], yr:[-1.2,top], xlabel:'t/T', ylabel:'y(t)',
+  const a = P.Axes(SZ({xr:[-0.2,2.3], yr:[-1.2,top], xlabel:'t', xunit:'T', ylabel:'y(t)',
     xticksOverride:[0,1,2], yticksOverride:[-1,0,1,2,3]}));
   const pts = [], N = 250;
   for(let i=0;i<=N;i++){ const t = -0.2+2.5*i/N; pts.push([a.sx(t), a.sy(k*(F.sig(t)+F.sd))]); }
@@ -576,7 +576,7 @@ function figMfCorr(v){
   const big = P.labelScale() > 1, hA = big ? 250 : 150, hB = big ? 290 : 215;
   const a = P.Axes({w:560,h:hA,xr:[-0.2,2.2],yr:[-0.15,1.35],xlabel:'',ylabel:'g(\\tau),\\;x(\\tau)g(\\tau)',
     pad:{l:56,r:26,t:24,b:24},xticksOverride:[0,0.5,1,1.5,2],yticksOverride:[0,1]});
-  const b = P.Axes({w:560,h:hB,xr:[-0.2,2.2],yr:[-0.15,1.4],xlabel:'t/T',ylabel:'\\text{output}/E',
+  const b = P.Axes({w:560,h:hB,xr:[-0.2,2.2],yr:[-0.15,1.4],xlabel:'t', xunit:'T',ylabel:'\\text{output}/E',
     pad:{l:56,r:26,t:24,b:42},xticksOverride:[0,0.5,1,1.5,2],yticksOverride:[0,0.5,1]});
   const g = u => (u>=0 && u<=1) ? u : 0, p = u => g(u)*g(u);
   a.poly([[-0.2,0],[0,0],[1,1],[1,0],[2.2,0]], {color:C.in, width:2.4});
@@ -604,7 +604,7 @@ function figTiming(v){
   const big = P.labelScale() > 1, hA = big ? 270 : 215, hB = big ? 270 : 215;
   const a = P.Axes({w:560,h:hA,xr:[-0.2,2.2],yr:[-0.4,1.4],xlabel:'',ylabel:'y(t)/E',
     pad:{l:56,r:26,t:24,b:24},xticksOverride:[0,0.5,1,1.5,2],yticksOverride:[0,0.5,1]});
-  const b = P.Axes({w:560,h:hB,xr:[-0.2,2.2],yr:[-0.1,1.35],xlabel:'t_0/T',ylabel:'\\eta(t_0)\\,/\\,(2E/N_0)',
+  const b = P.Axes({w:560,h:hB,xr:[-0.2,2.2],yr:[-0.1,1.35],xlabel:'t_0', xunit:'T',ylabel:'\\eta(t_0)\\,/\\,(2E/N_0)',
     pad:{l:56,r:26,t:24,b:42},xticksOverride:[0,0.5,1,1.5,2],yticksOverride:[0,0.5,1]});
   const pts = [], N = 240;
   for(let i=0;i<=N;i++){ const t = -0.2+2.4*i/N; pts.push([a.sx(t), a.sy(mfSig(t)+0.2)]); }
@@ -710,7 +710,7 @@ const near = (f, k) => clamp01(1-2*Math.abs(f-k));
 function figBasisUnit(v){
   const f = frameOf(v, 0), u1 = clamp01(f), u2 = clamp01(f-1);
   const H1 = 1.5, H2 = 2.25, h = H1+u1*(H2-H1);
-  const a = P.Axes(SZ({xr:[-0.3,1.45], yr:[-0.3,2.9], xlabel:'t/T_b', ylabel:'\\psi(t),\\;\\psi^{2}(t)', ynameAtAxis:true,
+  const a = P.Axes(SZ({xr:[-0.3,1.45], yr:[-0.3,2.9], xlabel:'t', xunit:'T_b', ylabel:'\\psi(t),\\;\\psi^{2}(t)', ynameAtAxis:true,
     xticksOverride:[0,0.5,1], yticksOverride:[], ytarget:3}));
   if(u2 > 0.005) a.area(()=>h, 0, u2, {color:C.dec.mid});
   a.poly(rectPts(h), {color:u1 < 0.5 ? C.h : C.mid, width:2.6});
@@ -726,7 +726,7 @@ function figBasisUnit(v){
 function figAntipodal(v){
   const f = frameOf(v, 0), A = 1.5;
   const c = f <= 1 ? 1+(A-1)*clamp01(f) : A-2*A*clamp01(f-1);
-  const a = P.Axes(SZ({xr:[-0.3,1.45], yr:[-2.2,2.3], xlabel:'t/T_b', ylabel:'\\text{amplitude}', ynameAtAxis:true,
+  const a = P.Axes(SZ({xr:[-0.3,1.45], yr:[-2.2,2.3], xlabel:'t', xunit:'T_b', ylabel:'\\text{amplitude}', ynameAtAxis:true,
     xticksOverride:[0,0.5,1], yticksOverride:[-1.5,-1,0,1,1.5], ytickfmt:()=>''}));
   a.poly(rectPts(1), {color:C.h, width:2.2});
   if(f > 1.01) fade(a, 0.4, ()=>a.poly(rectPts(A), {color:C.in, width:2.2}));
@@ -747,7 +747,7 @@ function figSignalSpace(v){
   P.hOverride = null;
   const f = frameOf(v, 0), u1 = clamp01(f), u2 = clamp01(f-1), u3 = clamp01(f-2);
   const big = P.labelScale() > 1, hA = big ? 290 : 230, hB = big ? 230 : 180;
-  const a = P.Axes({w:560,h:hA,xr:[-0.3,1.45],yr:[-2.2,2.2],xlabel:'t/T_b',ylabel:'\\text{amplitude}', ynameAtAxis:true,
+  const a = P.Axes({w:560,h:hA,xr:[-0.3,1.45],yr:[-2.2,2.2],xlabel:'t', xunit:'T_b',ylabel:'\\text{amplitude}', ynameAtAxis:true,
     pad:{l:56,r:26,t:24,b:40},xticksOverride:[0,0.5,1],yticksOverride:[],ytarget:2});
   if(u1 > 0.005){ a.area(()=>1.5, 0, u1, {color:C.dec.mid}); a.area(()=>-1.5, 0, u1, {color:C.dec.mid}); }
   a.poly(rectPts(1.5), {color:C.in, width:2.4});
@@ -776,7 +776,7 @@ function figDemodConv(v){
   P.hOverride = null;
   const f = frameOf(v, 0), t = f/2;
   const big = P.labelScale() > 1, hA = big ? 270 : 205, hB = big ? 290 : 225;
-  const a = P.Axes({w:560,h:hA,xr:[-1.2,2.3],yr:[-0.3,1.75],xlabel:'\\tau/T_b',ylabel:'\\text{amplitude}', ynameAtAxis:true,
+  const a = P.Axes({w:560,h:hA,xr:[-1.2,2.3],yr:[-0.3,1.75],xlabel:'\\tau', xunit:'T_b',ylabel:'\\text{amplitude}', ynameAtAxis:true,
     pad:{l:56,r:26,t:24,b:40},xticksOverride:[-1,0,1,2],yticksOverride:[0,1]});
   const lo = Math.max(0, t-1), hi = Math.min(1, t);
   if(hi-lo > 0.005) a.area(()=>1, lo, hi, {color:C.dec.mid});
@@ -784,7 +784,7 @@ function figDemodConv(v){
   a.poly([[-1.2,0],[t-1,0],[t-1,1],[t,1],[t,0],[2.3,0]], {color:C.h, width:2.2, dash:'7 5'});
   a.note(0.5, 1.2, 's_m\\psi(\\tau)', {tex:true, fs:15, color:C.in, anchor:'middle'});
   a.note(t-0.95, 1.55, 'h(t-\\tau)', {tex:true, fs:15, color:C.h});
-  const b = P.Axes({w:560,h:hB,xr:[-1.2,2.3],yr:[-0.2,1.5],xlabel:'t/T_b',ylabel:'y(t)',
+  const b = P.Axes({w:560,h:hB,xr:[-1.2,2.3],yr:[-0.2,1.5],xlabel:'t', xunit:'T_b',ylabel:'y(t)',
     pad:{l:56,r:26,t:24,b:42},xticksOverride:[-1,0,1,2],yticksOverride:[0,0.5,1]});
   b.curve(s=>s <= t+1e-9 ? tri1(s) : NaN, {color:C.mid, width:2.6, n:700});
   b.vline(1, {color:C.muted});
@@ -812,11 +812,11 @@ function figDemodSplit(v){
   P.hOverride = null;
   const f = frameOf(v, 0), o1 = clamp01(f), o2 = clamp01(f-1), o3 = clamp01(f-2);
   const big = P.labelScale() > 1, hA = big ? 260 : 190, hB = big ? 300 : 230;
-  const a = P.Axes({w:560,h:hA,xr:[-0.15,2.2],yr:[-1.4,3.0],xlabel:'t/T_b',ylabel:'x(t)',
+  const a = P.Axes({w:560,h:hA,xr:[-0.15,2.2],yr:[-1.4,3.0],xlabel:'t', xunit:'T_b',ylabel:'x(t)',
     pad:{l:56,r:26,t:24,b:40},xticksOverride:[0,1,2],yticksOverride:[-1,0,1,2]});
   a.curve(t=>t>=0 && t<=1 ? DM_X(t) : NaN, {color:C.out, width:1.4, n:900});
   a.poly([[-0.15,0],[0,0],[0,1],[1,1],[1,0],[2.2,0]], {color:C.in, width:2.2});
-  const b = P.Axes({w:560,h:hB,xr:[-0.3,2.2],yr:[-0.6,1.5],xlabel:'t/T_b',ylabel:'y(t)',
+  const b = P.Axes({w:560,h:hB,xr:[-0.3,2.2],yr:[-0.6,1.5],xlabel:'t', xunit:'T_b',ylabel:'y(t)',
     pad:{l:56,r:26,t:34,b:42},xticksOverride:[0,1,2],yticksOverride:[0,0.5,1]});
   const nz = DM_Y.map(p=>[p[0], p[1]-tri1(p[0])]);
   fade(b, o1*(1-0.5*o3), ()=>b.poly([[-0.3,0],[0,0],[1,1],[2,0],[2.2,0]], {color:C.mid, width:2.4, dash:o3 > 0.5 ? '6 5' : null}));
@@ -848,7 +848,7 @@ function figMfDemod(v){
     {t:'text',x:430,y:104,label:'t=T_b',tex:true,fs:14}
   ]});
   const big = P.labelScale() > 1, hA = big ? 320 : 260;
-  const a = P.Axes({w:560,h:hA,xr:[-0.15,2.2],yr:[-1.4,3.0],xlabel:'t/T_b',ylabel:'x(t),\\;y(t)',
+  const a = P.Axes({w:560,h:hA,xr:[-0.15,2.2],yr:[-1.4,3.0],xlabel:'t', xunit:'T_b',ylabel:'x(t),\\;y(t)',
     pad:{l:56,r:26,t:24,b:42},xticksOverride:[0,0.5,1,1.5,2],yticksOverride:[-1,0,1,2]});
   a.curve(t=>t>=0 && t<=1 ? xk(t) : NaN, {color:C.out, width:1.4, n:900, opacity:(1-0.55*u1).toFixed(3)});
   a.poly(rectPts(1, 2.2).map(p=>[Math.max(p[0],-0.15), p[1]]), {color:C.in, width:2.2});
@@ -881,12 +881,12 @@ function figDemodShapes(v){
   const y = mix(t=>sa*PSI_R[ka](t-1), t=>sb*PSI_R[kb](t-1));
   const T = v && v.t!=null ? v.t : 1, hs = tau => h(T-tau);
   const big = P.labelScale() > 1, hA = big ? 270 : 170, hB = big ? 300 : 195;
-  const a = P.Axes({w:560,h:hA,xr:[-0.2,2.2],yr:[-1.5,1.5],xlabel:'\\tau/T_b',ylabel:'g(\\tau),\\;h(t-\\tau)',
+  const a = P.Axes({w:560,h:hA,xr:[-0.2,2.2],yr:[-1.5,1.5],xlabel:'\\tau', xunit:'T_b',ylabel:'g(\\tau),\\;h(t-\\tau)',
     pad:{l:56,r:26,t:24,b:40},xticksOverride:[0,1,2],yticksOverride:[-1,0,1]});
   a.area(tau=>g(tau)*hs(tau), -0.2, 2.2, {color:C.mid+'40', n:1200});
   a.curve(hs, {color:C.h, width:2.2, dash:'7 5', n:1200});
   a.curve(g, {color:C.in, width:2.6, n:1200});
-  const b = P.Axes({w:560,h:hB,xr:[-0.2,2.2],yr:[-1.4,1.6],xlabel:'t/T_b',ylabel:'y(t)',
+  const b = P.Axes({w:560,h:hB,xr:[-0.2,2.2],yr:[-1.4,1.6],xlabel:'t', xunit:'T_b',ylabel:'y(t)',
     pad:{l:56,r:26,t:24,b:42},xticksOverride:[0,1,2],yticksOverride:[-1,-0.5,0,0.5,1]});
   b.curve(y, {color:C.mid+'73', width:1.6, dash:'6 5', n:800});
   b.curve(t=>t <= T ? y(t) : NaN, {color:C.mid, width:2.6, n:800});
@@ -937,14 +937,14 @@ function figDemodTrain(v){
      the edge of the axes so the filter and the product stay readable */
   const zoom = T < 10.79, x0 = zoom ? Math.min(Math.max(-0.3, T-2.6), 6.8) : -0.3, x1 = zoom ? x0+4 : 10.8;
   const xt = zoom ? [Math.ceil(x0), Math.ceil(x0)+1, Math.ceil(x0)+2, Math.ceil(x0)+3].filter(k=>k>=0 && k<=x1) : [0,2,4,6,8,10];
-  const a = P.Axes({w:560,h:hA,xr:[x0,x1],yr:[-2.0,3.2],xlabel:'\\tau/T_b',ylabel:'g(\\tau),\\;x(\\tau)',
+  const a = P.Axes({w:560,h:hA,xr:[x0,x1],yr:[-2.0,3.2],xlabel:'\\tau', xunit:'T_b',ylabel:'g(\\tau),\\;x(\\tau)',
     pad:{l:56,r:26,t:24,b:40},xticksOverride:xt,yticksOverride:[-1,0,1]});
   fade(a, o1, ()=>a.curve(mixF(R.x, M.x), {color:zoom ? C.out+'59' : C.out, width:1.1, n:2400}));
   if(zoom) a.area(tau=>gT(tau)*hT(tau), x0, x1, {color:C.mid+'59', n:1600});
   a.curve(gT, {color:C.in, width:2.4, n:2400});
   if(zoom) a.curve(hT, {color:C.h, width:2.4, dash:'7 5', n:1600});
   TR_B.forEach((bit, k)=>{ if(k+0.5 > x0 && k+0.5 < x1) a.note(k+0.5, 2.2, String(bit), {tex:true, fs:15, color:C.in, anchor:'middle'}); });
-  const b = P.Axes({w:560,h:hB,xr:[-0.3,10.8],yr:[-2.0,2.4],xlabel:'t/T_b',ylabel:'y_0(t),\\;y(t)',
+  const b = P.Axes({w:560,h:hB,xr:[-0.3,10.8],yr:[-2.0,2.4],xlabel:'t', xunit:'T_b',ylabel:'y_0(t),\\;y(t)',
     pad:{l:56,r:26,t:24,b:42},xticksOverride:[0,2,4,6,8,10],yticksOverride:[-1,0,1]});
   b.hline(0, {color:C.muted, dash:'5 4'});
   if(zoom) b.rect(Math.max(-0.3, T-1), -2.0, T, 2.4, {fill:C.h+'1F'});
@@ -991,7 +991,7 @@ function figCorrOut(v){
   a.poly([[-0.2,0],[0,0],[0,1],[1,1],[1,0],[2.2,0]], {color:C.mid, width:2.0, dash:'6 4'});
   a.vline(t, {color:C.muted});
   a.note(1.06, 1.25, 'x(\\tau)\\psi(\\tau)=\\psi^{2}(\\tau)', {tex:true, fs:15, color:C.mid});
-  const b = P.Axes({w:560,h:hB,xr:[-0.2,2.2],yr:[-0.2,1.45],xlabel:'t/T_b',ylabel:'y(t)',
+  const b = P.Axes({w:560,h:hB,xr:[-0.2,2.2],yr:[-0.2,1.45],xlabel:'t', xunit:'T_b',ylabel:'y(t)',
     pad:{l:56,r:26,t:24,b:42},xticksOverride:[0,0.5,1,1.5,2],yticksOverride:[0,0.5,1]});
   b.poly([[0,0],[t,t]], {color:C.mid, width:2.6});
   if(d > 0.01) b.poly([[1,1],[1,1-d]], {color:C.mid, width:2.0, dash:'3 4'});
@@ -1011,7 +1011,7 @@ const CM = ['rect','man','step'];
 function figCorrMf(v){
   const f = frameOf(v, 0), i = Math.min(1, Math.floor(f)), u = clamp01(f-i);
   const y = t => (1-u)*PSI_R[CM[i]](t-1) + u*PSI_R[CM[i+1]](t-1);
-  const a = P.Axes(SZ({xr:[-0.15,2.2], yr:[-0.75,1.4], xlabel:'t/T_b', ylabel:'\\text{output}',
+  const a = P.Axes(SZ({xr:[-0.15,2.2], yr:[-0.75,1.4], xlabel:'t', xunit:'T_b', ylabel:'\\text{output}',
     xticksOverride:[0,0.5,1,1.5,2], yticksOverride:[-0.5,0,0.5,1]}));
   a.raw('<g opacity="0.45">'); a.curve(y, {color:C.mid, width:5, n:800}); a.raw('</g>');
   a.poly([[-0.15,0],[0,0],[1,1],[1,0],[2.2,0]], {color:C.mid, width:2.2, dash:'7 5'});
@@ -1029,7 +1029,7 @@ function figCorrMf(v){
    t = u the product is psi^2(t) = +1/T_b everywhere. Frame 3: the result. */
 function figNoisePlane(v){
   const f = frameOf(v, 0), o1 = clamp01(f), o2 = clamp01(f-1), o3 = clamp01(f-2);
-  const a = P.Axes(SZ({xr:[-0.12,1.18], yr:[-0.12,1.3], xlabel:'t/T_b', ylabel:'u/T_b',
+  const a = P.Axes(SZ({xr:[-0.12,1.18], yr:[-0.12,1.3], xlabel:'t', xunit:'T_b', ylabel:'u/T_b',
     xticksOverride:[0,0.5,1], yticksOverride:[0,0.5,1], grid:false}));
   const q = 1-0.6*o2;
   a.raw(`<g opacity="${q.toFixed(3)}">`);
@@ -1094,7 +1094,7 @@ function figPpm(v){
   P.hOverride = null;
   const f = frameOf(v, 0), o1 = clamp01(f), o2 = clamp01(f-1), o3 = clamp01(f-2), r = Math.SQRT2;
   const big = P.labelScale() > 1, hA = big ? 230 : 170, hB = big ? 330 : 270;
-  const a = P.Axes({w:560,h:hA,xr:[-0.3,1.3],yr:[-0.3,big?3.0:2.6],xlabel:'t/T_b',ylabel:'s_m(t),\\;\\psi_m(t)',
+  const a = P.Axes({w:560,h:hA,xr:[-0.3,1.3],yr:[-0.3,big?3.0:2.6],xlabel:'t', xunit:'T_b',ylabel:'s_m(t),\\;\\psi_m(t)',
     pad:{l:56,r:26,t:24,b:40},xticksOverride:[0,0.5,1],yticksOverride:[]});
   const sq = (x0, x1, h) => [[-0.3,0],[x0,0],[x0,h],[x1,h],[x1,0],[1.3,0]];
   /* the pulse names sit a fixed number of pixels above the pulse tops */
@@ -1267,7 +1267,7 @@ const nrz = (bits, hist=0) => t => { const k = Math.floor(t); return k<0 ? hist 
 const ISI_B = [1,1,0,1,0,0];
 function figIsiBuild(v){
   const f = frameOf(v, 3), bt = 0.25, r = rcResp(bt);
-  const a = P.Axes(SZ({xr:[-0.6,7.3], yr:[-1.6,1.75], xlabel:'t/T_b', ylabel:'y(t)',
+  const a = P.Axes(SZ({xr:[-0.6,7.3], yr:[-1.6,1.75], xlabel:'t', xunit:'T_b', ylabel:'y(t)',
     xticksOverride:[0,1,2,3,4,5,6,7], ytarget:4}));
   const one = clamp01(1-(f-1.5)*2), many = clamp01(f-1.5);
   if(one > 0.02){
@@ -1291,7 +1291,7 @@ const TERM_B = [0,0,0,1];
 function figIsiTerm(){
   P.hOverride = null;
   const bt = 0.25, q = rcq(bt), y = rcTrain(TERM_B, bt, -1);
-  const a = P.Axes({w:560,h:210,xr:[-0.6,4.4],yr:[-1.4,1.5],xlabel:'t/T_b',ylabel:'y(t)',
+  const a = P.Axes({w:560,h:210,xr:[-0.6,4.4],yr:[-1.4,1.5],xlabel:'t', xunit:'T_b',ylabel:'y(t)',
     pad:{l:56,r:26,t:24,b:40},xticksOverride:[0,1,2,3,4],ytarget:3});
   a.curve(nrz(TERM_B,-1), {color:C.in, width:1.4, dash:'5 5', opacity:0.7, n:900});
   a.curve(y, {color:C.out, width:2.6, n:900});
@@ -1317,7 +1317,7 @@ function figIsiTerm(){
 const EXI_B = [0,0,0,1,1,1,0,1];
 function figExIsi(){
   const bt = 0.25, y = rcTrain(EXI_B, bt, -1);
-  const a = P.Axes(SZ({xr:[-0.4,8.4], yr:[-1.5,1.6], xlabel:'t/T_b', ylabel:'y(t)',
+  const a = P.Axes(SZ({xr:[-0.4,8.4], yr:[-1.5,1.6], xlabel:'t', xunit:'T_b', ylabel:'y(t)',
     xticksOverride:[0,1,2,3,4,5,6,7,8], ytarget:4}));
   a.raw(`<rect class="sk-area" x="${a.x0}" y="${a.y1}" width="${a.x1-a.x0}" height="${a.y0-a.y1}" fill="none"/>`);
   a.curve(nrz(EXI_B,-1), {color:C.ink, width:1.6, dash:'6 5', n:1400});
@@ -1345,7 +1345,7 @@ function eyeTraces(bt, n){
 }
 function figEyeBuild(v){
   const f = frameOf(v, 3), n = Math.min(128, Math.round(Math.pow(2, f*7/3)));
-  const a = P.Axes(SZ({xr:[-1,1], yr:[-1.5,1.5], xlabel:'t/T_b', ylabel:'y(t)',
+  const a = P.Axes(SZ({xr:[-1,1], yr:[-1.5,1.5], xlabel:'t', xunit:'T_b', ylabel:'y(t)',
     xticksOverride:[-1,-0.5,0,0.5,1], ytarget:4}));
   a.raw(`<g opacity="${n>20 ? 0.5 : 1}">`);
   eyeTraces(0.3, n).forEach(pts=>a.poly(pts, {color:C.out, width:n>20?1.1:1.8}));
@@ -1355,7 +1355,7 @@ function figEyeBuild(v){
 }
 function figEyeLive(v){
   const bt = v && v.bt!=null ? v.bt : 0.3, q = rcq(bt), h = 1-2*q;
-  const a = P.Axes(SZ({xr:[-1,1], yr:[-1.5,1.5], xlabel:'t/T_b', ylabel:'y(t)',
+  const a = P.Axes(SZ({xr:[-1,1], yr:[-1.5,1.5], xlabel:'t', xunit:'T_b', ylabel:'y(t)',
     xticksOverride:[-1,-0.5,0,0.5,1], ytarget:4}));
   a.raw('<g opacity="0.5">');
   eyeTraces(bt, 128).forEach(pts=>a.poly(pts, {color:C.out, width:1.1}));
@@ -1384,7 +1384,7 @@ const rcSpec = (f, al) => { const u = Math.abs(f), f1 = 1-al;
   return 0; };
 
 function figSincTrain(){
-  const a = P.Axes(SZ({xr:[-4.5,4.5], yr:[-0.35,1.3], xlabel:'t/T_b', ylabel:'p(t)',
+  const a = P.Axes(SZ({xr:[-4.5,4.5], yr:[-0.35,1.3], xlabel:'t', xunit:'T_b', ylabel:'p(t)',
     xticksOverride:[-4,-3,-2,-1,0,1,2,3,4], ytarget:3}));
   a.curve(t=>sinc(t-1), {color:C.in, width:1.4, dash:'6 5', opacity:0.6});
   a.curve(t=>sinc(t+1), {color:C.in, width:1.4, dash:'6 5', opacity:0.6});
@@ -1420,7 +1420,7 @@ function figNyqChannel(){
 const sincIsi = (eps, K=20) => { let s = 0; for(let k=-K;k<=K;k++) if(k) s += Math.abs(sinc(k+eps)); return s; };
 function figSincOffset(v){
   const eps = v && v.eps!=null ? v.eps : 0.1;
-  const a = P.Axes(SZ({xr:[-5.5,5.5], yr:[-0.35,1.35], xlabel:'t/T_b', ylabel:'p(t)',
+  const a = P.Axes(SZ({xr:[-5.5,5.5], yr:[-0.35,1.35], xlabel:'t', xunit:'T_b', ylabel:'p(t)',
     xticksOverride:[-5,-4,-3,-2,-1,0,1,2,3,4,5], ytarget:3}));
   a.curve(sinc, {color:C.in, width:2.6});
   const st = []; for(let k=-5;k<=5;k++) if(k) st.push([k+eps, sinc(k+eps)]);
@@ -1441,7 +1441,7 @@ function figRcSpec(v){
 }
 function figRcPulse(v){
   const al = v && v.al!=null ? v.al : 0.5;
-  const a = P.Axes(SZ({xr:[-4.5,4.5], yr:[-0.3,1.25], xlabel:'t/T_b', ylabel:'p(t)',
+  const a = P.Axes(SZ({xr:[-4.5,4.5], yr:[-0.3,1.25], xlabel:'t', xunit:'T_b', ylabel:'p(t)',
     xticksOverride:[-4,-3,-2,-1,0,1,2,3,4], ytarget:3}));
   a.curve(sinc, {color:C.in, width:1.4, dash:'6 5', opacity:0.6});
   a.curve(t=>rcPulse(t, al), {color:C.in, width:2.6, n:900});
@@ -1605,7 +1605,7 @@ const REAL_DEMOD = realGallery({ id:'m2-real-demod', nav:'Demodulators around us
       a.stem(HIST,{color:C.mid,r:2.4});
       a.vline(0,{color:C.muted});
       return a.svg(); }, 'The values of $y$ for $4000$ bits at $E_b/N_0=6$ dB. The two bumps sit at $\\pm\\sqrt{E_b}$, each with spread $\\sigma=\\sqrt{N_0/2}$.'],
-    [()=>{ const a=P.Axes(EXO({xr:[-0.1,2.1],yr:[-0.1,1.25],xlabel:'t/T_b',ylabel:'y(t)/\\sqrt{E_b}',xticksOverride:[0,0.5,1,1.5,2],ytarget:3}));
+    [()=>{ const a=P.Axes(EXO({xr:[-0.1,2.1],yr:[-0.1,1.25],xlabel:'t', xunit:'T_b',ylabel:'y(t)/\\sqrt{E_b}',xticksOverride:[0,0.5,1,1.5,2],ytarget:3}));
       a.poly([[-0.1,0],[0,0],[1,1],[2,0],[2.1,0]],{color:C.mid,width:2.4});
       a.point(1,1,{color:C.mid,r:4.5}); a.point(0.9,0.9,{color:C.err,r:4.5});
       return a.svg(); }, 'Sampled $0.1T_b$ early, the output keeps $0.9\\sqrt{E_b}$. The signal energy seen drops to $0.81E_b$, a loss of $0.92$ dB.']
@@ -1662,7 +1662,7 @@ const REAL_ISI = realGallery({ id:'m2-real-isi', nav:'Intersymbol interference a
   objective:'Recognise intersymbol interference in cables, radio echoes and optical fibre.',
   keywords:'examples cable pulse response tail multipath echo two ray wifi optical fibre dispersion pulse broadening eye opening bandwidth',
   figs:[
-    [()=>{ const r = rcResp(0.15), a=P.Axes(EXO({xr:[-0.3,5.3],yr:[-0.1,1.1],xlabel:'t/T_b',ylabel:'r(t)',xticksOverride:[0,1,2,3,4,5],ytarget:3}));
+    [()=>{ const r = rcResp(0.15), a=P.Axes(EXO({xr:[-0.3,5.3],yr:[-0.1,1.1],xlabel:'t', xunit:'T_b',ylabel:'r(t)',xticksOverride:[0,1,2,3,4,5],ytarget:3}));
       a.poly([[-0.3,0],[0,0],[0,1],[1,1],[1,0],[5.3,0]],{color:C.in,width:1.4,dash:'5 5'});
       a.curve(r,{color:C.out,width:2.2,n:800});
       for(let m=1;m<=4;m++) a.point(m+1,r(m+1),{color:C.err,r:4});
@@ -1705,11 +1705,11 @@ const REAL_NYQUIST = realGallery({ id:'m2-real-nyquist', nav:'Pulse shaping arou
       a.curve(f=>rcSpec(f/W,0.22),{color:C.in,width:2.2,n:900});
       a.vline(-2.5,{color:C.h,dash:'6 4',width:1.4}); a.vline(2.5,{color:C.h,dash:'6 4',width:1.4});
       return a.svg(); }, '3G mobile sends $3.84$ Mchip/s with $\\alpha=0.22$. $B_T=1.92(1.22)=2.34$ MHz fits inside the $\\pm2.5$ MHz of its $5$ MHz channel.'],
-    [()=>{ const a=P.Axes(EXO({xr:[-4.5,4.5],yr:[-0.3,1.2],xlabel:'t/T_s',ylabel:'p(t)',xticksOverride:[-4,-2,0,2,4],ytarget:3}));
+    [()=>{ const a=P.Axes(EXO({xr:[-4.5,4.5],yr:[-0.3,1.2],xlabel:'t', xunit:'T_s',ylabel:'p(t)',xticksOverride:[-4,-2,0,2,4],ytarget:3}));
       a.curve(t=>rcPulse(t,0.35),{color:C.in,width:2.2,n:900});
       for(let k=-4;k<=4;k++) a.point(k,k?0:1,{color:C.mid,r:4});
       return a.svg(); }, 'The raised-cosine pulse of $\\alpha=0.35$. It is zero at every other sampling instant, so the samples carry no interference.'],
-    [()=>{ const a=P.Axes(EXO({xr:[0,0.3],yr:[-0.1,2.3],xlabel:'\\epsilon/T_s',ylabel:'\\textstyle\\sum|p(kT_s+\\epsilon)|',xticksOverride:[0,0.1,0.2,0.3],ytarget:3}));
+    [()=>{ const a=P.Axes(EXO({xr:[0,0.3],yr:[-0.1,2.3],xlabel:'\\epsilon', xunit:'T_s',ylabel:'\\textstyle\\sum|p(kT_s+\\epsilon)|',xticksOverride:[0,0.1,0.2,0.3],ytarget:3}));
       a.curve(e=>tmIsi(e,0),{color:C.err,width:2.2,dash:'7 5',n:200});
       a.curve(e=>tmIsi(e,0.5),{color:C.err,width:2.2,n:200});
       a.note(0.15,1.5,'\\alpha=0',{tex:true,fs:14,color:C.err,anchor:'end'});
@@ -2213,7 +2213,7 @@ REAL_MATCHED,
     {t:'fig', frame:true, grow:true,
       frames:{labels:['$\\psi(t)$','$s_1(t)$','$s_0(t)$'], ms:1100},
       svg:figAntipodal,
-      caption:'Step through: the basis $\\psi(t)$, then $\\psi(t)$ times $+A\\sqrt{T_b}$, then times $-A\\sqrt{T_b}$. Drawn with $T_b=1$ and $A=1.5$.'},
+      caption:'Step through: the basis $\\psi(t)$, then $\\psi(t)$ times $+A\\sqrt{T_b}$, then times $-A\\sqrt{T_b}$. Drawn with $A=1.5$.'},
     {t:'legend', items:[['h','$\\psi(t)$'],['in','$s_1(t)$',0,1],['mid','$s_0(t)$',1,2]], at:'tr'}
   ], right:[
     {t:'eq', label:'One shape, two numbers', tex:'s_m(t)=s_m\\,\\psi(t),\\qquad m\\in\\{0,1\\}',
@@ -2340,7 +2340,7 @@ REAL_MATCHED,
       frames:{labels:['polar $1$','polar $0$','Manchester $1$','Manchester $0$','three steps'], ms:1100},
       live:{controls:[{k:'t', label:'$t/T_b$', min:0, max:2, step:0.01, v:1, show:v=>'$'+v.toFixed(2)+'$'}]},
       svg:figDemodShapes,
-      caption:'Five unit-energy pulses $g(t)=s_m\\psi(t)$, $T_b=1$. Drag $t$: $h(t-\\tau)$ slides over $g(\\tau)$, and the shaded product integrates to $y(t)$. At $t=T_b$, $y=s_m$.'},
+      caption:'Five unit-energy pulses $g(t)=s_m\\psi(t)$. Drag $t$: $h(t-\\tau)$ slides over $g(\\tau)$, and the shaded product integrates to $y(t)$. At $t=T_b$, $y=s_m$.'},
     {t:'legend', items:[['in','$g(\\tau)$'],['h','$h(t-\\tau)$',true]], at:'tr'}
   ], right:[
     {t:'eq', label:'Any unit-energy $\\psi$', tex:'\\begin{aligned}y(T_b)&=s_m\\int_0^{T_b}\\psi^{2}(\\tau)\\,d\\tau\\\\&=s_m=\\pm1\\end{aligned}',

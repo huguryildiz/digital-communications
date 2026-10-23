@@ -125,7 +125,7 @@ Object.assign(LABS, (function(){
       const xs = []; for(let j=Math.floor((-0.2-T0)/DT); j+8<=NK; j+=8){ const t = tz(j+4)-DT/2; if(t > 2.1) break;
         let s = 0; for(let i=0;i<8;i++) s += Z[j+i]; xs.push([t, cl(pulse(t)+sw*s/8, lo, hi)]); }
       const ax = P.Axes({w:ph?300:680,h:ph?290:gh(165),xr:[-0.2,2.1],yr:[lo,hi],
-        xlabel:'t/T',ylabel:'x(t),\\;g(t),\\;h(t)',pad:{l:ph?42:58,r:ph?16:26,t:24,b:40},
+        xlabel:'t', xunit:'T',ylabel:'\\text{amplitude}', ynameAtAxis:true,pad:{l:ph?42:58,r:ph?16:26,t:24,b:40},
         xticksOverride:[0,0.5,1,1.5,2],ytarget:4});
       ax.poly(xs, {color:P.COL.out, width:1.2, opacity:0.75});
       ax.curve(t=>pulse(t*TB),{color:P.COL.in,width:2.4,n:600});
@@ -266,14 +266,14 @@ Object.assign(LABS, (function(){
 
       const ph = PHONE(), gh = GH(root);
       const a1 = P.Axes({w:ph?300:680,h:ph?220:gh(185),xr:[0,2*TB],yr:[-3,3],
-        xlabel:'t/T_b',ylabel:'x(t),\\;s_m\\psi(t)',pad:{l:ph?42:56,r:ph?16:24,t:24,b:40},
+        xlabel:'t', xunit:'T_b',ylabel:'\\text{amplitude}', ynameAtAxis:true,pad:{l:ph?42:56,r:ph?16:24,t:24,b:40},
         xtarget:ph?4:6,ytarget:3});
       a1.curve(t=>t<=TB ? sm*psi(t) : 0,{color:P.COL.in,width:2.0});
       a1.curve(t=>x(Math.round(t/dt)),{color:P.COL.out,width:1.0,opacity:0.45,n:NS});
       a1.vline(t0,{color:P.COL.muted,dash:'4 4'});
 
       const a2 = P.Axes({w:ph?300:680,h:ph?200:gh(155),xr:[0,2*TB],yr:[-2.4,2.4],
-        xlabel:'t/T_b',ylabel:'c(t),\\;y(t)',pad:{l:ph?42:56,r:ph?16:24,t:22,b:40},
+        xlabel:'t', xunit:'T_b',ylabel:'\\text{amplitude}', ynameAtAxis:true,pad:{l:ph?42:56,r:ph?16:24,t:22,b:40},
         xtarget:ph?4:6,ytarget:3});
       a2.curve(t=> yVals[Math.min(2*NS,Math.max(0,Math.round(t/dt)))],
         {color:P.COL.mid,width:4.2,opacity:0.45,n:2*NS});
@@ -500,7 +500,7 @@ Object.assign(LABS, (function(){
       const ph = PHONE(), gh = GH(root);
       const NB = PATTERN.length;
       const a1 = P.Axes({w:ph?300:680,h:ph?220:gh(185),xr:[0,NB],yr:[-1.6,1.6],
-        xlabel:'t/T_b',ylabel:'\\text{NRZ},\\;y(t)',pad:{l:ph?42:56,r:ph?16:24,t:24,b:40},
+        xlabel:'t', xunit:'T_b',ylabel:'\\text{amplitude}', ynameAtAxis:true,pad:{l:ph?42:56,r:ph?16:24,t:24,b:40},
         xtarget:ph?4:6,ytarget:3});
       a1.curve(t=>PATTERN[Math.min(NB-1,Math.max(0,Math.floor(t)))],{color:P.COL.in,width:1.1,opacity:0.55});
       a1.curve(t=>received(r,t)+noise[Math.min(4095,Math.round(t/TB*40))],{color:P.COL.out,width:1.9,n:NB*30});
@@ -510,7 +510,7 @@ Object.assign(LABS, (function(){
       /* The eye: two bit intervals, the current bit on [0,T_b] and the next on
          [T_b,2T_b], so the sampling instant t_s sits inside the window. */
       const a2 = P.Axes({w:ph?300:680,h:ph?200:gh(155),xr:[0,2*TB],yr:[-2.2,2.2],
-        xlabel:'t/T_b',ylabel:'y(t)',pad:{l:ph?42:56,r:ph?16:24,t:22,b:40},xtarget:ph?4:4,ytarget:3});
+        xlabel:'t', xunit:'T_b',ylabel:'y(t)',pad:{l:ph?42:56,r:ph?16:24,t:22,b:40},xtarget:ph?4:4,ytarget:3});
       a2.raw('<g opacity="0.45">');
       for(let pat=0; pat<64; pat++){
         const b=[]; for(let k=0;k<6;k++) b.push(((pat>>k)&1)?1:-1);
@@ -633,7 +633,7 @@ Object.assign(LABS, (function(){
       const noise = gauss(20260802, 4096, nz);
       const ph = PHONE(), gh = GH(root);
       const ax = P.Axes({w:ph?300:640,h:ph?300:gh(255),xr:[-1,1],yr:[-2.1,2.1],
-        xlabel:'t/T_b',ylabel:'y(t)',pad:{l:ph?42:54,r:ph?16:26,t:24,b:44},xtarget:ph?4:4,ytarget:4});
+        xlabel:'t', xunit:'T_b',ylabel:'y(t)',pad:{l:ph?42:54,r:ph?16:26,t:24,b:44},xtarget:ph?4:4,ytarget:4});
       let ni = 0;
       for(let pat=0;pat<32;pat++){
         const b=[]; for(let k=0;k<NBIT;k++) b.push(((pat>>k)&1)?1:-1);

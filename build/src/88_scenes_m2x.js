@@ -71,7 +71,7 @@ const EYE_Z = gauss(20260951, 1024, 1);
 function figEyeNoise(v){
   const bt = val(v,'bt',0.3), sg = val(v,'sg',0.2), r = rcResp(bt);
   const y0 = (bits, t) => bits.reduce((s,b,k)=>s+(b?1:-1)*r(t-k), 0);
-  const a = P.Axes(SZ({xr:[-1,2.3], yr:[-2.9,2.9], xlabel:'t/T_b', ylabel:'y(t)',
+  const a = P.Axes(SZ({xr:[-1,2.3], yr:[-2.9,2.9], xlabel:'t', xunit:'T_b', ylabel:'y(t)',
     xticksOverride:[-1,-0.5,0,0.5,1], ytarget:4}));
   a.raw('<g opacity="0.45">');
   EYE_P.forEach((bits,j)=>{ const pts=[]; for(let i=0;i<=90;i++){ const u=-1+2*i/90, t=6+u;
@@ -106,7 +106,7 @@ function figEqualizer(v){
   const H = 380 + extraHeight(380);
   const g = t => r(t) + w*r(t-1), h = (1-q) - Math.abs(q+w);
   /* the eye after the equalizer on the left, the sampled pulse on the right */
-  const a = P.Axes({w:320,h:H,xr:[-1,1],yr:[-2,2],xlabel:'t/T_b',ylabel:'z(t)',
+  const a = P.Axes({w:320,h:H,xr:[-1,1],yr:[-2,2],xlabel:'t', xunit:'T_b',ylabel:'z(t)',
     pad:{l:50,r:14,t:24,b:42},xticksOverride:[-1,0,1],ytarget:4});
   a.raw('<g opacity="0.5">');
   EQ_P.forEach(bits=>{ const pts=[]; for(let i=0;i<=90;i++){ const u=-1+2*i/90, t=11+u;
@@ -138,7 +138,7 @@ const TM_D = 0.35;
 function tmTau(f){ return f<=1 ? 1.4 : f<=2 ? 1.4-0.28*(f-1) : 1.12-0.12*Math.min(1, f-2); }
 function figTiming(v){
   const f = frameOf(v, 3), tau = tmTau(f), op = clamp01(f);
-  const a = P.Axes(SZ({h:330, xr:[-0.15,2.4], yr:[-0.12,1.42], xlabel:'t/T_b', ylabel:'y(t)',
+  const a = P.Axes(SZ({h:330, xr:[-0.15,2.4], yr:[-0.12,1.42], xlabel:'t', xunit:'T_b', ylabel:'y(t)',
     xticksOverride:[0,0.5,1,1.5,2], ytarget:3}));
   a.curve(tri, {color:C.mid, width:2.6, n:900});
   if(op > 0.02){
@@ -218,7 +218,7 @@ function figRepeater(v){
      the waveform the repeater sends on, red where a bit is wrong */
   /* drawn at y + 2, so the time ticks sit under the frame and not on the
      edges of the waveform */
-  const c = P.Axes({w:560,h:h3,xr:[-0.2,8.3],yr:[0.2,3.8],xlabel:'t/T_b',ylabel:'\\text{regenerated}',
+  const c = P.Axes({w:560,h:h3,xr:[-0.2,8.3],yr:[0.2,3.8],xlabel:'t', xunit:'T_b',ylabel:'\\text{regenerated}',
     pad:{l:56,r:26,t:22,b:40},xnameDrop:(P.labelScale()>1?54:44)*P.labelScale(),xticksOverride:[0,2,4,6,8],yticksOverride:[1,3],ytickfmt:y=>P.fmt(y-2)});
   c.hline(2, {color:C.muted});
   const m = f > 0.02 ? Math.min(4, Math.ceil(f-1e-9)) : 0, sent = RP_R[Math.min(4, Math.floor(f+0.4))];
