@@ -2483,15 +2483,14 @@ REAL_MATCHED,
       svg:figNoisePlaneB,
       caption:'Step through: the band where white noise is correlated narrows to the line $t=u$. On that line $\\psi(t)\\psi(u)=\\psi^{2}(t)=1/T_b$, whatever the sign pattern of $\\psi$.'}
   ], right:[
-    {t:'eq', label:'Step 3 · white noise', tex:'\\begin{aligned}E[w(t)w(u)]&=\\frac{N_0}{2}\\,\\delta(t-u)\\\\E[n^{2}]&=\\frac{N_0}{2}\\int_0^{T_b}\\psi^{2}(t)\\,dt=\\frac{N_0}{2}\\end{aligned}',
-      note:'The impulse sifts $\\psi(u)$ to $\\psi(t)$. Unit energy gives $N_0/2$.'},
+    {t:'eq', label:'Step 3 · white noise', tex:'\\begin{aligned}E[w(t)w(u)]&=R_w(t-u)\\\\&=\\frac{N_0}{2}\\,\\delta(t-u)\\end{aligned}',
+      note:'The mean of $w(t)w(u)$ is the autocorrelation of $w$. For white noise it is an impulse at $t=u$.'},
     {t:'reveal', at:1, items:[
-      {t:'eq', label:'Key result · the noise value', key:true, result:true, tex:'n\\sim\\mathcal{N}\\Bigl(0,\\ \\frac{N_0}{2}\\Bigr),\\qquad y\\sim\\mathcal{N}\\Bigl(s_m,\\ \\frac{N_0}{2}\\Bigr)',
-        note:'A linear operation on Gaussian noise gives a Gaussian value. Adding $s_m$ moves the mean only.'}]},
+      {t:'eq', label:'Step 4 · sift and use unit energy', tex:'\\begin{aligned}E[n^{2}]&=\\int_0^{T_b}\\psi(t)\\int_0^{T_b}\\frac{N_0}{2}\\,\\delta(t-u)\\,\\psi(u)\\,du\\,dt\\\\&=\\frac{N_0}{2}\\int_0^{T_b}\\psi(t)\\underbrace{\\int_0^{T_b}\\psi(u)\\,\\delta(u-t)\\,du}_{\\psi(t)}\\,dt\\\\&=\\frac{N_0}{2}\\underbrace{\\int_0^{T_b}\\psi^{2}(t)\\,dt}_{1}\\\\&=\\frac{N_0}{2}\\end{aligned}',
+        note:'$\\delta$ is even, so $\\delta(t-u)=\\delta(u-t)$. The impulse sifts out $\\psi(t)$, and unit energy gives $N_0/2$.'}]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'def', head:'Given', html:'The noise has $N_0=2\\times10^{-4}$ W/Hz.<div class="nsep"></div>What is the standard deviation $\\sigma$ of $n$?',
-        ask:{key:'m2-demod-noise-var', choices:['$10^{-4}$','$0.01$','$0.014$'], answer:1,
-          why:'$\\sigma^{2}=N_0/2=10^{-4}$, so $\\sigma=\\sqrt{10^{-4}}=0.01$.'}}]}
+      {t:'eq', label:'Key result · the noise value', key:true, result:true, tex:'n\\sim\\mathcal{N}\\Bigl(0,\\ \\frac{N_0}{2}\\Bigr),\\qquad y\\sim\\mathcal{N}\\Bigl(s_m,\\ \\frac{N_0}{2}\\Bigr)',
+        note:'A linear operation on Gaussian noise gives a Gaussian value. Adding $s_m$ moves the mean only.'}]}
   ]}
 ]},
 
@@ -2505,7 +2504,7 @@ REAL_MATCHED,
     {t:'fig', frame:true, grow:true,
       live:{controls:[{k:'N0', label:'$N_0$', min:0.05, max:1, step:0.05, v:0.5, show:v=>'$'+v.toFixed(2)+'$'}]},
       svg:figNoiseHist,
-      caption:'$3000$ noise values $n=\\int_0^{T_b}w\\,\\psi\\,d\\tau$, each from its own white noise, with the Manchester $\\psi$. Drag $N_0$. The curve is the Gaussian density with $\\sigma=\\sqrt{N_0/2}$.'}
+      caption:'$3000$ noise values $n=\\int_0^{T_b}w(\\tau)\\,\\psi(\\tau)\\,d\\tau$, each from its own white noise, with the Manchester $\\psi$. Drag $N_0$. The curve is the Gaussian density with $\\sigma=\\sqrt{N_0/2}$.'}
   ], right:[
     {t:'eq', label:'The prediction', tex:'\\sigma=\\sqrt{\\frac{N_0}{2}}',
       note:'Each value is a sum of many noise samples weighted by $\\psi$. The measured spread follows $\\sqrt{N_0/2}$ to within a few percent at every $N_0$.'},
