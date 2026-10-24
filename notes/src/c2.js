@@ -825,15 +825,15 @@ const DS={A:1,s:0.5,N0:0.5};
 const densFrame=o=>ax1(Object.assign({xr:[-3,3],xlabel:'y',xticksOverride:[-2,-1,0,1,2],
   xtickfmt:v=>Math.abs(v)===1?'':String(v),ytickfmt:()=>''},o));
 function markMeans(a,y){
-  a.point(-1,0,{color:C.in,r:5}); a.point(1,0,{color:C.in,r:5});
-  a.note(-1,y,'-\\sqrt{E_b}',{tex:true,fs:14,color:C.in,anchor:'middle'});
+  a.point(-1,0,{color:C.mid,r:5}); a.point(1,0,{color:C.in,r:5});
+  a.note(-1,y,'-\\sqrt{E_b}',{tex:true,fs:14,color:C.mid,anchor:'middle'});
   a.note(1,y,'+\\sqrt{E_b}',{tex:true,fs:14,color:C.in,anchor:'middle'});
 }
 function figStat(){
   const {A,s}=DS, top=dens(0,0,s);
   const a=densFrame({yr:[-0.06*top,1.3*top],ylabel:'f_Y(y\\mid s_m)'});
   a.curve(y=>dens(y,-A,s),{color:C.mid,width:2.4,dash:'8 5'});
-  a.curve(y=>dens(y,A,s),{color:C.mid,width:2.4});
+  a.curve(y=>dens(y,A,s),{color:C.in,width:2.4});
   markMeans(a,0.1*top);
   return a.svg();
 }
@@ -843,7 +843,7 @@ function figErrors(lam){
   a.area(y=>dens(y,-A,s),lam,3,{color:C.dec.err});
   a.area(y=>dens(y,A,s),-3,lam,{color:C.dec.err});
   a.curve(y=>dens(y,-A,s),{color:C.mid,width:2.4,dash:'8 5'});
-  a.curve(y=>dens(y,A,s),{color:C.mid,width:2.4});
+  a.curve(y=>dens(y,A,s),{color:C.in,width:2.4});
   a.vline(lam,{color:C.ink,dash:'6 4',width:1.6,opacity:1});
   markMeans(a,0.1*top);
   a.note(-2.9,1.3*top,`P(\\text{err}\\mid s_0)=${sci(Qf((lam+A)/s))}`,{tex:true,fs:14,color:C.err});
@@ -856,7 +856,7 @@ function figThreshold(){
   const a=densFrame({yr:[-0.06*top,1.3*top],ylabel:'P(s_m)\\,f_Y(y\\mid s_m)'});
   a.area(y=>Math.min(p0*dens(y,-A,s),(1-p0)*dens(y,A,s)),-3,3,{color:C.dec.err});
   a.curve(y=>p0*dens(y,-A,s),{color:C.mid,width:2.4,dash:'8 5'});
-  a.curve(y=>(1-p0)*dens(y,A,s),{color:C.mid,width:2.4});
+  a.curve(y=>(1-p0)*dens(y,A,s),{color:C.in,width:2.4});
   a.vline(0,{color:C.muted});
   a.vline(lo,{color:C.ink,dash:'6 4',width:1.6,opacity:1});
   a.point(lo,(1-p0)*dens(lo,A,s),{color:C.ink,r:4.5});
@@ -869,7 +869,7 @@ function figThresholdLive(p0,dB){
   const top=Math.max(p0,1-p0)*dens(0,0,s);
   const a=densFrame({yr:[-0.06*top,1.36*top],ylabel:'P(s_m)\\,f_Y(y\\mid s_m)'});
   a.curve(y=>p0*dens(y,-A,s),{color:C.mid,width:2.4,dash:'8 5'});
-  a.curve(y=>(1-p0)*dens(y,A,s),{color:C.mid,width:2.4});
+  a.curve(y=>(1-p0)*dens(y,A,s),{color:C.in,width:2.4});
   a.vline(0,{color:C.muted});
   a.vline(lo,{color:C.ink,dash:'6 4',width:1.6,opacity:1});
   markMeans(a,0.1*top);
@@ -907,7 +907,7 @@ function figExLog(){
   leftTicks(a,P.decades(-7,-2),P.decade);
   const inX=f=>y=>Math.abs(y)<=0.24?f(y):NaN;
   a.curve(inX(y=>L(y,-A,p0)),{color:C.mid,width:2.4,dash:'8 5'});
-  a.curve(inX(y=>L(y,A,1-p0)),{color:C.mid,width:2.4});
+  a.curve(inX(y=>L(y,A,1-p0)),{color:C.in,width:2.4});
   a.vline(0,{color:C.muted});
   a.vline(lam,{color:C.ink,dash:'6 4',width:1.6,opacity:1});
   a.point(lam,L(lam,A,1-p0),{color:C.ink,r:4.5});
