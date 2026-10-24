@@ -796,6 +796,9 @@ function figNoisePlane(stage){
 
 /* Static states of the two extension slides: 3000 measured noise values at N0 = 0.5
    and the two orthogonal points with their noisy outputs. */
+const NH=(()=>{ const M=40, dt=1/M, z=gauss(20261021,3000*M,1), out=[];
+  for(let i=0;i<3000;i++){ let s=0; for(let j=0;j<M;j++){ const t=(j+0.5)*dt; s+=z[i*M+j]*Math.sqrt(1/dt)*(t<0.5?1:-1)*dt; } out.push(s); }
+  return out; })();
 function figNoiseHist(){
   const s=0.5, BW=0.1, LO=-2, O=3;
   const a=ax1({h:240,xr:[1,5],yr:[-0.04,1.0],xlabel:'n',ylabel:'\\text{density}',xticksOverride:[1,2,3,4,5],xtickfmt:x=>String(x-O),yticksOverride:[0.4,0.8]});
