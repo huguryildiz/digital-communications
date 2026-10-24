@@ -1777,7 +1777,7 @@ window.C2 = [
  after:'At $t=T_b$ the noise integral is the same $n$ as at the matched filter. At earlier times the correlator noise $\\int_0^{t}w\\psi\\,d\\tau$ and the filter noise $n(t)$ are different processes.'},
 
 {t:'p', text:'The matched filter has the impulse response $\\psi(T_b-t)$. Write its output as a convolution and put $t=T_b$.'},
-{t:'eqbox', cap:'Matched filter at $T_b$', tex:'\\begin{aligned}h(t)&=\\psi(T_b-t)\\\\y(t)&=\\int_{-\\infty}^{\\infty}x(\\tau)\\,\\psi(T_b-t+\\tau)\\,d\\tau\\\\y(T_b)&=\\int_0^{T_b}x(\\tau)\\,\\psi(\\tau)\\,d\\tau\\end{aligned}',
+{t:'eqbox', cap:'Matched filter at $T_b$', tex:'\\begin{aligned}h(t)&=\\psi(T_b-t)\\\\y(t)&=\\int_{-\\infty}^{\\infty}x(\\tau)\\,\\underbrace{\\psi(T_b-t+\\tau)}_{h(t-\\tau)}\\,d\\tau\\\\y(T_b)&=\\int_0^{T_b}x(\\tau)\\,\\psi(\\tau)\\,d\\tau\\end{aligned}',
  after:'The last line is the correlator output, for any shape of $\\psi$. Both demodulators turn the waveform into the one number $y=s_m+n$.'},
 {t:'p', text:'Away from $T_b$ the two outputs differ. Take one noiseless bit with $s_m=1$ and the rectangular $\\psi$. On $[0,T_b]$ both outputs rise along the same line.'},
 {t:'p', text:'After $T_b$ the correlator has been reset, while the matched-filter output falls as $2-t/T_b$. So $y(1.5T_b)=0.5$ at the filter. Only the value at $T_b$ is used.'},
