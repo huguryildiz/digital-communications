@@ -2362,7 +2362,7 @@ REAL_MATCHED,
       caption:'Five unit-energy pulses $g(t)=s_m\\psi(t)$. Drag $t$: $h(t-\\tau)$ slides over $g(\\tau)$, and the shaded product integrates to $y(t)$. At $t=T_b$, $y=s_m$.'},
     {t:'legend', items:[['in','$g(\\tau)$'],['h','$h(t-\\tau)$',true]], at:'tr'}
   ], right:[
-    {t:'eq', label:'Any unit-energy $\\psi$', tex:'\\begin{aligned}y(T_b)&=s_m\\int_0^{T_b}\\psi^{2}(\\tau)\\,d\\tau\\\\&=s_m=\\pm1\\end{aligned}',
+    {t:'eq', label:'Any unit-energy $\\psi$', tex:'\\begin{aligned}y(T_b)&=s_m\\underbrace{\\int_0^{T_b}\\psi^{2}(\\tau)\\,d\\tau}_{1}\\\\&=s_m=\\pm1\\end{aligned}',
       note:'Step 2 of the last slide used only the unit energy of $\\psi$, never its shape. The filter matched to $\\psi$ serves both bits of a code.'},
     {t:'reveal', at:1, items:[
       {t:'note', kind:'warn', head:'Signal part only', html:'These outputs carry no noise. With noise the sample is $s_m+n$, and the curve between samples moves too.'}]},

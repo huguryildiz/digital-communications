@@ -1742,7 +1742,7 @@ window.C2 = [
 
 {t:'h3', text:'The demodulator for other pulse shapes'},
 {t:'p', text:'Step 2 above used only the unit energy of $\\psi$, never its shape. So the same result holds for any unit-energy pulse. The Manchester pulse is one: $+1$ on the first half of the bit, $-1$ on the second. A pulse of three steps is another.'},
-{t:'eqbox', cap:'Any unit-energy $\\psi$', tex:'\\begin{aligned}y(T_b)&=s_m\\int_0^{T_b}\\psi^{2}(\\tau)\\,d\\tau\\\\&=s_m=\\pm1\\end{aligned}',
+{t:'eqbox', cap:'Any unit-energy $\\psi$', tex:'\\begin{aligned}y(T_b)&=s_m\\underbrace{\\int_0^{T_b}\\psi^{2}(\\tau)\\,d\\tau}_{1}\\\\&=s_m=\\pm1\\end{aligned}',
  after:'The filter is matched to $\\psi$, so one filter serves both bits of a code: the bit $0$ is the pulse $-\\psi(t)$.'},
 {t:'p', text:'The output between samples does depend on the shape. For the Manchester bit $1$ at $t=T_b/2$, the filter overlaps the first half of the bit, where $\\psi=+1$ meets $h=-1$. So $y(T_b/2)=-0.5$, and $y$ rises to $+1$ at $T_b$.'},
 {t:'box', kind:'warn', hd:'Signal part only', html:'The curves in the figure carry no noise. With noise the sample is $s_m+n$, and the curve between samples moves too.'},
