@@ -1857,9 +1857,9 @@ window.C2 = [
 
 {t:'h3', text:'The two conditional errors'},
 {t:'p', text:'The receiver decides $s_1$ when $y>\\lambda$ and $s_0$ otherwise. Each symbol then has its own error probability: the area of its density on the wrong side of $\\lambda$.'},
-{t:'eqbox', cap:'Error given $s_0$', tex:'\\begin{aligned}P(\\text{err}\\mid s_0)&=\\int_{\\lambda}^{\\infty}\\frac{1}{\\sqrt{\\pi N_0}}\\,e^{-(y+\\sqrt{E_b})^{2}/N_0}\\,dy\\\\&=\\int_{(\\lambda+\\sqrt{E_b})/\\sigma}^{\\infty}\\frac{1}{\\sqrt{2\\pi}}\\,e^{-z^{2}/2}\\,dz\\\\&=Q\\!\\left(\\frac{\\lambda+\\sqrt{E_b}}{\\sigma}\\right)\\end{aligned}',
+{t:'eqbox', cap:'Case I: $s_0$ sent, $y>\\lambda$', tex:'\\begin{aligned}P(\\text{err}\\mid s_0)=P(y>\\lambda\\mid s_0)&=\\int_{\\lambda}^{\\infty}f_Y(y\\mid s_0)\\,dy\\\\&=\\int_{\\lambda}^{\\infty}\\frac{1}{\\sqrt{\\pi N_0}}\\,e^{-(y+\\sqrt{E_b})^{2}/N_0}\\,dy\\\\&=\\int_{(\\lambda+\\sqrt{E_b})/\\sigma}^{\\infty}\\frac{1}{\\sqrt{2\\pi}}\\,e^{-z^{2}/2}\\,dz\\\\&=Q\\!\\left(\\frac{\\lambda+\\sqrt{E_b}}{\\sigma}\\right)\\end{aligned}',
  after:'Substitute $z=(y+\\sqrt{E_b})/\\sigma$ with $\\sigma=\\sqrt{N_0/2}$. The lower limit $y=\\lambda$ becomes $z=(\\lambda+\\sqrt{E_b})/\\sigma$. Since $dy=\\sigma\\,dz$ and $\\sigma/\\sqrt{\\pi N_0}=1/\\sqrt{2\\pi}$, the integrand becomes the unit Gaussian density.'},
-{t:'eqbox', cap:'Error given $s_1$', tex:'P(\\text{err}\\mid s_1)=\\int_{-\\infty}^{\\lambda}f_Y(y\\mid s_1)\\,dy=Q\\!\\left(\\frac{\\sqrt{E_b}-\\lambda}{\\sigma}\\right)',
+{t:'eqbox', cap:'Case II: $s_1$ sent, $y<\\lambda$', tex:'\\begin{aligned}P(\\text{err}\\mid s_1)=P(y<\\lambda\\mid s_1)&=\\int_{-\\infty}^{\\lambda}f_Y(y\\mid s_1)\\,dy\\\\&=Q\\!\\left(\\frac{\\sqrt{E_b}-\\lambda}{\\sigma}\\right)\\end{aligned}',
  after:'The same substitution with $z=(\\sqrt{E_b}-y)/\\sigma$. Here $Q(x)=\\tfrac12\\operatorname{erfc}(x/\\sqrt2)$ is the Gaussian tail. For example, $E_b=1$, $\\sigma=0.5$ and $\\lambda=0$ give $P(\\text{err}\\mid s_0)=Q\\bigl((0+1)/0.5\\bigr)=Q(2)=0.0228$.'},
 {t:'p', text:'Moving $\\lambda$ trades one error against the other. One area grows as the other shrinks.'},
 {t:'fig', svg:()=>figErrors(0.3),

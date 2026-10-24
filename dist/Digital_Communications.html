@@ -22332,7 +22332,7 @@ REAL_DEMOD,
 { id:'m2-errors', module:'M2', nav:'The two errors', title:'The two conditional errors',
   objective:'Write each conditional error probability as a Gaussian tail and see them trade as the threshold moves.',
   keywords:'threshold conditional error probability gaussian tail Q function trade off',
-  src:'CH8 s.24–26', slide:true, steps:2, blocks:[
+  src:'CH8 s.24–26', slide:true, steps:1, blocks:[
   {t:'eyebrow', text:'Module 2 · The decision and its error'},
   {t:'title', text:'The two conditional errors'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
@@ -22342,15 +22342,11 @@ REAL_DEMOD,
       caption:'Drag the threshold $\\lambda$. The receiver decides $s_1$ when $y>\\lambda$. Each red area is one conditional error. One grows as the other shrinks.'},
     {t:'legend', items:[['mid','$f_Y(y\\mid s_0)$'],['in','$f_Y(y\\mid s_1)$'],['err','error']], at:'tr'}
   ], right:[
-    {t:'eq', label:'Error given $s_0$', tex:'\\begin{aligned}P(\\text{err}\\mid s_0)&=\\int_{\\lambda}^{\\infty}\\frac{1}{\\sqrt{\\pi N_0}}\\,e^{-(y+\\sqrt{E_b})^{2}/N_0}\\,dy\\\\&=\\int_{(\\lambda+\\sqrt{E_b})/\\sigma}^{\\infty}\\frac{1}{\\sqrt{2\\pi}}\\,e^{-z^{2}/2}\\,dz\\\\&=Q\\!\\left(\\frac{\\lambda+\\sqrt{E_b}}{\\sigma}\\right)\\end{aligned}',
-      note:'Substitute $z=(y+\\sqrt{E_b})/\\sigma$ with $\\sigma=\\sqrt{N_0/2}$. The lower limit $y=\\lambda$ becomes $z=(\\lambda+\\sqrt{E_b})/\\sigma$.'},
+    {t:'eq', label:'Case I: $s_0$ sent, $y>\\lambda$', tex:'\\begin{aligned}P(\\text{err}\\mid s_0)=P(y>\\lambda\\mid s_0)&=\\int_{\\lambda}^{\\infty}f_Y(y\\mid s_0)\\,dy\\\\&=\\int_{\\lambda}^{\\infty}\\frac{1}{\\sqrt{\\pi N_0}}\\,e^{-(y+\\sqrt{E_b})^{2}/N_0}\\,dy\\\\&=\\int_{(\\lambda+\\sqrt{E_b})/\\sigma}^{\\infty}\\frac{1}{\\sqrt{2\\pi}}\\,e^{-z^{2}/2}\\,dz\\\\&=Q\\!\\left(\\frac{\\lambda+\\sqrt{E_b}}{\\sigma}\\right)\\end{aligned}',
+      note:'The receiver decides $s_1$ when $y>\\lambda$. Substitute $z=(y+\\sqrt{E_b})/\\sigma$ with $\\sigma=\\sqrt{N_0/2}$, so $y=\\lambda$ becomes $z=(\\lambda+\\sqrt{E_b})/\\sigma$.'},
     {t:'reveal', at:1, items:[
-      {t:'eq', label:'Error given $s_1$', tex:'P(\\text{err}\\mid s_1)=\\int_{-\\infty}^{\\lambda}f_Y(y\\mid s_1)\\,dy=Q\\!\\left(\\frac{\\sqrt{E_b}-\\lambda}{\\sigma}\\right)',
-        note:'The same substitution with $z=(\\sqrt{E_b}-y)/\\sigma$. Here $Q(x)=\\tfrac12\\operatorname{erfc}(x/\\sqrt2)$.'}]},
-    {t:'reveal', at:2, items:[
-      {t:'note', kind:'def', head:'Given', html:'$E_b=1$, $\\sigma=0.5$ and $\\lambda=0$.<div class="nsep"></div>What is $P(\\text{err}\\mid s_0)$?',
-        ask:{key:'m2-errors', choices:['$0.0013$','$0.0228$','$0.159$'], answer:1,
-          why:'$Q\\bigl((0+1)/0.5\\bigr)=Q(2)=0.0228$.'}}]}
+      {t:'eq', label:'Case II: $s_1$ sent, $y<\\lambda$', tex:'\\begin{aligned}P(\\text{err}\\mid s_1)=P(y<\\lambda\\mid s_1)&=\\int_{-\\infty}^{\\lambda}f_Y(y\\mid s_1)\\,dy\\\\&=Q\\!\\left(\\frac{\\sqrt{E_b}-\\lambda}{\\sigma}\\right)\\end{aligned}',
+        note:'The receiver decides $s_0$ when $y<\\lambda$. The same substitution with $z=(\\sqrt{E_b}-y)/\\sigma$. Here $Q(x)=\\tfrac12\\operatorname{erfc}(x/\\sqrt2)$.'}]}
   ]}
 ]},
 
