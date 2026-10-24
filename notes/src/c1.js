@@ -1197,7 +1197,7 @@ window.C1 = [
 
 {t:'h3', text:'The interpolation formula'},
 {t:'p', text:'The reconstructed signal $g_r(t)$ is the output of the filter when the input is $g_\\delta(t)$. Filtering is convolution in time, with $\\tau$ as the integration variable.'},
-{t:'eqbox', cap:'Filter the impulse train', tex:'\\begin{aligned}g_r(t)&=\\int_{-\\infty}^{\\infty}\\underbrace{\\sum_{n}g(nT_s)\\,\\delta(\\tau-nT_s)}_{g_\\delta(\\tau)}\\,h(t-\\tau)\\,d\\tau\\\\&=\\sum_{n}g(nT_s)\\int_{-\\infty}^{\\infty}h(t-\\tau)\\,\\delta(\\tau-nT_s)\\,d\\tau\\\\&=\\sum_{n}g(nT_s)\\,h(t-nT_s)\\end{aligned}',
+{t:'eqbox', cap:'Filter the impulse train', tex:'\\begin{aligned}g_r(t)&=\\int_{-\\infty}^{\\infty}\\underbrace{\\sum_{n}g(nT_s)\\,\\delta(\\tau-nT_s)}_{=g_\\delta(\\tau)}\\,h(t-\\tau)\\,d\\tau\\\\&=\\sum_{n}g(nT_s)\\int_{-\\infty}^{\\infty}h(t-\\tau)\\,\\delta(\\tau-nT_s)\\,d\\tau\\\\&=\\sum_{n}g(nT_s)\\,h(t-nT_s)\\end{aligned}',
  after:'The weights $g(nT_s)$ do not depend on $\\tau$, so the sum and the integral swap. Sifting then sets $\\tau=nT_s$ in each term.'},
 {t:'p', text:'Substitute $h(t)=\\operatorname{sinc}(2Wt)$, the filter at $f_s=2W$, with $\\operatorname{sinc}(x)=\\sin(\\pi x)/(\\pi x)$.'},
 {t:'eqbox', cap:'Key result: interpolation formula', tex:'g_r(t)=\\sum_{n=-\\infty}^{\\infty}g(nT_s)\\operatorname{sinc}\\!\\bigl(2W(t-nT_s)\\bigr)',
@@ -1336,7 +1336,7 @@ window.C1 = [
 {t:'p', text:'The <b>signal-to-quantization-noise ratio</b> (SQNR) compares the power $P_M$ of the message with the power of the error. Substitute $E[Q^{2}]=m_{\\max}^{2}/(3\\cdot2^{2R})$.'},
 {t:'eqbox', cap:'Uniform quantizer', tex:'\\begin{aligned}\\mathrm{SQNR}&=\\frac{P_M}{E[Q^{2}]}\\\\&=\\frac{3P_M}{m_{\\max}^{2}}\\,2^{2R}\\end{aligned}'},
 {t:'p', text:'In decibels the product becomes a sum, because the log of a product is a sum of logs. The factor $2^{2R}$ gives $20R\\log_{10}2$, and $20\\log_{10}2=6.02$.'},
-{t:'eqbox', cap:'Key result: six decibels a bit', tex:'\\begin{aligned}\\mathrm{SQNR}\\;[\\mathrm{dB}]&=\\underbrace{10\\log_{10}\\frac{3P_M}{m_{\\max}^{2}}}_{\\alpha}+10\\log_{10}2^{2R}\\\\&=\\alpha+20R\\log_{10}2\\\\&=\\alpha+6.02R\\end{aligned}',
+{t:'eqbox', cap:'Key result: six decibels a bit', tex:'\\begin{aligned}\\mathrm{SQNR}\\;[\\mathrm{dB}]&=\\underbrace{10\\log_{10}\\frac{3P_M}{m_{\\max}^{2}}}_{=\\alpha}+10\\log_{10}2^{2R}\\\\&=\\alpha+20R\\log_{10}2\\\\&=\\alpha+6.02R\\end{aligned}',
  after:'Every extra bit adds $6.02$ dB.'},
 {t:'fig', svg:()=>narrow(figSqnr(),60), cap:'The SQNR of a full-scale sinusoid (cyan) and of the same sinusoid $20$ dB below full scale (violet). The line keeps its slope of $6.02$ dB a bit and drops by the level.', short:'SQNR against the number of bits.'},
 {t:'p', text:'For example, a quantizer that gives $40$ dB at $R=6$ gives $52.04$ dB at $R=8$. Two more bits add $2(6.02)=12.04$ dB.'},

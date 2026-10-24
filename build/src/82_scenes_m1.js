@@ -2018,7 +2018,7 @@ REAL_SAMPLING,
       caption:'Each sample scales one sinc pulse. The green sum passes through every sample. Point to a sample, or step through the terms, to lift its pulse.'},
     {t:'legend', items:[['in','$g(nT_s)$'],['mid','$g(nT_s)\\operatorname{sinc}$ terms',true],['out','$g_r(t)$']]}
   ], right:[
-    {t:'eq', label:'Filter the impulse train', tex:'\\begin{aligned}g_r(t)&=\\int_{-\\infty}^{\\infty}\\underbrace{\\sum_{n}g(nT_s)\\,\\delta(\\tau-nT_s)}_{g_\\delta(\\tau)}\\,h(t-\\tau)\\,d\\tau\\\\&=\\sum_{n}g(nT_s)\\int_{-\\infty}^{\\infty}h(t-\\tau)\\,\\delta(\\tau-nT_s)\\,d\\tau\\\\&=\\sum_{n}g(nT_s)\\,h(t-nT_s)\\end{aligned}',
+    {t:'eq', label:'Filter the impulse train', tex:'\\begin{aligned}g_r(t)&=\\int_{-\\infty}^{\\infty}\\underbrace{\\sum_{n}g(nT_s)\\,\\delta(\\tau-nT_s)}_{=g_\\delta(\\tau)}\\,h(t-\\tau)\\,d\\tau\\\\&=\\sum_{n}g(nT_s)\\int_{-\\infty}^{\\infty}h(t-\\tau)\\,\\delta(\\tau-nT_s)\\,d\\tau\\\\&=\\sum_{n}g(nT_s)\\,h(t-nT_s)\\end{aligned}',
       note:'Swap the sum and the integral, then sift each term at $\\tau=nT_s$.'},
     {t:'reveal', at:1, items:[
       {t:'eq', key:true, result:true, label:'Key result · Interpolation formula', tex:'g_r(t)=\\sum_{n=-\\infty}^{\\infty}g(nT_s)\\operatorname{sinc}\\!\\bigl(2W(t-nT_s)\\bigr)',
@@ -2342,7 +2342,7 @@ REAL_QUANT,
     {t:'eq', label:'Uniform quantizer', tex:'\\begin{aligned}\\mathrm{SQNR}&=\\frac{P_M}{E[Q^{2}]}\\\\&=\\frac{3P_M}{m_{\\max}^{2}}\\,2^{2R}\\end{aligned}',
       note:'Substitute $E[Q^{2}]=m_{\\max}^{2}/(3\\cdot2^{2R})$.'},
     {t:'reveal', at:1, items:[
-      {t:'eq', key:true, result:true, label:'Key result · Six decibels a bit', tex:'\\begin{aligned}\\mathrm{SQNR}\\;[\\mathrm{dB}]&=\\underbrace{10\\log_{10}\\frac{3P_M}{m_{\\max}^{2}}}_{\\alpha}+10\\log_{10}2^{2R}\\\\&=\\alpha+20R\\log_{10}2\\\\&=\\alpha+6.02R\\end{aligned}',
+      {t:'eq', key:true, result:true, label:'Key result · Six decibels a bit', tex:'\\begin{aligned}\\mathrm{SQNR}\\;[\\mathrm{dB}]&=\\underbrace{10\\log_{10}\\frac{3P_M}{m_{\\max}^{2}}}_{=\\alpha}+10\\log_{10}2^{2R}\\\\&=\\alpha+20R\\log_{10}2\\\\&=\\alpha+6.02R\\end{aligned}',
         note:'The log of a product is a sum of logs, and $20\\log_{10}2=6.02$.'}]},
     {t:'reveal', at:2, items:[
       {t:'note', kind:'def', head:'Given', html:'A quantizer gives $40$ dB at $R=6$.<div class="nsep"></div>What does it give at $R=8$?',

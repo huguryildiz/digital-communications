@@ -18474,7 +18474,7 @@ REAL_SAMPLING,
       caption:'Each sample scales one sinc pulse. The green sum passes through every sample. Point to a sample, or step through the terms, to lift its pulse.'},
     {t:'legend', items:[['in','$g(nT_s)$'],['mid','$g(nT_s)\\operatorname{sinc}$ terms',true],['out','$g_r(t)$']]}
   ], right:[
-    {t:'eq', label:'Filter the impulse train', tex:'\\begin{aligned}g_r(t)&=\\int_{-\\infty}^{\\infty}\\underbrace{\\sum_{n}g(nT_s)\\,\\delta(\\tau-nT_s)}_{g_\\delta(\\tau)}\\,h(t-\\tau)\\,d\\tau\\\\&=\\sum_{n}g(nT_s)\\int_{-\\infty}^{\\infty}h(t-\\tau)\\,\\delta(\\tau-nT_s)\\,d\\tau\\\\&=\\sum_{n}g(nT_s)\\,h(t-nT_s)\\end{aligned}',
+    {t:'eq', label:'Filter the impulse train', tex:'\\begin{aligned}g_r(t)&=\\int_{-\\infty}^{\\infty}\\underbrace{\\sum_{n}g(nT_s)\\,\\delta(\\tau-nT_s)}_{=g_\\delta(\\tau)}\\,h(t-\\tau)\\,d\\tau\\\\&=\\sum_{n}g(nT_s)\\int_{-\\infty}^{\\infty}h(t-\\tau)\\,\\delta(\\tau-nT_s)\\,d\\tau\\\\&=\\sum_{n}g(nT_s)\\,h(t-nT_s)\\end{aligned}',
       note:'Swap the sum and the integral, then sift each term at $\\tau=nT_s$.'},
     {t:'reveal', at:1, items:[
       {t:'eq', key:true, result:true, label:'Key result · Interpolation formula', tex:'g_r(t)=\\sum_{n=-\\infty}^{\\infty}g(nT_s)\\operatorname{sinc}\\!\\bigl(2W(t-nT_s)\\bigr)',
@@ -18798,7 +18798,7 @@ REAL_QUANT,
     {t:'eq', label:'Uniform quantizer', tex:'\\begin{aligned}\\mathrm{SQNR}&=\\frac{P_M}{E[Q^{2}]}\\\\&=\\frac{3P_M}{m_{\\max}^{2}}\\,2^{2R}\\end{aligned}',
       note:'Substitute $E[Q^{2}]=m_{\\max}^{2}/(3\\cdot2^{2R})$.'},
     {t:'reveal', at:1, items:[
-      {t:'eq', key:true, result:true, label:'Key result · Six decibels a bit', tex:'\\begin{aligned}\\mathrm{SQNR}\\;[\\mathrm{dB}]&=\\underbrace{10\\log_{10}\\frac{3P_M}{m_{\\max}^{2}}}_{\\alpha}+10\\log_{10}2^{2R}\\\\&=\\alpha+20R\\log_{10}2\\\\&=\\alpha+6.02R\\end{aligned}',
+      {t:'eq', key:true, result:true, label:'Key result · Six decibels a bit', tex:'\\begin{aligned}\\mathrm{SQNR}\\;[\\mathrm{dB}]&=\\underbrace{10\\log_{10}\\frac{3P_M}{m_{\\max}^{2}}}_{=\\alpha}+10\\log_{10}2^{2R}\\\\&=\\alpha+20R\\log_{10}2\\\\&=\\alpha+6.02R\\end{aligned}',
         note:'The log of a product is a sum of logs, and $20\\log_{10}2=6.02$.'}]},
     {t:'reveal', at:2, items:[
       {t:'note', kind:'def', head:'Given', html:'A quantizer gives $40$ dB at $R=6$.<div class="nsep"></div>What does it give at $R=8$?',
@@ -21610,7 +21610,7 @@ const SC = [
       svg:figSplit,
       caption:'An RC filter with $\\tau=T/4$ acts on the noisy pulse. Step through: the signal part, the noise part alone, then their sum, sampled at $t=T$.'}
   ], right:[
-    {t:'eq', label:'Two parts', tex:'y(t)=x(t)*h(t)=\\underbrace{g(t)*h(t)}_{g_0(t)}+\\underbrace{w(t)*h(t)}_{n(t)}',
+    {t:'eq', label:'Two parts', tex:'y(t)=x(t)*h(t)=\\underbrace{g(t)*h(t)}_{=g_0(t)}+\\underbrace{w(t)*h(t)}_{=n(t)}',
       note:'The filter is linear, so each part of $x(t)$ passes through it on its own. $g_0(t)$ is the same every time the bit is sent. $n(t)$ is random.'},
     {t:'reveal', at:1, items:[
       {t:'note', kind:'warn', head:'Noise at the output', html:'The filter cannot tell noise from pulse in the band the pulse uses. A filter that passes the pulse passes that noise too. So $n(T)$ never vanishes, and the filter can only make it small against $g_0(T)$.'}]},
@@ -22048,7 +22048,7 @@ REAL_MATCHED,
     {t:'eq', label:'Filter and input', tex:'\\begin{aligned}h(t)&=\\psi(T_b-t)\\\\x(t)&=s_m\\psi(t)+w(t),\\qquad 0\\le t\\le T_b\\end{aligned}',
       note:'The filter is $\\psi$ reversed in time and delayed by one bit. $w(t)$ is white Gaussian noise.'},
     {t:'reveal', at:1, items:[
-      {t:'eq', label:'Step 1 · split the output', tex:'\\begin{aligned}y(t)&=x(t)*h(t)\\\\&=\\underbrace{s_m\\psi(t)*h(t)}_{\\text{signal part}}+\\underbrace{w(t)*h(t)}_{n(t)}\\end{aligned}',
+      {t:'eq', label:'Step 1 · split the output', tex:'\\begin{aligned}y(t)&=x(t)*h(t)\\\\&=\\underbrace{s_m\\psi(t)*h(t)}_{\\text{signal part}}+\\underbrace{w(t)*h(t)}_{=n(t)}\\end{aligned}',
         note:'The filter is linear, so each part of $x(t)$ passes through it on its own.'}]},
     {t:'reveal', at:2, items:[
       {t:'note', kind:'def', head:'Given', html:'The same bit is sent twice.<div class="nsep"></div>Which part of $y(t)$ is the same both times?',
@@ -22095,7 +22095,7 @@ REAL_MATCHED,
     {t:'eq', label:'Step 1 · sample at $t=T_b$', tex:'y(T_b)=\\int_0^{T_b}s_m\\psi(\\tau)\\,\\psi(\\tau)\\,d\\tau+n(T_b)',
       note:'Put $t=T_b$. Then $\\psi\\bigl(T_b-(T_b-\\tau)\\bigr)=\\psi(\\tau)$: the reversal and the delay cancel.'},
     {t:'reveal', at:1, items:[
-      {t:'eq', label:'Step 2 · use unit energy', tex:'\\begin{aligned}y(T_b)&=s_m\\underbrace{\\int_0^{T_b}\\psi^{2}(\\tau)\\,d\\tau}_{1}+n(T_b)\\\\&=s_m\\cdot1+n(T_b)\\end{aligned}',
+      {t:'eq', label:'Step 2 · use unit energy', tex:'\\begin{aligned}y(T_b)&=s_m\\underbrace{\\int_0^{T_b}\\psi^{2}(\\tau)\\,d\\tau}_{=1}+n(T_b)\\\\&=s_m\\cdot1+n(T_b)\\end{aligned}',
         note:'$s_m$ leaves the integral. The rest is the energy of $\\psi$, which is $1$.'}]},
     {t:'reveal', at:2, items:[
       {t:'eq', label:'Key result · the demodulator output', key:true, result:true, tex:'y=s_m+n,\\qquad n=\\int_0^{T_b}w(\\tau)\\,\\psi(\\tau)\\,d\\tau',
@@ -22121,7 +22121,7 @@ REAL_MATCHED,
       caption:'Five unit-energy pulses $g(t)=s_m\\psi(t)$. Drag $t$: $h(t-\\tau)$ slides over $g(\\tau)$, and the shaded product integrates to $y(t)$. At $t=T_b$, $y=s_m$.'},
     {t:'legend', items:[['in','$g(\\tau)$'],['h','$h(t-\\tau)$',true]], at:'tr'}
   ], right:[
-    {t:'eq', label:'Any unit-energy $\\psi$', tex:'\\begin{aligned}y(T_b)&=s_m\\underbrace{\\int_0^{T_b}\\psi^{2}(\\tau)\\,d\\tau}_{1}\\\\&=s_m=\\pm1\\end{aligned}',
+    {t:'eq', label:'Any unit-energy $\\psi$', tex:'\\begin{aligned}y(T_b)&=s_m\\underbrace{\\int_0^{T_b}\\psi^{2}(\\tau)\\,d\\tau}_{=1}\\\\&=s_m=\\pm1\\end{aligned}',
       note:'Step 2 of the last slide used only the unit energy of $\\psi$, never its shape. The filter matched to $\\psi$ serves both bits of a code.'},
     {t:'reveal', at:1, items:[
       {t:'note', kind:'warn', head:'Signal part only', html:'These outputs carry no noise. With noise the sample is $s_m+n$, and the curve between samples moves too.'}]},
@@ -22172,7 +22172,7 @@ REAL_MATCHED,
     {t:'eq', label:'The correlator', tex:'y(t)=\\int_0^{t}x(\\tau)\\,\\psi(\\tau)\\,d\\tau,\\qquad 0\\le t\\le T_b',
       note:'Multiply by $\\psi(t)$ and integrate from the start of the bit.'},
     {t:'reveal', at:1, items:[
-      {t:'eq', label:'Step 1 · substitute $x(\\tau)$', tex:'\\begin{aligned}y(t)&=\\int_0^{t}\\bigl[\\underbrace{s_m\\psi(\\tau)+w(\\tau)}_{x(\\tau)}\\bigr]\\psi(\\tau)\\,d\\tau\\\\&=s_m\\int_0^{t}\\psi^{2}(\\tau)\\,d\\tau+\\int_0^{t}w(\\tau)\\,\\psi(\\tau)\\,d\\tau\\end{aligned}',
+      {t:'eq', label:'Step 1 · substitute $x(\\tau)$', tex:'\\begin{aligned}y(t)&=\\int_0^{t}\\bigl[\\underbrace{s_m\\psi(\\tau)+w(\\tau)}_{=x(\\tau)}\\bigr]\\psi(\\tau)\\,d\\tau\\\\&=s_m\\int_0^{t}\\psi^{2}(\\tau)\\,d\\tau+\\int_0^{t}w(\\tau)\\,\\psi(\\tau)\\,d\\tau\\end{aligned}',
         note:'Multiply out and split the integral.'}]},
     {t:'reveal', at:2, items:[
       {t:'note', kind:'def', head:'Given', html:'A noiseless Manchester bit $1$.<div class="nsep"></div>What is the correlator output at $t=T_b/2$?',
@@ -22194,10 +22194,10 @@ REAL_MATCHED,
       caption:'One noiseless bit with $s_m=1$, for three shapes of $\\psi$. The wide line is the matched-filter output, the dashed line the correlator output, reset at $T_b$. At $t=T_b$ both read $s_m$.'},
     {t:'legend', items:[['mid','matched filter'],['mid','correlator',true]], at:'tr'}
   ], right:[
-    {t:'eq', label:'Correlator at $T_b$', tex:'\\begin{aligned}y(T_b)&=s_m\\underbrace{\\int_0^{T_b}\\psi^{2}(\\tau)\\,d\\tau}_{1}+\\int_0^{T_b}w(\\tau)\\,\\psi(\\tau)\\,d\\tau\\\\&=s_m+n\\end{aligned}',
+    {t:'eq', label:'Correlator at $T_b$', tex:'\\begin{aligned}y(T_b)&=s_m\\underbrace{\\int_0^{T_b}\\psi^{2}(\\tau)\\,d\\tau}_{=1}+\\int_0^{T_b}w(\\tau)\\,\\psi(\\tau)\\,d\\tau\\\\&=s_m+n\\end{aligned}',
       note:'This $n$ equals the filter noise $n(T_b)$. Before $T_b$ the two noise terms differ.'},
     {t:'reveal', at:1, items:[
-      {t:'eq', label:'Matched filter at $T_b$', tex:'\\begin{aligned}h(t)&=\\psi(T_b-t)\\\\y(t)&=\\int_{-\\infty}^{\\infty}x(\\tau)\\,\\underbrace{\\psi(T_b-t+\\tau)}_{h(t-\\tau)}\\,d\\tau\\\\y(T_b)&=\\int_0^{T_b}x(\\tau)\\,\\psi(\\tau)\\,d\\tau\\end{aligned}',
+      {t:'eq', label:'Matched filter at $T_b$', tex:'\\begin{aligned}h(t)&=\\psi(T_b-t)\\\\y(t)&=\\int_{-\\infty}^{\\infty}x(\\tau)\\,\\underbrace{\\psi(T_b-t+\\tau)}_{=h(t-\\tau)}\\,d\\tau\\\\y(T_b)&=\\int_0^{T_b}x(\\tau)\\,\\psi(\\tau)\\,d\\tau\\end{aligned}',
         note:'Put $t=T_b$. The last line is the correlator output, for any shape of $\\psi$. Both demodulators turn the waveform into the one number $y=s_m+n$.'}]},
     {t:'reveal', at:2, items:[
       {t:'note', kind:'def', head:'Given', html:'A noiseless bit with $s_m=1$ and the rectangular $\\psi$ enters the matched filter.<div class="nsep"></div>What is the filter output at $t=1.5T_b$?',
@@ -22245,7 +22245,7 @@ REAL_MATCHED,
     {t:'eq', label:'Step 3 · white noise', tex:'\\begin{aligned}E[w(t)w(u)]&=R_w(t-u)\\\\&=\\frac{N_0}{2}\\,\\delta(t-u)\\end{aligned}',
       note:'The mean of $w(t)w(u)$ is the autocorrelation of $w$. For white noise it is an impulse at $t=u$.'},
     {t:'reveal', at:1, items:[
-      {t:'eq', label:'Step 4 · sift and use unit energy', tex:'\\begin{aligned}E[n^{2}]&=\\int_0^{T_b}\\psi(t)\\int_0^{T_b}\\frac{N_0}{2}\\,\\delta(t-u)\\,\\psi(u)\\,du\\,dt\\\\&=\\frac{N_0}{2}\\int_0^{T_b}\\psi(t)\\underbrace{\\int_0^{T_b}\\psi(u)\\,\\delta(u-t)\\,du}_{\\psi(t)}\\,dt\\\\&=\\frac{N_0}{2}\\underbrace{\\int_0^{T_b}\\psi^{2}(t)\\,dt}_{1}\\\\&=\\frac{N_0}{2}\\end{aligned}',
+      {t:'eq', label:'Step 4 · sift and use unit energy', tex:'\\begin{aligned}E[n^{2}]&=\\int_0^{T_b}\\psi(t)\\int_0^{T_b}\\frac{N_0}{2}\\,\\delta(t-u)\\,\\psi(u)\\,du\\,dt\\\\&=\\frac{N_0}{2}\\int_0^{T_b}\\psi(t)\\underbrace{\\int_0^{T_b}\\psi(u)\\,\\delta(u-t)\\,du}_{=\\psi(t)}\\,dt\\\\&=\\frac{N_0}{2}\\underbrace{\\int_0^{T_b}\\psi^{2}(t)\\,dt}_{=1}\\\\&=\\frac{N_0}{2}\\end{aligned}',
         note:'$\\delta$ is even, so $\\delta(t-u)=\\delta(u-t)$. The impulse sifts out $\\psi(t)$, and unit energy gives $N_0/2$.'}]},
     {t:'reveal', at:2, items:[
       {t:'eq', label:'Key result · the noise value', key:true, result:true, tex:'n\\sim\\mathcal{N}\\Bigl(0,\\ \\frac{N_0}{2}\\Bigr),\\qquad y\\sim\\mathcal{N}\\Bigl(s_m,\\ \\frac{N_0}{2}\\Bigr)',
@@ -22452,7 +22452,7 @@ REAL_DEMOD,
   ], right:[
     {t:'eq', label:'Put $\\lambda=0$ in both conditional errors', tex:'\\begin{aligned}P(\\text{err}\\mid s_0)&=Q\\!\\left(\\frac{0+\\sqrt{E_b}}{\\sigma}\\right)=Q\\!\\left(\\frac{\\sqrt{E_b}}{\\sigma}\\right)\\\\P(\\text{err}\\mid s_1)&=1-Q\\!\\left(\\frac{0-\\sqrt{E_b}}{\\sigma}\\right)=1-Q\\!\\left(-\\frac{\\sqrt{E_b}}{\\sigma}\\right)\\\\&=1-\\left[1-Q\\!\\left(\\frac{\\sqrt{E_b}}{\\sigma}\\right)\\right]=Q\\!\\left(\\frac{\\sqrt{E_b}}{\\sigma}\\right)\\end{aligned}',
       note:'The last step uses $Q(-x)=1-Q(x)$. The two conditional errors are equal.'},
-    {t:'eq', label:'Equal priors', tex:'\\begin{aligned}P_e&=\\underbrace{p_0}_{1/2}\\underbrace{\\int_{0}^{\\infty}f_Y(y\\mid s_0)\\,dy}_{Q(\\sqrt{E_b}/\\sigma)}+\\underbrace{p_1}_{1/2}\\underbrace{\\int_{-\\infty}^{0}f_Y(y\\mid s_1)\\,dy}_{Q(\\sqrt{E_b}/\\sigma)}=Q\\!\\left(\\frac{\\sqrt{E_b}}{\\sigma}\\right)\\\\\\frac{\\sqrt{E_b}}{\\sigma}&=\\frac{\\sqrt{E_b}}{\\sqrt{N_0/2}}=\\sqrt{\\frac{2E_b}{N_0}}\\end{aligned}'},
+    {t:'eq', label:'Equal priors', tex:'\\begin{aligned}P_e&=\\underbrace{p_0}_{=1/2}\\underbrace{\\int_{0}^{\\infty}f_Y(y\\mid s_0)\\,dy}_{=Q(\\sqrt{E_b}/\\sigma)}+\\underbrace{p_1}_{=1/2}\\underbrace{\\int_{-\\infty}^{0}f_Y(y\\mid s_1)\\,dy}_{=Q(\\sqrt{E_b}/\\sigma)}=Q\\!\\left(\\frac{\\sqrt{E_b}}{\\sigma}\\right)\\\\\\frac{\\sqrt{E_b}}{\\sigma}&=\\frac{\\sqrt{E_b}}{\\sqrt{N_0/2}}=\\sqrt{\\frac{2E_b}{N_0}}\\end{aligned}'},
     {t:'reveal', at:1, items:[
       {t:'eq', label:'Polar signalling', key:true, result:true, tex:'P_e=Q\\!\\left(\\sqrt{\\frac{2E_b}{N_0}}\\right)',
         note:'$2E_b/N_0$ is the peak SNR of the matched filter, so $P_e=Q\\bigl(\\sqrt{\\eta_{\\max}}\\bigr)$.'}]}
