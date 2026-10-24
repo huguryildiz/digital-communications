@@ -26,7 +26,7 @@ const CONTENT = {
        other is wrong by exactly √2 inside the Q. */
     conventions:{
       noise:'\\text{White Gaussian noise, two-sided PSD }\\;S_n(f)=\\tfrac{N_0}{2}',
-      q:'Q(x)=\\frac{1}{\\sqrt{2\\pi}}\\int_{x}^{\\infty}e^{-t^{2}/2}\\,\\mathrm{d}t=\\tfrac12\\operatorname{erfc}\\!\\left(\\tfrac{x}{\\sqrt2}\\right)',
+      q:'Q(x)=\\frac{1}{\\sqrt{2\\pi}}\\int_{x}^{\\infty}e^{-t^{2}/2}\\,\\mathrm{d}t',
       energy:'Normalised (R = 1 Ω) energy and power throughout. Signal energy is written $E$, energy per bit $E_b$, energy per symbol $E_s$.',
       log:'Logarithms in information theory are base two, so entropy is in bits. Where a natural logarithm is meant it is written explicitly.'
     }
@@ -97,7 +97,7 @@ const CONTENT = {
     /* Chapter 4 */
     r:{ s:'r(t),\\;\\mathbf{r}', d:'The received waveform and the observation vector it produces, $\\mathbf{r}=\\mathbf{s}_i+\\mathbf{n}$.' },
     N0:{ s:'N_0', d:'Noise power spectral density parameter. The two-sided density is $N_0/2$ watts per hertz, and each noise component is $\\mathcal{N}(0,N_0/2)$.' },
-    Q:{ s:'Q(x)', d:'The Gaussian tail: the probability that a standard normal variable exceeds $x$. Equal to $\\tfrac12\\operatorname{erfc}(x/\\sqrt2)$.' },
+    Q:{ s:'Q(x)', d:'The Gaussian tail: the probability that a standard normal variable exceeds $x$.' },
     M:{ s:'M,\\;N', d:'The number of signals in the set, and the number of basis functions they need. $M$ signals carry $\\log_2 M$ bits a symbol.' },
     Nmin:{ s:'N_{\\min}', d:'The average number of signal points at the minimum distance. An average, so not usually a whole number.' },
     Pb:{ s:'P_b,\\;P_e,\\;P_s', d:'Bit error probability, error probability in general, and symbol error probability.' },

@@ -1301,7 +1301,7 @@ window.C6 = [
 {t:'h3', text:'The binary symmetric channel'},
 {t:'p', text:'The <b>binary symmetric channel</b> (BSC) has two inputs and two outputs. Each bit arrives flipped with probability $p$, the <b>crossover probability</b>, and intact with probability $1-p$, whatever its value.'},
 {t:'eqbox', cap:'Binary symmetric channel', tex:'\\mathbf{P}=\\begin{bmatrix}1-p&p\\\\p&1-p\\end{bmatrix}'},
-{t:'p', text:'The matched-filter receiver of Chapter 4, deciding each BPSK bit of Chapter 5, hands on a BSC. Its crossover is the BPSK bit error. Here $Q(x)=\\tfrac12\\operatorname{erfc}(x/\\sqrt2)$ is the Gaussian tail.'},
+{t:'p', text:'The matched-filter receiver of Chapter 4, deciding each BPSK bit of Chapter 5, hands on a BSC. Its crossover is the BPSK bit error. Here $Q(x)$ is the Gaussian tail.'},
 {t:'eqbox', cap:'BSC from hard-decision BPSK', tex:['p=Q\\Bigl(\\sqrt{2E_b/N_0}\\Bigr)', '\\begin{aligned}E_b/N_0&=4\\ \\text{dB}=10^{0.4}=2.512\\\\p&=Q\\bigl(\\sqrt{2\\times2.512}\\bigr)=Q(2.241)=0.0125\\end{aligned}']},
 {t:'fig', svg:fig(figBSC, {g:4}), cap:'Top: the binary symmetric channel. Bottom: its crossover when BPSK is decided bit by bit, shown at $E_b/N_0=4$ dB, where $p=0.0125$.'},
 {t:'box', kind:'warn', hd:'Hard decisions', html:'Deciding each bit throws away how sure the receiver was. The gallery at the end of Section 6.5 plots the capacity left after that decision.'},

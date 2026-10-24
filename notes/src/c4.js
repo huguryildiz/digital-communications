@@ -1105,7 +1105,7 @@ window.C4 = [
 {t:'p', text:'Two equally likely points a distance $d$ apart give the simplest error probability. The boundary is the midpoint, $d/2$ from each point.'},
 {t:'p', text:'Only the noise along the line through the two points can cause an error. That component has variance $N_0/2$, and an error needs more than $d/2$ of it.'},
 {t:'eqbox', cap:'Along the line', tex:'\\begin{aligned}P_e&=P\\Bigl(n>\\frac d2\\Bigr)=Q\\!\\left(\\frac{d/2}{\\sqrt{N_0/2}}\\right)\\\\&=Q\\!\\left(\\sqrt{\\frac{d^{2}}{2N_0}}\\right)\\end{aligned}',
- after:'Here $Q(x)=\\tfrac12\\operatorname{erfc}(x/\\sqrt2)$ is the Gaussian tail. The last step squares the argument: $(d/2)^{2}/(N_0/2)=d^{2}/2N_0$.'},
+ after:'Here $Q(x)$ is the Gaussian tail. The last step squares the argument: $(d/2)^{2}/(N_0/2)=d^{2}/2N_0$.'},
 {t:'p', text:'Put the distance of each special case into $d^{2}/2N_0$.'},
 {t:'eqbox', cap:'Two special cases', tex:[
   '\\text{antipodal},\\ d=2\\sqrt{E_b}:\\qquad \\frac{d^{2}}{2N_0}=\\frac{2E_b}{N_0},\\qquad P_e=Q\\bigl(\\sqrt{2E_b/N_0}\\bigr)',

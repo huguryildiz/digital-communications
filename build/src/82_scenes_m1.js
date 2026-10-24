@@ -2253,7 +2253,7 @@ REAL_QUANT,
       note:'Here $\\mu_X=E[X]$. Expand the square: $E[X^{2}]-2\\mu_XE[X]+\\mu_X^{2}=E[X^{2}]-\\mu_X^{2}$.'}
   ], right:[
     {t:'eq', label:'Two densities', tex:'\\begin{aligned}U(a,b):\\;f_X(x)&=\\frac{1}{b-a},\\quad a<x<b\\\\\\mu_X&=\\frac{a+b}{2},\\quad\\sigma_X^{2}=\\frac{(b-a)^{2}}{12}\\\\\\mathcal{N}(\\mu,\\sigma^{2}):\\;f_X(x)&=\\frac{1}{\\sqrt{2\\pi\\sigma^{2}}}\\,e^{-(x-\\mu)^{2}/2\\sigma^{2}}\\\\P\\bigl(|X-\\mu|>\\sigma\\bigr)&=2Q(1)=0.317\\end{aligned}',
-      note:'$Q(x)=\\tfrac12\\operatorname{erfc}(x/\\sqrt2)$ is the Gaussian tail. So about $32\\%$ of Gaussian samples lie outside $\\pm\\sigma$.'},
+      note:'$Q(x)$ is the Gaussian tail. So about $32\\%$ of Gaussian samples lie outside $\\pm\\sigma$.'},
     {t:'note', kind:'err', head:'Common error', html:'Use $P_X=E[X^{2}]$, not $\\sigma_X^{2}$, for the power of a signal with a non-zero mean. The two are equal only when $\\mu_X=0$.'}
   ]}
 ]},

@@ -882,7 +882,7 @@ window.C5 = [
 {t:'eqbox', cap:'BPSK', tex:'s_1(t)=\\sqrt{\\frac{2E_b}{T_b}}\\cos(2\\pi f_ct),\\qquad s_0(t)=-s_1(t)'},
 {t:'p', text:'Take the basis function $\\psi(t)=\\sqrt{2/T_b}\\cos(2\\pi f_ct)$. Then $s_1(t)=\\sqrt{E_b}\\,\\psi(t)$ and $s_0(t)=-\\sqrt{E_b}\\,\\psi(t)$. The two points sit on one axis at $\\pm\\sqrt{E_b}$, so they are antipodal.'},
 {t:'eq', tex:'d_{\\min}=\\sqrt{E_b}-\\bigl(-\\sqrt{E_b}\\bigr)=2\\sqrt{E_b}'},
-{t:'p', text:'The binary result of Chapter 4 is $P_b=Q\\bigl(\\sqrt{d^{2}/2N_0}\\bigr)$. Here $Q(x)=\\tfrac12\\operatorname{erfc}(x/\\sqrt2)$ is the Gaussian tail. Substitute $d^{2}=4E_b$.'},
+{t:'p', text:'The binary result of Chapter 4 is $P_b=Q\\bigl(\\sqrt{d^{2}/2N_0}\\bigr)$. Here $Q(x)$ is the Gaussian tail. Substitute $d^{2}=4E_b$.'},
 {t:'eq', tex:'\\frac{d^{2}}{2N_0}=\\frac{4E_b}{2N_0}=\\frac{2E_b}{N_0}'},
 {t:'eqbox', cap:'Key result · BPSK', tex:'d_{\\min}=2\\sqrt{E_b},\\qquad P_b=Q\\!\\left(\\sqrt{\\frac{2E_b}{N_0}}\\right)',
  after:'BPSK is baseband antipodal signalling times $\\cos(2\\pi f_ct)$. The carrier changes the band, not the error rate. With $E_b=4$ the two points are $2\\sqrt4=4$ apart.'},

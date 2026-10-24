@@ -1083,7 +1083,7 @@ window.C1 = [
 
 {t:'h3', text:'Course conventions'},
 {t:'p', text:'These notes are written for undergraduates. They assume Fourier analysis, probability and random processes. Read the plain explanation before the mathematics. Worked examples use five headings: Given, Find, Method, Solution, and Check.'},
-{t:'p', text:'Noise is white and Gaussian with <b>two-sided</b> power spectral density $N_0/2$ watts per hertz. The Gaussian tail is $Q(x)=\\frac{1}{\\sqrt{2\\pi}}\\int_x^{\\infty}e^{-t^{2}/2}\\,dt=\\tfrac12\\operatorname{erfc}(x/\\sqrt2)$. Energy and power use $R=1\\ \\Omega$.'},
+{t:'p', text:'Noise is white and Gaussian with <b>two-sided</b> power spectral density $N_0/2$ watts per hertz. The Gaussian tail is $Q(x)=\\frac{1}{\\sqrt{2\\pi}}\\int_x^{\\infty}e^{-t^{2}/2}\\,dt$. Energy and power use $R=1\\ \\Omega$.'},
 {t:'p', text:'A <b>PS</b> marker points to the related section of Proakis and Salehi, <i>Fundamentals of Communication Systems</i>, second edition. The textbook chapter numbers differ from the course chapter numbers.'},
 
 {t:'page'},
@@ -1306,7 +1306,7 @@ window.C1 = [
 {t:'eqbox', cap:'Power and variance', tex:'\\begin{aligned}P_X&=E[X^{2}]\\\\\\sigma_X^{2}&=E\\bigl[(X-\\mu_X)^{2}\\bigr]\\\\&=E[X^{2}]-\\mu_X^{2}\\end{aligned}'},
 {t:'p', text:'Two densities appear below. The uniform density $U(a,b)$ is flat on $(a,b)$. The Gaussian density $\\mathcal{N}(\\mu,\\sigma^{2})$ is the bell curve with mean $\\mu$ and variance $\\sigma^{2}$.'},
 {t:'eqbox', cap:'Two densities', tex:'\\begin{aligned}U(a,b):\\;f_X(x)&=\\frac{1}{b-a},\\quad a<x<b\\\\\\mu_X&=\\frac{a+b}{2},\\quad\\sigma_X^{2}=\\frac{(b-a)^{2}}{12}\\\\\\mathcal{N}(\\mu,\\sigma^{2}):\\;f_X(x)&=\\frac{1}{\\sqrt{2\\pi\\sigma^{2}}}\\,e^{-(x-\\mu)^{2}/2\\sigma^{2}}\\\\P\\bigl(|X-\\mu|>\\sigma\\bigr)&=2Q(1)=0.317\\end{aligned}',
- after:'$Q(x)=\\tfrac12\\operatorname{erfc}(x/\\sqrt2)$ is the Gaussian tail. So about $32\\%$ of Gaussian samples lie outside $\\pm\\sigma$.'},
+ after:'$Q(x)$ is the Gaussian tail. So about $32\\%$ of Gaussian samples lie outside $\\pm\\sigma$.'},
 {t:'box', kind:'err', hd:'Common error', html:'Use $P_X=E[X^{2}]$, not $\\sigma_X^{2}$, for the power of a signal with a non-zero mean. The two are equal only when $\\mu_X=0$.'},
 
 {t:'h3', text:'Quantization noise'},

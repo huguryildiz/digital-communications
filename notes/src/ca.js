@@ -42,7 +42,7 @@ window.CA = [
  ['When do the correlator and the matched filter agree?','At $t=T_b$, where both give $\\int_0^{T_b}x(t)\\,\\psi(t)\\,dt$, for any shape of $\\psi$.','Ch. 2 &middot; PS CH8.3.1'],
  ['What noise is left in the demodulator output?','$y=s_m+n$, with $n$ Gaussian of mean $0$ and variance $N_0/2$.','Ch. 2 &middot; PS CH8.3.1'],
  ['Where does the optimal threshold go?','$\\lambda_{\\mathrm{opt}}=\\frac{N_0}{4\\sqrt{E_b}}\\ln\\frac{p_0}{p_1}$, at $0$ for equal priors and toward the less likely symbol otherwise.','Ch. 2 &middot; PS CH8.3.3'],
- ['What is $Q(x)$?','The Gaussian tail $Q(x)=\\tfrac12\\operatorname{erfc}(x/\\sqrt2)$, the chance that a unit Gaussian exceeds $x$.','Ch. 2 &middot; PS CH8.3.3'],
+ ['What is $Q(x)$?','The Gaussian tail $Q(x)$, the chance that a unit Gaussian exceeds $x$.','Ch. 2 &middot; PS CH8.3.3'],
  ['What is $P_b$ for polar signalling?','$P_b=Q\\bigl(\\sqrt{2E_b/N_0}\\bigr)$ with equal priors and a matched filter.','Ch. 2 &middot; PS CH8.3.3'],
  ['How much interference does an RC channel add?','A bit $m$ bits back adds $(1-q)q^{m}$, with $q=e^{-2\\pi BT_b}$. The worst case totals $q$.','Ch. 2 &middot; PS CH10.1.1'],
  ['When does the eye close?','The opening is $2(1-2q)$. It closes at $BT_b=\\ln2/(2\\pi)=0.110$, and errors then occur without noise.','Ch. 2'],

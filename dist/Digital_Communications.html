@@ -2914,7 +2914,7 @@ const CONTENT = {
        other is wrong by exactly √2 inside the Q. */
     conventions:{
       noise:'\\text{White Gaussian noise, two-sided PSD }\\;S_n(f)=\\tfrac{N_0}{2}',
-      q:'Q(x)=\\frac{1}{\\sqrt{2\\pi}}\\int_{x}^{\\infty}e^{-t^{2}/2}\\,\\mathrm{d}t=\\tfrac12\\operatorname{erfc}\\!\\left(\\tfrac{x}{\\sqrt2}\\right)',
+      q:'Q(x)=\\frac{1}{\\sqrt{2\\pi}}\\int_{x}^{\\infty}e^{-t^{2}/2}\\,\\mathrm{d}t',
       energy:'Normalised (R = 1 Ω) energy and power throughout. Signal energy is written $E$, energy per bit $E_b$, energy per symbol $E_s$.',
       log:'Logarithms in information theory are base two, so entropy is in bits. Where a natural logarithm is meant it is written explicitly.'
     }
@@ -2985,7 +2985,7 @@ const CONTENT = {
     /* Chapter 4 */
     r:{ s:'r(t),\\;\\mathbf{r}', d:'The received waveform and the observation vector it produces, $\\mathbf{r}=\\mathbf{s}_i+\\mathbf{n}$.' },
     N0:{ s:'N_0', d:'Noise power spectral density parameter. The two-sided density is $N_0/2$ watts per hertz, and each noise component is $\\mathcal{N}(0,N_0/2)$.' },
-    Q:{ s:'Q(x)', d:'The Gaussian tail: the probability that a standard normal variable exceeds $x$. Equal to $\\tfrac12\\operatorname{erfc}(x/\\sqrt2)$.' },
+    Q:{ s:'Q(x)', d:'The Gaussian tail: the probability that a standard normal variable exceeds $x$.' },
     M:{ s:'M,\\;N', d:'The number of signals in the set, and the number of basis functions they need. $M$ signals carry $\\log_2 M$ bits a symbol.' },
     Nmin:{ s:'N_{\\min}', d:'The average number of signal points at the minimum distance. An average, so not usually a whole number.' },
     Pb:{ s:'P_b,\\;P_e,\\;P_s', d:'Bit error probability, error probability in general, and symbol error probability.' },
@@ -16438,7 +16438,7 @@ const SC = [
     [{t:'note', kind:'def', head:'Two modes', html:'<b>Lecture mode</b> returns to the last state of the previous scene, so a finished derivation stays finished. <b>Self-study mode</b> returns to the first state, so you can work through it again.'}],
     [{t:'note', kind:'def', head:'Two editions', html:'The <b>student edition</b> hides solutions until you ask for them. The <b>instructor edition</b> shows presenter notes, error warnings and every solution.'}],
     [{t:'note', kind:'warn', head:'Textbook anchors', html:'The band above the title gives the course address. An open book and a number such as <b>PS CH8.4.1</b> give the matching section in Proakis and Salehi, <em>Fundamentals of Communication Systems</em>, 2nd edition.'}],
-    [{t:'note', kind:'warn', head:'Conventions', html:'Noise is white and Gaussian with two-sided density $N_0/2$. $Q(x)=\\tfrac12\\operatorname{erfc}(x/\\sqrt2)$, and $\\log$ means base two unless a base is written.'}]
+    [{t:'note', kind:'warn', head:'Conventions', html:'Noise is white and Gaussian with two-sided density $N_0/2$. $Q(x)$ is the Gaussian tail above $x$, and $\\log$ means base two unless a base is written.'}]
   ]},
   {t:'note', kind:'ok', head:'Privacy and offline use', html:'The artifact is one file. It uses no network and keeps your progress only on this device. <button class="btn" data-act="reset" style="margin-left:14px">Reset all local progress</button>'}
 ]}
@@ -18706,7 +18706,7 @@ REAL_QUANT,
       note:'Here $\\mu_X=E[X]$. Expand the square: $E[X^{2}]-2\\mu_XE[X]+\\mu_X^{2}=E[X^{2}]-\\mu_X^{2}$.'}
   ], right:[
     {t:'eq', label:'Two densities', tex:'\\begin{aligned}U(a,b):\\;f_X(x)&=\\frac{1}{b-a},\\quad a<x<b\\\\\\mu_X&=\\frac{a+b}{2},\\quad\\sigma_X^{2}=\\frac{(b-a)^{2}}{12}\\\\\\mathcal{N}(\\mu,\\sigma^{2}):\\;f_X(x)&=\\frac{1}{\\sqrt{2\\pi\\sigma^{2}}}\\,e^{-(x-\\mu)^{2}/2\\sigma^{2}}\\\\P\\bigl(|X-\\mu|>\\sigma\\bigr)&=2Q(1)=0.317\\end{aligned}',
-      note:'$Q(x)=\\tfrac12\\operatorname{erfc}(x/\\sqrt2)$ is the Gaussian tail. So about $32\\%$ of Gaussian samples lie outside $\\pm\\sigma$.'},
+      note:'$Q(x)$ is the Gaussian tail. So about $32\\%$ of Gaussian samples lie outside $\\pm\\sigma$.'},
     {t:'note', kind:'err', head:'Common error', html:'Use $P_X=E[X^{2}]$, not $\\sigma_X^{2}$, for the power of a signal with a non-zero mean. The two are equal only when $\\mu_X=0$.'}
   ]}
 ]},
@@ -21407,7 +21407,7 @@ const REAL_DECISION = realGallery({ id:'m2-real-decision', nav:'Error rates arou
     [()=>{ const a=P.Axes(EXO({xr:[0,6.3],yr:[-10,0],xlabel:'x',ylabel:'Q(x)',ytickfmt:P.decade,yticksOverride:[-9,-6,-3,0],zeroAxes:false,pad:{l:64,r:26,t:24,b:44},xticksOverride:[0,1,2,3,4,5,6]}));
       a.curve(x=>Math.log10(Qf(x)),{color:C.mid,width:2.2});
       for(let k=1;k<=6;k++) a.point(k,Math.log10(Qf(k)),{color:C.mid,r:4.2});
-      return a.svg(); }, 'The Gaussian tail $Q(x)=\\tfrac12\\operatorname{erfc}(x/\\sqrt2)$ on decades. Above $x=3$ each unit step in $x$ divides $Q(x)$ by more than $40$.'],
+      return a.svg(); }, 'The Gaussian tail $Q(x)$ on decades. Above $x=3$ each unit step in $x$ divides $Q(x)$ by more than $40$.'],
     [()=>{ const a=P.Axes(EXO({xr:[0,21],yr:[-1,22],xlabel:'\\text{block}',ylabel:'\\text{errors}',xticksOverride:[1,5,10,15,20],yticksOverride:[0,10,20]}));
       a.hline(10,{color:C.muted});
       a.stem(ERR_CNT,{color:C.err,showZero:true});
@@ -22347,7 +22347,7 @@ REAL_DEMOD,
       note:'The receiver decides $s_1$ when $y>\\lambda$. Given $s_0$, $y$ is Gaussian with mean $\\mu_0=-\\sqrt{E_b}$ and deviation $\\sigma=\\sqrt{N_0/2}$. Substitute $z=(y-\\mu_0)/\\sigma$: the tail above $\\lambda$ is $Q\\bigl((\\lambda-\\mu_0)/\\sigma\\bigr)$.'},
     {t:'reveal', at:1, items:[
       {t:'eq', label:'Case II: $s_1$ sent, $y<\\lambda$', tex:'\\begin{aligned}P(\\text{err}\\mid s_1)=P(y<\\lambda\\mid s_1)&=\\int_{-\\infty}^{\\lambda}f_Y(y\\mid s_1)\\,dy\\\\&=Q\\!\\left(\\frac{\\mu_1-\\lambda}{\\sigma}\\right)=Q\\!\\left(\\frac{\\sqrt{E_b}-\\lambda}{\\sigma}\\right)\\end{aligned}',
-        note:'The receiver decides $s_0$ when $y<\\lambda$. Given $s_1$ the mean is $\\mu_1=+\\sqrt{E_b}$. The tail below $\\lambda$ is $Q\\bigl((\\mu_1-\\lambda)/\\sigma\\bigr)$. Here $Q(x)=\\tfrac12\\operatorname{erfc}(x/\\sqrt2)$.'}]}
+        note:'The receiver decides $s_0$ when $y<\\lambda$. Given $s_1$ the mean is $\\mu_1=+\\sqrt{E_b}$. The tail below $\\lambda$ is $Q\\bigl((\\mu_1-\\lambda)/\\sigma\\bigr)$.'}]}
   ]}
 ]},
 
@@ -22401,7 +22401,7 @@ REAL_DEMOD,
 
 { id:'m2-q', module:'M2', nav:'The Q function', title:'The Q function',
   objective:'Define the Gaussian tail Q(x) and read its values.',
-  keywords:'Q function gaussian tail erfc complementary error function standard normal table values',
+  keywords:'Q function gaussian tail standard normal table values',
   src:'CH8 s.29–31', slide:true, steps:2, blocks:[
   {t:'eyebrow', text:'Module 2 · The decision and its error'},
   {t:'title', text:'The Q function'},
@@ -22411,7 +22411,7 @@ REAL_DEMOD,
       svg:figQ,
       caption:'Drag $x$. $Q(x)$ is the shaded area under the standard normal density to the right of $x$.'}
   ], right:[
-    {t:'eq', label:'Definition', key:true, tex:'Q(x)=\\frac{1}{\\sqrt{2\\pi}}\\int_{x}^{\\infty}e^{-z^{2}/2}\\,dz=\\tfrac12\\operatorname{erfc}\\!\\left(\\frac{x}{\\sqrt2}\\right)',
+    {t:'eq', label:'Definition', key:true, tex:'Q(x)=\\frac{1}{\\sqrt{2\\pi}}\\int_{x}^{\\infty}e^{-z^{2}/2}\\,dz',
       note:'$Q(x)$ is the probability that a Gaussian of mean $0$ and variance $1$ exceeds $x$.'},
     {t:'reveal', at:1, items:[
       {t:'eq', label:'Values', tex:'Q(0)=0.5,\\quad Q(1)=0.159,\\quad Q(2)=0.0228,\\quad Q(3)=1.35\\times10^{-3}',
@@ -22948,7 +22948,7 @@ REAL_NYQUIST,
     {q:'Where does the optimal threshold go?', glyph:G.thresh,
      a:'$\\lambda_{\\mathrm{opt}}=\\frac{N_0}{4\\sqrt{E_b}}\\ln\\frac{p_0}{p_1}$: at $0$ for equal priors, toward the less likely symbol otherwise.'},
     {q:'What is $Q(x)$?', glyph:G.q,
-     a:'The Gaussian tail $Q(x)=\\tfrac12\\operatorname{erfc}(x/\\sqrt2)$: the chance that a unit Gaussian exceeds $x$.'},
+     a:'The Gaussian tail $Q(x)$: the chance that a unit Gaussian exceeds $x$.'},
     {q:'What is $P_b$ for polar signalling?', glyph:G.pb,
      a:'$P_b=Q\\bigl(\\sqrt{2E_b/N_0}\\bigr)$ with equal priors and a matched filter.'},
     {q:'How much interference does an RC channel add?', glyph:G.isi,

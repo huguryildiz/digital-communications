@@ -1861,7 +1861,7 @@ window.C2 = [
 {t:'eqbox', cap:'Case I: $s_0$ sent, $y>\\lambda$', tex:'\\begin{aligned}P(\\text{err}\\mid s_0)=P(y>\\lambda\\mid s_0)&=\\int_{\\lambda}^{\\infty}f_Y(y\\mid s_0)\\,dy\\\\&=\\int_{\\lambda}^{\\infty}\\frac{1}{\\sqrt{\\pi N_0}}\\,e^{-(y+\\sqrt{E_b})^{2}/N_0}\\,dy\\\\&=\\int_{(\\lambda-\\mu_0)/\\sigma}^{\\infty}\\frac{1}{\\sqrt{2\\pi}}\\,e^{-z^{2}/2}\\,dz\\\\&=Q\\!\\left(\\frac{\\lambda-\\mu_0}{\\sigma}\\right)=Q\\!\\left(\\frac{\\lambda+\\sqrt{E_b}}{\\sigma}\\right)\\end{aligned}',
  after:'Given $s_0$, $y$ is Gaussian with mean $\\mu_0=-\\sqrt{E_b}$ and deviation $\\sigma=\\sqrt{N_0/2}$. Substitute $z=(y-\\mu_0)/\\sigma$. The lower limit $y=\\lambda$ becomes $z=(\\lambda-\\mu_0)/\\sigma$. Since $dy=\\sigma\\,dz$ and $\\sigma/\\sqrt{\\pi N_0}=1/\\sqrt{2\\pi}$, the integrand becomes the unit Gaussian density.'},
 {t:'eqbox', cap:'Case II: $s_1$ sent, $y<\\lambda$', tex:'\\begin{aligned}P(\\text{err}\\mid s_1)=P(y<\\lambda\\mid s_1)&=\\int_{-\\infty}^{\\lambda}f_Y(y\\mid s_1)\\,dy\\\\&=Q\\!\\left(\\frac{\\mu_1-\\lambda}{\\sigma}\\right)=Q\\!\\left(\\frac{\\sqrt{E_b}-\\lambda}{\\sigma}\\right)\\end{aligned}',
- after:'Given $s_1$ the mean is $\\mu_1=+\\sqrt{E_b}$, and the tail below $\\lambda$ is $Q\\bigl((\\mu_1-\\lambda)/\\sigma\\bigr)$. Here $Q(x)=\\tfrac12\\operatorname{erfc}(x/\\sqrt2)$ is the Gaussian tail. For example, $E_b=1$, $\\sigma=0.5$ and $\\lambda=0$ give $P(\\text{err}\\mid s_0)=Q\\bigl((0+1)/0.5\\bigr)=Q(2)=0.0228$.'},
+ after:'Given $s_1$ the mean is $\\mu_1=+\\sqrt{E_b}$, and the tail below $\\lambda$ is $Q\\bigl((\\mu_1-\\lambda)/\\sigma\\bigr)$. Here $Q(x)$ is the Gaussian tail. For example, $E_b=1$, $\\sigma=0.5$ and $\\lambda=0$ give $P(\\text{err}\\mid s_0)=Q\\bigl((0+1)/0.5\\bigr)=Q(2)=0.0228$.'},
 {t:'p', text:'Moving $\\lambda$ trades one error against the other. One area grows as the other shrinks.'},
 {t:'fig', svg:()=>figErrors(0.3),
  cap:'The two conditional densities with $E_b=1$ and $N_0=0.5$, and the threshold at $\\lambda=0.3$. Each red area is one conditional error. Moving $\\lambda$ to the right shrinks the error given $s_0$ and grows the error given $s_1$.'},
@@ -1891,7 +1891,7 @@ window.C2 = [
 
 {t:'h3', text:'The Q function'},
 {t:'p', text:'The Gaussian tail has no closed form. It is written as a function of its own, $Q(x)$.'},
-{t:'eqbox', cap:'Definition', tex:'Q(x)=\\frac{1}{\\sqrt{2\\pi}}\\int_{x}^{\\infty}e^{-z^{2}/2}\\,dz=\\tfrac12\\operatorname{erfc}\\!\\left(\\frac{x}{\\sqrt2}\\right)',
+{t:'eqbox', cap:'Definition', tex:'Q(x)=\\frac{1}{\\sqrt{2\\pi}}\\int_{x}^{\\infty}e^{-z^{2}/2}\\,dz',
  after:'$Q(x)$ is the probability that a Gaussian of mean $0$ and variance $1$ exceeds $x$.'},
 {t:'p', text:'A few values recur throughout the course.'},
 {t:'eqbox', cap:'Values', tex:'Q(0)=0.5,\\quad Q(1)=0.159,\\quad Q(2)=0.0228,\\quad Q(3)=1.35\\times10^{-3}',
@@ -1937,7 +1937,7 @@ window.C2 = [
 {t:'ul', items:[
  '<b>Ethernet.</b> Wired Ethernet asks for $P_b<10^{-10}$. Polar signalling reaches it at $E_b/N_0=13.1$ dB, where $\\sqrt{2E_b/N_0}=6.36$.',
  '<b>Rare events.</b> A sensor reports a rare event with prior $p_1=0.1$. With $E_b=1$ and $N_0=0.5$, $\\lambda_{\\mathrm{opt}}=0.125\\ln 9=0.275$, moved toward the rare symbol.',
- '<b>The tail on decades.</b> On a logarithmic scale, the Gaussian tail $Q(x)=\\tfrac12\\operatorname{erfc}(x/\\sqrt2)$ keeps steepening. Above $x=3$ each unit step in $x$ divides $Q(x)$ by more than $40$.',
+ '<b>The tail on decades.</b> On a logarithmic scale, the Gaussian tail $Q(x)$ keeps steepening. Above $x=3$ each unit step in $x$ divides $Q(x)$ by more than $40$.',
  '<b>Error counts.</b> A tester counts errors in blocks of $10^{5}$ bits at $P_b=10^{-4}$. It expects $10$ a block, and the counts scatter around that.'
 ]},
 {t:'box', kind:'def', hd:'Target error rate', html:'A standard fixes the largest $P_b$ a link may have. The curve $Q\\bigl(\\sqrt{2E_b/N_0}\\bigr)$ turns that target into the $E_b/N_0$ the link needs.'},
@@ -2189,7 +2189,7 @@ window.C2 = [
  ['When do the correlator and the matched filter agree?','At $t=T_b$, where both give $\\int_0^{T_b}x(t)\\,\\psi(t)\\,dt$, for any shape of $\\psi$.','PS CH8.3.1'],
  ['What noise is left in the demodulator output?','$y=s_m+n$, with $n$ Gaussian of mean $0$ and variance $N_0/2$.','PS CH8.3.1'],
  ['Where does the optimal threshold go?','$\\lambda_{\\mathrm{opt}}=\\frac{N_0}{4\\sqrt{E_b}}\\ln\\frac{p_0}{p_1}$, at $0$ for equal priors and toward the less likely symbol otherwise.','PS CH8.3.3'],
- ['What is $Q(x)$?','The Gaussian tail $Q(x)=\\tfrac12\\operatorname{erfc}(x/\\sqrt2)$, the chance that a unit Gaussian exceeds $x$.','PS CH8.3.3'],
+ ['What is $Q(x)$?','The Gaussian tail $Q(x)$, the chance that a unit Gaussian exceeds $x$.','PS CH8.3.3'],
  ['What is $P_b$ for polar signalling?','$P_b=Q\\bigl(\\sqrt{2E_b/N_0}\\bigr)$ with equal priors and a matched filter.','PS CH8.3.3'],
  ['How much interference does an RC channel add?','A bit $m$ bits back adds $(1-q)q^{m}$, with $q=e^{-2\\pi BT_b}$. The worst case totals $q$.','PS CH10.1.1'],
  ['When does the eye close?','The opening is $2(1-2q)$. It closes at $BT_b=\\ln2/(2\\pi)=0.110$, and errors then occur without noise.','&mdash;'],

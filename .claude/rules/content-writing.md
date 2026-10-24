@@ -68,7 +68,7 @@ Say what an idea is for before developing it. Name each move (for example, "take
 ## Mathematical conventions
 
 - `sinc(x) = sin(πx)/(πx)`. State this convention at every use.
-- `Q(x)` is the Gaussian tail, `Q(x) = ½ erfc(x/√2)`.
+- `Q(x)` is the Gaussian tail, `Q(x) = (1/√(2π)) ∫ₓ^∞ e^{−t²/2} dt`. Student-facing text never writes it with erfc.
 - Noise is white and Gaussian with **two-sided** PSD `N₀/2` unless a scene says otherwise. Mixing the
   one-sided and two-sided conventions is a silent 3 dB error.
 - The imaginary unit is `j`.

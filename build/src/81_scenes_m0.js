@@ -545,7 +545,7 @@ const SC = [
     [{t:'note', kind:'def', head:'Two modes', html:'<b>Lecture mode</b> returns to the last state of the previous scene, so a finished derivation stays finished. <b>Self-study mode</b> returns to the first state, so you can work through it again.'}],
     [{t:'note', kind:'def', head:'Two editions', html:'The <b>student edition</b> hides solutions until you ask for them. The <b>instructor edition</b> shows presenter notes, error warnings and every solution.'}],
     [{t:'note', kind:'warn', head:'Textbook anchors', html:'The band above the title gives the course address. An open book and a number such as <b>PS CH8.4.1</b> give the matching section in Proakis and Salehi, <em>Fundamentals of Communication Systems</em>, 2nd edition.'}],
-    [{t:'note', kind:'warn', head:'Conventions', html:'Noise is white and Gaussian with two-sided density $N_0/2$. $Q(x)=\\tfrac12\\operatorname{erfc}(x/\\sqrt2)$, and $\\log$ means base two unless a base is written.'}]
+    [{t:'note', kind:'warn', head:'Conventions', html:'Noise is white and Gaussian with two-sided density $N_0/2$. $Q(x)$ is the Gaussian tail above $x$, and $\\log$ means base two unless a base is written.'}]
   ]},
   {t:'note', kind:'ok', head:'Privacy and offline use', html:'The artifact is one file. It uses no network and keeps your progress only on this device. <button class="btn" data-act="reset" style="margin-left:14px">Reset all local progress</button>'}
 ]}

@@ -1675,7 +1675,7 @@ const REAL_DECISION = realGallery({ id:'m2-real-decision', nav:'Error rates arou
     [()=>{ const a=P.Axes(EXO({xr:[0,6.3],yr:[-10,0],xlabel:'x',ylabel:'Q(x)',ytickfmt:P.decade,yticksOverride:[-9,-6,-3,0],zeroAxes:false,pad:{l:64,r:26,t:24,b:44},xticksOverride:[0,1,2,3,4,5,6]}));
       a.curve(x=>Math.log10(Qf(x)),{color:C.mid,width:2.2});
       for(let k=1;k<=6;k++) a.point(k,Math.log10(Qf(k)),{color:C.mid,r:4.2});
-      return a.svg(); }, 'The Gaussian tail $Q(x)=\\tfrac12\\operatorname{erfc}(x/\\sqrt2)$ on decades. Above $x=3$ each unit step in $x$ divides $Q(x)$ by more than $40$.'],
+      return a.svg(); }, 'The Gaussian tail $Q(x)$ on decades. Above $x=3$ each unit step in $x$ divides $Q(x)$ by more than $40$.'],
     [()=>{ const a=P.Axes(EXO({xr:[0,21],yr:[-1,22],xlabel:'\\text{block}',ylabel:'\\text{errors}',xticksOverride:[1,5,10,15,20],yticksOverride:[0,10,20]}));
       a.hline(10,{color:C.muted});
       a.stem(ERR_CNT,{color:C.err,showZero:true});
@@ -2615,7 +2615,7 @@ REAL_DEMOD,
       note:'The receiver decides $s_1$ when $y>\\lambda$. Given $s_0$, $y$ is Gaussian with mean $\\mu_0=-\\sqrt{E_b}$ and deviation $\\sigma=\\sqrt{N_0/2}$. Substitute $z=(y-\\mu_0)/\\sigma$: the tail above $\\lambda$ is $Q\\bigl((\\lambda-\\mu_0)/\\sigma\\bigr)$.'},
     {t:'reveal', at:1, items:[
       {t:'eq', label:'Case II: $s_1$ sent, $y<\\lambda$', tex:'\\begin{aligned}P(\\text{err}\\mid s_1)=P(y<\\lambda\\mid s_1)&=\\int_{-\\infty}^{\\lambda}f_Y(y\\mid s_1)\\,dy\\\\&=Q\\!\\left(\\frac{\\mu_1-\\lambda}{\\sigma}\\right)=Q\\!\\left(\\frac{\\sqrt{E_b}-\\lambda}{\\sigma}\\right)\\end{aligned}',
-        note:'The receiver decides $s_0$ when $y<\\lambda$. Given $s_1$ the mean is $\\mu_1=+\\sqrt{E_b}$. The tail below $\\lambda$ is $Q\\bigl((\\mu_1-\\lambda)/\\sigma\\bigr)$. Here $Q(x)=\\tfrac12\\operatorname{erfc}(x/\\sqrt2)$.'}]}
+        note:'The receiver decides $s_0$ when $y<\\lambda$. Given $s_1$ the mean is $\\mu_1=+\\sqrt{E_b}$. The tail below $\\lambda$ is $Q\\bigl((\\mu_1-\\lambda)/\\sigma\\bigr)$.'}]}
   ]}
 ]},
 
@@ -2669,7 +2669,7 @@ REAL_DEMOD,
 
 { id:'m2-q', module:'M2', nav:'The Q function', title:'The Q function',
   objective:'Define the Gaussian tail Q(x) and read its values.',
-  keywords:'Q function gaussian tail erfc complementary error function standard normal table values',
+  keywords:'Q function gaussian tail standard normal table values',
   src:'CH8 s.29–31', slide:true, steps:2, blocks:[
   {t:'eyebrow', text:'Module 2 · The decision and its error'},
   {t:'title', text:'The Q function'},
@@ -2679,7 +2679,7 @@ REAL_DEMOD,
       svg:figQ,
       caption:'Drag $x$. $Q(x)$ is the shaded area under the standard normal density to the right of $x$.'}
   ], right:[
-    {t:'eq', label:'Definition', key:true, tex:'Q(x)=\\frac{1}{\\sqrt{2\\pi}}\\int_{x}^{\\infty}e^{-z^{2}/2}\\,dz=\\tfrac12\\operatorname{erfc}\\!\\left(\\frac{x}{\\sqrt2}\\right)',
+    {t:'eq', label:'Definition', key:true, tex:'Q(x)=\\frac{1}{\\sqrt{2\\pi}}\\int_{x}^{\\infty}e^{-z^{2}/2}\\,dz',
       note:'$Q(x)$ is the probability that a Gaussian of mean $0$ and variance $1$ exceeds $x$.'},
     {t:'reveal', at:1, items:[
       {t:'eq', label:'Values', tex:'Q(0)=0.5,\\quad Q(1)=0.159,\\quad Q(2)=0.0228,\\quad Q(3)=1.35\\times10^{-3}',
@@ -3216,7 +3216,7 @@ REAL_NYQUIST,
     {q:'Where does the optimal threshold go?', glyph:G.thresh,
      a:'$\\lambda_{\\mathrm{opt}}=\\frac{N_0}{4\\sqrt{E_b}}\\ln\\frac{p_0}{p_1}$: at $0$ for equal priors, toward the less likely symbol otherwise.'},
     {q:'What is $Q(x)$?', glyph:G.q,
-     a:'The Gaussian tail $Q(x)=\\tfrac12\\operatorname{erfc}(x/\\sqrt2)$: the chance that a unit Gaussian exceeds $x$.'},
+     a:'The Gaussian tail $Q(x)$: the chance that a unit Gaussian exceeds $x$.'},
     {q:'What is $P_b$ for polar signalling?', glyph:G.pb,
      a:'$P_b=Q\\bigl(\\sqrt{2E_b/N_0}\\bigr)$ with equal priors and a matched filter.'},
     {q:'How much interference does an RC channel add?', glyph:G.isi,
