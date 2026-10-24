@@ -666,7 +666,7 @@ function figDemodConv(){
   a.poly([[-1.2,0],[0,0],[0,1],[1,1],[1,0],[2.3,0]],{color:C.in,width:2.4});
   a.poly([[-1.2,0],[t-1,0],[t-1,1],[t,1],[t,0],[2.3,0]],{color:C.h,width:2.2,dash:'7 5'});
   a.note(0.55,1.2,'s_m\\psi(\\tau)',{tex:true,fs:14,color:C.in,anchor:'middle'});
-  a.note(t-0.95,1.5,'h(t-\\tau),\\ t=T_b/2',{tex:true,fs:14,color:C.h});
+  a.note(t-0.95,1.5,'h(T_b/2-\\tau)',{tex:true,fs:14,color:C.h});
   const b=ax1({h:200,xr:[-1.2,2.3],yr:[-0.2,1.45],xlabel:'t/T_b',ylabel:'y(t)',
     xticksOverride:[-1,0,1,2],yticksOverride:[0,0.5,1]});
   b.curve(tri,{color:C.mid,width:2.6,n:700});
