@@ -20882,7 +20882,7 @@ function figPpm(v){
 
 /* The two conditional densities of y. The figures use E_b = 1 and N_0 = 0.5,
    so sigma = 0.5 and the overlap is wide enough to see. The density given
-   s_0 is dashed violet, the one given s_1 solid cyan, so the two symbols
+   s_0 is violet, the one given s_1 cyan; both are solid, so the two symbols
    never share a colour; each mean dot takes its symbol's colour. The error areas are red. */
 const DS = {A:1, s:0.5, N0:0.5};
 function densFrame(o){
@@ -20898,7 +20898,7 @@ function markMeans(a, y){
 function figStat(){
   const {A,s} = DS, top = dens(0,0,s);
   const a = densFrame({yr:[-0.06*top,1.3*top], ylabel:'f_Y(y\\mid s_m)'});
-  a.curve(y=>dens(y,-A,s), {color:C.mid, width:2.4, dash:'8 5'});
+  a.curve(y=>dens(y,-A,s), {color:C.mid, width:2.4});
   a.curve(y=>dens(y, A,s), {color:C.in, width:2.4});
   markMeans(a, 0.1*top);
   return a.svg();
@@ -20909,7 +20909,7 @@ function figErrors(v){
   const a = densFrame({yr:[-0.06*top,yt], ylabel:'f_Y(y\\mid s_m)'});
   a.area(y=>dens(y,-A,s), lam, 3, {color:C.dec.err});
   a.area(y=>dens(y, A,s), -3, lam, {color:C.dec.err});
-  a.curve(y=>dens(y,-A,s), {color:C.mid, width:2.4, dash:'8 5'});
+  a.curve(y=>dens(y,-A,s), {color:C.mid, width:2.4});
   a.curve(y=>dens(y, A,s), {color:C.in, width:2.4});
   a.vline(lam, {color:C.ink, dash:'6 4', width:1.6, opacity:1});
   markMeans(a, 0.1*top);
@@ -20925,7 +20925,7 @@ function figThreshold(){
   const {A,s,N0} = DS, p0 = 0.7, top = p0*dens(0,0,s), lo = lamOpt(N0,A,p0);
   const a = densFrame({yr:[-0.06*top,1.3*top], ylabel:'P(s_m)\\,f_Y(y\\mid s_m)'});
   a.area(y=>Math.min(p0*dens(y,-A,s),(1-p0)*dens(y,A,s)), -3, 3, {color:C.dec.err});
-  a.curve(y=>p0*dens(y,-A,s), {color:C.mid, width:2.4, dash:'8 5'});
+  a.curve(y=>p0*dens(y,-A,s), {color:C.mid, width:2.4});
   a.curve(y=>(1-p0)*dens(y,A,s), {color:C.in, width:2.4});
   a.vline(0, {color:C.muted});
   a.vline(lo, {color:C.ink, dash:'6 4', width:1.6, opacity:1});
@@ -20939,7 +20939,7 @@ function figThresholdLive(v){
   const A = 1, N0 = 1/Math.pow(10, dB/10), s = Math.sqrt(N0/2), lo = lamOpt(N0, A, p0);
   const top = Math.max(p0, 1-p0)*dens(0,0,s);
   const a = densFrame({yr:[-0.06*top,1.36*top], ylabel:'P(s_m)\\,f_Y(y\\mid s_m)'});
-  a.curve(y=>p0*dens(y,-A,s), {color:C.mid, width:2.4, dash:'8 5'});
+  a.curve(y=>p0*dens(y,-A,s), {color:C.mid, width:2.4});
   a.curve(y=>(1-p0)*dens(y,A,s), {color:C.in, width:2.4});
   a.vline(0, {color:C.muted});
   a.vline(lo, {color:C.ink, dash:'6 4', width:1.6, opacity:1});
@@ -20990,7 +20990,7 @@ function figExLog(){
     pad:{l:64,r:26,t:24,b:44}}));
   leftTicks(a, P.decades(-7,-2), P.decade);
   const inX = f => y => Math.abs(y) <= 0.24 ? f(y) : NaN;
-  a.curve(inX(y=>L(y,-A,p0)), {color:C.mid, width:2.4, dash:'8 5'});
+  a.curve(inX(y=>L(y,-A,p0)), {color:C.mid, width:2.4});
   a.curve(inX(y=>L(y, A,1-p0)), {color:C.in, width:2.4});
   a.vline(0, {color:C.muted});
   a.vline(lam, {color:C.ink, dash:'6 4', width:1.6, opacity:1});
@@ -22316,17 +22316,16 @@ REAL_DEMOD,
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true, svg:figStat,
       caption:'The density of $y$ for each symbol, drawn with $E_b=1$ and $N_0=0.5$. Each is a Gaussian centred on its symbol, and the two overlap.'},
-    {t:'legend', items:[['mid','$f_Y(y\\mid s_0)$',true],['in','$f_Y(y\\mid s_1)$']], at:'tr'}
+    {t:'legend', items:[['mid','$f_Y(y\\mid s_0)$'],['in','$f_Y(y\\mid s_1)$']], at:'tr'}
   ], right:[
     {t:'eq', label:'The statistic', tex:'y=s_m+n,\\qquad s_m=\\pm\\sqrt{E_b},\\qquad n\\sim\\mathcal{N}\\!\\left(0,\\tfrac{N_0}{2}\\right)',
       note:'$y$ is the demodulator output at $t=T_b$. It is all the receiver keeps of the bit.'},
     {t:'reveal', at:1, items:[
+      {t:'eq', label:'Mean and variance', tex:'\\begin{aligned}E[y]&=E[s_m+n]=E[s_m]+E[n]\\\\&=s_m\\\\\\sigma_Y^{2}&=\\operatorname{Var}(y)=\\operatorname{Var}(s_m+n)\\\\&=\\operatorname{Var}(n)=\\frac{N_0}{2}\\end{aligned}',
+        note:'$s_m$ is a constant and $E[n]=0$, so the mean is the symbol. Adding a constant moves $y$ but does not change its spread, since $\\operatorname{Var}(aX+b)=a^{2}\\operatorname{Var}(X)$ with $a=1$.'}]},
+    {t:'reveal', at:2, items:[
       {t:'eq', label:'Conditional density', tex:'f_Y(y\\mid s_1)=\\frac{1}{\\sqrt{\\pi N_0}}\\exp\\!\\left(-\\frac{(y-\\sqrt{E_b})^{2}}{N_0}\\right)',
         note:'This is a Gaussian with mean $\\sqrt{E_b}$ and variance $\\sigma^{2}=N_0/2$. For $s_0$, replace $-\\sqrt{E_b}$ by $+\\sqrt{E_b}$ in the exponent.'}]},
-    {t:'reveal', at:2, items:[
-      {t:'note', kind:'def', head:'Given', html:'$E_b=1$ and $N_0=0.5$.<div class="nsep"></div>What is the standard deviation of $y$ given $s_1$?',
-        ask:{key:'m2-stat', choices:['$0.25$','$0.5$','$0.707$'], answer:1,
-          why:'$\\sigma=\\sqrt{N_0/2}=\\sqrt{0.25}=0.5$. The symbol shifts the mean, not the spread.'}}]}
   ]}
 ]},
 
@@ -22341,7 +22340,7 @@ REAL_DEMOD,
       live:{controls:[{k:'lam', label:'$\\lambda$', min:-1, max:1, step:0.05, v:0, show:v=>'$'+v.toFixed(2)+'$'}]},
       svg:figErrors,
       caption:'Drag the threshold $\\lambda$. The receiver decides $s_1$ when $y>\\lambda$. Each red area is one conditional error. One grows as the other shrinks.'},
-    {t:'legend', items:[['mid','$f_Y(y\\mid s_0)$',true],['in','$f_Y(y\\mid s_1)$'],['err','error']], at:'tr'}
+    {t:'legend', items:[['mid','$f_Y(y\\mid s_0)$'],['in','$f_Y(y\\mid s_1)$'],['err','error']], at:'tr'}
   ], right:[
     {t:'eq', label:'Error given $s_0$', tex:'\\begin{aligned}P(\\text{err}\\mid s_0)&=\\int_{\\lambda}^{\\infty}\\frac{1}{\\sqrt{\\pi N_0}}\\,e^{-(y+\\sqrt{E_b})^{2}/N_0}\\,dy\\\\&=\\int_{(\\lambda+\\sqrt{E_b})/\\sigma}^{\\infty}\\frac{1}{\\sqrt{2\\pi}}\\,e^{-z^{2}/2}\\,dz\\\\&=Q\\!\\left(\\frac{\\lambda+\\sqrt{E_b}}{\\sigma}\\right)\\end{aligned}',
       note:'Substitute $z=(y+\\sqrt{E_b})/\\sigma$ with $\\sigma=\\sqrt{N_0/2}$. The lower limit $y=\\lambda$ becomes $z=(\\lambda+\\sqrt{E_b})/\\sigma$.'},
@@ -22364,7 +22363,7 @@ REAL_DEMOD,
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true, svg:figThreshold,
       caption:'The two densities weighted by their priors, for $P(s_0)=0.7$, $E_b=1$ and $N_0=0.5$. They cross at $\\lambda_{\\mathrm{opt}}$, right of zero. The shaded area is $P_e$.'},
-    {t:'legend', items:[['mid','$0.7\\,f_Y(y\\mid s_0)$',true],['in','$0.3\\,f_Y(y\\mid s_1)$'],['err','$P_e$']], at:'tr'}
+    {t:'legend', items:[['mid','$0.7\\,f_Y(y\\mid s_0)$'],['in','$0.3\\,f_Y(y\\mid s_1)$'],['err','$P_e$']], at:'tr'}
   ], right:[
     {t:'eq', label:'Minimise the average error', tex:'\\begin{aligned}P_e(\\lambda)&=p_0\\,P(\\text{err}\\mid s_0)+p_1\\,P(\\text{err}\\mid s_1)\\\\\\frac{dP_e}{d\\lambda}&=-p_0\\,f_Y(\\lambda\\mid s_0)+p_1\\,f_Y(\\lambda\\mid s_1)=0\\end{aligned}',
       note:'$p_0$ and $p_1$ are the priors. Differentiate each integral with respect to its limit $\\lambda$.'},
@@ -22391,7 +22390,7 @@ REAL_DEMOD,
         {k:'dB', label:'$E_b/N_0$', min:0, max:10, step:1, v:3, show:v=>'$'+v+'$ dB'}]},
       svg:figThresholdLive,
       caption:'Drag the prior $p_0$ and $E_b/N_0$, with $E_b=1$. The threshold sits where the weighted densities cross. It returns to $0$ at $p_0=0.5$.'},
-    {t:'legend', items:[['mid','$p_0\\,f_Y(y\\mid s_0)$',true],['in','$p_1\\,f_Y(y\\mid s_1)$']], at:'tr'}
+    {t:'legend', items:[['mid','$p_0\\,f_Y(y\\mid s_0)$'],['in','$p_1\\,f_Y(y\\mid s_1)$']], at:'tr'}
   ], right:[
     {t:'note', kind:'def', head:'Two effects', html:'<ol class="steps"><li>The threshold moves away from the more likely symbol, so that symbol gets the larger region.</li><li>The move grows with $N_0$. With little noise, $y$ decides and the prior hardly matters.</li></ol>'},
     {t:'reveal', at:1, items:[
@@ -22460,7 +22459,7 @@ REAL_DEMOD,
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true, svg:figExLog,
       caption:'The two weighted densities on a logarithmic scale, where each is a parabola. They cross at $\\lambda_{\\mathrm{opt}}$, just right of zero.'},
-    {t:'legend', items:[['mid','$0.7\\,f_Y(y\\mid s_0)$',true],['in','$0.3\\,f_Y(y\\mid s_1)$']], at:'tc'}
+    {t:'legend', items:[['mid','$0.7\\,f_Y(y\\mid s_0)$'],['in','$0.3\\,f_Y(y\\mid s_1)$']], at:'tc'}
   ], right:[
     {t:'note', kind:'def', head:'Given', html:'Polar signalling with $E_b=1$, $N_0=0.1$ and $P(s_1)=0.3$.<div class="nsep"></div>Find (a) the optimal threshold $\\lambda_{\\mathrm{opt}}$.',
       ask:{key:'m2-ex-pe', choices:['$-0.0212$','$0$','$0.0212$'], answer:2,

@@ -832,7 +832,7 @@ function markMeans(a,y){
 function figStat(){
   const {A,s}=DS, top=dens(0,0,s);
   const a=densFrame({yr:[-0.06*top,1.3*top],ylabel:'f_Y(y\\mid s_m)'});
-  a.curve(y=>dens(y,-A,s),{color:C.mid,width:2.4,dash:'8 5'});
+  a.curve(y=>dens(y,-A,s),{color:C.mid,width:2.4});
   a.curve(y=>dens(y,A,s),{color:C.in,width:2.4});
   markMeans(a,0.1*top);
   return a.svg();
@@ -842,7 +842,7 @@ function figErrors(lam){
   const a=densFrame({h:260,yr:[-0.06*top,1.42*top],ylabel:'f_Y(y\\mid s_m)'});
   a.area(y=>dens(y,-A,s),lam,3,{color:C.dec.err});
   a.area(y=>dens(y,A,s),-3,lam,{color:C.dec.err});
-  a.curve(y=>dens(y,-A,s),{color:C.mid,width:2.4,dash:'8 5'});
+  a.curve(y=>dens(y,-A,s),{color:C.mid,width:2.4});
   a.curve(y=>dens(y,A,s),{color:C.in,width:2.4});
   a.vline(lam,{color:C.ink,dash:'6 4',width:1.6,opacity:1});
   markMeans(a,0.1*top);
@@ -855,7 +855,7 @@ function figThreshold(){
   const {A,s,N0}=DS, p0=0.7, top=p0*dens(0,0,s), lo=lamOpt(N0,A,p0);
   const a=densFrame({yr:[-0.06*top,1.3*top],ylabel:'P(s_m)\\,f_Y(y\\mid s_m)'});
   a.area(y=>Math.min(p0*dens(y,-A,s),(1-p0)*dens(y,A,s)),-3,3,{color:C.dec.err});
-  a.curve(y=>p0*dens(y,-A,s),{color:C.mid,width:2.4,dash:'8 5'});
+  a.curve(y=>p0*dens(y,-A,s),{color:C.mid,width:2.4});
   a.curve(y=>(1-p0)*dens(y,A,s),{color:C.in,width:2.4});
   a.vline(0,{color:C.muted});
   a.vline(lo,{color:C.ink,dash:'6 4',width:1.6,opacity:1});
@@ -868,7 +868,7 @@ function figThresholdLive(p0,dB){
   const A=1, N0=1/Math.pow(10,dB/10), s=Math.sqrt(N0/2), lo=lamOpt(N0,A,p0);
   const top=Math.max(p0,1-p0)*dens(0,0,s);
   const a=densFrame({yr:[-0.06*top,1.36*top],ylabel:'P(s_m)\\,f_Y(y\\mid s_m)'});
-  a.curve(y=>p0*dens(y,-A,s),{color:C.mid,width:2.4,dash:'8 5'});
+  a.curve(y=>p0*dens(y,-A,s),{color:C.mid,width:2.4});
   a.curve(y=>(1-p0)*dens(y,A,s),{color:C.in,width:2.4});
   a.vline(0,{color:C.muted});
   a.vline(lo,{color:C.ink,dash:'6 4',width:1.6,opacity:1});
@@ -906,7 +906,7 @@ function figExLog(){
     pad:{l:64,r:22,t:20,b:44}});
   leftTicks(a,P.decades(-7,-2),P.decade);
   const inX=f=>y=>Math.abs(y)<=0.24?f(y):NaN;
-  a.curve(inX(y=>L(y,-A,p0)),{color:C.mid,width:2.4,dash:'8 5'});
+  a.curve(inX(y=>L(y,-A,p0)),{color:C.mid,width:2.4});
   a.curve(inX(y=>L(y,A,1-p0)),{color:C.in,width:2.4});
   a.vline(0,{color:C.muted});
   a.vline(lam,{color:C.ink,dash:'6 4',width:1.6,opacity:1});
@@ -1846,11 +1846,14 @@ window.C2 = [
 {t:'p', text:'The demodulator output $y$ at $t=T_b$ is the <b>decision statistic</b>. It is all the receiver keeps of the bit.'},
 {t:'eqbox', cap:'The statistic', tex:'y=s_m+n,\\qquad s_m=\\pm\\sqrt{E_b},\\qquad n\\sim\\mathcal{N}\\!\\left(0,\\tfrac{N_0}{2}\\right)',
  after:'The symbol sets the mean of $y$. The noise sets its spread.'},
-{t:'p', text:'Given the symbol, $y$ is Gaussian with mean $s_m$ and variance $\\sigma^{2}=N_0/2$. Put these into the Gaussian density.'},
+{t:'p', text:'Given the symbol, $y$ is a constant plus a Gaussian, so it is Gaussian too. Find its mean and variance.'},
+{t:'eqbox', cap:'Mean and variance', tex:'\\begin{aligned}E[y]&=E[s_m+n]=E[s_m]+E[n]\\\\&=s_m\\\\\\sigma_Y^{2}&=\\operatorname{Var}(y)=\\operatorname{Var}(s_m+n)\\\\&=\\operatorname{Var}(n)=\\frac{N_0}{2}\\end{aligned}',
+ after:'$s_m$ is a constant and $E[n]=0$, so the mean is the symbol. Adding a constant moves $y$ but does not change its spread, since $\\operatorname{Var}(aX+b)=a^{2}\\operatorname{Var}(X)$ with $a=1$.'},
+{t:'p', text:'So $y$ is Gaussian with mean $s_m$ and variance $\\sigma^{2}=N_0/2$. Put these into the Gaussian density.'},
 {t:'eqbox', cap:'Conditional density', tex:'\\begin{aligned}f_Y(y\\mid s_1)&=\\frac{1}{\\sqrt{2\\pi\\sigma^{2}}}\\exp\\!\\left(-\\frac{(y-\\sqrt{E_b})^{2}}{2\\sigma^{2}}\\right)\\\\&=\\frac{1}{\\sqrt{\\pi N_0}}\\exp\\!\\left(-\\frac{(y-\\sqrt{E_b})^{2}}{N_0}\\right)\\end{aligned}',
  after:'The second line uses $2\\sigma^{2}=N_0$. For $s_0$, replace $-\\sqrt{E_b}$ by $+\\sqrt{E_b}$ in the exponent. With $E_b=1$ and $N_0=0.5$, $\\sigma=\\sqrt{0.25}=0.5$ for either symbol.'},
 {t:'fig', svg:()=>figStat(),
- cap:'The density of $y$ for each symbol, drawn with $E_b=1$ and $N_0=0.5$. The density given $s_0$ is dashed and the density given $s_1$ solid. Each is a Gaussian centred on its symbol, and the two overlap.'},
+ cap:'The density of $y$ for each symbol, drawn with $E_b=1$ and $N_0=0.5$. The density given $s_0$ is violet and the density given $s_1$ cyan. Each is a Gaussian centred on its symbol, and the two overlap.'},
 
 {t:'h3', text:'The two conditional errors'},
 {t:'p', text:'The receiver decides $s_1$ when $y>\\lambda$ and $s_0$ otherwise. Each symbol then has its own error probability: the area of its density on the wrong side of $\\lambda$.'},
@@ -1872,7 +1875,7 @@ window.C2 = [
 {t:'eqbox', cap:'The optimal threshold', big:true, tex:'\\lambda_{\\mathrm{opt}}=\\frac{N_0}{4\\sqrt{E_b}}\\ln\\frac{p_0}{p_1}',
  after:'For example, $p_0=0.7$, $E_b=1$ and $N_0=0.5$ give $\\lambda_{\\mathrm{opt}}=\\frac{0.5}{4}\\ln\\frac{0.7}{0.3}=0.125(0.847)=0.106$. It moves toward the less likely symbol.'},
 {t:'fig', svg:()=>figThreshold(),
- cap:'The two densities weighted by their priors, for $p_0=0.7$, $E_b=1$ and $N_0=0.5$. The weighted density of $s_0$ is dashed. They cross at $\\lambda_{\\mathrm{opt}}$, right of zero. The shaded area is $P_e$.'},
+ cap:'The two densities weighted by their priors, for $p_0=0.7$, $E_b=1$ and $N_0=0.5$. The weighted density of $s_0$ is violet. They cross at $\\lambda_{\\mathrm{opt}}$, right of zero. The shaded area is $P_e$.'},
 
 {t:'h3', text:'Threshold, priors and noise'},
 {t:'p', text:'The formula for $\\lambda_{\\mathrm{opt}}$ shows two effects.'},
@@ -1914,7 +1917,7 @@ window.C2 = [
  ['Check','Both weighted densities are equal there. $p_0f_Y(\\lambda\\mid s_0)=\\frac{0.7}{\\sqrt{0.1\\pi}}e^{-(1.0212)^{2}/0.1}=1.249\\,e^{-10.428}=3.70\\times10^{-5}$. $p_1f_Y(\\lambda\\mid s_1)=\\frac{0.3}{\\sqrt{0.1\\pi}}e^{-(0.9788)^{2}/0.1}=0.535\\,e^{-9.581}=3.70\\times10^{-5}$.']
 ]},
 {t:'fig', svg:()=>figExLog(),
- cap:'Example 2.4: the two weighted densities on a logarithmic scale, where each is a parabola. The weighted density of $s_0$ is dashed. They cross at $\\lambda_{\\mathrm{opt}}=0.0212$, just right of zero.'},
+ cap:'Example 2.4: the two weighted densities on a logarithmic scale, where each is a parabola. The weighted density of $s_0$ is violet. They cross at $\\lambda_{\\mathrm{opt}}=0.0212$, just right of zero.'},
 {t:'box', kind:'err', hd:'Common error', html:'Use $p_0=0.7$, not the given $0.3$, for $s_0$. Swapping them gives $-0.0212$.'},
 
 {t:'ex', hd:'Example 2.5 — unequal priors: the error probability', rows:[
