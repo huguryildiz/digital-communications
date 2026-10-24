@@ -22363,15 +22363,15 @@ REAL_DEMOD,
       caption:'The two densities weighted by their priors, for $P(s_0)=0.7$, $E_b=1$ and $N_0=0.5$. They cross at $\\lambda_{\\mathrm{opt}}$, right of zero. The shaded area is $P_e$.'},
     {t:'legend', items:[['mid','$0.7\\,f_Y(y\\mid s_0)$'],['in','$0.3\\,f_Y(y\\mid s_1)$'],['err','$P_e$']], at:'tr'}
   ], right:[
-    {t:'eq', label:'Minimise the average error', tex:'\\begin{aligned}P_e(\\lambda)&=p_0\\,P(\\text{err}\\mid s_0)+p_1\\,P(\\text{err}\\mid s_1)\\\\\\frac{dP_e}{d\\lambda}&=-p_0\\,f_Y(\\lambda\\mid s_0)+p_1\\,f_Y(\\lambda\\mid s_1)=0\\end{aligned}',
-      note:'$p_0$ and $p_1$ are the priors. Differentiate each integral with respect to its limit $\\lambda$.'},
+    {t:'eq', label:'Minimise the average error', tex:'P_e(\\lambda)=p_0\\int_{\\lambda}^{\\infty}f_Y(y\\mid s_0)\\,dy+p_1\\int_{-\\infty}^{\\lambda}f_Y(y\\mid s_1)\\,dy',
+      note:'$p_0$ and $p_1$ are the priors.'},
     {t:'reveal', at:1, items:[
+      {t:'eq', label:'Leibniz rule', tex:'\\frac{d}{db}\\int_{a}^{b}f(x)\\,dx=f(b),\\qquad\\frac{d}{da}\\int_{a}^{b}f(x)\\,dx=-f(a)'},
+      {t:'eq', label:'Set the derivative to zero', tex:'\\frac{dP_e}{d\\lambda}=-p_0\\,f_Y(\\lambda\\mid s_0)+p_1\\,f_Y(\\lambda\\mid s_1)=0',
+        note:'$\\lambda$ is the lower limit of the first integral, hence the minus sign.'}]},
+    {t:'reveal', at:2, items:[
       {t:'eq', label:'Solve for $\\lambda$', key:true, result:true, tex:'\\begin{aligned}p_0\\,e^{-(\\lambda+\\sqrt{E_b})^{2}/N_0}&=p_1\\,e^{-(\\lambda-\\sqrt{E_b})^{2}/N_0}\\\\4\\lambda\\sqrt{E_b}&=N_0\\ln\\frac{p_0}{p_1}\\\\\\lambda_{\\mathrm{opt}}&=\\frac{N_0}{4\\sqrt{E_b}}\\ln\\frac{p_0}{p_1}\\end{aligned}',
         note:'Cancel the common factor $1/\\sqrt{\\pi N_0}$, take logarithms, then expand the two squares.'}]},
-    {t:'reveal', at:2, items:[
-      {t:'note', kind:'def', head:'Given', html:'$p_0=0.7$, $E_b=1$ and $N_0=0.5$.<div class="nsep"></div>What is $\\lambda_{\\mathrm{opt}}$?',
-        ask:{key:'m2-threshold', choices:['$-0.106$','$0$','$0.106$'], answer:2,
-          why:'$\\lambda_{\\mathrm{opt}}=\\frac{0.5}{4}\\ln\\frac{0.7}{0.3}=0.125(0.847)=0.106$. It moves toward the less likely symbol.'}}]}
   ]}
 ]},
 
