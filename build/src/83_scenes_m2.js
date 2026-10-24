@@ -1114,13 +1114,17 @@ function figPpm(v){
   const big = P.labelScale() > 1, hA = big ? 230 : 170, hB = big ? 330 : 270;
   const a = P.Axes({w:560,h:hA,xr:[-0.3,1.3],yr:[-0.3,big?3.0:2.6],xlabel:'t', xunit:'T_b',ylabel:'\\text{amplitude}', ynameAtAxis:true,
     pad:{l:56,r:26,t:24,b:40},xticksOverride:[0,0.5,1],yticksOverride:[]});
-  const sq = (x0, x1, h) => [[-0.3,0],[x0,0],[x0,h],[x1,h],[x1,0],[1.3,0]];
+  /* both pulses are zero off their halves: the zero line is drawn once, solid,
+     and s_2 (dashed) only by its top and its falling edge, so no dashed run
+     lies on a solid one */
+  const pair = (h, color, width, dash) => { a.poly([[-0.3,0],[1.3,0]], {color, width});
+    a.poly([[0,0],[0,h],[0.5,h],[0.5,0]], {color, width}); a.poly([[0.5,h],[1,h],[1,0]], {color, width, dash}); };
   /* the pulse names sit a fixed number of pixels above the pulse tops */
   const ys = big ? 2+8*P.labelScale()/(a.sy(0)-a.sy(1)) : 2.25;
-  fade(a, 1-0.6*o1, ()=>{ a.poly(sq(0,0.5,2), {color:C.in, width:2.4}); a.poly(sq(0.5,1,2), {color:C.in, width:2.4, dash:'8 5'});
+  fade(a, 1-0.6*o1, ()=>{ pair(2, C.in, 2.4, '8 5');
     a.note(0.25, ys, 's_1(t)', {tex:true, fs:15, color:C.in, anchor:'middle'});
     a.note(0.75, ys, 's_2(t)', {tex:true, fs:15, color:C.in, anchor:'middle'}); });
-  fade(a, o1, ()=>{ a.poly(sq(0,0.5,r), {color:C.h, width:2.2}); a.poly(sq(0.5,1,r), {color:C.h, width:2.2, dash:'7 5'});
+  fade(a, o1, ()=>{ pair(r, C.h, 2.2, '7 5');
     a.note(1.05, r, '\\psi_1,\\ \\psi_2', {tex:true, fs:15, color:C.h}); });
   const b = P.Axes({w:560,h:hB,xr:[-0.9,2.6],yr:[-0.7,2.1],xlabel:'y_1',ylabel:'y_2',
     pad:{l:56,r:26,t:24,b:42},xticksOverride:[0,1],yticksOverride:[0,1],xtickfmt:()=>'',ytickfmt:()=>''});
@@ -2211,7 +2215,7 @@ REAL_MATCHED,
     {t:'legend', items:[['h','$\\psi(t)$',0,0,0],['mid','$\\psi^{2}(t)$',0,1]], at:'tr'}
   ], right:[
     {t:'eq', label:'The pulse', tex:'\\psi(t)=\\begin{cases}1/\\sqrt{T_b}, & 0\\le t\\le T_b\\\\[2pt] 0, & \\text{otherwise}\\end{cases}',
-      note:'A rectangle one bit long; $T_b$ is the bit duration. We call $\\psi(t)$ the <b>basis function</b>; Module 3 builds them by Gram–Schmidt.'},
+      note:'A rectangle one bit long, and $T_b$ is the bit duration. We call $\\psi(t)$ the <b>basis function</b>. Module 3 builds them by Gram–Schmidt.'},
     {t:'reveal', at:1, items:[
       {t:'eq', label:'Step 1 · its energy', tex:'\\begin{aligned}E_\\psi&=\\int_0^{T_b}\\psi^{2}(t)\\,dt\\\\&=\\int_0^{T_b}\\frac{1}{T_b}\\,dt\\\\&=\\frac{1}{T_b}\\cdot T_b=1\\end{aligned}',
         note:'Square the height, then integrate over the bit. The height $1/\\sqrt{T_b}$ is chosen so that the energy is exactly $1$.'}]},
@@ -2263,7 +2267,7 @@ REAL_MATCHED,
       caption:'Step through: the two waveforms, and their products with $\\psi(t)$, whose areas are the two numbers. Then the numbers as points on the axis of $\\psi(t)$, and their distance.'}
   ], right:[
     {t:'eq', label:'Coefficient on $\\psi$', tex:'\\begin{aligned}s_m&=\\int_0^{T_b}s_m(t)\\,\\psi(t)\\,dt\\\\s_1&=\\int_0^{T_b}A\\cdot\\frac{1}{\\sqrt{T_b}}\\,dt\\\\&=\\frac{A}{\\sqrt{T_b}}\\cdot T_b=A\\sqrt{T_b}=+\\sqrt{E_b}\\end{aligned}',
-      note:'Multiply by $\\psi(t)$ and integrate over the bit; $s_0(t)=-A$ gives $-\\sqrt{E_b}$. Module 3 draws any signal set this way.'},
+      note:'Multiply by $\\psi(t)$ and integrate over the bit. For $s_0(t)=-A$ it gives $-\\sqrt{E_b}$. Module 3 draws any signal set this way.'},
     {t:'reveal', at:1, items:[
       {t:'eq', label:'Distance', tex:'\\begin{aligned}d&=s_1-s_0\\\\&=\\sqrt{E_b}-\\bigl(-\\sqrt{E_b}\\bigr)=2\\sqrt{E_b}\\end{aligned}',
         note:'A larger distance means noise must move the received number further before it lands nearer the wrong point.'}]},
