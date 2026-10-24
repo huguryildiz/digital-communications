@@ -783,12 +783,12 @@ function figDemodConv(v){
   a.poly([[-1.2,0],[0,0],[0,1],[1,1],[1,0],[2.3,0]], {color:C.in, width:2.4});
   a.poly([[-1.2,0],[t-1,0],[t-1,1],[t,1],[t,0],[2.3,0]], {color:C.h, width:2.2, dash:'7 5'});
   a.note(0.5, 1.2, 's_m\\psi(\\tau)', {tex:true, fs:15, color:C.in, anchor:'middle'});
-  /* t in the label follows the slide: a half-multiple of T_b at rest, two decimals between */
+  /* the label puts the output time in place of t: h(T_b/2-tau) at rest, two decimals between */
   const k = Math.round(2*t), tl = Math.abs(2*t-k) < 0.01
-    ? ['0','T_b/2','T_b','3T_b/2','2T_b'][k] : `${t.toFixed(2)}T_b`;
-  /* the label (about 1.05 T_b wide) steps to whichever side of the vertical axis is nearer rather than cross it */
-  let lx = t-0.95; if(lx < 0.08 && lx+1.05 > -0.08) lx = lx+0.525 < 0 ? -1.13 : 0.08;
-  a.note(lx, 1.55, `h(t-\\tau),\\ t=${tl}`, {tex:true, fs:15, color:C.h});
+    ? ['','T_b/2','T_b','3T_b/2','2T_b'][k] : `${t.toFixed(2)}T_b`;
+  /* the label (about 0.8 T_b wide) steps to whichever side of the vertical axis is nearer rather than cross it */
+  let lx = t-0.95; if(lx < 0.08 && lx+0.8 > -0.08) lx = lx+0.4 < 0 ? -0.9 : 0.08;
+  a.note(lx, 1.55, `h(${tl}-\\tau)`, {tex:true, fs:15, color:C.h});
   const b = P.Axes({w:560,h:hB,xr:[-1.2,2.3],yr:[-0.2,1.5],xlabel:'t', xunit:'T_b',ylabel:'y(t)',
     pad:{l:56,r:26,t:24,b:42},xticksOverride:[-1,0,1,2],yticksOverride:[0,0.5,1]});
   b.curve(s=>s <= t+1e-9 ? tri1(s) : NaN, {color:C.mid, width:2.6, n:700});
