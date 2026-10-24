@@ -1734,7 +1734,7 @@ window.C2 = [
 {t:'eqbox', cap:'Step 1 · sample at $t=T_b$', tex:'y(T_b)=\\int_0^{T_b}s_m\\psi(\\tau)\\,\\psi(\\tau)\\,d\\tau+n(T_b)',
  after:'Here $\\psi\\bigl(T_b-(T_b-\\tau)\\bigr)=\\psi(\\tau)$.'},
 {t:'p', text:'$s_m$ is a constant, so it leaves the integral. What is left is the energy of $\\psi$, which is $1$.'},
-{t:'eqbox', cap:'Step 2 · use unit energy', tex:'\\begin{aligned}y(T_b)&=s_m\\int_0^{T_b}\\psi^{2}(\\tau)\\,d\\tau+n(T_b)\\\\&=s_m\\cdot1+n(T_b)\\end{aligned}'},
+{t:'eqbox', cap:'Step 2 · use unit energy', tex:'\\begin{aligned}y(T_b)&=s_m\\underbrace{\\int_0^{T_b}\\psi^{2}(\\tau)\\,d\\tau}_{1}+n(T_b)\\\\&=s_m\\cdot1+n(T_b)\\end{aligned}'},
 {t:'eqbox', cap:'Key result · the demodulator output', tex:'y=s_m+n,\\qquad n=\\int_0^{T_b}w(\\tau)\\,\\psi(\\tau)\\,d\\tau',
  after:'The waveform has become one number. $s_m$ is set by the bit. $n=n(T_b)$ is a random variable with a new value on every bit. For example, with $E_b=4$ mJ, the bit $0$ and $n=0.01$, $y=-0.0632+0.01=-0.053$.'},
 {t:'fig', svg:()=>figMfDemod(),

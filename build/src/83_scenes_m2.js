@@ -2336,7 +2336,7 @@ REAL_MATCHED,
     {t:'eq', label:'Step 1 · sample at $t=T_b$', tex:'y(T_b)=\\int_0^{T_b}s_m\\psi(\\tau)\\,\\psi(\\tau)\\,d\\tau+n(T_b)',
       note:'Put $t=T_b$. Then $\\psi\\bigl(T_b-(T_b-\\tau)\\bigr)=\\psi(\\tau)$: the reversal and the delay cancel.'},
     {t:'reveal', at:1, items:[
-      {t:'eq', label:'Step 2 · use unit energy', tex:'\\begin{aligned}y(T_b)&=s_m\\int_0^{T_b}\\psi^{2}(\\tau)\\,d\\tau+n(T_b)\\\\&=s_m\\cdot1+n(T_b)\\end{aligned}',
+      {t:'eq', label:'Step 2 · use unit energy', tex:'\\begin{aligned}y(T_b)&=s_m\\underbrace{\\int_0^{T_b}\\psi^{2}(\\tau)\\,d\\tau}_{1}+n(T_b)\\\\&=s_m\\cdot1+n(T_b)\\end{aligned}',
         note:'$s_m$ leaves the integral. The rest is the energy of $\\psi$, which is $1$.'}]},
     {t:'reveal', at:2, items:[
       {t:'eq', label:'Key result · the demodulator output', key:true, result:true, tex:'y=s_m+n,\\qquad n=\\int_0^{T_b}w(\\tau)\\,\\psi(\\tau)\\,d\\tau',
