@@ -20693,7 +20693,10 @@ function figDemodTrain(v){
   if(zoom) a.area(tau=>gT(tau)*hT(tau), x0, x1, {color:C.mid+'59', n:1600});
   a.curve(gT, {color:C.in, width:2.4, n:2400});
   if(zoom) a.curve(hT, {color:C.h, width:2.4, dash:'7 5', n:1600});
-  TR_B.forEach((bit, k)=>{ if(k+0.5 > x0 && k+0.5 < x1) a.note(k+0.5, 2.2, String(bit), {tex:true, fs:15, color:C.in, anchor:'middle'}); });
+  /* each bit value sits on a small plate in the panel colour, so the noise does not run through it */
+  const pw = 9*P.labelScale()*(x1-x0)/478;
+  TR_B.forEach((bit, k)=>{ if(k+0.5 > x0 && k+0.5 < x1){ a.rect(k+0.5-pw, 1.98, k+0.5+pw, 2.62, {fill:C.plate});
+    a.note(k+0.5, 2.2, String(bit), {tex:true, fs:15, color:C.in, anchor:'middle'}); } });
   const b = P.Axes({w:560,h:hB,xr:[-0.3,10.8],yr:[-2.7,2.4],xlabel:'t', xunit:'T_b',ylabel:'\\text{amplitude}', ynameAtAxis:true,
     pad:{l:56,r:26,t:24,b:42},xticksOverride:[0,2,4,6,8,10],yticksOverride:[-1,0,1]});
   b.hline(0, {color:C.muted, dash:'5 4'});
@@ -20854,23 +20857,23 @@ function figPpm(v){
   /* both pulses are zero off their halves: the zero line is drawn once, solid,
      and s_2 (dashed) only by its top and its falling edge, so no dashed run
      lies on a solid one */
-  const pair = (h, color, width, dash) => { a.poly([[-0.3,0],[1.3,0]], {color, width});
-    a.poly([[0,0],[0,h],[0.5,h],[0.5,0]], {color, width}); a.poly([[0.5,h],[1,h],[1,0]], {color, width, dash}); };
+  const pair = (h, color, width, dash, color2=color) => { a.poly([[-0.3,0],[1.3,0]], {color, width});
+    a.poly([[0,0],[0,h],[0.5,h],[0.5,0]], {color, width}); a.poly([[0.5,h],[1,h],[1,0]], {color:color2, width, dash}); };
   /* the pulse names sit a fixed number of pixels above the pulse tops */
   const ys = big ? 2+8*P.labelScale()/(a.sy(0)-a.sy(1)) : 2.25;
-  fade(a, 1-0.6*o1, ()=>{ pair(2, C.in, 2.4, '8 5');
+  fade(a, 1-0.6*o1, ()=>{ pair(2, C.in, 2.4, '8 5', C.mid);
     a.note(0.25, ys, 's_1(t)', {tex:true, fs:15, color:C.in, anchor:'middle'});
-    a.note(0.75, ys, 's_2(t)', {tex:true, fs:15, color:C.in, anchor:'middle'}); });
+    a.note(0.75, ys, 's_2(t)', {tex:true, fs:15, color:C.mid, anchor:'middle'}); });
   fade(a, o1, ()=>{ pair(r, C.h, 2.2, '7 5');
     a.note(1.05, r, '\\psi_1,\\ \\psi_2', {tex:true, fs:15, color:C.h}); });
   const b = P.Axes({w:560,h:hB,xr:[-0.9,2.6],yr:[-0.7,2.1],xlabel:'y_1',ylabel:'y_2',
     pad:{l:56,r:26,t:24,b:42},xticksOverride:[0,1],yticksOverride:[0,1],xtickfmt:()=>'',ytickfmt:()=>''});
   fade(b, o3, ()=>{ for(let i=0;i<60;i++){ b.point(r+PP_Z[i], PP_Z[60+i], {color:C.out, r:2.6, ring:'none'});
     b.point(PP_Z[120+i], r+PP_Z[180+i], {color:C.out, r:2.6, ring:'none'}); } });
-  fade(b, o2, ()=>{ b.point(r, 0, {color:C.in, r:7}); b.point(0, r, {color:C.in, r:7});
+  fade(b, o2, ()=>{ b.point(r, 0, {color:C.in, r:7}); b.point(0, r, {color:C.mid, r:7});
     b.poly([[r,0],[0,r]], {color:C.muted, width:1.6, dash:'5 4'});
     b.note(r+0.45, 0.55, 's_1=(\\sqrt{E_b},0)', {tex:true, fs:15, color:C.in});
-    b.note(0.55, r+0.12, 's_2=(0,\\sqrt{E_b})', {tex:true, fs:15, color:C.in});
+    b.note(0.55, r+0.12, 's_2=(0,\\sqrt{E_b})', {tex:true, fs:15, color:C.mid});
     b.note(0.85, 0.85, 'd=\\sqrt{2E_b}', {tex:true, fs:15, color:C.muted}); });
   return stack(560, [[a.svg(),hA],[b.svg(),hB]]);
 }
