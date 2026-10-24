@@ -880,13 +880,22 @@ function figThresholdLive(p0,dB){
   a.note(-2.9,1.2*top,`\\lambda_{\\mathrm{opt}}=${lo.toFixed(3)}`,{tex:true,fs:15,color:C.ink});
   return a.svg();
 }
+function qFrame(a){
+  a.raw(`<rect x="${a.x0}" y="${a.y1}" width="${a.x1-a.x0}" height="${a.y0-a.y1}" fill="none" stroke="${C.axis}" stroke-width="1"/>`);
+  leftTicks(a,[0,0.2,0.4,0.6,0.8,1],v=>String(v));
+}
+function qGuide(a,x,q){
+  const X=a.sx(x).toFixed(2),Y=a.sy(q).toFixed(2),d=`stroke="${C.ink}" stroke-width="1.6" stroke-dasharray="6 4"`;
+  a.raw(`<line x1="${X}" y1="${a.y0}" x2="${X}" y2="${Y}" ${d}/><line x1="${a.x0}" y1="${Y}" x2="${X}" y2="${Y}" ${d}/>`);
+}
 function figQ(x){
-  const phi=z=>Math.exp(-z*z/2)/Math.sqrt(2*Math.PI);
-  const a=ax1({xr:[-3.6,3.6],yr:[-0.03,0.52],xlabel:'z',ylabel:'\\phi(z)',xticksOverride:[-3,-2,-1,0,1,2,3],yticksOverride:[0.1,0.2,0.3]});
-  a.area(phi,x,3.6,{color:C.dec.mid});
-  a.curve(phi,{color:C.mid,width:2.4});
-  a.vline(x,{color:C.ink,dash:'6 4',width:1.6,opacity:1});
-  a.note(-3.45,0.46,`Q(${x.toFixed(1)})=${sci(Qf(x))}`,{tex:true,fs:15,color:C.mid});
+  const q=Qf(x);
+  const a=ax1({xr:[-4,4],yr:[0,1.05],xlabel:'x',ylabel:'Q(x)',zeroAxes:false,xticksOverride:[-4,-2,1e-9,2,4],xtickfmt:v=>String(Math.round(v)),yticksOverride:[0,0.2,0.4,0.6,0.8,1],ytickfmt:()=>'',pad:{l:64,r:26,t:24,b:46}});
+  qFrame(a);
+  a.curve(Qf,{color:C.mid,width:2.4});
+  qGuide(a,x,q);
+  a.point(x,q,{color:C.mid,r:5.5});
+  a.note(0.5,0.9,`Q(${x.toFixed(1)})=${sci(q)}`,{tex:true,fs:15,color:C.mid});
   return a.svg();
 }
 const pbDb=d=>Qf(Math.sqrt(2*Math.pow(10,d/10)));
@@ -1906,7 +1915,7 @@ window.C2 = [
  after:'For large $x$, $Q(x)\\le\\tfrac12e^{-x^{2}/2}$, so the tail falls faster than any power of $x$.'},
 {t:'p', text:'A Gaussian value of mean $0$ and standard deviation $\\sigma$ is divided by $\\sigma$ before $Q$ is used. The probability that it exceeds $3\\sigma$ is $Q(3)=1.35\\times10^{-3}$.'},
 {t:'fig', svg:()=>figQ(1),
- cap:'$Q(x)$ is the shaded area under the standard normal density $\\phi(z)$ to the right of $x$, here at $x=1$.'},
+ cap:'$Q(x)$ falls from $1$ to $0$ and passes $0.5$ at $x=0$. The point marks $Q(1)=0.159$.'},
 
 {t:'h3', text:'The bit error probability'},
 {t:'p', text:'With equal priors the threshold is $\\lambda=0$. Put $\\lambda=0$ in both conditional errors, and the two become equal.'},
