@@ -1858,7 +1858,7 @@ window.C2 = [
 
 {t:'h3', text:'The two conditional errors'},
 {t:'p', text:'The receiver decides $s_1$ when $y>\\lambda$ and $s_0$ otherwise. Each symbol then has its own error probability: the area of its density on the wrong side of $\\lambda$.'},
-{t:'eqbox', cap:'Gaussian tail', tex:'\\begin{gathered}X\\sim\\mathcal{N}(\\mu,\\sigma^{2}):\\quad P(X>\\lambda)=Q\\!\\left(\\frac{\\lambda-\\mu}{\\sigma}\\right),\\quad P(X<\\lambda)=Q\\!\\left(\\frac{\\mu-\\lambda}{\\sigma}\\right)\\\\Q(x)=1-Q(-x)\\end{gathered}'},
+{t:'eqbox', cap:'Gaussian tail: $X\\sim\\mathcal{N}(\\mu,\\sigma^{2})$', tex:'\\begin{aligned}P(X>\\lambda)&=Q\\!\\left(\\frac{\\lambda-\\mu}{\\sigma}\\right)\\\\P(X<\\lambda)&=1-P(X>\\lambda)=1-Q\\!\\left(\\frac{\\lambda-\\mu}{\\sigma}\\right)=Q\\!\\left(\\frac{\\mu-\\lambda}{\\sigma}\\right)\\\\Q(x)&=1-Q(-x)\\end{aligned}'},
 {t:'eqbox', cap:'Case I: $s_0$ sent, $y>\\lambda$', tex:'\\begin{aligned}P(\\text{err}\\mid s_0)=P(y>\\lambda\\mid s_0)&=\\int_{\\lambda}^{\\infty}f_Y(y\\mid s_0)\\,dy\\\\&=\\int_{\\lambda}^{\\infty}\\frac{1}{\\sqrt{\\pi N_0}}\\,e^{-(y+\\sqrt{E_b})^{2}/N_0}\\,dy\\\\&=Q\\!\\left(\\frac{\\lambda-\\mu_0}{\\sigma}\\right)=Q\\!\\left(\\frac{\\lambda+\\sqrt{E_b}}{\\sigma}\\right)\\end{aligned}',
  after:'Given $s_0$, $y$ is Gaussian with mean $\\mu_0=-\\sqrt{E_b}$ and deviation $\\sigma=\\sqrt{N_0/2}$. The Gaussian tail rule above gives $Q\\bigl((\\lambda-\\mu_0)/\\sigma\\bigr)$.'},
 {t:'eqbox', cap:'Case II: $s_1$ sent, $y<\\lambda$', tex:'\\begin{aligned}P(\\text{err}\\mid s_1)=P(y<\\lambda\\mid s_1)&=\\int_{-\\infty}^{\\lambda}f_Y(y\\mid s_1)\\,dy\\\\&=Q\\!\\left(\\frac{\\mu_1-\\lambda}{\\sigma}\\right)=Q\\!\\left(\\frac{\\sqrt{E_b}-\\lambda}{\\sigma}\\right)\\end{aligned}',
