@@ -873,10 +873,10 @@ function figMfDemod(v){
   fade(a, u2, ()=>{ a.point(1, 1, {color:C.ink, r:3.5}); a.point(1, yT, {color:C.mid, r:5.5});
     if(Math.abs(yT-1) > 0.01) a.poly([[1.07,1],[1.07,yT]], {color:C.muted, width:2.4});
     a.note(1.06, 1.2, `y(T_b)=s_m+n,\\;\\; n=${(yT-1).toFixed(2)}`, {tex:true, fs:16, color:C.mid}); });
-  { const L = P.labelScale(), px = 1/(a.sx(1)-a.sx(0)), py = 1/(a.sy(0)-a.sy(1)), x = 2.17-60*L*px;
-    keyEntry(a, x, 3.15, 'x(t)', C.out, {width:1.4});
-    keyEntry(a, x, 3.15-26*L*py, 's_m\\psi(t)', C.in, {});
-    fade(a, u1, ()=>keyEntry(a, x, 3.15-52*L*py, 'y(t)', C.mid, {width:2.6})); }
+  { const L = P.labelScale(), px = 1/(a.sx(1)-a.sx(0)), x3 = 2.17-26*L*px, x2 = x3-86*L*px, x1 = x2-64*L*px;
+    keyEntry(a, x1, 3.15, 'x(t)', C.out, {width:1.4});
+    keyEntry(a, x2, 3.15, 's_m\\psi(t)', C.in, {});
+    fade(a, u1, ()=>keyEntry(a, x3, 3.15, 'y(t)', C.mid, {width:2.6})); }
   return stack(560, [[top,130],[a.svg(),hA]]);
 }
 

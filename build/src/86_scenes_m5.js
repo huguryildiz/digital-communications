@@ -1761,7 +1761,7 @@ codeScene('m5-code-binary', 'Binary keying', 'Binary keying in code',
       caption:'8-PSK with natural labels, then Gray labels. Each chord shows how many bits its two labels differ in. The last step sends $300$ noisy copies of $\\mathtt{000}$.'}
   ], right:[
     {t:'eq', label:'Gray code', tex:'g=i\\oplus\\lfloor i/2\\rfloor',
-      note:'For $i=0,\\ldots,7$: $\\mathtt{000},\\mathtt{001},\\mathtt{011},\\mathtt{010},\\mathtt{110},\\mathtt{111},\\mathtt{101},\\mathtt{100}$. Neighbours differ in one bit.'},
+      note:'For $i=0,\\ldots,7$: $\\mathtt{000}$, $\\mathtt{001}$, $\\mathtt{011}$, $\\mathtt{010}$, $\\mathtt{110}$, $\\mathtt{111}$, $\\mathtt{101}$, $\\mathtt{100}$. Neighbours differ in one bit.'},
     {t:'reveal', at:1, items:[
       {t:'eq', label:'Bits from symbols', tex:'P_b\\approx\\frac{P_e}{\\log_2M}',
         note:'A symbol error nearly always lands on a neighbour, and a neighbour costs one bit of $k$.'}]},

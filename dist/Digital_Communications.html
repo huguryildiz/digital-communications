@@ -1671,7 +1671,8 @@ body[data-layout=phone] .dr-pair > div{ width:100%; }
 body[data-layout=phone] .scene.slide .cols{ grid-template-columns:minmax(0,1fr); gap:var(--s4); }
 /* A long card-tab title can outrun the narrowest column; there it wraps
    rather than push the card past the edge of the screen. */
-body[data-layout=phone] .scene.slide .note > .note-h{ white-space:normal; max-width:calc(100% + 6px); text-align:left; }
+body[data-layout=phone] .scene.slide .note > .note-h,
+body[data-layout=phone] .scene.slide .eq > .eq-label{ white-space:normal; max-width:calc(100% + 6px); text-align:left; }
 body[data-layout=phone] .scene.slide .cols.fill > .col{ justify-content:flex-start; }
 body[data-layout=phone] .lab > .cols{ height:auto; }
 body[data-layout=phone] .scene.slide .lab > .cols > .col.stack{ justify-content:flex-start; }
@@ -1698,19 +1699,23 @@ body[data-layout=phone] .wex-v{
 }
 
 /* --- mathematics: a formula pans rather than being cut ------------------ */
-body[data-layout=phone] .eq{ padding:11px 13px 11px 15px; overflow-x:auto; overflow-y:hidden; }
+/* a formula box never clips: a slide card's tab sits above the box, and a
+   scroll box or a mask on it cuts the tab off. A formula that pans scrolls
+   inside its own line instead (see .eq.pans below) */
+body[data-layout=phone] .eq{ padding:11px 13px 11px 15px; }
 body[data-layout=phone] .eq.plain{ padding:9px 0; }
 body[data-layout=phone] .eq .katex{ font-size:1.22em; }
 body[data-layout=phone] .eq.lg .katex{ font-size:1.38em; }
 body[data-layout=phone] .eq.sm .katex{ font-size:1.08em; }
-/* the displayed formula must not clip itself: overflow on one axis turns the
-   other from `visible` into `auto`, and a formula that scrolls inside its own
-   box never reaches the box outside it, which is the one measured and faded */
+/* a formula that fits clips nothing: overflow on one axis turns the other
+   from `visible` into `auto`. phoneMath() measures the typeset pieces, not a
+   scrolled width, so where the scrolling happens does not change the answer */
 body[data-layout=phone] .katex-display{ overflow:visible; }
 /* the one formula in a hundred that is still wider than the column at the
-   smallest size it may be set: its right edge is faded, so that the reader can
-   see there is more of it and push it across */
-body[data-layout=phone] .eq.pans{
+   smallest size it may be set scrolls inside its own line, with its right edge
+   faded, so that the reader can see there is more of it and push it across */
+body[data-layout=phone] .eq.pans .katex-display{
+  overflow-x:auto; overflow-y:hidden;
   -webkit-mask-image:linear-gradient(90deg,#000 90%,rgba(0,0,0,.28) 100%);
           mask-image:linear-gradient(90deg,#000 90%,rgba(0,0,0,.28) 100%);
 }
@@ -2471,12 +2476,26 @@ const PLOT = (() => {
     return out;
   }
 
+  /* unitTick(v,u) writes v as a multiple of the TeX unit u: 0, u/2, u, 3u/2,
+     -2u. Other values keep two decimals in front of the unit. */
+  function unitTick(v, u){
+    if(Math.abs(v) < 1e-9) return '0';
+    const sg = v < 0 ? '-' : '', a = Math.abs(v), h = Math.round(2*a);
+    if(Math.abs(2*a-h) < 1e-6){
+      if(h % 2 === 0){ const n = h/2; return sg + (n === 1 ? '' : n) + u; }
+      return sg + (h === 1 ? '' : h) + u + '/2';
+    }
+    return sg + fmt(a, 2) + u;
+  }
   /* ======================================================================
      Axes — a plotting frame with mathematical coordinates.
      opt: {w,h,xr,yr,xlabel,ylabel,xticks,yticks,pad,grid,xstep,ystep,
            xnameDrop,
-           xtickfmt,ytickfmt,zeroAxes}
+           xtickfmt,ytickfmt,zeroAxes,xunit}
      xlabel and ylabel are TeX source — see texName above.
+     xunit: a time axis drawn in a unit such as T_b. The x numbers are then
+     typeset multiples of that unit (0, T_b/2, T_b, 2T_b), so the axis name
+     is plain t rather than t/T_b. An explicit xtickfmt still wins.
      ====================================================================== */
   function Axes(opt){
     /* A slide figure is drawn again, taller, to fill the spare height of its
@@ -2491,6 +2510,7 @@ const PLOT = (() => {
       xtickfmt:v=>fmt(v,3), ytickfmt:v=>fmt(v,3),
       xticksOverride:null, yticksOverride:null, arrows:true
     }, opt);
+    if(o.xunit && !opt.xtickfmt) o.xtickfmt = v => unitTick(v, o.xunit);
     const [xa,xb]=o.xr, [ya,yb]=o.yr;
     /* A scene that carries its own page colour — a navy module opening — needs
        the axis, the tick numbers and the axis names in that page's ink, not in
@@ -2737,7 +2757,7 @@ const PLOT = (() => {
         /* Tick numbers grow with the labels (LBLS) but their spacing does not,
            so where neighbours would touch only every n-th number is written,
            counted from zero when zero is a tick. The tick marks all stay. */
-        const TW = L => String(L).length*0.58*TICK_SIZE;
+        const TW = L => (o.xunit ? String(L).replace(/[_{}\\]/g,'') : String(L)).length*0.58*TICK_SIZE;
         const thin = (vals, fmt, pos, need) => {
           const k = vals.map((v,i)=>i).filter(i=>fmt(vals[i])!=='');
           let n = 1;
@@ -2758,7 +2778,8 @@ const PLOT = (() => {
           g.push(`<line x1="${sx(v).toFixed(2)}" y1="${yBase.toFixed(2)}" x2="${sx(v).toFixed(2)}" y2="${(yBase+5).toFixed(2)}" stroke="${CH.axis}" stroke-width="${1.2*STRW}"/>`);
           if(!showX(v)) return;
           xBoxes.push([sx(v)-TW(L)/2, yBase+20*LBLS-TICK_SIZE*0.8, sx(v)+TW(L)/2, yBase+20*LBLS+TICK_SIZE*0.2]);
-          tl.push(`<text x="${sx(v).toFixed(2)}" y="${(yBase+20*LBLS).toFixed(2)}" ${halo(3.4)} font-size="${TICK_SIZE}" fill="${CH.tick}" text-anchor="middle">${esc(L)}</text>`); });
+          if(o.xunit && L !== '0') tl.push(texName(L, { xMid:sx(v), baseline:yBase+22*LBLS+4, size:TICK_SIZE/LBLS*1.1, color:CH.tick, role:'tick', figW:W }));
+          else tl.push(`<text x="${sx(v).toFixed(2)}" y="${(yBase+20*LBLS).toFixed(2)}" ${halo(3.4)} font-size="${TICK_SIZE}" fill="${CH.tick}" text-anchor="middle">${esc(L)}</text>`); });
         const xBase = xz!=null? xz : x0;
         yt.forEach(v=>{ const L=o.ytickfmt(v); if(L==='')return;
           if(Math.abs(v)<1e-12 && xz!=null && yz!=null) return;
@@ -5349,13 +5370,17 @@ def _ss_figs():
       if(!k) return;
       k.style.fontSize = '';
       eq.classList.remove('pans');
-      /* the box a formula has to fit in is the content box, and what a scroll
-         container reports as its scrolled width carries the left padding with
-         it; both are taken off, or the closing bracket lands on the border */
+      /* the box a formula has to fit in is the content box. What the formula
+         needs is the span of its typeset pieces: a scrolled width is never
+         less than the box it scrolls in, padding and all, so it called every
+         formula too wide and set all of them small, faded and panning */
       const cs = getComputedStyle(eq);
       const padL = parseFloat(cs.paddingLeft), padR = parseFloat(cs.paddingRight);
       const room = () => eq.clientWidth - padL - padR;
-      const need = () => eq.scrollWidth - padL;
+      const need = () => { let l = Infinity, r = -Infinity;
+        k.querySelectorAll('.katex-html > .base').forEach(b => { const q = b.getBoundingClientRect();
+          if(q.width){ l = Math.min(l, q.left); r = Math.max(r, q.right); } });
+        return r > l ? r - l : 0; };
       let f = 1;
       for(let pass=0; pass<4; pass++){
         if(need() <= room()) break;
@@ -6440,7 +6465,7 @@ Object.assign(LABS, (function(){
       const xs = []; for(let j=Math.floor((-0.2-T0)/DT); j+8<=NK; j+=8){ const t = tz(j+4)-DT/2; if(t > 2.1) break;
         let s = 0; for(let i=0;i<8;i++) s += Z[j+i]; xs.push([t, cl(pulse(t)+sw*s/8, lo, hi)]); }
       const ax = P.Axes({w:ph?300:680,h:ph?290:gh(165),xr:[-0.2,2.1],yr:[lo,hi],
-        xlabel:'t/T',ylabel:'x(t),\\;g(t),\\;h(t)',pad:{l:ph?42:58,r:ph?16:26,t:24,b:40},
+        xlabel:'t', xunit:'T',ylabel:'\\text{amplitude}', ynameAtAxis:true,pad:{l:ph?42:58,r:ph?16:26,t:24,b:40},
         xticksOverride:[0,0.5,1,1.5,2],ytarget:4});
       ax.poly(xs, {color:P.COL.out, width:1.2, opacity:0.75});
       ax.curve(t=>pulse(t*TB),{color:P.COL.in,width:2.4,n:600});
@@ -6581,14 +6606,14 @@ Object.assign(LABS, (function(){
 
       const ph = PHONE(), gh = GH(root);
       const a1 = P.Axes({w:ph?300:680,h:ph?220:gh(185),xr:[0,2*TB],yr:[-3,3],
-        xlabel:'t/T_b',ylabel:'x(t),\\;s_m\\psi(t)',pad:{l:ph?42:56,r:ph?16:24,t:24,b:40},
+        xlabel:'t', xunit:'T_b',ylabel:'\\text{amplitude}', ynameAtAxis:true,pad:{l:ph?42:56,r:ph?16:24,t:24,b:40},
         xtarget:ph?4:6,ytarget:3});
       a1.curve(t=>t<=TB ? sm*psi(t) : 0,{color:P.COL.in,width:2.0});
       a1.curve(t=>x(Math.round(t/dt)),{color:P.COL.out,width:1.0,opacity:0.45,n:NS});
       a1.vline(t0,{color:P.COL.muted,dash:'4 4'});
 
       const a2 = P.Axes({w:ph?300:680,h:ph?200:gh(155),xr:[0,2*TB],yr:[-2.4,2.4],
-        xlabel:'t/T_b',ylabel:'c(t),\\;y(t)',pad:{l:ph?42:56,r:ph?16:24,t:22,b:40},
+        xlabel:'t', xunit:'T_b',ylabel:'\\text{amplitude}', ynameAtAxis:true,pad:{l:ph?42:56,r:ph?16:24,t:22,b:40},
         xtarget:ph?4:6,ytarget:3});
       a2.curve(t=> yVals[Math.min(2*NS,Math.max(0,Math.round(t/dt)))],
         {color:P.COL.mid,width:4.2,opacity:0.45,n:2*NS});
@@ -6815,7 +6840,7 @@ Object.assign(LABS, (function(){
       const ph = PHONE(), gh = GH(root);
       const NB = PATTERN.length;
       const a1 = P.Axes({w:ph?300:680,h:ph?220:gh(185),xr:[0,NB],yr:[-1.6,1.6],
-        xlabel:'t/T_b',ylabel:'\\text{NRZ},\\;y(t)',pad:{l:ph?42:56,r:ph?16:24,t:24,b:40},
+        xlabel:'t', xunit:'T_b',ylabel:'\\text{amplitude}', ynameAtAxis:true,pad:{l:ph?42:56,r:ph?16:24,t:24,b:40},
         xtarget:ph?4:6,ytarget:3});
       a1.curve(t=>PATTERN[Math.min(NB-1,Math.max(0,Math.floor(t)))],{color:P.COL.in,width:1.1,opacity:0.55});
       a1.curve(t=>received(r,t)+noise[Math.min(4095,Math.round(t/TB*40))],{color:P.COL.out,width:1.9,n:NB*30});
@@ -6825,7 +6850,7 @@ Object.assign(LABS, (function(){
       /* The eye: two bit intervals, the current bit on [0,T_b] and the next on
          [T_b,2T_b], so the sampling instant t_s sits inside the window. */
       const a2 = P.Axes({w:ph?300:680,h:ph?200:gh(155),xr:[0,2*TB],yr:[-2.2,2.2],
-        xlabel:'t/T_b',ylabel:'y(t)',pad:{l:ph?42:56,r:ph?16:24,t:22,b:40},xtarget:ph?4:4,ytarget:3});
+        xlabel:'t', xunit:'T_b',ylabel:'y(t)',pad:{l:ph?42:56,r:ph?16:24,t:22,b:40},xtarget:ph?4:4,ytarget:3});
       a2.raw('<g opacity="0.45">');
       for(let pat=0; pat<64; pat++){
         const b=[]; for(let k=0;k<6;k++) b.push(((pat>>k)&1)?1:-1);
@@ -6948,7 +6973,7 @@ Object.assign(LABS, (function(){
       const noise = gauss(20260802, 4096, nz);
       const ph = PHONE(), gh = GH(root);
       const ax = P.Axes({w:ph?300:640,h:ph?300:gh(255),xr:[-1,1],yr:[-2.1,2.1],
-        xlabel:'t/T_b',ylabel:'y(t)',pad:{l:ph?42:54,r:ph?16:26,t:24,b:44},xtarget:ph?4:4,ytarget:4});
+        xlabel:'t', xunit:'T_b',ylabel:'y(t)',pad:{l:ph?42:54,r:ph?16:26,t:24,b:44},xtarget:ph?4:4,ytarget:4});
       let ni = 0;
       for(let pat=0;pat<32;pat++){
         const b=[]; for(let k=0;k<NBIT;k++) b.push(((pat>>k)&1)?1:-1);
@@ -19824,7 +19849,7 @@ function figOpenTx(){
      labels sit a fixed number of pixels above the pulse top */
   const big = P.labelScale()>1;
   const a = P.Axes({w:520,h:big?156:130,xr:[0,10],yr:[-1.6,big?2.3:1.6],grid:false,
-    xlabel:'t/T_b', ylabel:'s(t)', chrome:NAVY, pad:{l:46,r:30,t:22,b:34}, xstep:2, ytarget:3,
+    xlabel:'t', xunit:'T_b', ylabel:'s(t)', chrome:NAVY, pad:{l:46,r:30,t:22,b:34}, xstep:2, ytarget:3,
     ...(big ? {yticksOverride:[-1,0,1]} : {})});
   a.curve(openS, {color:T_CY, width:2.4, n:2000, anim:{delay:0, sweep:'#D9F3F7'}});
   const yb = big ? 1 + 9*P.labelScale()/(a.sy(0)-a.sy(1)) : 1.32;
@@ -19833,13 +19858,13 @@ function figOpenTx(){
 }
 function figOpenRx(){
   const a = P.Axes({w:520,h:130,xr:[0,10],yr:[-2.6,2.6],grid:false,
-    xlabel:'t/T_b', ylabel:'x(t)', chrome:NAVY, pad:{l:46,r:30,t:22,b:34}, xstep:2, ytarget:3});
+    xlabel:'t', xunit:'T_b', ylabel:'x(t)', chrome:NAVY, pad:{l:46,r:30,t:22,b:34}, xstep:2, ytarget:3});
   a.curve(t=>openS(t)+OPEN_W(t), {color:T_GR, width:1.6, n:2000, anim:{delay:0.5}});
   return a.svg();
 }
 function figOpenDecide(){
   const a = P.Axes({w:520,h:130,xr:[0,10],yr:[-1.9,1.9],grid:false,
-    xlabel:'t/T_b', ylabel:'y_k', chrome:NAVY, pad:{l:46,r:30,t:22,b:34}, xstep:2, ytarget:3});
+    xlabel:'t', xunit:'T_b', ylabel:'y_k', chrome:NAVY, pad:{l:46,r:30,t:22,b:34}, xstep:2, ytarget:3});
   a.hline(0, {color:'rgba(239,231,216,.30)', dash:'4 5'});
   a.stem(OPEN_B.map((_,k)=>[k+1, openY(k)]), {color:T_VI, anim:{delay:1.2, step:0.09, tip:true}});
   OPEN_B.forEach((_,k)=>{ const d = openY(k) > 0 ? 1 : 0;
@@ -19921,7 +19946,7 @@ const awQ = s => { const q = Qf(1/s); return q < 1e-6 ? '\\approx 0' : '='+q.toF
 function figAwgn(v){
   const f = frameOf(v, 0), i = Math.min(1, Math.floor(f)), u = clamp01(f-i);
   const s = Math.exp((1-u)*Math.log(AW_S[i]) + u*Math.log(AW_S[i+1]));
-  const a = P.Axes(SZ({xr:[-0.15,5.15], yr:[-4.6,6.6], xlabel:'t/T', ylabel:'x(t)=g(t)+w(t)',
+  const a = P.Axes(SZ({xr:[-0.15,5.15], yr:[-4.6,6.6], xlabel:'t', xunit:'T', ylabel:'x(t)=g(t)+w(t)',
     xticksOverride:[0,1,2,3,4,5], yticksOverride:[-4,-2,0,2,4]}));
   const pts = [], N = 400;
   for(let j=0;j<=N;j++){ const t = 5*j/N; pts.push([a.sx(t), a.sy(awG(t)+s)]); }
@@ -19944,7 +19969,7 @@ function figFilterChoice(v){
   const F = {sig:t=>(1-u)*A.sig(t)+u*B.sig(t), sd:(1-u)*A.sd+u*B.sd, n:t=>(1-u)*A.n(t)+u*B.n(t)};
   /* the phone draws larger labels, so each panel takes more height there */
   const big = P.labelScale() > 1, hA = big ? 290 : 200, hB = big ? 330 : 230;
-  const a = P.Axes({w:560,h:hA,xr:[-0.2,2.3],yr:[-1.6,2.6],xlabel:'t/T',ylabel:'x(t)',
+  const a = P.Axes({w:560,h:hA,xr:[-0.2,2.3],yr:[-1.6,2.6],xlabel:'t', xunit:'T',ylabel:'x(t)',
     pad:{l:56,r:26,t:24,b:40},xticksOverride:[0,1,2],yticksOverride:[-1,0,1,2]});
   a.area(t=>(t>=0&&t<1?1:0), -0.2, 2.3, {color:C.dec.in, n:600});
   a.poly(FP_X.map(([t,x])=>[t, fpG(t)+0.5*(x-fpG(t))]), {color:C.out, width:1.0});
@@ -19955,7 +19980,7 @@ function figFilterChoice(v){
   a.note(x1, 2.3, 'g(t)', {tex:true, fs:15, color:C.in});
   a.poly([[x2-24*px,2.3],[x2-6*px,2.3]], {color:C.out, width:1.6});
   a.note(x2, 2.3, 'x(t)=g(t)+w(t)', {tex:true, fs:15, color:C.out});
-  const b = P.Axes({w:560,h:hB,xr:[-0.2,2.3],yr:[-1.1,2.1],xlabel:'t/T',ylabel:'y(t)',
+  const b = P.Axes({w:560,h:hB,xr:[-0.2,2.3],yr:[-1.1,2.1],xlabel:'t', xunit:'T',ylabel:'y(t)',
     pad:{l:56,r:26,t:24,b:42},xticksOverride:[0,1,2],yticksOverride:[-1,0,1,2]});
   fpOutput(b, F, -0.2, 2.3);
   return stack(560, [[a.svg(),hA],[b.svg(),hB]]);
@@ -19979,7 +20004,7 @@ function figReceiver(){
     {t:'arrow',x1:488,y1:62,x2:548,y2:62,label:'y(T)',tex:true,color:C.mid},
     {t:'text',x:470,y:104,label:'t=T',tex:true,fs:14}
   ]});
-  const a = P.Axes({w:560,h:250,xr:[-0.2,1.4],yr:[-1.2,2.6],xlabel:'t/T',ylabel:'x(t)',
+  const a = P.Axes({w:560,h:250,xr:[-0.2,1.4],yr:[-1.2,2.6],xlabel:'t', xunit:'T',ylabel:'x(t)',
     pad:{l:56,r:26,t:24,b:42},xticksOverride:[0,0.5,1],ytarget:3});
   a.curve(t=>(t>=0&&t<=1?1:0)+RX_W(t), {color:C.out, width:1.5, n:900});
   a.poly([[-0.2,0],[0,0],[0,1],[1,1],[1,0],[1.4,0]], {color:C.in, width:2.4});
@@ -19998,11 +20023,11 @@ function figSplit(v){
   P.hOverride = null;
   const f = frameOf(v, 3), o1 = clamp01(f), o2 = clamp01(f-1), o3 = clamp01(f-2);
   const big = P.labelScale() > 1, hA = big ? 290 : 200, hB = big ? 330 : 230;
-  const a = P.Axes({w:560,h:hA,xr:[-0.2,2.3],yr:[-3.2,4.4],xlabel:'t/T',ylabel:'x(t)',
+  const a = P.Axes({w:560,h:hA,xr:[-0.2,2.3],yr:[-3.2,4.4],xlabel:'t', xunit:'T',ylabel:'x(t)',
     pad:{l:56,r:26,t:24,b:40},xticksOverride:[0,1,2],yticksOverride:[-2,0,2,4]});
   a.poly(FP_X, {color:C.out, width:1.3});
   a.poly([[-0.2,0],[0,0],[0,1],[1,1],[1,0],[2.3,0]], {color:C.in, width:2.4});
-  const b = P.Axes({w:560,h:hB,xr:[-0.2,2.3],yr:[-1.1,2.2],xlabel:'t/T',ylabel:'g_0(t),\\;n(t),\\;y(t)',
+  const b = P.Axes({w:560,h:hB,xr:[-0.2,2.3],yr:[-1.1,2.2],xlabel:'t', xunit:'T',ylabel:'\\text{amplitude}', ynameAtAxis:true,
     pad:{l:56,r:26,t:24,b:42},xticksOverride:[0,1,2],yticksOverride:[-1,0,1,2]});
   const sd = SP_F.sd, lift = t => o3*SP_F.sig(t);
   if(o2 > 0.01){ const pts = [], N = 250;
@@ -20033,7 +20058,7 @@ function figSnr(v){
   const r = v && v.r!=null ? v.r : 0, tau = Math.pow(10, -r), F = fpFilter(+tau.toPrecision(6));
   const big = P.labelScale() > 1, hA = big ? 480 : 400;
   const g0 = F.sig(1), sd = F.sd, eta = Math.pow(g0/sd, 2);
-  const a = P.Axes({w:560,h:hA,xr:[-0.2,2.3],yr:[-0.9,1.9],xlabel:'t/T',ylabel:'y(t)',
+  const a = P.Axes({w:560,h:hA,xr:[-0.2,2.3],yr:[-0.9,1.9],xlabel:'t', xunit:'T',ylabel:'y(t)',
     pad:{l:56,r:26,t:24,b:42},xticksOverride:[0,1,2],yticksOverride:[0,1]});
   a.curve(F.sig, {color:C.mid, width:2.4, n:600});
   a.vline(1, {color:C.muted, dash:'4 4'});
@@ -20124,7 +20149,7 @@ function figBoundCurve(){
 function figMatchedBuild(v){
   const f = frameOf(v, 2), u1 = clamp01(f), u2 = clamp01(f-1);
   const X = t => t*(1-2*u1) + u2;
-  const a = P.Axes(SZ({xr:[-1.35,1.35], yr:[-0.2,1.75], xlabel:'t/T', ylabel:'g(t),\\;h(t)',
+  const a = P.Axes(SZ({xr:[-1.35,1.35], yr:[-0.2,1.75], xlabel:'t', xunit:'T', ylabel:'\\text{amplitude}', ynameAtAxis:true,
     xticksOverride:[-1,-0.5,0,0.5,1], yticksOverride:[0.5,1]}));
   a.poly([[0,0],[0,0],[1,1],[1,0]], {color:C.in, width:f>0.05?1.6:2.6});
   a.note(1.04, 0.72, 'g(t)', {tex:true, fs:15, color:C.in});
@@ -20155,11 +20180,11 @@ function figConvSweep(v){
   const f = frameOf(v, 2), o5 = clamp01(f-3), F = Math.min(f, 3), t = F<=2 ? F/2 : 1+(F-2);
   const big = P.labelScale() > 1, hA = big ? 230 : 130, hB = big ? 230 : 115, hC = big ? 260 : 185;
   const g = u => (u>=0 && u<=1) ? u : 0;
-  const a = P.Axes({w:560,h:hA,xr:[-1.2,2.3],yr:[-0.2,1.5],xlabel:'',ylabel:'g(\\tau),\\;h(t-\\tau)',
+  const a = P.Axes({w:560,h:hA,xr:[-1.2,2.3],yr:[-0.2,1.5],xlabel:'',ylabel:'\\text{amplitude}', ynameAtAxis:true,
     pad:{l:56,r:26,t:24,b:24},xticksOverride:[-1,0,1,2],yticksOverride:[0,1]});
   const b = P.Axes({w:560,h:hB,xr:[-1.2,2.3],yr:[-0.15,1.25],xlabel:'',ylabel:'g(\\tau)\\,h(t-\\tau)',
     pad:{l:56,r:26,t:24,b:24},xticksOverride:[-1,0,1,2],yticksOverride:[0,1]});
-  const c = P.Axes({w:560,h:hC,xr:[-1.2,2.3],yr:[-0.2,1.5],xlabel:'t/T',ylabel:'y(t)/E',
+  const c = P.Axes({w:560,h:hC,xr:[-1.2,2.3],yr:[-0.2,1.5],xlabel:'t', xunit:'T',ylabel:'y(t)/E',
     pad:{l:56,r:26,t:24,b:42},xticksOverride:[-1,0,1,2],yticksOverride:[0,0.5,1]});
   a.poly([[-1.2,0],[0,0],[1,1],[1,0],[2.3,0]], {color:C.in, width:2.4});
   /* the reversed copy, sliding */
@@ -20198,7 +20223,7 @@ function mfOut(k){
   return MF_OUT[k];
 }
 function figEqualOutputs(){
-  const a = P.Axes(SZ({xr:[-0.2,2.2], yr:[-0.12,1.3], xlabel:'t/T', ylabel:'y(t)/E',
+  const a = P.Axes(SZ({xr:[-0.2,2.2], yr:[-0.12,1.3], xlabel:'t', xunit:'T', ylabel:'y(t)/E',
     xticksOverride:[0,0.5,1,1.5,2], ytarget:3}));
   a.poly(mfOut(0), {color:C.mid, width:2.4});
   a.poly(mfOut(1), {color:C.mid, width:2.4, dash:'8 5'});
@@ -20216,7 +20241,7 @@ function figEqualOutputs(){
 function figGain(v){
   const k = v && v.k!=null ? v.k : 1, F = FP_FILTERS[2];
   const L = P.labelScale(), big = L>1, top = big ? 5.6 : 4.9;
-  const a = P.Axes(SZ({xr:[-0.2,2.3], yr:[-1.2,top], xlabel:'t/T', ylabel:'y(t)',
+  const a = P.Axes(SZ({xr:[-0.2,2.3], yr:[-1.2,top], xlabel:'t', xunit:'T', ylabel:'y(t)',
     xticksOverride:[0,1,2], yticksOverride:[-1,0,1,2,3]}));
   const pts = [], N = 250;
   for(let i=0;i<=N;i++){ const t = -0.2+2.5*i/N; pts.push([a.sx(t), a.sy(k*(F.sig(t)+F.sd))]); }
@@ -20281,9 +20306,9 @@ function figMfCorr(v){
   P.hOverride = null;
   const f = frameOf(v, 3), t = Math.min(f, 2)/2, o3 = clamp01(f-2);
   const big = P.labelScale() > 1, hA = big ? 250 : 150, hB = big ? 290 : 215;
-  const a = P.Axes({w:560,h:hA,xr:[-0.2,2.2],yr:[-0.15,1.35],xlabel:'',ylabel:'g(\\tau),\\;x(\\tau)g(\\tau)',
+  const a = P.Axes({w:560,h:hA,xr:[-0.2,2.2],yr:[-0.15,1.35],xlabel:'',ylabel:'\\text{amplitude}', ynameAtAxis:true,
     pad:{l:56,r:26,t:24,b:24},xticksOverride:[0,0.5,1,1.5,2],yticksOverride:[0,1]});
-  const b = P.Axes({w:560,h:hB,xr:[-0.2,2.2],yr:[-0.15,1.4],xlabel:'t/T',ylabel:'\\text{output}/E',
+  const b = P.Axes({w:560,h:hB,xr:[-0.2,2.2],yr:[-0.15,1.4],xlabel:'t', xunit:'T',ylabel:'\\text{output}/E',
     pad:{l:56,r:26,t:24,b:42},xticksOverride:[0,0.5,1,1.5,2],yticksOverride:[0,0.5,1]});
   const g = u => (u>=0 && u<=1) ? u : 0, p = u => g(u)*g(u);
   a.poly([[-0.2,0],[0,0],[1,1],[1,0],[2.2,0]], {color:C.in, width:2.4});
@@ -20311,7 +20336,7 @@ function figTiming(v){
   const big = P.labelScale() > 1, hA = big ? 270 : 215, hB = big ? 270 : 215;
   const a = P.Axes({w:560,h:hA,xr:[-0.2,2.2],yr:[-0.4,1.4],xlabel:'',ylabel:'y(t)/E',
     pad:{l:56,r:26,t:24,b:24},xticksOverride:[0,0.5,1,1.5,2],yticksOverride:[0,0.5,1]});
-  const b = P.Axes({w:560,h:hB,xr:[-0.2,2.2],yr:[-0.1,1.35],xlabel:'t_0/T',ylabel:'\\eta(t_0)\\,/\\,(2E/N_0)',
+  const b = P.Axes({w:560,h:hB,xr:[-0.2,2.2],yr:[-0.1,1.35],xlabel:'t_0', xunit:'T',ylabel:'\\eta(t_0)\\,/\\,(2E/N_0)',
     pad:{l:56,r:26,t:24,b:42},xticksOverride:[0,0.5,1,1.5,2],yticksOverride:[0,0.5,1]});
   const pts = [], N = 240;
   for(let i=0;i<=N;i++){ const t = -0.2+2.4*i/N; pts.push([a.sx(t), a.sy(mfSig(t)+0.2)]); }
@@ -20417,7 +20442,7 @@ const near = (f, k) => clamp01(1-2*Math.abs(f-k));
 function figBasisUnit(v){
   const f = frameOf(v, 0), u1 = clamp01(f), u2 = clamp01(f-1);
   const H1 = 1.5, H2 = 2.25, h = H1+u1*(H2-H1);
-  const a = P.Axes(SZ({xr:[-0.3,1.45], yr:[-0.3,2.9], xlabel:'t/T_b', ylabel:'\\psi(t),\\;\\psi^{2}(t)', ynameAtAxis:true,
+  const a = P.Axes(SZ({xr:[-0.3,1.45], yr:[-0.3,2.9], xlabel:'t', xunit:'T_b', ylabel:'\\text{amplitude}', ynameAtAxis:true,
     xticksOverride:[0,0.5,1], yticksOverride:[], ytarget:3}));
   if(u2 > 0.005) a.area(()=>h, 0, u2, {color:C.dec.mid});
   a.poly(rectPts(h), {color:u1 < 0.5 ? C.h : C.mid, width:2.6});
@@ -20433,7 +20458,7 @@ function figBasisUnit(v){
 function figAntipodal(v){
   const f = frameOf(v, 0), A = 1.5;
   const c = f <= 1 ? 1+(A-1)*clamp01(f) : A-2*A*clamp01(f-1);
-  const a = P.Axes(SZ({xr:[-0.3,1.45], yr:[-2.2,2.3], xlabel:'t/T_b', ylabel:'\\text{amplitude}', ynameAtAxis:true,
+  const a = P.Axes(SZ({xr:[-0.3,1.45], yr:[-2.2,2.3], xlabel:'t', xunit:'T_b', ylabel:'\\text{amplitude}', ynameAtAxis:true,
     xticksOverride:[0,0.5,1], yticksOverride:[-1.5,-1,0,1,1.5], ytickfmt:()=>''}));
   a.poly(rectPts(1), {color:C.h, width:2.2});
   if(f > 1.01) fade(a, 0.4, ()=>a.poly(rectPts(A), {color:C.in, width:2.2}));
@@ -20454,7 +20479,7 @@ function figSignalSpace(v){
   P.hOverride = null;
   const f = frameOf(v, 0), u1 = clamp01(f), u2 = clamp01(f-1), u3 = clamp01(f-2);
   const big = P.labelScale() > 1, hA = big ? 290 : 230, hB = big ? 230 : 180;
-  const a = P.Axes({w:560,h:hA,xr:[-0.3,1.45],yr:[-2.2,2.2],xlabel:'t/T_b',ylabel:'\\text{amplitude}', ynameAtAxis:true,
+  const a = P.Axes({w:560,h:hA,xr:[-0.3,1.45],yr:[-2.2,2.2],xlabel:'t', xunit:'T_b',ylabel:'\\text{amplitude}', ynameAtAxis:true,
     pad:{l:56,r:26,t:24,b:40},xticksOverride:[0,0.5,1],yticksOverride:[],ytarget:2});
   if(u1 > 0.005){ a.area(()=>1.5, 0, u1, {color:C.dec.mid}); a.area(()=>-1.5, 0, u1, {color:C.dec.mid}); }
   a.poly(rectPts(1.5), {color:C.in, width:2.4});
@@ -20483,15 +20508,20 @@ function figDemodConv(v){
   P.hOverride = null;
   const f = frameOf(v, 0), t = f/2;
   const big = P.labelScale() > 1, hA = big ? 270 : 205, hB = big ? 290 : 225;
-  const a = P.Axes({w:560,h:hA,xr:[-1.2,2.3],yr:[-0.3,1.75],xlabel:'\\tau/T_b',ylabel:'\\text{amplitude}', ynameAtAxis:true,
+  const a = P.Axes({w:560,h:hA,xr:[-1.2,2.3],yr:[-0.3,1.75],xlabel:'\\tau', xunit:'T_b',ylabel:'\\text{amplitude}', ynameAtAxis:true,
     pad:{l:56,r:26,t:24,b:40},xticksOverride:[-1,0,1,2],yticksOverride:[0,1]});
   const lo = Math.max(0, t-1), hi = Math.min(1, t);
   if(hi-lo > 0.005) a.area(()=>1, lo, hi, {color:C.dec.mid});
   a.poly([[-1.2,0],[0,0],[0,1],[1,1],[1,0],[2.3,0]], {color:C.in, width:2.4});
   a.poly([[-1.2,0],[t-1,0],[t-1,1],[t,1],[t,0],[2.3,0]], {color:C.h, width:2.2, dash:'7 5'});
   a.note(0.5, 1.2, 's_m\\psi(\\tau)', {tex:true, fs:15, color:C.in, anchor:'middle'});
-  a.note(t-0.95, 1.55, 'h(t-\\tau)', {tex:true, fs:15, color:C.h});
-  const b = P.Axes({w:560,h:hB,xr:[-1.2,2.3],yr:[-0.2,1.5],xlabel:'t/T_b',ylabel:'y(t)',
+  /* the label puts the output time in place of t: h(T_b/2-tau) at rest, two decimals between */
+  const k = Math.round(2*t), tl = Math.abs(2*t-k) < 0.01
+    ? ['','T_b/2','T_b','3T_b/2','2T_b'][k] : `${t.toFixed(2)}T_b`;
+  /* the label (about 0.8 T_b wide) steps to whichever side of the vertical axis is nearer rather than cross it */
+  let lx = t-0.95; if(lx < 0.08 && lx+0.8 > -0.08) lx = lx+0.4 < 0 ? -0.9 : 0.08;
+  a.note(lx, 1.55, `h(${tl}-\\tau)`, {tex:true, fs:15, color:C.h});
+  const b = P.Axes({w:560,h:hB,xr:[-1.2,2.3],yr:[-0.2,1.5],xlabel:'t', xunit:'T_b',ylabel:'y(t)',
     pad:{l:56,r:26,t:24,b:42},xticksOverride:[-1,0,1,2],yticksOverride:[0,0.5,1]});
   b.curve(s=>s <= t+1e-9 ? tri1(s) : NaN, {color:C.mid, width:2.6, n:700});
   b.vline(1, {color:C.muted});
@@ -20519,11 +20549,11 @@ function figDemodSplit(v){
   P.hOverride = null;
   const f = frameOf(v, 0), o1 = clamp01(f), o2 = clamp01(f-1), o3 = clamp01(f-2);
   const big = P.labelScale() > 1, hA = big ? 260 : 190, hB = big ? 300 : 230;
-  const a = P.Axes({w:560,h:hA,xr:[-0.15,2.2],yr:[-1.4,3.0],xlabel:'t/T_b',ylabel:'x(t)',
+  const a = P.Axes({w:560,h:hA,xr:[-0.15,2.2],yr:[-1.4,3.0],xlabel:'t', xunit:'T_b',ylabel:'x(t)',
     pad:{l:56,r:26,t:24,b:40},xticksOverride:[0,1,2],yticksOverride:[-1,0,1,2]});
   a.curve(t=>t>=0 && t<=1 ? DM_X(t) : NaN, {color:C.out, width:1.4, n:900});
   a.poly([[-0.15,0],[0,0],[0,1],[1,1],[1,0],[2.2,0]], {color:C.in, width:2.2});
-  const b = P.Axes({w:560,h:hB,xr:[-0.3,2.2],yr:[-0.6,1.5],xlabel:'t/T_b',ylabel:'y(t)',
+  const b = P.Axes({w:560,h:hB,xr:[-0.3,2.2],yr:[-0.6,1.5],xlabel:'t', xunit:'T_b',ylabel:'y(t)',
     pad:{l:56,r:26,t:34,b:42},xticksOverride:[0,1,2],yticksOverride:[0,0.5,1]});
   const nz = DM_Y.map(p=>[p[0], p[1]-tri1(p[0])]);
   fade(b, o1*(1-0.5*o3), ()=>b.poly([[-0.3,0],[0,0],[1,1],[2,0],[2.2,0]], {color:C.mid, width:2.4, dash:o3 > 0.5 ? '6 5' : null}));
@@ -20541,6 +20571,15 @@ function figDemodSplit(v){
    one drawn; any other N0 scales the same draw, and with it n, by
    sqrt(N0/DM_N0). The signal part, the dashed triangle, does not move. */
 const DM_N0 = 0.045;
+/* A legend entry drawn inside the axes, for a panel that sits below another
+   drawing, where a legend card would land on the drawing above: a short line
+   ending 6 px left of x at the height of the name's middle, then its TeX
+   name at x. */
+function keyEntry(a, x, y, tex, col, o){
+  const px = 1/(a.sx(1)-a.sx(0)), yl = y + 5*P.labelScale()/(a.sy(0)-a.sy(1));
+  a.poly([[x-24*px,yl],[x-6*px,yl]], {color:col, width:o.width||2.2, dash:o.dash||null});
+  a.note(x, y, tex, {tex:true, fs:15, color:col});
+}
 function figMfDemod(v){
   P.hOverride = null;
   const f = frameOf(v, 0), u1 = clamp01(f), u2 = clamp01(f-1);
@@ -20555,7 +20594,7 @@ function figMfDemod(v){
     {t:'text',x:430,y:104,label:'t=T_b',tex:true,fs:14}
   ]});
   const big = P.labelScale() > 1, hA = big ? 320 : 260;
-  const a = P.Axes({w:560,h:hA,xr:[-0.15,2.2],yr:[-1.4,3.0],xlabel:'t/T_b',ylabel:'x(t),\\;y(t)',
+  const a = P.Axes({w:560,h:hA,xr:[-0.15,2.2],yr:[-1.4,3.4],xlabel:'t', xunit:'T_b',ylabel:'\\text{amplitude}', ynameAtAxis:true,
     pad:{l:56,r:26,t:24,b:42},xticksOverride:[0,0.5,1,1.5,2],yticksOverride:[-1,0,1,2]});
   a.curve(t=>t>=0 && t<=1 ? xk(t) : NaN, {color:C.out, width:1.4, n:900, opacity:(1-0.55*u1).toFixed(3)});
   a.poly(rectPts(1, 2.2).map(p=>[Math.max(p[0],-0.15), p[1]]), {color:C.in, width:2.2});
@@ -20565,7 +20604,11 @@ function figMfDemod(v){
   const yT = yk[100][1];
   fade(a, u2, ()=>{ a.point(1, 1, {color:C.ink, r:3.5}); a.point(1, yT, {color:C.mid, r:5.5});
     if(Math.abs(yT-1) > 0.01) a.poly([[1.07,1],[1.07,yT]], {color:C.muted, width:2.4});
-    a.note(1.06, 2.35, `y(T_b)=s_m+n,\\;\\; n=${(yT-1).toFixed(2)}`, {tex:true, fs:16, color:C.mid}); });
+    a.note(1.06, 1.2, `y(T_b)=s_m+n,\\;\\; n=${(yT-1).toFixed(2)}`, {tex:true, fs:16, color:C.mid}); });
+  { const L = P.labelScale(), px = 1/(a.sx(1)-a.sx(0)), x3 = 2.17-26*L*px, x2 = x3-86*L*px, x1 = x2-64*L*px;
+    keyEntry(a, x1, 3.15, 'x(t)', C.out, {width:1.4});
+    keyEntry(a, x2, 3.15, 's_m\\psi(t)', C.in, {});
+    fade(a, u1, ()=>keyEntry(a, x3, 3.15, 'y(t)', C.mid, {width:2.6})); }
   return stack(560, [[top,130],[a.svg(),hA]]);
 }
 
@@ -20588,12 +20631,12 @@ function figDemodShapes(v){
   const y = mix(t=>sa*PSI_R[ka](t-1), t=>sb*PSI_R[kb](t-1));
   const T = v && v.t!=null ? v.t : 1, hs = tau => h(T-tau);
   const big = P.labelScale() > 1, hA = big ? 270 : 170, hB = big ? 300 : 195;
-  const a = P.Axes({w:560,h:hA,xr:[-0.2,2.2],yr:[-1.5,1.5],xlabel:'\\tau/T_b',ylabel:'g(\\tau),\\;h(t-\\tau)',
+  const a = P.Axes({w:560,h:hA,xr:[-0.2,2.2],yr:[-1.5,1.5],xlabel:'\\tau', xunit:'T_b',ylabel:'\\text{amplitude}', ynameAtAxis:true,
     pad:{l:56,r:26,t:24,b:40},xticksOverride:[0,1,2],yticksOverride:[-1,0,1]});
   a.area(tau=>g(tau)*hs(tau), -0.2, 2.2, {color:C.mid+'40', n:1200});
   a.curve(hs, {color:C.h, width:2.2, dash:'7 5', n:1200});
   a.curve(g, {color:C.in, width:2.6, n:1200});
-  const b = P.Axes({w:560,h:hB,xr:[-0.2,2.2],yr:[-1.4,1.6],xlabel:'t/T_b',ylabel:'y(t)',
+  const b = P.Axes({w:560,h:hB,xr:[-0.2,2.2],yr:[-1.4,1.6],xlabel:'t', xunit:'T_b',ylabel:'y(t)',
     pad:{l:56,r:26,t:24,b:42},xticksOverride:[0,1,2],yticksOverride:[-1,-0.5,0,0.5,1]});
   b.curve(y, {color:C.mid+'73', width:1.6, dash:'6 5', n:800});
   b.curve(t=>t <= T ? y(t) : NaN, {color:C.mid, width:2.6, n:800});
@@ -20638,23 +20681,23 @@ function figDemodTrain(v){
   const mixP = (p, q) => p.map((pt, j)=>[pt[0], (1-m)*pt[1]+m*q[j][1]]);
   const T = v && v.t!=null ? v.t : 10.8;
   const hT = tau => (1-m)*PSI.rect(1-T+tau)+m*PSI.man(1-T+tau), gT = mixF(R.g, M.g);
-  const big = P.labelScale() > 1, hA = big ? 280 : 165, hB = big ? 300 : 190;
+  const big = P.labelScale() > 1, hA = big ? 300 : 190, hB = big ? 300 : 200;
   /* at the end of the slider the top axes show all ten bits; anywhere else
      they zoom to four bits around t, and the noise is drawn faint and cut at
      the edge of the axes so the filter and the product stay readable */
   const zoom = T < 10.79, x0 = zoom ? Math.min(Math.max(-0.3, T-2.6), 6.8) : -0.3, x1 = zoom ? x0+4 : 10.8;
   const xt = zoom ? [Math.ceil(x0), Math.ceil(x0)+1, Math.ceil(x0)+2, Math.ceil(x0)+3].filter(k=>k>=0 && k<=x1) : [0,2,4,6,8,10];
-  const a = P.Axes({w:560,h:hA,xr:[x0,x1],yr:zoom ? [-2.0,3.2] : [-6,8.4],xlabel:'\\tau/T_b',ylabel:'g(\\tau),\\;x(\\tau)',
-    pad:{l:56,r:26,t:24,b:40},xticksOverride:xt,yticksOverride:zoom ? [-1,0,1] : [-4,0,4]});
+  const a = P.Axes({w:560,h:hA,xr:[x0,x1],yr:[-2.0,3.2],xlabel:'\\tau', xunit:'T_b',ylabel:'\\text{amplitude}', ynameAtAxis:true,
+    pad:{l:56,r:26,t:50,b:40},xticksOverride:xt,yticksOverride:[-1,0,1]});
   fade(a, o1, ()=>a.curve(mixF(R.x, M.x), {color:zoom ? C.out+'59' : C.out, width:1.1, n:2400}));
   if(zoom) a.area(tau=>gT(tau)*hT(tau), x0, x1, {color:C.mid+'59', n:1600});
   a.curve(gT, {color:C.in, width:2.4, n:2400});
   if(zoom) a.curve(hT, {color:C.h, width:2.4, dash:'7 5', n:1600});
-  TR_B.forEach((bit, k)=>{ if(k+0.5 > x0 && k+0.5 < x1) a.note(k+0.5, zoom ? 2.2 : 7.2, String(bit), {tex:true, fs:15, color:C.in, anchor:'middle'}); });
-  const b = P.Axes({w:560,h:hB,xr:[-0.3,10.8],yr:[-2.0,2.4],xlabel:'t/T_b',ylabel:'y_0(t),\\;y(t)',
+  TR_B.forEach((bit, k)=>{ if(k+0.5 > x0 && k+0.5 < x1) a.note(k+0.5, 2.2, String(bit), {tex:true, fs:15, color:C.in, anchor:'middle'}); });
+  const b = P.Axes({w:560,h:hB,xr:[-0.3,10.8],yr:[-2.7,2.4],xlabel:'t', xunit:'T_b',ylabel:'\\text{amplitude}', ynameAtAxis:true,
     pad:{l:56,r:26,t:24,b:42},xticksOverride:[0,2,4,6,8,10],yticksOverride:[-1,0,1]});
   b.hline(0, {color:C.muted, dash:'5 4'});
-  if(zoom) b.rect(Math.max(-0.3, T-1), -2.0, T, 2.4, {fill:C.h+'1F'});
+  if(zoom) b.rect(Math.max(-0.3, T-1), -2.7, T, 2.4, {fill:C.h+'1F'});
   const cut = (Y, after) => Y.filter(p=>after ? p[0] >= T-0.02 : p[0] <= T+1e-9);
   const Y0 = mixP(R.y0, M.y0), Y1 = mixP(R.y, M.y);
   fade(b, o2*(1-0.55*o3), ()=>{ b.poly(cut(Y0), {color:C.mid, width:2.0, dash:'6 4'});
@@ -20667,6 +20710,9 @@ function figDemodTrain(v){
   fade(b, o4, ()=>{ const Y = mixP(R.y, M.y);
     for(let k=1;k<=Math.min(10, Math.floor(T+1e-9));k++){ const yk = Y[50*k][1]; b.point(k, yk, {color:C.mid, r:5});
       b.note(k-0.5, 2.05, yk > 0 ? '1' : '0', {tex:true, fs:15, color:C.out, anchor:'middle'}); } });
+  { const L = P.labelScale(), px = 1/(b.sx(1)-b.sx(0)), y = -2.3, x = 10.6-150*L*px;
+    fade(b, o2, ()=>keyEntry(b, x, y, 'y_0(t)', C.mid, {width:2.0, dash:'6 4'}));
+    fade(b, o3, ()=>keyEntry(b, x+80*L*px, y, 'y(t)', C.mid, {width:2.4})); }
   return stack(560, [[a.svg(),hA],[b.svg(),hB]]);
 }
 
@@ -20691,14 +20737,16 @@ function figCorrOut(v){
     {t:'text',x:470,y:88,label:'t=T_b',tex:true,fs:14}
   ]});
   const big = P.labelScale() > 1, hA = big ? 250 : 130, hB = big ? 280 : 168;
-  const a = P.Axes({w:560,h:hA,xr:[-0.2,2.2],yr:[-1.5,1.6],xlabel:'',ylabel:'x(\\tau),\\;x(\\tau)\\psi(\\tau)',
+  const a = P.Axes({w:560,h:hA,xr:[-0.2,2.2],yr:[-1.5,1.6],xlabel:'',ylabel:'\\text{amplitude}', ynameAtAxis:true,
     pad:{l:56,r:26,t:24,b:24},xticksOverride:[0,1,2],yticksOverride:[-1,0,1]});
   if(t > 0.005 && d < 0.99) fade(a, 1-d, ()=>a.area(()=>1, 0, t, {color:C.dec.mid}));
   a.curve(PSI.man, {color:C.in, width:2.2, n:900});
   a.poly([[-0.2,0],[0,0],[0,1],[1,1],[1,0],[2.2,0]], {color:C.mid, width:2.0, dash:'6 4'});
   a.vline(t, {color:C.muted});
-  a.note(1.06, 1.25, 'x(\\tau)\\psi(\\tau)=\\psi^{2}(\\tau)', {tex:true, fs:15, color:C.mid});
-  const b = P.Axes({w:560,h:hB,xr:[-0.2,2.2],yr:[-0.2,1.45],xlabel:'t/T_b',ylabel:'y(t)',
+  { const px = 1/(a.sx(1)-a.sx(0)), L = P.labelScale(), x = 2.17-(118+78)*L*px;
+    keyEntry(a, x, 1.15, 'x(\\tau)', C.in, {});
+    keyEntry(a, x+78*L*px, 1.15, 'x(\\tau)\\psi(\\tau)', C.mid, {width:2.0, dash:'6 4'}); }
+  const b = P.Axes({w:560,h:hB,xr:[-0.2,2.2],yr:[-0.2,1.45],xlabel:'t', xunit:'T_b',ylabel:'y(t)',
     pad:{l:56,r:26,t:24,b:42},xticksOverride:[0,0.5,1,1.5,2],yticksOverride:[0,0.5,1]});
   b.poly([[0,0],[t,t]], {color:C.mid, width:2.6});
   if(d > 0.01) b.poly([[1,1],[1,1-d]], {color:C.mid, width:2.0, dash:'3 4'});
@@ -20718,7 +20766,7 @@ const CM = ['rect','man','step'];
 function figCorrMf(v){
   const f = frameOf(v, 0), i = Math.min(1, Math.floor(f)), u = clamp01(f-i);
   const y = t => (1-u)*PSI_R[CM[i]](t-1) + u*PSI_R[CM[i+1]](t-1);
-  const a = P.Axes(SZ({xr:[-0.15,2.2], yr:[-0.75,1.4], xlabel:'t/T_b', ylabel:'\\text{output}',
+  const a = P.Axes(SZ({xr:[-0.15,2.2], yr:[-0.75,1.4], xlabel:'t', xunit:'T_b', ylabel:'\\text{output}',
     xticksOverride:[0,0.5,1,1.5,2], yticksOverride:[-0.5,0,0.5,1]}));
   a.raw('<g opacity="0.45">'); a.curve(y, {color:C.mid, width:5, n:800}); a.raw('</g>');
   a.poly([[-0.15,0],[0,0],[1,1],[1,0],[2.2,0]], {color:C.mid, width:2.2, dash:'7 5'});
@@ -20736,7 +20784,7 @@ function figCorrMf(v){
    t = u the product is psi^2(t) = +1/T_b everywhere. Frame 3: the result. */
 function figNoisePlane(v){
   const f = frameOf(v, 0), o1 = clamp01(f), o2 = clamp01(f-1), o3 = clamp01(f-2);
-  const a = P.Axes(SZ({xr:[-0.12,1.18], yr:[-0.12,1.3], xlabel:'t/T_b', ylabel:'u/T_b',
+  const a = P.Axes(SZ({xr:[-0.12,1.18], yr:[-0.12,1.3], xlabel:'t', xunit:'T_b', ylabel:'u/T_b',
     xticksOverride:[0,0.5,1], yticksOverride:[0,0.5,1], grid:false}));
   const q = 1-0.6*o2;
   a.raw(`<g opacity="${q.toFixed(3)}">`);
@@ -20760,52 +20808,6 @@ function figNoisePlane(v){
 }
 /* The second slide of the variance plays the same figure from frame 1. */
 const figNoisePlaneB = v => figNoisePlane({frame:frameOf(v, 0)+1});
-
-/* The sampling instant moved by e T_b in the ten-bit polar stream, no noise.
-   y0(kT_b + e) = s_k (1 - |e|) + s_{k+-1} |e|: a neighbour leaks in with the
-   weight |e|, so the smallest margin s_k y0 is 1 - 2|e| (a bit between two
-   opposite bits). The ideal instants are dashed, the moved ones solid. */
-const trY0 = t => { const p = TR.rect.y0, x = t/0.02, j = Math.max(0, Math.min(p.length-2, Math.floor(x))), f = x-j;
-  return (1-f)*p[j][1] + f*p[j+1][1]; };
-function figDemodTiming(v){
-  const e = v && v.e!=null ? v.e : 0.25;
-  const L = P.labelScale(), big = L>1;
-  const a = P.Axes(SZ({xr:[-0.3,10.8], yr:[big?-1.9:-1.6,2.4], xlabel:'t/T_b', ylabel:'y_0(t)',
-    xticksOverride:[0,2,4,6,8,10], yticksOverride:[-1,0,1]}));
-  a.hline(0, {color:C.muted, dash:'5 4'});
-  a.poly(TR.rect.y0, {color:C.mid, width:2.4});
-  let mn = 9;
-  for(let k=1;k<=10;k++){ const t = k+e, y = trY0(t), s = TR_B[k-1] ? 1 : -1; mn = Math.min(mn, s*y);
-    a.poly([[k,-1.08],[k,1.45]], {color:C.muted, width:1, dash:'3 4'});
-    a.point(t, y, {color:C.mid, r:5});
-    a.note(k-0.5, 2.05, String(TR_B[k-1]), {tex:true, fs:15, color:C.in, anchor:'middle'}); }
-  /* in projector mode the readout keeps a fixed pixel gap under the troughs */
-  a.note(0.1, big ? -1-26*L/(a.sy(0)-a.sy(1)) : -1.35, `\\min_k s_k\\,y_0(kT_b+\\epsilon)=${mn.toFixed(2)}`, {tex:true, fs:15, color:C.mid});
-  return a.svg();
-}
-
-/* The correlator on samples (book Example 8.3.3): the rectangular pulse, no
-   noise, sampled N times a bit, y(kT_s) = (1/N) sum_{n<=k} r(nT_s) s(nT_s)
-   with T_s = T_b/N. Frames N = 4, 8, 20; between frames the old stems fade
-   out and the new ones in. The continuous correlator output t/T_b is dashed. */
-const CS_N = [4, 8, 20];
-function figCorrSamples(v){
-  P.hOverride = null;
-  const f = frameOf(v, 0), i = Math.min(1, Math.floor(f)), u = clamp01(f-i);
-  const big = P.labelScale() > 1, hA = big ? 230 : 165, hB = big ? 300 : 230;
-  const a = P.Axes({w:560,h:hA,xr:[-0.1,1.25],yr:[-0.2,1.45],xlabel:'t/T_b',ylabel:'r(nT_s)',
-    pad:{l:56,r:26,t:24,b:40},xticksOverride:[0,0.5,1],yticksOverride:[0,1]});
-  const b = P.Axes({w:560,h:hB,xr:[-0.1,1.25],yr:[-0.15,1.3],xlabel:'t/T_b',ylabel:'y(kT_s)',
-    pad:{l:56,r:26,t:24,b:42},xticksOverride:[0,0.5,1],yticksOverride:[0,0.5,1]});
-  a.poly([[-0.1,0],[0,0],[0,1],[1,1],[1,0],[1.25,0]], {color:C.in, width:1.6, dash:'6 5'});
-  b.poly([[0,0],[1,1]], {color:C.mid, width:1.6, dash:'6 5'});
-  [[CS_N[i], 1-u], [CS_N[i+1], u]].forEach(([N, op]) => fade(a, op, ()=>{
-    a.stem([...Array(N)].map((_,n)=>[(n+1)/N, 1]), {color:C.in});
-    b.stem([...Array(N)].map((_,n)=>[(n+1)/N, (n+1)/N]), {color:C.mid}); }));
-  const N = CS_N[Math.round(f)];
-  b.note(0.02, 1.15, `N=${N},\\;\\; T_s=T_b/${N}`, {tex:true, fs:15, color:C.ink});
-  return stack(560, [[a.svg(),hA],[b.svg(),hB]]);
-}
 
 /* Measured noise values under an N0 slider. Each of 3000 values is the sum
    n = sum_j w_j psi(t_j) dt over 40 samples of the Manchester psi, with w_j
@@ -20847,15 +20849,19 @@ function figPpm(v){
   P.hOverride = null;
   const f = frameOf(v, 0), o1 = clamp01(f), o2 = clamp01(f-1), o3 = clamp01(f-2), r = Math.SQRT2;
   const big = P.labelScale() > 1, hA = big ? 230 : 170, hB = big ? 330 : 270;
-  const a = P.Axes({w:560,h:hA,xr:[-0.3,1.3],yr:[-0.3,big?3.0:2.6],xlabel:'t/T_b',ylabel:'s_m(t),\\;\\psi_m(t)',
+  const a = P.Axes({w:560,h:hA,xr:[-0.3,1.3],yr:[-0.3,big?3.0:2.6],xlabel:'t', xunit:'T_b',ylabel:'\\text{amplitude}', ynameAtAxis:true,
     pad:{l:56,r:26,t:24,b:40},xticksOverride:[0,0.5,1],yticksOverride:[]});
-  const sq = (x0, x1, h) => [[-0.3,0],[x0,0],[x0,h],[x1,h],[x1,0],[1.3,0]];
+  /* both pulses are zero off their halves: the zero line is drawn once, solid,
+     and s_2 (dashed) only by its top and its falling edge, so no dashed run
+     lies on a solid one */
+  const pair = (h, color, width, dash) => { a.poly([[-0.3,0],[1.3,0]], {color, width});
+    a.poly([[0,0],[0,h],[0.5,h],[0.5,0]], {color, width}); a.poly([[0.5,h],[1,h],[1,0]], {color, width, dash}); };
   /* the pulse names sit a fixed number of pixels above the pulse tops */
   const ys = big ? 2+8*P.labelScale()/(a.sy(0)-a.sy(1)) : 2.25;
-  fade(a, 1-0.6*o1, ()=>{ a.poly(sq(0,0.5,2), {color:C.in, width:2.4}); a.poly(sq(0.5,1,2), {color:C.in, width:2.4, dash:'8 5'});
+  fade(a, 1-0.6*o1, ()=>{ pair(2, C.in, 2.4, '8 5');
     a.note(0.25, ys, 's_1(t)', {tex:true, fs:15, color:C.in, anchor:'middle'});
     a.note(0.75, ys, 's_2(t)', {tex:true, fs:15, color:C.in, anchor:'middle'}); });
-  fade(a, o1, ()=>{ a.poly(sq(0,0.5,r), {color:C.h, width:2.2}); a.poly(sq(0.5,1,r), {color:C.h, width:2.2, dash:'7 5'});
+  fade(a, o1, ()=>{ pair(r, C.h, 2.2, '7 5');
     a.note(1.05, r, '\\psi_1,\\ \\psi_2', {tex:true, fs:15, color:C.h}); });
   const b = P.Axes({w:560,h:hB,xr:[-0.9,2.6],yr:[-0.7,2.1],xlabel:'y_1',ylabel:'y_2',
     pad:{l:56,r:26,t:24,b:42},xticksOverride:[0,1],yticksOverride:[0,1],xtickfmt:()=>'',ytickfmt:()=>''});
@@ -21020,7 +21026,7 @@ const nrz = (bits, hist=0) => t => { const k = Math.floor(t); return k<0 ? hist 
 const ISI_B = [1,1,0,1,0,0];
 function figIsiBuild(v){
   const f = frameOf(v, 3), bt = 0.25, r = rcResp(bt);
-  const a = P.Axes(SZ({xr:[-0.6,7.3], yr:[-1.6,1.75], xlabel:'t/T_b', ylabel:'y(t)',
+  const a = P.Axes(SZ({xr:[-0.6,7.3], yr:[-1.6,1.75], xlabel:'t', xunit:'T_b', ylabel:'y(t)',
     xticksOverride:[0,1,2,3,4,5,6,7], ytarget:4}));
   const one = clamp01(1-(f-1.5)*2), many = clamp01(f-1.5);
   if(one > 0.02){
@@ -21044,7 +21050,7 @@ const TERM_B = [0,0,0,1];
 function figIsiTerm(){
   P.hOverride = null;
   const bt = 0.25, q = rcq(bt), y = rcTrain(TERM_B, bt, -1);
-  const a = P.Axes({w:560,h:210,xr:[-0.6,4.4],yr:[-1.4,1.5],xlabel:'t/T_b',ylabel:'y(t)',
+  const a = P.Axes({w:560,h:210,xr:[-0.6,4.4],yr:[-1.4,1.5],xlabel:'t', xunit:'T_b',ylabel:'y(t)',
     pad:{l:56,r:26,t:24,b:40},xticksOverride:[0,1,2,3,4],ytarget:3});
   a.curve(nrz(TERM_B,-1), {color:C.in, width:1.4, dash:'5 5', opacity:0.7, n:900});
   a.curve(y, {color:C.out, width:2.6, n:900});
@@ -21070,7 +21076,7 @@ function figIsiTerm(){
 const EXI_B = [0,0,0,1,1,1,0,1];
 function figExIsi(){
   const bt = 0.25, y = rcTrain(EXI_B, bt, -1);
-  const a = P.Axes(SZ({xr:[-0.4,8.4], yr:[-1.5,1.6], xlabel:'t/T_b', ylabel:'y(t)',
+  const a = P.Axes(SZ({xr:[-0.4,8.4], yr:[-1.5,1.6], xlabel:'t', xunit:'T_b', ylabel:'y(t)',
     xticksOverride:[0,1,2,3,4,5,6,7,8], ytarget:4}));
   a.raw(`<rect class="sk-area" x="${a.x0}" y="${a.y1}" width="${a.x1-a.x0}" height="${a.y0-a.y1}" fill="none"/>`);
   a.curve(nrz(EXI_B,-1), {color:C.ink, width:1.6, dash:'6 5', n:1400});
@@ -21098,7 +21104,7 @@ function eyeTraces(bt, n){
 }
 function figEyeBuild(v){
   const f = frameOf(v, 3), n = Math.min(128, Math.round(Math.pow(2, f*7/3)));
-  const a = P.Axes(SZ({xr:[-1,1], yr:[-1.5,1.5], xlabel:'t/T_b', ylabel:'y(t)',
+  const a = P.Axes(SZ({xr:[-1,1], yr:[-1.5,1.5], xlabel:'t', xunit:'T_b', ylabel:'y(t)',
     xticksOverride:[-1,-0.5,0,0.5,1], ytarget:4}));
   a.raw(`<g opacity="${n>20 ? 0.5 : 1}">`);
   eyeTraces(0.3, n).forEach(pts=>a.poly(pts, {color:C.out, width:n>20?1.1:1.8}));
@@ -21108,7 +21114,7 @@ function figEyeBuild(v){
 }
 function figEyeLive(v){
   const bt = v && v.bt!=null ? v.bt : 0.3, q = rcq(bt), h = 1-2*q;
-  const a = P.Axes(SZ({xr:[-1,1], yr:[-1.5,1.5], xlabel:'t/T_b', ylabel:'y(t)',
+  const a = P.Axes(SZ({xr:[-1,1], yr:[-1.5,1.5], xlabel:'t', xunit:'T_b', ylabel:'y(t)',
     xticksOverride:[-1,-0.5,0,0.5,1], ytarget:4}));
   a.raw('<g opacity="0.5">');
   eyeTraces(bt, 128).forEach(pts=>a.poly(pts, {color:C.out, width:1.1}));
@@ -21137,7 +21143,7 @@ const rcSpec = (f, al) => { const u = Math.abs(f), f1 = 1-al;
   return 0; };
 
 function figSincTrain(){
-  const a = P.Axes(SZ({xr:[-4.5,4.5], yr:[-0.35,1.3], xlabel:'t/T_b', ylabel:'p(t)',
+  const a = P.Axes(SZ({xr:[-4.5,4.5], yr:[-0.35,1.3], xlabel:'t', xunit:'T_b', ylabel:'p(t)',
     xticksOverride:[-4,-3,-2,-1,0,1,2,3,4], ytarget:3}));
   a.curve(t=>sinc(t-1), {color:C.in, width:1.4, dash:'6 5', opacity:0.6});
   a.curve(t=>sinc(t+1), {color:C.in, width:1.4, dash:'6 5', opacity:0.6});
@@ -21173,7 +21179,7 @@ function figNyqChannel(){
 const sincIsi = (eps, K=20) => { let s = 0; for(let k=-K;k<=K;k++) if(k) s += Math.abs(sinc(k+eps)); return s; };
 function figSincOffset(v){
   const eps = v && v.eps!=null ? v.eps : 0.1;
-  const a = P.Axes(SZ({xr:[-5.5,5.5], yr:[-0.35,1.35], xlabel:'t/T_b', ylabel:'p(t)',
+  const a = P.Axes(SZ({xr:[-5.5,5.5], yr:[-0.35,1.35], xlabel:'t', xunit:'T_b', ylabel:'p(t)',
     xticksOverride:[-5,-4,-3,-2,-1,0,1,2,3,4,5], ytarget:3}));
   a.curve(sinc, {color:C.in, width:2.6});
   const st = []; for(let k=-5;k<=5;k++) if(k) st.push([k+eps, sinc(k+eps)]);
@@ -21194,7 +21200,7 @@ function figRcSpec(v){
 }
 function figRcPulse(v){
   const al = v && v.al!=null ? v.al : 0.5;
-  const a = P.Axes(SZ({xr:[-4.5,4.5], yr:[-0.3,1.25], xlabel:'t/T_b', ylabel:'p(t)',
+  const a = P.Axes(SZ({xr:[-4.5,4.5], yr:[-0.3,1.25], xlabel:'t', xunit:'T_b', ylabel:'p(t)',
     xticksOverride:[-4,-3,-2,-1,0,1,2,3,4], ytarget:3}));
   a.curve(sinc, {color:C.in, width:1.4, dash:'6 5', opacity:0.6});
   a.curve(t=>rcPulse(t, al), {color:C.in, width:2.6, n:900});
@@ -21321,11 +21327,12 @@ const REAL_MATCHED = realGallery({ id:'m2-real-matched', nav:'Matched filters ar
       a.vline(t0,{color:C.muted});
       a.note(t0+0.2,1.08,'t_0=5.83\\ \\text{ms}',{tex:true,fs:14,color:C.mid});
       return a.svg(); }, 'An ultrasonic range finder correlates the echo with the pulse it sent. The peak at $t_0=5.83$ ms gives $d=ct_0/2=1.00$ m for $c=343$ m/s.'],
-    [()=>{ const Tb = 104.2, a=P.Axes(EXO({xr:[-10,230],yr:[-0.5,1.9],xlabel:'t\\;(\\mu\\text{s})',ylabel:'x(t),\\;y(t)',xticksOverride:[0,104.2,208.4],
+    [()=>{ const Tb = 104.2, a=P.Axes(EXO({xr:[-10,230],yr:[-0.5,1.9],xlabel:'t\\;(\\mu\\text{s})',ylabel:'\\text{amplitude}', ynameAtAxis:true,xticksOverride:[0,104.2,208.4],
         xtickfmt:v=>v?String(+v.toFixed(1)):'0',ytarget:3}));
       a.curve(t=>t>=0&&t<Tb?1+UA_W(t/Tb):0,{color:C.out,width:1.3,n:900});
       a.curve(t=>{ if(t<0||t>=Tb) return t>=Tb ? 0 : NaN; let s=0; const N=120; for(let i=0;i<N;i++){ const u=t*(i+0.5)/N; s+=1+UA_W(u/Tb); } return s/N*(t/Tb); },{color:C.mid,width:2.4,n:600});
       a.point(Tb,(()=>{ let s=0; for(let i=0;i<400;i++) s+=1+UA_W((i+0.5)/400); return s/400; })(),{color:C.mid,r:5});
+      { const px=1/(a.sx(1)-a.sx(0)), L=P.labelScale(); keyEntry(a,222-110*L*px,1.6,'x(t)',C.out,{width:1.3}); keyEntry(a,222-50*L*px,1.6,'y(t)',C.mid,{width:2.4}); }
       return a.svg(); }, 'A serial port at $9600$ baud integrates each bit over $T_b=1/9600=104.2\\ \\mu$s, then dumps. The integrator is the matched filter of a rectangular bit.']
   ],
   notes:[
@@ -21358,7 +21365,7 @@ const REAL_DEMOD = realGallery({ id:'m2-real-demod', nav:'Demodulators around us
       a.stem(HIST,{color:C.mid,r:2.4});
       a.vline(0,{color:C.muted});
       return a.svg(); }, 'The values of $y$ for $4000$ bits at $E_b/N_0=6$ dB. The two bumps sit at $\\pm\\sqrt{E_b}$, each with spread $\\sigma=\\sqrt{N_0/2}$.'],
-    [()=>{ const a=P.Axes(EXO({xr:[-0.1,2.1],yr:[-0.1,1.25],xlabel:'t/T_b',ylabel:'y(t)/\\sqrt{E_b}',xticksOverride:[0,0.5,1,1.5,2],ytarget:3}));
+    [()=>{ const a=P.Axes(EXO({xr:[-0.1,2.1],yr:[-0.1,1.25],xlabel:'t', xunit:'T_b',ylabel:'y(t)/\\sqrt{E_b}',xticksOverride:[0,0.5,1,1.5,2],ytarget:3}));
       a.poly([[-0.1,0],[0,0],[1,1],[2,0],[2.1,0]],{color:C.mid,width:2.4});
       a.point(1,1,{color:C.mid,r:4.5}); a.point(0.9,0.9,{color:C.err,r:4.5});
       return a.svg(); }, 'Sampled $0.1T_b$ early, the output keeps $0.9\\sqrt{E_b}$. The signal energy seen drops to $0.81E_b$, a loss of $0.92$ dB.']
@@ -21415,7 +21422,7 @@ const REAL_ISI = realGallery({ id:'m2-real-isi', nav:'Intersymbol interference a
   objective:'Recognise intersymbol interference in cables, radio echoes and optical fibre.',
   keywords:'examples cable pulse response tail multipath echo two ray wifi optical fibre dispersion pulse broadening eye opening bandwidth',
   figs:[
-    [()=>{ const r = rcResp(0.15), a=P.Axes(EXO({xr:[-0.3,5.3],yr:[-0.1,1.1],xlabel:'t/T_b',ylabel:'r(t)',xticksOverride:[0,1,2,3,4,5],ytarget:3}));
+    [()=>{ const r = rcResp(0.15), a=P.Axes(EXO({xr:[-0.3,5.3],yr:[-0.1,1.1],xlabel:'t', xunit:'T_b',ylabel:'r(t)',xticksOverride:[0,1,2,3,4,5],ytarget:3}));
       a.poly([[-0.3,0],[0,0],[0,1],[1,1],[1,0],[5.3,0]],{color:C.in,width:1.4,dash:'5 5'});
       a.curve(r,{color:C.out,width:2.2,n:800});
       for(let m=1;m<=4;m++) a.point(m+1,r(m+1),{color:C.err,r:4});
@@ -21458,11 +21465,11 @@ const REAL_NYQUIST = realGallery({ id:'m2-real-nyquist', nav:'Pulse shaping arou
       a.curve(f=>rcSpec(f/W,0.22),{color:C.in,width:2.2,n:900});
       a.vline(-2.5,{color:C.h,dash:'6 4',width:1.4}); a.vline(2.5,{color:C.h,dash:'6 4',width:1.4});
       return a.svg(); }, '3G mobile sends $3.84$ Mchip/s with $\\alpha=0.22$. $B_T=1.92(1.22)=2.34$ MHz fits inside the $\\pm2.5$ MHz of its $5$ MHz channel.'],
-    [()=>{ const a=P.Axes(EXO({xr:[-4.5,4.5],yr:[-0.3,1.2],xlabel:'t/T_s',ylabel:'p(t)',xticksOverride:[-4,-2,0,2,4],ytarget:3}));
+    [()=>{ const a=P.Axes(EXO({xr:[-4.5,4.5],yr:[-0.3,1.2],xlabel:'t', xunit:'T_s',ylabel:'p(t)',xticksOverride:[-4,-2,0,2,4],ytarget:3}));
       a.curve(t=>rcPulse(t,0.35),{color:C.in,width:2.2,n:900});
       for(let k=-4;k<=4;k++) a.point(k,k?0:1,{color:C.mid,r:4});
       return a.svg(); }, 'The raised-cosine pulse of $\\alpha=0.35$. It is zero at every other sampling instant, so the samples carry no interference.'],
-    [()=>{ const a=P.Axes(EXO({xr:[0,0.3],yr:[-0.1,2.3],xlabel:'\\epsilon/T_s',ylabel:'\\textstyle\\sum|p(kT_s+\\epsilon)|',xticksOverride:[0,0.1,0.2,0.3],ytarget:3}));
+    [()=>{ const a=P.Axes(EXO({xr:[0,0.3],yr:[-0.1,2.3],xlabel:'\\epsilon', xunit:'T_s',ylabel:'\\textstyle\\sum|p(kT_s+\\epsilon)|',xticksOverride:[0,0.1,0.2,0.3],ytarget:3}));
       a.curve(e=>tmIsi(e,0),{color:C.err,width:2.2,dash:'7 5',n:200});
       a.curve(e=>tmIsi(e,0.5),{color:C.err,width:2.2,n:200});
       a.note(0.15,1.5,'\\alpha=0',{tex:true,fs:14,color:C.err,anchor:'end'});
@@ -21945,7 +21952,7 @@ REAL_MATCHED,
     {t:'legend', items:[['h','$\\psi(t)$',0,0,0],['mid','$\\psi^{2}(t)$',0,1]], at:'tr'}
   ], right:[
     {t:'eq', label:'The pulse', tex:'\\psi(t)=\\begin{cases}1/\\sqrt{T_b}, & 0\\le t\\le T_b\\\\[2pt] 0, & \\text{otherwise}\\end{cases}',
-      note:'A rectangle one bit long; $T_b$ is the bit duration. We call $\\psi(t)$ the <b>basis function</b>; Module 3 builds them by Gram–Schmidt.'},
+      note:'A rectangle one bit long, and $T_b$ is the bit duration. We call $\\psi(t)$ the <b>basis function</b>. Module 3 builds them by Gram–Schmidt.'},
     {t:'reveal', at:1, items:[
       {t:'eq', label:'Step 1 · its energy', tex:'\\begin{aligned}E_\\psi&=\\int_0^{T_b}\\psi^{2}(t)\\,dt\\\\&=\\int_0^{T_b}\\frac{1}{T_b}\\,dt\\\\&=\\frac{1}{T_b}\\cdot T_b=1\\end{aligned}',
         note:'Square the height, then integrate over the bit. The height $1/\\sqrt{T_b}$ is chosen so that the energy is exactly $1$.'}]},
@@ -21966,7 +21973,7 @@ REAL_MATCHED,
     {t:'fig', frame:true, grow:true,
       frames:{labels:['$\\psi(t)$','$s_1(t)$','$s_0(t)$'], ms:1100},
       svg:figAntipodal,
-      caption:'Step through: the basis $\\psi(t)$, then $\\psi(t)$ times $+A\\sqrt{T_b}$, then times $-A\\sqrt{T_b}$. Drawn with $T_b=1$ and $A=1.5$.'},
+      caption:'Step through: the basis $\\psi(t)$, then $\\psi(t)$ times $+A\\sqrt{T_b}$, then times $-A\\sqrt{T_b}$. Drawn with $A=1.5$.'},
     {t:'legend', items:[['h','$\\psi(t)$'],['in','$s_1(t)$',0,1],['mid','$s_0(t)$',1,2]], at:'tr'}
   ], right:[
     {t:'eq', label:'One shape, two numbers', tex:'s_m(t)=s_m\\,\\psi(t),\\qquad m\\in\\{0,1\\}',
@@ -21997,7 +22004,7 @@ REAL_MATCHED,
       caption:'Step through: the two waveforms, and their products with $\\psi(t)$, whose areas are the two numbers. Then the numbers as points on the axis of $\\psi(t)$, and their distance.'}
   ], right:[
     {t:'eq', label:'Coefficient on $\\psi$', tex:'\\begin{aligned}s_m&=\\int_0^{T_b}s_m(t)\\,\\psi(t)\\,dt\\\\s_1&=\\int_0^{T_b}A\\cdot\\frac{1}{\\sqrt{T_b}}\\,dt\\\\&=\\frac{A}{\\sqrt{T_b}}\\cdot T_b=A\\sqrt{T_b}=+\\sqrt{E_b}\\end{aligned}',
-      note:'Multiply by $\\psi(t)$ and integrate over the bit; $s_0(t)=-A$ gives $-\\sqrt{E_b}$. Module 3 draws any signal set this way.'},
+      note:'Multiply by $\\psi(t)$ and integrate over the bit. For $s_0(t)=-A$ it gives $-\\sqrt{E_b}$. Module 3 draws any signal set this way.'},
     {t:'reveal', at:1, items:[
       {t:'eq', label:'Distance', tex:'\\begin{aligned}d&=s_1-s_0\\\\&=\\sqrt{E_b}-\\bigl(-\\sqrt{E_b}\\bigr)=2\\sqrt{E_b}\\end{aligned}',
         note:'A larger distance means noise must move the received number further before it lands nearer the wrong point.'}]},
@@ -22070,7 +22077,7 @@ REAL_MATCHED,
     {t:'eq', label:'Step 1 · sample at $t=T_b$', tex:'y(T_b)=\\int_0^{T_b}s_m\\psi(\\tau)\\,\\psi(\\tau)\\,d\\tau+n(T_b)',
       note:'Put $t=T_b$. Then $\\psi\\bigl(T_b-(T_b-\\tau)\\bigr)=\\psi(\\tau)$: the reversal and the delay cancel.'},
     {t:'reveal', at:1, items:[
-      {t:'eq', label:'Step 2 · use unit energy', tex:'\\begin{aligned}y(T_b)&=s_m\\int_0^{T_b}\\psi^{2}(\\tau)\\,d\\tau+n(T_b)\\\\&=s_m\\cdot1+n(T_b)\\end{aligned}',
+      {t:'eq', label:'Step 2 · use unit energy', tex:'\\begin{aligned}y(T_b)&=s_m\\underbrace{\\int_0^{T_b}\\psi^{2}(\\tau)\\,d\\tau}_{1}+n(T_b)\\\\&=s_m\\cdot1+n(T_b)\\end{aligned}',
         note:'$s_m$ leaves the integral. The rest is the energy of $\\psi$, which is $1$.'}]},
     {t:'reveal', at:2, items:[
       {t:'eq', label:'Key result · the demodulator output', key:true, result:true, tex:'y=s_m+n,\\qquad n=\\int_0^{T_b}w(\\tau)\\,\\psi(\\tau)\\,d\\tau',
@@ -22093,10 +22100,10 @@ REAL_MATCHED,
       frames:{labels:['polar $1$','polar $0$','Manchester $1$','Manchester $0$','three steps'], ms:1100},
       live:{controls:[{k:'t', label:'$t/T_b$', min:0, max:2, step:0.01, v:1, show:v=>'$'+v.toFixed(2)+'$'}]},
       svg:figDemodShapes,
-      caption:'Five unit-energy pulses $g(t)=s_m\\psi(t)$, $T_b=1$. Drag $t$: $h(t-\\tau)$ slides over $g(\\tau)$, and the shaded product integrates to $y(t)$. At $t=T_b$, $y=s_m$.'},
+      caption:'Five unit-energy pulses $g(t)=s_m\\psi(t)$. Drag $t$: $h(t-\\tau)$ slides over $g(\\tau)$, and the shaded product integrates to $y(t)$. At $t=T_b$, $y=s_m$.'},
     {t:'legend', items:[['in','$g(\\tau)$'],['h','$h(t-\\tau)$',true]], at:'tr'}
   ], right:[
-    {t:'eq', label:'Any unit-energy $\\psi$', tex:'\\begin{aligned}y(T_b)&=s_m\\int_0^{T_b}\\psi^{2}(\\tau)\\,d\\tau\\\\&=s_m=\\pm1\\end{aligned}',
+    {t:'eq', label:'Any unit-energy $\\psi$', tex:'\\begin{aligned}y(T_b)&=s_m\\underbrace{\\int_0^{T_b}\\psi^{2}(\\tau)\\,d\\tau}_{1}\\\\&=s_m=\\pm1\\end{aligned}',
       note:'Step 2 of the last slide used only the unit energy of $\\psi$, never its shape. The filter matched to $\\psi$ serves both bits of a code.'},
     {t:'reveal', at:1, items:[
       {t:'note', kind:'warn', head:'Signal part only', html:'These outputs carry no noise. With noise the sample is $s_m+n$, and the curve between samples moves too.'}]},
@@ -22118,7 +22125,8 @@ REAL_MATCHED,
       frames:{labels:['bits','$x(t)$','$y_0(t)$','$y(t)$','samples','Manchester'], ms:1200},
       live:{controls:[{k:'t', label:'$t/T_b$', min:0, max:10.8, step:0.02, v:10.8, show:v=>'$'+v.toFixed(2)+'$'}]},
       svg:figDemodTrain,
-      caption:'Ten polar bits, then Manchester, through the matched filter. Drag $t$: the top axes zoom in, $h(t-\\tau)$ covers $[t-T_b,t]$, and the shaded product of the signal part integrates to $y_0(t)$.'}
+      caption:'Ten polar bits, then Manchester, through the matched filter. Drag $t$: the top axes zoom in, $h(t-\\tau)$ covers $[t-T_b,t]$, and the shaded product of the signal part integrates to $y_0(t)$.'},
+    {t:'legend', items:[['in','$g(\\tau)$'],['out','$x(\\tau)$',0,1],['h','$h(t-\\tau)$',true]], at:'tc-row'}
   ], right:[
     {t:'eq', label:'Bit $k$', tex:'y(kT_b)=s_{m,k}+n_k,\\qquad k=1,2,\\dots',
       note:'Bit $k$ lasts from $(k-1)T_b$ to $kT_b$. Its output peaks at $kT_b$. The outputs of the bits before and after it are zero there.'},
@@ -22128,29 +22136,6 @@ REAL_MATCHED,
       {t:'note', kind:'def', head:'Given', html:'Two polar $1$ bits follow each other, with no noise.<div class="nsep"></div>What does $y_0(t)$ do between their two sampling instants?',
         ask:{key:'m2-demod-train', choices:['it falls to $0$','it stays at $+1$','it rises to $+2$'], answer:1,
           why:'The falling side of the first triangle and the rising side of the second add to $1$ at every $t$ between them.'}}]}
-  ]}
-]},
-
-{ id:'m2-demod-timing', module:'M2', nav:'The sampling instant', title:'The sampling instant in a stream',
-  objective:'Move the sampling instant away from kTb in a stream of bits and see the neighbouring bit leak into each sample.',
-  keywords:'sampling instant timing offset epsilon bit stream neighbour leaks margin 1 - 2 epsilon intersymbol interference preview',
-  src:'CH8 s.18 (extension)', slide:true, steps:2, blocks:[
-  {t:'eyebrow', text:'Module 2 · The demodulator'},
-  {t:'title', text:'The sampling instant in a stream'},
-  {t:'cols', ratio:'c-5-7', fill:true, left:[
-    {t:'fig', frame:true, grow:true,
-      live:{controls:[{k:'e', label:'$\\epsilon/T_b$', min:-0.5, max:0.5, step:0.05, v:0.25, show:v=>'$'+v.toFixed(2)+'$'}]},
-      svg:figDemodTiming,
-      caption:'The noiseless output of the ten polar bits. Drag the offset $\\epsilon$: each sample is taken at $kT_b+\\epsilon$ instead of at the dashed line $kT_b$. The readout is the smallest margin.'}
-  ], right:[
-    {t:'eq', label:'A sample taken late', tex:'y_0(kT_b+\\epsilon)=s_k\\Bigl(1-\\frac{\\epsilon}{T_b}\\Bigr)+s_{k+1}\\,\\frac{\\epsilon}{T_b},\\qquad 0\\le\\epsilon\\le T_b',
-      note:'The triangle of bit $k$ has fallen by $\\epsilon/T_b$. The triangle of bit $k+1$ has risen by the same amount. An early sample takes $s_{k-1}$ instead.'},
-    {t:'reveal', at:1, items:[
-      {t:'note', kind:'warn', head:'A neighbour in the sample', html:'When $s_{k+1}=-s_k$, the sample shrinks to $s_k(1-2\\epsilon/T_b)$. One bit now disturbs another. Section 2.7 meets this effect again in a band-limited channel.'}]},
-    {t:'reveal', at:2, items:[
-      {t:'note', kind:'def', head:'Given', html:'A polar $1$ is followed by a $0$, with no noise. The sample is taken $0.25T_b$ late.<div class="nsep"></div>What is the sample?',
-        ask:{key:'m2-demod-timing', choices:['$0.25$','$0.5$','$0.75$'], answer:1,
-          why:'$y_0=(1)(0.75)+(-1)(0.25)=0.5$. Half the margin is lost.'}}]}
   ]}
 ]},
 
@@ -22169,36 +22154,12 @@ REAL_MATCHED,
     {t:'eq', label:'The correlator', tex:'y(t)=\\int_0^{t}x(\\tau)\\,\\psi(\\tau)\\,d\\tau,\\qquad 0\\le t\\le T_b',
       note:'Multiply by $\\psi(t)$ and integrate from the start of the bit.'},
     {t:'reveal', at:1, items:[
-      {t:'eq', label:'Step 1 · substitute $x(\\tau)$', tex:'\\begin{aligned}y(t)&=\\int_0^{t}\\bigl[s_m\\psi(\\tau)+w(\\tau)\\bigr]\\psi(\\tau)\\,d\\tau\\\\&=s_m\\int_0^{t}\\psi^{2}(\\tau)\\,d\\tau+\\int_0^{t}w(\\tau)\\,\\psi(\\tau)\\,d\\tau\\end{aligned}',
+      {t:'eq', label:'Step 1 · substitute $x(\\tau)$', tex:'\\begin{aligned}y(t)&=\\int_0^{t}\\bigl[\\underbrace{s_m\\psi(\\tau)+w(\\tau)}_{x(\\tau)}\\bigr]\\psi(\\tau)\\,d\\tau\\\\&=s_m\\int_0^{t}\\psi^{2}(\\tau)\\,d\\tau+\\int_0^{t}w(\\tau)\\,\\psi(\\tau)\\,d\\tau\\end{aligned}',
         note:'Multiply out and split the integral.'}]},
     {t:'reveal', at:2, items:[
       {t:'note', kind:'def', head:'Given', html:'A noiseless Manchester bit $1$.<div class="nsep"></div>What is the correlator output at $t=T_b/2$?',
         ask:{key:'m2-corr-out', choices:['$-0.5$','$0$','$+0.5$'], answer:2,
           why:'$y(T_b/2)=\\int_0^{T_b/2}\\psi^{2}\\,d\\tau=0.5$. The matched filter gives $-0.5$ at that time.'}}]}
-  ]}
-]},
-
-{ id:'m2-corr-samples', module:'M2', nav:'The correlator on samples', title:'The correlator on samples',
-  objective:'Build the correlator in discrete time: multiply N samples of the bit by samples of the pulse and add them.',
-  keywords:'discrete time correlator samples per bit sum 1/N sampling interval Ts = Tb/N noise variance sigma^2/N digital receiver',
-  src:'book Ex. 8.3.3 (extension)', slide:true, steps:2, blocks:[
-  {t:'eyebrow', text:'Module 2 · The demodulator'},
-  {t:'title', text:'The correlator on samples'},
-  {t:'cols', ratio:'c-5-7', fill:true, left:[
-    {t:'fig', frame:true, grow:true,
-      frames:{labels:['$N=4$','$N=8$','$N=20$'], ms:1100},
-      svg:figCorrSamples,
-      caption:'One noiseless bit with the rectangular pulse, sampled $N$ times. Above: the samples $r(nT_s)$. Below: the running sum. It climbs the dashed line of the continuous correlator and ends at $1$.'}
-  ], right:[
-    {t:'eq', label:'The sum', tex:'y(kT_s)=\\frac{1}{N}\\sum_{n=1}^{k}r(nT_s)\\,s(nT_s),\\qquad T_s=\\frac{T_b}{N}',
-      note:'A digital receiver adds samples instead of integrating. The factor $1/N$ plays the part of $d\\tau/T_b$.'},
-    {t:'reveal', at:1, items:[
-      {t:'eq', label:'Noise in the sum', tex:'\\begin{aligned}\\operatorname{Var}(y)&=\\frac{1}{N^{2}}\\sum_{n=1}^{N}\\operatorname{Var}\\bigl(r(nT_s)\\bigr)\\\\&=\\frac{1}{N^{2}}\\cdot N\\sigma^{2}=\\frac{\\sigma^{2}}{N}\\end{aligned}',
-        note:'Take $s(nT_s)=1$ and independent noise of variance $\\sigma^{2}$ on each sample. The variances of independent terms add.'}]},
-    {t:'reveal', at:2, items:[
-      {t:'note', kind:'def', head:'Given', html:'$N=20$ samples a bit, each with independent noise of variance $\\sigma^{2}=0.2$.<div class="nsep"></div>What is the noise variance of $y$?',
-        ask:{key:'m2-corr-samples', choices:['$0.2$','$0.01$','$0.0005$'], answer:1,
-          why:'$\\sigma^{2}/N=0.2/20=0.01$. Adding $20$ samples averages the noise down.'}}]}
   ]}
 ]},
 
@@ -22215,10 +22176,10 @@ REAL_MATCHED,
       caption:'One noiseless bit with $s_m=1$, for three shapes of $\\psi$. The wide line is the matched-filter output, the dashed line the correlator output, reset at $T_b$. At $t=T_b$ both read $s_m$.'},
     {t:'legend', items:[['mid','matched filter'],['mid','correlator',true]], at:'tr'}
   ], right:[
-    {t:'eq', label:'Correlator at $T_b$', tex:'\\begin{aligned}y(T_b)&=s_m\\int_0^{T_b}\\psi^{2}(\\tau)\\,d\\tau+\\int_0^{T_b}w(\\tau)\\,\\psi(\\tau)\\,d\\tau\\\\&=s_m+n\\end{aligned}',
+    {t:'eq', label:'Correlator at $T_b$', tex:'\\begin{aligned}y(T_b)&=s_m\\underbrace{\\int_0^{T_b}\\psi^{2}(\\tau)\\,d\\tau}_{1}+\\int_0^{T_b}w(\\tau)\\,\\psi(\\tau)\\,d\\tau\\\\&=s_m+n\\end{aligned}',
       note:'This $n$ equals the filter noise $n(T_b)$. Before $T_b$ the two noise terms differ.'},
     {t:'reveal', at:1, items:[
-      {t:'eq', label:'Matched filter at $T_b$', tex:'\\begin{aligned}h(t)&=\\psi(T_b-t)\\\\y(t)&=\\int_{-\\infty}^{\\infty}x(\\tau)\\,\\psi(T_b-t+\\tau)\\,d\\tau\\\\y(T_b)&=\\int_0^{T_b}x(\\tau)\\,\\psi(\\tau)\\,d\\tau\\end{aligned}',
+      {t:'eq', label:'Matched filter at $T_b$', tex:'\\begin{aligned}h(t)&=\\psi(T_b-t)\\\\y(t)&=\\int_{-\\infty}^{\\infty}x(\\tau)\\,\\underbrace{\\psi(T_b-t+\\tau)}_{h(t-\\tau)}\\,d\\tau\\\\y(T_b)&=\\int_0^{T_b}x(\\tau)\\,\\psi(\\tau)\\,d\\tau\\end{aligned}',
         note:'Put $t=T_b$. The last line is the correlator output, for any shape of $\\psi$. Both demodulators turn the waveform into the one number $y=s_m+n$.'}]},
     {t:'reveal', at:2, items:[
       {t:'note', kind:'def', head:'Given', html:'A noiseless bit with $s_m=1$ and the rectangular $\\psi$ enters the matched filter.<div class="nsep"></div>What is the filter output at $t=1.5T_b$?',
@@ -22263,15 +22224,14 @@ REAL_MATCHED,
       svg:figNoisePlaneB,
       caption:'Step through: the band where white noise is correlated narrows to the line $t=u$. On that line $\\psi(t)\\psi(u)=\\psi^{2}(t)=1/T_b$, whatever the sign pattern of $\\psi$.'}
   ], right:[
-    {t:'eq', label:'Step 3 · white noise', tex:'\\begin{aligned}E[w(t)w(u)]&=\\frac{N_0}{2}\\,\\delta(t-u)\\\\E[n^{2}]&=\\frac{N_0}{2}\\int_0^{T_b}\\psi^{2}(t)\\,dt=\\frac{N_0}{2}\\end{aligned}',
-      note:'The impulse sifts $\\psi(u)$ to $\\psi(t)$. Unit energy gives $N_0/2$.'},
+    {t:'eq', label:'Step 3 · white noise', tex:'\\begin{aligned}E[w(t)w(u)]&=R_w(t-u)\\\\&=\\frac{N_0}{2}\\,\\delta(t-u)\\end{aligned}',
+      note:'The mean of $w(t)w(u)$ is the autocorrelation of $w$. For white noise it is an impulse at $t=u$.'},
     {t:'reveal', at:1, items:[
-      {t:'eq', label:'Key result · the noise value', key:true, result:true, tex:'n\\sim\\mathcal{N}\\Bigl(0,\\ \\frac{N_0}{2}\\Bigr),\\qquad y\\sim\\mathcal{N}\\Bigl(s_m,\\ \\frac{N_0}{2}\\Bigr)',
-        note:'A linear operation on Gaussian noise gives a Gaussian value. Adding $s_m$ moves the mean only.'}]},
+      {t:'eq', label:'Step 4 · sift and use unit energy', tex:'\\begin{aligned}E[n^{2}]&=\\int_0^{T_b}\\psi(t)\\int_0^{T_b}\\frac{N_0}{2}\\,\\delta(t-u)\\,\\psi(u)\\,du\\,dt\\\\&=\\frac{N_0}{2}\\int_0^{T_b}\\psi(t)\\underbrace{\\int_0^{T_b}\\psi(u)\\,\\delta(u-t)\\,du}_{\\psi(t)}\\,dt\\\\&=\\frac{N_0}{2}\\underbrace{\\int_0^{T_b}\\psi^{2}(t)\\,dt}_{1}\\\\&=\\frac{N_0}{2}\\end{aligned}',
+        note:'$\\delta$ is even, so $\\delta(t-u)=\\delta(u-t)$. The impulse sifts out $\\psi(t)$, and unit energy gives $N_0/2$.'}]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'def', head:'Given', html:'The noise has $N_0=2\\times10^{-4}$ W/Hz.<div class="nsep"></div>What is the standard deviation $\\sigma$ of $n$?',
-        ask:{key:'m2-demod-noise-var', choices:['$10^{-4}$','$0.01$','$0.014$'], answer:1,
-          why:'$\\sigma^{2}=N_0/2=10^{-4}$, so $\\sigma=\\sqrt{10^{-4}}=0.01$.'}}]}
+      {t:'eq', label:'Key result · the noise value', key:true, result:true, tex:'n\\sim\\mathcal{N}\\Bigl(0,\\ \\frac{N_0}{2}\\Bigr),\\qquad y\\sim\\mathcal{N}\\Bigl(s_m,\\ \\frac{N_0}{2}\\Bigr)',
+        note:'A linear operation on Gaussian noise gives a Gaussian value. Adding $s_m$ moves the mean only.'}]}
   ]}
 ]},
 
@@ -22285,7 +22245,7 @@ REAL_MATCHED,
     {t:'fig', frame:true, grow:true,
       live:{controls:[{k:'N0', label:'$N_0$', min:0.05, max:1, step:0.05, v:0.5, show:v=>'$'+v.toFixed(2)+'$'}]},
       svg:figNoiseHist,
-      caption:'$3000$ noise values $n=\\int_0^{T_b}w\\,\\psi\\,d\\tau$, each from its own white noise, with the Manchester $\\psi$. Drag $N_0$. The curve is the Gaussian density with $\\sigma=\\sqrt{N_0/2}$.'}
+      caption:'$3000$ noise values $n=\\int_0^{T_b}w(\\tau)\\,\\psi(\\tau)\\,d\\tau$, each from its own white noise, with the Manchester $\\psi$. Drag $N_0$. The curve is the Gaussian density with $\\sigma=\\sqrt{N_0/2}$.'}
   ], right:[
     {t:'eq', label:'The prediction', tex:'\\sigma=\\sqrt{\\frac{N_0}{2}}',
       note:'Each value is a sum of many noise samples weighted by $\\psi$. The measured spread follows $\\sqrt{N_0/2}$ to within a few percent at every $N_0$.'},
@@ -28086,7 +28046,7 @@ codeScene('m5-code-binary', 'Binary keying', 'Binary keying in code',
       caption:'8-PSK with natural labels, then Gray labels. Each chord shows how many bits its two labels differ in. The last step sends $300$ noisy copies of $\\mathtt{000}$.'}
   ], right:[
     {t:'eq', label:'Gray code', tex:'g=i\\oplus\\lfloor i/2\\rfloor',
-      note:'For $i=0,\\ldots,7$: $\\mathtt{000},\\mathtt{001},\\mathtt{011},\\mathtt{010},\\mathtt{110},\\mathtt{111},\\mathtt{101},\\mathtt{100}$. Neighbours differ in one bit.'},
+      note:'For $i=0,\\ldots,7$: $\\mathtt{000}$, $\\mathtt{001}$, $\\mathtt{011}$, $\\mathtt{010}$, $\\mathtt{110}$, $\\mathtt{111}$, $\\mathtt{101}$, $\\mathtt{100}$. Neighbours differ in one bit.'},
     {t:'reveal', at:1, items:[
       {t:'eq', label:'Bits from symbols', tex:'P_b\\approx\\frac{P_e}{\\log_2M}',
         note:'A symbol error nearly always lands on a neighbour, and a neighbour costs one bit of $k$.'}]},
@@ -32080,7 +32040,7 @@ function figFilterSpectrum(v){
   a.raw(`<g opacity="${clamp01(f-1)}">`);a.area(x=>0.5*H2(x),-5,5,{color:C.dec.out,n:600});a.curve(x=>0.5*H2(x),{color:C.out,width:2.6,n:600});a.raw('</g>');return a.svg();
 }
 function figFilterTime(){
-  const a=P.Axes(SZ({xr:[0,5],yr:[-3.2,3.2],xlabel:'t\\;(\\text{ms})',ylabel:'x(t),\\;y(t)',xticksOverride:[0,1,2,3,4,5],yticksOverride:[-2,0,2]}));
+  const a=P.Axes(SZ({xr:[0,5],yr:[-3.2,3.2],xlabel:'t\\;(\\text{ms})',ylabel:'\\text{amplitude}', ynameAtAxis:true,xticksOverride:[0,1,2,3,4,5],yticksOverride:[-2,0,2]}));
   a.curve(LT_X,{color:C.in,width:1.1,opacity:0.45,n:1000});a.curve(LT_Y,{color:C.out,width:2.6,n:800});return a.svg();
 }
 function figGaussianSample(){
@@ -33270,7 +33230,7 @@ const EYE_Z = gauss(20260951, 1024, 1);
 function figEyeNoise(v){
   const bt = val(v,'bt',0.3), sg = val(v,'sg',0.2), r = rcResp(bt);
   const y0 = (bits, t) => bits.reduce((s,b,k)=>s+(b?1:-1)*r(t-k), 0);
-  const a = P.Axes(SZ({xr:[-1,2.3], yr:[-2.9,2.9], xlabel:'t/T_b', ylabel:'y(t)',
+  const a = P.Axes(SZ({xr:[-1,2.3], yr:[-2.9,2.9], xlabel:'t', xunit:'T_b', ylabel:'y(t)',
     xticksOverride:[-1,-0.5,0,0.5,1], ytarget:4}));
   a.raw('<g opacity="0.45">');
   EYE_P.forEach((bits,j)=>{ const pts=[]; for(let i=0;i<=90;i++){ const u=-1+2*i/90, t=6+u;
@@ -33305,7 +33265,7 @@ function figEqualizer(v){
   const H = 380 + extraHeight(380);
   const g = t => r(t) + w*r(t-1), h = (1-q) - Math.abs(q+w);
   /* the eye after the equalizer on the left, the sampled pulse on the right */
-  const a = P.Axes({w:320,h:H,xr:[-1,1],yr:[-2,2],xlabel:'t/T_b',ylabel:'z(t)',
+  const a = P.Axes({w:320,h:H,xr:[-1,1],yr:[-2,2],xlabel:'t', xunit:'T_b',ylabel:'z(t)',
     pad:{l:50,r:14,t:24,b:42},xticksOverride:[-1,0,1],ytarget:4});
   a.raw('<g opacity="0.5">');
   EQ_P.forEach(bits=>{ const pts=[]; for(let i=0;i<=90;i++){ const u=-1+2*i/90, t=11+u;
@@ -33337,7 +33297,7 @@ const TM_D = 0.35;
 function tmTau(f){ return f<=1 ? 1.4 : f<=2 ? 1.4-0.28*(f-1) : 1.12-0.12*Math.min(1, f-2); }
 function figTiming(v){
   const f = frameOf(v, 3), tau = tmTau(f), op = clamp01(f);
-  const a = P.Axes(SZ({h:330, xr:[-0.15,2.4], yr:[-0.12,1.42], xlabel:'t/T_b', ylabel:'y(t)',
+  const a = P.Axes(SZ({h:330, xr:[-0.15,2.4], yr:[-0.12,1.42], xlabel:'t', xunit:'T_b', ylabel:'y(t)',
     xticksOverride:[0,0.5,1,1.5,2], ytarget:3}));
   a.curve(tri, {color:C.mid, width:2.6, n:900});
   if(op > 0.02){
@@ -33417,7 +33377,7 @@ function figRepeater(v){
      the waveform the repeater sends on, red where a bit is wrong */
   /* drawn at y + 2, so the time ticks sit under the frame and not on the
      edges of the waveform */
-  const c = P.Axes({w:560,h:h3,xr:[-0.2,8.3],yr:[0.2,3.8],xlabel:'t/T_b',ylabel:'\\text{regenerated}',
+  const c = P.Axes({w:560,h:h3,xr:[-0.2,8.3],yr:[0.2,3.8],xlabel:'t', xunit:'T_b',ylabel:'\\text{regenerated}',
     pad:{l:56,r:26,t:22,b:40},xnameDrop:(P.labelScale()>1?54:44)*P.labelScale(),xticksOverride:[0,2,4,6,8],yticksOverride:[1,3],ytickfmt:y=>P.fmt(y-2)});
   c.hline(2, {color:C.muted});
   const m = f > 0.02 ? Math.min(4, Math.ceil(f-1e-9)) : 0, sent = RP_R[Math.min(4, Math.floor(f+0.4))];
@@ -33651,8 +33611,8 @@ CONTENT.SECTIONS = {
         'm2-awgn','m2-filter-choice','m2-receiver','m2-split','m2-model','m2-noise-power','m2-schwarz','m2-bound',
         'm2-matched','m2-mf-freq','m2-conv','m2-mf-correlator','m2-props','m2-props-snr','m2-sample-time','m2-sample-dist','m2-ex-mf','m2-real-matched','m2-lab-c','m2-code-matched'] },
     { n:'2.3', title:'The demodulator',                ids:[
-        'm2-basis','m2-antipodal','m2-space','m2-demod-mf','m2-demod-signal','m2-demod','m2-demod-shapes','m2-demod-train','m2-demod-timing',
-        'm2-corr-out','m2-corr-samples','m2-correlator','m2-demod-noise','m2-demod-noise-var',
+        'm2-basis','m2-antipodal','m2-space','m2-demod-mf','m2-demod-signal','m2-demod','m2-demod-shapes','m2-demod-train',
+        'm2-corr-out','m2-correlator','m2-demod-noise','m2-demod-noise-var',
         'm2-demod-noise-hist','m2-demod-ppm','m2-real-demod','m2-lab-p','m2-code-demod'] },
     { n:'2.4', title:'The decision and its error',     ids:[
         'm2-stat','m2-errors','m2-threshold','m2-threshold-b','m2-q','m2-pe','m2-ex-pe','m2-ex-pe-b','m2-real-decision','m2-lab-d','m2-code-decision'] },
@@ -33812,7 +33772,7 @@ CONTENT.BOOK = {
   'm2-ex-mf':'8.3.2', 'm2-real-matched':'8.3.2', 'm2-lab-c':'8.3.2',
   'm2-basis':'8.2.1', 'm2-antipodal':'8.2.1', 'm2-space':'8.2.1', 'm2-demod-mf':'8.3.2', 'm2-demod-signal':'8.3.2', 'm2-demod':'8.3.2',
   'm2-demod-shapes':'8.3.2', 'm2-demod-train':'8.3.2', 'm2-corr-out':'8.3.1', 'm2-correlator':'8.3.1',
-  'm2-demod-noise':'8.3.1', 'm2-demod-noise-var':'8.3.1', 'm2-corr-samples':'8.3.1',
+  'm2-demod-noise':'8.3.1', 'm2-demod-noise-var':'8.3.1',
   'm2-demod-noise-hist':'8.3.1', 'm2-demod-ppm':'8.3.1', 'm2-real-demod':'8.3.1', 'm2-lab-p':'8.3.1',
   'm2-stat':'8.3.3', 'm2-errors':'8.3.3', 'm2-threshold':'8.3.3', 'm2-threshold-b':'8.3.3', 'm2-q':'8.3.3', 'm2-pe':'8.3.3',
   'm2-ex-pe':'8.3.3', 'm2-ex-pe-b':'8.3.3', 'm2-real-decision':'8.3.3', 'm2-lab-d':'8.3.3',
