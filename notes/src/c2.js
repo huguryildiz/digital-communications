@@ -900,13 +900,13 @@ function figQ(x){
 }
 const pbDb=d=>Qf(Math.sqrt(2*Math.pow(10,d/10)));
 function figPe(dB){
-  const a=ax1({h:270,xr:[0,12],yr:[-8,-0.02],xlabel:'E_b/N_0\\;(\\mathrm{dB})',ylabel:'P_b',
+  const a=ax1({h:270,xr:[0,12],yr:[-8,-0.02],xlabel:'E_b/N_0\\;(\\mathrm{dB})',ylabel:'P_e',
     ytickfmt:P.decade,yticksOverride:P.decades(-8,-1),zeroAxes:false,pad:{l:64,r:22,t:20,b:46},xtarget:6});
   a.curve(d=>{ const p=pbDb(d); return p>3e-8?Math.log10(p):NaN; },{color:C.in,width:2.4});
   const p=pbDb(dB);
   a.vline(dB,{color:C.muted});
   a.point(dB,Math.log10(p),{color:C.in,r:5.5});
-  a.note(dB-0.35,Math.log10(p)-0.7,`P_b=${sci(p)}`,{tex:true,fs:15,color:C.in,anchor:'end'});
+  a.note(dB-0.35,Math.log10(p)-0.7,`P_e=${sci(p)}`,{tex:true,fs:15,color:C.in,anchor:'end'});
   return a.svg();
 }
 const EX={A:1,N0:0.1,p0:0.7};
@@ -1918,14 +1918,16 @@ window.C2 = [
  cap:'$Q(x)$ falls from $1$ to $0$ and passes $0.5$ at $x=0$. The point marks $Q(1)=0.159$.'},
 
 {t:'h3', text:'The bit error probability'},
-{t:'p', text:'With equal priors the threshold is $\\lambda=0$. Put $\\lambda=0$ in both conditional errors, and the two become equal.'},
-{t:'eqbox', cap:'Equal priors', tex:'\\begin{aligned}P_b&=\\tfrac12\\,Q\\!\\left(\\frac{\\sqrt{E_b}}{\\sigma}\\right)+\\tfrac12\\,Q\\!\\left(\\frac{\\sqrt{E_b}}{\\sigma}\\right)=Q\\!\\left(\\frac{\\sqrt{E_b}}{\\sigma}\\right)\\\\\\frac{\\sqrt{E_b}}{\\sigma}&=\\frac{\\sqrt{E_b}}{\\sqrt{N_0/2}}=\\sqrt{\\frac{2E_b}{N_0}}\\end{aligned}'},
+{t:'p', text:'With equal priors the threshold is $\\lambda=0$. Put $\\lambda=0$ in both conditional errors. The last step uses $Q(-x)=1-Q(x)$.'},
+{t:'eqbox', cap:'Conditional errors at $\\lambda=0$', tex:'\\begin{aligned}P(\\text{err}\\mid s_0)&=Q\\!\\left(\\frac{0+\\sqrt{E_b}}{\\sigma}\\right)=Q\\!\\left(\\frac{\\sqrt{E_b}}{\\sigma}\\right)\\\\P(\\text{err}\\mid s_1)&=1-Q\\!\\left(\\frac{0-\\sqrt{E_b}}{\\sigma}\\right)=1-Q\\!\\left(-\\frac{\\sqrt{E_b}}{\\sigma}\\right)\\\\&=1-\\left[1-Q\\!\\left(\\frac{\\sqrt{E_b}}{\\sigma}\\right)\\right]=Q\\!\\left(\\frac{\\sqrt{E_b}}{\\sigma}\\right)\\end{aligned}'},
+{t:'p', text:'The two conditional errors are equal, so each prior multiplies the same value.'},
+{t:'eqbox', cap:'Equal priors', tex:'\\begin{aligned}P_e&=\\underbrace{p_0}_{1/2}\\underbrace{\\int_{0}^{\\infty}f_Y(y\\mid s_0)\\,dy}_{Q(\\sqrt{E_b}/\\sigma)}+\\underbrace{p_1}_{1/2}\\underbrace{\\int_{-\\infty}^{0}f_Y(y\\mid s_1)\\,dy}_{Q(\\sqrt{E_b}/\\sigma)}=Q\\!\\left(\\frac{\\sqrt{E_b}}{\\sigma}\\right)\\\\\\frac{\\sqrt{E_b}}{\\sigma}&=\\frac{\\sqrt{E_b}}{\\sqrt{N_0/2}}=\\sqrt{\\frac{2E_b}{N_0}}\\end{aligned}'},
 {t:'p', text:'The result is the bit error probability of polar signalling.'},
-{t:'eqbox', cap:'Polar signalling', big:true, tex:'P_b=Q\\!\\left(\\sqrt{\\frac{2E_b}{N_0}}\\right)',
- after:'$2E_b/N_0$ is the peak SNR of the matched filter, so $P_b=Q\\bigl(\\sqrt{\\eta_{\\max}}\\bigr)$. For example, $E_b/N_0=4$, which is $6.02$ dB, gives $P_b=Q(\\sqrt8)=Q(2.83)=2.3\\times10^{-3}$. Dropping the factor $2$ gives $Q(2)=2.3\\times10^{-2}$.'},
+{t:'eqbox', cap:'Polar signalling', big:true, tex:'P_e=Q\\!\\left(\\sqrt{\\frac{2E_b}{N_0}}\\right)',
+ after:'$2E_b/N_0$ is the peak SNR of the matched filter, so $P_e=Q\\bigl(\\sqrt{\\eta_{\\max}}\\bigr)$.'},
 {t:'p', text:'The error probability falls slowly at low $E_b/N_0$ and steeply at high $E_b/N_0$.'},
 {t:'fig', svg:()=>figPe(9.6),
- cap:'Bit error probability of polar signalling against $E_b/N_0$. The marked point is $E_b/N_0=9.6$ dB, where $P_b=9.74\\times10^{-6}$.'},
+ cap:'Bit error probability of polar signalling against $E_b/N_0$. The marked point is $E_b/N_0=9.6$ dB, where $P_e=9.74\\times10^{-6}$.'},
 
 {t:'ex', hd:'Example 2.4 — unequal priors: the threshold', rows:[
  ['Given','Polar signalling with $E_b=1$, $N_0=0.1$ and $P(s_1)=0.3$.'],
