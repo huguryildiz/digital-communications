@@ -1795,8 +1795,10 @@ window.C2 = [
  short:'The square of the double integral of the noise variance.'},
 
 {t:'h3', text:'The noise variance'},
-{t:'p', text:'White noise has the autocorrelation $(N_0/2)\\delta(t-u)$. The impulse sifts $\\psi(u)$ to $\\psi(t)$, and the unit energy of $\\psi$ gives the last line.'},
-{t:'eqbox', cap:'Step 3 · white noise', tex:'\\begin{aligned}E[w(t)w(u)]&=\\frac{N_0}{2}\\,\\delta(t-u)\\\\E[n^{2}]&=\\frac{N_0}{2}\\int_0^{T_b}\\psi^{2}(t)\\,dt\\\\&=\\frac{N_0}{2}\\end{aligned}',
+{t:'p', text:'The mean of $w(t)w(u)$ is the autocorrelation $R_w(t-u)$ of the noise. For white noise it is an impulse at $t=u$.'},
+{t:'eqbox', cap:'Step 3 · white noise', tex:'\\begin{aligned}E[w(t)w(u)]&=R_w(t-u)\\\\&=\\frac{N_0}{2}\\,\\delta(t-u)\\end{aligned}'},
+{t:'p', text:'Put the impulse into the double integral. The impulse is even, so $\\delta(t-u)=\\delta(u-t)$, and the inner integral sifts out $\\psi(t)$. The unit energy of $\\psi$ gives the last line.'},
+{t:'eqbox', cap:'Step 4 · sift and use unit energy', tex:'\\begin{aligned}E[n^{2}]&=\\int_0^{T_b}\\psi(t)\\int_0^{T_b}\\frac{N_0}{2}\\,\\delta(t-u)\\,\\psi(u)\\,du\\,dt\\\\&=\\frac{N_0}{2}\\int_0^{T_b}\\psi(t)\\underbrace{\\int_0^{T_b}\\psi(u)\\,\\delta(u-t)\\,du}_{\\psi(t)}\\,dt\\\\&=\\frac{N_0}{2}\\underbrace{\\int_0^{T_b}\\psi^{2}(t)\\,dt}_{1}\\\\&=\\frac{N_0}{2}\\end{aligned}',
  after:'The impulse leaves only the line $t=u$, where $\\psi(t)\\psi(u)=\\psi^{2}(t)$.'},
 {t:'p', text:'A linear operation on Gaussian noise gives a Gaussian random variable. Adding the constant $s_m$ moves the mean only.'},
 {t:'eqbox', cap:'Key result · the noise value', tex:'n\\sim\\mathcal{N}\\Bigl(0,\\ \\frac{N_0}{2}\\Bigr),\\qquad y\\sim\\mathcal{N}\\Bigl(s_m,\\ \\frac{N_0}{2}\\Bigr)',
