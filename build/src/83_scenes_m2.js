@@ -1180,6 +1180,7 @@ function figErrors(v){
   a.curve(y=>dens(y,-A,s), {color:C.mid, width:2.4});
   a.curve(y=>dens(y, A,s), {color:C.in, width:2.4});
   a.vline(lam, {color:C.ink, dash:'6 4', width:1.6, opacity:1});
+  a.note(lam, -0.06*top, '\\lambda', {tex:true, fs:17, color:C.ink, anchor:'middle', dy:18*L});
   markMeans(a, 0.1*top);
   const u = 1/(a.sy(0)-a.sy(1)), y1 = big ? yt-18*L*u : 1.3*top, y2 = big ? y1-24*L*u : 1.14*top;
   a.note(-2.9, y1, `P(\\text{err}\\mid s_0)=${sci(Qf((lam+A)/s))}`, {tex:true, fs:15, color:C.err});
@@ -2610,11 +2611,11 @@ REAL_DEMOD,
       caption:'Drag the threshold $\\lambda$. The receiver decides $s_1$ when $y>\\lambda$. Each red area is one conditional error. One grows as the other shrinks.'},
     {t:'legend', items:[['mid','$f_Y(y\\mid s_0)$'],['in','$f_Y(y\\mid s_1)$'],['err','error']], at:'tr'}
   ], right:[
-    {t:'eq', label:'Case I: $s_0$ sent, $y>\\lambda$', tex:'\\begin{aligned}P(\\text{err}\\mid s_0)=P(y>\\lambda\\mid s_0)&=\\int_{\\lambda}^{\\infty}f_Y(y\\mid s_0)\\,dy\\\\&=\\int_{\\lambda}^{\\infty}\\frac{1}{\\sqrt{\\pi N_0}}\\,e^{-(y+\\sqrt{E_b})^{2}/N_0}\\,dy\\\\&=\\int_{(\\lambda+\\sqrt{E_b})/\\sigma}^{\\infty}\\frac{1}{\\sqrt{2\\pi}}\\,e^{-z^{2}/2}\\,dz\\\\&=Q\\!\\left(\\frac{\\lambda+\\sqrt{E_b}}{\\sigma}\\right)\\end{aligned}',
-      note:'The receiver decides $s_1$ when $y>\\lambda$. Substitute $z=(y+\\sqrt{E_b})/\\sigma$ with $\\sigma=\\sqrt{N_0/2}$, so $y=\\lambda$ becomes $z=(\\lambda+\\sqrt{E_b})/\\sigma$.'},
+    {t:'eq', label:'Case I: $s_0$ sent, $y>\\lambda$', tex:'\\begin{aligned}P(\\text{err}\\mid s_0)=P(y>\\lambda\\mid s_0)&=\\int_{\\lambda}^{\\infty}f_Y(y\\mid s_0)\\,dy\\\\&=\\int_{\\lambda}^{\\infty}\\frac{1}{\\sqrt{\\pi N_0}}\\,e^{-(y+\\sqrt{E_b})^{2}/N_0}\\,dy\\\\&=\\int_{(\\lambda-\\mu_0)/\\sigma}^{\\infty}\\frac{1}{\\sqrt{2\\pi}}\\,e^{-z^{2}/2}\\,dz\\\\&=Q\\!\\left(\\frac{\\lambda-\\mu_0}{\\sigma}\\right)=Q\\!\\left(\\frac{\\lambda+\\sqrt{E_b}}{\\sigma}\\right)\\end{aligned}',
+      note:'The receiver decides $s_1$ when $y>\\lambda$. Given $s_0$, $y$ is Gaussian with mean $\\mu_0=-\\sqrt{E_b}$ and deviation $\\sigma=\\sqrt{N_0/2}$. Substitute $z=(y-\\mu_0)/\\sigma$: the tail above $\\lambda$ is $Q\\bigl((\\lambda-\\mu_0)/\\sigma\\bigr)$.'},
     {t:'reveal', at:1, items:[
-      {t:'eq', label:'Case II: $s_1$ sent, $y<\\lambda$', tex:'\\begin{aligned}P(\\text{err}\\mid s_1)=P(y<\\lambda\\mid s_1)&=\\int_{-\\infty}^{\\lambda}f_Y(y\\mid s_1)\\,dy\\\\&=Q\\!\\left(\\frac{\\sqrt{E_b}-\\lambda}{\\sigma}\\right)\\end{aligned}',
-        note:'The receiver decides $s_0$ when $y<\\lambda$. The same substitution with $z=(\\sqrt{E_b}-y)/\\sigma$. Here $Q(x)=\\tfrac12\\operatorname{erfc}(x/\\sqrt2)$.'}]}
+      {t:'eq', label:'Case II: $s_1$ sent, $y<\\lambda$', tex:'\\begin{aligned}P(\\text{err}\\mid s_1)=P(y<\\lambda\\mid s_1)&=\\int_{-\\infty}^{\\lambda}f_Y(y\\mid s_1)\\,dy\\\\&=Q\\!\\left(\\frac{\\mu_1-\\lambda}{\\sigma}\\right)=Q\\!\\left(\\frac{\\sqrt{E_b}-\\lambda}{\\sigma}\\right)\\end{aligned}',
+        note:'The receiver decides $s_0$ when $y<\\lambda$. Given $s_1$ the mean is $\\mu_1=+\\sqrt{E_b}$. The tail below $\\lambda$ is $Q\\bigl((\\mu_1-\\lambda)/\\sigma\\bigr)$. Here $Q(x)=\\tfrac12\\operatorname{erfc}(x/\\sqrt2)$.'}]}
   ]}
 ]},
 
