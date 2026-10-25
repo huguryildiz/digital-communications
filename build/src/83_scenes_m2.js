@@ -1656,90 +1656,289 @@ function figEyeLive(v){
   return a.svg();
 }
 
-/* ---- 2.5 Nyquist and the raised cosine -----------------------------------
-   T_b = 1, so R_b = 1 and the Nyquist bandwidth W = 1/2. The pulse p(t) and
-   its spectrum P(f) are cyan; replicas of the spectrum and their sum, which
-   is the spectrum of the sampled pulse, are violet as in Module 1. */
+/* ---- 2.6 Nyquist and the raised cosine -----------------------------------
+   T_b = 1, so R_b = 1 and the Nyquist bandwidth W = 1/2. Time is drawn in
+   units of T_b and frequency in units of W, so the copies of a spectrum sit
+   every 2W = R_b. A spectrum is drawn as P(f)/T_b, which is 1 on the flat part
+   of the Nyquist rectangle. The pulse p(t) and its spectrum P(f) are cyan;
+   the samples p(mT_b), the copies of P(f) and their sum P_delta(f), which
+   belong to the sampled pulse, are violet as in Module 1. */
 const rcPulse = (t, al) => { const den = 1-4*al*al*t*t;
   if(Math.abs(den) < 1e-6) return sinc(t)*Math.PI/4;
   return sinc(t)*Math.cos(Math.PI*al*t)/den; };
-/* 2W P(f) of the raised cosine, f in units of W */
+/* the second factor of the pulse, cos(2 pi alpha W t)/(1 - 16 alpha^2 W^2 t^2)
+   with W = 1/2, and its limit pi/4 where the denominator vanishes */
+const rcWin = (t, al) => { const den = 1-4*al*al*t*t;
+  if(Math.abs(den) < 1e-6) return Math.PI/4;
+  return Math.cos(Math.PI*al*t)/den; };
+/* P(f)/T_b of the raised cosine, f in units of W */
 const rcSpec = (f, al) => { const u = Math.abs(f), f1 = 1-al;
   if(al < 1e-9) return u <= 1 ? 1 : 0;
   if(u <= f1) return 1;
   if(u < 2-f1) return 0.5*(1-Math.sin(Math.PI*(u-1)/(2-2*f1)));
   return 0; };
+const ease = s => s*s*(3-2*s);
 
-function figSincTrain(){
-  const a = P.Axes(SZ({xr:[-4.5,4.5], yr:[-0.35,1.3], xlabel:'t', xunit:'T_b', ylabel:'p(t)',
-    xticksOverride:[-4,-3,-2,-1,0,1,2,3,4], ytarget:3}));
-  a.curve(t=>sinc(t-1), {color:C.in, width:1.4, dash:'6 5', opacity:0.6});
-  a.curve(t=>sinc(t+1), {color:C.in, width:1.4, dash:'6 5', opacity:0.6});
-  a.curve(sinc, {color:C.in, width:2.6});
-  for(let k=-4;k<=4;k++) a.point(k, sinc(k), {color:C.mid, r:4.8});
+/* Zero interference at the sampling instants. Five bits sent with a pulse
+   that meets the criterion (the raised cosine of alpha = 0.5), mu = 1.
+   Frame 0 draws each pulse a_k p(t - kT_b) and their sum y(t). Frame 1 picks
+   the sampling instant t_i = 2T_b and the own pulse. In frame 2 a red marker
+   runs down each other pulse to t_i, where every one of them is zero. Frame 3
+   marks the sample y(t_i) = mu a_i, and the samples at the other instants. */
+const NZ_A = [1,-1,1,1,-1], NZ_I = 2;
+function figNyqZero(v){
+  const f = frameOf(v, 3), u = k => clamp01(f-k), al = 0.5;
+  const pk = k => t => NZ_A[k]*rcPulse(t-k, al);
+  const y = t => NZ_A.reduce((s,a,k)=>s+a*rcPulse(t-k, al), 0);
+  const a = P.Axes(SZ({xr:[-1.4,6.8], yr:[-1.75,2.2], xlabel:'t', xunit:'T_b', ylabel:'y(t)',
+    xticksOverride:[0,1,2,3,4,5,6], yticksOverride:[-1,0,1]}));
+  NZ_A.forEach((s,k)=>a.note(k+0.1, 1.86, (s > 0 ? '+1' : '-1'), {tex:true, fs:15, color:C.in}));
+  a.curve(y, {color:C.out, width:2.6, opacity:1-0.6*u(0), n:1400});
+  NZ_A.forEach((_,k)=>{
+    if(k===NZ_I){
+      fade(a, 1-u(0), ()=>a.curve(pk(k), {color:C.mid, width:1.4, dash:'5 4', n:900}));
+      fade(a, u(0), ()=>a.curve(pk(k), {color:C.mid, width:2.8, n:900}));
+      return; }
+    fade(a, 1-u(1), ()=>a.curve(pk(k), {color:C.mid, width:1.4, dash:'5 4', n:900}));
+    fade(a, u(1), ()=>a.curve(pk(k), {color:C.err, width:1.5, dash:'5 4', n:900}));
+  });
+  fade(a, u(0), ()=>{ a.vline(NZ_I, {color:C.ink, dash:'6 4', opacity:0.9});
+    a.note(NZ_I+0.08, -1.5, 't_i', {tex:true, fs:15, color:C.ink});
+    a.point(NZ_I, NZ_A[NZ_I], {color:C.mid, r:5.5}); });
+  /* each other pulse is followed from its own peak down to t_i */
+  const e = ease(u(1));
+  if(f > 1.01) NZ_A.forEach((_,k)=>{ if(k===NZ_I) return;
+    const t = k + (NZ_I-k)*e; a.point(t, pk(k)(t), {color:C.err, r:4.6}); });
+  fade(a, clamp01((f-1.6)*2.5)*(1-u(2)), ()=>a.note(NZ_I-0.1, -1.4, 'p\\bigl((i-k)T_b\\bigr)=0', {tex:true, fs:15, color:C.err, anchor:'end'}));
+  fade(a, u(2), ()=>{ NZ_A.forEach((_,k)=>{ if(k!==NZ_I) a.point(k, y(k), {color:C.out, r:4.4}); });
+    a.point(NZ_I, y(NZ_I), {color:C.out, r:6});
+    a.note(NZ_I-0.16, 1.25, 'y(t_i)=\\mu a_i', {tex:true, fs:15, color:C.out, anchor:'end'}); });
   return a.svg();
 }
-/* A triangular spectrum of width 2R_b, P(f) = T_b(1 - |f|/R_b), and its
-   replicas at multiples of R_b. Frame 0 is the pulse spectrum, frames 1 and 2
-   add the pairs at +-R_b and +-2R_b, frame 3 draws their sum, a constant. The
-   sum is drawn on [-2R_b, 2R_b], where the five drawn copies are all there is. */
-function figTiling(v){
-  const f = frameOf(v, 3), tri = u => Math.max(0, 1-Math.abs(u));
-  const a = P.Axes(SZ({xr:[-3.3,3.3], yr:[-0.12,1.45], xlabel:'f/R_b', ylabel:'R_b\\,P(f-nR_b)',
-    xticksOverride:[-3,-2,-1,0,1,2,3], ytarget:3}));
-  for(const n of [-2,-1,1,2]){ const w = clamp01(f - (Math.abs(n)-1));
-    if(w > 0.02) a.poly([[n-1,0],[n,w],[n+1,0]], {color:C.mid, width:1.8, dash:'6 4'}); }
-  a.poly([[-1,0],[0,1],[1,0]], {color:C.in, width:2.6});
-  if(f > 2.02){ const w = clamp01(f-2);
-    a.curve(u=>{ if(Math.abs(u) > 2) return NaN; let s = 0; for(let n=-2;n<=2;n++) s += tri(u-n); return w*s + (1-w)*tri(u); }, {color:C.mid, width:2.8});
-  }
-  return a.svg();
+
+/* The sampled pulse and its spectrum, for a pulse whose spectrum is too
+   narrow: p(t) = sinc(0.7t/T_b), so R_b P(f) = 1/0.7 on |f| < 0.35R_b = 0.7W.
+   Above, the samples p(mT_b) rise as impulses, then the pulse fades and leaves
+   p_delta(t). Below, P(f); its copies slide out to every 2W; their sum
+   P_delta(f) = R_b sum P(f - nR_b) drops to zero in the gaps (red). */
+const NS_B = 0.7;
+const nsP = t => sinc(NS_B*t), nsS = x => Math.abs(x) < NS_B ? 1/NS_B : 0;
+const nsAxes = big => P.Axes({w:560, h:big ? 225 : 190, xr:[-4.6,4.6], yr:[-0.45,1.3],
+  xlabel:'t', xunit:'T_b', ylabel:'p(t),\\ p_\\delta(t)', pad:{l:56,r:26,t:24,b:40},
+  xticksOverride:[-4,-3,-2,-1,0,1,2,3,4], yticksOverride:[0,1]});
+const nfAxes = (big, yl) => P.Axes({w:560, h:big ? 230 : 200, xr:[-4.6,4.6], yr:[-0.15,1.75],
+  xlabel:'f', xunit:'W', ylabel:yl, pad:{l:56,r:26,t:24,b:42},
+  xticksOverride:[-4,-2,-1,0,1,2,4], yticksOverride:[0,1]});
+function figNyqSample(v){
+  P.hOverride = null;
+  const f = frameOf(v, 3), u = k => clamp01(f-k), big = P.labelScale() > 1;
+  const a = nsAxes(big);
+  fade(a, 1-0.75*u(1), ()=>a.curve(nsP, {color:C.in, width:2.6, n:900}));
+  for(let m=-4;m<=4;m++){ const w = nsP(m)*ease(clamp01(u(0)*1.6-Math.abs(m)*0.15));
+    if(Math.abs(w) > 0.012) a.impulse(m, w, {color:C.mid, label:false}); }
+  fade(a, u(1), ()=>a.note(0.28, 1.12, 'p_\\delta(t)', {tex:true, fs:15, color:C.mid}));
+  const b = nfAxes(big, 'R_b\\,P(f-nR_b)'), s = ease(u(1));
+  if(f > 1.01) fade(b, 1-u(2), ()=>[-2,-1,1,2].forEach(n=>{ const c = 2*n*s;
+    b.poly([[c-NS_B,0],[c-NS_B,1/NS_B],[c+NS_B,1/NS_B],[c+NS_B,0]], {color:C.mid, width:1.8, dash:'6 4'}); }));
+  fade(b, u(2), ()=>{ [-3,-1,1,3].forEach(c=>b.rect(c-(1-NS_B), 0, c+(1-NS_B), 1.6, {fill:C.dec.err}));
+    b.curve(x=>{ let t = 0; for(let n=-3;n<=3;n++) t += nsS(x-2*n); return t; }, {color:C.mid, width:2.8, n:1400});
+    b.note(0.2, 1.58, 'P_\\delta(f)', {tex:true, fs:15, color:C.mid}); });
+  b.poly([[-4.6,0],[-NS_B,0],[-NS_B,1/NS_B],[NS_B,1/NS_B],[NS_B,0],[4.6,0]], {color:C.in, width:2.6});
+  return stack(560, [[a.svg(),big ? 225 : 190],[b.svg(),big ? 230 : 200]]);
 }
-function figNyqChannel(){
-  const a = P.Axes(SZ({xr:[-3.6,3.6], yr:[-0.12,1.4], xlabel:'f/W', ylabel:'2W\\,P(f-nR_b)',
-    xticksOverride:[-3,-1,1,3], ytarget:3}));
-  for(let n=-1;n<=1;n++)
-    a.poly([[-3.6,0],[2*n-1,0],[2*n-1,1],[2*n+1,1],[2*n+1,0],[3.6,0]], {color:n?C.mid:C.in, width:n?1.8:2.6, dash:n?'6 4':null});
-  return a.svg();
+
+/* Nyquist's criterion in frequency. The pulse of the last figure is blended
+   into one that meets the criterion, the raised cosine with alpha = 0.5:
+   p_s = (1-s) g + s r. The blend is linear, so its samples are (1-s) g(mT_b)
+   for m != 0 and 1 at m = 0, and its spectrum is the same blend of the two
+   spectra. Frame 0 is the pulse with interference, frame 1 the blend done,
+   p_delta(t) = delta(t); frame 2 draws the copies of the new spectrum, whose
+   sum is 1 at every frequency. */
+function figNyqFreq(v){
+  P.hOverride = null;
+  const f = frameOf(v, 2), u = k => clamp01(f-k), s = ease(u(0)), al = 0.5, big = P.labelScale() > 1;
+  const pt = t => (1-s)*nsP(t) + s*rcPulse(t, al), Pf = x => (1-s)*nsS(x) + s*rcSpec(x, al);
+  const a = nsAxes(big);
+  a.curve(pt, {color:C.in, width:2, opacity:0.35, n:900});
+  for(let m=-4;m<=4;m++){ const w = m ? (1-s)*nsP(m) : 1;
+    if(Math.abs(w) > 0.012) a.impulse(m, w, {color:C.mid, label:false}); }
+  fade(a, u(0), ()=>a.note(0.28, 1.12, 'p_\\delta(t)=\\delta(t)', {tex:true, fs:15, color:C.mid}));
+  const b = nfAxes(big, 'R_b\\,P(f-nR_b)');
+  fade(b, 1-s, ()=>[-3,-1,1,3].forEach(c=>b.rect(c-(1-NS_B), 0, c+(1-NS_B), 1.6, {fill:C.dec.err})));
+  fade(b, u(1), ()=>[-2,-1,1,2].forEach(n=>b.curve(x=>Pf(x-2*n), {color:C.mid, width:1.6, dash:'6 4', n:900})));
+  b.curve(Pf, {color:C.in, width:2.6, n:900});
+  b.curve(x=>{ let t = 0; for(let n=-3;n<=3;n++) t += Pf(x-2*n); return t; }, {color:C.mid, width:2.8, n:1400});
+  fade(b, u(1), ()=>b.note(0.2, 1.3, 'P_\\delta(f)=1', {tex:true, fs:15, color:C.mid}));
+  return stack(560, [[a.svg(),big ? 225 : 190],[b.svg(),big ? 230 : 200]]);
 }
-/* The ideal pulse sampled late by eps: each neighbour now contributes
-   p(k + eps), and those contributions decay only as 1/k. */
-const sincIsi = (eps, K=20) => { let s = 0; for(let k=-K;k<=K;k++) if(k) s += Math.abs(sinc(k+eps)); return s; };
+
+/* The ideal Nyquist channel. Above, P(f) = 1/(2W) = T_b on |f| <= W; in the
+   last frame its copies P(f +- 2W) slide in from +-4W and meet it edge to
+   edge. Below, its pulse p(t) = sinc(2Wt) = sinc(t/T_b), drawn from left to
+   right, then its zeros at t = kT_b, k != 0. */
+function figNyqChannel(v){
+  P.hOverride = null;
+  const f = frameOf(v, 3), u = k => clamp01(f-k), big = P.labelScale() > 1;
+  const hA = big ? 210 : 180, hB = big ? 230 : 200;
+  const a = P.Axes({w:560, h:hA, xr:[-3.6,3.6], yr:[-0.15,1.6], xlabel:'f', xunit:'W', ylabel:'P(f)/T_b',
+    pad:{l:56,r:26,t:24,b:40}, xticksOverride:[-3,-2,-1,0,1,2,3], yticksOverride:[0,1]});
+  a.rect(-1, 0, 1, 1, {fill:C.dec.in});
+  a.poly([[-3.6,0],[-1,0],[-1,1],[1,1],[1,0],[3.6,0]], {color:C.in, width:2.6});
+  a.note(0.1, 1.22, 'P(f)', {tex:true, fs:15, color:C.in});
+  const s = ease(u(2)), d = 2+2*(1-s);
+  fade(a, s, ()=>[-1,1].forEach(n=>{ const c = n*d;
+    a.poly([[c-1,0],[c-1,1],[c+1,1],[c+1,0]], {color:C.mid, width:1.8, dash:'6 4'});
+    a.note(c, 1.22, n < 0 ? 'P(f+2W)' : 'P(f-2W)', {tex:true, fs:15, color:C.mid, anchor:'middle'}); }));
+  const b = P.Axes({w:560, h:hB, xr:[-4.6,4.6], yr:[-0.4,1.25], xlabel:'t', xunit:'T_b', ylabel:'p(t)',
+    pad:{l:56,r:26,t:24,b:42}, xticksOverride:[-4,-3,-2,-1,0,1,2,3,4], yticksOverride:[0,1]});
+  if(f > 0.01) b.curve(upTo(sinc, -4.6+9.2*ease(u(0))), {color:C.in, width:2.6, n:900});
+  fade(b, u(1), ()=>{ for(let k=-4;k<=4;k++) if(k) b.point(k, 0, {color:C.mid, r:4.8});
+    b.note(1.12, 0.62, 'p(kT_b)=0', {tex:true, fs:15, color:C.mid}); });
+  return stack(560, [[a.svg(),hA],[b.svg(),hB]]);
+}
+
+/* The ideal pulse sampled eps late. Above, each neighbour adds p(kT_b + eps)
+   (red stems) to the wanted term p(eps) (violet). Below, the sum of their
+   sizes over 1 <= |k| <= K as K grows. For the sinc pulse the terms fall as
+   1/(pi|k|) and the sum keeps growing, like a harmonic series. For the raised
+   cosine with alpha = 0.5 (dashed) it levels off within a few bits. */
+const isiSum = (eps, K, al) => { let s = 0;
+  for(let k=1;k<=K;k++) s += Math.abs(rcPulse(k+eps, al)) + Math.abs(rcPulse(-k+eps, al)); return s; };
+const sincIsi = eps => isiSum(eps, 20, 0);
 function figSincOffset(v){
-  const eps = v && v.eps!=null ? v.eps : 0.1;
-  const a = P.Axes(SZ({xr:[-5.5,5.5], yr:[-0.35,1.35], xlabel:'t', xunit:'T_b', ylabel:'p(t)',
-    xticksOverride:[-5,-4,-3,-2,-1,0,1,2,3,4,5], ytarget:3}));
-  a.curve(sinc, {color:C.in, width:2.6});
+  P.hOverride = null;
+  const eps = v && v.eps!=null ? v.eps : 0.1, big = P.labelScale() > 1;
+  const hA = big ? 225 : 190, hB = big ? 230 : 200;
+  const a = P.Axes({w:560, h:hA, xr:[-5.5,5.5], yr:[-0.35,1.3], xlabel:'t', xunit:'T_b', ylabel:'p(t)',
+    pad:{l:56,r:26,t:24,b:40}, xticksOverride:[-4,-2,0,2,4], yticksOverride:[0,1]});
+  a.curve(sinc, {color:C.in, width:2.6, n:900});
   const st = []; for(let k=-5;k<=5;k++) if(k) st.push([k+eps, sinc(k+eps)]);
   a.stem(st, {color:C.err});
   a.stem([[eps, sinc(eps)]], {color:C.mid});
-  a.note(-5.35, 1.18, `\\textstyle\\sum_{1\\le|k|\\le20}|p(kT_b+\\epsilon)|=${sincIsi(eps).toFixed(2)}`, {tex:true, fs:15, color:C.err});
+  const K = 40;
+  const b = P.Axes({w:560, h:hB, xr:[0,K+1], yr:[0,3.3], xlabel:'K\\;(\\text{neighbours on each side})',
+    ylabel:'\\textstyle\\sum_{1\\le|k|\\le K}|p(kT_b+\\epsilon)|', pad:{l:56,r:26,t:24,b:42},
+    xticksOverride:[0,10,20,30,40], yticksOverride:[0,1,2,3]});
+  const run = al => { const pts = [[0,0]]; for(let k=1;k<=K;k++) pts.push([k, isiSum(eps, k, al)]); return pts; };
+  const r0 = run(0), r5 = run(0.5);
+  b.poly(r0, {color:C.err, width:2.6});
+  b.poly(r5, {color:C.err, width:2.2, dash:'7 5'});
+  /* the two readouts share one line in the upper left, which the sums never reach */
+  b.note(1, 2.8, `\\alpha=0:\\ ${r0[K][1].toFixed(2)},\\qquad\\alpha=0.5\\ (\\text{dashed}):\\ ${r5[K][1].toFixed(2)}`, {tex:true, fs:15, color:C.err});
+  return stack(560, [[a.svg(),hA],[b.svg(),hB]]);
+}
+
+/* Building the raised-cosine spectrum, alpha = 0.5, so f_1 = W/2 and the
+   band ends at 2W - f_1 = 3W/2. Frame 0 is the ideal rectangle (dashed).
+   Frame 1 draws the flat part on |f| <= f_1. Frame 2 sweeps the roll-off out
+   to 2W - f_1 on both sides. Frame 3 turns the piece the roll-off cuts from
+   the rectangle (f_1 < |f| < W, above the curve) half a turn about the point
+   (W, T_b/2); it lands on the piece the roll-off adds (W < |f| < 2W - f_1).
+   A half turn is a point reflection, which an affine map keeps, so it is done
+   in screen coordinates and still lands exactly. */
+function figRcBuild(v){
+  const f = frameOf(v, 3), u = k => clamp01(f-k), al = 0.5, f1 = 1-al, f2 = 1+al;
+  const a = P.Axes(SZ({xr:[-2.3,2.3], yr:[-0.12,1.5], xlabel:'f', xunit:'W', ylabel:'P(f)/T_b',
+    xticksOverride:[-2,-1.5,-1,-0.5,0,0.5,1,1.5,2], yticksOverride:[0,0.5,1]}));
+  a.poly([[-2.3,0],[-1,0],[-1,1],[1,1],[1,0],[2.3,0]], {color:C.ink, width:1.6, dash:'6 5'});
+  const w1 = f1*ease(u(0));
+  if(w1 > 0.005) a.poly([[-w1,1],[w1,1]], {color:C.in, width:2.8});
+  fade(a, u(0), ()=>{ a.vline(f1, {color:C.in, opacity:0.7}); a.vline(-f1, {color:C.in, opacity:0.7});
+    a.note(-0.1, 1.13, '\\tfrac{1}{2W}=T_b', {tex:true, fs:15, color:C.in, anchor:'end'});
+    a.note(f1-0.04, 1.32, 'f_1', {tex:true, fs:15, color:C.in, anchor:'end'}); });
+  const end = f1+(f2-f1)*ease(u(1));
+  if(f > 1.01){ a.curve(x=>{ const z = Math.abs(x); return z >= f1 && z <= end ? rcSpec(x, al) : NaN; }, {color:C.in, width:2.8, n:900});
+    fade(a, u(1), ()=>{ a.poly([[-2.3,0],[-f2,0]], {color:C.in, width:2.8}); a.poly([[f2,0],[2.3,0]], {color:C.in, width:2.8});
+      a.vline(f2, {color:C.in, opacity:0.7}); a.vline(-f2, {color:C.in, opacity:0.7});
+      a.note(f2+0.04, 1.32, '2W-f_1', {tex:true, fs:15, color:C.in}); }); }
+  if(f > 2.01){ const th = Math.PI*ease(u(2));
+    const piece = sg => { const pts = []; for(let i=0;i<=48;i++){ const x = f1+(1-f1)*i/48; pts.push([sg*x, rcSpec(x, al)]); }
+      pts.push([sg,1],[sg*f1,1]); return pts; };
+    const turn = (pts, sg) => { const cx = a.sx(sg), cy = a.sy(0.5), t = sg*th;
+      return pts.map(([x,y])=>{ const X = a.sx(x)-cx, Y = a.sy(y)-cy;
+        return [cx+X*Math.cos(t)-Y*Math.sin(t), cy+X*Math.sin(t)+Y*Math.cos(t)]; }); };
+    fade(a, clamp01(u(2)*4), ()=>[-1,1].forEach(sg=>{ const q = turn(piece(sg), sg);
+      a.raw(`<path d="M${q.map(p=>p[0].toFixed(2)+','+p[1].toFixed(2)).join('L')}Z" fill="${C.dec.mid}" stroke="${C.mid}" stroke-width="1.6" stroke-linejoin="round"/>`); }));
+    fade(a, u(2), ()=>a.note(1.08, 0.62, '\\tfrac{1}{2}T_b', {tex:true, fs:15, color:C.mid})); }
+  fade(a, u(1), ()=>{ a.point(1, 0.5, {color:C.mid, r:5}); a.point(-1, 0.5, {color:C.mid, r:5}); });
   return a.svg();
 }
-function figRcSpec(v){
-  const al = v && v.al!=null ? v.al : 0.5;
-  const a = P.Axes(SZ({xr:[-3.3,3.3], yr:[-0.12,1.4], xlabel:'f/W', ylabel:'2W\\,P(f)',
-    xticksOverride:[-3,-2,-1,0,1,2,3], ytarget:3}));
-  for(const n of [-1,1]) a.curve(f=>rcSpec(f-2*n, al), {color:C.mid, width:1.6, dash:'6 4', n:900});
-  a.curve(f=>rcSpec(f, al), {color:C.in, width:2.6, n:900});
-  a.curve(f=>{ let s = 0; for(let n=-2;n<=2;n++) s += rcSpec(f-2*n, al); return s; }, {color:C.mid, width:2.2, n:900});
-  a.span(-1-al, 1+al, 1.24, `B_T=${(1+al).toFixed(2)}\\,W`, {tex:true, fs:15, color:C.muted});
-  return a.svg();
+
+/* The copies of the raised cosine, alpha = 0.5, add to a constant. Above,
+   P(f), then P(f + 2W) and P(f - 2W) sliding in from +-4W. In the overlaps
+   (shaded) a cursor stacks the two values that meet at one frequency: the
+   rising edge of P(f) (cyan) and the falling edge of P(f + 2W) (violet),
+   which always reach T_b. Below, their sum, drawn from left to right. */
+function figRcCheck(v){
+  P.hOverride = null;
+  const f = frameOf(v, 3), u = k => clamp01(f-k), al = 0.5, big = P.labelScale() > 1;
+  const hA = big ? 240 : 215, hB = big ? 205 : 180;
+  const a = P.Axes({w:560, h:hA, xr:[-3.4,3.4], yr:[-0.12,1.55], xlabel:'f', xunit:'W', ylabel:'P(f-nR_b)/T_b',
+    pad:{l:56,r:26,t:24,b:40}, xticksOverride:[-3,-2,-1,0,1,2,3], yticksOverride:[0,0.5,1]});
+  const s = ease(u(0)), d = 2+2*(1-s);
+  fade(a, u(1), ()=>{ a.rect(-1-al, 0, -1+al, 1.08, {fill:C.dec.mid}); a.rect(1-al, 0, 1+al, 1.08, {fill:C.dec.mid}); });
+  fade(a, s, ()=>[-1,1].forEach(n=>{ a.curve(x=>rcSpec(x-n*d, al), {color:C.mid, width:2.2, dash:'7 4', n:900});
+    a.note(n*d, 1.24, n < 0 ? 'P(f+2W)' : 'P(f-2W)', {tex:true, fs:15, color:C.mid, anchor:'middle'}); }));
+  a.curve(x=>rcSpec(x, al), {color:C.in, width:2.6, n:900});
+  a.note(0.1, 1.24, 'P(f)', {tex:true, fs:15, color:C.in});
+  const xc = -1.38+0.6*ease(u(1)), y1 = rcSpec(xc, al), y2 = rcSpec(xc+2, al), bw = 0.05;
+  fade(a, u(1), ()=>{ a.rect(xc-bw, 0, xc+bw, y1, {fill:C.in}); a.rect(xc-bw, y1, xc+bw, y1+y2, {fill:C.mid});
+    a.hline(1, {color:C.ink, dash:'6 4', opacity:0.8}); a.note(xc, 1.1, 'T_b', {tex:true, fs:15, color:C.ink, anchor:'middle'}); });
+  const b = P.Axes({w:560, h:hB, xr:[-3.4,3.4], yr:[-0.12,1.4], xlabel:'f', xunit:'W', ylabel:'R_b\\sum_nP(f-nR_b)',
+    pad:{l:56,r:26,t:24,b:42}, xticksOverride:[-3,-2,-1,0,1,2,3], yticksOverride:[0,1]});
+  if(f > 2.01){ b.curve(upTo(x=>{ let t = 0; for(let n=-3;n<=3;n++) t += rcSpec(x-2*n, al); return t; }, -3.4+6.8*ease(u(2))), {color:C.mid, width:2.8, n:900});
+    fade(b, u(2), ()=>b.note(0, 1.18, '=1', {tex:true, fs:15, color:C.mid, anchor:'middle'})); }
+  return stack(560, [[a.svg(),hA],[b.svg(),hB]]);
 }
+
+/* The raised-cosine pulse built as a product, alpha = 0.5. Frame 0 is the
+   sinc factor with its zeros at kT_b. Frame 1 adds the second factor (violet).
+   Frame 2 multiplies them: the cyan trace turns from the sinc into p(t), and
+   the zeros stay. Frame 3 sets the pulses of alpha = 0, 0.5 and 1 side by side. */
 function figRcPulse(v){
-  const al = v && v.al!=null ? v.al : 0.5;
-  const a = P.Axes(SZ({xr:[-4.5,4.5], yr:[-0.3,1.25], xlabel:'t', xunit:'T_b', ylabel:'p(t)',
-    xticksOverride:[-4,-3,-2,-1,0,1,2,3,4], ytarget:3}));
-  a.curve(sinc, {color:C.in, width:1.4, dash:'6 5', opacity:0.6});
-  a.curve(t=>rcPulse(t, al), {color:C.in, width:2.6, n:900});
-  for(let k=-4;k<=4;k++) a.point(k, k ? 0 : 1, {color:C.mid, r:4.6});
-  a.note(-4.35, 1.08, `\\alpha=${al.toFixed(2)}`, {tex:true, fs:16, color:C.in});
+  const f = frameOf(v, 3), u = k => clamp01(f-k), al = 0.5, s = ease(u(1));
+  const a = P.Axes(SZ({xr:[-4.5,4.5], yr:[-0.35,1.25], xlabel:'t', xunit:'T_b', ylabel:'p(t)',
+    xticksOverride:[-4,-3,-2,-1,0,1,2,3,4], yticksOverride:[0,0.5,1]}));
+  fade(a, u(1), ()=>a.curve(sinc, {color:C.in, width:1.6, dash:'6 5', n:900}));
+  fade(a, u(0)*(1-0.55*u(1))*(1-u(2)), ()=>a.curve(t=>rcWin(t, al), {color:C.mid, width:2.4, n:900}));
+  a.curve(t=>sinc(t)*(1-s+s*rcWin(t, al)), {color:C.in, width:2.8, n:900});
+  fade(a, u(2), ()=>a.curve(t=>rcPulse(t, 1), {color:C.mid, width:2.4, n:900}));
+  for(let k=-4;k<=4;k++) if(k) a.point(k, 0, {color:C.mid, r:4.6});
   return a.svg();
 }
+
+/* The roll-off chosen with a slider. Above, the spectrum with a strip that
+   names its bands: the passband |f| <= f_1, the transition band out to
+   (1 + alpha)W, and the stop band beyond. Below, the pulse against the sinc
+   pulse (alpha = 0, dashed), with the tails past |t| = 2T_b shaded and the
+   largest of them read out. */
+const rcTail = al => { let m = 0; for(let t=2;t<=12;t+=0.005) m = Math.max(m, Math.abs(rcPulse(t, al))); return m; };
+function figRcAlpha(v){
+  P.hOverride = null;
+  const al = v && v.al!=null ? v.al : 0.5, f1 = 1-al, f2 = 1+al, big = P.labelScale() > 1;
+  const hA = big ? 225 : 200, hB = big ? 225 : 195;
+  const a = P.Axes({w:560, h:hA, xr:[-2.3,2.3], yr:[-0.12,1.75], xlabel:'f', xunit:'W', ylabel:'P(f)/T_b',
+    pad:{l:56,r:26,t:24,b:40}, xticksOverride:[-2,-1,0,1,2], yticksOverride:[0,0.5,1]});
+  const strip = (x0, x1, fill) => { if(x1-x0 > 1e-3) a.rect(x0, 1.22, x1, 1.3, {fill}); };
+  strip(-f1, f1, C.in); strip(f1, f2, C.mid); strip(-f2, -f1, C.mid); strip(f2, 2.3, C.grid); strip(-2.3, -f2, C.grid);
+  /* names on the right half only, each where it fits, so none crosses the axis */
+  const lab = (x0, x1, s) => { if(a.sx(x1)-a.sx(x0) > 6.8*s.length*P.labelScale()+4) a.note((x0+x1)/2, 1.42, s, {fs:13, color:C.ink, anchor:'middle'}); };
+  lab(0, f1, 'passband'); lab(f1, f2, 'transition'); lab(f2, 2.3, 'stop');
+  a.curve(x=>rcSpec(x, al), {color:C.in, width:2.6, n:900});
+  a.note(-2.22, 0.72, `B_T=${(1+al).toFixed(2)}\\,W`, {tex:true, fs:15, color:C.in});
+  const b = P.Axes({w:560, h:hB, xr:[-4.6,4.6], yr:[-0.35,1.25], xlabel:'t', xunit:'T_b', ylabel:'p(t)',
+    pad:{l:56,r:26,t:24,b:42}, xticksOverride:[-4,-2,0,2,4], yticksOverride:[0,0.5,1]});
+  b.rect(2, -0.35, 4.6, 1.25, {fill:C.dec.err}); b.rect(-4.6, -0.35, -2, 1.25, {fill:C.dec.err});
+  b.curve(sinc, {color:C.in, width:1.5, dash:'6 5', n:900});
+  b.curve(t=>rcPulse(t, al), {color:C.in, width:2.6, n:900});
+  b.note(-4.45, 1.0, `\\max_{|t|\\ge2T_b}|p(t)|=${rcTail(al).toFixed(3)}`, {tex:true, fs:15, color:C.err});
+  return stack(560, [[a.svg(),hA],[b.svg(),hB]]);
+}
+
 /* Worked example: R_b = 20 kb/s, so W = 10 kHz. The given trace is the ideal
    rectangle; the answer is the raised cosine with alpha = 0.5. */
 function figExRc(){
-  const a = P.Axes(SZ({xr:[-22,22], yr:[-0.12,P.labelScale()>1?1.5:1.35], xlabel:'f\\;(\\text{kHz})', ylabel:'2W\\,P(f)',
+  const a = P.Axes(SZ({xr:[-22,22], yr:[-0.12,P.labelScale()>1?1.5:1.35], xlabel:'f\\;(\\text{kHz})', ylabel:'P(f)/T_b',
     xticksOverride:[-20,-15,-10,-5,0,5,10,15,20], ytarget:3}));
   a.raw(`<rect class="sk-area" x="${a.x0}" y="${a.y1}" width="${a.x1-a.x0}" height="${a.y0-a.y1}" fill="none"/>`);
   a.poly([[-22,0],[-10,0],[-10,1],[10,1],[10,0],[22,0]], {color:C.ink, width:1.6, dash:'6 5'});
@@ -1749,13 +1948,46 @@ function figExRc(){
   a.raw('</g>');
   return a.svg();
 }
-function figSrrc(){
-  const al = 0.5;
-  const a = P.Axes(SZ({xr:[-2.2,2.2], yr:[-0.08,1.3], xlabel:'f/W', ylabel:'\\text{spectrum}',
-    xticksOverride:[-2,-1.5,-1,-0.5,0,0.5,1,1.5,2], ytarget:3}));
-  a.curve(f=>Math.sqrt(rcSpec(f, al)), {color:C.h, width:2.4, dash:'8 5', n:900});
-  a.curve(f=>rcSpec(f, al), {color:C.in, width:2.6, n:900});
-  return a.svg();
+
+/* Splitting the raised cosine, alpha = 0.5. Above, the link with a square-
+   root filter at each end of a flat channel; the two filters light up in
+   frame 2. Below, P(f)/T_b (cyan), then its square root (amber); in the last
+   frame the root is multiplied by the second root, (P/T_b)^(1/2 + s/2), and
+   lands on the raised cosine. */
+function figSrrc(v){
+  P.hOverride = null;
+  const f = frameOf(v, 3), u = k => clamp01(f-k), al = 0.5, big = P.labelScale() > 1;
+  const yc = 46, bh = 42, by = yc-bh/2;
+  const it = [
+    {t:'arrow',x1:4,y1:yc,x2:44,y2:yc,label:'a_k',tex:true,color:C.in},
+    {t:'box',x:44,y:by,w:76,h:bh,label:'H_T(f)',tex:true},
+    {t:'arrow',x1:120,y1:yc,x2:156,y2:yc},
+    {t:'box',x:156,y:by,w:82,h:bh,label:'channel',fs:14,color:C.h},
+    {t:'arrow',x1:238,y1:yc,x2:262,y2:yc},
+    {t:'sum',x:276,y:yc},
+    {t:'arrow',x1:276,y1:100,x2:276,y2:yc+16,color:C.muted},
+    {t:'text',x:266,y:106,label:'w(t)',tex:true,anchor:'end',fs:14},
+    {t:'arrow',x1:290,y1:yc,x2:318,y2:yc},
+    {t:'box',x:318,y:by,w:76,h:bh,label:'H_R(f)',tex:true},
+    {t:'arrow',x1:394,y1:yc,x2:430,y2:yc,label:'y(t)',tex:true,color:C.out},
+    {t:'line',d:`M430,${yc} l16,-12`},
+    {t:'text',x:442,y:yc+26,label:'t_i',tex:true,fs:14},
+    {t:'arrow',x1:454,y1:yc,x2:520,y2:yc,label:'y(t_i)',tex:true,color:C.mid},
+    {t:'text',x:82,y:88,label:'transmitter',fs:12},
+    {t:'text',x:356,y:88,label:'receiver',fs:12}];
+  const g = u(1)*(1-0.6*u(2));
+  const glow = g > 0.01 ? [44,318].map(x=>`<rect x="${x}" y="${by}" width="76" height="${bh}" fill="${C.dec.h}" opacity="${g.toFixed(3)}" rx="2"/>`).join('') : '';
+  const top = P.blocks({w:560, h:116, items:it}).replace(/(<svg[^>]*>)/, '$1'+glow);
+  const H = big ? 295 : 265;
+  const b = P.Axes({w:560, h:H, xr:[-2.2,2.2], yr:[-0.1,1.4], xlabel:'f', xunit:'W', ylabel:'\\text{response}',
+    pad:{l:56,r:26,t:24,b:42}, xticksOverride:[-2,-1.5,-1,-0.5,0,0.5,1,1.5,2], yticksOverride:[0,0.5,1]});
+  b.curve(x=>rcSpec(x, al), {color:C.in, width:2.6, n:900});
+  fade(b, 1-u(1), ()=>b.note(-2.1, 1.2, 'P(f)/T_b', {tex:true, fs:15, color:C.in}));
+  const p = 0.5+0.5*ease(u(2));
+  fade(b, u(0), ()=>b.curve(x=>Math.pow(rcSpec(x, al), p), {color:C.h, width:2.6, dash:'8 5', n:900}));
+  fade(b, u(1)*(1-u(2)), ()=>b.note(2.15, 1.2, 'H_T(f)=H_R(f)=\\sqrt{P(f)}', {tex:true, fs:15, color:C.h, anchor:'end'}));
+  fade(b, u(2), ()=>b.note(2.15, 1.2, 'H_T(f)\\,H_R(f)=P(f)', {tex:true, fs:15, color:C.in, anchor:'end'}));
+  return `<svg viewBox="0 0 560 ${116+H}" xmlns="http://www.w3.org/2000/svg" role="img">${place(top,0,0,560,116)}${place(b.svg(),0,116,560,H)}</svg>`;
 }
 
 /* ---- the whole receiver --------------------------------------------------
@@ -1984,11 +2216,11 @@ const REAL_NYQUIST = realGallery({ id:'m2-real-nyquist', nav:'Pulse shaping arou
   objective:'Read roll-off factors and bandwidths off broadcast and mobile standards.',
   keywords:'examples raised cosine roll off satellite television dvb 27.5 mbaud 0.35 3g umts 3.84 mchip 0.22 5 mhz channel timing error',
   figs:[
-    [()=>{ const W = 13.75, a=P.Axes(EXO({xr:[-25,25],yr:[-0.08,1.3],xlabel:'f\\;(\\text{MHz})',ylabel:'2W\\,P(f)',xticksOverride:[-18.6,-13.75,0,13.75,18.6],
+    [()=>{ const W = 13.75, a=P.Axes(EXO({xr:[-25,25],yr:[-0.08,1.3],xlabel:'f\\;(\\text{MHz})',ylabel:'P(f)/T_b',xticksOverride:[-18.6,-13.75,0,13.75,18.6],
         xtickfmt:v=>String(+v.toFixed(2)),ytarget:3}));
       a.curve(f=>rcSpec(f/W,0.35),{color:C.in,width:2.2,n:900});
       return a.svg(); }, 'Satellite television at $R_s=27.5$ Mbaud with $\\alpha=0.35$ uses $B_T=13.75(1.35)=18.6$ MHz at baseband.'],
-    [()=>{ const W = 1.92, a=P.Axes(EXO({xr:[-3.2,3.2],yr:[-0.08,1.3],xlabel:'f\\;(\\text{MHz})',ylabel:'2W\\,P(f)',xticksOverride:[-2.5,-1.92,0,1.92,2.5],
+    [()=>{ const W = 1.92, a=P.Axes(EXO({xr:[-3.2,3.2],yr:[-0.08,1.3],xlabel:'f\\;(\\text{MHz})',ylabel:'P(f)/T_b',xticksOverride:[-2.5,-1.92,0,1.92,2.5],
         xtickfmt:v=>String(+v.toFixed(2)),ytarget:3}));
       a.curve(f=>rcSpec(f/W,0.22),{color:C.in,width:2.2,n:900});
       a.vline(-2.5,{color:C.h,dash:'6 4',width:1.4}); a.vline(2.5,{color:C.h,dash:'6 4',width:1.4});
@@ -3304,165 +3536,254 @@ REAL_ISI,
 ]},
 
 /* ---------------------------------------------------------------- 2.5 ---- */
-{ id:'m2-nyq-sinc', module:'M2', nav:'A pulse with zero interference', title:'A pulse with zero interference',
-  objective:'Show that the sinc pulse is zero at every other sampling instant.',
-  keywords:'sinc pulse zero crossings sampling instants zero intersymbol interference ideal nyquist pulse',
-  src:'CH8 s.42–45', slide:true, steps:2, blocks:[
+{ id:'m2-nyq-sinc', module:'M2', nav:'Zero interference at the sampling instants', title:'Zero interference at the sampling instants',
+  objective:'State the time-domain condition for zero intersymbol interference and what it leaves of a sample.',
+  keywords:'nyquist criterion time domain zero intersymbol interference p((i-k)T_b) sampling instant own bit mu a_i high snr',
+  src:'CH8 s.42', slide:true, steps:3, blocks:[
   {t:'eyebrow', text:'Module 2 · Nyquist and the raised cosine'},
-  {t:'title', text:'A pulse with zero interference'},
-  {t:'cols', ratio:'c-5-7', fill:true, left:[
-    {t:'fig', frame:true, grow:true, svg:figSincTrain,
-      caption:'$p(t)=\\operatorname{sinc}(t/T_b)$ with two of its neighbours. At every sampling instant only one pulse is non-zero.'},
-    {t:'legend', items:[['in','$p(t)$'],['in','neighbours',true],['mid','samples','dot']], at:'tr'}
-  ], right:[
-    {t:'eq', label:'Zero interference', tex:'p(kT_b)=\\begin{cases}1,&k=0\\\\0,&k\\neq0\\end{cases}',
-      note:'A pulse with this property adds nothing to the samples of its neighbours, however long it lasts.'},
-    {t:'reveal', at:1, items:[
-      {t:'eq', label:'The sinc pulse', tex:'p(t)=\\operatorname{sinc}\\!\\left(\\frac{t}{T_b}\\right),\\qquad p(kT_b)=\\frac{\\sin(\\pi k)}{\\pi k}=0\\quad(k\\neq0)',
-        note:'Here $\\operatorname{sinc}(x)=\\sin(\\pi x)/(\\pi x)$, and $\\operatorname{sinc}(0)=1$.'}]},
-    {t:'reveal', at:2, items:[
-      {t:'note', kind:'def', head:'Given', html:'$p(t)=\\operatorname{sinc}(t/T_b)$ with $T_b=0.1$ ms.<div class="nsep"></div>Where is $p(t)=0$?',
-        ask:{key:'m2-nyq-sinc', choices:['every $0.1$ ms except $t=0$','every $0.05$ ms','nowhere'], answer:0,
-          why:'$\\operatorname{sinc}(t/T_b)=0$ at $t/T_b=\\pm1,\\pm2,\\ldots$, that is every $0.1$ ms except $t=0$.'}}]}
-  ]}
-]},
-
-{ id:'m2-nyquist', module:'M2', nav:'Nyquist\'s criterion', title:'Nyquist\'s criterion for zero intersymbol interference',
-  objective:'State the zero-interference condition in frequency: the shifted copies of P(f) add to a constant.',
-  keywords:'nyquist criterion zero isi spectrum copies sum constant sampled pulse replication',
-  src:'CH8 s.42–45', slide:true, steps:2, blocks:[
-  {t:'eyebrow', text:'Module 2 · Nyquist and the raised cosine'},
-  {t:'title', text:'Nyquist\'s criterion for zero intersymbol interference'},
+  {t:'title', text:'Zero interference at the sampling instants'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true,
-      frames:{labels:['$P(f)$','copies at $\\pm R_b$','copies at $\\pm2R_b$','their sum']},
-      svg:figTiling,
-      caption:'Step through the frames for a triangular $P(f)$ of width $2R_b$. The copies at multiples of $R_b$ add to a constant, so $p(t)$ has zero interference.'},
-    {t:'legend', items:[['in','$P(f)$'],['mid','copies',true,1],['mid','sum of copies',0,3]], at:'tr'}
+      frames:{labels:['one pulse per bit','the sample at $t_i$','the other pulses at $t_i$','the sample $y(t_i)$'], ms:1600},
+      svg:figNyqZero,
+      caption:'Step through the frames. Five bits sent with a pulse that is zero at every sampling instant but its own. At $t_i$ every other pulse passes through zero, so the sample is $\\mu a_i$.'},
+    {t:'legend', items:[['out','$y(t)$'],['mid','$a_k\\,p(t-kT_b)$',true,0,0],['mid','own pulse',false,1],['err','other pulses',true,2]], at:'tr'}
   ], right:[
-    {t:'eq', label:'Sample the pulse', tex:'\\begin{aligned}p_\\delta(t)&=\\sum_{k}p(kT_b)\\,\\delta(t-kT_b)\\\\P_\\delta(f)&=R_b\\sum_{n}P(f-nR_b)\\end{aligned}',
-      note:'The second line is the replication result of Module 1, with $f_s=R_b=1/T_b$.'},
+    {t:'eq', label:'Sampled output', tex:'y(t_i)=\\mu a_i+\\mu\\sum_{k\\ne i}a_k\\,p\\bigl((i-k)T_b\\bigr)+n(t_i)',
+      note:'The own bit, the other bits and the noise. The middle term vanishes only if every other pulse is zero at $t_i$.'},
     {t:'reveal', at:1, items:[
-      {t:'eq', label:'Nyquist\'s criterion', key:true, result:true, tex:'p(kT_b)=\\delta[k]\\iff\\sum_{n=-\\infty}^{\\infty}P(f-nR_b)=T_b',
-        note:'Zero interference makes $p_\\delta(t)=\\delta(t)$, whose transform is $1$. Divide by $R_b$.'}]},
+      {t:'eq', label:'Nyquist\'s criterion, time domain', key:true, result:true, tex:'p\\bigl((i-k)T_b\\bigr)=\\begin{cases}1, & i=k\\\\0, & i\\ne k\\end{cases}',
+        note:'A pulse with this property adds nothing to the samples of its neighbours, however long it lasts.'}]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'def', head:'Given', html:'$P(f)=T_b(1-|f|/R_b)$ for $|f|<R_b$, so $p(t)=\\operatorname{sinc}^{2}(t/T_b)$.<div class="nsep"></div>What is $p(T_b)$?',
-        ask:{key:'m2-nyquist', choices:['$0$','$0.5$','$1$'], answer:0,
-          why:'The copies add to $T_b$, so the criterion holds. Directly, $\\operatorname{sinc}^{2}(1)=0$.'}}]}
+      {t:'eq', label:'Zero interference', tex:'y(t_i)=\\mu a_i+n(t_i)\\;\\cong\\;\\mu a_i',
+        note:'For $i=k$, $p(0)=1$, so only the own bit is left. At high SNR, $|\\mu a_i|\\gg|n(t_i)|$, and the sample is $\\mu a_i$.'}]},
+    {t:'reveal', at:3, items:[
+      {t:'note', kind:'def', head:'Given', html:'$p(t)$ meets the criterion, $\\mu=1$, $a_i=-1$ and $n(t_i)=0.1$.<div class="nsep"></div>What is $y(t_i)$?',
+        ask:{key:'m2-nyq-sinc', choices:['$-0.9$','$-1.1$','it depends on the other bits'], answer:0,
+          why:'$y(t_i)=\\mu a_i+n(t_i)=-1+0.1=-0.9$. The other bits add nothing.'}}]}
   ]}
 ]},
 
-{ id:'m2-nyq-channel', module:'M2', nav:'The minimum bandwidth', title:'The minimum bandwidth',
-  objective:'Show that zero interference needs a bandwidth of at least R_b/2.',
-  keywords:'nyquist bandwidth minimum R_b/2 ideal rectangular spectrum gaps copies',
-  src:'CH8 s.42–45', slide:true, steps:2, blocks:[
+{ id:'m2-nyq-sample', module:'M2', nav:'The sampled pulse', title:'The sampled pulse',
+  objective:'Sample the pulse at the bit rate and write the spectrum of the sampled pulse as copies of P(f).',
+  keywords:'sampled pulse impulse train p_delta(t) fourier transform replication copies P(f - nR_b) gaps narrow spectrum',
+  src:'CH8 s.42', slide:true, steps:2, blocks:[
   {t:'eyebrow', text:'Module 2 · Nyquist and the raised cosine'},
-  {t:'title', text:'The minimum bandwidth'},
+  {t:'title', text:'The sampled pulse'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
-    {t:'fig', frame:true, grow:true, svg:figNyqChannel,
-      caption:'The rectangle of width $2W=R_b$ and its copies at multiples of $R_b$. They meet edge to edge and fill the axis with no gap.'},
-    {t:'legend', items:[['in','$P(f)$'],['mid','copies',true]], at:'tr'}
+    {t:'fig', frame:true, grow:true,
+      frames:{labels:['the pulse $p(t)$','its samples $p(mT_b)$','the copies of $P(f)$','their sum $P_\\delta(f)$'], ms:1600},
+      svg:figNyqSample,
+      caption:'Step through the frames for $p(t)=\\operatorname{sinc}(0.7t/T_b)$, whose spectrum ends at $0.35R_b$. Its samples are not zero, and the copies of $P(f)$ leave gaps (red).'},
+    {t:'legend', items:[['in','$p(t)$, $P(f)$'],['mid','sampled pulse',false,1]], at:'tr'}
   ], right:[
-    {t:'eq', label:'Nyquist bandwidth', key:true, result:true, tex:'B_T\\ge W=\\frac{R_b}{2}',
-      note:'If $P(f)=0$ for $|f|>B_T$ with $B_T<R_b/2$, the copies leave gaps, and their sum cannot be constant.'},
+    {t:'eq', label:'Sampled pulse', tex:'p_\\delta(t)=\\sum_{m}p(mT_b)\\,\\delta(t-mT_b)',
+      note:'Multiply $p(t)$ by an impulse train of period $T_b$. Each impulse carries one sample $p(mT_b)$.'},
     {t:'reveal', at:1, items:[
-      {t:'eq', label:'The only pulse at $B_T=W$', tex:'P(f)=\\frac{1}{2W}\\,\\Pi\\!\\left(\\frac{f}{2W}\\right)\\;\\leftrightarrow\\;p(t)=\\operatorname{sinc}(2Wt)=\\operatorname{sinc}\\!\\left(\\frac{t}{T_b}\\right)',
-        note:'$\\Pi(f/2W)$ is $1$ for $|f|<W$. The sinc pulse of the last slide is this pulse.'}]},
+      {t:'eq', label:'Its spectrum', tex:'p_\\delta(t)\\;\\overset{\\mathcal{F}}{\\longrightarrow}\\;P_\\delta(f)=\\frac{1}{T_b}\\sum_{n}P\\Bigl(f-n\\frac{1}{T_b}\\Bigr)',
+        note:'The replication result of Module 1 with $f_s=1/T_b=R_b$: a copy of $P(f)$ every $R_b$, scaled by $1/T_b$.'}]},
     {t:'reveal', at:2, items:[
+      {t:'note', kind:'def', head:'Given', html:'$P(f)=0$ for $|f|>0.35R_b$, and the copies sit every $R_b$.<div class="nsep"></div>Can $P_\\delta(f)$ be constant?',
+        ask:{key:'m2-nyq-sample', choices:['yes','no, the copies leave gaps'], answer:1,
+          why:'Each copy is $0.7R_b$ wide, so a gap of $R_b-0.7R_b=0.3R_b$ is left between neighbours, where $P_\\delta(f)=0$.'}}]}
+  ]}
+]},
+
+{ id:'m2-nyquist', module:'M2', nav:'Nyquist\'s criterion in frequency', title:'Nyquist\'s criterion in frequency',
+  objective:'Derive the frequency-domain form of Nyquist\'s criterion: the copies of P(f) spaced R_b apart add to a constant.',
+  keywords:'nyquist criterion frequency domain sifting property P_delta(f) = 1 R_b sum P(f - nR_b) = 1 copies constant',
+  src:'CH8 s.43', slide:true, steps:3, blocks:[
+  {t:'eyebrow', text:'Module 2 · Nyquist and the raised cosine'},
+  {t:'title', text:'Nyquist\'s criterion in frequency'},
+  {t:'cols', ratio:'c-5-7', fill:true, left:[
+    {t:'fig', frame:true, grow:true,
+      frames:{labels:['a pulse with interference','zero interference','$P_\\delta(f)=1$'], ms:2000},
+      svg:figNyqFreq,
+      caption:'Step through the frames. As the samples $p(mT_b)$, $m\\ne0$, shrink to zero, $p_\\delta(t)$ becomes $\\delta(t)$ and the sum of the copies becomes flat.'},
+    {t:'legend', items:[['in','$p(t)$, $P(f)$'],['mid','sampled pulse']], at:'tr'}
+  ], right:[
+    {t:'eq', label:'Fourier transform of $p_\\delta(t)$', tex:'P_\\delta(f)=\\int_{-\\infty}^{\\infty}\\overbrace{\\Bigl\\{\\sum_{m}p(mT_b)\\,\\delta(t-mT_b)\\Bigr\\}}^{=p_\\delta(t)}e^{-j2\\pi ft}\\,dt'},
+    {t:'reveal', at:1, items:[
+      {t:'eq', label:'Zero interference', tex:'P_\\delta(f)=\\int_{-\\infty}^{\\infty}p(0)\\,\\delta(t)\\,e^{-j2\\pi ft}\\,dt=p(0)\\,e^{-j2\\pi f\\cdot0}=1',
+        note:'With $m=i-k$, only $m=0$ is left. Sifting puts $t=0$ into the exponential, and $p(0)=1$.'}]},
+    {t:'reveal', at:2, items:[
+      {t:'eq', label:'Nyquist\'s criterion, frequency domain', key:true, result:true, tex:'R_b\\sum_{n}P(f-nR_b)=1,\\qquad R_b=\\frac{1}{T_b}',
+        note:'Set the replication sum equal to $1$. The copies of $P(f)$ spaced $R_b$ apart add to the constant $T_b$.'}]},
+    {t:'reveal', at:3, items:[
+      {t:'note', kind:'def', head:'Given', html:'$P(f)=T_b(1-|f|/R_b)$ for $|f|<R_b$, a triangle.<div class="nsep"></div>Does it meet the criterion?',
+        ask:{key:'m2-nyquist', choices:['yes','no'], answer:0,
+          why:'Neighbouring triangles overlap, one rising as the other falls, so $R_b\\sum_nP(f-nR_b)=1$.'}}]}
+  ]}
+]},
+
+{ id:'m2-nyq-channel', module:'M2', nav:'The ideal Nyquist channel', title:'The ideal Nyquist channel',
+  objective:'Meet the criterion with the narrowest spectrum, a rectangle of width 2W, and find its pulse and the highest bit rate.',
+  keywords:'ideal nyquist channel rectangular spectrum nyquist bandwidth W = R_b/2 sinc(2Wt) maximum rate 2W bits per second copies edge to edge',
+  src:'CH8 s.44', slide:true, steps:3, blocks:[
+  {t:'eyebrow', text:'Module 2 · Nyquist and the raised cosine'},
+  {t:'title', text:'The ideal Nyquist channel'},
+  {t:'cols', ratio:'c-5-7', fill:true, left:[
+    {t:'fig', frame:true, grow:true,
+      frames:{labels:['$P(f)$ of height $T_b$','$p(t)=\\operatorname{sinc}(2Wt)$','zeros at $t=kT_b$','copies at $\\pm2W$'], ms:1500},
+      svg:figNyqChannel,
+      caption:'Step through the frames. The rectangle of width $2W$ is the narrowest spectrum that meets the criterion. Its pulse is zero at $t=kT_b$, $k\\ne0$, and its copies at $\\pm2W$ meet it edge to edge.'},
+  ], right:[
+    {t:'eq', label:'Ideal Nyquist channel', tex:'P(f)=\\begin{cases}\\dfrac{1}{2W}, & -W\\le f\\le W\\\\[4pt]0, & \\text{otherwise}\\end{cases}\\qquad W=\\frac{R_b}{2}=\\frac{1}{2T_b}',
+      note:'$W$ is the <b>Nyquist bandwidth</b>. The height $1/(2W)$ equals $T_b$.'},
+    {t:'reveal', at:1, items:[
+      {t:'eq', label:'Its pulse', tex:'p(t)=\\int_{-W}^{W}\\frac{1}{2W}\\,e^{j2\\pi ft}\\,df=\\frac{\\sin(2\\pi Wt)}{2\\pi Wt}=\\operatorname{sinc}(2Wt)',
+        note:'Here $\\operatorname{sinc}(x)=\\sin(\\pi x)/(\\pi x)$. Since $2W=1/T_b$, $p(kT_b)=\\operatorname{sinc}(k)=0$ for $k\\ne0$.'}]},
+    {t:'reveal', at:2, items:[
+      {t:'eq', label:'Highest bit rate', key:true, result:true, tex:'R_b\\le2W\\quad\\Longleftrightarrow\\quad W\\ge\\frac{R_b}{2}',
+        note:'A channel of bandwidth $W$ carries at most $2W$ bits per second without interference.'}]},
+    {t:'reveal', at:3, items:[
       {t:'note', kind:'def', head:'Given', html:'A link sends $R_b=64$ kb/s.<div class="nsep"></div>What is the smallest bandwidth with zero interference?',
         ask:{key:'m2-nyq-channel', choices:['$32$ kHz','$64$ kHz','$128$ kHz'], answer:0,
           why:'$W=R_b/2=64/2=32$ kHz.'}}]}
   ]}
 ]},
 
-{ id:'m2-sinc-timing', module:'M2', nav:'Timing and the sinc pulse', title:'Timing and the sinc pulse',
-  objective:'Show why the sinc pulse is impractical: a small timing error collects interference from many neighbours.',
-  keywords:'sinc pulse timing error jitter slow decay 1/t tails harmonic series non causal',
-  src:'CH8 s.42–45', slide:true, steps:2, blocks:[
+{ id:'m2-sinc-timing', module:'M2', nav:'The ideal channel in practice', title:'The ideal channel in practice',
+  objective:'Show why the ideal Nyquist channel is impractical: it cannot be built, and a small timing error collects interference from many neighbours.',
+  keywords:'ideal nyquist channel impractical unrealizable abrupt transitions slow decay 1/t timing error jitter harmonic series raised cosine',
+  src:'CH8 s.44', slide:true, steps:3, blocks:[
   {t:'eyebrow', text:'Module 2 · Nyquist and the raised cosine'},
-  {t:'title', text:'Timing and the sinc pulse'},
+  {t:'title', text:'The ideal channel in practice'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true,
       live:{controls:[{k:'eps', label:'$\\epsilon/T_b$', min:0, max:0.4, step:0.02, v:0.1, show:v=>'$'+v.toFixed(2)+'$'}]},
       svg:figSincOffset,
-      caption:'Drag the timing error $\\epsilon$. Each red stem is a neighbour\'s contribution to a sample taken $\\epsilon$ late. The sum at the top grows quickly with $\\epsilon$.'},
+      caption:'Drag the timing error $\\epsilon$. Above, each red stem is a neighbour\'s term in a sample taken $\\epsilon$ late. Below, the sum of their sizes as more neighbours are counted. It keeps growing for the sinc pulse, and levels off for a raised cosine with $\\alpha=0.5$.'},
     {t:'legend', items:[['in','$p(t)$'],['mid','wanted term'],['err','interference']], at:'tr'}
   ], right:[
-    {t:'eq', label:'A late sample', tex:'y_0=a_0\\operatorname{sinc}\\!\\left(\\frac{\\epsilon}{T_b}\\right)+\\sum_{k\\neq0}a_k\\operatorname{sinc}\\!\\left(k+\\frac{\\epsilon}{T_b}\\right)',
-      note:'Sample at $t=\\epsilon$ instead of $t=0$. Every neighbour now adds a small term.'},
+    {t:'note', kind:'warn', head:'Impractical', html:'$P(f)$ jumps at $-W$ and $W$. No physical filter has such an abrupt edge.<div class="nsep"></div>$p(t)$ decays slowly, only as $1/|t|$.'},
     {t:'reveal', at:1, items:[
-      {t:'note', kind:'warn', head:'Slow tails', html:'The terms fall only as $1/(\\pi|k|)$. The sum of their sizes behaves like $\\sum1/k$, which grows without bound. A sinc pulse also lasts forever in both directions.'}]},
+      {t:'eq', label:'A late sample', tex:'y(\\epsilon)=a_0\\operatorname{sinc}\\!\\left(\\frac{\\epsilon}{T_b}\\right)+\\sum_{k\\neq0}a_k\\operatorname{sinc}\\!\\left(k+\\frac{\\epsilon}{T_b}\\right)',
+        note:'Sample bit $0$ at $t=\\epsilon$. Each neighbour adds a term up to $1/(\\pi|k|)$, and these add like $\\sum1/k$.'}]},
     {t:'reveal', at:2, items:[
+      {t:'note', kind:'ok', head:'Solution', html:'Exact timing is a major challenge in modem design, and some timing jitter is always left. A pulse with faster-decaying tails tolerates it: the <b>raised cosine</b>.'}]},
+    {t:'reveal', at:3, items:[
       {t:'note', kind:'def', head:'Given', html:'The sample is taken $\\epsilon=0.1T_b$ late.<div class="nsep"></div>What is the wanted term, $\\operatorname{sinc}(0.1)$?',
         ask:{key:'m2-sinc-timing', choices:['$0.984$','$0.9$','$0.5$'], answer:0,
           why:'$\\sin(0.1\\pi)/(0.1\\pi)=0.309/0.314=0.984$. The wanted term barely drops. The interference is the problem.'}}]}
   ]}
 ]},
 
-{ id:'m2-rcos', module:'M2', nav:'The raised cosine', title:'The raised-cosine spectrum',
-  objective:'Define the raised-cosine spectrum and its bandwidth, and check it against Nyquist\'s criterion.',
-  keywords:'raised cosine spectrum roll off factor alpha transmission bandwidth W(1+alpha) nyquist criterion',
-  src:'CH8 s.46–48', slide:true, steps:2, blocks:[
+{ id:'m2-rcos', module:'M2', nav:'The raised-cosine spectrum', title:'The raised-cosine spectrum',
+  objective:'Build the raised-cosine spectrum from its flat part and its roll-off, and define the roll-off factor.',
+  keywords:'raised cosine spectrum flat band f_1 roll off factor alpha = 1 - f_1/W transition 2W - f_1 odd symmetry half height',
+  src:'CH8 s.46', slide:true, steps:3, blocks:[
   {t:'eyebrow', text:'Module 2 · Nyquist and the raised cosine'},
   {t:'title', text:'The raised-cosine spectrum'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true,
-      live:{controls:[{k:'al', label:'$\\alpha$', min:0, max:1, step:0.05, v:0.5, show:v=>'$'+v.toFixed(2)+'$'}]},
-      svg:figRcSpec,
-      caption:'Drag the roll-off $\\alpha$. The spectrum widens from $W$ to $W(1+\\alpha)$. The copies still add to a constant for every $\\alpha$.'},
-    {t:'legend', items:[['in','$P(f)$'],['mid','copies',true],['mid','sum of copies']], at:'tr'}
+      frames:{labels:['the ideal rectangle','flat up to $f_1$','roll-off to $2W-f_1$','odd symmetry about $W$'], ms:1800},
+      svg:figRcBuild,
+      caption:'Step through the frames for $\\alpha=0.5$. Below $W$ the roll-off cuts a piece from the rectangle (violet). Turned half a turn about $(W,T_b/2)$, it fills exactly the piece added above $W$.'},
   ], right:[
-    {t:'eq', label:'Raised-cosine spectrum', tex:'P(f)=\\begin{cases}\\dfrac{1}{2W},&|f|<f_1\\\\[4pt]\\dfrac{1}{4W}\\Bigl[1+\\cos\\dfrac{\\pi(|f|-f_1)}{2W-2f_1}\\Bigr],&f_1\\le|f|<2W-f_1\\\\[4pt]0,&|f|\\ge2W-f_1\\end{cases}',
-      note:'$W=R_b/2$ and $f_1=W(1-\\alpha)$. The roll-off factor $\\alpha$ runs from $0$ to $1$.'},
+    {t:'eq', label:'Raised-cosine spectrum', tex:'P(f)=\\begin{cases}\\dfrac{1}{2W}, & 0\\le|f|\\le f_1\\\\[6pt]\\dfrac{1}{4W}\\Bigl\\{1-\\sin\\Bigl(\\dfrac{\\pi(|f|-W)}{2W-2f_1}\\Bigr)\\Bigr\\}, & f_1\\le|f|\\le2W-f_1\\\\[6pt]0, & \\text{otherwise}\\end{cases}',
+      note:'The band grows from $W$ to between $W$ and $2W$, with rounded edges.'},
     {t:'reveal', at:1, items:[
-      {t:'eq', label:'Bandwidth', key:true, result:true, tex:'B_T=2W-f_1=W(1+\\alpha)=\\frac{R_b}{2}(1+\\alpha)',
-        note:'$\\alpha=0$ is the rectangle, $B_T=W$. $\\alpha=1$ doubles the bandwidth to $R_b$.'}]},
+      {t:'eq', label:'Roll-off factor', tex:'\\alpha=1-\\frac{f_1}{W},\\qquad f_1=W(1-\\alpha),\\qquad 2W-f_1=W(1+\\alpha)',
+        note:'$\\alpha$ runs from $0$ to $1$. $\\alpha=0$ gives $f_1=W$, the ideal rectangle.'}]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'def', head:'Given', html:'$W=5$ kHz and $\\alpha=0.25$.<div class="nsep"></div>What is $B_T$?',
-        ask:{key:'m2-rcos', choices:['$5$ kHz','$6.25$ kHz','$10$ kHz'], answer:1,
-          why:'$B_T=W(1+\\alpha)=5(1.25)=6.25$ kHz.'}}]}
+      {t:'eq', label:'Half height at $W$', tex:'P(W)=\\frac{1}{4W}\\{1-\\sin0\\}=\\frac{1}{4W}=\\frac{T_b}{2}',
+        note:'The roll-off is odd about this point. What it takes away below $W$ it adds above $W$.'}]},
+    {t:'reveal', at:3, items:[
+      {t:'note', kind:'def', head:'Given', html:'$R_b=10$ kb/s and $\\alpha=0.25$.<div class="nsep"></div>Where does the flat part end?',
+        ask:{key:'m2-rcos', choices:['$3.75$ kHz','$5$ kHz','$6.25$ kHz'], answer:0,
+          why:'$W=R_b/2=5$ kHz, so $f_1=W(1-\\alpha)=5(0.75)=3.75$ kHz.'}}]}
+  ]}
+]},
+
+{ id:'m2-rcos-check', module:'M2', nav:'The copies add to a constant', title:'The copies add to a constant',
+  objective:'Check that the raised cosine meets Nyquist\'s criterion: in each overlap the two roll-offs add to T_b.',
+  keywords:'raised cosine nyquist criterion superposition copies P(f + 2W) P(f - 2W) overlap sum T_b flat',
+  src:'CH8 s.48', slide:true, steps:2, blocks:[
+  {t:'eyebrow', text:'Module 2 · Nyquist and the raised cosine'},
+  {t:'title', text:'The copies add to a constant'},
+  {t:'cols', ratio:'c-5-7', fill:true, left:[
+    {t:'fig', frame:true, grow:true,
+      frames:{labels:['$P(f)$','$P(f+2W)$ and $P(f-2W)$','one frequency in the overlap','their sum'], ms:2000},
+      svg:figRcCheck,
+      caption:'Step through the frames for $\\alpha=0.5$. In each shaded overlap the falling edge of one copy and the rising edge of the next add to $T_b$, so the sum is flat.'},
+  ], right:[
+    {t:'eq', label:'Nyquist\'s criterion', tex:'R_b\\sum_{n}P(f-nR_b)=1\\quad\\Longleftrightarrow\\quad\\sum_{n}P(f-2nW)=T_b',
+      note:'With $R_b=2W$ the copies sit every $2W$. Only two copies overlap at any frequency.'},
+    {t:'reveal', at:1, items:[
+      {t:'eq', label:'In the overlap', tex:'\\begin{aligned}P(f)+P(f-2W)&=\\frac{1}{4W}\\{1-\\sin\\theta\\}+\\frac{1}{4W}\\{1+\\sin\\theta\\}\\\\&=\\frac{1}{2W}=T_b\\end{aligned}',
+        note:'For $f_1\\le f\\le2W-f_1$, with $\\theta=\\pi(f-W)/(2W-2f_1)$. For the copy, $|f-2W|-W=-(f-W)$, so its sine changes sign.'}]},
+    {t:'reveal', at:2, items:[
+      {t:'note', kind:'def', head:'Given', html:'$\\alpha=0.5$ and $P(0.8W)=0.794\\,T_b$.<div class="nsep"></div>What is $P(1.2W)$?',
+        ask:{key:'m2-rcos-check', choices:['$0.206\\,T_b$','$0.794\\,T_b$','$0$'], answer:0,
+          why:'$P(1.2W)=P(-1.2W)=P(0.8W-2W)$, and in the overlap $P(f)+P(f-2W)=T_b$. So $P(1.2W)=T_b-0.794\\,T_b=0.206\\,T_b$.'}}]}
   ]}
 ]},
 
 { id:'m2-rcos-pulse', module:'M2', nav:'The raised-cosine pulse', title:'The raised-cosine pulse',
-  objective:'Write the raised-cosine pulse in time and see how the roll-off shortens its tails.',
-  keywords:'raised cosine pulse time domain zero crossings tails decay 1/t^3 roll off',
-  src:'CH8 s.46–48', slide:true, steps:2, blocks:[
+  objective:'Write the raised-cosine pulse as a sinc factor that keeps the zeros and a second factor that speeds up the decay.',
+  keywords:'raised cosine pulse inverse fourier transform sinc(2Wt) cos(2 pi alpha W t) 1 - 16 alpha^2 W^2 t^2 zero crossings faster decay 1/t^3',
+  src:'CH8 s.46–47', slide:true, steps:3, blocks:[
   {t:'eyebrow', text:'Module 2 · Nyquist and the raised cosine'},
   {t:'title', text:'The raised-cosine pulse'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true,
-      live:{controls:[{k:'al', label:'$\\alpha$', min:0, max:1, step:0.05, v:0.5, show:v=>'$'+v.toFixed(2)+'$'}]},
+      frames:{labels:['$\\operatorname{sinc}(2Wt)$','the second factor','their product $p(t)$','$\\alpha=0,\\ 0.5,\\ 1$'], ms:1600},
       svg:figRcPulse,
-      caption:'Drag $\\alpha$. The zeros at $t=kT_b$ stay where they are. A larger $\\alpha$ makes the tails die out sooner.'},
-    {t:'legend', items:[['in','raised cosine'],['in','sinc',true],['mid','samples','dot']], at:'tr'}
+      caption:'Step through the frames. The product keeps every zero of $\\operatorname{sinc}(2Wt)$ at $t=kT_b$, and the second factor, drawn for $\\alpha=0.5$, damps the tails.'},
+    {t:'legend', items:[['in','$\\operatorname{sinc}(2Wt)$',false,0,1],['mid','second factor',false,1,2],['in','$\\alpha=0.5$',false,2],['in','$\\alpha=0$',true,2],['mid','$\\alpha=1$',false,3]], at:'tr'}
   ], right:[
-    {t:'eq', label:'The pulse', tex:'p(t)=\\operatorname{sinc}\\!\\left(\\frac{t}{T_b}\\right)\\frac{\\cos(\\pi\\alpha t/T_b)}{1-4\\alpha^{2}t^{2}/T_b^{2}}',
-      note:'The sinc factor keeps the zeros at $t=kT_b$. Here $\\operatorname{sinc}(x)=\\sin(\\pi x)/(\\pi x)$.'},
+    {t:'eq', label:'Raised-cosine pulse', tex:'p(t)=\\mathcal{F}^{-1}\\{P(f)\\}=\\underbrace{\\operatorname{sinc}(2Wt)}_{\\text{zeros at }t_i=iT_b}\\;\\underbrace{\\frac{\\cos(2\\pi\\alpha Wt)}{1-16\\alpha^{2}W^{2}t^{2}}}_{\\text{faster decay}}',
+      note:'Here $\\operatorname{sinc}(x)=\\sin(\\pi x)/(\\pi x)$. Since $2W=1/T_b$, the sinc factor is zero at $t=kT_b$, $k\\ne0$.'},
     {t:'reveal', at:1, items:[
-      {t:'note', kind:'ok', head:'Faster decay', html:'For $\\alpha>0$ the second factor falls as $1/t^{2}$, so the tails fall as $1/|t|^{3}$. A timing error then collects little interference.'}]},
+      {t:'note', kind:'ok', head:'Faster decay', html:'For $\\alpha>0$ the second factor falls as $1/t^{2}$, so the tails fall as $1/|t|^{3}$, against $1/|t|$ for the sinc pulse. A timing error then collects little interference.'}]},
     {t:'reveal', at:2, items:[
+      {t:'note', kind:'err', head:'Common error', html:'Write $\\cos(2\\pi\\alpha Wt)$, not $\\cos(2\\pi\\alpha W)$. Without $t$ the factor is a constant and does nothing to the tails.'}]},
+    {t:'reveal', at:3, items:[
       {t:'note', kind:'def', head:'Given', html:'The roll-off is $\\alpha=1$.<div class="nsep"></div>What is $p(1.5T_b)$?',
         ask:{key:'m2-rcos-pulse', choices:['$0$','$-0.21$','$0.5$'], answer:0,
-          why:'$\\cos(1.5\\pi)=0$ and the denominator $1-4(2.25)=-8$ is not zero, so $p(1.5T_b)=0$.'}}]}
+          why:'$2\\pi\\alpha Wt=1.5\\pi$, so the cosine is $0$, and $1-16\\alpha^{2}W^{2}t^{2}=1-9=-8\\ne0$. So $p(1.5T_b)=0$.'}}]}
+  ]}
+]},
+
+{ id:'m2-rcos-alpha', module:'M2', nav:'Choosing the roll-off', title:'Choosing the roll-off',
+  objective:'Read the passband, transition band and transmission bandwidth of the raised cosine, and trade bandwidth against tail decay.',
+  keywords:'roll off factor alpha transmission bandwidth B_T = (1 + alpha) W excess bandwidth alpha W passband transition band stop band tails filter design',
+  src:'CH8 s.47', slide:true, steps:2, blocks:[
+  {t:'eyebrow', text:'Module 2 · Nyquist and the raised cosine'},
+  {t:'title', text:'Choosing the roll-off'},
+  {t:'cols', ratio:'c-5-7', fill:true, left:[
+    {t:'fig', frame:true, grow:true,
+      live:{controls:[{k:'al', label:'$\\alpha$', min:0, max:1, step:0.05, v:0.5, show:v=>'$'+v.toFixed(2)+'$'}]},
+      svg:figRcAlpha,
+      caption:'Drag $\\alpha$. The strip names the bands of $P(f)$. A larger $\\alpha$ widens the transition band and $B_T$, and the tails of $p(t)$ beyond $|t|=2T_b$ (shaded) shrink.'},
+  ], right:[
+    {t:'eq', label:'Transmission bandwidth', key:true, result:true, tex:'B_T=2W-f_1=W(1+\\alpha)=\\frac{R_b}{2}(1+\\alpha)',
+      note:'The <b>passband</b> ends at $f_1$, the <b>transition band</b> runs from $f_1$ to $B_T$, and the <b>stop band</b> starts at $B_T$. The bandwidth beyond $W$ is $\\alpha W$.'},
+    {t:'reveal', at:1, items:[
+      {t:'note', kind:'def', head:'As $\\alpha$ increases', html:'The tails of $p(t)$ decay faster.<br>The bandwidth $B_T$ grows.<br>The filter is easier to design, since its edges are gentler.'}]},
+    {t:'reveal', at:2, items:[
+      {t:'note', kind:'def', head:'Given', html:'$W=5$ kHz and $\\alpha=0.25$.<div class="nsep"></div>What is $B_T$?',
+        ask:{key:'m2-rcos-alpha', choices:['$5$ kHz','$6.25$ kHz','$10$ kHz'], answer:1,
+          why:'$B_T=W(1+\\alpha)=5(1.25)=6.25$ kHz.'}}]}
   ]}
 ]},
 
 { id:'m2-ex-rc', module:'M2', nav:'Worked example · a raised-cosine link', title:'Worked example: a raised-cosine link',
   objective:'Find the Nyquist bandwidth, the flat band and the transmission bandwidth of a raised-cosine link.',
   keywords:'worked example raised cosine 20 kb/s roll off 0.5 bandwidth 15 kHz sketch spectrum',
-  src:'CH8 s.46–48', slide:true, steps:3, blocks:[
+  src:'CH8 s.46–47', slide:true, steps:3, blocks:[
   {t:'eyebrow', text:'Module 2 · Worked example'},
   {t:'title', text:'Worked example: a raised-cosine link'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
-    {t:'fig', frame:true, grow:true, sketch:{label:'Sketch $2W\\,P(f)$ on the axes, then check it.'}, svg:figExRc,
+    {t:'fig', frame:true, grow:true, sketch:{label:'Sketch $P(f)/T_b$ on the axes, then check it.'}, svg:figExRc,
       caption:'The dashed trace is the ideal rectangle of width $2W$. Draw the raised-cosine spectrum with $\\alpha=0.5$, then show the answer.'}
   ], right:[
     {t:'note', kind:'def', head:'Given', html:'A link sends $R_b=20$ kb/s with raised-cosine pulses and $\\alpha=0.5$.<div class="nsep"></div>Find $W$, $f_1$ and $B_T$.',
       ask:{key:'m2-ex-rc', choices:['$10$ kHz','$15$ kHz','$20$ kHz'], answer:1,
         why:'$W=10$ kHz, so $B_T=W(1+\\alpha)=10(1.5)=15$ kHz.'}},
     {t:'reveal', at:1, items:[
-      {t:'eq', label:'Method', tex:'W=\\frac{R_b}{2},\\qquad f_1=W(1-\\alpha),\\qquad B_T=W(1+\\alpha)',
+      {t:'eq', label:'Method', tex:'W=\\frac{R_b}{2},\\qquad f_1=W(1-\\alpha),\\qquad B_T=2W-f_1=W(1+\\alpha)',
         note:'The spectrum is flat up to $f_1$ and falls to zero at $B_T$, with its half-height point at $W$.'}]},
     {t:'reveal', at:2, items:[
       {t:'eq', label:'Solution', tex:'\\begin{aligned}W&=20/2=10\\ \\text{kHz}\\\\f_1&=10(1-0.5)=5\\ \\text{kHz}\\\\B_T&=10(1+0.5)=15\\ \\text{kHz}\\end{aligned}',
@@ -3473,24 +3794,27 @@ REAL_ISI,
 ]},
 
 { id:'m2-srrc', module:'M2', nav:'Splitting the filter', title:'Splitting the raised cosine',
-  objective:'Split the raised cosine between transmitter and receiver so the receiver is also a matched filter.',
-  keywords:'root raised cosine square root split transmit receive filter matched filter zero isi',
-  src:'CH8 s.46–48', slide:true, steps:2, blocks:[
+  objective:'Split the raised cosine into a square-root filter at each end, so the receive filter is also matched.',
+  keywords:'square root raised cosine srrc split transmit receive filter matched filter zero isi fir tapped delay line',
+  src:'CH8 s.48', slide:true, steps:3, blocks:[
   {t:'eyebrow', text:'Module 2 · Nyquist and the raised cosine'},
   {t:'title', text:'Splitting the raised cosine'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
-    {t:'fig', frame:true, grow:true, svg:figSrrc,
-      caption:'The raised cosine with $\\alpha=0.5$ and its square root. Two square-root filters in a row give the raised cosine.'},
-    {t:'legend', items:[['in','$2W\\,P(f)$'],['h','$\\sqrt{2W\\,P(f)}$',true]], at:'tr'}
+    {t:'fig', frame:true, grow:true,
+      frames:{labels:['the raised cosine $P(f)$','its square root','one root at each end','their product'], ms:1600},
+      svg:figSrrc,
+      caption:'Step through the frames for $\\alpha=0.5$. Each end of the link takes a square-root raised cosine. Over a flat channel their product is the raised cosine again.'},
   ], right:[
     {t:'eq', label:'Split', tex:'H_T(f)\\,H_R(f)=P(f),\\qquad H_T(f)=H_R(f)=\\sqrt{P(f)}',
-      note:'$H_T$ shapes the pulse at the transmitter and $H_R$ filters at the receiver. Their product must meet Nyquist\'s criterion.'},
+      note:'$H_T$ shapes the pulse at the transmitter and $H_R$ filters at the receiver. Each is a <b>square-root raised-cosine</b> (SRRC) filter.'},
     {t:'reveal', at:1, items:[
       {t:'note', kind:'ok', head:'Matched and free of interference', html:'$H_R=H_T^{*}$ for a real, even $\\sqrt{P(f)}$, so the receive filter is matched to the pulse. The link then has both the smallest $P_b$ and zero interference.'}]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'def', head:'Given', html:'$\\alpha=0.5$.<div class="nsep"></div>What is $\\sqrt{2W\\,P(f)}$ at $f=W$?',
+      {t:'note', kind:'def', head:'Implementation', html:'A raised-cosine or SRRC filter is usually a finite impulse response (FIR) filter, also called a tapped-delay-line (TDL) filter. Its taps are samples of the pulse, cut off after a few $T_b$.'}]},
+    {t:'reveal', at:3, items:[
+      {t:'note', kind:'def', head:'Given', html:'$\\alpha=0.5$.<div class="nsep"></div>What is $H_T(W)/H_T(0)$?',
         ask:{key:'m2-srrc', choices:['$0.5$','$0.707$','$1$'], answer:1,
-          why:'At $f=W$ the raised cosine is at half height, $2W\\,P(W)=0.5$, and $\\sqrt{0.5}=0.707$.'}}]}
+          why:'$P(W)=T_b/2$ and $P(0)=T_b$, so $H_T(W)/H_T(0)=\\sqrt{1/2}=0.707$.'}}]}
   ]}
 ]},
 
