@@ -502,6 +502,31 @@ def _m2_eye_opening(bt, n=24):
     return 2 * worst
 
 
+def _m2_Q(x):
+    return 0.5 * math.erfc(x / math.sqrt(2))
+
+
+def _m2_g_q(bt):
+    """Gaussian channel: share of a bit past one edge, Q(pi BTb / sqrt(ln 2))."""
+    return _m2_Q(math.pi * bt / math.sqrt(math.log(2)))
+
+
+def _m2_g_eye_opening(bt, n=7):
+    """2 min over all n-bit patterns of a_k y_k at the centre bit, by direct
+    summation of the Gaussian-smoothed rectangles (line holds the outer bits)."""
+    s = math.sqrt(math.log(2)) / (2 * math.pi * bt)
+    c = n // 2
+    seg = lambda lo, hi: (_m2_Q((c - hi) / s) if hi < 1e9 else 1.0) - (_m2_Q((c - lo) / s) if lo > -1e9 else 0.0)
+    worst = 9.0
+    for p in range(2 ** n):
+        bits = [(p >> k) & 1 for k in range(n)]
+        lv = [1.0 if b else -1.0 for b in bits]
+        y = lv[0] * seg(-1e18, -0.5) + lv[-1] * seg(n - 0.5, 1e18)
+        y += sum(lv[k] * seg(k - 0.5, k + 0.5) for k in range(n))
+        worst = min(worst, y * lv[c])
+    return 2 * worst
+
+
 def _m2_rc_spec(u, a):
     """2W P(f) of the raised cosine, with u = f/W."""
     u = np.abs(np.asarray(u, dtype=float))
@@ -1342,18 +1367,28 @@ CHECKS: list[dict] = [
      "derive": lambda: _m2_rc_samples([0, 1, 0, 1, 1], 0.25, hist=0)[4] - 0.1, "tol": 5e-3},
     {"name": "2.4.2 a 1 after a long run of 0s", "stated": 0.584,
      "derive": lambda: _m2_rc_samples([0, 0, 0, 1], 0.25)[3], "tol": 5e-3},
-    {"name": "2.4.4 eye opening at BTb = 0.3, all 128 patterns", "stated": 1.39,
-     "derive": lambda: _m2_eye_opening(0.3), "tol": 5e-3},
-    {"name": "2.4.5 closing bandwidth ln2/(2 pi)", "stated": 0.110,
+    {"name": "2.5.10 RC eye closes at ln2/(2 pi)", "stated": 0.110,
      "derive": lambda: _m6_bisect(lambda b: _m2_eye_opening(b), 0.05, 0.2), "tol": 5e-3},
-    {"name": "2.4.5 opening at BTb = 0.1 is negative (shifted by one)", "stated": 1 - 0.134,
-     "derive": lambda: 1 + _m2_eye_opening(0.1), "tol": 5e-3},
-    {"name": "2.4.4 q at BTb = 0.3", "stated": 0.152,
-     "derive": lambda: 1 - _m2_rc_samples([1], 0.3, hist=0)[0], "tol": 5e-3},
-    {"name": "2.4.5 q at BTb = 0.1", "stated": 0.533,
-     "derive": lambda: 1 - _m2_rc_samples([1], 0.1, hist=0)[0], "tol": 5e-3},
-    {"name": "2.4.5 half-opening 1 - 2q at BTb = 0.1", "stated": -0.067,
-     "derive": lambda: _m2_eye_opening(0.1) / 2, "tol": 1e-2},
+    {"name": "2.5.7 Gaussian channel q at BTb = 0.5", "stated": 0.030,
+     "derive": lambda: _m2_g_q(0.5), "tol": 2e-2},
+    {"name": "2.5.7 Gaussian eye opening 2(1-4q) at BTb = 0.5, all 128 patterns", "stated": 1.76,
+     "derive": lambda: _m2_g_eye_opening(0.5), "tol": 5e-3},
+    {"name": "2.5.7 own bit 2(1-2q) at BTb = 0.5 (a distractor)", "stated": 1.88,
+     "derive": lambda: 2 * (1 - 2 * _m2_g_q(0.5)), "tol": 5e-3},
+    {"name": "2.5.8 Gaussian eye closes at BTb = 0.674 sqrt(ln2)/pi", "stated": 0.179,
+     "derive": lambda: _m6_bisect(lambda b: _m2_g_eye_opening(b), 0.1, 0.3), "tol": 5e-3},
+    {"name": "2.5.8 Q(x) = 1/4 at x", "stated": 0.674,
+     "derive": lambda: _m6_bisect(lambda x: 0.25 - _m2_Q(x), 0.3, 1.0), "tol": 1e-3},
+    {"name": "2.5.8 q at BTb = 0.15", "stated": 0.286,
+     "derive": lambda: _m2_g_q(0.15), "tol": 5e-3},
+    {"name": "2.5.8 1 - 4q at BTb = 0.15", "stated": -0.14,
+     "derive": lambda: _m2_g_eye_opening(0.15) / 2, "tol": 3e-2},
+    {"name": "2.5.8 notes: q at BTb = 0.25", "stated": 0.173,
+     "derive": lambda: _m2_g_q(0.25), "tol": 5e-3},
+    {"name": "2.5.8 notes: opening at BTb = 0.25", "stated": 0.618,
+     "derive": lambda: _m2_g_eye_opening(0.25), "tol": 2e-3},
+    {"name": "2.5.9 worst level 1 - 4q at BTb = 0.5", "stated": 0.88,
+     "derive": lambda: _m2_g_eye_opening(0.5) / 2, "tol": 5e-3},
     {"name": "2.4.6 q at BTb = 0.15", "stated": 0.39,
      "derive": lambda: math.exp(-2 * math.pi * 0.15), "tol": 5e-3},
     {"name": "2.4.6 fibre pulse width sqrt(20^2 + 34^2), ps", "stated": 39.4,

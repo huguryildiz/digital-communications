@@ -1052,90 +1052,107 @@ function figIsiBuild(){
   ISI_B.forEach((_,k)=>a.point(k+1,y(k+1),{color:C.mid,r:4.6}));
   return a.svg();
 }
-function eyeTraces(bt,n){
-  const out=[], r=rcResp(bt);
-  for(let j=0;j<n;j++){ const p=(j*37+45)%128, bits=[];
-    for(let k=0;k<7;k++) bits.push((p>>k)&1);
-    const pts=[]; for(let i=0;i<=120;i++){ const u=-1+2*i/120, t=6+u;
-      let s=0; bits.forEach((b,k)=>{ s+=(b?1:-1)*r(t-k); }); pts.push([u,s]); }
+/* the eye slides use a Gaussian channel: sigma = sqrt(ln 2)/(2 pi B T_b),
+   bit k on [k-1/2, k+1/2] comes out as Q((t-k-1/2)/sigma) - Q((t-k+1/2)/sigma),
+   q = Q(pi B T_b/sqrt(ln 2)) leaks past each edge, the worst sample is 1 - 4q;
+   the line holds the outer bits beyond a pattern */
+const gsig=bt=>Math.sqrt(Math.LN2)/(2*Math.PI*bt);
+const gq=bt=>Qf(Math.PI*bt/Math.sqrt(Math.LN2));
+function gTrain(bits,bt){ const s=gsig(bt), n=bits.length, lv=b=>b?1:-1;
+  return t=>bits.reduce((y,b,k)=>y+lv(b)*(Qf((t-k-0.5)/s)-Qf((t-k+0.5)/s)),
+    lv(bits[0])*Qf((t+0.5)/s)+lv(bits[n-1])*(1-Qf((t-n+0.5)/s))); }
+function eyeTraces(bt){
+  const out=[];
+  for(let p=0;p<128;p++){ const bits=[]; for(let k=0;k<7;k++) bits.push((p>>k)&1);
+    const y=gTrain(bits,bt), pts=[];
+    for(let i=0;i<=120;i++){ const u=-1+2*i/120; pts.push([u,y(3+u)]); }
     out.push(pts); }
   return out;
 }
-/* the eye as an oscilloscope builds it: 32 bits of a de Bruijn sequence, the
-   strip around the eighth sampling instant above and all 32 pieces below */
-const EYE_DB='00000100011001010011101011011111'.split('').map(Number);
-const EYE_L=[...EYE_DB.slice(24),...EYE_DB,...EYE_DB.slice(0,2)];
-function figEyeScope(){
-  const y=rcTrain(EYE_L,0.3), tc=16;
-  const s=ax1({h:190,xr:[-3.2,3.2],yr:[-1.4,2.1],xlabel:'(t-t_k)/T_b',ylabel:'y(t)',xticksOverride:[-3,-2,-1,0,1,2,3],yticksOverride:[-1,0,1]});
-  s.rect(-1,-1.4,1,1.95,{fill:C.dec.mid});
-  s.vline(-1,{color:C.mid,opacity:0.7}); s.vline(1,{color:C.mid,opacity:0.7}); s.vline(0,{color:C.ink,dash:'6 4',opacity:0.8});
-  s.curve(u=>y(tc+u),{color:C.out,width:2.2,n:900});
-  s.curve(u=>Math.abs(u)<=1?y(tc+u):NaN,{color:C.mid,width:2.6,n:600});
-  EYE_L.forEach((b,j)=>{ const x=j+0.5-tc; if(Math.abs(x)<2.85) s.note(x,1.62,String(b),{fs:13,color:C.ink,anchor:'middle',weight:600}); });
-  const e=ax1({h:230,xr:[-1,1],yr:[-1.5,1.5],xlabel:'(t-t_k)/T_b',ylabel:'y(t)',xticksOverride:[-1,-0.5,0,0.5,1],ytarget:4});
-  e.raw('<g opacity="0.55">');
-  for(let k=1;k<=32;k++){ const pts=[]; for(let i=0;i<=100;i++){ const u=-1+2*i/100; pts.push([u,y(8+k+u)]); } e.poly(pts,{color:C.out,width:1.2}); }
-  e.raw('</g>');
+/* the eight three-bit patterns at BT_b = 0.5, each with its window 2T_b
+   wide shaded, and the eye they make together, as in the last frame on the
+   slide */
+const EYE_PAT=[0,1,2,3,4,5,6,7].map(n=>[n&1,(n>>1)&1,(n>>2)&1]);
+function figEyePatterns(){
+  const bt=0.5, RH=46, T0=34, T1=210, EX=280, W=700, Y0=24, H=Y0+8*RH+6;
+  const e=P.Axes({w:W-EX,h:H,xr:[-1,1],yr:[-1.5,1.5],xlabel:'(t-t_k)/T_b',ylabel:'y(t)',pad:{l:56,r:22,t:Y0,b:42},xticksOverride:[-1,-0.5,0,0.5,1],ytarget:4});
   e.vline(0,{color:C.ink,dash:'6 4',opacity:0.8});
-  return stack(700,[[s.svg(),190],[e.svg(),230]]);
+  const tx=u=>T0+(u+1.5)/3*(T1-T0), ty=(j,yy)=>Y0+j*RH+29-12*yy;
+  const d=pts=>'M'+pts.map(q=>q[0].toFixed(1)+','+q[1].toFixed(1)).join('L');
+  const line=(pts,c,w,op=1,dash='')=>`<path d="${d(pts)}" fill="none" stroke="${c}" stroke-width="${w}" opacity="${op}"${dash?` stroke-dasharray="${dash}"`:''} stroke-linejoin="round"/>`;
+  const span=(lo,hi,n)=>Array.from({length:n+1},(_,i)=>lo+(hi-lo)*i/n);
+  const ax=EX+e.x0-40, ay=e.sy(0);
+  let s='';
+  EYE_PAT.forEach((bits,j)=>{ const tr=gTrain(bits,bt), y=u=>tr(1+u), top=Y0+j*RH;
+    s+=`<rect x="${tx(-1)}" y="${top+15}" width="${tx(1)-tx(-1)}" height="28" fill="${C.dec.mid}"/>`;
+    bits.forEach((b,i)=>{ s+=`<text x="${tx(i-1).toFixed(1)}" y="${top+12}" font-size="13" font-weight="600" text-anchor="middle" fill="${C.ink}">${b}</text>`; });
+    s+=line(span(-1.5,1.5,90).map(u=>[tx(u),ty(j,y(u))]),C.out,1.4);
+    s+=line(span(-1,1,60).map(u=>[tx(u),ty(j,y(u))]),C.out,2.4);
+    s+=line([[T1+6,ty(j,0)],[ax,ay]],C.muted,1.2,0.6,'2 4');
+    e.poly(span(-1,1,80).map(u=>[u,y(u)]),{color:C.out,width:1.7}); });
+  s+=`<circle cx="${ax}" cy="${ay}" r="3" fill="${C.muted}"/>`;
+  return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img">${place(e.svg(),EX,0,W-EX,H)}${s}</svg>`;
 }
-/* the eye at BT_b = 0.3 with its readings, as in the last frame on the slide */
+/* the eye at BT_b = 0.5 with its readings, as in the last frame on the slide */
+function eyeCross(tr){ let c0=Infinity, c1=-Infinity;
+  tr.forEach(pts=>{ for(let i=60;i<120;i++){ const [x0,y0]=pts[i], [x1,y1]=pts[i+1];
+    if(y0*y1<0){ const c=x0+(x1-x0)*y0/(y0-y1); c0=Math.min(c0,c); c1=Math.max(c1,c); } } });
+  return [c0,c1]; }
 function figEyeRead(){
-  const bt=0.3, q=rcq(bt), tau=1/(2*Math.PI*bt), h=1-2*q;
-  const a=P.Axes({w:700,h:330,xr:[-1,1],yr:[-1.6,1.9],xlabel:'t/T_b',ylabel:'y(t)',pad:{l:56,r:250,t:20,b:40},xticksOverride:[-1,0,1],yticksOverride:[-1,0,1]});
-  a.raw('<g opacity="0.5">'); eyeTraces(bt,128).forEach(pts=>a.poly(pts,{color:C.out,width:1.1})); a.raw('</g>');
+  const bt=0.5, q=gq(bt), h=1-4*q, tr=eyeTraces(bt);
+  const a=P.Axes({w:700,h:330,xr:[-1,1],yr:[-1.6,1.9],xlabel:'(t-t_k)/T_b',ylabel:'y(t)',pad:{l:56,r:250,t:20,b:40},xticksOverride:[-1,-0.5,0,0.5,1],yticksOverride:[-1,0,1]});
+  a.raw('<g opacity="0.5">'); tr.forEach(pts=>a.poly(pts,{color:C.out,width:1.1})); a.raw('</g>');
   const lab=(y,s,c)=>a.note(1.06,y,s,{tex:true,fs:13,color:c});
   const lead=(x0,y0,y1,c)=>a.poly([[x0,y0],[1.03,y1]],{color:c,width:1.2});
   const cap=(x,ya,yb,c)=>{ a.poly([[x,ya],[x,yb]],{color:c,width:2.2}); a.poly([[x-0.03,ya],[x+0.03,ya]],{color:c,width:2.2}); a.poly([[x-0.03,yb],[x+0.03,yb]],{color:c,width:2.2}); };
   a.vline(0,{color:C.ink,dash:'6 4',width:1.4,opacity:1}); a.note(0.04,1.66,'\\text{best sampling time}',{tex:true,fs:13,color:C.ink});
-  cap(0.11,-h,h,C.mid); lead(0.14,0.3,0.3,C.mid); lab(0.3,'\\text{margin over noise}',C.mid);
-  cap(0.05,h,1,C.err); lead(0.08,0.85,1.25,C.err); lab(1.25,'\\text{distortion at }t=0',C.err);
-  const c0=tau*Math.log(2-2*q), c1=tau*Math.log(2);
-  [[c0,c1],[c0-1,c1-1]].forEach(([p,r])=>a.rect(p,-0.045,r,0.045,{fill:C.err}));
-  lead(c1+0.01,0,-0.42,C.err); lab(-0.42,'\\text{zero-crossing spread}',C.err);
-  a.poly([[c1-1,0.16],[c0,0.16]],{color:C.ink,width:1.5}); a.poly([[c1-1,0.07],[c1-1,0.25]],{color:C.ink,width:1.5}); a.poly([[c0,0.07],[c0,0.25]],{color:C.ink,width:1.5});
-  lead(c0+0.02,0.2,-0.9,C.ink); lab(-0.9,'\\text{sampling window}',C.ink);
-  const t0=-0.3, y0=1-2*Math.exp(-(t0+1)/tau), sl=(2/tau)*Math.exp(-(t0+1)/tau);
-  a.poly([[t0-0.16,y0-0.16*sl],[t0+0.16,y0+0.16*sl]],{color:C.ink,width:2.6});
-  lead(t0+0.17,y0+0.17*sl,0.78,C.ink); lab(0.78,'\\text{timing sensitivity}',C.ink);
+  cap(0.11,-h,h,C.mid); lead(0.14,0.55,0.55,C.mid); lab(0.55,'\\text{margin over noise}',C.mid);
+  cap(0.05,h,1,C.err); lead(0.08,0.95,1.25,C.err); lab(1.25,'\\text{distortion at }t=0',C.err);
+  const [c0,c1]=eyeCross(tr);
+  [[c0,c1],[-c1,-c0]].forEach(([p,r])=>a.rect(p,-0.045,r,0.045,{fill:C.err}));
+  lead(c1+0.01,0,-0.4,C.err); lab(-0.4,'\\text{zero-crossing spread}',C.err);
+  a.poly([[-c0,0.16],[c0,0.16]],{color:C.ink,width:1.5}); a.poly([[-c0,0.07],[-c0,0.25]],{color:C.ink,width:1.5}); a.poly([[c0,0.07],[c0,0.25]],{color:C.ink,width:1.5});
+  lead(c0+0.02,0.2,0.12,C.ink); lab(0.12,'\\text{sampling window}',C.ink);
+  const s=gsig(bt), pk=t=>Qf((t-0.5)/s)-Qf((t+0.5)/s), t0=0.62, y0=2*pk(t0)-1, sl=(2*pk(t0+1e-3)-2*pk(t0-1e-3))/2e-3, dx=0.07;
+  a.poly([[t0-dx,y0-dx*sl],[t0+dx,y0+dx*sl]],{color:C.ink,width:2.6});
+  a.poly([[t0+dx+0.02,y0+(dx+0.02)*sl],[1.03,-0.85]],{color:C.ink,width:1.2}); lab(-0.85,'\\text{timing sensitivity}',C.ink);
   return a.svg();
 }
 function figEyeClose(bt){
-  const q=rcq(bt), h=1-2*q;
-  const a=ax1({h:230,xr:[-1,1],yr:[-1.5,1.5],xlabel:'t/T_b',ylabel:'y(t)',xticksOverride:[-1,-0.5,0,0.5,1],ytarget:4});
+  const q=gq(bt), h=1-4*q;
+  const a=ax1({h:230,xr:[-1,1],yr:[-1.5,1.5],xlabel:'(t-t_k)/T_b',ylabel:'y(t)',xticksOverride:[-1,-0.5,0,0.5,1],ytarget:4});
   a.raw('<g opacity="0.5">');
-  eyeTraces(bt,128).forEach(pts=>a.poly(pts,{color:C.out,width:1.1}));
+  eyeTraces(bt).forEach(pts=>a.poly(pts,{color:C.out,width:1.1}));
   a.raw('</g>');
   a.vline(0,{color:C.muted});
   a.poly([[0.04,-h],[0.04,h]],{color:C.mid,width:2.4});
   a.poly([[0.02,h],[0.06,h]],{color:C.mid,width:2.4}); a.poly([[0.02,-h],[0.06,-h]],{color:C.mid,width:2.4});
-  a.note(0.09,1.3,`2(1-2q)=${(2*h).toFixed(3)}`,{tex:true,fs:14,color:C.mid});
+  a.note(0.09,1.3,`2(1-4q)=${(2*h).toFixed(3)}`,{tex:true,fs:14,color:C.mid});
   return a.svg();
 }
 /* 128 seven-bit patterns, each with its own seeded noise, and a histogram of
    1024 samples at the sampling instant, as on the slide */
 const EYE_P=[...Array(128)].map((_,j)=>{ const p=(j*37+45)%128, b=[]; for(let k=0;k<7;k++) b.push((p>>k)&1); return b; });
-const EYE_W=EYE_P.map((_,j)=>noiseFn(20260960+j,0.3,1,3,9));
+const EYE_W=EYE_P.map((_,j)=>noiseFn(20260960+j,0.3,1,1,5));
 const EYE_Z=gauss(20260951,1024,1);
 function figEyeNoise(bt,sg){
-  const r=rcResp(bt), y0=(bits,t)=>bits.reduce((s,b,k)=>s+(b?1:-1)*r(t-k),0);
-  const a=ax1({h:290,xr:[-1,2.3],yr:[-2.9,2.9],xlabel:'t/T_b',ylabel:'y(t)',xticksOverride:[-1,-0.5,0,0.5,1],ytarget:4});
+  const y0=(bits,t)=>gTrain(bits,bt)(t);
+  const a=ax1({h:290,xr:[-1,2.3],yr:[-2.9,2.9],xlabel:'(t-t_k)/T_b',ylabel:'y(t)',xticksOverride:[-1,-0.5,0,0.5,1],ytarget:4});
   a.raw('<g opacity="0.45">');
-  EYE_P.forEach((bits,j)=>{ const pts=[]; for(let i=0;i<=90;i++){ const u=-1+2*i/90, t=6+u;
+  EYE_P.forEach((bits,j)=>{ const pts=[]; for(let i=0;i<=90;i++){ const u=-1+2*i/90, t=3+u;
     pts.push([u,y0(bits,t)+sg*EYE_W[j](t)]); } a.poly(pts,{color:C.out,width:1.05}); });
   a.raw('</g>');
   a.vline(0,{color:C.muted});
   a.vline(1.08,{color:C.muted});
   let y1m=Infinity, y0m=-Infinity;
-  EYE_P.forEach((bits,j)=>{ const y=y0(bits,6)+sg*EYE_W[j](6); if(bits[5]) y1m=Math.min(y1m,y); else y0m=Math.max(y0m,y); });
+  EYE_P.forEach((bits,j)=>{ const y=y0(bits,3)+sg*EYE_W[j](3); if(bits[3]) y1m=Math.min(y1m,y); else y0m=Math.max(y0m,y); });
   if(y1m>y0m){ const x=0.07;
     a.poly([[x,y0m],[x,y1m]],{color:C.mid,width:2.4});
     a.poly([[x-0.035,y0m],[x+0.035,y0m]],{color:C.mid,width:2.4}); a.poly([[x-0.035,y1m],[x+0.035,y1m]],{color:C.mid,width:2.4});
     a.note(-0.95,2.55,`\\text{eye opening}=${(y1m-y0m).toFixed(2)}`,{tex:true,fs:14,color:C.mid});
   } else { a.rect(-0.12,y1m,0.12,y0m,{fill:C.err}); a.note(-0.95,2.55,'\\text{eye closed}',{tex:true,fs:14,color:C.err}); }
   const NB=44, lo=-2.2, hi=2.2, ok=Array(NB).fill(0), bad=Array(NB).fill(0); let ne=0;
-  EYE_P.forEach((bits,j)=>{ const s0=y0(bits,6), one=bits[5]===1;
+  EYE_P.forEach((bits,j)=>{ const s0=y0(bits,3), one=bits[3]===1;
     for(let d=0;d<8;d++){ const y=s0+sg*EYE_Z[j*8+d], k=Math.max(0,Math.min(NB-1,Math.floor((y-lo)/(hi-lo)*NB)));
       if((y>0)===one) ok[k]++; else { bad[k]++; ne++; } } });
   const top=Math.max(40,...ok.map((c,k)=>c+bad[k])), X0=1.14, L=1.1/top, bw=(hi-lo)/NB;
@@ -2266,42 +2283,50 @@ window.C2 = [
 
 {t:'h3', text:'The eye diagram'},
 {t:'p', text:'An <b>eye diagram</b> shows the interference of every bit pattern at once. Cut the received waveform into pieces $2T_b$ long, centred on the sampling instants $t_k$, and draw them all on one axis. An oscilloscope triggered by the bit clock does this.'},
-{t:'p', text:'Each piece shows one bit with its neighbours and their tails. Once every pattern has passed, the eye shows the best and the worst case together. A wider channel leaves smaller tails, so the band of traces at the sampling instant gets thinner.'},
-{t:'fig', svg:()=>figEyeScope(),
- cap:'How the eye is built, for the RC channel with $BT_b=0.3$. Above, the received waveform around one sampling instant $t_k$, with the window $2T_b$ wide that cuts one piece (violet). Below, the pieces cut at $32$ sampling instants of a stream that holds every five-bit pattern.', short:'How the eye diagram is built.'},
+{t:'p', text:'The RC channel turns each bit edge into a sharp corner and a slow tail, so its eye leans to one side. For the eye diagrams of this section the channel is a <b>Gaussian lowpass filter</b> of 3 dB bandwidth $B$. It rounds every edge into a smooth S-curve, the same on the rise and the fall, so the eye comes out symmetric.'},
+{t:'p', text:'Its impulse response is a Gaussian bell of width $\\sigma$. A bit of amplitude $1$ on $[-T_b/2,\\,T_b/2]$ comes out as the bell summed over the bit.'},
+{t:'eqbox', cap:'Gaussian channel', tex:'\\begin{aligned}\\sigma&=\\frac{\\sqrt{\\ln 2}}{2\\pi B}\\\\p(t)&=Q\\!\\left(\\frac{t-T_b/2}{\\sigma}\\right)-Q\\!\\left(\\frac{t+T_b/2}{\\sigma}\\right)\\end{aligned}',
+ after:'$Q(x)$ is the Gaussian tail probability. The bit is sampled at its centre, $t=0$.'},
+{t:'p', text:'At the centre the pulse is $p(0)=Q(-a)-Q(a)=1-2Q(a)$, with $a=T_b/(2\\sigma)$. Name the share that leaks past one edge $q$.'},
+{t:'eqbox', cap:'Leak past one edge', tex:'\\begin{aligned}q&=Q\\!\\left(\\frac{T_b}{2\\sigma}\\right)=Q\\!\\left(\\frac{\\pi BT_b}{\\sqrt{\\ln 2}}\\right)\\\\p(0)&=1-2q\\end{aligned}',
+ after:'The bit keeps $1-2q$ of its own sample. The rest, $q$ on each side, lands on its neighbours.'},
+{t:'p', text:'Each piece of the eye holds the sampled bit and half of each neighbour. Three bits give eight patterns. The line before and after a pattern holds its outer bits, so the eight pieces already show the best and the worst case.'},
+{t:'fig', svg:()=>figEyePatterns(),
+ cap:'How the eye is built, for the Gaussian channel with $BT_b=0.5$. Left, the eight patterns of three bits, each with the window $2T_b$ wide around $t_k$ shaded. Right, the eight pieces laid on one axis make the eye.', short:'How the eye diagram is built.'},
+{t:'p', text:'A wider channel rounds the edges less. Less of each bit leaks into its neighbours, so the band of traces at the sampling instant gets thinner.'},
 
 {t:'h3', text:'Reading the eye'},
-{t:'p', text:'An eye diagram is read at a few places. The current bit fills $[-T_b,0]$ and is sampled at $t=0$, where the eye is widest.'},
+{t:'p', text:'An eye diagram is read at a few places. The bit is sampled at its centre $t=t_k$, where the eye is widest.'},
 {t:'ul', items:[
  '<b>Best sampling time.</b> The instant where the eye is most open.',
  '<b>Margin over noise.</b> The vertical gap at the best sampling time. Noise smaller than half of it cannot cause an error.',
- '<b>Distortion at the sampling time.</b> The thickness of the band of traces there. For the RC channel the levels of a $1$ run from $1-2q$ to $1$, so the band is $2q$ thick.',
+ '<b>Distortion at the sampling time.</b> The thickness of the band of traces there. For the Gaussian channel the levels of a $1$ run from $1-4q$ to $1$, so the band is $4q$ thick.',
  '<b>Zero crossings.</b> The traces cross zero at different times. The spread is the timing jitter that the bit clock must tolerate. The gap between the inner crossings is the window in which a sample still decides correctly.',
  '<b>Timing sensitivity.</b> The slope of the sides of the eye. A steep side means a small timing error costs a lot of margin.'
 ]},
-{t:'eqbox', cap:'Opening', tex:'\\min_{\\text{patterns}}|y_k|=(1-q)-q=1-2q,\\qquad\\text{opening}=2(1-2q)',
- after:'The worst pattern has every earlier bit opposite to the current one. For $BT_b=0.3$, $q=e^{-0.6\\pi}=0.152$, so the opening is $2(1-2q)=2(0.696)=1.39$.'},
+{t:'p', text:'The worst pattern has every other bit opposite to the sampled one. The leaks of all the bits on one side add up to $q$, because together they fill one half-line. Both sides together take $2q$.'},
+{t:'eqbox', cap:'Opening', tex:'\\begin{aligned}\\min_{\\text{patterns}}|y_k|&=(1-2q)-2q=1-4q\\\\\\text{opening}&=2(1-4q)\\end{aligned}',
+ after:'For $BT_b=0.5$, $q=Q(0.5\\pi/\\sqrt{\\ln 2})=Q(1.887)=0.030$, so the opening is $2(1-4q)=2(0.882)=1.76$.'},
 {t:'fig', svg:()=>figEyeRead(),
- cap:'The eye of the RC channel with $BT_b=0.3$, from $128$ bit patterns. Its readings are the best sampling time, the noise margin, the distortion at $t=0$, the zero-crossing spread, the sampling window and the timing sensitivity.', short:'Reading the eye diagram.'},
+ cap:'The eye of the Gaussian channel with $BT_b=0.5$, from $128$ bit patterns. Its readings are the best sampling time, the noise margin, the distortion at $t=0$, the zero-crossing spread, the sampling window and the timing sensitivity.', short:'Reading the eye diagram.'},
 
 {t:'h3', text:'Eye closure'},
-{t:'p', text:'A narrower channel closes the eye. It is fully closed when the opening reaches zero. Set $1-2q=0$ and take logarithms.'},
-{t:'eqbox', cap:'Closure', big:true, tex:'\\begin{aligned}1-2q&=0\\\\e^{-2\\pi BT_b}&=\\tfrac12\\\\BT_b&=\\frac{\\ln2}{2\\pi}=0.110\\end{aligned}',
- after:'Below $BT_b=0.110$ some patterns cross zero at the sampling instant, and decisions fail with no noise at all. At $BT_b=0.1$, $q=e^{-0.2\\pi}=0.533>0.5$, so $1-2q=-0.067<0$ and the eye is closed.'},
-{t:'box', kind:'ok', hd:'Noise margin', html:'Noise must move a sample by more than $1-2q$ to cause an error. A half-closed eye halves the margin, which costs $6$ dB of SNR.'},
+{t:'p', text:'A narrower channel closes the eye. It is fully closed when the opening reaches zero. Set $1-4q=0$ and read the argument of $Q$ from a table.'},
+{t:'eqbox', cap:'Closure', big:true, tex:'\\begin{aligned}1-4q&=0\\\\Q\\!\\left(\\frac{\\pi BT_b}{\\sqrt{\\ln 2}}\\right)&=\\tfrac14\\\\\\frac{\\pi BT_b}{\\sqrt{\\ln 2}}&=0.674\\\\BT_b&=\\frac{0.674\\sqrt{\\ln 2}}{\\pi}=0.179\\end{aligned}',
+ after:'Below $BT_b=0.179$ some patterns cross zero at the sampling instant, and decisions fail with no noise at all. At $BT_b=0.15$, $q=Q(0.566)=0.286>0.25$, so $1-4q=-0.14<0$ and the eye is closed.'},
+{t:'box', kind:'ok', hd:'Noise margin', html:'Noise must move a sample by more than $1-4q$ to cause an error. A half-closed eye halves the margin, which costs $6$ dB of SNR.'},
 {t:'box', kind:'err', hd:'Common error', html:'Use the worst pattern, not a typical one. A random stream may run for a long time before it shows the pattern that closes the eye.'},
-{t:'fig', svg:()=>figEyeClose(0.15),
- cap:'The eye at $BT_b=0.15$, where $q=0.390$ and the opening has shrunk to $0.441$. Below $BT_b=0.110$ the eye is closed.'},
+{t:'fig', svg:()=>figEyeClose(0.25),
+ cap:'The eye of the Gaussian channel at $BT_b=0.25$, where $q=0.173$ and the opening has shrunk to $0.618$. Below $BT_b=0.179$ the eye is closed.'},
 
 {t:'h3', text:'Noise on the eye'},
 {t:'p', text:'A real sample carries noise as well as interference. Each sample then has three parts.'},
-{t:'eqbox', cap:'One sample', tex:'y_k=\\underbrace{a_k(1-q)}_{\\text{own bit}}+\\underbrace{\\text{ISI}_k}_{\\text{earlier bits}}+\\underbrace{n_k}_{\\text{noise}}',
+{t:'eqbox', cap:'One sample', tex:'y_k=\\underbrace{a_k(1-2q)}_{\\text{own bit}}+\\underbrace{\\text{ISI}_k}_{\\text{other bits}}+\\underbrace{n_k}_{\\text{noise}}',
  after:'Interference moves each sample to one of a few levels. Noise then spreads every level into a bell.'},
-{t:'box', kind:'warn', hd:'Worst pattern', html:'The levels nearest zero fail first. Their margin is $1-2q$, not $1-q$, so a half-closed eye needs much less noise to fail.'},
-{t:'p', text:'As the noise grows from zero, the worst-pattern samples cross zero first. At $BT_b=0.3$ they sit at $\\pm(1-2q)=\\pm0.70$, the levels closest to the threshold.'},
-{t:'fig', svg:()=>figEyeNoise(0.3,0.2),
- cap:'The eye at $BT_b=0.3$ with noise of standard deviation $\\sigma=0.2$. The violet bracket is the opening the traces leave at $t=0$. The bars at the right count $1024$ samples taken at $t=0$, red ones on the wrong side of zero.'},
-
+{t:'box', kind:'warn', hd:'Worst pattern', html:'The levels nearest zero fail first. Their margin is $1-4q$, not $1-2q$, so a half-closed eye needs much less noise to fail.'},
+{t:'p', text:'As the noise grows from zero, the worst-pattern samples cross zero first. At $BT_b=0.5$ they sit at $\\pm(1-4q)=\\pm0.88$, the levels closest to the threshold.'},
+{t:'fig', svg:()=>figEyeNoise(0.5,0.2),
+ cap:'The eye of the Gaussian channel at $BT_b=0.5$ with noise of standard deviation $\\sigma=0.2$. The violet bracket is the opening the traces leave at $t=0$. The bars at the right count $1024$ samples taken at $t=0$, red ones on the wrong side of zero.'},
 {t:'h3', text:'Intersymbol interference around us'},
 {t:'p', text:'Intersymbol interference appears in cables, radio echoes and optical fibre.'},
 {t:'ul', items:[
@@ -2546,7 +2571,7 @@ window.C2 = [
  ['What is $Q(x)$?','The Gaussian tail $Q(x)$, the chance that a unit Gaussian exceeds $x$.','PS CH8.3.3'],
  ['What is $P_b$ for polar signalling?','$P_b=Q\\bigl(\\sqrt{2E_b/N_0}\\bigr)$ with equal priors and a matched filter.','PS CH8.3.3'],
  ['How much interference does an RC channel add?','A bit $m$ bits back adds $(1-q)q^{m}$, with $q=e^{-2\\pi BT_b}$. The worst case totals $q$.','PS CH10.1.1'],
- ['When does the eye close?','The opening is $2(1-2q)$. It closes at $BT_b=\\ln2/(2\\pi)=0.110$, and errors then occur without noise.','&mdash;'],
+ ['When does the eye close?','For the Gaussian channel the opening is $2(1-4q)$, with $q=Q(\\pi BT_b/\\sqrt{\\ln 2})$. It closes at $BT_b=0.179$, and errors then occur without noise.','&mdash;'],
  ['What is Nyquist\'s criterion?','$p(kT_b)=\\delta[k]$ exactly when $\\sum_nP(f-nR_b)=T_b$. It needs $B_T\\ge R_b/2$.','PS CH10.3.1'],
  ['What bandwidth does a raised cosine need?','$B_T=\\tfrac{R_b}{2}(1+\\alpha)$. The tails fall as $1/|t|^{3}$ for $\\alpha>0$.','PS CH10.3.1']
 ]},

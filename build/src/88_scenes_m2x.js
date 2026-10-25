@@ -60,21 +60,31 @@ const rcSpec = (f, al) => { const u = Math.abs(f), f1 = 1-al;
 const simpson = (f, a, b, n=400) => { if(b<=a) return 0; const h=(b-a)/n; let s=f(a)+f(b);
   for(let i=1;i<n;i++) s += (i%2?4:2)*f(a+i*h); return s*h/3; };
 
-/* ---- 2.4 Noise on the eye -----------------------------------------------
-   The 128 seven-bit patterns of the eye in 2.4, each drawn once with its own
-   noise. The histogram takes eight noise values a pattern, 1024 samples at
-   the sampling instant. The noise is seeded, so a setting of the sliders is
-   always the same figure. */
+/* ---- 2.5 Noise on the eye -----------------------------------------------
+   The 128 seven-bit patterns of the eye in 2.5, each drawn once with its own
+   noise, through the Gaussian channel of the eye slides: bit k on
+   [k-1/2, k+1/2] comes out as Q((t-k-1/2)/sigma) - Q((t-k+1/2)/sigma) with
+   sigma = sqrt(ln 2)/(2 pi B T_b), and the line holds the outer bits beyond
+   the pattern. The fourth bit is sampled at its centre, t = 3. The histogram
+   takes eight noise values a pattern, 1024 samples at the sampling instant.
+   The noise is seeded, so a setting of the sliders is always the same
+   figure. */
+function erfc(x){ const z=Math.abs(x), t=1/(1+0.5*z);
+  const r=t*Math.exp(-z*z-1.26551223+t*(1.00002368+t*(0.37409196+t*(0.09678418+t*(-0.18628806
+    +t*(0.27886807+t*(-1.13520398+t*(1.48851587+t*(-0.82215223+t*0.17087277)))))))));
+  return x>=0 ? r : 2-r; }
+const Qf = x => 0.5*erfc(x/Math.SQRT2);
 const EYE_P = [...Array(128)].map((_,j)=>{ const p=(j*37+45)%128, b=[]; for(let k=0;k<7;k++) b.push((p>>k)&1); return b; });
-const EYE_W = EYE_P.map((_,j)=>noiseFn(20260960+j, 0.3, 1, 3, 9));
+const EYE_W = EYE_P.map((_,j)=>noiseFn(20260960+j, 0.3, 1, 1, 5));
 const EYE_Z = gauss(20260951, 1024, 1);
 function figEyeNoise(v){
-  const bt = val(v,'bt',0.3), sg = val(v,'sg',0.2), r = rcResp(bt);
-  const y0 = (bits, t) => bits.reduce((s,b,k)=>s+(b?1:-1)*r(t-k), 0);
+  const bt = val(v,'bt',0.5), sg = val(v,'sg',0.2), s = Math.sqrt(Math.LN2)/(2*Math.PI*bt);
+  const y0 = (bits, t) => bits.reduce((y,b,k)=>y+(b?1:-1)*(Qf((t-k-0.5)/s)-Qf((t-k+0.5)/s)),
+    (bits[0]?1:-1)*Qf((t+0.5)/s) + (bits[6]?1:-1)*(1-Qf((t-6.5)/s)));
   const a = P.Axes(SZ({xr:[-1,2.3], yr:[-2.9,2.9], xlabel:'t', xunit:'T_b', ylabel:'y(t)',
     xticksOverride:[-1,-0.5,0,0.5,1], ytarget:4}));
   a.raw('<g opacity="0.45">');
-  EYE_P.forEach((bits,j)=>{ const pts=[]; for(let i=0;i<=90;i++){ const u=-1+2*i/90, t=6+u;
+  EYE_P.forEach((bits,j)=>{ const pts=[]; for(let i=0;i<=90;i++){ const u=-1+2*i/90, t=3+u;
     pts.push([u, y0(bits,t)+sg*EYE_W[j](t)]); } a.poly(pts, {color:C.out, width:1.05}); });
   a.raw('</g>');
   a.vline(0, {color:C.muted});
@@ -83,7 +93,7 @@ function figEyeNoise(v){
      the highest trace of a 0. Noise eats it from both sides; once the two
      cross, the band between them is red and the eye is closed. */
   let y1m = Infinity, y0m = -Infinity;
-  EYE_P.forEach((bits,j)=>{ const y = y0(bits,6)+sg*EYE_W[j](6); if(bits[5]) y1m = Math.min(y1m, y); else y0m = Math.max(y0m, y); });
+  EYE_P.forEach((bits,j)=>{ const y = y0(bits,3)+sg*EYE_W[j](3); if(bits[3]) y1m = Math.min(y1m, y); else y0m = Math.max(y0m, y); });
   if(y1m > y0m){ const x = 0.07;
     a.poly([[x,y0m],[x,y1m]], {color:C.mid, width:2.6});
     a.poly([[x-0.035,y0m],[x+0.035,y0m]], {color:C.mid, width:2.6}); a.poly([[x-0.035,y1m],[x+0.035,y1m]], {color:C.mid, width:2.6});
@@ -95,7 +105,7 @@ function figEyeNoise(v){
   /* the samples at the sampling instant, as a histogram on its side: each bar
      is one bin of y_k, on the same vertical axis as the eye */
   const NB = 44, lo = -2.2, hi = 2.2, ok = Array(NB).fill(0), bad = Array(NB).fill(0); let ne = 0;
-  EYE_P.forEach((bits,j)=>{ const s0 = y0(bits,6), one = bits[5]===1;
+  EYE_P.forEach((bits,j)=>{ const s0 = y0(bits,3), one = bits[3]===1;
     for(let d=0;d<8;d++){ const y = s0 + sg*EYE_Z[j*8+d], k = Math.max(0, Math.min(NB-1, Math.floor((y-lo)/(hi-lo)*NB)));
       if((y>0)===one) ok[k]++; else { bad[k]++; ne++; } } });
   const top = Math.max(40, ...ok.map((c,k)=>c+bad[k])), X0 = 1.14, L = 1.1/top, bw = (hi-lo)/NB;
@@ -258,19 +268,19 @@ const SC = [
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true,
       live:{controls:[
-        {k:'bt', label:'$BT_b$', min:0.12, max:0.6, step:0.01, v:0.3, show:v=>'$'+v.toFixed(2)+'$'},
+        {k:'bt', label:'$BT_b$', min:0.15, max:0.8, step:0.01, v:0.5, show:v=>'$'+v.toFixed(2)+'$'},
         {k:'sg', label:'$\\sigma$', min:0, max:0.6, step:0.01, v:0.2, show:v=>'$'+v.toFixed(2)+'$'}]},
       svg:figEyeNoise,
-      caption:'Drag the noise $\\sigma$ and the bandwidth $BT_b$. The violet bracket is the opening left at $t=0$. It turns red when the eye closes. The bars at the right count $1024$ samples taken at $t=0$, red ones on the wrong side of zero.'}
+      caption:'Drag the noise $\\sigma$ and the bandwidth $BT_b$ of the Gaussian channel. The violet bracket is the opening left at $t=0$. It turns red when the eye closes. The bars at the right count $1024$ samples taken at $t=0$, red ones on the wrong side of zero.'}
   ], right:[
-    {t:'eq', label:'One sample', tex:'y_k=\\underbrace{a_k(1-q)}_{\\text{own bit}}+\\underbrace{\\text{ISI}_k}_{\\text{earlier bits}}+\\underbrace{n_k}_{\\text{noise}}',
+    {t:'eq', label:'One sample', tex:'y_k=\\underbrace{a_k(1-2q)}_{\\text{own bit}}+\\underbrace{\\text{ISI}_k}_{\\text{other bits}}+\\underbrace{n_k}_{\\text{noise}}',
       note:'Interference moves each sample to one of a few levels. Noise then spreads every level into a bell.'},
     {t:'reveal', at:1, items:[
-      {t:'note', kind:'warn', head:'Worst pattern', html:'The levels nearest zero fail first. Their margin is $1-2q$, not $1-q$, so a half-closed eye needs much less noise to fail.'}]},
+      {t:'note', kind:'warn', head:'Worst pattern', html:'The levels nearest zero fail first. Their margin is $1-4q$, not $1-2q$, so a half-closed eye needs much less noise to fail.'}]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'def', head:'Given', html:'$BT_b=0.3$ and the noise grows slowly from zero.<div class="nsep"></div>Which samples cross zero first?',
+      {t:'note', kind:'def', head:'Given', html:'$BT_b=0.5$ and the noise grows slowly from zero.<div class="nsep"></div>Which samples cross zero first?',
         ask:{key:'m2-eye-noise', choices:['the worst-pattern samples','all samples equally','the samples with no interference'], answer:0,
-          why:'They sit at $\\pm(1-2q)=\\pm0.70$, the closest level to the threshold.'}}]}
+          why:'They sit at $\\pm(1-4q)=\\pm0.88$, the closest level to the threshold.'}}]}
   ]}
 ]},
 
