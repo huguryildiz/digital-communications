@@ -88,7 +88,8 @@ CONTENT.SECTIONS = {
     { n:'2.4', title:'The decision and its error',     ids:[
         'm2-stat','m2-errors','m2-threshold','m2-threshold-b','m2-q','m2-pe','m2-ex-pe','m2-ex-pe-b','m2-real-decision','m2-lab-d','m2-code-decision'] },
     { n:'2.5', title:'Intersymbol interference',       ids:[
-        'm2-isi','m2-isi-term','m2-ex-isi','m2-eye','m2-eye-close','m2-eye-noise','m2-real-isi','m2-lab-q','m2-code-isi'] },
+        'm2-isi-link','m2-isi-tx','m2-isi-channel','m2-isi','m2-isi-sample','m2-isi-term','m2-ex-isi',
+        'm2-eye','m2-eye-read','m2-eye-close','m2-eye-noise','m2-real-isi','m2-lab-q','m2-code-isi'] },
     { n:'2.6', title:'Nyquist and the raised cosine',  ids:[
         'm2-nyq-sinc','m2-nyquist','m2-nyq-channel','m2-sinc-timing','m2-rcos','m2-rcos-pulse','m2-ex-rc','m2-srrc','m2-real-nyquist','m2-lab-e','m2-code-nyquist'] },
     { n:'2.7', title:'The link in practice',           ids:['m2-equalizer','m2-timing','m2-psd','m2-repeater'] },
@@ -247,6 +248,7 @@ CONTENT.BOOK = {
   'm2-demod-noise-hist':'8.3.1', 'm2-demod-ppm':'8.3.1', 'm2-real-demod':'8.3.1', 'm2-lab-p':'8.3.1',
   'm2-stat':'8.3.3', 'm2-errors':'8.3.3', 'm2-threshold':'8.3.3', 'm2-threshold-b':'8.3.3', 'm2-q':'8.3.3', 'm2-pe':'8.3.3',
   'm2-ex-pe':'8.3.3', 'm2-ex-pe-b':'8.3.3', 'm2-real-decision':'8.3.3', 'm2-lab-d':'8.3.3',
+  'm2-isi-link':'10.1.1', 'm2-isi-tx':'10.1.1', 'm2-isi-channel':'10.1.1', 'm2-isi-sample':'10.1.1',
   'm2-isi':'10.1.1', 'm2-isi-term':'10.1.1', 'm2-ex-isi':'10.1.1', 'm2-real-isi':'10.1.1', 'm2-lab-q':'10.1.1',
   'm2-nyq-sinc':'10.3.1', 'm2-nyquist':'10.3.1', 'm2-nyq-channel':'10.3.1', 'm2-sinc-timing':'10.3.1',
   'm2-rcos':'10.3.1', 'm2-rcos-pulse':'10.3.1', 'm2-ex-rc':'10.3.1', 'm2-real-nyquist':'10.3.1', 'm2-lab-e':'10.3.1',

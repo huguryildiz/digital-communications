@@ -79,6 +79,19 @@ function figEyeNoise(v){
   a.raw('</g>');
   a.vline(0, {color:C.muted});
   a.vline(1.08, {color:C.muted});
+  /* the opening the traces leave at t = 0: the lowest trace of a 1 against
+     the highest trace of a 0. Noise eats it from both sides; once the two
+     cross, the band between them is red and the eye is closed. */
+  let y1m = Infinity, y0m = -Infinity;
+  EYE_P.forEach((bits,j)=>{ const y = y0(bits,6)+sg*EYE_W[j](6); if(bits[5]) y1m = Math.min(y1m, y); else y0m = Math.max(y0m, y); });
+  if(y1m > y0m){ const x = 0.07;
+    a.poly([[x,y0m],[x,y1m]], {color:C.mid, width:2.6});
+    a.poly([[x-0.035,y0m],[x+0.035,y0m]], {color:C.mid, width:2.6}); a.poly([[x-0.035,y1m],[x+0.035,y1m]], {color:C.mid, width:2.6});
+    a.note(-0.95, 2.55, `\\text{eye opening}=${(y1m-y0m).toFixed(2)}`, {tex:true, fs:14, color:C.mid});
+  } else {
+    a.rect(-0.12, y1m, 0.12, y0m, {fill:C.err});
+    a.note(-0.95, 2.55, '\\text{eye closed}', {tex:true, fs:14, color:C.err});
+  }
   /* the samples at the sampling instant, as a histogram on its side: each bar
      is one bin of y_k, on the same vertical axis as the eye */
   const NB = 44, lo = -2.2, hi = 2.2, ok = Array(NB).fill(0), bad = Array(NB).fill(0); let ne = 0;
@@ -248,7 +261,7 @@ const SC = [
         {k:'bt', label:'$BT_b$', min:0.12, max:0.6, step:0.01, v:0.3, show:v=>'$'+v.toFixed(2)+'$'},
         {k:'sg', label:'$\\sigma$', min:0, max:0.6, step:0.01, v:0.2, show:v=>'$'+v.toFixed(2)+'$'}]},
       svg:figEyeNoise,
-      caption:'Drag the noise $\\sigma$ and the bandwidth $BT_b$. The bars at the right count $1024$ samples taken at $t=0$. Violet ones fall on the correct side of zero, red ones on the wrong side.'}
+      caption:'Drag the noise $\\sigma$ and the bandwidth $BT_b$. The violet bracket is the opening left at $t=0$. It turns red when the eye closes. The bars at the right count $1024$ samples taken at $t=0$, red ones on the wrong side of zero.'}
   ], right:[
     {t:'eq', label:'One sample', tex:'y_k=\\underbrace{a_k(1-q)}_{\\text{own bit}}+\\underbrace{\\text{ISI}_k}_{\\text{earlier bits}}+\\underbrace{n_k}_{\\text{noise}}',
       note:'Interference moves each sample to one of a few levels. Noise then spreads every level into a bell.'},

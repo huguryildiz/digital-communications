@@ -1334,6 +1334,8 @@ CHECKS: list[dict] = [
      "derive": lambda: 1 - _m2_rc_samples([1], 0.25, hist=0)[0], "tol": 5e-3},
     {"name": "2.4.1 one bit reaches 1 - q", "stated": 0.792,
      "derive": lambda: _m2_rc_samples([1], 0.25, hist=0)[0], "tol": 5e-3},
+    {"name": "2.4.2 previous +1 bit adds mu p(T_b) = (1-q) q at BTb = 0.25", "stated": 0.165,
+     "derive": lambda: (_m2_rc_samples([1, 0], 0.25, hist=0)[1] - _m2_rc_samples([0, 0], 0.25, hist=0)[1]) / 2, "tol": 5e-3},
     {"name": "2.4.2 a 1 after a long run of 0s", "stated": 0.584,
      "derive": lambda: _m2_rc_samples([0, 0, 0, 1], 0.25)[3], "tol": 5e-3},
     {"name": "2.4.3 the seventh sample of 0 0 0 1 1 1 0 1", "stated": -0.588,

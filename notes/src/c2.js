@@ -949,11 +949,84 @@ function rcTrain(bits,bt,hist=0){ const r=rcResp(bt), tau=1/(2*Math.PI*bt);
 const nrz=(bits,hist=0)=>t=>{ const k=Math.floor(t); return k<0?hist:k<bits.length?(bits[k]?1:-1):0; };
 
 const ISI_B=[1,1,0,1,0,0];
+const bitDigits=(a,bits,y)=>bits.forEach((b,k)=>a.note(k+0.5,y,String(b),{fs:13,color:C.ink,anchor:'middle',weight:600}));
+/* the baseband link as a block diagram, as on the slide */
+function figIsiLink(){
+  const yc=44, bh=42, by=yc-bh/2;
+  return P.blocks({w:600,h:116,items:[
+    {t:'arrow',x1:4,y1:yc,x2:34,y2:yc,label:'b_k',tex:true,color:C.ink},
+    {t:'box',x:34,y:by,w:66,h:bh,label:'PAM',fs:15},
+    {t:'arrow',x1:100,y1:yc,x2:140,y2:yc,label:'a_k',tex:true,color:C.in},
+    {t:'box',x:140,y:by,w:60,h:bh,label:'g(t)',tex:true},
+    {t:'arrow',x1:200,y1:yc,x2:238,y2:yc,label:'s(t)',tex:true,color:C.in},
+    {t:'box',x:238,y:by,w:60,h:bh,label:'h(t)',tex:true,color:C.h},
+    {t:'arrow',x1:298,y1:yc,x2:332,y2:yc,label:'x(t)',tex:true,color:C.out},
+    {t:'sum',x:346,y:yc},
+    {t:'arrow',x1:346,y1:96,x2:346,y2:yc+16,color:C.muted},
+    {t:'text',x:336,y:104,label:'w(t)',tex:true,anchor:'end',fs:14},
+    {t:'arrow',x1:360,y1:yc,x2:376,y2:yc},
+    {t:'box',x:376,y:by,w:56,h:bh,label:'c(t)',tex:true},
+    {t:'arrow',x1:432,y1:yc,x2:466,y2:yc,label:'y(t)',tex:true,color:C.out},
+    {t:'line',d:`M466,${yc} l16,-12`},
+    {t:'text',x:478,y:yc+26,label:'t_i',tex:true,fs:14},
+    {t:'arrow',x1:490,y1:yc,x2:528,y2:yc,label:'y(t_i)',tex:true,color:C.mid},
+    {t:'box',x:528,y:by,w:68,h:bh,label:'Decide',fs:14},
+    {t:'text',x:170,y:86,label:'transmit filter',fs:12},
+    {t:'text',x:268,y:86,label:'channel',fs:12},
+    {t:'text',x:404,y:86,label:'receive filter',fs:12}]});
+}
+/* the pulses a_k g(t - kT_b) and their sum s(t) */
+function figIsiTx(){
+  const a=ax1({h:230,xr:[-0.4,6.6],yr:[-1.5,1.95],xlabel:'t/T_b',ylabel:'s(t)',xticksOverride:[0,1,2,3,4,5,6],yticksOverride:[-1,0,1]});
+  bitDigits(a,ISI_B,1.62);
+  ISI_B.forEach((b,k)=>{ const s=b?1:-1; a.rect(k,0,k+1,s,{fill:C.dec.in});
+    a.poly([[k,0],[k,s],[k+1,s],[k+1,0]],{color:C.in,width:1.4,dash:'5 4'}); });
+  a.curve(t=>t<0||t>=6?0:(ISI_B[Math.floor(t)]?1:-1),{color:C.in,width:2.6,n:1400});
+  return a.svg();
+}
+/* the convolution at t = 4T_b, above in u, and the whole output below */
+function figIsiConv(){
+  const bt=0.25, tc=1/(2*Math.PI*bt), hr=u=>u<0?0:Math.exp(-u/tc)/tc, sF=nrz(ISI_B), x=rcTrain(ISI_B,bt), t=4;
+  const a=ax1({h:200,xr:[-0.4,6.6],yr:[-1.5,1.9],xlabel:'u/T_b',ylabel:'s(u),\\ h(t-u)',xticksOverride:[0,1,2,3,4,5,6],yticksOverride:[-1,0,1]});
+  a.curve(sF,{color:C.in,width:1.6,dash:'5 5',n:1400});
+  const pr=u=>sF(u)*hr(t-u);
+  a.area(u=>u<=t?pr(u):0,-0.4,t,{color:C.dec.mid,n:600}); a.area(u=>u<=t?pr(u):0,-0.4,t,{color:C.dec.mid,n:600});
+  a.curve(u=>u<=t?pr(u):NaN,{color:C.mid,width:1.5,n:900});
+  a.curve(u=>hr(t-u),{color:C.h,width:2.4,n:900});
+  a.vline(t,{color:C.h,opacity:0.8});
+  const b=ax1({h:200,xr:[-0.4,6.6],yr:[-1.5,1.9],xlabel:'t/T_b',ylabel:'x(t)',xticksOverride:[0,1,2,3,4,5,6],yticksOverride:[-1,0,1]});
+  b.curve(sF,{color:C.in,width:1.4,dash:'5 5',opacity:0.8,n:1400});
+  b.curve(u=>u<0?0:x(u),{color:C.out,width:2.6,n:1400});
+  b.point(t,x(t),{color:C.mid,r:5});
+  return stack(700,[[a.svg(),200],[b.svg(),200]]);
+}
+/* one sample taken apart: the bits 0 1 0 1 1, sampled at t_i = 5T_b; the
+   waterfall on the right builds y(t_i) from the own bit, the interference of
+   each earlier bit, and a noise value -0.1 */
+const SMP_B=[0,1,0,1,1], SMP_N=-0.1;
+function figIsiSample(){
+  const bt=0.25, q=rcq(bt), r=rcResp(bt), amp=SMP_B.map(b=>b?1:-1), y=rcTrain(SMP_B,bt);
+  const a=P.Axes({w:470,h:250,xr:[-0.6,5.6],yr:[-1.6,2.1],xlabel:'t/T_b',ylabel:'y(t)',pad:{l:52,r:12,t:20,b:40},xticksOverride:[0,1,2,3,4,5],yticksOverride:[-1,0,1]});
+  bitDigits(a,SMP_B,1.62);
+  a.curve(t=>t<0?0:y(t),{color:C.out,width:2.2,opacity:0.45,n:1200});
+  a.vline(5,{color:C.ink,dash:'6 4',opacity:0.9}); a.note(4.92,-1.42,'t_i',{tex:true,fs:14,color:C.ink,anchor:'end'});
+  [0,1,2,3].forEach(k=>{ a.curve(t=>amp[k]*r(t-k),{color:C.err,width:1.4,dash:'4 4',n:900}); a.point(5,amp[k]*r(5-k),{color:C.err,r:3.6}); });
+  a.curve(t=>r(t-4),{color:C.mid,width:2.4,n:900}); a.point(5,r(1),{color:C.mid,r:4.6});
+  a.point(5,y(5)+SMP_N,{color:C.out,r:5});
+  const b=P.Axes({w:230,h:250,xr:[0,4],yr:[-1.6,2.1],xlabel:'',ylabel:'',pad:{l:12,r:12,t:20,b:40},xticksOverride:[],yticksOverride:[]});
+  const col=(c,lo,hi,fill)=>{ if(Math.abs(hi-lo)>1e-4) b.rect(c+0.18,lo,c+0.82,hi,{fill}); };
+  let lev=1-q; col(0,0,lev,C.mid);
+  [3,2,1,0].forEach(k=>{ const d=amp[k]*(1-q)*Math.pow(q,4-k); col(1,lev,lev+d,C.err); lev+=d; });
+  col(2,lev,lev+SMP_N,C.noise); lev+=SMP_N; col(3,0,lev,C.out);
+  ['\\text{own}','\\text{ISI}','n','y(t_i)'].forEach((s,c)=>b.note(c+0.5,-0.32,s,{tex:true,fs:13,color:C.ink,anchor:'middle'}));
+  return `<svg viewBox="0 0 700 250" xmlns="http://www.w3.org/2000/svg" role="img">${place(a.svg(),0,0,470,250)}${place(b.svg(),470,0,230,250)}</svg>`;
+}
 function figIsiBuild(){
   const bt=0.25, r=rcResp(bt);
   const a=ax1({h:250,xr:[-0.6,7.3],yr:[-1.6,1.75],xlabel:'t/T_b',ylabel:'y(t)',
     xticksOverride:[0,1,2,3,4,5,6,7],ytarget:4});
   a.curve(nrz(ISI_B),{color:C.in,width:1.4,dash:'5 5',opacity:0.7,n:1400});
+  ISI_B.forEach((b,k)=>{ const rk=t=>(b?1:-1)*r(t-k); a.area(rk,k+1,7.3,{color:C.dec.err}); a.area(rk,k+1,7.3,{color:C.dec.err}); });
   ISI_B.forEach((b,k)=>a.curve(t=>(b?1:-1)*r(t-k),{color:C.mid,width:1.2,dash:'3 4',opacity:0.6,n:900}));
   const y=rcTrain(ISI_B,bt);
   a.curve(y,{color:C.out,width:2.6,n:1400});
@@ -1003,12 +1076,44 @@ function eyeTraces(bt,n){
     out.push(pts); }
   return out;
 }
-function figEye(){
-  const a=ax1({h:230,xr:[-1,1],yr:[-1.5,1.5],xlabel:'t/T_b',ylabel:'y(t)',xticksOverride:[-1,-0.5,0,0.5,1],ytarget:4});
-  a.raw('<g opacity="0.5">');
-  eyeTraces(0.3,128).forEach(pts=>a.poly(pts,{color:C.out,width:1.1}));
-  a.raw('</g>');
-  a.vline(0,{color:C.muted});
+/* the eye as an oscilloscope builds it: 32 bits of a de Bruijn sequence, the
+   strip around the eighth sampling instant above and all 32 pieces below */
+const EYE_DB='00000100011001010011101011011111'.split('').map(Number);
+const EYE_L=[...EYE_DB.slice(24),...EYE_DB,...EYE_DB.slice(0,2)];
+function figEyeScope(){
+  const y=rcTrain(EYE_L,0.3), tc=16;
+  const s=ax1({h:190,xr:[-3.2,3.2],yr:[-1.4,2.1],xlabel:'(t-t_k)/T_b',ylabel:'y(t)',xticksOverride:[-3,-2,-1,0,1,2,3],yticksOverride:[-1,0,1]});
+  s.rect(-1,-1.4,1,1.95,{fill:C.dec.mid});
+  s.vline(-1,{color:C.mid,opacity:0.7}); s.vline(1,{color:C.mid,opacity:0.7}); s.vline(0,{color:C.ink,dash:'6 4',opacity:0.8});
+  s.curve(u=>y(tc+u),{color:C.out,width:2.2,n:900});
+  s.curve(u=>Math.abs(u)<=1?y(tc+u):NaN,{color:C.mid,width:2.6,n:600});
+  EYE_L.forEach((b,j)=>{ const x=j+0.5-tc; if(Math.abs(x)<2.85) s.note(x,1.62,String(b),{fs:13,color:C.ink,anchor:'middle',weight:600}); });
+  const e=ax1({h:230,xr:[-1,1],yr:[-1.5,1.5],xlabel:'(t-t_k)/T_b',ylabel:'y(t)',xticksOverride:[-1,-0.5,0,0.5,1],ytarget:4});
+  e.raw('<g opacity="0.55">');
+  for(let k=1;k<=32;k++){ const pts=[]; for(let i=0;i<=100;i++){ const u=-1+2*i/100; pts.push([u,y(8+k+u)]); } e.poly(pts,{color:C.out,width:1.2}); }
+  e.raw('</g>');
+  e.vline(0,{color:C.ink,dash:'6 4',opacity:0.8});
+  return stack(700,[[s.svg(),190],[e.svg(),230]]);
+}
+/* the eye at BT_b = 0.3 with its readings, as in the last frame on the slide */
+function figEyeRead(){
+  const bt=0.3, q=rcq(bt), tau=1/(2*Math.PI*bt), h=1-2*q;
+  const a=P.Axes({w:700,h:330,xr:[-1,1],yr:[-1.6,1.9],xlabel:'t/T_b',ylabel:'y(t)',pad:{l:56,r:250,t:20,b:40},xticksOverride:[-1,0,1],yticksOverride:[-1,0,1]});
+  a.raw('<g opacity="0.5">'); eyeTraces(bt,128).forEach(pts=>a.poly(pts,{color:C.out,width:1.1})); a.raw('</g>');
+  const lab=(y,s,c)=>a.note(1.06,y,s,{tex:true,fs:13,color:c});
+  const lead=(x0,y0,y1,c)=>a.poly([[x0,y0],[1.03,y1]],{color:c,width:1.2});
+  const cap=(x,ya,yb,c)=>{ a.poly([[x,ya],[x,yb]],{color:c,width:2.2}); a.poly([[x-0.03,ya],[x+0.03,ya]],{color:c,width:2.2}); a.poly([[x-0.03,yb],[x+0.03,yb]],{color:c,width:2.2}); };
+  a.vline(0,{color:C.ink,dash:'6 4',width:1.4,opacity:1}); a.note(0.04,1.66,'\\text{best sampling time}',{tex:true,fs:13,color:C.ink});
+  cap(0.11,-h,h,C.mid); lead(0.14,0.3,0.3,C.mid); lab(0.3,'\\text{margin over noise}',C.mid);
+  cap(0.05,h,1,C.err); lead(0.08,0.85,1.25,C.err); lab(1.25,'\\text{distortion at }t=0',C.err);
+  const c0=tau*Math.log(2-2*q), c1=tau*Math.log(2);
+  [[c0,c1],[c0-1,c1-1]].forEach(([p,r])=>a.rect(p,-0.045,r,0.045,{fill:C.err}));
+  lead(c1+0.01,0,-0.42,C.err); lab(-0.42,'\\text{zero-crossing spread}',C.err);
+  a.poly([[c1-1,0.16],[c0,0.16]],{color:C.ink,width:1.5}); a.poly([[c1-1,0.07],[c1-1,0.25]],{color:C.ink,width:1.5}); a.poly([[c0,0.07],[c0,0.25]],{color:C.ink,width:1.5});
+  lead(c0+0.02,0.2,-0.9,C.ink); lab(-0.9,'\\text{sampling window}',C.ink);
+  const t0=-0.3, y0=1-2*Math.exp(-(t0+1)/tau), sl=(2/tau)*Math.exp(-(t0+1)/tau);
+  a.poly([[t0-0.16,y0-0.16*sl],[t0+0.16,y0+0.16*sl]],{color:C.ink,width:2.6});
+  lead(t0+0.17,y0+0.17*sl,0.78,C.ink); lab(0.78,'\\text{timing sensitivity}',C.ink);
   return a.svg();
 }
 function figEyeClose(bt){
@@ -1037,6 +1142,13 @@ function figEyeNoise(bt,sg){
   a.raw('</g>');
   a.vline(0,{color:C.muted});
   a.vline(1.08,{color:C.muted});
+  let y1m=Infinity, y0m=-Infinity;
+  EYE_P.forEach((bits,j)=>{ const y=y0(bits,6)+sg*EYE_W[j](6); if(bits[5]) y1m=Math.min(y1m,y); else y0m=Math.max(y0m,y); });
+  if(y1m>y0m){ const x=0.07;
+    a.poly([[x,y0m],[x,y1m]],{color:C.mid,width:2.4});
+    a.poly([[x-0.035,y0m],[x+0.035,y0m]],{color:C.mid,width:2.4}); a.poly([[x-0.035,y1m],[x+0.035,y1m]],{color:C.mid,width:2.4});
+    a.note(-0.95,2.55,`\\text{eye opening}=${(y1m-y0m).toFixed(2)}`,{tex:true,fs:14,color:C.mid});
+  } else { a.rect(-0.12,y1m,0.12,y0m,{fill:C.err}); a.note(-0.95,2.55,'\\text{eye closed}',{tex:true,fs:14,color:C.err}); }
   const NB=44, lo=-2.2, hi=2.2, ok=Array(NB).fill(0), bad=Array(NB).fill(0); let ne=0;
   EYE_P.forEach((bits,j)=>{ const s0=y0(bits,6), one=bits[5]===1;
     for(let d=0;d<8;d++){ const y=s0+sg*EYE_Z[j*8+d], k=Math.max(0,Math.min(NB-1,Math.floor((y-lo)/(hi-lo)*NB)));
@@ -1966,15 +2078,61 @@ window.C2 = [
 /* ================================================================ 2.5 === */
 {t:'h2', num:'2.5', text:'Intersymbol interference'},
 
-{t:'h3', text:'Intersymbol interference'},
+{t:'h3', text:'The baseband link'},
+{t:'p', text:'A baseband link carries bits as pulses over a wire or a cable. It has six blocks, and the signal changes its form at each one.'},
+{t:'ul', items:[
+ 'The <b>pulse-amplitude modulator</b> (PAM) turns each bit $b_k$ into an amplitude $a_k$.',
+ 'The <b>transmit filter</b> $g(t)$ sends one pulse per amplitude. Their sum is $s(t)$.',
+ 'The <b>channel</b> $h(t)$ changes the shape of the pulses, giving $x(t)$. White Gaussian noise $w(t)$ adds to it.',
+ 'The <b>receive filter</b> $c(t)$ gives $y(t)$, which is sampled once a bit, at $t_i=iT_b$.',
+ 'The <b>decision device</b> compares each sample $y(t_i)$ with a threshold and decides the bit.'
+]},
+{t:'fig', svg:()=>figIsiLink(),
+ cap:'The baseband link. Each arrow carries the name of the signal on it. The channel $h(t)$ is the block this section studies.', short:'The baseband link.'},
+{t:'p', text:'The three filters act on a pulse one after another. Their convolution is one overall filter. Its impulse response is written $\\mu\\,p(t)$, with $p(t)$ scaled so that $p(0)=1$.'},
+{t:'eqbox', cap:'Overall pulse', tex:'\\mu\\,p(t)=g(t)*h(t)*c(t)\\quad\\Longleftrightarrow\\quad\\mu\\,P(f)=G(f)\\,H(f)\\,C(f)',
+ after:'Convolution in time is multiplication in frequency, so the overall frequency response is the product of the three. $\\mu$ carries the gain of the link.'},
+{t:'eqbox', cap:'Receive-filter output', tex:'y(t)=\\mu\\sum_k a_k\\,p(t-kT_b)+n(t)',
+ after:'One copy of $p(t)$ for each bit, shifted to its slot and signed by $a_k$. $n(t)$ is the noise after the receive filter.'},
+{t:'box', kind:'def', hd:'Pulse spreading', html:'With rectangular transmit pulses, it is the channel. A bandlimited channel cannot follow the sharp edges of $s(t)$, so it smooths each pulse and gives it a tail.'},
+
+{t:'h3', text:'From bits to pulses'},
+{t:'p', text:'In polar NRZ signalling each bit sets the sign of one pulse. NRZ, non-return-to-zero, means the level holds for the whole bit.'},
+{t:'eqbox', cap:'Polar NRZ', tex:'a_k=\\begin{cases}+1, & b_k=1\\\\-1, & b_k=0\\end{cases}'},
+{t:'eqbox', cap:'Transmitted signal', tex:'s(t)=\\sum_k a_k\\,g(t-kT_b)',
+ after:'Here $g(t)$ is a rectangle of height $1$ on $[0,T_b]$. The copies sit side by side and never overlap, so at any time only the pulse of the current bit is on.'},
+{t:'fig', svg:()=>figIsiTx(),
+ cap:'The bits $1\\,1\\,0\\,1\\,0\\,0$ in polar NRZ. Each bit stamps one copy of $g(t)$ (shaded, dashed) into its slot, and the copies add up to $s(t)$.', short:'From bits to the transmitted signal.'},
+
+{t:'h3', text:'An ideal and a bandlimited channel'},
+{t:'p', text:'A linear channel puts out the convolution of its input with its impulse response. To compute one value $x(t)$, flip $h$, slide it to $t$, multiply it by $s$, and take the area of the product.'},
+{t:'eqbox', cap:'Channel output', tex:'x(t)=s(t)*h(t)=\\int_{-\\infty}^{\\infty}s(u)\\,h(t-u)\\,du'},
+{t:'p', text:'An <b>ideal channel</b> has a flat response. Its impulse response is a single impulse, which picks out one value of $s$.'},
+{t:'eqbox', cap:'Ideal channel', tex:'H(f)=c\\quad\\Longrightarrow\\quad h(t)=c\\,\\delta(t),\\qquad x(t)=\\int_{-\\infty}^{\\infty}s(u)\\,c\\,\\delta(t-u)\\,du=c\\,s(t)',
+ after:'Every frequency of $s(t)$ passes with the same gain, so the pulses keep their shape. For example, $H(f)=0.5$ gives $x(t)=0.5\\,s(t)$.'},
 {t:'p', text:'A first-order RC lowpass is the simplest bandlimited channel. It has one parameter, the $3$ dB bandwidth $B$.'},
 {t:'eqbox', cap:'The RC channel', tex:'H(f)=\\frac{1}{1+jf/B},\\qquad h(t)=\\frac{1}{\\tau}e^{-t/\\tau}\\ (t\\ge0),\\qquad\\tau=\\frac{1}{2\\pi B}',
- after:'The channel responds to a sudden change with the time constant $\\tau$.'},
-{t:'p', text:'Send one unit bit on $[0,T_b]$. Inside the bit the output is the integral of $h$. It never reaches $1$ inside the bit, and it decays after the bit ends.'},
+ after:'The impulse response is spread over a few time constants $\\tau$. The convolution then averages $s$ over the recent past, and the sharp edges of $s(t)$ become slow rises and falls.'},
+{t:'fig', svg:()=>figIsiConv(),
+ cap:'The convolution for the RC channel with $BT_b=0.25$, at $t=4T_b$. Above, $s(u)$ (dashed), the flipped response $h(t-u)$ (amber) and their product (violet). The shaded area is $x(4T_b)$. Below, the whole output $x(t)$ (green) with that value marked.', short:'The channel output as a convolution.'},
+
+{t:'h3', text:'Intersymbol interference'},
+{t:'p', text:'Send one unit bit on $[0,T_b]$ through the RC channel. Inside the bit the output is the integral of $h$. It never reaches $1$ inside the bit, and it decays after the bit ends.'},
 {t:'eqbox', cap:'One bit', tex:'\\begin{aligned}r(t)&=\\int_0^{t}\\frac{1}{\\tau}e^{-u/\\tau}\\,du=1-e^{-t/\\tau},\\quad 0\\le t\\le T_b\\\\r(T_b)&=1-q,\\qquad q=e^{-T_b/\\tau}=e^{-2\\pi BT_b}\\end{aligned}',
  after:'The share $q$ is the part of the bit\'s level still missing at the end of the bit. For $BT_b=0.25$, $q=e^{-2\\pi(0.25)}=e^{-\\pi/2}=0.208$ and $r(T_b)=1-q=0.792$.'},
+{t:'p', text:'A pulse spread beyond its own bit overlaps its neighbours at their sampling instants. That overlap is <b>intersymbol interference</b> (ISI): one symbol interferes with the symbols after it.'},
 {t:'fig', svg:()=>figIsiBuild(),
- cap:'Six bits $1,1,0,1,0,0$ through an RC channel with $BT_b=0.25$. The sent bits are dashed cyan and each bit\'s own response is dashed violet. Their sum is the received waveform (green), and the dots are its samples at the end of each bit.'},
+ cap:'Six bits $1,1,0,1,0,0$ through an RC channel with $BT_b=0.25$. The sent bits are cyan and each bit\'s own response is dashed violet. The red areas are the tails that spill into later bits. Their sum is the received waveform (green), and the dots are its samples at the end of each bit.', short:'Six bits through an RC channel.'},
+
+{t:'h3', text:'The three parts of a sample'},
+{t:'p', text:'Sample the receive-filter output at $t_i=iT_b$. The sum over all bits splits into the bit being decided, all the other bits, and the noise.'},
+{t:'eqbox', cap:'Sampled output', tex:'\\begin{aligned}y(t_i)&=\\mu\\sum_k a_k\\,p\\bigl((i-k)T_b\\bigr)+n(t_i)\\\\&=\\underbrace{\\mu\\,a_i}_{\\text{own bit}}+\\underbrace{\\mu\\sum_{k\\ne i}a_k\\,p\\bigl((i-k)T_b\\bigr)}_{\\text{intersymbol interference}}\\\\&\\quad+\\underbrace{n(t_i)}_{\\text{noise}}\\end{aligned}',
+ after:'The term $k=i$ is taken out of the sum. Since $p(0)=1$, it is $\\mu a_i$. Every other bit adds the value of its pulse at $t_i$.'},
+{t:'p', text:'For the RC channel with the sample at the end of each bit, $\\mu p(0)=r(T_b)=1-q$ and $\\mu p(mT_b)=r\\bigl((m+1)T_b\\bigr)=(1-q)q^{m}$. Dividing by $\\mu$ gives $p$.'},
+{t:'eqbox', cap:'RC channel', tex:'\\mu=1-q,\\qquad p(mT_b)=\\begin{cases}q^{m}, & m\\ge0\\\\0, & m<0\\end{cases}',
+ after:'The channel is causal, so only earlier bits interfere. At $BT_b=0.25$ the previous bit, if it is a $+1$, adds $\\mu\\,p(T_b)=(1-q)q=0.792\\times0.208=0.165$.'},
+{t:'fig', svg:()=>figIsiSample(),
+ cap:'The bits $0\\,1\\,0\\,1\\,1$ through the RC channel with $BT_b=0.25$, sampled at $t_i=5T_b$. Left, the own pulse (violet) and the other pulses (red, dashed). Right, the sample built from its parts: the own bit, the interference, a noise value $-0.1$, and the total.', short:'The three parts of a sample.'},
 
 {t:'h3', text:'The interference term'},
 {t:'p', text:'After its bit ends, a response decays as $(1-q)e^{-(t-T_b)/\\tau}$. One bit later it is $(1-q)q$, and $m$ bits later $(1-q)q^{m}$.'},
@@ -2000,12 +2158,24 @@ window.C2 = [
 {t:'box', kind:'err', hd:'Common error', html:'Use the full history, not only the previous bit. Each earlier bit still contributes its own tail $(1-q)q^{m}$.'},
 
 {t:'h3', text:'The eye diagram'},
-{t:'p', text:'An <b>eye diagram</b> shows the interference of every bit pattern at once. Cut the received waveform into pieces $2T_b$ long, centred on the sampling instants, and draw them all on one axis.'},
-{t:'p', text:'The vertical gap at the sampling instant is the <b>opening</b> of the eye. The worst pattern has every earlier bit opposite to the current one.'},
+{t:'p', text:'An <b>eye diagram</b> shows the interference of every bit pattern at once. Cut the received waveform into pieces $2T_b$ long, centred on the sampling instants $t_k$, and draw them all on one axis. An oscilloscope triggered by the bit clock does this.'},
+{t:'p', text:'Each piece shows one bit with its neighbours and their tails. Once every pattern has passed, the eye shows the best and the worst case together. A wider channel leaves smaller tails, so the band of traces at the sampling instant gets thinner.'},
+{t:'fig', svg:()=>figEyeScope(),
+ cap:'How the eye is built, for the RC channel with $BT_b=0.3$. Above, the received waveform around one sampling instant $t_k$, with the window $2T_b$ wide that cuts one piece (violet). Below, the pieces cut at $32$ sampling instants of a stream that holds every five-bit pattern.', short:'How the eye diagram is built.'},
+
+{t:'h3', text:'Reading the eye'},
+{t:'p', text:'An eye diagram is read at a few places. The current bit fills $[-T_b,0]$ and is sampled at $t=0$, where the eye is widest.'},
+{t:'ul', items:[
+ '<b>Best sampling time.</b> The instant where the eye is most open.',
+ '<b>Margin over noise.</b> The vertical gap at the best sampling time. Noise smaller than half of it cannot cause an error.',
+ '<b>Distortion at the sampling time.</b> The thickness of the band of traces there. For the RC channel the levels of a $1$ run from $1-2q$ to $1$, so the band is $2q$ thick.',
+ '<b>Zero crossings.</b> The traces cross zero at different times. The spread is the timing jitter that the bit clock must tolerate. The gap between the inner crossings is the window in which a sample still decides correctly.',
+ '<b>Timing sensitivity.</b> The slope of the sides of the eye. A steep side means a small timing error costs a lot of margin.'
+]},
 {t:'eqbox', cap:'Opening', tex:'\\min_{\\text{patterns}}|y_k|=(1-q)-q=1-2q,\\qquad\\text{opening}=2(1-2q)',
- after:'For $BT_b=0.3$, $q=e^{-0.6\\pi}=0.152$, so the opening is $2(1-2q)=2(0.696)=1.39$.'},
-{t:'fig', svg:()=>figEye(),
- cap:'The eye of the RC channel with $BT_b=0.3$. Each trace is the received waveform over two bits, centred on a sampling instant, for one of $128$ bit patterns. Laid on top of each other they form the eye.'},
+ after:'The worst pattern has every earlier bit opposite to the current one. For $BT_b=0.3$, $q=e^{-0.6\\pi}=0.152$, so the opening is $2(1-2q)=2(0.696)=1.39$.'},
+{t:'fig', svg:()=>figEyeRead(),
+ cap:'The eye of the RC channel with $BT_b=0.3$, from $128$ bit patterns. Its readings are the best sampling time, the noise margin, the distortion at $t=0$, the zero-crossing spread, the sampling window and the timing sensitivity.', short:'Reading the eye diagram.'},
 
 {t:'h3', text:'Eye closure'},
 {t:'p', text:'A narrower channel closes the eye. It is fully closed when the opening reaches zero. Set $1-2q=0$ and take logarithms.'},
@@ -2023,7 +2193,7 @@ window.C2 = [
 {t:'box', kind:'warn', hd:'Worst pattern', html:'The levels nearest zero fail first. Their margin is $1-2q$, not $1-q$, so a half-closed eye needs much less noise to fail.'},
 {t:'p', text:'As the noise grows from zero, the worst-pattern samples cross zero first. At $BT_b=0.3$ they sit at $\\pm(1-2q)=\\pm0.70$, the levels closest to the threshold.'},
 {t:'fig', svg:()=>figEyeNoise(0.3,0.2),
- cap:'The eye at $BT_b=0.3$ with noise of standard deviation $\\sigma=0.2$. The bars at the right count $1024$ samples taken at $t=0$. Violet bars fall on the correct side of zero, red bars on the wrong side.'},
+ cap:'The eye at $BT_b=0.3$ with noise of standard deviation $\\sigma=0.2$. The violet bracket is the opening the traces leave at $t=0$. The bars at the right count $1024$ samples taken at $t=0$, red ones on the wrong side of zero.'},
 
 {t:'h3', text:'Intersymbol interference around us'},
 {t:'p', text:'Intersymbol interference appears in cables, radio echoes and optical fibre.'},
