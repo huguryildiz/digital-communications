@@ -975,12 +975,22 @@ function figIsiLink(){
     {t:'text',x:268,y:86,label:'channel',fs:12},
     {t:'text',x:404,y:86,label:'receive filter',fs:12}]});
 }
+/* the channel output for the same bits: an ideal channel (h = delta) passes
+   s(t) unchanged; a band-limited RC channel, BT_b = 0.25, rounds and spreads it */
+function figIsiChanPair(){
+  const sF=nrz(ISI_B), x=rcTrain(ISI_B,0.25);
+  const mk=(lab,y)=>{ const a=ax1({h:180,xr:[-0.4,6.6],yr:[-1.5,1.95],xlabel:'t/T_b',ylabel:lab,xticksOverride:[0,1,2,3,4,5,6],yticksOverride:[-1,0,1]});
+    bitDigits(a,ISI_B,1.62);
+    a.curve(sF,{color:C.in,width:1.4,dash:'5 5',opacity:0.8,n:1400});
+    a.curve(y,{color:C.out,width:2.6,n:1400}); return a.svg(); };
+  return stack(700,[[mk('x(t),\\ h=\\delta',u=>u<0?0:sF(u)),180],[mk('x(t),\\ \\text{band-limited}',u=>u<0?0:x(u)),180]]);
+}
 /* the pulses a_k g(t - kT_b) and their sum s(t) */
 function figIsiTx(){
   const a=ax1({h:230,xr:[-0.4,6.6],yr:[-1.5,1.95],xlabel:'t/T_b',ylabel:'s(t)',xticksOverride:[0,1,2,3,4,5,6],yticksOverride:[-1,0,1]});
   bitDigits(a,ISI_B,1.62);
   ISI_B.forEach((b,k)=>{ const s=b?1:-1; a.rect(k,0,k+1,s,{fill:C.dec.in});
-    a.poly([[k,0],[k,s],[k+1,s],[k+1,0]],{color:C.in,width:1.4,dash:'5 4'}); });
+    a.poly(k>0&&ISI_B[k-1]===b?[[k,s],[k+1,s],[k+1,0]]:[[k,0],[k,s],[k+1,s],[k+1,0]],{color:C.in,width:1.4,dash:'5 4'}); });
   a.curve(t=>t<0||t>=6?0:(ISI_B[Math.floor(t)]?1:-1),{color:C.in,width:2.6,n:1400});
   return a.svg();
 }
@@ -1000,26 +1010,35 @@ function figIsiConv(){
   b.point(t,x(t),{color:C.mid,r:5});
   return stack(700,[[a.svg(),200],[b.svg(),200]]);
 }
-/* one sample taken apart: the bits 0 1 0 1 1, sampled at t_i = 5T_b; the
-   waterfall on the right builds y(t_i) from the own bit, the interference of
-   each earlier bit, and a noise value -0.1 */
+/* one sample taken apart: the bits 0 1 0 1 1, sampled at t_i = 5T_b. Top,
+   the own pulse (violet) and the other pulses added together (red, dashed).
+   Bottom, the sample built tip to tail: the own bit, the interference, a
+   noise value -0.1, and the total, each part with its share of the sum of
+   the three sizes */
 const SMP_B=[0,1,0,1,1], SMP_N=-0.1;
 function figIsiSample(){
-  const bt=0.25, q=rcq(bt), r=rcResp(bt), amp=SMP_B.map(b=>b?1:-1), y=rcTrain(SMP_B,bt);
-  const a=P.Axes({w:470,h:250,xr:[-0.6,5.6],yr:[-1.6,2.1],xlabel:'t/T_b',ylabel:'y(t)',pad:{l:52,r:12,t:20,b:40},xticksOverride:[0,1,2,3,4,5],yticksOverride:[-1,0,1]});
-  bitDigits(a,SMP_B,1.62);
-  a.curve(t=>t<0?0:y(t),{color:C.out,width:2.2,opacity:0.45,n:1200});
+  const bt=0.25, q=rcq(bt), r=rcResp(bt), amp=SMP_B.map(b=>b?1:-1), y=rcTrain(SMP_B,bt), oth=t=>y(t)-r(t-4);
+  const a=P.Axes({w:700,h:240,xr:[-0.4,5.6],yr:[-1.6,2.1],xlabel:'t/T_b',ylabel:'y(t)',pad:{l:52,r:16,t:20,b:40},xticksOverride:[0,1,2,3,4,5],yticksOverride:[-1,0,1]});
+  bitDigits(a,SMP_B,1.7);
   a.vline(5,{color:C.ink,dash:'6 4',opacity:0.9}); a.note(4.92,-1.42,'t_i',{tex:true,fs:14,color:C.ink,anchor:'end'});
-  [0,1,2,3].forEach(k=>{ a.curve(t=>amp[k]*r(t-k),{color:C.err,width:1.4,dash:'4 4',n:900}); a.point(5,amp[k]*r(5-k),{color:C.err,r:3.6}); });
+  a.curve(t=>t<0?0:y(t),{color:C.out,width:2.2,opacity:0.4,n:1200});
   a.curve(t=>r(t-4),{color:C.mid,width:2.4,n:900}); a.point(5,r(1),{color:C.mid,r:4.6});
+  a.curve(oth,{color:C.err,width:1.8,dash:'6 4',n:1200}); a.point(5,oth(5),{color:C.err,r:4.6});
+  a.poly([[5,y(5)],[5,y(5)+SMP_N]],{color:C.noise,width:3});
   a.point(5,y(5)+SMP_N,{color:C.out,r:5});
-  const b=P.Axes({w:230,h:250,xr:[0,4],yr:[-1.6,2.1],xlabel:'',ylabel:'',pad:{l:12,r:12,t:20,b:40},xticksOverride:[],yticksOverride:[]});
-  const col=(c,lo,hi,fill)=>{ if(Math.abs(hi-lo)>1e-4) b.rect(c+0.18,lo,c+0.82,hi,{fill}); };
-  let lev=1-q; col(0,0,lev,C.mid);
-  [3,2,1,0].forEach(k=>{ const d=amp[k]*(1-q)*Math.pow(q,4-k); col(1,lev,lev+d,C.err); lev+=d; });
-  col(2,lev,lev+SMP_N,C.noise); lev+=SMP_N; col(3,0,lev,C.out);
-  ['\\text{own}','\\text{ISI}','n','y(t_i)'].forEach((s,c)=>b.note(c+0.5,-0.32,s,{tex:true,fs:13,color:C.ink,anchor:'middle'}));
-  return `<svg viewBox="0 0 700 250" xmlns="http://www.w3.org/2000/svg" role="img">${place(a.svg(),0,0,470,250)}${place(b.svg(),470,0,230,250)}</svg>`;
+  const own=1-q, isi=[0,1,2,3].reduce((s,k)=>s+amp[k]*(1-q)*Math.pow(q,4-k),0), tot=own+Math.abs(isi)+Math.abs(SMP_N);
+  const b=P.Axes({w:700,h:170,xr:[-0.55,1.55],yr:[0,4.3],xlabel:'',ylabel:'',pad:{l:14,r:16,t:10,b:28},xticksOverride:[],yticksOverride:[],arrows:false});
+  b.vline(0,{color:C.ink,dash:'none',width:1.3,opacity:0.9}); b.poly([[1,0],[1,0.22]],{color:C.muted,width:1.3});
+  b.note(0,0,'0',{tex:true,fs:13,color:C.ink,anchor:'middle',dy:18}); b.note(1,0,'1',{tex:true,fs:13,color:C.muted,anchor:'middle',dy:18});
+  b.note(1.53,4.3,'share',{fs:12,color:C.muted,anchor:'end',dy:10});
+  const rows=[[C.mid,0,own,'\\mu a_i'],[C.err,own,own+isi,'\\text{ISI}'],[C.noise,own+isi,own+isi+SMP_N,'n(t_i)'],[C.out,0,own+isi+SMP_N,'y(t_i)']];
+  rows.forEach(([c,lo,hi,name],j)=>{ const yc=3.6-j, tc=c===C.noise?C.ink:c, d=hi-lo;
+    b.note(-0.06,yc,name,{tex:true,fs:14,color:tc,anchor:'end',dy:2});
+    if(j>0&&j<3) b.poly([[lo,yc+0.7],[lo,yc+0.3]],{color:C.muted,width:1.1,dash:'3 3'});
+    b.rect(lo,yc-0.28,hi,yc+0.28,{fill:c});
+    b.note(Math.max(lo,hi)+0.03,yc,j===3?'='+hi.toFixed(3):(d<0?'-':'+')+Math.abs(d).toFixed(3),{tex:true,fs:13,color:tc,dy:2});
+    if(j<3) b.note(1.53,yc,Math.round(100*Math.abs(d)/tot)+'%',{fs:13,color:tc,anchor:'end',weight:600,dy:6}); });
+  return `<svg viewBox="0 0 700 410" xmlns="http://www.w3.org/2000/svg" role="img">${place(a.svg(),0,0,700,240)}${place(b.svg(),0,240,700,170)}</svg>`;
 }
 function figIsiBuild(){
   const bt=0.25, r=rcResp(bt);
@@ -2236,6 +2255,9 @@ window.C2 = [
  after:'Convolution in time is multiplication in frequency, so the overall frequency response is the product of the three. $\\mu$ carries the gain of the link.'},
 {t:'eqbox', cap:'Receive-filter output', tex:'y(t)=\\mu\\sum_k a_k\\,p(t-kT_b)+n(t)',
  after:'One copy of $p(t)$ for each bit, shifted to its slot and signed by $a_k$. $n(t)$ is the noise after the receive filter.'},
+{t:'p', text:'The channel acts on $s(t)$ by convolution, $x(t)=s(t)*h(t)$. An ideal channel has $h(t)=\\delta(t)$, and convolution with $\\delta(t)$ returns the signal itself, so $x(t)=s(t)$.'},
+{t:'fig', svg:()=>figIsiChanPair(),
+ cap:'The bits $1\\,1\\,0\\,1\\,0\\,0$ through two channels, with $s(t)$ dashed. Top: an ideal channel, $h(t)=\\delta(t)$, gives $x(t)=s(t)$. Bottom: a band-limited RC channel with $BT_b=0.25$ rounds the edges and spreads each pulse.', short:'Ideal and band-limited channel outputs.'},
 {t:'box', kind:'def', hd:'Pulse spreading', html:'With rectangular transmit pulses, it is the channel. A bandlimited channel cannot follow the sharp edges of $s(t)$, so it smooths each pulse and gives it a tail.'},
 
 {t:'h3', text:'From bits to pulses'},
@@ -2274,7 +2296,7 @@ window.C2 = [
 {t:'eqbox', cap:'RC channel', tex:'\\mu=1-q,\\qquad p(mT_b)=\\begin{cases}q^{m}, & m\\ge0\\\\0, & m<0\\end{cases}',
  after:'The channel is causal, so only earlier bits interfere. At $BT_b=0.25$ the previous bit, if it is a $+1$, adds $\\mu\\,p(T_b)=(1-q)q=0.792\\times0.208=0.165$.'},
 {t:'fig', svg:()=>figIsiSample(),
- cap:'The bits $0\\,1\\,0\\,1\\,1$ through the RC channel with $BT_b=0.25$, sampled at $t_i=5T_b$. Left, the own pulse (violet) and the other pulses (red, dashed). Right, the sample built from its parts: the own bit, the interference, a noise value $-0.1$, and the total.', short:'The three parts of a sample.'},
+ cap:'The bits $0\\,1\\,0\\,1\\,1$ through the RC channel with $BT_b=0.25$, sampled at $t_i=5T_b$. Top, the own pulse (violet) and the other pulses added together (red, dashed). Bottom, the sample built tip to tail: the own bit $0.792$, the interference $+0.136$, a noise value $-0.1$, and the total $0.828$. The percentages are each part\'s share of their total size. A narrower channel shrinks the own bit and grows the interference.', short:'The three parts of a sample.'},
 
 {t:'h3', text:'The interference term'},
 {t:'p', text:'After its bit ends, a response decays as $(1-q)e^{-(t-T_b)/\\tau}$. One bit later it is $(1-q)q$, and $m$ bits later $(1-q)q^{m}$.'},

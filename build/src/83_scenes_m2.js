@@ -1316,14 +1316,19 @@ const bitDigits = (a, bits, y, op=1) => fade(a, op, ()=>bits.forEach((b,k)=>
 
 /* The baseband link, block by block. Each frame lights one block and shows
    the signal that leaves it: the bits, their amplitudes a_k, the pulses of
-   the transmit filter (rectangles of length T_b), the channel output (the RC
-   channel narrowing from very wide to BT_b = 0.25), the same with noise, its
-   samples at the end of each bit, and the decisions. The arrows of the
-   diagram carry the colours of the traces below, so the diagram is the key. */
+   the transmit filter (rectangles of length T_b), the channel output twice
+   (an ideal channel h = delta, which passes s(t) unchanged, then a
+   band-limited RC channel with BT_b = 0.25, which rounds and spreads it), the
+   same with noise, its samples at the end of each bit, and the decisions. A
+   red dot on the diagram sits at the point whose signal is drawn below and
+   slides along the link from frame to frame. The arrows of the diagram carry
+   the colours of the traces below, so the diagram is the key. */
 const LINK_N = noiseFn(20261025, 0.12, 0.07, -1, 8);
+const LINK_BOX = [-1, 0, 1, 2, 2, 3, 4, 5];              /* the block lit in each frame */
+const LINK_DOT = [24, 120, 219, 315, 315, 449, 509, 588]; /* where its signal is taken */
 function figIsiLink(v){
   P.hOverride = null;
-  const f = frameOf(v, 6), u = k => clamp01(f-k), big = P.labelScale() > 1;
+  const f = frameOf(v, 7), u = k => clamp01(f-k), big = P.labelScale() > 1;
   const yc = 44, bh = 42, by = yc-bh/2;
   const box = [[34,66],[140,60],[238,60],[376,56],[464,30],[528,68]];
   const it = [
@@ -1348,9 +1353,12 @@ function figIsiLink(v){
     {t:'text',x:268,y:86,label:'channel',fs:12},
     {t:'text',x:404,y:86,label:'receive filter',fs:12}];
   const glowFill = [C.dec.in, C.dec.in, C.dec.h, C.dec.out, C.dec.mid, C.dec.out];
-  const glow = box.map(([x,w],i)=>{ const op = clamp01(1-Math.abs(f-(i+1)));
+  const glow = box.map(([x,w],i)=>{
+    const op = LINK_BOX.reduce((m,b,k)=>b===i ? Math.max(m, clamp01(1-Math.abs(f-k))) : m, 0);
     return op > 0.01 ? `<rect x="${x}" y="${by}" width="${w}" height="${bh}" fill="${glowFill[i]}" opacity="${op.toFixed(3)}" rx="2"/>` : ''; }).join('');
-  const top = P.blocks({w:600, h:116, items:it}).replace(/(<svg[^>]*>)/, '$1'+glow);
+  const k0 = Math.min(6, Math.floor(f)), dx = LINK_DOT[k0] + (LINK_DOT[k0+1]-LINK_DOT[k0])*(f-k0);
+  const dot = `<circle cx="${dx.toFixed(1)}" cy="${yc}" r="7" fill="${C.err}" stroke="${C.plate}" stroke-width="2.5"/>`;
+  const top = P.blocks({w:600, h:116, items:it}).replace(/(<svg[^>]*>)/, '$1'+glow).replace(/<\/svg>\s*$/, dot+'</svg>');
 
   const H = big ? 330 : 290;
   const a = P.Axes({w:600, h:H, xr:[-0.5,6.6], yr:[-1.85,1.95], xlabel:'t', xunit:'T_b', ylabel:'\\text{signal at this stage}',
@@ -1364,11 +1372,14 @@ function figIsiLink(v){
       a.poly([[k,0],[k,s],[k+w,s],[k+w,0]], {color:C.in, width:2.3}); });
   });
   if(f > 2){
-    const bt = 0.25*Math.pow(40, 1-u(2)), x = rcTrain(ISI_B, bt), y = t => x(t) + u(3)*LINK_N(t);
-    a.curve(y, {color:C.out, width:2.5, n:1400});
-    fade(a, u(4), ()=>ISI_B.forEach((_,k)=>{ a.vline(k+1, {color:C.mid, opacity:0.5});
+    /* frame 3: h = delta, so x = s; frame 4: the channel narrows to BT_b = 0.25 */
+    const bt = 0.25*Math.pow(80, 1-u(3)), x = rcTrain(ISI_B, bt), y = t => x(t) + u(4)*LINK_N(t);
+    fade(a, u(2), ()=>a.curve(y, {color:C.out, width:2.5, n:1400}));
+    fade(a, clamp01(1-Math.abs(f-3)), ()=>a.note(0.12, -1.6, 'x(t)=s(t)*\\delta(t)=s(t)', {tex:true, fs:15, color:C.out}));
+    fade(a, clamp01(1-Math.abs(f-4)), ()=>a.note(0.12, -1.6, 'x(t)=s(t)*h(t),\\ \\text{band-limited}', {tex:true, fs:15, color:C.out}));
+    fade(a, u(5), ()=>ISI_B.forEach((_,k)=>{ a.vline(k+1, {color:C.mid, opacity:0.5});
       a.point(k+1, y(k+1), {color:C.mid, r:5}); }));
-    fade(a, u(5), ()=>{ a.hline(0, {color:C.ink, dash:'6 4', opacity:0.9});
+    fade(a, u(6), ()=>{ a.hline(0, {color:C.ink, dash:'6 4', opacity:0.9});
       ISI_B.forEach((_,k)=>a.note(k+0.5, -1.66, y(k+1) > 0 ? '1' : '0', {fs:15, color:C.out, anchor:'middle', weight:600})); });
   }
   return `<svg viewBox="0 0 600 ${116+H}" xmlns="http://www.w3.org/2000/svg" role="img">${place(top,0,0,600,116)}${place(a.svg(),0,116,600,H)}</svg>`;
@@ -1394,7 +1405,9 @@ function figIsiTx(v){
     const w = clamp01((f-1)*6-k);            /* the pulses are stamped one after another */
     if(w < 0.02){ if(u(0) > 0) a.stem([[k, s*u(0)]], {color:C.in}); return; }
     a.rect(k, 0, k+w, s, {fill:C.dec.in});
-    fade(a, 1-0.7*u(2), ()=>a.poly([[k,0],[k,s],[k+w,s],[k+w,0]], {color:C.in, width:1.6, dash:'5 4'}));
+    /* a pulse after one of the same sign shares its left edge: draw it once, so the dashes do not overlap */
+    const pts = k > 0 && amp[k-1] === s ? [[k,s],[k+w,s],[k+w,0]] : [[k,0],[k,s],[k+w,s],[k+w,0]];
+    fade(a, 1-0.7*u(2), ()=>a.poly(pts, {color:C.in, width:1.6, dash:'5 4'}));
   });
   if(f > 2) a.curve(upTo(t=>t<0 || t>=6 ? 0 : amp[Math.floor(t)], -0.4+7*u(2)), {color:C.in, width:2.6, n:1400});
   return stack(560, [[g.svg(),hA],[a.svg(),hB]]);
@@ -1425,13 +1438,15 @@ function figIsiChannel(v){
     a.curve(u => u <= t ? pr(u) : NaN, {color:C.mid, width:1.6, n:900});
     a.curve(u => hr(t-u), {color:C.h, width:2.6, n:900});
     a.vline(t, {color:C.h, opacity:0.8}); });
-  const b = P.Axes({w:560, h:hB, xr:[-0.4,6.6], yr:[-1.5,1.95], xlabel:'t', xunit:'T_b', ylabel:'x(t)',
+  const b = P.Axes({w:560, h:hB, xr:[-0.4,6.6], yr:[-1.95,1.95], xlabel:'t', xunit:'T_b', ylabel:'x(t)',
     pad:{l:56,r:26,t:24,b:42}, xticksOverride:[0,1,2,3,4,5,6], yticksOverride:[-1,0,1]});
   bitDigits(b, ISI_B, 1.62);
   b.curve(sF, {color:C.in, width:1.5, dash:'5 5', opacity:0.8, n:1400});
   if(ideal > 0.01) fade(b, ideal, ()=>b.curve(u=>u<0 ? 0 : sF(u), {color:C.out, width:2.6, n:1400}));
   if(f > 0.01) fade(b, 1-ideal, ()=>{ b.curve(upTo(u=>u<0 ? 0 : x(u), t), {color:C.out, width:2.6, n:1400});
     b.point(t, x(t), {color:C.mid, r:5.5}); });
+  fade(b, ideal, ()=>b.note(0.12, -1.66, 'x(t)=s(t)*\\delta(t)=s(t)', {tex:true, fs:15, color:C.out}));
+  fade(b, 1-ideal, ()=>b.note(0.12, -1.66, 'x(t)=s(t)*h(t),\\ \\text{band-limited}', {tex:true, fs:15, color:C.out}));
   return stack(560, [[a.svg(),hA],[b.svg(),hB]]);
 }
 
@@ -1467,42 +1482,62 @@ function figIsiBuild(v){
 }
 
 /* One sample taken apart. Bits 0 1 0 1 1 after a line at rest; the sample is
-   at t_i = 5 T_b, the end of the last bit. Left, the received waveform and
-   the response of each bit; right, the sample built as a waterfall: the own
-   bit mu a_i = 1 - q, the tails of the four earlier bits mu a_k q^(i-k), a
-   noise value n(t_i) = -0.1, and the total. RC channel, BT_b = 0.25. */
+   at t_i = 5 T_b, the end of the last bit. Top, the received waveform, the
+   own pulse (violet) and the other pulses added together (red, dashed), each
+   with its value at t_i. Bottom, the sample built tip to tail on one scale:
+   the own bit mu a_i = 1 - q, the interference of the earlier bits, a noise
+   value n(t_i) = -0.1, and the total, each with its share of the sum of the
+   three sizes. The slider sets BT_b; a narrower channel shrinks the own bit
+   and grows the interference. */
 const SMP_B = [0,1,0,1,1], SMP_N = -0.1;
+function isiParts(bt){ const q = rcq(bt), amp = SMP_B.map(b=>b?1:-1);
+  const own = 1-q, isi = [0,1,2,3].reduce((s,k)=>s + amp[k]*(1-q)*Math.pow(q, 4-k), 0);
+  return {q, own, isi, n:SMP_N, y:own+isi+SMP_N}; }
 function figIsiSample(v){
   P.hOverride = null;
-  const f = frameOf(v, 4), u = k => clamp01(f-k), big = P.labelScale() > 1, bt = 0.25, q = rcq(bt), r = rcResp(bt);
-  const H = big ? 420 : 380, amp = SMP_B.map(b=>b?1:-1), ti = 5;
-  const y = rcTrain(SMP_B, bt);
-  const a = P.Axes({w:390, h:H, xr:[-0.6,5.6], yr:[-1.6,2.3], xlabel:'t', xunit:'T_b', ylabel:'y(t)',
-    pad:{l:52,r:14,t:24,b:42}, xticksOverride:[0,1,2,3,4,5], yticksOverride:[-1,0,1]});
-  bitDigits(a, SMP_B, 1.62);
-  a.curve(nrz(SMP_B), {color:C.in, width:1.4, dash:'5 5', opacity:0.75*(1-0.6*u(2)), n:1200});
-  a.curve(t=>t<0 ? 0 : y(t), {color:C.out, width:2.5, opacity:1-0.55*u(2), n:1200});
-  fade(a, u(0), ()=>{ a.vline(ti, {color:C.ink, dash:'6 4', opacity:0.9}); a.note(ti-0.08, -1.42, 't_i', {tex:true, fs:15, color:C.ink, anchor:'end'}); });
-  fade(a, u(1), ()=>{ a.curve(t=>r(t-4), {color:C.mid, width:2.6, n:900}); a.point(ti, r(1), {color:C.mid, r:5}); });
-  fade(a, u(2), ()=>[0,1,2,3].forEach(k=>{ a.curve(t=>amp[k]*r(t-k), {color:C.err, width:1.5, dash:'4 4', n:900});
-    a.point(ti, amp[k]*r(ti-k), {color:C.err, r:4}); }));
-  fade(a, u(3), ()=>a.point(ti, y(ti)+SMP_N, {color:C.out, r:5.5}));
+  const f = frameOf(v, 3), u = k => clamp01(f-k), big = P.labelScale() > 1;
+  const bt = v && v.bt!=null ? v.bt : 0.25, r = rcResp(bt), ti = 5, pt = isiParts(bt);
+  const y = rcTrain(SMP_B, bt), oth = t => y(t) - r(t-4);
+  const Ht = big ? 290 : 250, Hb = big ? 200 : 176;
+  const a = P.Axes({w:600, h:Ht, xr:[-0.4,5.6], yr:[-1.6,2.2], xlabel:'t', xunit:'T_b', ylabel:'y(t)',
+    pad:{l:52,r:20,t:22,b:40}, xticksOverride:[0,1,2,3,4,5], yticksOverride:[-1,0,1]});
+  bitDigits(a, SMP_B, 1.7);
+  a.vline(ti, {color:C.ink, dash:'6 4', opacity:0.9});
+  a.note(ti-0.08, -1.42, 't_i', {tex:true, fs:15, color:C.ink, anchor:'end'});
+  a.curve(t=>t<0 ? 0 : y(t), {color:C.out, width:2.6, opacity:1-0.6*u(0), n:1200});
+  fade(a, u(0), ()=>{ a.curve(t=>r(t-4), {color:C.mid, width:2.6, n:900}); a.point(ti, r(1), {color:C.mid, r:5}); });
+  fade(a, u(1), ()=>{ a.curve(oth, {color:C.err, width:2, dash:'6 4', n:1200}); a.point(ti, oth(ti), {color:C.err, r:5}); });
+  /* the noise moves the sample off the waveform */
+  const yn = y(ti) + SMP_N*u(2);
+  if(f > 2) a.poly([[ti, y(ti)], [ti, yn]], {color:C.noise, width:3});
+  a.point(ti, yn, {color:C.out, r:5.5});
 
-  /* the waterfall: own, the interference (one segment per earlier bit, newest
-     first), the noise, and the sample */
-  const b = P.Axes({w:210, h:H, xr:[0,4], yr:[-1.6,2.3], xlabel:'', ylabel:'',
-    pad:{l:14,r:12,t:24,b:42}, xticksOverride:[], yticksOverride:[]});
-  const col = (c, lo, hi, fill) => { if(Math.abs(hi-lo) > 1e-4) b.rect(c+0.18, lo, c+0.82, hi, {fill}); };
-  const own = (1-q)*u(1);
-  col(0, 0, own, C.mid);
-  let lev = own;
-  [3,2,1,0].forEach((k,j)=>{ const d = amp[k]*(1-q)*Math.pow(q, 4-k)*clamp01(u(2)*4-j);
-    col(1, lev, lev+d, C.err); lev += d; });
-  const nz = SMP_N*u(3); col(2, lev, lev+nz, C.noise); lev += nz;
-  if(f > 3) col(3, 0, lev*u(3), C.out);
-  const lbl = ['\\text{own}','\\text{ISI}','n','y(t_i)'];
-  lbl.forEach((s,c)=>b.note(c+0.5, -0.32, s, {tex:true, fs:14, color:C.ink, anchor:'middle'}));
-  return `<svg viewBox="0 0 600 ${H}" xmlns="http://www.w3.org/2000/svg" role="img">${place(a.svg(),0,0,390,H)}${place(b.svg(),390,0,210,H)}</svg>`;
+  /* the parts tip to tail: own, interference, noise, then the sample */
+  const b = P.Axes({w:600, h:Hb, xr:[-0.55,1.55], yr:[0,4.3], xlabel:'', ylabel:'',
+    pad:{l:14,r:20,t:10,b:30}, xticksOverride:[], yticksOverride:[], arrows:false});
+  const tot = Math.abs(pt.own)+Math.abs(pt.isi)+Math.abs(pt.n), pc = x => Math.round(100*Math.abs(x)/tot)+'%';
+  const sg = x => (x < 0 ? '-' : '+')+Math.abs(x).toFixed(3);
+  b.vline(0, {color:C.ink, dash:'none', width:1.3, opacity:0.9});
+  b.poly([[1,0],[1,0.22]], {color:C.muted, width:1.3});
+  b.note(1.53, 4.3, 'share', {fs:12, color:C.muted, anchor:'end', dy:10});
+  b.note(0, 0, '0', {tex:true, fs:13, color:C.ink, anchor:'middle', dy:18});
+  b.note(1, 0, '1', {tex:true, fs:13, color:C.muted, anchor:'middle', dy:18});
+  const rows = [
+    {c:C.mid, lo:0, hi:pt.own, name:'\\mu a_i', at:0},
+    {c:C.err, lo:pt.own, hi:pt.own+pt.isi, name:'\\text{ISI}', at:1},
+    {c:C.noise, lo:pt.own+pt.isi, hi:pt.y, name:'n(t_i)', at:2},
+    {c:C.out, lo:0, hi:pt.y, name:'y(t_i)', at:2, total:true}];
+  rows.forEach((w,j)=>{ const yc = 3.6-j, o = u(w.at) * (w.total ? clamp01((f-2)*2-1) : 1);
+    b.note(-0.06, yc, w.name, {tex:true, fs:15, color:w.c===C.noise ? C.ink : w.c, anchor:'end', dy:2});
+    if(o < 0.01) return;
+    const hi = w.lo + (w.hi-w.lo)*o;
+    if(j > 0 && !w.total) b.poly([[w.lo, yc+1-0.3], [w.lo, yc+0.3]], {color:C.muted, width:1.1, dash:'3 3'});
+    if(Math.abs(hi-w.lo) > 1e-4) b.rect(w.lo, yc-0.28, hi, yc+0.28, {fill:w.c});
+    const val = w.total ? '='+pt.y.toFixed(3) : sg(w.hi-w.lo), tc = w.c===C.noise ? C.ink : w.c;
+    fade(b, clamp01(o*1.5-0.5), ()=>{ b.note(Math.max(w.lo, w.hi)+0.03, yc, val, {tex:true, fs:14, color:tc, dy:2});
+      if(!w.total) b.note(1.53, yc, pc(w.hi-w.lo), {fs:14, color:tc, anchor:'end', weight:600, dy:6}); });
+  });
+  return `<svg viewBox="0 0 600 ${Ht+Hb}" xmlns="http://www.w3.org/2000/svg" role="img">${place(a.svg(),0,0,600,Ht)}${place(b.svg(),0,Ht,600,Hb)}</svg>`;
 }
 
 /* One sample and what makes it up. Bits 0,0,0 then 1 after a line idle at
@@ -3274,24 +3309,25 @@ REAL_DECISION,
 { id:'m2-isi-link', module:'M2', nav:'The baseband link', title:'The baseband link',
   objective:'Follow one bit pattern block by block through a baseband link, from the bits to the decisions.',
   keywords:'baseband link pulse amplitude modulator transmit filter channel receive filter sampler decision overall pulse',
-  src:'CH8 s.35–36', slide:true, steps:2, blocks:[
+  src:'CH8 s.35–36', slide:true, steps:3, blocks:[
   {t:'eyebrow', text:'Module 2 · Intersymbol interference'},
   {t:'title', text:'The baseband link'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true,
-      frames:{labels:['bits $b_k$','amplitudes $a_k$','transmit filter','channel','noise and receive filter','sampler','decision'], ms:1100},
+      frames:{labels:['bits $b_k$','amplitudes $a_k$','transmit filter','ideal channel','band-limited channel','noise and receive filter','sampler','decision'], ms:1100},
       svg:figIsiLink,
-      caption:'Step through the link. Each frame lights one block and shows the signal it puts out, for the bits $1\\,1\\,0\\,1\\,0\\,0$. The arrow names carry the colours of the traces.'}
+      caption:'Step through the link for the bits $1\\,1\\,0\\,1\\,0\\,0$. The red dot marks the point whose signal is drawn. An ideal channel, $h(t)=\\delta(t)$, passes $s(t)$ unchanged. A band-limited channel rounds the edges and spreads each pulse.'}
   ], right:[
-    {t:'eq', label:'Overall pulse', tex:'\\mu\\,p(t)=g(t)*h(t)*c(t)\\quad\\Longleftrightarrow\\quad\\mu\\,P(f)=G(f)\\,H(f)\\,C(f)',
-      note:'The three filters act on a pulse as one filter. $p(t)$ is scaled so that $p(0)=1$, and $\\mu$ carries the gain.'},
+    {t:'note', kind:'def', head:'Symbols', html:'$b_k$: the $k$-th bit. $a_k=\\pm1$: its amplitude. $T_b$: the bit duration.<div class="nsep"></div>$g(t)$, $h(t)$, $c(t)$: the transmit filter, the channel and the receive filter. $w(t)$: the channel noise. $t_i=iT_b$: the sampling instants.'},
     {t:'reveal', at:1, items:[
-      {t:'eq', label:'Receive-filter output', tex:'y(t)=\\mu\\sum_k a_k\\,p(t-kT_b)+n(t)',
-        note:'One copy of $p(t)$ for each bit, shifted to its slot and signed by $a_k$. $n(t)$ is the noise after the receive filter.'}]},
+      {t:'eq', label:'Channel output', tex:'x(t)=s(t)*h(t)',
+        note:'$h(t)$ is the impulse response of the channel. An ideal channel has $h(t)=\\delta(t)$, so $x(t)=s(t)$. A band-limited channel rounds and spreads each pulse.'}]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'def', head:'Given', html:'The transmit filter makes rectangles of length $T_b$. The channel is bandlimited.<div class="nsep"></div>Which block stretches a pulse into the next bits?',
-        ask:{key:'m2-isi-link', choices:['the transmit filter $g(t)$','the channel $h(t)$','the sampler'], answer:1,
-          why:'A bandlimited channel cannot follow the sharp edges of $s(t)$, so it smooths each pulse and gives it a tail.'}}]}
+      {t:'eq', label:'Overall pulse', tex:'\\mu\\,p(t)=g(t)*h(t)*c(t)\\quad\\Longleftrightarrow\\quad\\mu\\,P(f)=G(f)\\,H(f)\\,C(f)',
+        note:'The three filters act on a pulse as one filter. $p(t)$ is scaled so that $p(0)=1$, and $\\mu$ carries the gain.'}]},
+    {t:'reveal', at:3, items:[
+      {t:'eq', label:'Receive-filter output', tex:'y(t)=\\mu\\sum_k a_k\\,p(t-kT_b)+n(t)',
+        note:'One copy of $p(t)$ for each bit, signed by $a_k$. $n(t)=w(t)*c(t)$ is the noise after the receive filter.'}]}
   ]}
 ]},
 
@@ -3327,9 +3363,9 @@ REAL_DECISION,
   {t:'title', text:'An ideal and a bandlimited channel'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true,
-      frames:{labels:['ideal channel, $h(t)=\\delta(t)$','RC channel, $t=0$','$t=2T_b$','$t=4T_b$','the whole output'], ms:2200},
+      frames:{labels:['ideal channel, $h(t)=\\delta(t)$','band-limited RC channel, $t=0$','$t=2T_b$','$t=4T_b$','the whole output'], ms:2200},
       svg:figIsiChannel,
-      caption:'Step through the frames. The flipped response $h(t-u)$ slides along $s(u)$. The violet area under their product is $x(t)$. RC channel with $BT_b=0.25$.'},
+      caption:'Step through the frames. The flipped response $h(t-u)$ slides along $s(u)$. The violet area under their product is $x(t)$. The first frame is the ideal channel and the rest use a band-limited RC channel with $BT_b=0.25$.'},
     {t:'legend', items:[['in','$s$',true],['h','$h(t-u)$'],['out','$x(t)$']], at:'tc-row'}
   ], right:[
     {t:'eq', label:'Channel output', tex:'x(t)=s(t)*h(t)=\\int_{-\\infty}^{\\infty}s(u)\\,h(t-u)\\,du',
@@ -3379,10 +3415,11 @@ REAL_DECISION,
   {t:'title', text:'The three parts of a sample'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true,
-      frames:{labels:['the received waveform','the sampling instant','own pulse','the other pulses','noise'], ms:1300},
+      frames:{labels:['the received sample','own pulse','the other pulses','noise'], ms:1300},
+      live:{controls:[{k:'bt', label:'$BT_b$', min:0.08, max:1, step:0.01, v:0.25, show:v=>'$'+v.toFixed(2)+'$'}]},
       svg:figIsiSample,
-      caption:'Step through the frames. The bits $0\\,1\\,0\\,1\\,1$ through the RC channel with $BT_b=0.25$, sampled at the end of the last bit. The bar chart builds the sample from its parts.'},
-    {t:'legend', items:[['out','received'],['mid','own pulse',false,2],['err','other pulses',true,3]], at:'tc-row'}
+      caption:'The bits $0\\,1\\,0\\,1\\,1$ through the RC channel, sampled at the end of the last bit. The bars add the parts tip to tail. The percentages are each part\'s share of their total size. Drag $BT_b$: a narrower channel shrinks the own bit and grows the interference.'},
+    {t:'legend', items:[['out','received'],['mid','own pulse',false,1],['err','other pulses',true,2]], at:'tc-row'}
   ], right:[
     {t:'eq', label:'Sampled output', tex:'\\begin{aligned}y(t_i)&=\\underbrace{\\mu\\,a_i}_{\\text{own bit}}+\\underbrace{\\mu\\sum_{k\\ne i}a_k\\,p\\bigl((i-k)T_b\\bigr)}_{\\text{intersymbol interference}}\\\\&\\quad+\\underbrace{n(t_i)}_{\\text{noise}}\\end{aligned}',
       note:'Sample at $t_i=iT_b$. Since $p(0)=1$, the own bit gives $\\mu a_i$. Every other bit adds the value of its pulse at $t_i$.'},
