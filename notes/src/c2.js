@@ -1052,40 +1052,6 @@ function figIsiBuild(){
   ISI_B.forEach((_,k)=>a.point(k+1,y(k+1),{color:C.mid,r:4.6}));
   return a.svg();
 }
-const TERM_B=[0,0,0,1];
-function figIsiTermTop(){
-  const bt=0.25, y=rcTrain(TERM_B,bt,-1);
-  const a=ax2({xr:[-0.6,4.4],yr:[-1.4,1.5],xlabel:'t/T_b',ylabel:'y(t)',xticksOverride:[0,1,2,3,4]});
-  a.curve(nrz(TERM_B,-1),{color:C.in,width:1.4,dash:'5 5',opacity:0.7,n:900});
-  a.curve(y,{color:C.out,width:2.6,n:900});
-  a.vline(4,{color:C.muted});
-  a.point(4,y(4),{color:C.mid,r:5});
-  a.note(2.2,1.22,`y=${y(4).toFixed(3)}`,{tex:true,fs:13,color:C.mid});
-  return a.svg();
-}
-function figIsiTermBottom(){
-  const q=rcq(0.25);
-  const cont=[0,1,2,3,4].map(m=>[m,(m===0?1:-1)*(1-q)*Math.pow(q,m)]);
-  const a=ax2({xr:[-0.5,5],yr:[-0.35,1.0],xlabel:'m\\;(\\text{bits back})',ylabel:'\\text{share of the sample}',
-    xticksOverride:[0,1,2,3,4]});
-  a.stem([cont[0]],{color:C.mid});
-  a.stem(cont.slice(1),{color:C.err});
-  a.note(0.14,0.84,'1-q',{tex:true,fs:13,color:C.mid});
-  a.note(2.0,0.36,'-(1-q)q^{m}',{tex:true,fs:13,color:C.err});
-  return a.svg();
-}
-const EXI_B=[0,0,0,1,1,1,0,1];
-function figExIsi(){
-  const bt=0.25, y=rcTrain(EXI_B,bt,-1);
-  const a=ax1({h:250,xr:[-0.4,8.4],yr:[-1.5,1.6],xlabel:'t/T_b',ylabel:'y(t)',
-    xticksOverride:[0,1,2,3,4,5,6,7,8],ytarget:4});
-  a.curve(nrz(EXI_B,-1),{color:C.ink,width:1.6,dash:'6 5',n:1400});
-  EXI_B.forEach((b,k)=>a.note(k+0.5,1.4,String(b),{fs:13,color:C.ink,anchor:'middle'}));
-  a.curve(y,{color:C.out,width:2.6,n:1400});
-  EXI_B.forEach((_,k)=>a.point(k+1,y(k+1),{color:C.mid,r:4.6}));
-  a.note(7.12,y(7)-0.22,y(7).toFixed(3),{tex:true,fs:14,color:C.mid});
-  return a.svg();
-}
 function eyeTraces(bt,n){
   const out=[], r=rcResp(bt);
   for(let j=0;j<n;j++){ const p=(j*37+45)%128, bits=[];
@@ -2298,29 +2264,6 @@ window.C2 = [
 {t:'fig', svg:()=>figIsiSample(),
  cap:'The bits $0\\,1\\,0\\,1\\,1$ through the RC channel with $BT_b=0.25$, sampled at $t_i=5T_b$. Top, the own pulse (violet) and the other pulses added together (red, dashed). Bottom, the sample built tip to tail: the own bit $0.792$, the interference $+0.136$, a noise value $-0.1$, and the total $0.828$. The percentages are each part\'s share of their total size. A narrower channel shrinks the own bit and grows the interference.', short:'The three parts of a sample.'},
 
-{t:'h3', text:'The interference term'},
-{t:'p', text:'After its bit ends, a response decays as $(1-q)e^{-(t-T_b)/\\tau}$. One bit later it is $(1-q)q$, and $m$ bits later $(1-q)q^{m}$.'},
-{t:'eqbox', cap:'One sample', tex:'y_k=a_k(1-q)+\\sum_{m=1}^{\\infty}a_{k-m}\\,(1-q)\\,q^{m},\\qquad a_k=\\pm1',
- after:'Each earlier bit $a_{k-m}$ adds its tail to the sample of bit $k$. The sum of the tails is the <b>intersymbol interference</b>.'},
-{t:'p', text:'The interference is largest when every earlier bit has the sign opposite to the current one. Its size is then a geometric series.'},
-{t:'eqbox', cap:'Worst case', tex:'\\sum_{m=1}^{\\infty}(1-q)\\,q^{m}=(1-q)\\,\\frac{q}{1-q}=q',
- after:'The sample then shrinks from $1-q$ to $(1-q)-q=1-2q$. For example, a $1$ after a long run of $0$s at $BT_b=0.25$ gives $1-2(0.208)=0.584$.'},
-{t:'figrow', n:2, items:[
- {svg:()=>figIsiTermTop(), cap:'The bits $0,0,0,1$ after a line idle at the level of a $0$, with $BT_b=0.25$. The last sample is marked.'},
- {svg:()=>figIsiTermBottom(), cap:'The last sample split into its own share $1-q$ (violet) and the tails $-(1-q)q^{m}$ of the earlier bits (red).'}
-]},
-
-{t:'ex', hd:'Example 2.6 — the samples of a bit pattern', rows:[
- ['Given','Bits $0\\,0\\,0\\,1\\,1\\,1\\,0\\,1$ sent after a line idle at the level of a $0$ ($a_k=-1$), through an RC channel with $BT_b=0.25$, so $q=0.208$.'],
- ['Find','The sample at the end of the seventh bit, $y_7$.'],
- ['Method','Every earlier bit leaves a tail in the sample. Add the bit\'s own share, the tails of the three $1$s, and the tails of every earlier bit and the idle line, all $-1$.'],
- ['Solution','$y_7=-(1-q)+(1-q)(q+q^{2}+q^{3})-(1-q)\\sum_{m=4}^{\\infty}q^{m}$. The middle term is $q-q^{4}$ and the last is $q^{4}$, by the geometric series. So $y_7=-(1-q)+(q-q^{4})-q^{4}=-1+2q-2q^{4}=-1+2(0.2079)-2(0.0019)=-0.588$.'],
- ['Check','The sample is negative, so the $0$ is still decided correctly.']
-]},
-{t:'fig', svg:()=>figExIsi(),
- cap:'Example 2.6: the sent pattern (dashed) and the channel output (green), with its value at the end of each bit. The seventh sample is $-0.588$.'},
-{t:'box', kind:'err', hd:'Common error', html:'Use the full history, not only the previous bit. Each earlier bit still contributes its own tail $(1-q)q^{m}$.'},
-
 {t:'h3', text:'The eye diagram'},
 {t:'p', text:'An <b>eye diagram</b> shows the interference of every bit pattern at once. Cut the received waveform into pieces $2T_b$ long, centred on the sampling instants $t_k$, and draw them all on one axis. An oscilloscope triggered by the bit clock does this.'},
 {t:'p', text:'Each piece shows one bit with its neighbours and their tails. Once every pattern has passed, the eye shows the best and the worst case together. A wider channel leaves smaller tails, so the band of traces at the sampling instant gets thinner.'},
@@ -2485,7 +2428,7 @@ window.C2 = [
 {t:'fig', svg:()=>figRcAlpha(0.5),
  cap:'The raised cosine with $\\alpha=0.5$. Above, the spectrum, with a strip that marks the passband (cyan), the transition band (violet) and the stop band. Below, the pulse against the sinc pulse (dashed). The largest tail beyond $|t|=2T_b$ is $0.023$.', short:'Choosing the roll-off.'},
 
-{t:'ex', hd:'Example 2.7 — a raised-cosine link', rows:[
+{t:'ex', hd:'Example 2.6 — a raised-cosine link', rows:[
  ['Given','A link sends $R_b=20$ kb/s with raised-cosine pulses and $\\alpha=0.5$.'],
  ['Find','$W$, $f_1$ and $B_T$.'],
  ['Method','Each of the three follows from $R_b$ and $\\alpha$: $W=R_b/2$, $f_1=W(1-\\alpha)$ and $B_T=2W-f_1=W(1+\\alpha)$. The spectrum is flat up to $f_1$ and falls to zero at $B_T$, with its half-height point at $W$.'],
@@ -2493,7 +2436,7 @@ window.C2 = [
  ['Check','$B_T-W=W-f_1=5$ kHz, so the roll-off is symmetric about $W$.']
 ]},
 {t:'fig', svg:()=>figExRc(),
- cap:'Example 2.7: the ideal rectangle of width $2W$ (dashed) and the raised-cosine spectrum with $\\alpha=0.5$, which reaches $B_T=15$ kHz.'},
+ cap:'Example 2.6: the ideal rectangle of width $2W$ (dashed) and the raised-cosine spectrum with $\\alpha=0.5$, which reaches $B_T=15$ kHz.'},
 {t:'box', kind:'err', hd:'Common error', html:'Use $W=R_b/2=10$ kHz, not $R_b=20$ kHz. The wrong $W$ gives $B_T=30$ kHz, twice the true value.'},
 
 {t:'h3', text:'Splitting the raised cosine'},

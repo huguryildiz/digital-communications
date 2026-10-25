@@ -1540,52 +1540,6 @@ function figIsiSample(v){
   return `<svg viewBox="0 0 600 ${Ht+Hb}" xmlns="http://www.w3.org/2000/svg" role="img">${place(a.svg(),0,0,600,Ht)}${place(b.svg(),0,Ht,600,Hb)}</svg>`;
 }
 
-/* One sample and what makes it up. Bits 0,0,0 then 1 after a line idle at
-   the level of a 0; the sample at the end of the 1 is the bit's own share
-   (1 - q) less the tails of the earlier bits. BT_b = 0.25. */
-const TERM_B = [0,0,0,1];
-function figIsiTerm(){
-  P.hOverride = null;
-  const bt = 0.25, q = rcq(bt), y = rcTrain(TERM_B, bt, -1);
-  const a = P.Axes({w:560,h:210,xr:[-0.6,4.4],yr:[-1.4,1.5],xlabel:'t', xunit:'T_b',ylabel:'y(t)',
-    pad:{l:56,r:26,t:24,b:40},xticksOverride:[0,1,2,3,4],ytarget:3});
-  a.curve(nrz(TERM_B,-1), {color:C.in, width:1.4, dash:'5 5', opacity:0.7, n:900});
-  a.curve(y, {color:C.out, width:2.6, n:900});
-  a.vline(4, {color:C.muted});
-  a.point(4, y(4), {color:C.mid, r:5});
-  a.note(3.1, 1.25, `y=${y(4).toFixed(3)}`, {tex:true, fs:15, color:C.mid});
-  const cont = [0,1,2,3,4].map(m=>[m, (m===0?1:-1)*(1-q)*Math.pow(q,m)]);
-  /* in projector mode the panel reaches higher, so the 1-q label stays
-     clear of the axis name above it */
-  const b = P.Axes({w:560,h:220,xr:[-0.5,5],yr:[-0.35,P.labelScale()>1?1.35:1.0],xlabel:'m\\;(\\text{bits back})',ylabel:'\\text{share of the sample}',
-    pad:{l:56,r:26,t:24,b:42},xticksOverride:[0,1,2,3,4],ytarget:3});
-  b.stem([cont[0]], {color:C.mid});
-  b.stem(cont.slice(1), {color:C.err});
-  b.note(0.12, 0.86, '1-q', {tex:true, fs:15, color:C.mid});
-  b.note(2.3, 0.4, '-(1-q)q^{m}', {tex:true, fs:15, color:C.err});
-  return stack(560, [[a.svg(),210],[b.svg(),220]]);
-}
-
-/* Worked example: the bits 0 0 0 1 1 1 0 1 after a line idle at the level of
-   a 0, through the channel with BT_b = 0.25. The answer is y(t) and its
-   samples at the end of each bit; the one asked for, at the end of the
-   seventh bit, is -1 + 2q - 2q^4 = -0.588. */
-const EXI_B = [0,0,0,1,1,1,0,1];
-function figExIsi(){
-  const bt = 0.25, y = rcTrain(EXI_B, bt, -1);
-  const a = P.Axes(SZ({xr:[-0.4,8.4], yr:[-1.5,1.6], xlabel:'t', xunit:'T_b', ylabel:'y(t)',
-    xticksOverride:[0,1,2,3,4,5,6,7,8], ytarget:4}));
-  a.raw(`<rect class="sk-area" x="${a.x0}" y="${a.y1}" width="${a.x1-a.x0}" height="${a.y0-a.y1}" fill="none"/>`);
-  a.curve(nrz(EXI_B,-1), {color:C.ink, width:1.6, dash:'6 5', n:1400});
-  EXI_B.forEach((b,k)=>a.note(k+0.5, 1.4, String(b), {fs:14, color:C.ink, anchor:'middle'}));
-  a.raw('<g class="sk-key">');
-  a.curve(y, {color:C.out, width:2.6, n:1400});
-  EXI_B.forEach((_,k)=>a.point(k+1, y(k+1), {color:C.mid, r:4.6}));
-  a.note(7.12, y(7)-0.2, y(7).toFixed(3), {tex:true, fs:15, color:C.mid});
-  a.raw('</g>');
-  return a.svg();
-}
-
 /* The eye of the same channel: the received waveform cut into two-bit pieces
    centred on the sampling instant (the end of a bit) and laid on top of each
    other. Each trace is one pattern of seven bits; seven are enough because
@@ -1599,43 +1553,46 @@ function eyeTraces(bt, n){
     out.push(pts); }
   return out;
 }
-/* The eye as an oscilloscope builds it. A stream of 32 bits, a de Bruijn
-   sequence that holds every five-bit pattern once when read around a circle,
-   runs through the RC channel with BT_b = 0.3. Above, the waveform scrolls
-   left past a fixed window 2T_b wide centred on a sampling instant t_k (the
-   end of a bit). Below, every piece the window has cut is laid on one axis:
-   the newest in violet, the earlier ones in green. Eight bits of the same
-   sequence come first as history, so the first pieces already carry the
-   tails of the bits before them. */
-const EYE_DB = '00000100011001010011101011011111'.split('').map(Number);
-const EYE_L = [...EYE_DB.slice(24), ...EYE_DB, ...EYE_DB.slice(0,2)];   /* sample k is at t = 8 + k */
-const EYE_NS = [1,2,3,4,8,32];
-function figEyeScope(v){
+/* The eye as the overlay of every bit pattern. A piece 2T_b long around a
+   sampling instant t_k (the end of a bit) holds the bit just ended, the bit
+   after it, and the tail of the bit before: three bits, eight patterns. The
+   line before each pattern sits at the level of its first bit, so the eight
+   pieces reach the best and the worst case of the 128-pattern eye. Left, the
+   eight patterns through the RC channel with BT_b = 0.3, the window
+   [-T_b, T_b] shaded. Each frame lifts one piece out of its window and lays
+   it on the eye at the right: the newest in violet, the earlier ones green. */
+const EYE_P = [0,1,2,3,4,5,6,7].map(n=>[n&1, (n>>1)&1, (n>>2)&1]);
+const eyePiece = (bits, bt) => { const y = rcTrain(bits, bt, bits[0]?1:-1); return uu => y(uu+2); };
+function figEyePatterns(v){
   P.hOverride = null;
-  const f = Math.max(0, Math.min(EYE_NS.length-1, frameOf(v, EYE_NS.length-1))), big = P.labelScale() > 1;
-  const i0 = Math.min(EYE_NS.length-2, Math.floor(f)), n = EYE_NS[i0] + (EYE_NS[i0+1]-EYE_NS[i0])*(f-i0);
-  const bt = 0.3, y = rcTrain(EYE_L, bt), tc = 8+n;
-  const hA = big ? 205 : 180, hB = big ? 270 : 235;
-  const s = P.Axes({w:560, h:hA, xr:[-3.2,3.2], yr:[-1.4,2.5], xlabel:'t-t_k', xunit:'T_b', ylabel:'y(t)',
-    pad:{l:56,r:26,t:24,b:40}, xticksOverride:[-3,-2,-1,0,1,2,3], yticksOverride:[-1,0,1]});
-  s.rect(-1, -1.4, 1, 1.95, {fill:C.dec.mid});
-  s.vline(-1, {color:C.mid, opacity:0.7}); s.vline(1, {color:C.mid, opacity:0.7});
-  s.vline(0, {color:C.ink, dash:'6 4', opacity:0.8});
-  s.curve(uu=>y(tc+uu), {color:C.out, width:2.3, n:900});
-  s.curve(uu=>Math.abs(uu) <= 1 ? y(tc+uu) : NaN, {color:C.mid, width:2.8, n:600});
-  /* the digits of the bits in view, moving with the waveform */
-  EYE_L.forEach((b,j)=>{ const x = j+0.5-tc; if(Math.abs(x) < 2.85) s.note(x, 1.62, String(b), {fs:15, color:C.ink, anchor:'middle', weight:600}); });
-
-  const e = P.Axes({w:560, h:hB, xr:[-1,1], yr:[-1.5,1.5], xlabel:'t-t_k', xunit:'T_b', ylabel:'y(t)',
-    pad:{l:56,r:26,t:24,b:42}, xticksOverride:[-1,-0.5,0,0.5,1], ytarget:4});
-  const piece = k => { const pts = []; for(let i=0;i<=100;i++){ const uu = -1+2*i/100; pts.push([uu, y(8+k+uu)]); } return pts; };
-  const done = Math.floor(n+1e-9), op = done > 12 ? 0.55 : 0.85;
-  e.raw(`<g opacity="${op}">`);
-  for(let k=1;k<done;k++) e.poly(piece(k), {color:C.out, width:done > 12 ? 1.2 : 1.7});
-  e.raw('</g>');
-  e.poly(piece(done), {color:C.mid, width:2.6});
+  const f = Math.max(0, Math.min(8, frameOf(v, 8))), cur = Math.ceil(f-1e-9), p = ease(clamp01(f-(cur-1)));
+  const bt = 0.3, RH = 54, T0 = 34, T1 = 190, EX = 226, W = 560, Y0 = 40, H = Y0+8*RH+6;
+  const e = P.Axes({w:W-EX, h:H, xr:[-1,1], yr:[-1.5,1.5], xlabel:'t-t_k', xunit:'T_b', ylabel:'y(t)',
+    pad:{l:56,r:20,t:Y0,b:42}, xticksOverride:[-1,0,1], ytarget:4});
   e.vline(0, {color:C.ink, dash:'6 4', opacity:0.8});
-  return stack(560, [[s.svg(),hA],[e.svg(),hB]]);
+  const tx = uu => T0 + (uu+2)/3*(T1-T0), ty = (j, yy) => Y0 + j*RH + 34 - 14*yy;
+  const ex = uu => EX + e.sx(uu), ey = yy => e.sy(yy);
+  const d = pts => 'M'+pts.map(q=>q[0].toFixed(1)+','+q[1].toFixed(1)).join('L');
+  const line = (pts, c, w, op=1, dash='') => `<path d="${d(pts)}" fill="none" stroke="${c}" stroke-width="${w}" opacity="${op}"${dash?` stroke-dasharray="${dash}"`:''} stroke-linejoin="round"/>`;
+  const span = (lo, hi, n) => Array.from({length:n+1}, (_,i)=>lo+(hi-lo)*i/n);
+  const ax = (EX+e.x0-14), ay = ey(0);
+  let left = '', arrows = '', eye = '';
+  EYE_P.forEach((bits, j)=>{
+    const y = eyePiece(bits, bt), k = j+1, on = k <= cur, now = k === cur, top = Y0 + j*RH;
+    left += `<rect x="${tx(-1)}" y="${top+17}" width="${tx(1)-tx(-1)}" height="34" fill="${C.dec.mid}"/>`;
+    left += line([[T0, ty(j,0)], [T1, ty(j,0)]], C.grid, 1);
+    bits.forEach((b,i)=>{ left += `<text x="${tx(i-1.5).toFixed(1)}" y="${top+13}" font-size="14" font-weight="600" text-anchor="middle" fill="${now ? C.mid : C.ink}">${b}</text>`; });
+    left += line(span(-2, 1, 90).map(uu=>[tx(uu), ty(j, y(uu))]), on ? C.out : C.muted, 1.6, on ? 1 : 0.5);
+    if(on) left += line(span(-1, 1, 60).map(uu=>[tx(uu), ty(j, y(uu))]), now ? C.mid : C.out, 2.6);
+    if(!on) return;
+    arrows += line([[T1+6, ty(j,0)], [ax, ay]], now ? C.mid : C.muted, 1.3, now ? 0.9 : 0.45, '2 4');
+    const pts = span(-1, 1, 80).map(uu=>{ const s = now ? p : 1;
+      return [tx(uu) + (ex(uu)-tx(uu))*s, ty(j, y(uu)) + (ey(y(uu))-ty(j, y(uu)))*s]; });
+    if(now) eye += line(pts, C.mid, 2.6);
+    else eye = line(pts, C.out, 1.7, 0.85) + eye;
+  });
+  arrows += `<circle cx="${ax}" cy="${ay}" r="3" fill="${cur ? C.mid : C.muted}" opacity="${cur ? 0.9 : 0.4}"/>`;
+  return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img">${place(e.svg(), EX, 0, W-EX, H)}${left}${arrows}${eye}</svg>`;
 }
 
 /* Reading the eye of the RC channel at BT_b = 0.3, the 128 seven-bit
@@ -3433,53 +3390,6 @@ REAL_DECISION,
   ]}
 ]},
 
-{ id:'m2-isi-term', module:'M2', nav:'The interference term', title:'The interference term',
-  objective:'Write each sample as its own bit plus the tails of all earlier bits.',
-  keywords:'intersymbol interference term sample sum of tails geometric series worst case q',
-  src:'CH8 s.35–37', slide:true, steps:2, blocks:[
-  {t:'eyebrow', text:'Module 2 · Intersymbol interference'},
-  {t:'title', text:'The interference term'},
-  {t:'cols', ratio:'c-5-7', fill:true, left:[
-    {t:'fig', frame:true, grow:true, svg:figIsiTerm,
-      caption:'The bits $0,0,0,1$ after a line idle at the level of a $0$, with $BT_b=0.25$. The lower panel splits the last sample into its own share and the tails of earlier bits.'},
-    {t:'legend', items:[['mid','own bit'],['err','earlier bits']], at:'tc'}
-  ], right:[
-    {t:'eq', label:'One sample', tex:'y_k=a_k(1-q)+\\sum_{m=1}^{\\infty}a_{k-m}\\,(1-q)\\,q^{m},\\qquad a_k=\\pm1',
-      note:'After its bit, a response decays as $(1-q)e^{-(t-T_b)/\\tau}$. One bit later that is $(1-q)q$, $m$ bits later $(1-q)q^{m}$.'},
-    {t:'reveal', at:1, items:[
-      {t:'eq', label:'Worst case', tex:'\\sum_{m=1}^{\\infty}(1-q)\\,q^{m}=(1-q)\\,\\frac{q}{1-q}=q',
-        note:'The geometric series. When every earlier bit has the opposite sign, the sample shrinks from $1-q$ to $1-2q$.'}]},
-    {t:'reveal', at:2, items:[
-      {t:'note', kind:'def', head:'Given', html:'$BT_b=0.25$. A $1$ follows a long run of $0$s.<div class="nsep"></div>What is the sample at the end of the $1$?',
-        ask:{key:'m2-isi-term', choices:['$0.584$','$0.792$','$1$'], answer:0,
-          why:'All earlier bits are $-1$, so $y=(1-q)-q=1-2q=1-2(0.208)=0.584$.'}}]}
-  ]}
-]},
-
-{ id:'m2-ex-isi', module:'M2', nav:'Worked example · a bit pattern', title:'Worked example: the samples of a bit pattern',
-  objective:'Sketch the channel output for a bit pattern and compute one sample with its interference.',
-  keywords:'worked example intersymbol interference bit pattern rc channel sample sketch -0.588',
-  src:'CH8 s.35–37', slide:true, steps:3, blocks:[
-  {t:'eyebrow', text:'Module 2 · Worked example'},
-  {t:'title', text:'Worked example: the samples of a bit pattern'},
-  {t:'cols', ratio:'c-5-7', fill:true, left:[
-    {t:'fig', frame:true, grow:true, sketch:{label:'Sketch $y(t)$ on the axes, then check it.'}, svg:figExIsi,
-      caption:'The dashed trace is the sent pattern. Draw the channel output and mark its value at the end of each bit, then show the answer.'}
-  ], right:[
-    {t:'note', kind:'def', head:'Given', html:'Bits $0\\,0\\,0\\,1\\,1\\,1\\,0\\,1$ after a line idle at a $0$. $BT_b=0.25$, so $q=0.208$.<div class="nsep"></div>Find the sample at the end of the seventh bit.',
-      ask:{key:'m2-ex-isi', choices:['$-0.792$','$-0.588$','$+0.208$'], answer:1,
-        why:'$y_7=-1+2q-2q^{4}=-1+0.416-0.004=-0.588$.'}},
-    {t:'reveal', at:1, items:[
-      {t:'eq', label:'Method', tex:'y_7=-(1-q)+(1-q)(q+q^{2}+q^{3})-(1-q)\\sum_{m=4}^{\\infty}q^{m}',
-        note:'The own bit, the three $1$s, then every earlier bit and the idle line, all $-1$.'}]},
-    {t:'reveal', at:2, items:[
-      {t:'eq', label:'Solution', tex:'\\begin{aligned}y_7&=-(1-q)+(q-q^{4})-q^{4}\\\\&=-1+2q-2q^{4}\\\\&=-1+2(0.2079)-2(0.0019)=-0.588\\end{aligned}',
-        note:'Check: the sample is negative, so the $0$ is still decided correctly.'}]},
-    {t:'reveal', at:3, items:[
-      {t:'note', kind:'err', head:'Common error', html:'Use the full history, not only the previous bit.'}]}
-  ]}
-]},
-
 { id:'m2-eye', module:'M2', nav:'The eye diagram', title:'The eye diagram',
   objective:'Build the eye diagram by overlaying the received waveform and read its opening.',
   keywords:'eye diagram overlay traces opening sampling instant worst case pattern',
@@ -3488,14 +3398,14 @@ REAL_DECISION,
   {t:'title', text:'The eye diagram'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true,
-      frames:{labels:['one piece','two pieces','three pieces','four pieces','eight pieces','all $32$ pieces'], ms:1600},
-      svg:figEyeScope,
-      caption:'Step through the frames. The waveform runs left past a window $2T_b$ wide. At every sampling instant the window cuts one piece and lays it on the eye. RC channel, $BT_b=0.3$.'},
-    {t:'legend', items:[['out','received'],['mid','the piece just cut']], at:'tc-row'}
+      frames:{labels:['eight patterns','$000$','$100$','$010$','$110$','$001$','$101$','$011$','$111$'], ms:1400},
+      svg:figEyePatterns,
+      caption:'Step through the frames. Each pattern of three bits passes through the RC channel with $BT_b=0.3$. The window $2T_b$ wide around $t_k$ cuts one piece, and the piece is laid on the eye. The line before a pattern sits at the level of its first bit.'},
+    {t:'legend', items:[['out','pieces laid'],['mid','the piece just added']], at:'tc-row'}
   ], right:[
     {t:'note', kind:'def', head:'Eye diagram', html:'Cut the received waveform into pieces $2T_b$ long, centred on the sampling instants $t_k$, and draw them on one axis. An oscilloscope triggered by the bit clock does this.'},
     {t:'reveal', at:1, items:[
-      {t:'note', kind:'warn', head:'One piece, one pattern', html:'Each piece shows one bit with its neighbours. Once every pattern has passed, the eye shows the best and the worst case together.'}]},
+      {t:'note', kind:'warn', head:'One piece, one pattern', html:'A piece holds the bit sampled at $t_k$, the bit after it and the tail of the bit before. Three bits give eight patterns, and the eight pieces together show the best and the worst case.'}]},
     {t:'reveal', at:2, items:[
       {t:'note', kind:'def', head:'Given', html:'The channel is made wider, so $BT_b$ grows.<div class="nsep"></div>What happens to the band of traces at $t-t_k=0$?',
         ask:{key:'m2-eye', choices:['it gets thinner','it gets thicker','it does not change'], answer:0,
