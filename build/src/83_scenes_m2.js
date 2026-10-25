@@ -1626,26 +1626,26 @@ function figEyeRead(v){
     pad:{l:56,r:224,t:24,b:42}, xticksOverride:[-1,-0.5,0,0.5,1], yticksOverride:[-1,0,1], ytickfmt:()=>''});
   leftTicks(a, [-1,1], String);
   a.raw('<g opacity="0.5">');
-  tr.forEach(pts=>a.poly(pts, {color:C.out, width:1.1}));
+  tr.forEach(pts=>a.poly(pts, {color:C.out, width:1.8}));
   a.raw('</g>');
   /* the labels stand in a column right of the eye, each on a leader */
   const lab = (y, s, c) => a.note(1.13, y, s, {tex:true, fs:14, color:c});
-  const lead = (x0, y0, y1, c) => a.poly([[x0,y0],[1.1,y1]], {color:c, width:1.2});
-  const cap = (x, ya, yb, c) => { a.poly([[x,ya],[x,yb]], {color:c, width:2.4});
-    a.poly([[x-0.03,ya],[x+0.03,ya]], {color:c, width:2.4}); a.poly([[x-0.03,yb],[x+0.03,yb]], {color:c, width:2.4}); };
-  fade(a, u(0), ()=>{ a.vline(0, {color:C.ink, dash:'6 4', width:1.4, opacity:1});
+  const lead = (x0, y0, y1, c) => a.poly([[x0,y0],[1.1,y1]], {color:c, width:1.8});
+  const cap = (x, ya, yb, c) => { a.poly([[x,ya],[x,yb]], {color:c, width:3.4});
+    a.poly([[x-0.03,ya],[x+0.03,ya]], {color:c, width:3.4}); a.poly([[x-0.03,yb],[x+0.03,yb]], {color:c, width:3.4}); };
+  fade(a, u(0), ()=>{ a.vline(0, {color:C.ink, dash:'6 4', width:2.2, opacity:1});
     a.note(0.04, 1.66, '\\text{best sampling time}', {tex:true, fs:14, color:C.ink}); });
   fade(a, u(1), ()=>{ cap(0.11, -h, h, C.mid); lead(0.14, 0.55, 0.55, C.mid); lab(0.55, '\\text{margin over noise}', C.mid); });
   fade(a, u(2), ()=>{ cap(0.05, h, 1, C.err); lead(0.08, 0.95, 1.25, C.err); lab(1.25, '\\text{distortion at }t=0', C.err); });
   const [c0, c1] = eyeCross(tr);
   fade(a, u(3), ()=>{ [[c0,c1],[-c1,-c0]].forEach(([p,r])=>a.rect(p, -0.045, r, 0.045, {fill:C.err}));
     lead(c1+0.01, 0, -0.4, C.err); lab(-0.4, '\\text{zero-crossing spread}', C.err);
-    a.poly([[-c0,0.16],[c0,0.16]], {color:C.ink, width:1.6}); a.poly([[-c0,0.07],[-c0,0.25]], {color:C.ink, width:1.6});
-    a.poly([[c0,0.07],[c0,0.25]], {color:C.ink, width:1.6});
+    a.poly([[-c0,0.16],[c0,0.16]], {color:C.ink, width:2.4}); a.poly([[-c0,0.07],[-c0,0.25]], {color:C.ink, width:2.4});
+    a.poly([[c0,0.07],[c0,0.25]], {color:C.ink, width:2.4});
     lead(c0+0.02, 0.2, 0.12, C.ink); lab(0.12, '\\text{sampling window}', C.ink); });
   const s = gsig(bt), pk = t => Qf((t-0.5)/s) - Qf((t+0.5)/s), t0 = 0.62, y0 = 2*pk(t0)-1, sl = (2*pk(t0+1e-3)-2*pk(t0-1e-3))/2e-3, dx = 0.07;
-  fade(a, u(4), ()=>{ a.poly([[t0-dx, y0-dx*sl],[t0+dx, y0+dx*sl]], {color:C.ink, width:2.8});
-    a.poly([[t0+dx+0.02, y0+(dx+0.02)*sl],[1.1, -0.85]], {color:C.ink, width:1.2}); lab(-0.85, '\\text{timing sensitivity}', C.ink); });
+  fade(a, u(4), ()=>{ a.poly([[t0-dx, y0-dx*sl],[t0+dx, y0+dx*sl]], {color:C.ink, width:3.8});
+    a.poly([[t0+dx+0.02, y0+(dx+0.02)*sl],[1.1, -0.85]], {color:C.ink, width:1.8}); lab(-0.85, '\\text{timing sensitivity}', C.ink); });
   return a.svg();
 }
 function figEyeLive(v){
@@ -3433,7 +3433,7 @@ REAL_DECISION,
 { id:'m2-eye-read', module:'M2', nav:'Reading the eye', title:'Reading the eye',
   objective:'Read the sampling time, the noise margin, the distortion and the timing sensitivity off an eye diagram.',
   keywords:'eye diagram interpretation best sampling time margin over noise distortion zero crossing jitter slope timing error opening',
-  src:'CH8 s.39', slide:true, steps:2, blocks:[
+  src:'CH8 s.39', slide:true, steps:1, blocks:[
   {t:'eyebrow', text:'Module 2 · Intersymbol interference'},
   {t:'title', text:'Reading the eye'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
@@ -3442,11 +3442,8 @@ REAL_DECISION,
       svg:figEyeRead,
       caption:'Step through the frames. Each frame adds one reading to the eye of the Gaussian channel with $BT_b=0.5$, built from $128$ bit patterns.'}
   ], right:[
-    {t:'eq', label:'Opening', tex:'\\begin{aligned}q&=Q\\!\\left(\\frac{\\pi BT_b}{\\sqrt{\\ln 2}}\\right)\\\\\\min_{\\text{patterns}}|y_k|&=(1-2q)-2q=1-4q\\end{aligned}',
-      note:'$Q(x)$ is the Gaussian tail probability. A share $q$ of each bit leaks past each of its two edges, so the bit keeps $1-2q$. In the worst pattern every other bit is opposite and adds $2q$. The opening is $2(1-4q)$.'},
+    {t:'note', kind:'def', head:'Readings', html:'<b>Best sampling time</b>: the instant where the eye is most open.<div class="nsep"></div><b>Margin over noise</b>: the vertical gap at that instant. Noise smaller than half of it cannot cause an error.<div class="nsep"></div><b>Distortion at $t=0$</b>: the thickness of the band of traces at that instant. Interference from the other bits causes it.<div class="nsep"></div><b>Zero-crossing spread</b>: the range of times at which the traces cross zero. <b>Sampling window</b>: the time between the inner crossings, where a sample still decides correctly.<div class="nsep"></div><b>Timing sensitivity</b>: the slope of the sides of the eye.'},
     {t:'reveal', at:1, items:[
-      {t:'note', kind:'warn', head:'Timing', html:'A steep side of the eye means a small timing error costs a lot of margin. The spread of the zero crossings is the timing jitter that the bit clock must tolerate.'}]},
-    {t:'reveal', at:2, items:[
       {t:'note', kind:'def', head:'Given', html:'The Gaussian channel has $BT_b=0.5$.<div class="nsep"></div>What is the eye opening at the sampling instant?',
         ask:{key:'m2-eye-read', choices:['$0.94$','$1.76$','$1.88$'], answer:1,
           why:'$q=Q(0.5\\pi/\\sqrt{\\ln 2})=Q(1.887)=0.030$, so $2(1-4q)=2(0.882)=1.76$.'}}]}
@@ -3456,7 +3453,7 @@ REAL_DECISION,
 { id:'m2-eye-close', module:'M2', nav:'Eye closure', title:'Eye closure',
   objective:'Find the bandwidth at which the eye closes and decisions fail without noise.',
   keywords:'eye closure bandwidth gaussian channel 0.179 noise margin decision errors without noise',
-  src:'CH8 s.38–41', slide:true, steps:3, blocks:[
+  src:'CH8 s.38–41', slide:true, steps:2, blocks:[
   {t:'eyebrow', text:'Module 2 · Intersymbol interference'},
   {t:'title', text:'Eye closure'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
@@ -3465,13 +3462,10 @@ REAL_DECISION,
       svg:figEyeLive,
       caption:'Drag $BT_b$. A narrower Gaussian channel closes the eye. Below $BT_b=0.179$ some patterns cross zero at the sampling instant.'}
   ], right:[
-    {t:'eq', label:'Closure', key:true, result:true, tex:'\\begin{aligned}1-4q&=0\\\\Q\\!\\left(\\frac{\\pi BT_b}{\\sqrt{\\ln 2}}\\right)&=\\tfrac14\\\\\\frac{\\pi BT_b}{\\sqrt{\\ln 2}}&=0.674\\\\BT_b&=\\frac{0.674\\sqrt{\\ln 2}}{\\pi}=0.179\\end{aligned}',
-      note:'Set the opening to zero. $Q(x)$ is the Gaussian tail probability, and $Q(x)=\\tfrac14$ at $x=0.674$ from a $Q$ table.'},
+    {t:'note', kind:'def', head:'Closure', html:'The eye closes when the opening $1-4q$ falls to zero, which needs $q=\\tfrac14$. A $Q$ table gives $Q(x)=\\tfrac14$ at $x=0.674$, so $BT_b=0.674\\sqrt{\\ln 2}/\\pi=0.179$.<div class="nsep"></div>Above this bandwidth the margin against noise is $1-4q$. A half-closed eye halves it, which costs $6$ dB of SNR.'},
     {t:'reveal', at:1, items:[
-      {t:'note', kind:'ok', head:'Noise margin', html:'Noise must move a sample by more than $1-4q$ to cause an error. A half-closed eye halves the margin, which costs $6$ dB of SNR.'}]},
-    {t:'reveal', at:2, items:[
       {t:'note', kind:'err', head:'Common error', html:'Use the worst pattern, not a typical one. A random stream may run for a long time before it shows the pattern that closes the eye.'}]},
-    {t:'reveal', at:3, items:[
+    {t:'reveal', at:2, items:[
       {t:'note', kind:'def', head:'Given', html:'The Gaussian channel has $BT_b=0.15$.<div class="nsep"></div>Is the eye open or closed?',
         ask:{key:'m2-eye-close', choices:['open','closed'], answer:1,
           why:'$BT_b=0.15$ is below $0.179$. $q=Q(0.566)=0.286>0.25$, so $1-4q=-0.14<0$: the eye is closed.'}}]}
