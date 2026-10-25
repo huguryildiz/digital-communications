@@ -1101,21 +1101,21 @@ function eyeCross(tr){ let c0=Infinity, c1=-Infinity;
 function figEyeRead(){
   const bt=0.5, q=gq(bt), h=1-4*q, tr=eyeTraces(bt);
   const a=P.Axes({w:700,h:330,xr:[-1,1],yr:[-1.6,1.9],xlabel:'(t-t_k)/T_b',ylabel:'y(t)',pad:{l:56,r:250,t:20,b:40},xticksOverride:[-1,-0.5,0,0.5,1],yticksOverride:[-1,0,1]});
-  a.raw('<g opacity="0.5">'); tr.forEach(pts=>a.poly(pts,{color:C.out,width:1.1})); a.raw('</g>');
+  a.raw('<g opacity="0.5">'); tr.forEach(pts=>a.poly(pts,{color:C.out,width:1.8})); a.raw('</g>');
   const lab=(y,s,c)=>a.note(1.06,y,s,{tex:true,fs:13,color:c});
-  const lead=(x0,y0,y1,c)=>a.poly([[x0,y0],[1.03,y1]],{color:c,width:1.2});
-  const cap=(x,ya,yb,c)=>{ a.poly([[x,ya],[x,yb]],{color:c,width:2.2}); a.poly([[x-0.03,ya],[x+0.03,ya]],{color:c,width:2.2}); a.poly([[x-0.03,yb],[x+0.03,yb]],{color:c,width:2.2}); };
-  a.vline(0,{color:C.ink,dash:'6 4',width:1.4,opacity:1}); a.note(0.04,1.66,'\\text{best sampling time}',{tex:true,fs:13,color:C.ink});
+  const lead=(x0,y0,y1,c)=>a.poly([[x0,y0],[1.03,y1]],{color:c,width:1.8});
+  const cap=(x,ya,yb,c)=>{ a.poly([[x,ya],[x,yb]],{color:c,width:3.2}); a.poly([[x-0.03,ya],[x+0.03,ya]],{color:c,width:3.2}); a.poly([[x-0.03,yb],[x+0.03,yb]],{color:c,width:3.2}); };
+  a.vline(0,{color:C.ink,dash:'6 4',width:2.2,opacity:1}); a.note(0.04,1.66,'\\text{best sampling time}',{tex:true,fs:13,color:C.ink});
   cap(0.11,-h,h,C.mid); lead(0.14,0.55,0.55,C.mid); lab(0.55,'\\text{margin over noise}',C.mid);
   cap(0.05,h,1,C.err); lead(0.08,0.95,1.25,C.err); lab(1.25,'\\text{distortion at }t=0',C.err);
   const [c0,c1]=eyeCross(tr);
   [[c0,c1],[-c1,-c0]].forEach(([p,r])=>a.rect(p,-0.045,r,0.045,{fill:C.err}));
   lead(c1+0.01,0,-0.4,C.err); lab(-0.4,'\\text{zero-crossing spread}',C.err);
-  a.poly([[-c0,0.16],[c0,0.16]],{color:C.ink,width:1.5}); a.poly([[-c0,0.07],[-c0,0.25]],{color:C.ink,width:1.5}); a.poly([[c0,0.07],[c0,0.25]],{color:C.ink,width:1.5});
+  a.poly([[-c0,0.16],[c0,0.16]],{color:C.ink,width:2.4}); a.poly([[-c0,0.07],[-c0,0.25]],{color:C.ink,width:2.4}); a.poly([[c0,0.07],[c0,0.25]],{color:C.ink,width:2.4});
   lead(c0+0.02,0.2,0.12,C.ink); lab(0.12,'\\text{sampling window}',C.ink);
   const s=gsig(bt), pk=t=>Qf((t-0.5)/s)-Qf((t+0.5)/s), t0=0.62, y0=2*pk(t0)-1, sl=(2*pk(t0+1e-3)-2*pk(t0-1e-3))/2e-3, dx=0.07;
-  a.poly([[t0-dx,y0-dx*sl],[t0+dx,y0+dx*sl]],{color:C.ink,width:2.6});
-  a.poly([[t0+dx+0.02,y0+(dx+0.02)*sl],[1.03,-0.85]],{color:C.ink,width:1.2}); lab(-0.85,'\\text{timing sensitivity}',C.ink);
+  a.poly([[t0-dx,y0-dx*sl],[t0+dx,y0+dx*sl]],{color:C.ink,width:3.6});
+  a.poly([[t0+dx+0.02,y0+(dx+0.02)*sl],[1.03,-0.85]],{color:C.ink,width:1.8}); lab(-0.85,'\\text{timing sensitivity}',C.ink);
   return a.svg();
 }
 function figEyeClose(bt){
@@ -2299,16 +2299,17 @@ window.C2 = [
 {t:'p', text:'An eye diagram is read at a few places. The bit is sampled at its centre $t=t_k$, where the eye is widest.'},
 {t:'ul', items:[
  '<b>Best sampling time.</b> The instant where the eye is most open.',
- '<b>Margin over noise.</b> The vertical gap at the best sampling time. Noise smaller than half of it cannot cause an error.',
- '<b>Distortion at the sampling time.</b> The thickness of the band of traces there. For the Gaussian channel the levels of a $1$ run from $1-4q$ to $1$, so the band is $4q$ thick.',
- '<b>Zero crossings.</b> The traces cross zero at different times. The spread is the timing jitter that the bit clock must tolerate. The gap between the inner crossings is the window in which a sample still decides correctly.',
- '<b>Timing sensitivity.</b> The slope of the sides of the eye. A steep side means a small timing error costs a lot of margin.'
+ '<b>Margin over noise.</b> The vertical gap at that instant. Noise smaller than half of it cannot cause an error.',
+ '<b>Distortion at $t=0$.</b> The thickness of the band of traces at that instant. Interference from the other bits causes it.',
+ '<b>Zero-crossing spread.</b> The range of times at which the traces cross zero.',
+ '<b>Sampling window.</b> The time between the inner crossings, where a sample still decides correctly.',
+ '<b>Timing sensitivity.</b> The slope of the sides of the eye.'
 ]},
-{t:'p', text:'The worst pattern has every other bit opposite to the sampled one. The leaks of all the bits on one side add up to $q$, because together they fill one half-line. Both sides together take $2q$.'},
-{t:'eqbox', cap:'Opening', tex:'\\begin{aligned}\\min_{\\text{patterns}}|y_k|&=(1-2q)-2q=1-4q\\\\\\text{opening}&=2(1-4q)\\end{aligned}',
- after:'For $BT_b=0.5$, $q=Q(0.5\\pi/\\sqrt{\\ln 2})=Q(1.887)=0.030$, so the opening is $2(1-4q)=2(0.882)=1.76$.'},
 {t:'fig', svg:()=>figEyeRead(),
- cap:'The eye of the Gaussian channel with $BT_b=0.5$, from $128$ bit patterns. Its readings are the best sampling time, the noise margin, the distortion at $t=0$, the zero-crossing spread, the sampling window and the timing sensitivity.', short:'Reading the eye diagram.'},
+ cap:'The eye of the Gaussian channel with $BT_b=0.5$, from $128$ bit patterns. Its readings are the best sampling time, the margin over noise, the distortion at $t=0$, the zero-crossing spread, the sampling window and the timing sensitivity.', short:'Reading the eye diagram.'},
+{t:'p', text:'The size of the opening follows from the worst pattern, in which every other bit is opposite to the sampled one. A share $q$ of each bit leaks past each of its two edges, so the sampled bit keeps $1-2q$. The leaks of the other bits add up to $2q$ against it.'},
+{t:'eqbox', cap:'Opening', tex:'\\begin{aligned}\\min_{\\text{patterns}}|y_k|&=(1-2q)-2q=1-4q\\\\\\text{opening}&=2(1-4q)\\end{aligned}',
+ after:'For $BT_b=0.5$, $q=Q(0.5\\pi/\\sqrt{\\ln 2})=Q(1.887)=0.030$, so the eye opening at the sampling instant is $2(1-4q)=2(0.882)=1.76$.'},
 
 {t:'h3', text:'Eye closure'},
 {t:'p', text:'A narrower channel closes the eye. It is fully closed when the opening reaches zero. Set $1-4q=0$ and read the argument of $Q$ from a table.'},
