@@ -23,8 +23,8 @@ page.
 The artifact is the lecture deck. The lecture notes carry the long explanation. A student who wants
 the full argument reads the notes; a student in the room reads the slide and listens.
 
-The syllabus: sampling, quantization and PCM (M1); baseband transmission, the matched filter and
-intersymbol interference (M2); the geometric representation of signals (M3); the optimal receiver in
+The syllabus: sampling, quantization and PCM (M1); baseband transmission — random signals and noise,
+the matched filter, the error probability, intersymbol interference and the raised cosine (M2); the geometric representation of signals (M3); the optimal receiver in
 additive white Gaussian noise, decision regions and the union bound (M4); digital modulation methods —
 PSK, PAM, QAM, FSK (M5); an introduction to information theory — entropy, source coding, channel
 capacity (M6). M0 is the opening: what the whole subject asks, and how to use the artifact.

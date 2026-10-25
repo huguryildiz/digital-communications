@@ -62,7 +62,7 @@ with the questions only, and a formula reference.
 | --- | --- | --- |
 | 0 | Why digital communications? | What the subject asks · the transmitter–channel–receiver chain · why digits are sent at all · the course map · how to use the artifact |
 | 1 | Sampling, quantization and PCM | The sampling theorem and aliasing · reconstruction · uniform and non-uniform quantization · SQNR and the 6 dB rule · companding · PCM, DPCM and delta modulation · line codes |
-| 2 | Baseband transmission | The transmitted pulse · the matched filter · the threshold and its error probability · intersymbol interference · the Nyquist criterion · raised-cosine shaping · the eye diagram |
+| 2 | Baseband transmission | Random signals and noise · the matched filter · the correlator receiver · the threshold and its error probability · intersymbol interference and the eye diagram · the Nyquist criterion · raised-cosine shaping · the link in practice |
 | 3 | Geometric representation of signals | Gram–Schmidt · orthonormal bases · a waveform as a point · energy as squared length · the noise projection |
 | 4 | The optimal receiver in AWGN | Correlation and matched-filter receivers · the maximum-likelihood rule · decision regions · pairwise error probability · the union bound |
 | 5 | Digital modulation methods | PSK, PAM, QAM and FSK · constellations and minimum distance · error probabilities · bandwidth against energy |
@@ -159,7 +159,7 @@ theme you used. A screenshot helps.
 These are fixed for the whole course and stated in the artifact where a reader first meets them.
 
 - Noise is white and Gaussian with two-sided power spectral density `N₀/2`, unless a scene says otherwise.
-- `Q(x) = ½ erfc(x/√2)`.
+- `Q(x)` is the Gaussian tail, `Q(x) = (1/√(2π)) ∫ₓ^∞ e^(−t²/2) dt`.
 - sinc is normalised, `sinc(x) = sin(πx)/(πx)`, with zeros at every non-zero integer.
 - Energy is normalised to a 1 Ω resistance.
 - `log` without a base means base two.
