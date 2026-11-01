@@ -1816,29 +1816,24 @@ const isiSum = (eps, K, al) => { let s = 0;
 const sincIsi = eps => isiSum(eps, 20, 0);
 function figSincOffset(v){
   P.hOverride = null;
-  const eps = v && v.eps!=null ? v.eps : 0.1, big = P.labelScale() > 1;
-  const hA = big ? 225 : 190, hB = big ? 230 : 200;
-  const a = P.Axes({w:560, h:hA, xr:[-5.5,5.5], yr:[-0.35,1.3], xlabel:'t', xunit:'T_b', ylabel:'p(t)',
-    pad:{l:56,r:26,t:24,b:40}, xticksOverride:[-4,-2,0,2,4], yticksOverride:[0,1]});
-  a.curve(sinc, {color:C.in, width:2.6, n:900});
-  const st = []; for(let k=-5;k<=5;k++) if(k) st.push([k+eps, sinc(k+eps)]);
-  a.stem(st, {color:C.err});
-  a.stem([[eps, sinc(eps)]], {color:C.mid});
-  const K = 40;
-  const b = P.Axes({w:560, h:hB, xr:[0,K+1], yr:[0,3.3], xlabel:'K\\;(\\text{neighbours on each side})',
-    ylabel:'\\textstyle\\sum_{1\\le|k|\\le K}|p(kT_b+\\epsilon)|', pad:{l:56,r:26,t:24,b:42},
-    xticksOverride:[0,10,20,30,40], yticksOverride:[0,1,2,3]});
-  const run = al => { const pts = [[0,0]]; for(let k=1;k<=K;k++) pts.push([k, isiSum(eps, k, al)]); return pts; };
-  const r0 = run(0), r5 = run(0.5);
-  b.poly(r0, {color:C.err, width:2.6});
-  b.poly(r5, {color:C.err, width:2.2, dash:'7 5'});
-  /* the two readouts share one line in the upper left, which the sums never reach */
-  b.note(1, 2.8, `\\alpha=0:\\ ${r0[K][1].toFixed(2)},\\qquad\\alpha=0.5\\ (\\text{dashed}):\\ ${r5[K][1].toFixed(2)}`, {tex:true, fs:15, color:C.err});
-  return stack(560, [[a.svg(),hA],[b.svg(),hB]]);
+  const eps = v && v.eps!=null ? v.eps : 0.1, h = P.labelScale() > 1 ? 190 : 165;
+  /* one panel per pulse, alpha = 0 and alpha = 0.5; the readout adds 40 neighbours on each side */
+  const panel = (al, name) => {
+    const a = P.Axes({w:560, h, xr:[-5.5,5.5], yr:[-0.35,1.3], xlabel:'\\text{time, in bit periods}', ylabel:`\\text{${name}}`,
+      pad:{l:56,r:26,t:24,b:40}, xticksOverride:[-4,-2,0,2,4], yticksOverride:[0,1]});
+    a.curve(t=>rcPulse(t, al), {color:C.in, width:2.6, n:900});
+    const st = []; for(let k=-5;k<=5;k++) if(k) st.push([k+eps, rcPulse(k+eps, al)]);
+    a.stem(st, {color:C.err});
+    a.stem([[eps, rcPulse(eps, al)]], {color:C.mid});
+    a.note(-5.2, 1.08, `\\text{leak from neighbours: }${isiSum(eps, 40, al).toFixed(2)}`, {tex:true, fs:15, color:C.err});
+    return a.svg();
+  };
+  return stack(560, [[panel(0, 'ideal pulse'),h],[panel(0.5, 'raised cosine'),h]]);
 }
 
-/* Building the raised-cosine spectrum, alpha = 0.5, so f_1 = W/2 and the
-   band ends at 2W - f_1 = 3W/2. Frame 0 is the ideal rectangle (dashed).
+/* Building the raised-cosine spectrum under a slider for alpha, so f_1 = W(1 -
+   alpha) and the band ends at 2W - f_1 = W(1 + alpha). The guides stop below
+   the labels, so no alpha lays one across them. Frame 0 is the ideal rectangle (dashed).
    Frame 1 draws the flat part on |f| <= f_1. Frame 2 sweeps the roll-off out
    to 2W - f_1 on both sides. Frame 3 turns the piece the roll-off cuts from
    the rectangle (f_1 < |f| < W, above the curve) half a turn about the point
@@ -1846,20 +1841,22 @@ function figSincOffset(v){
    A half turn is a point reflection, which an affine map keeps, so it is done
    in screen coordinates and still lands exactly. */
 function figRcBuild(v){
-  const f = frameOf(v, 3), u = k => clamp01(f-k), al = 0.5, f1 = 1-al, f2 = 1+al;
+  const f = frameOf(v, 3), u = k => clamp01(f-k), al = v && v.al!=null ? v.al : 0.5, f1 = 1-al, f2 = 1+al;
   const a = P.Axes(SZ({xr:[-2.3,2.3], yr:[-0.12,1.5], xlabel:'f', xunit:'W', ylabel:'P(f)/T_b',
     xticksOverride:[-2,-1.5,-1,-0.5,0,0.5,1,1.5,2], yticksOverride:[0,0.5,1]}));
   a.poly([[-2.3,0],[-1,0],[-1,1],[1,1],[1,0],[2.3,0]], {color:C.ink, width:1.6, dash:'6 5'});
+  const guide = x => a.poly([[x,0],[x,1.22]], {color:C.in, width:1, dash:'3 4', opacity:0.7});
   const w1 = f1*ease(u(0));
   if(w1 > 0.005) a.poly([[-w1,1],[w1,1]], {color:C.in, width:2.8});
-  fade(a, u(0), ()=>{ a.vline(f1, {color:C.in, opacity:0.7}); a.vline(-f1, {color:C.in, opacity:0.7});
-    a.note(-0.1, 1.13, '\\tfrac{1}{2W}=T_b', {tex:true, fs:15, color:C.in, anchor:'end'});
-    a.note(f1-0.04, 1.32, 'f_1', {tex:true, fs:15, color:C.in, anchor:'end'}); });
+  fade(a, u(0), ()=>{ guide(f1); guide(-f1);
+    a.note(-0.1, 1.32, '\\tfrac{1}{2W}=T_b', {tex:true, fs:15, color:C.in, anchor:'end'});
+    a.note(f1 > 0.35 ? f1-0.04 : f1+0.04, 1.32, 'f_1', {tex:true, fs:15, color:C.in, anchor:f1 > 0.35 ? 'end' : 'start'}); });
   const end = f1+(f2-f1)*ease(u(1));
   if(f > 1.01){ a.curve(x=>{ const z = Math.abs(x); return z >= f1 && z <= end ? rcSpec(x, al) : NaN; }, {color:C.in, width:2.8, n:900});
     fade(a, u(1), ()=>{ a.poly([[-2.3,0],[-f2,0]], {color:C.in, width:2.8}); a.poly([[f2,0],[2.3,0]], {color:C.in, width:2.8});
-      a.vline(f2, {color:C.in, opacity:0.7}); a.vline(-f2, {color:C.in, opacity:0.7});
-      a.note(f2+0.04, 1.32, '2W-f_1', {tex:true, fs:15, color:C.in}); }); }
+      if(al < 1e-9) [-1,1].forEach(sg=>a.poly([[sg,0],[sg,1]], {color:C.in, width:2.8}));
+      guide(f2); guide(-f2);
+      a.note(f2 < 1.6 ? f2+0.04 : f2-0.04, 1.32, '2W-f_1', {tex:true, fs:15, color:C.in, anchor:f2 < 1.6 ? 'start' : 'end'}); }); }
   if(f > 2.01){ const th = Math.PI*ease(u(2));
     const piece = sg => { const pts = []; for(let i=0;i<=48;i++){ const x = f1+(1-f1)*i/48; pts.push([sg*x, rcSpec(x, al)]); }
       pts.push([sg,1],[sg*f1,1]); return pts; };
@@ -1868,7 +1865,7 @@ function figRcBuild(v){
         return [cx+X*Math.cos(t)-Y*Math.sin(t), cy+X*Math.sin(t)+Y*Math.cos(t)]; }); };
     fade(a, clamp01(u(2)*4), ()=>[-1,1].forEach(sg=>{ const q = turn(piece(sg), sg);
       a.raw(`<path d="M${q.map(p=>p[0].toFixed(2)+','+p[1].toFixed(2)).join('L')}Z" fill="${C.dec.mid}" stroke="${C.mid}" stroke-width="1.6" stroke-linejoin="round"/>`); }));
-    fade(a, u(2), ()=>a.note(1.08, 0.62, '\\tfrac{1}{2}T_b', {tex:true, fs:15, color:C.mid})); }
+    fade(a, u(2), ()=>a.note(f2 < 1.4 ? f2+0.05 : 1.08, 0.62, '\\tfrac{1}{2}T_b', {tex:true, fs:15, color:C.mid})); }
   fade(a, u(1), ()=>{ a.point(1, 0.5, {color:C.mid, r:5}); a.point(-1, 0.5, {color:C.mid, r:5}); });
   return a.svg();
 }
@@ -3602,28 +3599,27 @@ REAL_ISI,
 ]},
 
 { id:'m2-sinc-timing', module:'M2', nav:'The ideal channel in practice', title:'The ideal channel in practice',
-  objective:'Show why the ideal Nyquist channel is impractical: it cannot be built, and a small timing error collects interference from many neighbours.',
-  keywords:'ideal nyquist channel impractical unrealizable abrupt transitions slow decay 1/t timing error jitter harmonic series raised cosine',
+  objective:'Show in plain words why the ideal pulse fails in practice, and why a pulse with short tails copes with a late reading.',
+  keywords:'ideal nyquist channel impractical sharp edge slow decay long tails late sample timing error jitter neighbours leak raised cosine',
   src:'CH8 s.44', slide:true, steps:3, blocks:[
   {t:'eyebrow', text:'Module 2 · Nyquist and the raised cosine'},
   {t:'title', text:'The ideal channel in practice'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true,
-      live:{controls:[{k:'eps', label:'$\\epsilon/T_b$', min:0, max:0.4, step:0.02, v:0.1, show:v=>'$'+v.toFixed(2)+'$'}]},
+      live:{controls:[{k:'eps', label:'Lateness', min:0, max:0.4, step:0.02, v:0.1, show:v=>'$'+v.toFixed(2)+'$ of a bit'}]},
       svg:figSincOffset,
-      caption:'Drag the timing error $\\epsilon$. Above, each red stem is a neighbour\'s term in a sample taken $\\epsilon$ late. Below, the sum of their sizes as more neighbours are counted. It keeps growing for the sinc pulse, and levels off for a raised cosine with $\\alpha=0.5$.'},
-    {t:'legend', items:[['in','$p(t)$'],['mid','wanted term'],['err','interference']], at:'tr'}
+      caption:'Drag the slider to read the bit later. Each red stem is one neighbour leaking into the bit. The number adds up $40$ neighbours on each side.'},
+    {t:'legend', items:[['in','pulse'],['mid','the bit'],['err','leak']], at:'tr'}
   ], right:[
-    {t:'note', kind:'warn', head:'Impractical', html:'$P(f)$ jumps at $-W$ and $W$. No physical filter has such an abrupt edge.<div class="nsep"></div>$p(t)$ decays slowly, only as $1/|t|$.'},
+    {t:'note', kind:'warn', head:'Two problems', html:'The ideal pulse needs a perfectly sharp filter edge, and no real filter has one. Its tails also die away slowly.'},
     {t:'reveal', at:1, items:[
-      {t:'eq', label:'A late sample', tex:'y(\\epsilon)=a_0\\operatorname{sinc}\\!\\left(\\frac{\\epsilon}{T_b}\\right)+\\sum_{k\\neq0}a_k\\operatorname{sinc}\\!\\left(k+\\frac{\\epsilon}{T_b}\\right)',
-        note:'Sample bit $0$ at $t=\\epsilon$. Each neighbour adds a term up to $1/(\\pi|k|)$, and these add like $\\sum1/k$.'}]},
+      {t:'note', kind:'def', head:'A late reading', html:'At the exact reading time, every neighbouring pulse is at zero. A real clock reads slightly late, so each neighbour leaks a little into the bit.'}]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'ok', head:'Solution', html:'Exact timing is a major challenge in modem design, and some timing jitter is always left. A pulse with faster-decaying tails tolerates it: the <b>raised cosine</b>.'}]},
+      {t:'note', kind:'ok', head:'Solution', html:'The <b>raised cosine</b> keeps the same zeros, but its tails die away quickly. A late reading picks up only a small leak. The price is more bandwidth.'}]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'def', head:'Given', html:'The sample is taken $\\epsilon=0.1T_b$ late.<div class="nsep"></div>What is the wanted term, $\\operatorname{sinc}(0.1)$?',
-        ask:{key:'m2-sinc-timing', choices:['$0.984$','$0.9$','$0.5$'], answer:0,
-          why:'$\\sin(0.1\\pi)/(0.1\\pi)=0.309/0.314=0.984$. The wanted term barely drops. The interference is the problem.'}}]}
+      {t:'note', kind:'def', head:'Given', html:'A receiver reads every bit slightly late.<div class="nsep"></div>Which pulse suffers more from its neighbours?',
+        ask:{key:'m2-sinc-timing', choices:['ideal pulse','raised cosine'], answer:0,
+          why:'Its slow tails reach many bits, so many neighbours leak into each reading.'}}]}
   ]}
 ]},
 
@@ -3636,8 +3632,9 @@ REAL_ISI,
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true,
       frames:{labels:['the ideal rectangle','flat up to $f_1$','roll-off to $2W-f_1$','odd symmetry about $W$'], ms:1800},
+      live:{controls:[{k:'al', label:'$\\alpha$', min:0, max:1, step:0.05, v:0.5, show:v=>'$'+v.toFixed(2)+'$'}]},
       svg:figRcBuild,
-      caption:'Step through the frames for $\\alpha=0.5$. Below $W$ the roll-off cuts a piece from the rectangle (violet). Turned half a turn about $(W,T_b/2)$, it fills exactly the piece added above $W$.'},
+      caption:'Step through the frames, then drag $\\alpha$. Below $W$ the roll-off cuts a piece from the rectangle (violet). Turned half a turn about $(W,T_b/2)$, it fills exactly the piece added above $W$.'},
   ], right:[
     {t:'eq', label:'Raised-cosine spectrum', tex:'P(f)=\\begin{cases}\\dfrac{1}{2W}, & 0\\le|f|\\le f_1\\\\[6pt]\\dfrac{1}{4W}\\Bigl\\{1-\\sin\\Bigl(\\dfrac{\\pi(|f|-W)}{2W-2f_1}\\Bigr)\\Bigr\\}, & f_1\\le|f|\\le2W-f_1\\\\[6pt]0, & \\text{otherwise}\\end{cases}',
       note:'The band grows from $W$ to between $W$ and $2W$, with rounded edges.'},

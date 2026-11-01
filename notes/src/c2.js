@@ -1243,25 +1243,21 @@ function figNyqChannel(){
   b.note(1.12,0.62,'p(kT_b)=0',{tex:true,fs:14,color:C.mid});
   return stack(700,[[a.svg(),180],[b.svg(),200]]);
 }
-/* a sample taken 0.1T_b late, and the interference summed over 1 <= |k| <= K */
+/* a reading taken 0.1T_b late on each pulse, and the leak added over 40 neighbours on each side */
 const isiSum=(eps,K,al)=>{ let s=0;
   for(let k=1;k<=K;k++) s+=Math.abs(rcPulse(k+eps,al))+Math.abs(rcPulse(-k+eps,al)); return s; };
 function figSincOffset(eps){
-  const a=ax1({h:190,xr:[-5.5,5.5],yr:[-0.35,1.3],xlabel:'t',xunit:'T_b',ylabel:'p(t)',
-    xticksOverride:[-4,-2,0,2,4],yticksOverride:[0,1]});
-  a.curve(sinc,{color:C.in,width:2.6,n:900});
-  const st=[]; for(let k=-5;k<=5;k++) if(k) st.push([k+eps,sinc(k+eps)]);
-  a.stem(st,{color:C.err});
-  a.stem([[eps,sinc(eps)]],{color:C.mid});
-  const K=40;
-  const b=ax1({h:200,xr:[0,K+1],yr:[0,3.3],xlabel:'K\\;(\\text{neighbours on each side})',
-    ylabel:'\\textstyle\\sum_{1\\le|k|\\le K}|p(kT_b+\\epsilon)|',xticksOverride:[0,10,20,30,40],yticksOverride:[0,1,2,3]});
-  const run=al=>{ const pts=[[0,0]]; for(let k=1;k<=K;k++) pts.push([k,isiSum(eps,k,al)]); return pts; };
-  const r0=run(0), r5=run(0.5);
-  b.poly(r0,{color:C.err,width:2.6});
-  b.poly(r5,{color:C.err,width:2.2,dash:'7 5'});
-  b.note(1,2.8,`\\alpha=0:\\ ${r0[K][1].toFixed(2)},\\qquad\\alpha=0.5\\ (\\text{dashed}):\\ ${r5[K][1].toFixed(2)}`,{tex:true,fs:14,color:C.err});
-  return stack(700,[[a.svg(),190],[b.svg(),200]]);
+  const panel=(al,name)=>{
+    const a=ax1({h:190,xr:[-5.5,5.5],yr:[-0.35,1.3],xlabel:'\\text{time, in bit periods}',ylabel:`\\text{${name}}`,
+      xticksOverride:[-4,-2,0,2,4],yticksOverride:[0,1]});
+    a.curve(t=>rcPulse(t,al),{color:C.in,width:2.6,n:900});
+    const st=[]; for(let k=-5;k<=5;k++) if(k) st.push([k+eps,rcPulse(k+eps,al)]);
+    a.stem(st,{color:C.err});
+    a.stem([[eps,rcPulse(eps,al)]],{color:C.mid});
+    a.note(-5.2,1.08,`\\text{leak from neighbours: }${isiSum(eps,40,al).toFixed(2)}`,{tex:true,fs:14,color:C.err});
+    return a.svg();
+  };
+  return stack(700,[[panel(0,'ideal pulse'),190],[panel(0.5,'raised cosine'),190]]);
 }
 /* the raised-cosine spectrum of alpha = 0.5 built on the ideal rectangle, with
    the piece cut below W moved half a turn about (W, T_b/2) */
@@ -2393,18 +2389,13 @@ window.C2 = [
  cap:'The ideal Nyquist channel. Above, the rectangle $P(f)$ of height $T_b$ and its copies at $\\pm2W$, which meet it edge to edge. Below, its pulse $p(t)=\\operatorname{sinc}(2Wt)$, zero at $t=kT_b$, $k\\ne0$.', short:'The ideal Nyquist channel.'},
 
 {t:'h3', text:'The ideal channel in practice'},
-{t:'p', text:'The ideal Nyquist channel is impractical, for two reasons.'},
-{t:'ul', items:[
- '$P(f)$ jumps at $-W$ and $W$. No physical filter has such an abrupt edge.',
- '$p(t)$ decays slowly, only as $1/|t|$.'
-]},
-{t:'p', text:'The slow decay makes the sample timing critical. Suppose bit $0$ is sampled at $t=\\epsilon$ instead of $t=0$. Every neighbour now adds a small term.'},
-{t:'eqbox', cap:'A late sample', tex:'y(\\epsilon)=a_0\\operatorname{sinc}\\!\\left(\\frac{\\epsilon}{T_b}\\right)+\\sum_{k\\neq0}a_k\\operatorname{sinc}\\!\\left(k+\\frac{\\epsilon}{T_b}\\right)',
- after:'The wanted term barely drops. At $\\epsilon=0.1T_b$ it is $\\operatorname{sinc}(0.1)=\\sin(0.1\\pi)/(0.1\\pi)=0.309/0.314=0.984$.'},
-{t:'p', text:'The interference is the problem. The terms fall only as $1/(\\pi|k|)$, and their sizes add like $\\sum1/k$, which grows without bound. At $\\epsilon=0.1T_b$ the sizes summed over $1\\le|k|\\le40$ already reach $0.84$.'},
-{t:'box', kind:'ok', hd:'Solution', html:'Exact timing is a major challenge in modem design, and some timing jitter is always left. A pulse with faster-decaying tails tolerates it: the <b>raised cosine</b>. With $\\alpha=0.5$ the same sum is only $0.20$.'},
+{t:'p', text:'The ideal Nyquist channel has two problems in practice.'},
+{t:'p', text:'The ideal pulse needs a perfectly sharp filter edge, and no real filter has one. Its tails also die away slowly.'},
+{t:'p', text:'At the exact reading time, every neighbouring pulse is at zero. A real clock reads slightly late, so each neighbour leaks a little into the bit.'},
+{t:'box', kind:'ok', hd:'Solution', html:'The <b>raised cosine</b> keeps the same zeros, but its tails die away quickly. A late reading picks up only a small leak. The price is more bandwidth.'},
 {t:'fig', svg:()=>figSincOffset(0.1),
- cap:'A sample taken $\\epsilon=0.1T_b$ late. Above, the wanted term (violet) and each neighbour\'s term (red). Below, the sum of their sizes as more neighbours are counted. It keeps growing for the sinc pulse, and levels off for a raised cosine with $\\alpha=0.5$ (dashed).', short:'Timing error and the sinc pulse.'},
+ cap:'A bit read $0.1$ of a bit period late. Each red stem is one neighbour leaking into the bit. The number adds up $40$ neighbours on each side.', short:'A late reading on the ideal pulse and the raised cosine.'},
+{t:'p', text:'For example, a receiver reads every bit slightly late. The ideal pulse suffers more, because its slow tails reach many bits.'},
 
 {t:'h3', text:'The raised-cosine spectrum'},
 {t:'p', text:'The raised cosine overcomes the practical difficulties of the ideal channel. Its band grows from $W$ to between $W$ and $2W$, and its edges are rounded.'},

@@ -1414,7 +1414,6 @@ CHECKS: list[dict] = [
      "derive": lambda: 1.0 + max(_m2_tiling_dev(lambda u, a=a: _m2_rc_spec(u, a), 2) for a in (0.25, 0.5, 1.0)), "tol": 1e-9},
     {"name": "2.5.3 minimum bandwidth for 64 kb/s", "stated": 32e3,
      "derive": lambda: 64e3 / 2},
-    {"name": "2.5.4 sinc(0.1)", "stated": 0.984, "derive": lambda: float(np.sinc(0.1)), "tol": 1e-3},
     {"name": "2.5.4 interference summed over 1 <= |k| <= 20 at 0.1 Tb", "stated": 0.71,
      "derive": lambda: sum(abs(float(np.sinc(k + 0.1))) for k in range(-20, 21) if k), "tol": 5e-3},
     {"name": "2.5.5 bandwidth for W = 5 kHz, alpha = 0.25", "stated": 6.25e3,
