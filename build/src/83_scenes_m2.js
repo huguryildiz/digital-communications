@@ -706,7 +706,7 @@ const near = (f, k) => clamp01(1-2*Math.abs(f-k));
 /* The unit-energy basis on a t/T_b axis. Frame 0 is psi(t), of height
    1/sqrt(T_b), drawn 1.5; frame 1 squares it to 1/T_b, drawn 2.25 (so
    T_b = 1/2.25 s here); frame 2 sweeps the area under psi^2 from 0 to T_b,
-   and the readout int_0^t psi^2 = t/T_b ends at 1. */
+   and the readout int_0^(u T_b) psi^2(t) dt = u ends at 1. */
 function figBasisUnit(v){
   const f = frameOf(v, 0), u1 = clamp01(f), u2 = clamp01(f-1);
   const H1 = 1.5, H2 = 2.25, h = H1+u1*(H2-H1);
@@ -716,7 +716,7 @@ function figBasisUnit(v){
   a.poly(rectPts(h), {color:u1 < 0.5 ? C.h : C.mid, width:2.6});
   fade(a, 1-u1, ()=>a.note(0.5, H1+0.3, '\\psi(t)=1/\\sqrt{T_b}', {tex:true, fs:16, color:C.h, anchor:'middle'}));
   fade(a, u1, ()=>a.note(0.5, H2+0.3, '\\psi^{2}(t)=1/T_b', {tex:true, fs:16, color:C.mid, anchor:'middle'}));
-  fade(a, u2, ()=>a.note(0.5, 1.0, `\\int_0^{t}\\psi^{2}(\\tau)\\,d\\tau=${u2.toFixed(2)}`, {tex:true, fs:16, color:C.mid, anchor:'middle'}));
+  fade(a, u2, ()=>a.note(0.5, 1.0, `\\int_0^{${u2 > 0.995 ? '' : u2.toFixed(2)}T_b}\\psi^{2}(t)\\,dt=${u2.toFixed(2)}`, {tex:true, fs:16, color:C.mid, anchor:'middle'}));
   return a.svg();
 }
 
@@ -2712,7 +2712,7 @@ REAL_MATCHED,
   {t:'title', text:'The unit-energy pulse'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true,
-      frames:{labels:['$\\psi(t)$','$\\psi^{2}(t)$','$\\int\\psi^{2}\\,d\\tau$'], ms:1100},
+      frames:{labels:['$\\psi(t)$','$\\psi^{2}(t)$','$\\int\\psi^{2}(t)\\,dt$'], ms:1100},
       svg:figBasisUnit,
       caption:'The pulse $\\psi(t)$ has height $1/\\sqrt{T_b}$ on one bit. Step through: square it, then sweep the area under $\\psi^{2}(t)$. The area ends at $1$.'},
     {t:'legend', items:[['h','$\\psi(t)$',0,0,0],['mid','$\\psi^{2}(t)$',0,1]], at:'tr'}
