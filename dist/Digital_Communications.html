@@ -6732,26 +6732,29 @@ Object.assign(LABS, (function(){
       ax.vline(lam,{color:P.COL.ink,dash:'5 4',width:1.8});
       ax.vline(lamOpt,{color:P.COL.h,dash:'2 4',width:1.6});
 
-      const bLo = Math.log10(Math.max(1e-12,peOpt)) - 0.2, bHi = bLo + 2.6;
-      /* drawn in v = u + 0.85, so the vertical axis and its decade numbers sit
-         at the left edge and not on the dip of the curve */
-      const bx = P.Axes({w:ph?300:680,h:ph?220:gh(220),xr:[0,1.7],yr:[bLo,bHi],
-        xlabel:'\\lambda/(2\\sqrt{E_b})',ylabel:'P_e',
-        ytickfmt:P.decade, yticksOverride:P.decades(bLo,bHi), zeroAxes:false,
-        xticksOverride:[0.35,0.85,1.35], xtickfmt:v=>P.fmt(v-0.85,3),
+      /* P_e against E_b/N_0 in dB over the slider's range: the threshold set
+         (the same fraction of 2 sqrt(E_b) at every dB) and lambda_opt, which
+         moves with N_0. Values below 1e-9 leave the frame. */
+      const peAt = (d, opt) => { const n0 = Eb/Math.pow(10, d/10), s = Math.sqrt(n0/2),
+          l = opt ? (n0/(4*A))*Math.log(p0/p1) : lam, p = p0*Qf((l+A)/s)+p1*Qf((A-l)/s);
+        return p > 1e-9 ? Math.log10(p) : NaN; };
+      const bx = P.Axes({w:ph?300:680,h:ph?220:gh(220),xr:[0,12],yr:[-9,-0.3],
+        xlabel:'E_b/N_0\\;(\\mathrm{dB})',ylabel:'P_e',
+        ytickfmt:P.decade, yticksOverride:[-8,-6,-4,-2], zeroAxes:false,
+        xticksOverride:[1e-9,2,4,6,8,10,12], xtickfmt:v=>String(Math.round(v)),
         pad:{l:ph?44:60,r:ph?16:24,t:22,b:44}, ytarget:3});
-      bx.curve(v=>{ const Lam=(v-0.85)*2*A;
-        return Math.log10(Math.max(1e-12, p0*Qf((Lam+A)/sig)+p1*Qf((A-Lam)/sig))); },
-        {color:P.COL.in,width:2.3});
-      bx.vline(st.lam/100+0.85,{color:P.COL.ink,dash:'5 4',width:1.6});
-      bx.vline(lamOpt/(2*A)+0.85,{color:P.COL.h,dash:'2 4',width:1.6});
+      bx.curve(d=>peAt(d,true),{color:P.COL.h,width:2,dash:'2 4'});
+      bx.curve(d=>peAt(d,false),{color:P.COL.in,width:2.3});
+      bx.vline(st.ebn0,{color:P.COL.muted});
+      if(pe > 1e-9) bx.point(st.ebn0, Math.log10(pe), {color:P.COL.in, r:5});
 
       const lg1 = `${L('mid','P(s_0)f_Y(y\\mid s_0)',true)}${L('mid','P(s_1)f_Y(y\\mid s_1)')}${L('err','\\text{error}')}`;
+      const lg2 = `${L('in','\\lambda\\ \\text{set}')}${L('h','\\lambda_{\\mathrm{opt}}',true)}`;
       root.querySelector('.plots').innerHTML = ph
         ? `<div class="plot-wrap">${ax.svg()}</div>${legendRow(lg1)}`
-        + `<div class="plot-wrap">${bx.svg()}</div>`
+        + `<div class="plot-wrap">${bx.svg()}</div>${legendRow(lg2)}`
         : `<div class="plot-wrap">${ax.svg()}<div class="legend in-plot lg-at-tr">${lg1}</div></div>`
-        + `<div class="plot-wrap">${bx.svg()}</div>`;
+        + `<div class="plot-wrap">${bx.svg()}<div class="legend in-plot lg-at-tr">${lg2}</div></div>`;
 
       root.querySelector('.ro').innerHTML = `
         <div><dt>Threshold set</dt><dd>${N(lam,4)}</dd></div>
