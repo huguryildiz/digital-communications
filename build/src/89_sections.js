@@ -93,8 +93,7 @@ CONTENT.SECTIONS = {
     { n:'2.6', title:'Nyquist and the raised cosine',  ids:[
         'm2-nyq-sinc','m2-nyq-sample','m2-nyquist','m2-nyq-channel','m2-sinc-timing','m2-rcos','m2-rcos-check',
         'm2-rcos-pulse','m2-rcos-alpha','m2-ex-rc','m2-srrc','m2-real-nyquist','m2-lab-e','m2-code-nyquist'] },
-    { n:'2.7', title:'The link in practice',           ids:['m2-equalizer','m2-timing','m2-psd','m2-repeater'] },
-    { n:'2.8', title:'Summary',                        ids:['m2-chain','m2-quick','m2-synth','m2-projects'] }
+    { n:'2.7', title:'Summary',                        ids:['m2-chain','m2-quick','m2-synth','m2-projects'] }
   ],
 
   M3: [
@@ -256,12 +255,7 @@ CONTENT.BOOK = {
   /* Splitting the raised cosine between the two ends is 10.5.1, "Design of
      Transmitting and Receiving Filters for a Known Channel", read there. */
   'm2-srrc':'10.5.1',
-  /* Section 2.7 is a survey of what a real link adds, read in the book at
-     10.5.2 (channel equalization), 8.9.1 (early-late gate synchronizers), 10.2
-     (the power spectrum of digitally modulated signals) and 8.10 (regenerative
-     repeaters). The noisy eye in 2.5 carries no anchor, like the other eye
-     scenes. */
-  'm2-equalizer':'10.5.2', 'm2-timing':'8.9.1', 'm2-psd':'10.2', 'm2-repeater':'8.10',
+  /* The noisy eye in 2.5 carries no anchor, like the other eye scenes. */
   'm2-chain':'8.3', 'm2-quick':'8.3, 10.3.1', 'm2-synth':'8.3, 10.3.1', 'm2-projects':'8.3, 10.3.1',
 
   /* Module 3 is section 8.1 of the book, "Geometric Representation of Signal
