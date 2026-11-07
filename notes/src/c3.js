@@ -131,20 +131,44 @@ function figProject(){
   return narrow(stack(560,[[row(130,[[basisPulse(HALF1,'\\psi_1(t)'),280],[basisPulse(HALF2,'\\psi_2(t)'),280]]),130],
     [row(240,[[a.svg(),280],[b.svg(),280]]),240]]),62);
 }
+const SA_YS=[60,210,360], SA_NM=['1','2','N'], SA_R=16;
+const saRing=(x,y,rr)=>({t:'line',d:'M'+(x-rr)+','+y+' a'+rr+','+rr+' 0 1,0 '+(2*rr)+',0 a'+rr+','+rr+' 0 1,0 '+(-2*rr)+',0'});
+const saMult=(x,y)=>[saRing(x,y,SA_R),{t:'text',x:x,y:y+3,label:'\\times',tex:true,fs:17}];
+const saFeed=(x,y,k)=>[{t:'arrow',x1:x,y1:y+70,x2:x,y2:y+SA_R+6,color:C.h},
+  {t:'text',x:x,y:y+94,label:'\\psi_'+SA_NM[k]+'(t)',tex:true,fs:16,color:C.h}];
+/* The synthesizer: each coordinate scales its basis function, and the N
+   products are added. */
+function figSynth(){
+  const cx=170, sx=420, sr=18, it=[];
+  SA_YS.forEach((y,k)=>{
+    it.push({t:'text',x:16,y:y+6,label:'s_{i'+SA_NM[k]+'}',tex:true,fs:16,anchor:'start',color:C.in},
+      {t:'arrow',x1:66,y1:y,x2:cx-SA_R-4,y2:y,color:C.in});
+    it.push(...saMult(cx,y),...saFeed(cx,y,k));
+    const dx=sx-(cx+SA_R+2), dy=y-210, L=Math.hypot(dx,dy);
+    it.push({t:'arrow',x1:cx+SA_R+2,y1:y,x2:sx-(sr+4)*dx/L,y2:210-(sr+4)*dy/L}); });
+  it.push({t:'text',x:cx,y:330,label:'\\smash{\\vdots}',tex:true,fs:16},
+    saRing(sx,210,sr),{t:'text',x:sx,y:214,label:'\\Sigma',tex:true,fs:18},
+    {t:'arrow',x1:sx+sr+2,y1:210,x2:505,y2:210,color:C.in},
+    {t:'text',x:515,y:216,label:'s_i(t)',tex:true,fs:17,anchor:'start',color:C.in});
+  return narrow(P.blocks({w:600,h:480,items:it}),62);
+}
+/* The analyzer: the waveform meets each basis function and each product is
+   integrated over the symbol interval. */
 function figAnalyzer(){
-  const ys=[50,140,262], nm=['1','2','N'];
-  const it=[
-    {t:'arrow',x1:8,y1:140,x2:60,y2:140}, {t:'line',d:'M60,50 V262'},
-    {t:'text',x:10,y:118,label:'s_i(t)',tex:true,fs:16,anchor:'start'},
-    {t:'text',x:215,y:212,label:'\\smash{\\vdots}',tex:true,fs:16}
-  ];
-  ys.forEach((y,k)=>{ it.push({t:'arrow',x1:60,y1:y,x2:100,y2:y},
-    {t:'box',x:100,y:y-30,w:230,h:60,label:'\\int_0^T(\\cdot)\\,\\psi_'+nm[k]+'(t)\\,dt',tex:true,fs:15},
-    {t:'arrow',x1:330,y1:y,x2:410,y2:y},
-    {t:'text',x:448,y:y+6,label:'s_{i'+nm[k]+'}',tex:true,fs:16}); });
-  it.push({t:'line',d:'M488,50 H505 V262 H488'}, {t:'arrow',x1:505,y1:156,x2:540,y2:156},
-    {t:'text',x:572,y:163,label:'\\mathbf{s}_i',tex:true,fs:17});
-  return narrow(P.blocks({w:600,h:300,items:it}),62);
+  const cx=130, it=[
+    {t:'text',x:8,y:188,label:'s_i(t)',tex:true,fs:17,anchor:'start',color:C.in},
+    {t:'arrow',x1:8,y1:210,x2:56,y2:210,color:C.in}, {t:'line',d:'M58,60 V360',color:C.in}];
+  SA_YS.forEach((y,k)=>{
+    it.push({t:'arrow',x1:58,y1:y,x2:cx-SA_R-4,y2:y,color:C.in});
+    it.push(...saMult(cx,y),...saFeed(cx,y,k));
+    it.push({t:'arrow',x1:cx+SA_R+2,y1:y,x2:190,y2:y},
+      {t:'box',x:190,y:y-28,w:160,h:56,label:'\\int_0^T(\\cdot)\\,dt',tex:true,fs:16},
+      {t:'arrow',x1:350,y1:y,x2:410,y2:y},
+      {t:'text',x:440,y:y+6,label:'s_{i'+SA_NM[k]+'}',tex:true,fs:16,color:C.in}); });
+  it.push({t:'text',x:cx,y:330,label:'\\smash{\\vdots}',tex:true,fs:16},
+    {t:'line',d:'M478,60 H494 V360 H478'}, {t:'arrow',x1:494,y1:210,x2:528,y2:210,color:C.in},
+    {t:'text',x:540,y:217,label:'\\mathbf{s}_i',tex:true,fs:17,anchor:'start',color:C.in});
+  return narrow(P.blocks({w:600,h:480,items:it}),62);
 }
 function figInner(){
   const X=[[0,1,2],[1,2,1]], Y=[[0,1,1],[1,2,-1]];
@@ -473,9 +497,11 @@ window.C3 = [
 {t:'p', text:'Each coefficient is a projection, so each waveform becomes a point.'},
 {t:'eqbox', cap:'Coordinates', tex:'s_{ij}=\\int_0^{T}s_i(t)\\,\\psi_j(t)\\,dt,\\qquad \\mathbf{s}_i=(s_{i1},\\ldots,s_{iN})',
  after:'The list $\\mathbf{s}_i$ is the <b>signal vector</b>.'},
-{t:'p', text:'The <b>analyzer</b> multiplies the waveform by each $\\psi_j(t)$ and integrates over $[0,T]$. It is a bank of correlators, one for each basis function.'},
+{t:'p', text:'The <b>synthesizer</b> builds the waveform from its coordinates. It scales each $\\psi_j(t)$ by $s_{ij}$ and adds the $N$ products.'},
+{t:'fig', svg:figSynth, cap:'The synthesizer: each coordinate $s_{ij}$ scales its basis function, and the products are added to give $s_i(t)$.'},
+{t:'p', text:'The <b>analyzer</b> runs the other way. It multiplies the waveform by each $\\psi_j(t)$ and integrates over $[0,T]$, so it is a bank of correlators, one for each basis function.'},
 {t:'fig', svg:figAnalyzer, cap:'The analyzer: one correlator for each basis function. Its $N$ outputs are the coordinates, and together they form the signal vector $\\mathbf{s}_i$.'},
-{t:'p', text:'The receiver of Chapter 4 is this bank of correlators. The <b>synthesizer</b> scales each $\\psi_j(t)$ by $s_{ij}$ and adds.'},
+{t:'p', text:'The receiver of Chapter 4 is this bank of correlators.'},
 
 /* m3-energy */
 {t:'h3', text:'Energy and distance'},

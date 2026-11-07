@@ -232,21 +232,50 @@ function figProject(v){
     [row(240, [[a.svg(),280],[b.svg(),280]]),240]]);
 }
 
-/* The analyzer: one correlator per basis function. */
-function figAnalyzer(){
-  const ys = [60, 200, 370], lab = ['1','2','N'];
-  const it = [
-    {t:'arrow',x1:8,y1:200,x2:60,y2:200}, {t:'line',d:'M60,60 V370'},
-    {t:'text',x:10,y:178,label:'s_i(t)',tex:true,fs:16,anchor:'start'},
-    {t:'text',x:215,y:296,label:'\\smash{\\vdots}',tex:true,fs:16}
-  ];
-  ys.forEach((y,k)=>{ it.push({t:'arrow',x1:60,y1:y,x2:100,y2:y},
-    {t:'box',x:100,y:y-30,w:230,h:60,label:'\\int_0^T(\\cdot)\\,\\psi_'+(k===2?'N':lab[k])+'(t)\\,dt',tex:true,fs:15},
-    {t:'arrow',x1:330,y1:y,x2:410,y2:y},
-    {t:'text',x:448,y:y+6,label:'s_{i'+lab[k]+'}',tex:true,fs:16}); });
-  it.push({t:'line',d:'M488,60 H505 V370 H488'}, {t:'arrow',x1:505,y1:215,x2:540,y2:215},
-    {t:'text',x:572,y:222,label:'\\mathbf{s}_i',tex:true,fs:17});
-  return P.blocks({w:600, h:420, items:it});
+/* The synthesizer and the analyzer, one frame each: the sum that builds the
+   waveform from its coordinates, and the bank of correlators that reads the
+   coordinates back out of it. Both are drawn on the same canvas, so the frames
+   change the diagram and not its place. */
+function figSynthAnalyze(v){
+  const W = 600, H = 480, ys = [60, 210, 360], nm = ['1','2','N'], r = 16;
+  /* a circle drawn as a path, since blocks() has no node of its own */
+  const ring = (x,y,rr) => ({t:'line', d:'M'+(x-rr)+','+y+' a'+rr+','+rr+' 0 1,0 '+(2*rr)+',0 a'+rr+','+rr+' 0 1,0 '+(-2*rr)+',0'});
+  const mult = (x,y) => [ring(x,y,r), {t:'text',x:x,y:y+3,label:'\\times',tex:true,fs:17}];
+  /* each multiplier takes its basis function from below */
+  const feed = (x,y,k) => [{t:'arrow',x1:x,y1:y+70,x2:x,y2:y+r+6,color:C.h},
+    {t:'text',x:x,y:y+94,label:'\\psi_'+nm[k]+'(t)',tex:true,fs:16,color:C.h}];
+  const it = [];
+  if(frameOf(v, 1) < 0.5){
+    /* synthesizer: s_ij scales psi_j(t), and the N products are added */
+    const cx = 170, sx = 420, sr = 18;
+    ys.forEach((y,k)=>{
+      it.push({t:'text',x:16,y:y+6,label:'s_{i'+nm[k]+'}',tex:true,fs:16,anchor:'start',color:C.in},
+        {t:'arrow',x1:66,y1:y,x2:cx-r-4,y2:y,color:C.in});
+      it.push(...mult(cx,y), ...feed(cx,y,k));
+      const dx = sx-(cx+r+2), dy = y-210, L = Math.hypot(dx,dy);
+      it.push({t:'arrow',x1:cx+r+2,y1:y,x2:sx-(sr+4)*dx/L,y2:210-(sr+4)*dy/L}); });
+    it.push({t:'text',x:cx,y:330,label:'\\smash{\\vdots}',tex:true,fs:16},
+      ring(sx,210,sr), {t:'text',x:sx,y:214,label:'\\Sigma',tex:true,fs:18},
+      {t:'arrow',x1:sx+sr+2,y1:210,x2:505,y2:210,color:C.in},
+      {t:'text',x:515,y:216,label:'s_i(t)',tex:true,fs:17,anchor:'start',color:C.in});
+  } else {
+    /* analyzer: the waveform meets each basis function, and each product is
+       integrated over the symbol interval */
+    const cx = 130;
+    it.push({t:'text',x:8,y:188,label:'s_i(t)',tex:true,fs:17,anchor:'start',color:C.in},
+      {t:'arrow',x1:8,y1:210,x2:56,y2:210,color:C.in}, {t:'line',d:'M58,60 V360',color:C.in});
+    ys.forEach((y,k)=>{
+      it.push({t:'arrow',x1:58,y1:y,x2:cx-r-4,y2:y,color:C.in});
+      it.push(...mult(cx,y), ...feed(cx,y,k));
+      it.push({t:'arrow',x1:cx+r+2,y1:y,x2:190,y2:y},
+        {t:'box',x:190,y:y-28,w:160,h:56,label:'\\int_0^T(\\cdot)\\,dt',tex:true,fs:16},
+        {t:'arrow',x1:350,y1:y,x2:410,y2:y},
+        {t:'text',x:440,y:y+6,label:'s_{i'+nm[k]+'}',tex:true,fs:16,color:C.in}); });
+    it.push({t:'text',x:cx,y:330,label:'\\smash{\\vdots}',tex:true,fs:16},
+      {t:'line',d:'M478,60 H494 V360 H478'}, {t:'arrow',x1:494,y1:210,x2:528,y2:210,color:C.in},
+      {t:'text',x:540,y:217,label:'\\mathbf{s}_i',tex:true,fs:17,anchor:'start',color:C.in});
+  }
+  return P.blocks({w:W, h:H, items:it});
 }
 
 /* x = 2 psi1 + psi2 and y = psi1 - psi2, the two unit pulses they are built
@@ -807,8 +836,8 @@ const SC = [
   {t:'eyebrow', text:'Module 3 · Signals as vectors'},
   {t:'title', text:'Basis functions for a signal set'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
-    {t:'fig', frame:true, grow:true, svg:figAnalyzer,
-      caption:'The analyzer: one correlator for each basis function. Its $N$ outputs are the coordinates, and together they form the signal vector $\\mathbf{s}_i$.'}
+    {t:'fig', frame:true, grow:true, frames:{labels:['synthesizer','analyzer']}, svg:figSynthAnalyze,
+      caption:'The synthesizer scales each $\\psi_j(t)$ by $s_{ij}$ and adds, which builds $s_i(t)$. The analyzer multiplies $s_i(t)$ by each $\\psi_j(t)$ and integrates over $[0,T]$, which gives the coordinates back. Together they form the signal vector $\\mathbf{s}_i$.'}
   ], right:[
     {t:'eq', label:'Signal set', tex:'s_i(t)=\\sum_{j=1}^{N}s_{ij}\\,\\psi_j(t),\\qquad i=1,\\ldots,M,\\quad 0\\le t\\le T',
       note:'$M$ finite-energy waveforms share $N$ orthonormal basis functions, with $N\\le M$.'},
