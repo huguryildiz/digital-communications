@@ -1493,6 +1493,20 @@ const SMP_B = [0,1,0,1,1], SMP_N = -0.1;
 function isiParts(bt){ const q = rcq(bt), amp = SMP_B.map(b=>b?1:-1);
   const own = 1-q, isi = [0,1,2,3].reduce((s,k)=>s + amp[k]*(1-q)*Math.pow(q, 4-k), 0);
   return {q, own, isi, n:SMP_N, y:own+isi+SMP_N}; }
+/* The figure's bits as sound: 0 1 0 1 1 repeated at 2000 bits a second, the
+   sent NRZ s(t), the RC channel output x(t) for this BT_b, and x(t) plus
+   white Gaussian noise of standard deviation 0.2. The channel runs as the
+   first-order recursion of h(t). */
+function isiSound(bt, part){
+  const Rb = 2000, fs = 48000, n = 1.5*fs, a = 1-Math.exp(-2*Math.PI*bt*Rb/fs);
+  let sd = 5011; const rnd = () => (sd = (Math.imul(sd, 1664525) + 1013904223) >>> 0)/4294967296;
+  const y = new Float32Array(n); let x = 0;
+  for(let i=0;i<n;i++){ const s = SMP_B[Math.floor(i*Rb/fs) % 5] ? 1 : -1;
+    x += a*(s-x);
+    y[i] = part==='s' ? s : part==='x' ? x
+      : x + 0.2*Math.sqrt(-2*Math.log(1-rnd()))*Math.cos(2*Math.PI*rnd()); }
+  return { dur:1.5, f: t => y[Math.min(n-1, Math.round(t*fs))] };
+}
 function figIsiSample(v){
   P.hOverride = null;
   const f = frameOf(v, 3), u = k => clamp01(f-k), big = P.labelScale() > 1;
@@ -3388,8 +3402,12 @@ REAL_DECISION,
     {t:'fig', frame:true, grow:true,
       frames:{labels:['the received sample','own pulse','the other pulses','noise'], ms:1300},
       live:{controls:[{k:'bt', label:'$BT_b$', min:0.08, max:1, step:0.01, v:0.25, show:v=>'$'+v.toFixed(2)+'$'}]},
+      listen:{items:[
+        {label:'sent $s(t)$', sound:v=>isiSound(v.bt, 's')},
+        {label:'through the channel', sound:v=>isiSound(v.bt, 'x')},
+        {label:'with noise', sound:v=>isiSound(v.bt, 'y')}]},
       svg:figIsiSample,
-      caption:'The bits $0\\,1\\,0\\,1\\,1$ through the RC channel, sampled at the end of the last bit. The bars add the parts tip to tail. The percentages are each part\'s share of their total size. Drag $BT_b$: a narrower channel shrinks the own bit and grows the interference.'},
+      caption:'The bits $0\\,1\\,0\\,1\\,1$ through the RC channel, sampled at the end of the last bit. The bars add the parts tip to tail. The percentages are each part\'s share of their total size. Drag $BT_b$: a narrower channel shrinks the own bit and grows the interference. The sounds repeat the bits at $2000$ bits per second, each at the same loudness. A narrower channel dulls the tone and lets the noise stand out.'},
     {t:'legend', items:[['out','received'],['mid','own pulse',false,1],['err','other pulses',true,2]], at:'tc-row'}
   ], right:[
     {t:'eq', label:'Sampled output', tex:'\\begin{aligned}y(t_i)&=\\underbrace{\\mu\\,a_i}_{\\text{own bit}}+\\underbrace{\\mu\\sum_{k\\ne i}a_k\\,p\\bigl((i-k)T_b\\bigr)}_{\\text{intersymbol interference}}\\\\&\\quad+\\underbrace{n(t_i)}_{\\text{noise}}\\end{aligned}',
