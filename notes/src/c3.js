@@ -449,8 +449,8 @@ window.C3 = [
   '\\begin{aligned}\\int x(t)\\,y(t)\\,dt&=\\int\\Bigl(\\sum_{k=1}^{N}x_k\\psi_k(t)\\Bigr)\\Bigl(\\sum_{j=1}^{N}y_j\\psi_j(t)\\Bigr)dt\\\\&=\\sum_{k=1}^{N}\\sum_{j=1}^{N}x_ky_j\\int\\psi_k(t)\\,\\psi_j(t)\\,dt\\\\&=\\sum_{k=1}^{N}x_ky_k\\end{aligned}',
  after:'The last integral is $1$ for $j=k$ and $0$ otherwise. Only the terms with $j=k$ are left.'},
 {t:'p', text:'For example, take $x=2\\psi_1+\\psi_2$ and $y=\\psi_1-\\psi_2$ on the two unit pulses. So $\\mathbf{x}=(2,1)$ and $\\mathbf{y}=(1,-1)$. The product $x(t)\\,y(t)$ is $2$ on $[0,1)$ and $-1$ on $[1,2)$.'},
-{t:'fig', svg:figInner, cap:'$x=2\\psi_1+\\psi_2$ and $y=\\psi_1-\\psi_2$ on the two unit pulses, with their product and its signed area.',
- short:'Two waveforms, their product and its signed area.'},
+{t:'fig', svg:figInner, cap:'$x=2\\psi_1+\\psi_2$ and $y=\\psi_1-\\psi_2$ as waveforms and as the vectors $\\mathbf{x}$ and $\\mathbf{y}$. The signed area of the product and $x_1y_1+x_2y_2$ both give $1$.',
+ short:'Two waveforms, their product and its area, and the same two signals as vectors.'},
 {t:'eqbox', cap:'The signed area and the coordinates agree', tex:
   '\\int_0^{2}x(t)\\,y(t)\\,dt=2-1=1,\\qquad x_1y_1+x_2y_2=2(1)+1(-1)=1'},
 

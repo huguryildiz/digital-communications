@@ -1498,6 +1498,8 @@ CHECKS: list[dict] = [
      "derive": lambda: _m3_ip([(0, 1, 3), (1, 2, -1)], [(1, 2, 1)], 0, 2), "tol": 1e-6},
     {"name": "3.1.4 integral of x*y for x = (2,1), y = (1,-1)", "stated": 1.0,
      "derive": lambda: _m3_ip([(0, 1, 2), (1, 2, 1)], [(0, 1, 1), (1, 2, -1)], 0, 2), "tol": 1e-6},
+    {"name": "3.1.4 integral of x*y for x = (1,2), y = (2,-1)", "stated": 0.0,
+     "derive": lambda: _m3_ip([(0, 1, 1), (1, 2, 2)], [(0, 1, 2), (1, 2, -1)], 0, 2), "tol": 1e-6},
     {"name": "3.1.6 distance between (1,1) and (1,-1) from the waveforms", "stated": 2.0,
      "derive": lambda: math.sqrt(_m3_ip([(1, 2, 2)], [(1, 2, 2)], 0, 2)), "tol": 1e-6},
     {"name": "3.1.6 energy of a point on the circle of radius sqrt 2", "stated": 2.0,

@@ -23944,22 +23944,31 @@ function figAnalyzer(){
 }
 
 /* x = 2 psi1 + psi2 and y = psi1 - psi2 on the unit pulses, their product and
-   its area, played in three frames. */
+   its area, then the same two signals as vectors in the plane: the area and
+   x1*y1 + x2*y2 give the same number. Played in four frames. */
 function figInner(v){
   P.hOverride = null;
-  const f = frameOf(v, 2), op = k => clamp01(f-k+1);
+  const f = frameOf(v, 3), op = k => clamp01(f-k+1);
   const X = [[0,1,2],[1,2,1]], Y = [[0,1,1],[1,2,-1]], XY = [[0,1,2],[1,2,-1]];
   const pan = (segs, name, h, yr, last, fn) => { const a = TAx({w:560,h,xr:[-0.1,2.25],yr,
       xlabel:last?'t':'', ylabel:name, pad:{l:56,r:26,t:24,b:last?36:12},
       xt:last?[0,1,2]:null, yticksOverride:[-1,0,1,2]});
     (fn||(()=>a.poly(outline(segs,-0.1,2.25), {color:C.in, width:2.4})))(a);
     return a.svg(); };
-  const p3 = pan(XY, 'x(t)\\,y(t)', 170, [-2.2,3.0], true, a=>{
+  const p3 = pan(XY, 'x(t)\\,y(t)', 165, [-2.2,3.0], true, a=>{
     if(op(2) > 0.02) shade(a, pwc(XY), 0, 2, C.mid, 0.24*op(2));
     if(op(1) > 0.02) seg(a, outline(XY,-0.1,2.25), {color:C.mid, width:2.4, opacity:op(1)});
     if(op(2) > 0.5){ a.note(0.5, 2.35, '+2', {tex:true, fs:15, color:C.mid, anchor:'middle'});
-      a.note(1.5, -1.75, '-1', {tex:true, fs:15, color:C.mid, anchor:'middle'}); } });
-  return stack(560, [[pan(X,'x(t)',115,[-1.5,2.6]),115],[pan(Y,'y(t)',115,[-1.5,2.6]),115],[p3,170]]);
+      a.note(1.5, -1.75, '-1', {tex:true, fs:15, color:C.mid, anchor:'middle'});
+      a.note(1.5, 1.2, '\\textstyle\\int x\\,y\\,dt=1', {tex:true, fs:15, color:C.mid, anchor:'middle'}); } });
+  const b = plane({h:225, need:[[-0.5,2.5],[-1.45,1.45]], ynameAtAxis:true, xticksOverride:[1,2], yticksOverride:[-1,1]});
+  const o3 = op(3);
+  if(o3 > 0.02){ seg(b, [[2,0],[2,1],[0,1]], {dash:'4 5', opacity:o3}); seg(b, [[1,0],[1,-1],[0,-1]], {dash:'4 5', opacity:o3}); }
+  arrow(b, 0,0,2,1, {color:C.in}); arrow(b, 0,0,1,-1, {color:C.in});
+  b.note(2.12, 1.1, '\\mathbf{x}=(2,1)', {tex:true, fs:15, color:C.in, anchor:'start'});
+  b.note(1.12, -1.2, '\\mathbf{y}=(1,-1)', {tex:true, fs:15, color:C.in, anchor:'start'});
+  if(o3 > 0.5) b.note(2.4, 0.4, '\\mathbf{x}\\cdot\\mathbf{y}=2-1=1', {tex:true, fs:15, color:C.mid, anchor:'start'});
+  return stack(560, [[pan(X,'x(t)',115,[-1.5,2.6]),115],[pan(Y,'y(t)',115,[-1.5,2.6]),115],[p3,165],[b.svg(),225]]);
 }
 
 /* Two points of energy 2: s1 fixed at (1,1), s2 turned by the slider. */
@@ -24471,8 +24480,8 @@ const SC = [
   {t:'eyebrow', text:'Module 3 · Signals as vectors'},
   {t:'title', text:'Inner products are preserved'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
-    {t:'fig', frame:true, grow:true, frames:{labels:['$x(t)$, $y(t)$','$x(t)\\,y(t)$','area']}, svg:figInner,
-      caption:'$x=2\\psi_1+\\psi_2$ and $y=\\psi_1-\\psi_2$ on the two unit pulses. Step to the product and its signed area.'}
+    {t:'fig', frame:true, grow:true, frames:{labels:['$x(t)$, $y(t)$','$x(t)\\,y(t)$','area','$x_1y_1+x_2y_2$']}, svg:figInner,
+      caption:'$x=2\\psi_1+\\psi_2$ and $y=\\psi_1-\\psi_2$ are drawn as waveforms and as the vectors $\\mathbf{x}$ and $\\mathbf{y}$. The signed area of the product and $x_1y_1+x_2y_2$ both give $1$.'}
   ], right:[
     {t:'eq', result:true, label:'Key result · inner products', tex:'\\int_{-\\infty}^{\\infty}x(t)\\,y(t)\\,dt=\\sum_{k=1}^{N}x_ky_k=\\langle\\mathbf{x},\\mathbf{y}\\rangle',
       note:'An integral over two waveforms equals a sum over $N$ pairs of coordinates.'},
@@ -24480,9 +24489,9 @@ const SC = [
       {t:'eq', label:'Proof', tex:'\\begin{aligned}\\int x(t)\\,y(t)\\,dt&=\\int\\Bigl(\\sum_{k=1}^{N}x_k\\psi_k(t)\\Bigr)\\Bigl(\\sum_{j=1}^{N}y_j\\psi_j(t)\\Bigr)dt\\\\&=\\sum_{k=1}^{N}\\sum_{j=1}^{N}x_ky_j\\int\\psi_k(t)\\,\\psi_j(t)\\,dt\\\\&=\\sum_{k=1}^{N}x_ky_k\\end{aligned}',
         note:'The last integral is $1$ for $j=k$ and $0$ otherwise. Only the terms with $j=k$ are left.'}]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'def', head:'Given', html:'$\\mathbf{x}=(2,1)$ and $\\mathbf{y}=(1,-1)$ on an orthonormal basis.<div class="nsep"></div>What is $\\int x(t)\\,y(t)\\,dt$?',
-        ask:{key:'m3-inner', choices:['$-1$','$1$','$3$'], answer:1,
-          why:'$x_1y_1+x_2y_2=2(1)+1(-1)=1$, the signed area $2-1$ in the figure.'}}]}
+      {t:'note', kind:'def', head:'Given', html:'$\\mathbf{x}=(1,2)$ and $\\mathbf{y}=(2,-1)$ on an orthonormal basis.<div class="nsep"></div>What is $\\int x(t)\\,y(t)\\,dt$?',
+        ask:{key:'m3-inner', choices:['$3$','$0$','$4$'], answer:1,
+          why:'$x_1y_1+x_2y_2=1(2)+2(-1)=0$, so the two waveforms are orthogonal.'}}]}
   ]}
 ]},
 
