@@ -23792,9 +23792,13 @@ function bottomTicks(a, vals, fmt){
   const L = P.labelScale(), f = fmt || (v => String(v));
   vals.forEach(v=>{ const X = f2(a.sx(v));
     a.raw(`<line x1="${X}" y1="${a.y0}" x2="${X}" y2="${a.y0+5}" stroke="${C.axis}" stroke-width="1.2"/>`);
-    a.raw(`<text x="${X}" y="${f2(a.y0+19*L)}" font-size="${13.5*L}" fill="${C.muted}" text-anchor="middle">${f(v)}</text>`); });
+    /* A label given by `fmt` is TeX (T/4, T/2, T); a plain number stays text. */
+    if(fmt) a.note(v, 0, f(v), {tex:true, fs:14.5, color:C.muted, anchor:'middle', dy:a.y0-a.sy(0)+22*L+1});
+    else a.raw(`<text x="${X}" y="${f2(a.y0+19*L)}" font-size="${13.5*L}" fill="${C.muted}" text-anchor="middle">${f(v)}</text>`); });
   return a;
 }
+/* Time ticks in units of the symbol time: the axis name is then plain t. */
+const TT = v => ({0:'0',0.25:'T/4',0.5:'T/2',0.75:'3T/4',1:'T'})[v];
 /* An Axes whose time ticks sit at the lower edge: `xt` names them. */
 const TAx = o => { const xt = o.xt; const a = P.Axes(Object.assign({}, o, {xticksOverride:[]})); return xt ? bottomTicks(a, xt, o.xfmt) : a; };
 /* A blank drawing canvas in data coordinates: no ticks, no grid, no axes. */
@@ -23862,7 +23866,7 @@ const NAVY = {axis:'rgba(239,231,216,.34)', tick:'#9EACB9', name:'#E6E2D9'};
 const T_CY = '#4FBECE', T_AM = '#E5B255', T_VI = '#AC99DC';
 function figOpenWave(segs, name, dash, delay){
   const a = P.Axes({w:520,h:112,xr:[-0.05,1.1],yr:[-1.5,1.5],grid:false,
-    xlabel:'t/T', ylabel:name, chrome:NAVY, pad:{l:46,r:30,t:22,b:34}, xticksOverride:[0,0.5,1], ytarget:3});
+    xlabel:'t', xunit:'T', ylabel:name, chrome:NAVY, pad:{l:46,r:30,t:22,b:34}, xticksOverride:[0,0.5,1], ytarget:3});
   a.curve(pwc(segs), {color:T_CY, width:2.4, n:1400, dash, anim:{delay, sweep:'#D9F3F7'}});
   return a.svg();
 }
@@ -23886,8 +23890,9 @@ function figOpenPlane(){
 function figTwoAxes(){
   P.hOverride = null;
   const pan = (segs, name, col, h, last) => { const a = TAx({w:560,h,xr:[-0.05,1.1],yr:[-1.6,1.6], ynameAtAxis:true,
-      xlabel:last?'t/T':'', ylabel:name, pad:{l:56,r:26,t:24,b:last?36:12},
-      xt:last?[0,0.25,0.5,0.75,1]:null, yticksOverride:[-1,0,1]});
+      xlabel:last?'t':'', ylabel:name, pad:{l:56,r:26,t:24,b:last?36:12},
+      xt:last?[0,0.25,0.5,0.75,1]:null, xfmt:TT,
+      yticksOverride:[-1,0,1]});
     if(col===C.mid) shade(a, pwc(segs), 0, 1, C.mid, 0.2);
     a.poly(outline(segs,-0.05,1.1), {color:col, width:2.4});
     return a.svg(); };
@@ -23909,12 +23914,24 @@ function figOrtho(){
   return a.svg();
 }
 
+/* The two unit pulses used as an orthonormal pair. */
+function figOrthoPulses(){
+  P.hOverride = null;
+  const pan = (segs, name, h, last) => { const a = TAx({w:560,h,xr:[-0.1,2.25],yr:[-0.4,1.5], ynameAtAxis:true,
+      xlabel:last?'t':'', ylabel:name, pad:{l:56,r:26,t:24,b:last?36:12},
+      xt:last?[0,1,2]:null, yticksOverride:[0,1]});
+    shade(a, pwc(segs), segs[0][0], segs[0][1], C.h, 0.15);
+    a.poly(outline(segs,-0.1,2.25), {color:C.h, width:2.4});
+    return a.svg(); };
+  return stack(560, [[pan(HALF1,'\\psi_1(t)',150,false),150],[pan(HALF2,'\\psi_2(t)',180,true),180]]);
+}
+
 /* Synthesis on the basis of two unit pulses: the waveform s1*psi1 + s2*psi2
    and its point, driven by the two sliders. */
 function figProject(v){
   P.hOverride = null;
   const s1 = v ? v.a : 1.5, s2 = v ? v.b : -1;
-  const a = TAx({w:560,h:180,xr:[-0.1,2.25],yr:[-2.4,2.4],xlabel:'t',ylabel:'s(t)',
+  const a = TAx({w:560,h:180,xr:[-0.1,2.25],yr:[-2.4,2.4],xlabel:'t',ylabel:'x(t)',
     pad:{l:56,r:26,t:18,b:36},xt:[0,1,2],yticksOverride:[-2,-1,0,1,2]});
   a.poly(outline(HALF1,-0.1,2.25), {color:C.h, width:1.6, dash:'6 5'});
   a.poly(outline(HALF2,-0.1,2.25), {color:C.h, width:1.6, dash:'6 5'});
@@ -23922,25 +23939,25 @@ function figProject(v){
   const b = plane({h:250, need:[[-2.3,2.3],[-2.3,2.3]], xticksOverride:[-2,-1,1,2], yticksOverride:[-2,-1,1,2]});
   seg(b, [[s1,0],[s1,s2]], {dash:'4 5'}); seg(b, [[0,s2],[s1,s2]], {dash:'4 5'});
   b.point(s1, s2, {color:C.in, r:6.5});
-  b.note(b.o.xr[1]-0.15, b.o.yr[1]-0.45, '\\mathbf{s}=('+num(s1,1)+',\\,'+num(s2,1)+')', {tex:true, fs:15, color:C.in, anchor:'end'});
+  b.note(b.o.xr[1]-0.15, b.o.yr[1]-0.45, '\\mathbf{x}=('+num(s1,1)+',\\,'+num(s2,1)+')', {tex:true, fs:15, color:C.in, anchor:'end'});
   return stack(560, [[a.svg(),180],[b.svg(),250]]);
 }
 
 /* The analyzer: one correlator per basis function. */
 function figAnalyzer(){
-  const ys = [50, 140, 262], lab = ['1','2','N'];
+  const ys = [60, 200, 370], lab = ['1','2','N'];
   const it = [
-    {t:'arrow',x1:8,y1:140,x2:60,y2:140}, {t:'line',d:'M60,50 V262'},
-    {t:'text',x:10,y:118,label:'s_i(t)',tex:true,fs:16,anchor:'start'},
-    {t:'text',x:215,y:212,label:'\\smash{\\vdots}',tex:true,fs:16}
+    {t:'arrow',x1:8,y1:200,x2:60,y2:200}, {t:'line',d:'M60,60 V370'},
+    {t:'text',x:10,y:178,label:'s_i(t)',tex:true,fs:16,anchor:'start'},
+    {t:'text',x:215,y:296,label:'\\smash{\\vdots}',tex:true,fs:16}
   ];
   ys.forEach((y,k)=>{ it.push({t:'arrow',x1:60,y1:y,x2:100,y2:y},
     {t:'box',x:100,y:y-30,w:230,h:60,label:'\\int_0^T(\\cdot)\\,\\psi_'+(k===2?'N':lab[k])+'(t)\\,dt',tex:true,fs:15},
     {t:'arrow',x1:330,y1:y,x2:410,y2:y},
     {t:'text',x:448,y:y+6,label:'s_{i'+lab[k]+'}',tex:true,fs:16}); });
-  it.push({t:'line',d:'M488,50 H505 V262 H488'}, {t:'arrow',x1:505,y1:156,x2:540,y2:156},
-    {t:'text',x:572,y:163,label:'\\mathbf{s}_i',tex:true,fs:17});
-  return P.blocks({w:600, h:300, items:it});
+  it.push({t:'line',d:'M488,60 H505 V370 H488'}, {t:'arrow',x1:505,y1:215,x2:540,y2:215},
+    {t:'text',x:572,y:222,label:'\\mathbf{s}_i',tex:true,fs:17});
+  return P.blocks({w:600, h:420, items:it});
 }
 
 /* x = 2 psi1 + psi2 and y = psi1 - psi2 on the unit pulses, their product and
@@ -24045,8 +24062,8 @@ function figBinary(v){
 function figPassband(v){
   P.hOverride = null;
   const th = (v ? v.th : 45)*Math.PI/180;
-  const a = TAx({w:560,h:160,xr:[-0.03,1.08],yr:[-1.8,1.8],xlabel:'t/T',ylabel:'s(t)',
-    pad:{l:56,r:26,t:18,b:36},xt:[0,0.5,1],yticksOverride:[-1,0,1]});
+  const a = TAx({w:560,h:160,xr:[-0.03,1.08],yr:[-1.8,1.8],xlabel:'t',ylabel:'s(t)',
+    pad:{l:56,r:26,t:18,b:36},xt:[0,0.5,1],xfmt:TT,yticksOverride:[-1,0,1]});
   a.curve(t=> t>=0 && t<=1 ? Math.SQRT2*Math.cos(2*Math.PI*FC*t - th) : 0, {color:C.in, width:2.4, n:900});
   const b = plane({h:260, need:[[-1.6,1.6],[-1.45,1.45]], xticksOverride:[], yticksOverride:[]});
   circle(b, 1);
@@ -24079,7 +24096,7 @@ function figRemarks(v){
   const pulse = ([x,y]) => pwc([[0,0.5,Math.SQRT2*x],[0.5,1,Math.SQRT2*y]]);
   const carr = ([x,y]) => t => x*cosB(t) + y*sinB(t);
   const small = (p, lo) => { const a = TAx({w:280,h:lo?140:110,xr:[-0.04,1.3],yr:[-2.4,2.4],
-      xlabel:lo?'t/T':'', xnameDrop:30, ylabel:'('+p.v[0]+','+p.v[1]+')', pad:{l:50,r:18,t:14,b:lo?34:10}, xt:lo?[0,0.5,1]:null, yticksOverride:[-2,0,2]});
+      xlabel:lo?'t':'', xnameDrop:30, ylabel:'('+p.v[0]+','+p.v[1]+')', pad:{l:50,r:18,t:14,b:lo?34:10}, xt:lo?[0,0.5,1]:null, xfmt:TT, yticksOverride:[-2,0,2]});
     if(f < 0.98) a.curve(pulse(p.v), {color:C.in, width:2.2, n:600, opacity:1-f});
     if(f > 0.02) a.curve(carr(p.v), {color:C.in, width:2.0, n:600, opacity:f});
     return a.svg(); };
@@ -24414,74 +24431,76 @@ const SC = [
   ]}
 ]},
 
-{ id:'m3-ortho', module:'M3', nav:'An orthonormal basis', title:'An orthonormal basis',
-  objective:'Define the inner product and an orthonormal set of signals by analogy with vectors.',
-  keywords:'orthonormal basis inner product norm orthogonal unit energy functions vectors analogy',
-  src:'CH9 s.4–5', slide:true, steps:3, blocks:[
+{ id:'m3-vectors', module:'M3', nav:'Vectors and space', title:'Vectors and space',
+  objective:'Write a vector against unit basis vectors and define its inner product, norm and orthogonality.',
+  keywords:'vector space unit basis vectors coordinates inner product dot product norm length orthogonal dimension',
+  src:'CH9 s.4', slide:true, steps:3, blocks:[
   {t:'eyebrow', text:'Module 3 · Signals as vectors'},
-  {t:'title', text:'An orthonormal basis'},
+  {t:'title', text:'Vectors and space'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true, svg:figOrtho,
       caption:'A vector written against the unit axes $\\mathbf{e}_1$ and $\\mathbf{e}_2$ is the list $(a_1,a_2)$. Its length and its angle to another vector come from that list.'}
   ], right:[
-    {t:'eq', label:'Vectors', tex:'\\langle\\mathbf{a},\\mathbf{b}\\rangle=\\sum_{k=1}^{N}a_kb_k,\\qquad \\|\\mathbf{a}\\|=\\sqrt{\\langle\\mathbf{a},\\mathbf{a}\\rangle}',
-      note:'The inner product multiplies matching entries and adds them. The length is the root of the inner product with itself.'},
+    {t:'eq', label:'A vector in $N$ dimensions', tex:'\\mathbf{a}=\\sum_{i=1}^{N}a_i\\,\\mathbf{e}_i=(a_1,a_2,\\ldots,a_N)',
+      note:'The unit vectors $\\mathbf{e}_1,\\ldots,\\mathbf{e}_N$ are the axes. $N$ is the smallest number of vectors that builds every vector of the space.'},
+    {t:'reveal', at:1, items:[
+      {t:'eq', label:'Inner product', tex:'\\mathbf{a}\\cdot\\mathbf{b}=\\langle\\mathbf{a},\\mathbf{b}\\rangle=\\sum_{i=1}^{N}a_ib_i',
+        note:'The inner product multiplies matching entries and adds them.'}]},
+    {t:'reveal', at:2, items:[
+      {t:'eq', label:'Norm', tex:'\\|\\mathbf{a}\\|=\\sqrt{\\langle\\mathbf{a},\\mathbf{a}\\rangle}=\\sqrt{\\sum_{i=1}^{N}a_i^{2}}',
+        note:'The norm is the length of the vector.'}]},
+    {t:'reveal', at:3, items:[
+      {t:'note', kind:'def', head:'Orthogonal', html:'$\\mathbf{a}$ and $\\mathbf{b}$ are <b>orthogonal</b> when $\\langle\\mathbf{a},\\mathbf{b}\\rangle=0$. In the plane they meet at $90^{\\circ}$.'}]}
+  ]}
+]},
+
+{ id:'m3-ortho', module:'M3', nav:'An orthonormal basis', title:'An orthonormal basis',
+  objective:'Define an orthonormal set of vectors and, by analogy, an orthonormal set of signals.',
+  keywords:'orthonormal basis orthogonal set unit norm unit energy inner product of signals functions',
+  src:'CH9 s.5', slide:true, steps:3, blocks:[
+  {t:'eyebrow', text:'Module 3 · Signals as vectors'},
+  {t:'title', text:'An orthonormal basis'},
+  {t:'cols', ratio:'c-5-7', fill:true, left:[
+    {t:'fig', frame:true, grow:true, svg:figOrthoPulses,
+      caption:'The unit pulses $\\psi_1$ on $[0,1)$ and $\\psi_2$ on $[1,2)$. Each has energy $1$. They never overlap, so $\\int\\psi_1(t)\\psi_2(t)\\,dt=0$.'},
+    {t:'reveal', at:3, items:[
+      {t:'note', kind:'def', head:'Orthonormal set', html:'If every $c_j=1$, the set $\\{\\psi_1,\\ldots,\\psi_N\\}$ is <b>orthonormal</b>. Each function then has unit energy, $\\int\\psi_k^{2}(t)\\,dt=1$.'}]}
+  ], right:[
+    {t:'note', kind:'def', head:'Orthonormal vectors', html:'A set of vectors is <b>orthonormal</b> when each pair is orthogonal and each vector has unit norm: $\\mathbf{e}_i\\cdot\\mathbf{e}_j=0$ for $i\\ne j$, and $\\|\\mathbf{e}_i\\|=1$.'},
     {t:'reveal', at:1, items:[
       {t:'eq', label:'Signals', tex:'\\langle x,y\\rangle=\\int_{-\\infty}^{\\infty}x(t)\\,y(t)\\,dt,\\qquad \\|x\\|^{2}=\\int_{-\\infty}^{\\infty}x^{2}(t)\\,dt=E_x',
         note:'The sum becomes an integral. The squared length of a signal is its energy.'}]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'def', head:'Orthonormal set', html:'$\\{\\psi_1,\\ldots,\\psi_N\\}$ is orthonormal when $\\int\\psi_j(t)\\psi_k(t)\\,dt$ is $1$ for $j=k$ and $0$ for $j\\ne k$. Each has unit energy, and each pair is orthogonal.'}]},
-    {t:'reveal', at:3, items:[
-      {t:'note', kind:'def', head:'Given', html:'$\\psi(t)=c$ on $[0,2]$ and zero elsewhere.<div class="nsep"></div>Which $c>0$ gives $\\psi$ unit energy?',
-        ask:{key:'m3-ortho', choices:['$1/2$','$1/\\sqrt2$','$1$'], answer:1,
-          why:'$\\int_0^{2}c^{2}\\,dt=2c^{2}=1$, so $c=1/\\sqrt2=0.707$.'}}]}
+      {t:'eq', label:'Orthogonal set', tex:'\\int_{-\\infty}^{\\infty}\\psi_j(t)\\,\\psi_k(t)\\,dt=\\begin{cases}c_j,& j=k\\\\0,& j\\ne k\\end{cases}',
+        note:'Two different functions of the set have inner product $0$. The angle between them is $90^{\\circ}$.'}]}
   ]}
 ]},
 
 { id:'m3-project', module:'M3', nav:'Coordinates', title:'The coordinates of a waveform',
-  objective:'Give the analysis and synthesis formulas that turn a waveform into its coordinates and back.',
-  keywords:'projection coordinates synthesis analysis signal vector inner product basis slider',
-  src:'CH9 s.6–8', slide:true, steps:2, blocks:[
+  objective:'Give the projection and synthesis formulas that turn a waveform into its coordinates and back.',
+  keywords:'projection coordinates synthesis analysis vector of a waveform inner product basis slider',
+  src:'CH9 s.6', slide:true, steps:2, blocks:[
   {t:'eyebrow', text:'Module 3 · Signals as vectors'},
   {t:'title', text:'The coordinates of a waveform'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true,
-      live:{controls:[{k:'a', label:'$s_1$', min:-2, max:2, step:0.1, v:1.5, show:v=>'$'+num(v,1)+'$'},
-                      {k:'b', label:'$s_2$', min:-2, max:2, step:0.1, v:-1, show:v=>'$'+num(v,1)+'$'}]},
+      live:{controls:[{k:'a', label:'$x_1$', min:-2, max:2, step:0.1, v:1.5, show:v=>'$'+num(v,1)+'$'},
+                      {k:'b', label:'$x_2$', min:-2, max:2, step:0.1, v:-1, show:v=>'$'+num(v,1)+'$'}]},
       svg:figProject,
-      caption:'Drag $s_1$ and $s_2$. The waveform $s_1\\psi_1(t)+s_2\\psi_2(t)$ and the point $(s_1,s_2)$ change together. The dashed pulses are $\\psi_1$ and $\\psi_2$.'}
+      caption:'Drag $x_1$ and $x_2$. The waveform $x_1\\psi_1(t)+x_2\\psi_2(t)$ and the point $(x_1,x_2)$ change together. The dashed pulses are $\\psi_1$ and $\\psi_2$.'}
   ], right:[
-    {t:'eq', key:true, label:'Analysis', tex:'s_{ij}=\\int_0^{T}s_i(t)\\,\\psi_j(t)\\,dt,\\qquad j=1,\\ldots,N',
-      note:'One integral for each axis takes the waveform apart into $N$ numbers.'},
+    {t:'eq', key:true, label:'Projection', tex:'x_k=\\int_{-\\infty}^{\\infty}x(t)\\,\\psi_k(t)\\,dt,\\qquad k=1,\\ldots,N',
+      note:'$x_k$ is the projection of $x(t)$ on $\\psi_k(t)$. One integral for each axis gives one number.'},
     {t:'reveal', at:1, items:[
-      {t:'eq', label:'Synthesis', tex:'s_i(t)=\\sum_{j=1}^{N}s_{ij}\\,\\psi_j(t),\\qquad \\mathbf{s}_i=(s_{i1},\\ldots,s_{iN})',
-        note:'The $N$ numbers build the waveform back. The list $\\mathbf{s}_i$ is the <b>signal vector</b>.'}]},
+      {t:'eq', label:'Synthesis', tex:'x(t)=\\sum_{k=1}^{N}x_k\\,\\psi_k(t),\\qquad \\mathbf{x}=(x_1,x_2,\\ldots,x_N)',
+        note:'The $N$ numbers build the waveform back. The list $\\mathbf{x}$ is the vector of $x(t)$.'}]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'def', head:'Given', html:'$\\psi_1=1$ on $[0,1)$ and $\\psi_2=1$ on $[1,2)$. $s(t)=3$ on $[0,1)$ and $-1$ on $[1,2)$.<div class="nsep"></div>What is $\\mathbf{s}$?',
+      {t:'note', kind:'def', head:'Given', html:'$\\psi_1=1$ on $[0,1)$ and $\\psi_2=1$ on $[1,2)$. $x(t)=3$ on $[0,1)$ and $-1$ on $[1,2)$.<div class="nsep"></div>What is $\\mathbf{x}$?',
         ask:{key:'m3-project', choices:['$(3,-1)$','$(-1,3)$','$(3,1)$'], answer:0,
-          why:'$s_1=\\int_0^{1}3\\cdot1\\,dt=3$ and $s_2=\\int_1^{2}(-1)\\cdot1\\,dt=-1$.'}}]}
+          why:'$x_1=\\int_0^{1}3\\cdot1\\,dt=3$ and $x_2=\\int_1^{2}(-1)\\cdot1\\,dt=-1$.'}}]}
   ]}
 ]},
 
-{ id:'m3-analyzer', module:'M3', nav:'The analyzer', title:'The analyzer and the synthesizer',
-  objective:'Show the bank of correlators that computes the coordinates, and why it is computed once.',
-  keywords:'analyzer synthesizer bank of correlators coordinates computed once receiver structure N correlators',
-  src:'CH9 s.8', slide:true, steps:2, blocks:[
-  {t:'eyebrow', text:'Module 3 · Signals as vectors'},
-  {t:'title', text:'The analyzer and the synthesizer'},
-  {t:'cols', ratio:'c-5-7', fill:true, left:[
-    {t:'fig', frame:true, grow:true, svg:figAnalyzer,
-      caption:'The analyzer: one correlator for each basis function. Its $N$ outputs are the coordinates, and together they form the signal vector $\\mathbf{s}_i$.'}
-  ], right:[
-    {t:'note', kind:'def', head:'Analyzer', html:'Multiply the waveform by each $\\psi_j(t)$ and integrate over $[0,T]$. The receiver of Module 4 is this bank of correlators.'},
-    {t:'reveal', at:1, items:[
-      {t:'note', kind:'def', head:'Synthesizer', html:'Scale each $\\psi_j(t)$ by $s_{ij}$ and add. The transmitter can build every waveform of the set from $N$ basis functions.'}]},
-    {t:'reveal', at:2, items:[
-      {t:'note', kind:'def', head:'Given', html:'A set of $M=8$ waveforms spans $N=2$ dimensions.<div class="nsep"></div>How many correlators does the analyzer need?',
-        ask:{key:'m3-analyzer', choices:['$2$','$3$','$8$'], answer:0,
-          why:'One correlator for each basis function, so $N=2$, however many waveforms share the two axes.'}}]}
-  ]}
-]},
 
 { id:'m3-inner', module:'M3', nav:'Inner products preserved', title:'Inner products are preserved',
   objective:'Show that the integral of a product of two signals equals the dot product of their vectors.',
@@ -24496,11 +24515,32 @@ const SC = [
     {t:'eq', result:true, label:'Key result · inner products', tex:'\\int_{-\\infty}^{\\infty}x(t)\\,y(t)\\,dt=\\sum_{k=1}^{N}x_ky_k=\\langle\\mathbf{x},\\mathbf{y}\\rangle',
       note:'An integral over two waveforms equals a sum over $N$ pairs of coordinates.'},
     {t:'reveal', at:1, items:[
-      {t:'note', kind:'def', head:'Proof in three moves', html:'<ol class="steps"><li>Write $x=\\sum_jx_j\\psi_j$ and $y=\\sum_ky_k\\psi_k$.</li><li>Move the integral inside both sums.</li><li>Use $\\int\\psi_j\\psi_k\\,dt=1$ for $j=k$ and $0$ otherwise.</li></ol>'}]},
+      {t:'eq', label:'Proof', tex:'\\begin{aligned}\\int x(t)\\,y(t)\\,dt&=\\int\\Bigl(\\sum_{k=1}^{N}x_k\\psi_k(t)\\Bigr)\\Bigl(\\sum_{j=1}^{N}y_j\\psi_j(t)\\Bigr)dt\\\\&=\\sum_{k=1}^{N}\\sum_{j=1}^{N}x_ky_j\\int\\psi_k(t)\\,\\psi_j(t)\\,dt\\\\&=\\sum_{k=1}^{N}x_ky_k\\end{aligned}',
+        note:'The last integral is $1$ for $j=k$ and $0$ otherwise. Only the terms with $j=k$ are left.'}]},
     {t:'reveal', at:2, items:[
       {t:'note', kind:'def', head:'Given', html:'$\\mathbf{x}=(2,1)$ and $\\mathbf{y}=(1,-1)$ on an orthonormal basis.<div class="nsep"></div>What is $\\int x(t)\\,y(t)\\,dt$?',
         ask:{key:'m3-inner', choices:['$-1$','$1$','$3$'], answer:1,
           why:'$x_1y_1+x_2y_2=2(1)+1(-1)=1$, the signed area $2-1$ in the figure.'}}]}
+  ]}
+]},
+
+{ id:'m3-analyzer', module:'M3', nav:'Basis for a signal set', title:'Basis functions for a signal set',
+  objective:'Write every waveform of an M-ary set on one orthonormal basis and show the correlator bank that finds the coordinates.',
+  keywords:'signal set M-ary basis functions coordinates signal vector analyzer synthesizer bank of correlators',
+  src:'CH9 s.7–8', slide:true, steps:2, blocks:[
+  {t:'eyebrow', text:'Module 3 · Signals as vectors'},
+  {t:'title', text:'Basis functions for a signal set'},
+  {t:'cols', ratio:'c-5-7', fill:true, left:[
+    {t:'fig', frame:true, grow:true, svg:figAnalyzer,
+      caption:'The analyzer: one correlator for each basis function. Its $N$ outputs are the coordinates, and together they form the signal vector $\\mathbf{s}_i$.'}
+  ], right:[
+    {t:'eq', label:'Signal set', tex:'s_i(t)=\\sum_{j=1}^{N}s_{ij}\\,\\psi_j(t),\\qquad i=1,\\ldots,M,\\quad 0\\le t\\le T',
+      note:'$M$ finite-energy waveforms share $N$ orthonormal basis functions, with $N\\le M$.'},
+    {t:'reveal', at:1, items:[
+      {t:'eq', label:'Coordinates', tex:'s_{ij}=\\int_0^{T}s_i(t)\\,\\psi_j(t)\\,dt,\\qquad \\mathbf{s}_i=(s_{i1},\\ldots,s_{iN})',
+        note:'Each waveform becomes a point. The list $\\mathbf{s}_i$ is its <b>signal vector</b>.'}]},
+    {t:'reveal', at:2, items:[
+      {t:'note', kind:'def', head:'Analyzer and synthesizer', html:'The analyzer multiplies the waveform by each $\\psi_j(t)$ and integrates over $[0,T]$. The receiver of Module 4 is this bank of correlators. The synthesizer scales each $\\psi_j(t)$ by $s_{ij}$ and adds.'}]}
   ]}
 ]},
 
@@ -34059,7 +34099,7 @@ CONTENT.SECTIONS = {
   M3: [
     { n:'3.0', title:'Opening',                        ids:['m3-open'] },
     { n:'3.1', title:'Signals as vectors',             ids:[
-        'm3-twoaxes','m3-ortho','m3-project','m3-analyzer','m3-inner','m3-energy','m3-ex-inspect',
+        'm3-twoaxes','m3-vectors','m3-ortho','m3-project','m3-inner','m3-analyzer','m3-energy','m3-ex-inspect',
         'm3-real-vectors','m3-lab-r','m3-code-vectors'] },
     { n:'3.2', title:'Constellations',                 ids:[
         'm3-constellation','m3-binary','m3-passband','m3-ex-qpsk','m3-remarks','m3-psk',
@@ -34226,7 +34266,7 @@ CONTENT.BOOK = {
      signals and three axes is the book's own Example 8.1.1, and the change of
      basis its closing remark on Figure 8.3. The galleries of real systems and
      the code pages carry no anchor beyond their section's, as in Module 2. */
-  'm3-open':'8.1', 'm3-twoaxes':'8.1', 'm3-ortho':'8.1', 'm3-project':'8.1', 'm3-analyzer':'8.1',
+  'm3-open':'8.1', 'm3-twoaxes':'8.1', 'm3-vectors':'8.1', 'm3-ortho':'8.1', 'm3-project':'8.1', 'm3-analyzer':'8.1',
   'm3-inner':'8.1', 'm3-energy':'8.1', 'm3-ex-inspect':'8.1', 'm3-real-vectors':'8.1', 'm3-lab-r':'8.1',
   'm3-constellation':'8.1', 'm3-binary':'8.2', 'm3-passband':'8.6.1', 'm3-ex-qpsk':'8.6.1',
   'm3-remarks':'8.1', 'm3-psk':'8.6.1', 'm3-real-constellation':'8.6.1, 8.7.1', 'm3-lab-s':'8.1, 8.6.1',

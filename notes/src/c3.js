@@ -112,9 +112,18 @@ function figOrtho(){
   a.note(-0.1,0.9,'a_2',{tex:true,fs:15,color:C.muted,anchor:'end'});
   return narrow(a.svg(),56);
 }
+function figOrthoPulses(){
+  const pan=(segs,name,h,last)=>{ const a=TAx({w:560,h,xr:[-0.1,2.25],yr:[-0.4,1.5],ynameAtAxis:true,
+      xlabel:last?'t':'',ylabel:name,pad:{l:56,r:26,t:24,b:last?36:12},
+      xt:last?[0,1,2]:null,yticksOverride:[0,1]});
+    shade(a,pwc(segs),segs[0][0],segs[0][1],C.h,0.15);
+    a.poly(outline(segs,-0.1,2.25),{color:C.h,width:2.4});
+    return a.svg(); };
+  return narrow(stack(560,[[pan(HALF1,'\\psi_1(t)',150,false),150],[pan(HALF2,'\\psi_2(t)',180,true),180]]),64);
+}
 function figProject(){
   const s1=1.5, s2=-1;
-  const a=TAx({w:560,h:180,xr:[-0.1,2.25],yr:[-2.4,2.4],xlabel:'t',ylabel:'s(t)',
+  const a=TAx({w:560,h:180,xr:[-0.1,2.25],yr:[-2.4,2.4],xlabel:'t',ylabel:'x(t)',
     pad:{l:56,r:26,t:18,b:36},xt:[0,1,2],yticksOverride:[-2,-1,0,1,2]});
   a.poly(outline(HALF1,-0.1,2.25),{color:C.h,width:1.6,dash:'6 5'});
   a.poly(outline(HALF2,-0.1,2.25),{color:C.h,width:1.6,dash:'6 5'});
@@ -122,7 +131,7 @@ function figProject(){
   const b=plane({h:250,need:[[-2.3,2.3],[-2.3,2.3]],xticksOverride:[-2,-1,1,2],yticksOverride:[-2,-1,1,2]});
   seg(b,[[s1,0],[s1,s2]],{dash:'4 5'}); seg(b,[[0,s2],[s1,s2]],{dash:'4 5'});
   b.point(s1,s2,{color:C.in,r:6.5});
-  b.note(b.o.xr[1]-0.15,b.o.yr[1]-0.45,'\\mathbf{s}=(1.5,\\,-1)',{tex:true,fs:15,color:C.in,anchor:'end'});
+  b.note(b.o.xr[1]-0.15,b.o.yr[1]-0.45,'\\mathbf{x}=(1.5,\\,-1)',{tex:true,fs:15,color:C.in,anchor:'end'});
   return narrow(stack(560,[[a.svg(),180],[b.svg(),250]]),62);
 }
 function figAnalyzer(){
@@ -413,57 +422,70 @@ window.C3 = [
 {t:'p', text:'Take $T=1$ and integrate the product $s_0(t)\\,s_1(t)$. It is $+1$ on two quarters and $-1$ on the other two. So the two areas are $0.5$ each, and they cancel.'},
 {t:'eqbox', cap:'The product integrates to zero', tex:'\\int_0^{1}s_0(t)\\,s_1(t)\\,dt=0.5-0.5=0'},
 
-/* m3-ortho */
-{t:'h3', text:'An orthonormal basis'},
+/* m3-vectors */
+{t:'h3', text:'Vectors and space'},
 {t:'p', text:'A vector written against the unit axes $\\mathbf{e}_1$ and $\\mathbf{e}_2$ is the list $(a_1,a_2)$. Its length and its angle to another vector come from that list.'},
 {t:'fig', svg:figOrtho, cap:'A vector written against the unit axes $\\mathbf{e}_1$ and $\\mathbf{e}_2$ is the list $(a_1,a_2)$. Its length and its angle to another vector come from that list.',
  short:'A vector written against two unit axes.'},
-{t:'p', text:'The inner product multiplies matching entries and adds them. The length is the root of the inner product with itself.'},
-{t:'eqbox', cap:'Vectors', tex:'\\langle\\mathbf{a},\\mathbf{b}\\rangle=\\sum_{k=1}^{N}a_kb_k,\\qquad \\|\\mathbf{a}\\|=\\sqrt{\\langle\\mathbf{a},\\mathbf{a}\\rangle}'},
+{t:'p', text:'In $N$ dimensions the unit vectors $\\mathbf{e}_1,\\ldots,\\mathbf{e}_N$ are the axes. $N$ is the smallest number of vectors that builds every vector of the space.'},
+{t:'eqbox', cap:'A vector in $N$ dimensions', tex:'\\mathbf{a}=\\sum_{i=1}^{N}a_i\\,\\mathbf{e}_i=(a_1,a_2,\\ldots,a_N)'},
+{t:'p', text:'The inner product multiplies matching entries and adds them.'},
+{t:'eqbox', cap:'Inner product', tex:'\\mathbf{a}\\cdot\\mathbf{b}=\\langle\\mathbf{a},\\mathbf{b}\\rangle=\\sum_{i=1}^{N}a_ib_i'},
+{t:'p', text:'The norm is the length of the vector. It is the root of the inner product of the vector with itself.'},
+{t:'eqbox', cap:'Norm', tex:'\\|\\mathbf{a}\\|=\\sqrt{\\langle\\mathbf{a},\\mathbf{a}\\rangle}=\\sqrt{\\sum_{i=1}^{N}a_i^{2}}'},
+{t:'p', text:'$\\mathbf{a}$ and $\\mathbf{b}$ are <b>orthogonal</b> when $\\langle\\mathbf{a},\\mathbf{b}\\rangle=0$. In the plane they meet at $90^{\\circ}$.'},
+
+/* m3-ortho */
+{t:'h3', text:'An orthonormal basis'},
+{t:'p', text:'A set of vectors is <b>orthonormal</b> when each pair is orthogonal and each vector has unit norm: $\\mathbf{e}_i\\cdot\\mathbf{e}_j=0$ for $i\\ne j$, and $\\|\\mathbf{e}_i\\|=1$.'},
 {t:'p', text:'For signals the sum becomes an integral.'},
 {t:'eqbox', cap:'Signals', tex:'\\langle x,y\\rangle=\\int_{-\\infty}^{\\infty}x(t)\\,y(t)\\,dt,\\qquad \\|x\\|^{2}=\\int_{-\\infty}^{\\infty}x^{2}(t)\\,dt=E_x',
  after:'The squared length of a signal is its energy.'},
-{t:'p', text:'The set $\\{\\psi_1,\\ldots,\\psi_N\\}$ is <b>orthonormal</b> when the integral of $\\psi_j(t)\\psi_k(t)$ is $1$ for $j=k$ and $0$ for $j\\ne k$.'},
-{t:'eqbox', cap:'Orthonormal set', tex:'\\int\\psi_j(t)\\,\\psi_k(t)\\,dt=\\begin{cases}1,&j=k\\\\0,&j\\ne k\\end{cases}',
- after:'Each function has unit energy, and each pair is orthogonal.'},
-{t:'p', text:'For example, take $\\psi(t)=c$ on $[0,2]$ and zero elsewhere. Its energy is $\\int_0^{2}c^{2}\\,dt=2c^{2}$. Unit energy needs $2c^{2}=1$, so $c=1/\\sqrt2=0.707$.'},
+{t:'p', text:'A set of functions is <b>orthogonal</b> when two different functions of the set have inner product $0$. The angle between them is $90^{\\circ}$.'},
+{t:'eqbox', cap:'Orthogonal set', tex:'\\int_{-\\infty}^{\\infty}\\psi_j(t)\\,\\psi_k(t)\\,dt=\\begin{cases}c_j,& j=k\\\\0,& j\\ne k\\end{cases}'},
+{t:'p', text:'If every $c_j=1$, the set $\\{\\psi_1,\\ldots,\\psi_N\\}$ is <b>orthonormal</b>. Each function then has unit energy, $\\int\\psi_k^{2}(t)\\,dt=1$.'},
+{t:'fig', svg:figOrthoPulses, cap:'The unit pulses $\\psi_1$ on $[0,1)$ and $\\psi_2$ on $[1,2)$. Each has energy $1$. They never overlap, so $\\int\\psi_1(t)\\psi_2(t)\\,dt=0$.',
+ short:'Two unit pulses that form an orthonormal pair.'},
 
 /* m3-project */
 {t:'h3', text:'The coordinates of a waveform'},
-{t:'p', text:'One integral for each axis takes the waveform apart into $N$ numbers. This step is called <b>analysis</b>.'},
-{t:'eqbox', cap:'Analysis', tex:'s_{ij}=\\int_0^{T}s_i(t)\\,\\psi_j(t)\\,dt,\\qquad j=1,\\ldots,N'},
+{t:'p', text:'One integral for each axis takes the waveform apart into $N$ numbers. $x_k$ is the <b>projection</b> of $x(t)$ on $\\psi_k(t)$.'},
+{t:'eqbox', cap:'Projection', tex:'x_k=\\int_{-\\infty}^{\\infty}x(t)\\,\\psi_k(t)\\,dt,\\qquad k=1,\\ldots,N'},
 {t:'p', text:'The $N$ numbers build the waveform back. This step is called <b>synthesis</b>.'},
-{t:'eqbox', cap:'Synthesis', tex:'s_i(t)=\\sum_{j=1}^{N}s_{ij}\\,\\psi_j(t),\\qquad \\mathbf{s}_i=(s_{i1},\\ldots,s_{iN})',
- after:'The list $\\mathbf{s}_i$ is the <b>signal vector</b>.'},
-{t:'p', text:'The figure shows synthesis on two unit pulses. The waveform $s_1\\psi_1(t)+s_2\\psi_2(t)$ and the point $(s_1,s_2)$ change together.'},
-{t:'fig', svg:figProject, cap:'The waveform $s_1\\psi_1(t)+s_2\\psi_2(t)$ and the point $(s_1,s_2)$, drawn for $s_1=1.5$ and $s_2=-1$. The dashed pulses are $\\psi_1$ and $\\psi_2$.',
- short:'The waveform $s_1\\psi_1(t)+s_2\\psi_2(t)$ and its point.'},
-{t:'p', text:'For example, take $\\psi_1=1$ on $[0,1)$ and $\\psi_2=1$ on $[1,2)$. Let $s(t)=3$ on $[0,1)$ and $-1$ on $[1,2)$. Each coordinate is one analysis integral.'},
+{t:'eqbox', cap:'Synthesis', tex:'x(t)=\\sum_{k=1}^{N}x_k\\,\\psi_k(t),\\qquad \\mathbf{x}=(x_1,x_2,\\ldots,x_N)',
+ after:'The list $\\mathbf{x}$ is the vector of $x(t)$.'},
+{t:'p', text:'The figure shows synthesis on two unit pulses. The waveform $x_1\\psi_1(t)+x_2\\psi_2(t)$ and the point $(x_1,x_2)$ change together.'},
+{t:'fig', svg:figProject, cap:'The waveform $x_1\\psi_1(t)+x_2\\psi_2(t)$ and the point $(x_1,x_2)$, drawn for $x_1=1.5$ and $x_2=-1$. The dashed pulses are $\\psi_1$ and $\\psi_2$.',
+ short:'The waveform $x_1\\psi_1(t)+x_2\\psi_2(t)$ and its point.'},
+{t:'p', text:'For example, take $\\psi_1=1$ on $[0,1)$ and $\\psi_2=1$ on $[1,2)$. Let $x(t)=3$ on $[0,1)$ and $-1$ on $[1,2)$. Each coordinate is one projection integral.'},
 {t:'eqbox', cap:'The coordinates of one waveform', tex:
-  '\\begin{aligned}s_1&=\\int_0^{1}3\\cdot1\\,dt=3\\\\s_2&=\\int_1^{2}(-1)\\cdot1\\,dt=-1\\end{aligned}',
- after:'So $\\mathbf{s}=(3,-1)$.'},
-
-/* m3-analyzer */
-{t:'h3', text:'The analyzer and the synthesizer'},
-{t:'p', text:'The <b>analyzer</b> multiplies the waveform by each $\\psi_j(t)$ and integrates over $[0,T]$. It is a bank of correlators, one for each basis function.'},
-{t:'fig', svg:figAnalyzer, cap:'The analyzer: one correlator for each basis function. Its $N$ outputs are the coordinates, and together they form the signal vector $\\mathbf{s}_i$.'},
-{t:'p', text:'The receiver of Chapter 4 is this bank of correlators.'},
-{t:'p', text:'The <b>synthesizer</b> scales each $\\psi_j(t)$ by $s_{ij}$ and adds. The transmitter can build every waveform of the set from $N$ basis functions.'},
-{t:'p', text:'For example, a set of $M=8$ waveforms spans $N=2$ dimensions. The analyzer needs one correlator for each basis function, so it needs $N=2$ correlators. The number of waveforms that share the two axes does not matter.'},
+  '\\begin{aligned}x_1&=\\int_0^{1}3\\cdot1\\,dt=3\\\\x_2&=\\int_1^{2}(-1)\\cdot1\\,dt=-1\\end{aligned}',
+ after:'So $\\mathbf{x}=(3,-1)$.'},
 
 /* m3-inner */
 {t:'h3', text:'Inner products are preserved'},
 {t:'p', text:'An integral over two waveforms equals a sum over $N$ pairs of coordinates.'},
 {t:'eqbox', cap:'Key result: inner products', tex:'\\int_{-\\infty}^{\\infty}x(t)\\,y(t)\\,dt=\\sum_{k=1}^{N}x_ky_k=\\langle\\mathbf{x},\\mathbf{y}\\rangle'},
-{t:'p', text:'The proof takes three moves. Write $x=\\sum_jx_j\\psi_j$ and $y=\\sum_ky_k\\psi_k$. Move the integral inside both sums. Then use $\\int\\psi_j\\psi_k\\,dt=1$ for $j=k$ and $0$ otherwise.'},
-{t:'eqbox', cap:'Proof in three moves', tex:
-  '\\begin{aligned}\\int_{-\\infty}^{\\infty}x(t)\\,y(t)\\,dt&=\\int_{-\\infty}^{\\infty}\\Bigl(\\sum_{j=1}^{N}x_j\\psi_j(t)\\Bigr)\\Bigl(\\sum_{k=1}^{N}y_k\\psi_k(t)\\Bigr)dt\\\\&=\\sum_{j=1}^{N}\\sum_{k=1}^{N}x_jy_k\\int_{-\\infty}^{\\infty}\\psi_j(t)\\,\\psi_k(t)\\,dt\\\\&=\\sum_{k=1}^{N}x_ky_k=\\langle\\mathbf{x},\\mathbf{y}\\rangle\\end{aligned}',
- after:'In the double sum, each term with $j\\ne k$ is $0$ and each term with $j=k$ keeps $x_ky_k$.'},
+{t:'p', text:'The proof writes both waveforms on the basis, moves the integral inside both sums and then uses orthonormality.'},
+{t:'eqbox', cap:'Proof', tex:
+  '\\begin{aligned}\\int x(t)\\,y(t)\\,dt&=\\int\\Bigl(\\sum_{k=1}^{N}x_k\\psi_k(t)\\Bigr)\\Bigl(\\sum_{j=1}^{N}y_j\\psi_j(t)\\Bigr)dt\\\\&=\\sum_{k=1}^{N}\\sum_{j=1}^{N}x_ky_j\\int\\psi_k(t)\\,\\psi_j(t)\\,dt\\\\&=\\sum_{k=1}^{N}x_ky_k\\end{aligned}',
+ after:'The last integral is $1$ for $j=k$ and $0$ otherwise. Only the terms with $j=k$ are left.'},
 {t:'p', text:'For example, take $x=2\\psi_1+\\psi_2$ and $y=\\psi_1-\\psi_2$ on the two unit pulses. So $\\mathbf{x}=(2,1)$ and $\\mathbf{y}=(1,-1)$. The product $x(t)\\,y(t)$ is $2$ on $[0,1)$ and $-1$ on $[1,2)$.'},
 {t:'fig', svg:figInner, cap:'$x=2\\psi_1+\\psi_2$ and $y=\\psi_1-\\psi_2$ on the two unit pulses, with their product and its signed area.',
  short:'Two waveforms, their product and its signed area.'},
 {t:'eqbox', cap:'The signed area and the coordinates agree', tex:
   '\\int_0^{2}x(t)\\,y(t)\\,dt=2-1=1,\\qquad x_1y_1+x_2y_2=2(1)+1(-1)=1'},
+
+/* m3-analyzer */
+{t:'h3', text:'Basis functions for a signal set'},
+{t:'p', text:'Take a set of $M$ waveforms $s_i(t)$ of finite energy. All of them can be written on one set of $N$ orthonormal basis functions, with $N\\le M$.'},
+{t:'eqbox', cap:'Signal set', tex:'s_i(t)=\\sum_{j=1}^{N}s_{ij}\\,\\psi_j(t),\\qquad i=1,\\ldots,M,\\quad 0\\le t\\le T'},
+{t:'p', text:'Each coefficient is a projection, so each waveform becomes a point.'},
+{t:'eqbox', cap:'Coordinates', tex:'s_{ij}=\\int_0^{T}s_i(t)\\,\\psi_j(t)\\,dt,\\qquad \\mathbf{s}_i=(s_{i1},\\ldots,s_{iN})',
+ after:'The list $\\mathbf{s}_i$ is the <b>signal vector</b>.'},
+{t:'p', text:'The <b>analyzer</b> multiplies the waveform by each $\\psi_j(t)$ and integrates over $[0,T]$. It is a bank of correlators, one for each basis function.'},
+{t:'fig', svg:figAnalyzer, cap:'The analyzer: one correlator for each basis function. Its $N$ outputs are the coordinates, and together they form the signal vector $\\mathbf{s}_i$.'},
+{t:'p', text:'The receiver of Chapter 4 is this bank of correlators. The <b>synthesizer</b> scales each $\\psi_j(t)$ by $s_{ij}$ and adds.'},
 
 /* m3-energy */
 {t:'h3', text:'Energy and distance'},
