@@ -23914,20 +23914,27 @@ function figOrthoPulses(){
 function figProject(v){
   P.hOverride = null;
   const s1 = v ? v.a : 1.5, s2 = v ? v.b : -1;
-  const a = TAx({w:560,h:180,xr:[-0.1,2.25],yr:[-2.4,2.4],xlabel:'t',ylabel:'x(t)',
-    pad:{l:56,r:26,t:18,b:36},xt:[0,1,2],yticksOverride:[-2,-1,0,1,2]});
-  a.poly(outline(HALF1,-0.1,2.25), {color:C.h, width:1.6, dash:'6 5'});
-  a.poly(outline(HALF2,-0.1,2.25), {color:C.h, width:1.6, dash:'6 5'});
-  a.poly(outline(halves([s1,s2]),-0.1,2.25), {color:C.in, width:2.6});
-  const b = plane({h:250, need:[[-2.3,2.3],[-2.3,2.3]], xticksOverride:[-2,2], yticksOverride:[-2,2]});
+  /* the two basis pulses side by side, above the waveform they build */
+  const pulse = (segs, name) => { const p = TAx({w:280,h:130,xr:[-0.1,2.3],yr:[-0.4,1.5], ynameAtAxis:true,
+      xlabel:'t', xnameDrop:30, ylabel:name, pad:{l:50,r:18,t:24,b:34}, xt:[0,1,2], yticksOverride:[0,1]});
+    shade(p, pwc(segs), segs[0][0], segs[0][1], C.h, 0.15);
+    p.poly(outline(segs,-0.1,2.3), {color:C.h, width:2.4});
+    return p.svg(); };
+  const a = TAx({w:280,h:240,xr:[-0.1,2.3],yr:[-2.4,2.4],xlabel:'t',ylabel:'x(t)',ynameAtAxis:true,xnameDrop:30,
+    pad:{l:50,r:18,t:24,b:34},xt:[0,1,2],yticksOverride:[-2,-1,0,1,2]});
+  a.poly(outline(halves([s1,s2]),-0.1,2.3), {color:C.in, width:2.6});
+  const b = plane({w:280,h:240, need:[[-2.3,2.3],[-2.3,2.3]], xticksOverride:[-2,2], yticksOverride:[-2]});
   seg(b, [[s1,0],[s1,s2]], {dash:'4 5'}); seg(b, [[0,s2],[s1,s2]], {dash:'4 5'});
   /* the basis itself: one unit arrow along each axis */
   arrow(b, 0,0,1,0, {color:C.h, width:3.2}); arrow(b, 0,0,0,1, {color:C.h, width:3.2});
   b.note(0.5, 0.36, '\\psi_1', {tex:true, fs:15, color:C.h, anchor:'middle'});
   b.note(-0.22, 0.5, '\\psi_2', {tex:true, fs:15, color:C.h, anchor:'end'});
   b.point(s1, s2, {color:C.in, r:6.5});
-  b.note(b.o.xr[1]-0.15, b.o.yr[1]-0.45, '\\mathbf{x}=('+num(s1,1)+',\\,'+num(s2,1)+')', {tex:true, fs:15, color:C.in, anchor:'end'});
-  return stack(560, [[a.svg(),180],[b.svg(),250]]);
+  /* the point is named beside itself, on the side away from the origin; the
+     slider readouts already give its coordinates */
+  b.note(s1+(s1>=0?0.22:-0.22), s2+(s2>=0?0.12:-0.5), '\\mathbf{x}', {tex:true, fs:15, color:C.in, anchor:s1>=0?'start':'end'});
+  return stack(560, [[row(130, [[pulse(HALF1,'\\psi_1(t)'),280],[pulse(HALF2,'\\psi_2(t)'),280]]),130],
+    [row(240, [[a.svg(),280],[b.svg(),280]]),240]]);
 }
 
 /* The analyzer: one correlator per basis function. */
@@ -24461,7 +24468,7 @@ const SC = [
       live:{controls:[{k:'a', label:'$x_1$', min:-2, max:2, step:0.1, v:1.5, show:v=>'$'+num(v,1)+'$'},
                       {k:'b', label:'$x_2$', min:-2, max:2, step:0.1, v:-1, show:v=>'$'+num(v,1)+'$'}]},
       svg:figProject,
-      caption:'Drag $x_1$ and $x_2$. The waveform $x_1\\psi_1(t)+x_2\\psi_2(t)$ and the point $(x_1,x_2)$ change together. The dashed pulses are $\\psi_1$ and $\\psi_2$, drawn in the plane as the two unit arrows.'}
+      caption:'Drag $x_1$ and $x_2$. The waveform $x_1\\psi_1(t)+x_2\\psi_2(t)$ and the point $(x_1,x_2)$ change together. The basis pulses $\\psi_1$ and $\\psi_2$ are drawn above, and in the plane as the two unit arrows.'}
   ], right:[
     {t:'eq', key:true, label:'Projection', tex:'x_k=\\int_{-\\infty}^{\\infty}x(t)\\,\\psi_k(t)\\,dt,\\qquad k=1,\\ldots,N',
       note:'$x_k$ is the projection of $x(t)$ on $\\psi_k(t)$. One integral for each axis gives one number.'},

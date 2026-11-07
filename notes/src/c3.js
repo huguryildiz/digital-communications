@@ -110,18 +110,26 @@ function figOrthoPulses(){
     return a.svg(); };
   return narrow(stack(560,[[pan(HALF1,'\\psi_1(t)',150,false),150],[pan(HALF2,'\\psi_2(t)',180,true),180]]),64);
 }
+const basisPulse=(segs,name)=>{ const p=TAx({w:280,h:130,xr:[-0.1,2.3],yr:[-0.4,1.5],ynameAtAxis:true,
+    xlabel:'t',xnameDrop:30,ylabel:name,pad:{l:50,r:18,t:24,b:34},xt:[0,1,2],yticksOverride:[0,1]});
+  shade(p,pwc(segs),segs[0][0],segs[0][1],C.h,0.15);
+  p.poly(outline(segs,-0.1,2.3),{color:C.h,width:2.4});
+  return p.svg(); };
+const basisArrows=b=>{ arrow(b,0,0,1,0,{color:C.h,width:3.2}); arrow(b,0,0,0,1,{color:C.h,width:3.2}); };
 function figProject(){
   const s1=1.5, s2=-1;
-  const a=TAx({w:560,h:180,xr:[-0.1,2.25],yr:[-2.4,2.4],xlabel:'t',ylabel:'x(t)',
-    pad:{l:56,r:26,t:18,b:36},xt:[0,1,2],yticksOverride:[-2,-1,0,1,2]});
-  a.poly(outline(HALF1,-0.1,2.25),{color:C.h,width:1.6,dash:'6 5'});
-  a.poly(outline(HALF2,-0.1,2.25),{color:C.h,width:1.6,dash:'6 5'});
-  a.poly(outline(halves([s1,s2]),-0.1,2.25),{color:C.in,width:2.6});
-  const b=plane({h:250,need:[[-2.3,2.3],[-2.3,2.3]],xticksOverride:[-2,-1,1,2],yticksOverride:[-2,-1,1,2]});
+  const a=TAx({w:280,h:240,xr:[-0.1,2.3],yr:[-2.4,2.4],xlabel:'t',ylabel:'x(t)',ynameAtAxis:true,xnameDrop:30,
+    pad:{l:50,r:18,t:24,b:34},xt:[0,1,2],yticksOverride:[-2,-1,0,1,2]});
+  a.poly(outline(halves([s1,s2]),-0.1,2.3),{color:C.in,width:2.6});
+  const b=plane({w:280,h:240,need:[[-2.3,2.3],[-2.3,2.3]],xticksOverride:[-2,2],yticksOverride:[-2]});
   seg(b,[[s1,0],[s1,s2]],{dash:'4 5'}); seg(b,[[0,s2],[s1,s2]],{dash:'4 5'});
+  basisArrows(b);
+  b.note(0.5,0.36,'\\psi_1',{tex:true,fs:15,color:C.h,anchor:'middle'});
+  b.note(-0.22,0.5,'\\psi_2',{tex:true,fs:15,color:C.h,anchor:'end'});
   b.point(s1,s2,{color:C.in,r:6.5});
-  b.note(b.o.xr[1]-0.15,b.o.yr[1]-0.45,'\\mathbf{x}=(1.5,\\,-1)',{tex:true,fs:15,color:C.in,anchor:'end'});
-  return narrow(stack(560,[[a.svg(),180],[b.svg(),250]]),62);
+  b.note(s1+0.22,s2-0.5,'\\mathbf{x}',{tex:true,fs:15,color:C.in,anchor:'start'});
+  return narrow(stack(560,[[row(130,[[basisPulse(HALF1,'\\psi_1(t)'),280],[basisPulse(HALF2,'\\psi_2(t)'),280]]),130],
+    [row(240,[[a.svg(),280],[b.svg(),280]]),240]]),62);
 }
 function figAnalyzer(){
   const ys=[50,140,262], nm=['1','2','N'];
@@ -139,18 +147,22 @@ function figAnalyzer(){
   return narrow(P.blocks({w:600,h:300,items:it}),62);
 }
 function figInner(){
-  const X=[[0,1,2],[1,2,1]], Y=[[0,1,1],[1,2,-1]], XY=[[0,1,2],[1,2,-1]];
-  const pan=(segs,name,h,yr,last,fn)=>{ const a=TAx({w:560,h,xr:[-0.1,2.25],yr,
-      xlabel:last?'t':'',ylabel:name,pad:{l:56,r:26,t:24,b:last?36:12},
-      xt:last?[0,1,2]:null,yticksOverride:[-1,0,1,2]});
-    (fn||(()=>a.poly(outline(segs,-0.1,2.25),{color:C.in,width:2.4})))(a);
+  const X=[[0,1,2],[1,2,1]], Y=[[0,1,1],[1,2,-1]];
+  const small=(segs,name)=>{ const a=TAx({w:280,h:150,xr:[-0.1,2.3],yr:[-1.5,2.5],ynameAtAxis:true,
+      xlabel:'t',xnameDrop:30,ylabel:name,pad:{l:50,r:18,t:24,b:34},xt:[0,1,2],yticksOverride:[-1,1,2]});
+    a.poly(outline(segs,-0.1,2.3),{color:C.in,width:2.4});
     return a.svg(); };
-  const p3=pan(XY,'x(t)\\,y(t)',170,[-2.2,3.0],true,a=>{
-    shade(a,pwc(XY),0,2,C.mid,0.24);
-    seg(a,outline(XY,-0.1,2.25),{color:C.mid,width:2.4});
-    a.note(0.5,2.35,'+2',{tex:true,fs:15,color:C.mid,anchor:'middle'});
-    a.note(1.5,-2.0,'-1',{tex:true,fs:15,color:C.mid,anchor:'middle'}); });
-  return narrow(stack(560,[[pan(X,'x(t)',115,[-1.5,2.6]),115],[pan(Y,'y(t)',115,[-1.5,2.6]),115],[p3,170]]),64);
+  const b=plane({h:260,need:[[-0.5,2.5],[-1.45,1.45]],ynameAtAxis:true,xticksOverride:[2],yticksOverride:[-1]});
+  seg(b,[[2,0],[2,1],[0,1]],{dash:'4 5'}); seg(b,[[1,0],[1,-1],[0,-1]],{dash:'4 5'});
+  arrow(b,0,0,2,1,{color:C.in}); arrow(b,0,0,1,-1,{color:C.in});
+  basisArrows(b);
+  b.note(1.18,0.2,'\\psi_1',{tex:true,fs:15,color:C.h,anchor:'start'});
+  b.note(-0.22,0.5,'\\psi_2',{tex:true,fs:15,color:C.h,anchor:'end'});
+  b.note(2.12,1.1,'\\mathbf{x}=(2,1)',{tex:true,fs:15,color:C.in,anchor:'start'});
+  b.note(1.12,-1.2,'\\mathbf{y}=(1,-1)',{tex:true,fs:15,color:C.in,anchor:'start'});
+  b.note(2.4,0.4,'\\mathbf{x}\\cdot\\mathbf{y}=2-1=1',{tex:true,fs:15,color:C.mid,anchor:'start'});
+  return narrow(stack(560,[[row(150,[[small(X,'x(t)'),280],[small(Y,'y(t)'),280]]),150],
+    [row(130,[[basisPulse(HALF1,'\\psi_1(t)'),280],[basisPulse(HALF2,'\\psi_2(t)'),280]]),130],[b.svg(),260]]),64);
 }
 /* s1 at (1,1) and s2 turned by 90 degrees, to (-1,1). */
 function figEnergy(){
@@ -433,7 +445,7 @@ window.C3 = [
 {t:'eqbox', cap:'Synthesis', tex:'x(t)=\\sum_{k=1}^{N}x_k\\,\\psi_k(t),\\qquad \\mathbf{x}=(x_1,x_2,\\ldots,x_N)',
  after:'The list $\\mathbf{x}$ is the vector of $x(t)$.'},
 {t:'p', text:'The figure shows synthesis on two unit pulses. The waveform $x_1\\psi_1(t)+x_2\\psi_2(t)$ and the point $(x_1,x_2)$ change together.'},
-{t:'fig', svg:figProject, cap:'The waveform $x_1\\psi_1(t)+x_2\\psi_2(t)$ and the point $(x_1,x_2)$, drawn for $x_1=1.5$ and $x_2=-1$. The dashed pulses are $\\psi_1$ and $\\psi_2$.',
+{t:'fig', svg:figProject, cap:'The waveform $x_1\\psi_1(t)+x_2\\psi_2(t)$ and the point $(x_1,x_2)$, drawn for $x_1=1.5$ and $x_2=-1$. The basis pulses $\\psi_1$ and $\\psi_2$ are drawn above, and in the plane as the two unit arrows.',
  short:'The waveform $x_1\\psi_1(t)+x_2\\psi_2(t)$ and its point.'},
 {t:'p', text:'For example, take $\\psi_1=1$ on $[0,1)$ and $\\psi_2=1$ on $[1,2)$. Let $x(t)=3$ on $[0,1)$ and $-1$ on $[1,2)$. Each coordinate is one projection integral.'},
 {t:'eqbox', cap:'The coordinates of one waveform', tex:
