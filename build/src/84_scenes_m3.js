@@ -124,7 +124,7 @@ const S0 = [[0,0.5,1],[0.5,1,-1]];
 const S1 = [[0,0.25,1],[0.25,0.75,-1],[0.75,1,1]];
 const s0f = pwc(S0), s1f = pwc(S1);
 
-/* The basis of two unit pulses on [0,2] and the four signals of 3.1.7, which
+/* The basis of two unit pulses on [0,2] and the four signals of 3.1.6, which
    it writes as the corners of a square. */
 const HALF1 = [[0,1,1]], HALF2 = [[1,2,1]];
 const SQ = [ {v:[1,1],   l:'\\mathbf{s}_1'}, {v:[1,-1],  l:'\\mathbf{s}_2'},
@@ -178,23 +178,6 @@ function figOpenPlane(){
 }
 
 /* ---- 3.1 signals as vectors --------------------------------------------- */
-
-/* The two waveforms of the opening and their product. The product is +1 on
-   the first and third quarters and -1 on the other two, so it integrates to
-   zero: the two are orthogonal. */
-function figTwoAxes(){
-  P.hOverride = null;
-  const pan = (segs, name, col, h, last) => { const a = TAx({w:560,h,xr:[-0.05,1.1],yr:[-1.6,1.6], ynameAtAxis:true,
-      xlabel:last?'t':'', ylabel:name, pad:{l:56,r:26,t:24,b:last?36:12},
-      xt:last?[0,0.25,0.5,0.75,1]:null, xfmt:TT,
-      yticksOverride:[-1,0,1]});
-    if(col===C.mid) shade(a, pwc(segs), 0, 1, C.mid, 0.2);
-    a.poly(outline(segs,-0.05,1.1), {color:col, width:2.4});
-    return a.svg(); };
-  const prod = [[0,0.25,1],[0.25,0.5,-1],[0.5,0.75,1],[0.75,1,-1]];
-  return stack(560, [[pan(S0,'s_0(t)',C.in,120),120],[pan(S1,'s_1(t)',C.in,120),120],
-    [pan(prod,'s_0(t)\\,s_1(t)',C.mid,160,true),160]]);
-}
 
 /* A vector written against two unit axes. */
 function figOrtho(){
@@ -318,7 +301,7 @@ function figInspect(v){
 
 /* ---- 3.2 constellations -------------------------------------------------- */
 
-/* The square of 3.1.7 as a constellation: the points, then the energy read as
+/* The square of 3.1.6 as a constellation: the points, then the energy read as
    a radius, then the distance read between two points. */
 function figConst(v){
   const f = frameOf(v, 2), op = k => clamp01(f-k+1);
@@ -705,27 +688,6 @@ const SC = [
 ]},
 
 /* ---------------------------------------------------------------- 3.1 ---- */
-{ id:'m3-twoaxes', module:'M3', nav:'Two waveforms, two axes', title:'Two waveforms, two axes',
-  objective:'Show why two waveforms that are not multiples of each other need two axes and two correlators.',
-  keywords:'two waveforms not multiples one basis not enough two matched filters two numbers point plane orthogonal product',
-  src:'CH9 s.2–3', slide:true, steps:2, blocks:[
-  {t:'eyebrow', text:'Module 3 · Signals as vectors'},
-  {t:'title', text:'Two waveforms, two axes'},
-  {t:'cols', ratio:'c-5-7', fill:true, left:[
-    {t:'fig', frame:true, grow:true, svg:figTwoAxes,
-      caption:'$s_0(t)$ and $s_1(t)$ take the values $\\pm1$ on $[0,T]$. Their product is $+1$ on two quarters and $-1$ on the other two.'}
-  ], right:[
-    {t:'note', kind:'def', head:'One axis is not enough', html:'Neither waveform is a multiple of the other. No single $\\psi(t)$ writes both as $s_m\\psi(t)$, so the one-number receiver of Module 2 does not apply.'},
-    {t:'reveal', at:1, items:[
-      {t:'eq', label:'Two correlators', tex:'y_0=\\int_0^{T}x(t)\\,s_0(t)\\,dt,\\qquad y_1=\\int_0^{T}x(t)\\,s_1(t)\\,dt',
-        note:'The receiver computes one number for each waveform. The pair $(y_0,y_1)$ is a point in a plane.'}]},
-    {t:'reveal', at:2, items:[
-      {t:'note', kind:'def', head:'Given', html:'$s_0$ and $s_1$ are drawn on the left, with $T=1$.<div class="nsep"></div>What is $\\int_0^{1}s_0(t)\\,s_1(t)\\,dt$?',
-        ask:{key:'m3-twoaxes', choices:['$0$','$0.5$','$1$'], answer:0,
-          why:'The product is $+1$ on two quarters and $-1$ on two, so the integral is $0.5-0.5=0$.'}}]}
-  ]}
-]},
-
 { id:'m3-vectors', module:'M3', nav:'Vectors and space', title:'Vectors and space',
   objective:'Write a vector against unit basis vectors and define its inner product, norm and orthogonality.',
   keywords:'vector space unit basis vectors coordinates inner product dot product norm length orthogonal dimension',

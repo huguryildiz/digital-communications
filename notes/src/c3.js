@@ -91,17 +91,6 @@ const cosB=t=>(t>=0&&t<=1)?Math.SQRT2*Math.cos(2*Math.PI*FC*t):0;
 const sinB=t=>(t>=0&&t<=1)?Math.SQRT2*Math.sin(2*Math.PI*FC*t):0;
 
 /* ---- the figures ------------------------------------------------------------- */
-function figTwoAxes(){
-  const pan=(segs,name,col,h,last)=>{ const a=TAx({w:560,h,xr:[-0.05,1.1],yr:[-1.6,1.6],ynameAtAxis:true,
-      xlabel:last?'t/T':'',ylabel:name,pad:{l:56,r:26,t:24,b:last?36:12},
-      xt:last?[0,0.25,0.5,0.75,1]:null,yticksOverride:[-1,0,1]});
-    if(col===C.mid) shade(a,pwc(segs),0,1,C.mid,0.2);
-    a.poly(outline(segs,-0.05,1.1),{color:col,width:2.4});
-    return a.svg(); };
-  const prod=[[0,0.25,1],[0.25,0.5,-1],[0.5,0.75,1],[0.75,1,-1]];
-  return narrow(stack(560,[[pan(S0,'s_0(t)',C.in,120),120],[pan(S1,'s_1(t)',C.in,120),120],
-    [pan(prod,'s_0(t)\\,s_1(t)',C.mid,160,true),160]]),64);
-}
 function figOrtho(){
   const a=plane({need:[[-0.35,2.0],[-0.35,1.35]],xlabel:'\\mathbf{e}_1',ylabel:'\\mathbf{e}_2',xticksOverride:[],yticksOverride:[]});
   seg(a,[[1.6,0],[1.6,0.9]],{dash:'4 5'}); seg(a,[[0,0.9],[1.6,0.9]],{dash:'4 5'});
@@ -410,17 +399,6 @@ window.C3 = [
 
 /* ================================================================ 3.1 ==== */
 {t:'h2', num:'3.1', text:'Signals as vectors'},
-
-/* m3-twoaxes */
-{t:'h3', text:'Two waveforms, two axes'},
-{t:'p', text:'Take two waveforms $s_0(t)$ and $s_1(t)$ that take the values $\\pm1$ on $[0,T]$. The figure draws both and their product.'},
-{t:'fig', svg:figTwoAxes, cap:'$s_0(t)$ and $s_1(t)$ take the values $\\pm1$ on $[0,T]$. Their product is $+1$ on two quarters and $-1$ on the other two.'},
-{t:'p', text:'Neither waveform is a multiple of the other. No single $\\psi(t)$ writes both as $s_m\\psi(t)$, so the one-number receiver of Chapter 2 does not apply.'},
-{t:'p', text:'The receiver computes one number for each waveform, with two correlators.'},
-{t:'eqbox', cap:'Two correlators', tex:'y_0=\\int_0^{T}x(t)\\,s_0(t)\\,dt,\\qquad y_1=\\int_0^{T}x(t)\\,s_1(t)\\,dt',
- after:'The pair $(y_0,y_1)$ is a point in a plane.'},
-{t:'p', text:'Take $T=1$ and integrate the product $s_0(t)\\,s_1(t)$. It is $+1$ on two quarters and $-1$ on the other two. So the two areas are $0.5$ each, and they cancel.'},
-{t:'eqbox', cap:'The product integrates to zero', tex:'\\int_0^{1}s_0(t)\\,s_1(t)\\,dt=0.5-0.5=0'},
 
 /* m3-vectors */
 {t:'h3', text:'Vectors and space'},

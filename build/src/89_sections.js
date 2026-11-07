@@ -99,7 +99,7 @@ CONTENT.SECTIONS = {
   M3: [
     { n:'3.0', title:'Opening',                        ids:['m3-open'] },
     { n:'3.1', title:'Signals as vectors',             ids:[
-        'm3-twoaxes','m3-vectors','m3-ortho','m3-project','m3-inner','m3-analyzer','m3-energy','m3-ex-inspect',
+        'm3-vectors','m3-ortho','m3-project','m3-inner','m3-analyzer','m3-energy','m3-ex-inspect',
         'm3-real-vectors','m3-lab-r','m3-code-vectors'] },
     { n:'3.2', title:'Constellations',                 ids:[
         'm3-constellation','m3-binary','m3-passband','m3-ex-qpsk','m3-remarks','m3-psk',
@@ -266,7 +266,7 @@ CONTENT.BOOK = {
      signals and three axes is the book's own Example 8.1.1, and the change of
      basis its closing remark on Figure 8.3. The galleries of real systems and
      the code pages carry no anchor beyond their section's, as in Module 2. */
-  'm3-open':'8.1', 'm3-twoaxes':'8.1', 'm3-vectors':'8.1', 'm3-ortho':'8.1', 'm3-project':'8.1', 'm3-analyzer':'8.1',
+  'm3-open':'8.1', 'm3-vectors':'8.1', 'm3-ortho':'8.1', 'm3-project':'8.1', 'm3-analyzer':'8.1',
   'm3-inner':'8.1', 'm3-energy':'8.1', 'm3-ex-inspect':'8.1', 'm3-real-vectors':'8.1', 'm3-lab-r':'8.1',
   'm3-constellation':'8.1', 'm3-binary':'8.2', 'm3-passband':'8.6.1', 'm3-ex-qpsk':'8.6.1',
   'm3-remarks':'8.1', 'm3-psk':'8.6.1', 'm3-real-constellation':'8.6.1, 8.7.1', 'm3-lab-s':'8.1, 8.6.1',
