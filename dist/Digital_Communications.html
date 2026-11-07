@@ -23954,16 +23954,13 @@ function figInner(v){
   P.hOverride = null;
   const f = frameOf(v, 2), op = k => clamp01(f-k+1);
   const X = [[0,1,2],[1,2,1]], Y = [[0,1,1],[1,2,-1]];
-  const pan = (segs, name) => { const a = TAx({w:560,h:115,xr:[-0.1,2.25],yr:[-1.5,2.6],
-      xlabel:'', ylabel:name, pad:{l:56,r:26,t:24,b:12}, yticksOverride:[-1,0,1,2]});
-    a.poly(outline(segs,-0.1,2.25), {color:C.in, width:2.4});
+  /* one small panel of a row of two; x(t) and y(t) share a row, as do the pulses */
+  const small = (segs, name, col, yr, yt, h, fill) => { const a = TAx({w:280,h,xr:[-0.1,2.3],yr, ynameAtAxis:true,
+      xlabel:'t', xnameDrop:30, ylabel:name, pad:{l:50,r:18,t:24,b:34}, xt:[0,1,2], yticksOverride:yt});
+    if(fill) shade(a, pwc(segs), segs[0][0], segs[0][1], col, 0.15);
+    a.poly(outline(segs,-0.1,2.3), {color:col, width:2.4});
     return a.svg(); };
-  const basis = (segs, name) => { const a = TAx({w:280,h:130,xr:[-0.1,2.3],yr:[-0.4,1.5], ynameAtAxis:true,
-      xlabel:'t', xnameDrop:30, ylabel:name, pad:{l:50,r:18,t:24,b:34}, xt:[0,1,2], yticksOverride:[0,1]});
-    shade(a, pwc(segs), segs[0][0], segs[0][1], C.h, 0.15);
-    a.poly(outline(segs,-0.1,2.3), {color:C.h, width:2.4});
-    return a.svg(); };
-  const b = plane({h:225, need:[[-0.5,2.5],[-1.45,1.45]], ynameAtAxis:true, xticksOverride:[2], yticksOverride:[-1]});
+  const b = plane({h:260, need:[[-0.5,2.5],[-1.45,1.45]], ynameAtAxis:true, xticksOverride:[2], yticksOverride:[-1]});
   const o1 = op(1);
   if(o1 > 0.02){ seg(b, [[2,0],[2,1],[0,1]], {dash:'4 5', opacity:o1}); seg(b, [[1,0],[1,-1],[0,-1]], {dash:'4 5', opacity:o1});
     arrow(b, 0,0,2,1, {color:C.in, opacity:o1}); arrow(b, 0,0,1,-1, {color:C.in, opacity:o1}); }
@@ -23973,8 +23970,8 @@ function figInner(v){
   if(o1 > 0.5){ b.note(2.12, 1.1, '\\mathbf{x}=(2,1)', {tex:true, fs:15, color:C.in, anchor:'start'});
     b.note(1.12, -1.2, '\\mathbf{y}=(1,-1)', {tex:true, fs:15, color:C.in, anchor:'start'}); }
   if(op(2) > 0.5) b.note(2.4, 0.4, '\\mathbf{x}\\cdot\\mathbf{y}=2-1=1', {tex:true, fs:15, color:C.mid, anchor:'start'});
-  return stack(560, [[pan(X,'x(t)'),115],[pan(Y,'y(t)'),115],
-    [row(130, [[basis(HALF1,'\\psi_1(t)'),280],[basis(HALF2,'\\psi_2(t)'),280]]),130],[b.svg(),225]]);
+  return stack(560, [[row(150, [[small(X,'x(t)',C.in,[-1.5,2.5],[-1,1,2],150),280],[small(Y,'y(t)',C.in,[-1.5,2.5],[-1,1,2],150),280]]),150],
+    [row(130, [[small(HALF1,'\\psi_1(t)',C.h,[-0.4,1.5],[0,1],130,true),280],[small(HALF2,'\\psi_2(t)',C.h,[-0.4,1.5],[0,1],130,true),280]]),130],[b.svg(),260]]);
 }
 
 /* Two points of energy 2: s1 fixed at (1,1), s2 turned by the slider. */
