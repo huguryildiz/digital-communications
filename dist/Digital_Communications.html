@@ -7529,7 +7529,7 @@ Object.assign(LABS, (function(){
          y0 like the frame figures. */
       const R_XTICKS = [0,0.5,1,1.5,2];
       const a1 = P.Axes({w:ph?300:640,h:ph?230:gh(190),xr:[0,TMAX],yr:[-2.4,2.4],
-        xlabel:'t',ylabel:'s(t),\\;\\hat s(t),\\;e(t)',pad:{l:ph?42:56,r:ph?16:24,t:24,b:40},
+        xlabel:'t',ylabel:'\\text{Amplitude}',pad:{l:ph?42:56,r:ph?16:24,t:24,b:40},
         xtarget:ph?4:5,ytarget:4,xticksOverride:R_XTICKS,xtickfmt:()=>''});
       a1.poly(grid.map((t,i)=>[t,sVals[i]]),{color:P.COL.in,width:2.2});
       a1.poly(grid.map((t,i)=>[t,shVals[i]]),{color:P.COL.mid,width:2.0,dash:'7 5'});
