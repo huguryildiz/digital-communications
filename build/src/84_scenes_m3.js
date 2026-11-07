@@ -214,8 +214,12 @@ function figProject(v){
   a.poly(outline(HALF1,-0.1,2.25), {color:C.h, width:1.6, dash:'6 5'});
   a.poly(outline(HALF2,-0.1,2.25), {color:C.h, width:1.6, dash:'6 5'});
   a.poly(outline(halves([s1,s2]),-0.1,2.25), {color:C.in, width:2.6});
-  const b = plane({h:250, need:[[-2.3,2.3],[-2.3,2.3]], xticksOverride:[-2,-1,1,2], yticksOverride:[-2,-1,1,2]});
+  const b = plane({h:250, need:[[-2.3,2.3],[-2.3,2.3]], xticksOverride:[-2,2], yticksOverride:[-2,2]});
   seg(b, [[s1,0],[s1,s2]], {dash:'4 5'}); seg(b, [[0,s2],[s1,s2]], {dash:'4 5'});
+  /* the basis itself: one unit arrow along each axis */
+  arrow(b, 0,0,1,0, {color:C.h, width:3.2}); arrow(b, 0,0,0,1, {color:C.h, width:3.2});
+  b.note(0.5, 0.36, '\\psi_1', {tex:true, fs:15, color:C.h, anchor:'middle'});
+  b.note(-0.22, 0.5, '\\psi_2', {tex:true, fs:15, color:C.h, anchor:'end'});
   b.point(s1, s2, {color:C.in, r:6.5});
   b.note(b.o.xr[1]-0.15, b.o.yr[1]-0.45, '\\mathbf{x}=('+num(s1,1)+',\\,'+num(s2,1)+')', {tex:true, fs:15, color:C.in, anchor:'end'});
   return stack(560, [[a.svg(),180],[b.svg(),250]]);
@@ -238,32 +242,34 @@ function figAnalyzer(){
   return P.blocks({w:600, h:420, items:it});
 }
 
-/* x = 2 psi1 + psi2 and y = psi1 - psi2 on the unit pulses, their product and
-   its area, then the same two signals as vectors in the plane: the area and
-   x1*y1 + x2*y2 give the same number. Played in four frames. */
+/* x = 2 psi1 + psi2 and y = psi1 - psi2, the two unit pulses they are built
+   from, and the same signals as vectors in the plane, where the pulses are the
+   unit arrows. Played in three frames: waveforms, vectors, then x1*y1 + x2*y2. */
 function figInner(v){
   P.hOverride = null;
-  const f = frameOf(v, 3), op = k => clamp01(f-k+1);
-  const X = [[0,1,2],[1,2,1]], Y = [[0,1,1],[1,2,-1]], XY = [[0,1,2],[1,2,-1]];
-  const pan = (segs, name, h, yr, last, fn) => { const a = TAx({w:560,h,xr:[-0.1,2.25],yr,
-      xlabel:last?'t':'', ylabel:name, pad:{l:56,r:26,t:24,b:last?36:12},
-      xt:last?[0,1,2]:null, yticksOverride:[-1,0,1,2]});
-    (fn||(()=>a.poly(outline(segs,-0.1,2.25), {color:C.in, width:2.4})))(a);
+  const f = frameOf(v, 2), op = k => clamp01(f-k+1);
+  const X = [[0,1,2],[1,2,1]], Y = [[0,1,1],[1,2,-1]];
+  const pan = (segs, name) => { const a = TAx({w:560,h:115,xr:[-0.1,2.25],yr:[-1.5,2.6],
+      xlabel:'', ylabel:name, pad:{l:56,r:26,t:24,b:12}, yticksOverride:[-1,0,1,2]});
+    a.poly(outline(segs,-0.1,2.25), {color:C.in, width:2.4});
     return a.svg(); };
-  const p3 = pan(XY, 'x(t)\\,y(t)', 165, [-2.2,3.0], true, a=>{
-    if(op(2) > 0.02) shade(a, pwc(XY), 0, 2, C.mid, 0.24*op(2));
-    if(op(1) > 0.02) seg(a, outline(XY,-0.1,2.25), {color:C.mid, width:2.4, opacity:op(1)});
-    if(op(2) > 0.5){ a.note(0.5, 2.35, '+2', {tex:true, fs:15, color:C.mid, anchor:'middle'});
-      a.note(1.5, -1.75, '-1', {tex:true, fs:15, color:C.mid, anchor:'middle'});
-      a.note(1.5, 1.2, '\\textstyle\\int x\\,y\\,dt=1', {tex:true, fs:15, color:C.mid, anchor:'middle'}); } });
-  const b = plane({h:225, need:[[-0.5,2.5],[-1.45,1.45]], ynameAtAxis:true, xticksOverride:[1,2], yticksOverride:[-1,1]});
-  const o3 = op(3);
-  if(o3 > 0.02){ seg(b, [[2,0],[2,1],[0,1]], {dash:'4 5', opacity:o3}); seg(b, [[1,0],[1,-1],[0,-1]], {dash:'4 5', opacity:o3}); }
-  arrow(b, 0,0,2,1, {color:C.in}); arrow(b, 0,0,1,-1, {color:C.in});
-  b.note(2.12, 1.1, '\\mathbf{x}=(2,1)', {tex:true, fs:15, color:C.in, anchor:'start'});
-  b.note(1.12, -1.2, '\\mathbf{y}=(1,-1)', {tex:true, fs:15, color:C.in, anchor:'start'});
-  if(o3 > 0.5) b.note(2.4, 0.4, '\\mathbf{x}\\cdot\\mathbf{y}=2-1=1', {tex:true, fs:15, color:C.mid, anchor:'start'});
-  return stack(560, [[pan(X,'x(t)',115,[-1.5,2.6]),115],[pan(Y,'y(t)',115,[-1.5,2.6]),115],[p3,165],[b.svg(),225]]);
+  const basis = (segs, name) => { const a = TAx({w:280,h:130,xr:[-0.1,2.3],yr:[-0.4,1.5], ynameAtAxis:true,
+      xlabel:'t', xnameDrop:30, ylabel:name, pad:{l:50,r:18,t:24,b:34}, xt:[0,1,2], yticksOverride:[0,1]});
+    shade(a, pwc(segs), segs[0][0], segs[0][1], C.h, 0.15);
+    a.poly(outline(segs,-0.1,2.3), {color:C.h, width:2.4});
+    return a.svg(); };
+  const b = plane({h:225, need:[[-0.5,2.5],[-1.45,1.45]], ynameAtAxis:true, xticksOverride:[2], yticksOverride:[-1]});
+  const o1 = op(1);
+  if(o1 > 0.02){ seg(b, [[2,0],[2,1],[0,1]], {dash:'4 5', opacity:o1}); seg(b, [[1,0],[1,-1],[0,-1]], {dash:'4 5', opacity:o1});
+    arrow(b, 0,0,2,1, {color:C.in, opacity:o1}); arrow(b, 0,0,1,-1, {color:C.in, opacity:o1}); }
+  arrow(b, 0,0,1,0, {color:C.h, width:3.2}); arrow(b, 0,0,0,1, {color:C.h, width:3.2});
+  b.note(1.18, 0.2, '\\psi_1', {tex:true, fs:15, color:C.h, anchor:'start'});
+  b.note(-0.22, 0.5, '\\psi_2', {tex:true, fs:15, color:C.h, anchor:'end'});
+  if(o1 > 0.5){ b.note(2.12, 1.1, '\\mathbf{x}=(2,1)', {tex:true, fs:15, color:C.in, anchor:'start'});
+    b.note(1.12, -1.2, '\\mathbf{y}=(1,-1)', {tex:true, fs:15, color:C.in, anchor:'start'}); }
+  if(op(2) > 0.5) b.note(2.4, 0.4, '\\mathbf{x}\\cdot\\mathbf{y}=2-1=1', {tex:true, fs:15, color:C.mid, anchor:'start'});
+  return stack(560, [[pan(X,'x(t)'),115],[pan(Y,'y(t)'),115],
+    [row(130, [[basis(HALF1,'\\psi_1(t)'),280],[basis(HALF2,'\\psi_2(t)'),280]]),130],[b.svg(),225]]);
 }
 
 /* Two points of energy 2: s1 fixed at (1,1), s2 turned by the slider. */
@@ -753,7 +759,7 @@ const SC = [
       live:{controls:[{k:'a', label:'$x_1$', min:-2, max:2, step:0.1, v:1.5, show:v=>'$'+num(v,1)+'$'},
                       {k:'b', label:'$x_2$', min:-2, max:2, step:0.1, v:-1, show:v=>'$'+num(v,1)+'$'}]},
       svg:figProject,
-      caption:'Drag $x_1$ and $x_2$. The waveform $x_1\\psi_1(t)+x_2\\psi_2(t)$ and the point $(x_1,x_2)$ change together. The dashed pulses are $\\psi_1$ and $\\psi_2$.'}
+      caption:'Drag $x_1$ and $x_2$. The waveform $x_1\\psi_1(t)+x_2\\psi_2(t)$ and the point $(x_1,x_2)$ change together. The dashed pulses are $\\psi_1$ and $\\psi_2$, drawn in the plane as the two unit arrows.'}
   ], right:[
     {t:'eq', key:true, label:'Projection', tex:'x_k=\\int_{-\\infty}^{\\infty}x(t)\\,\\psi_k(t)\\,dt,\\qquad k=1,\\ldots,N',
       note:'$x_k$ is the projection of $x(t)$ on $\\psi_k(t)$. One integral for each axis gives one number.'},
@@ -775,8 +781,8 @@ const SC = [
   {t:'eyebrow', text:'Module 3 · Signals as vectors'},
   {t:'title', text:'Inner products are preserved'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
-    {t:'fig', frame:true, grow:true, frames:{labels:['$x(t)$, $y(t)$','$x(t)\\,y(t)$','area','$x_1y_1+x_2y_2$']}, svg:figInner,
-      caption:'$x=2\\psi_1+\\psi_2$ and $y=\\psi_1-\\psi_2$ are drawn as waveforms and as the vectors $\\mathbf{x}$ and $\\mathbf{y}$. The signed area of the product and $x_1y_1+x_2y_2$ both give $1$.'}
+    {t:'fig', frame:true, grow:true, frames:{labels:['$x(t)$, $y(t)$','$\\mathbf{x}$, $\\mathbf{y}$','$x_1y_1+x_2y_2$']}, svg:figInner,
+      caption:'$x=2\\psi_1+\\psi_2$ and $y=\\psi_1-\\psi_2$ are built from the unit pulses $\\psi_1$ and $\\psi_2$. In the plane the pulses are the unit arrows. Both $\\int x\\,y\\,dt$ and $x_1y_1+x_2y_2$ give $1$.'}
   ], right:[
     {t:'eq', result:true, label:'Key result · inner products', tex:'\\int_{-\\infty}^{\\infty}x(t)\\,y(t)\\,dt=\\sum_{k=1}^{N}x_ky_k=\\langle\\mathbf{x},\\mathbf{y}\\rangle',
       note:'An integral over two waveforms equals a sum over $N$ pairs of coordinates.'},
