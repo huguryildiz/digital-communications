@@ -306,12 +306,14 @@ function figGs(){
 }
 function figExGs(){
   const pan=(k,h,last)=>{ const a=TAx({w:560,h,xr:[-0.1,3.3],yr:[-0.3,1.45],
-      xlabel:last?'t':'',ylabel:['s_1,\\;\\psi_1','s_2,\\;\\psi_2','s_3,\\;g_3'][k],pad:{l:56,r:26,t:24,b:last?36:12},
+      xlabel:last?'t':'',ylabel:['s_1(t),\\;\\psi_1(t)','s_2(t),\\;\\psi_2(t)','s_3(t),\\;g_3(t)'][k],pad:{l:56,r:26,t:24,b:last?36:12},
       xt:last?[0,1,2,3]:null,yticksOverride:[0,1]});
-    a.poly(outline(GS3[k],-0.1,3.3),{color:C.in,width:1.8,dash:'6 5'});
-    if(k===0) seg(a,outline([[0,2,1/Math.SQRT2]],-0.1,3.3),{color:C.h,width:2.8});
-    if(k===1) seg(a,outline([[2,3,1]],-0.1,3.3),{color:C.h,width:2.8});
-    if(k===2){ seg(a,[[0,0],[3,0]],{color:C.mid,width:4});
+    /* the signal is a broad cyan trace and the basis function a narrower one
+       on top, so where the two coincide the cyan still shows at the edges */
+    a.poly(outline(GS3[k],-0.1,3.3),{color:C.in,width:3.6});
+    if(k===0) seg(a,outline([[0,2,1/Math.SQRT2]],-0.1,3.3),{color:C.h,width:2.0});
+    if(k===1) seg(a,outline([[2,3,1]],-0.1,3.3),{color:C.h,width:2.0});
+    if(k===2){ seg(a,[[0,0],[3,0]],{color:C.mid,width:2.0});
       a.note(1.5,0.42,'g_3=0',{tex:true,fs:15,color:C.mid,anchor:'middle'}); }
     return a.svg(); };
   return narrow(stack(560,[[pan(0,122),122],[pan(1,122),122],[pan(2,160,true),160]]),64);
@@ -665,7 +667,7 @@ window.C3 = [
  ['Solution','$\\mathbf{s}_1=(\\sqrt2,0)$, $\\mathbf{s}_2=(0,1)$ and $\\mathbf{s}_3=(\\sqrt2,1)$. Two axes are enough: $s_3=s_1+s_2$, so its remainder is zero and it adds no axis.'],
  ['Check','Energies from the vectors are $2$, $1$ and $3$. They are the same as $\\int s_i^{2}\\,dt$: height $1$ over lengths $2$, $1$ and $3$.']
 ]},
-{t:'fig', svg:figExGs, cap:'Each row holds one signal of Example 3.3, dashed, with the basis function it produces. The third leaves nothing: $g_3=0$.',
+{t:'fig', svg:figExGs, cap:'Each row holds one signal of Example 3.3 in cyan, with the basis function it produces drawn over it. The third leaves nothing: $g_3=0$.',
  short:'Gram–Schmidt for three pulses.'},
 
 /* m3-ex-gs-b */
