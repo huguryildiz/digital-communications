@@ -587,6 +587,31 @@ def _gs_example():
             "energies": [sum(v * v for v in c) for c in coords]}
 
 
+def _gs_example_steps():
+    """The intermediate quantities of scenes 3.3.2 and 3.3.3.
+
+    Same sampled route as _gs_example, but it keeps what the two slides print
+    on the way: the energy of the first basis function, the projection of the
+    second signal on it, the energy of the second remainder and the energy of
+    the third remainder, which the example claims is zero.
+    """
+    n, tmax = 30000, 3.0
+    dt = tmax / n
+    t = (np.arange(n) + 0.5) * dt
+    s1 = np.where((t >= 0) & (t < 2), 1.0, 0.0)
+    s2 = np.where((t >= 2) & (t < 3), 1.0, 0.0)
+    s3 = np.where((t >= 0) & (t < 3), 1.0, 0.0)
+    dot = lambda a, b: float(np.sum(a * b) * dt)
+    psi1 = s1 / math.sqrt(dot(s1, s1))
+    s21 = dot(s2, psi1)
+    g2 = s2 - s21 * psi1
+    eg2 = dot(g2, g2)
+    psi2 = g2 / math.sqrt(eg2)
+    rebuilt = dot(s3, psi1) * psi1 + dot(s3, psi2) * psi2
+    return {"e_psi1": dot(psi1, psi1), "s21": s21, "eg2": eg2,
+            "e_rebuilt": dot(rebuilt, rebuilt)}
+
+
 # The remaining Module 3 helpers work on sampled waveforms: every inner
 # product is a sum of samples, never the coordinate formula the scene uses.
 _M3_N = 60000
@@ -1475,22 +1500,32 @@ CHECKS: list[dict] = [
     # ---- 3.3.2, the Gram-Schmidt example ---------------------------------
     # The procedure is run numerically on the sampled waveforms rather than
     # symbolically, which is a different route from the scene's integrals.
-    {"name": "3.3.2 first coordinate of s1", "stated": 1.41421,
+    {"name": "3.3.3 first coordinate of s1", "stated": 1.41421,
      "derive": lambda: _gs_example()["coords"][0][0], "tol": 1e-5},
-    {"name": "3.3.2 second coordinate of s2", "stated": 1.0,
+    {"name": "3.3.3 second coordinate of s2", "stated": 1.0,
      "derive": lambda: _gs_example()["coords"][1][1], "tol": 1e-6},
-    {"name": "3.3.2 first coordinate of s3", "stated": 1.41421,
+    {"name": "3.3.3 first coordinate of s3", "stated": 1.41421,
      "derive": lambda: _gs_example()["coords"][2][0], "tol": 1e-5},
-    {"name": "3.3.2 second coordinate of s3", "stated": 1.0,
+    {"name": "3.3.3 second coordinate of s3", "stated": 1.0,
      "derive": lambda: _gs_example()["coords"][2][1], "tol": 1e-6},
-    {"name": "3.3.2 the set needs two dimensions", "stated": 2,
+    {"name": "3.3.3 the set needs two dimensions", "stated": 2,
      "derive": lambda: _gs_example()["dim"]},
-    {"name": "3.3.2 energy of s1", "stated": 2.0,
+    {"name": "3.3.3 energy of s1", "stated": 2.0,
      "derive": lambda: _gs_example()["energies"][0], "tol": 1e-6},
-    {"name": "3.3.2 energy of s2", "stated": 1.0,
+    {"name": "3.3.3 energy of s2", "stated": 1.0,
      "derive": lambda: _gs_example()["energies"][1], "tol": 1e-6},
-    {"name": "3.3.2 energy of s3", "stated": 3.0,
+    {"name": "3.3.3 energy of s3", "stated": 3.0,
      "derive": lambda: _gs_example()["energies"][2], "tol": 1e-6},
+    {"name": "3.3.2 unit energy of psi1", "stated": 1.0,
+     "derive": lambda: _gs_example_steps()["e_psi1"], "tol": 1e-9},
+    {"name": "3.3.2 projection of s2 on psi1", "stated": 0.0,
+     "derive": lambda: _gs_example_steps()["s21"], "tol": 1e-9},
+    {"name": "3.3.2 energy of the remainder g2", "stated": 1.0,
+     "derive": lambda: _gs_example_steps()["eg2"], "tol": 1e-6},
+    # g3 = 0 is checked by what is left when the two projections are put
+    # back: their sum carries the whole energy of s3, so nothing remains.
+    {"name": "3.3.3 energy of the two projections added back", "stated": 3.0,
+     "derive": lambda: _gs_example_steps()["e_rebuilt"], "tol": 1e-6},
     # ---- Module 3, converted: every stated number on a slide -----------------
     {"name": "3.1.3 first coordinate of x = 3 then -1", "stated": 3.0,
      "derive": lambda: _m3_ip([(0, 1, 3), (1, 2, -1)], [(0, 1, 1)], 0, 2), "tol": 1e-6},

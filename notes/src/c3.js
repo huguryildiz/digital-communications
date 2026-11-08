@@ -318,6 +318,21 @@ function figExGs(){
     return a.svg(); };
   return narrow(stack(560,[[pan(0,122),122],[pan(1,122),122],[pan(2,160,true),160]]),64);
 }
+/* The three vectors of Example 3.3 in the plane the basis spans. */
+function figExGsVec(){
+  const r2=Math.SQRT2;
+  const a=plane({need:[[-0.3,2.6],[-0.35,1.6]],xticksOverride:[1],yticksOverride:[1]});
+  /* the guides that read each coordinate off the two axes */
+  seg(a,[[r2,0],[r2,1],[0,1]],{dash:'4 5'});
+  a.point(r2,0,{color:C.in,r:6.5});
+  a.point(0,1,{color:C.in,r:6.5});
+  a.point(r2,1,{color:C.in,r:6.5});
+  a.note(r2+0.08,0.1,'\\mathbf{s}_1=(\\sqrt2,0)',{tex:true,fs:15,color:C.in,anchor:'start'});
+  a.note(0.08,1.12,'\\mathbf{s}_2=(0,1)',{tex:true,fs:15,color:C.in,anchor:'start'});
+  a.note(r2+0.08,1.12,'\\mathbf{s}_3=(\\sqrt2,1)',{tex:true,fs:15,color:C.in,anchor:'start'});
+  a.note(r2,-0.18,'\\sqrt2',{tex:true,fs:14,color:C.muted,anchor:'middle'});
+  return a.svg();
+}
 /* Four signals in three dimensions, seen from 30 degrees. */
 function figExGsB(){
   const az=Math.PI/6, el=22*Math.PI/180;
@@ -662,13 +677,27 @@ window.C3 = [
  ['Given','$s_1=1$ on $[0,2)$, $s_2=1$ on $[2,3)$ and $s_3=1$ on $[0,3)$, each zero elsewhere.'],
  ['Find','The basis and the vectors. How many axes?'],
  ['Method','Run Gram–Schmidt in the order $s_1,s_2,s_3$.'],
- ['Steps 1 and 2','$E_1=\\int_0^{2}1^{2}\\,dt=2$, so $\\psi_1=\\tfrac{1}{\\sqrt2}$ on $[0,2)$. Then $s_{21}=\\int s_2(t)\\psi_1(t)\\,dt=0$, because the two never overlap. So $g_2=s_2$ and $\\psi_2=1$ on $[2,3)$.'],
- ['Step 3','$\\psi_1$ is zero on $[2,3)$, so $s_{31}=\\int_0^{2}1\\cdot\\tfrac{1}{\\sqrt2}\\,dt=\\sqrt2$. Also $s_{32}=\\int_2^{3}1\\cdot1\\,dt=1$. Then $g_3=s_3-\\sqrt2\\,\\psi_1-\\psi_2=0$.'],
- ['Solution','$\\mathbf{s}_1=(\\sqrt2,0)$, $\\mathbf{s}_2=(0,1)$ and $\\mathbf{s}_3=(\\sqrt2,1)$. Two axes are enough: $s_3=s_1+s_2$, so its remainder is zero and it adds no axis.'],
- ['Check','Energies from the vectors are $2$, $1$ and $3$. They are the same as $\\int s_i^{2}\\,dt$: height $1$ over lengths $2$, $1$ and $3$.']
+ ['Step 1 — the first axis','The first signal sets the first axis. Its energy is'
+  +'$$\\int_0^{2}s_1^{2}(t)\\,dt=\\int_0^{2}1^{2}\\,dt=2=E_1.$$'
+  +'Dividing by $\\sqrt{E_1}$ gives a function of unit energy,'
+  +'$$\\psi_1(t)=\\frac{s_1(t)}{\\sqrt{E_1}}=\\frac{1}{\\sqrt2}\\ \\text{ on }[0,2),\\qquad \\int_0^{2}\\psi_1^{2}(t)\\,dt=\\int_0^{2}\\tfrac12\\,dt=1.$$'],
+ ['Step 2 — the second axis','$\\psi_1$ is zero on $[2,3)$ and $s_2$ is zero on $[0,2)$, so their product is zero at every $t$:'
+  +'$$s_{21}=\\int s_2(t)\\psi_1(t)\\,dt=0.$$'
+  +'Nothing is taken off $s_2$, so the remainder is the signal itself, and scaling it to unit energy leaves it unchanged:'
+  +'$$g_2(t)=s_2(t)-s_{21}\\psi_1(t)=s_2(t),\\qquad E_{g_2}=\\int_2^{3}1^{2}\\,dt=1,\\qquad \\psi_2(t)=\\frac{g_2(t)}{\\sqrt{E_{g_2}}}=s_2(t).$$'],
+ ['Step 3 — the third signal','Each integral runs over the interval where its basis function is non-zero:'
+  +'$$s_{31}=\\int s_3(t)\\psi_1(t)\\,dt=\\int_0^{2}1\\cdot\\tfrac{1}{\\sqrt2}\\,dt=\\sqrt2,\\qquad s_{32}=\\int s_3(t)\\psi_2(t)\\,dt=\\int_2^{3}1\\cdot1\\,dt=1.$$'
+  +'The two projections put back a pulse of height $1$ on $[0,2)$ and on $[2,3)$, which is $s_3$ itself:'
+  +'$$g_3(t)=s_3(t)-s_{31}\\psi_1(t)-s_{32}\\psi_2(t)=s_3(t)-\\sqrt2\\cdot\\tfrac{1}{\\sqrt2}-1\\cdot1=0.$$'
+  +'A zero remainder adds no axis, so the basis stops at two.'],
+ ['Solution','Each signal is now written in the basis, and its coefficients are its coordinates:'
+  +'$$\\begin{aligned}s_1(t)&=\\sqrt2\\,\\psi_1(t)+0\\,\\psi_2(t), &\\quad \\mathbf{s}_1&=(\\sqrt2,0)\\\\s_2(t)&=0\\,\\psi_1(t)+1\\,\\psi_2(t), &\\quad \\mathbf{s}_2&=(0,1)\\\\s_3(t)&=\\sqrt2\\,\\psi_1(t)+1\\,\\psi_2(t), &\\quad \\mathbf{s}_3&=(\\sqrt2,1)\\end{aligned}$$'],
+ ['Check','The squared lengths are $2$, $1$ and $3$. They are the same as $\\int s_i^{2}(t)\\,dt$: height $1$ over lengths $2$, $1$ and $3$.']
 ]},
 {t:'fig', svg:figExGs, cap:'Each row holds one signal of Example 3.3 in cyan, with the basis function it produces drawn over it. The third leaves nothing: $g_3=0$.',
  short:'Gram–Schmidt for three pulses.'},
+{t:'fig', svg:figExGsVec, cap:'The three signals of Example 3.3 as points in the plane the basis spans. The dashed guides read each coordinate off its axis.',
+ short:'The three vectors of Example 3.3.'},
 
 /* m3-ex-gs-b */
 {t:'p', text:'Example 3.4 runs the procedure on four signals that span three dimensions.'},

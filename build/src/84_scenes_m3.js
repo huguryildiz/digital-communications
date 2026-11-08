@@ -481,6 +481,22 @@ function figExGs(v){
   return stack(560, [[pan(0,122),122],[pan(1,122),122],[pan(2,160,true),160]]);
 }
 
+/* The three vectors of the worked example in the plane the basis spans. */
+function figExGsVec(){
+  const r2 = Math.SQRT2;
+  const a = plane({need:[[-0.3,2.6],[-0.35,1.6]], xticksOverride:[1], yticksOverride:[1]});
+  /* the guides that read each coordinate off the two axes */
+  seg(a, [[r2,0],[r2,1],[0,1]], {dash:'4 5'});
+  a.point(r2, 0, {color:C.in, r:6.5});
+  a.point(0, 1, {color:C.in, r:6.5});
+  a.point(r2, 1, {color:C.in, r:6.5});
+  a.note(r2+0.08, 0.1, '\\mathbf{s}_1=(\\sqrt2,0)', {tex:true, fs:15, color:C.in, anchor:'start'});
+  a.note(0.08, 1.12, '\\mathbf{s}_2=(0,1)', {tex:true, fs:15, color:C.in, anchor:'start'});
+  a.note(r2+0.08, 1.12, '\\mathbf{s}_3=(\\sqrt2,1)', {tex:true, fs:15, color:C.in, anchor:'start'});
+  a.note(r2, -0.18, '\\sqrt2', {tex:true, fs:14, color:C.muted, anchor:'middle'});
+  return a.svg();
+}
+
 /* Four signals in three dimensions, seen from an angle the reader turns. */
 function figExGsB(v){
   const az = (v ? v.az : 30)*Math.PI/180, el = 22*Math.PI/180;
@@ -1102,7 +1118,7 @@ REAL_CONST,
 { id:'m3-ex-gs', module:'M3', nav:'Worked example · three pulses', title:'Worked example: Gram–Schmidt for three pulses',
   objective:'Run the procedure on three pulses, find that two axes suffice, and write the vectors.',
   keywords:'worked example gram schmidt three pulses two basis functions remainder zero constellation frames',
-  src:'CH9 s.19–21', slide:true, steps:3, blocks:[
+  src:'CH9 s.19–21', slide:true, steps:2, blocks:[
   {t:'eyebrow', text:'Module 3 · Worked example'},
   {t:'title', text:'Worked example: Gram–Schmidt for three pulses'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
@@ -1110,15 +1126,38 @@ REAL_CONST,
       caption:'Each row holds one signal in cyan. Step to the basis function it produces, drawn over it. The third leaves nothing.'},
     {t:'legend', items:[['in','$s_k(t)$',false],['h','$\\psi_k(t)$',false,1],['mid','$g_3(t)$',false,3]], at:'tr'}
   ], right:[
-    {t:'note', kind:'def', head:'Given', html:'$s_1=1$ on $[0,2)$, $s_2=1$ on $[2,3)$, $s_3=1$ on $[0,3)$, each zero elsewhere.<div class="nsep"></div>Find the basis and the vectors. How many axes?',
-      ask:{key:'m3-ex-gs', choices:['$1$','$2$','$3$'], answer:1,
-        why:'$s_3=s_1+s_2$, so its remainder is zero and it adds no axis.'}},
+    {t:'note', kind:'def', head:'Given', html:'$s_1=1$ on $[0,2)$, $s_2=1$ on $[2,3)$, $s_3=1$ on $[0,3)$, each zero elsewhere.<div class="nsep"></div>Find the basis and the vectors.'},
     {t:'reveal', at:1, items:[
-      {t:'eq', label:'Steps 1 and 2', tex:'\\begin{aligned}E_1&=\\int_0^{2}1^{2}\\,dt=2,\\qquad \\psi_1=\\tfrac{1}{\\sqrt2}\\ \\text{on }[0,2)\\\\s_{21}&=\\int s_2(t)\\psi_1(t)\\,dt=0,\\qquad g_2=s_2,\\qquad \\psi_2=1\\ \\text{on }[2,3)\\end{aligned}'}]},
+      {t:'eq', label:'Step 1 · the first axis', tex:'\\begin{aligned}E_1&=\\int_0^{2}s_1^{2}(t)\\,dt=2\\\\\\psi_1(t)&=\\frac{s_1(t)}{\\sqrt{E_1}}=\\frac{1}{\\sqrt2}\\ \\text{ on }[0,2)\\\\\\int_0^{2}\\psi_1^{2}(t)\\,dt&=\\int_0^{2}\\tfrac12\\,dt=1\\end{aligned}',
+        note:'The first signal sets the first axis. Dividing by $\\sqrt{E_1}$ makes its energy $1$, as the last line shows.'}]},
     {t:'reveal', at:2, items:[
-      {t:'eq', label:'Step 3', tex:'\\begin{aligned}s_{31}&=\\int_0^{2}1\\cdot\\tfrac{1}{\\sqrt2}\\,dt=\\sqrt2,\\qquad s_{32}=\\int_2^{3}1\\cdot1\\,dt=1\\\\g_3&=s_3-\\sqrt2\\,\\psi_1-\\psi_2=0\\end{aligned}'}]},
+      {t:'eq', label:'Step 2 · the second axis', tex:'\\begin{aligned}s_{21}&=\\int s_2(t)\\psi_1(t)\\,dt=0\\\\g_2(t)&=s_2(t)-s_{21}\\psi_1(t)=s_2(t)\\\\E_{g_2}&=\\int_2^{3}1^{2}\\,dt=1\\\\\\psi_2(t)&=\\frac{g_2(t)}{\\sqrt{E_{g_2}}}=s_2(t)\\end{aligned}',
+        note:'The two never overlap, so the product is zero at every $t$ and nothing is taken off $s_2$.'}]},
+  ]}
+]},
+
+{ id:'m3-ex-gs-c', module:'M3', nav:'Worked example · the third signal and the vectors',
+  title:'Worked example: the third signal and the vectors',
+  objective:'Finish the procedure on the three pulses: project the third signal, find a zero remainder, and read the three vectors.',
+  keywords:'worked example gram schmidt third signal projection remainder zero coordinates vectors constellation square root two',
+  src:'CH9 s.19–21', slide:true, steps:3, blocks:[
+  {t:'eyebrow', text:'Module 3 · Worked example'},
+  {t:'title', text:'Worked example: the third signal and the vectors'},
+  {t:'cols', ratio:'c-5-7', fill:true, left:[
+    {t:'fig', frame:true, grow:true, svg:figExGsVec,
+      caption:'The three signals as points in the plane the basis spans. The dashed guides read each coordinate off its axis.'}
+  ], right:[
+    {t:'note', kind:'def', head:'The basis so far', html:'$\\psi_1=\\tfrac{1}{\\sqrt2}$ on $[0,2)$, $\\psi_2=1$ on $[2,3)$. Does $s_3=1$ on $[0,3)$ add a third axis?',
+      ask:{key:'m3-ex-gs-c', choices:['Yes','No'], answer:1,
+        why:'$s_3=s_1+s_2$, so nothing is left after the two projections are taken off.'}},
+    {t:'reveal', at:1, items:[
+      {t:'eq', label:'Step 3 · the two coordinates', tex:'\\begin{aligned}s_{31}&=\\int s_3(t)\\psi_1(t)\\,dt=\\int_0^{2}1\\cdot\\tfrac{1}{\\sqrt2}\\,dt=\\sqrt2\\\\s_{32}&=\\int s_3(t)\\psi_2(t)\\,dt=\\int_2^{3}1\\cdot1\\,dt=1\\end{aligned}'}]},
+    {t:'reveal', at:2, items:[
+      {t:'eq', label:'Step 3 · the remainder', tex:'\\begin{aligned}g_3(t)&=s_3(t)-s_{31}\\psi_1(t)-s_{32}\\psi_2(t)\\\\&=s_3(t)-\\sqrt2\\cdot\\tfrac{1}{\\sqrt2}-1\\cdot 1=0\\end{aligned}',
+        note:'The two projections put back $s_3$ itself. A zero remainder adds no axis, so the basis stops at two.'}]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'ok', head:'Solution', html:'$\\mathbf{s}_1=(\\sqrt2,0)$, $\\mathbf{s}_2=(0,1)$, $\\mathbf{s}_3=(\\sqrt2,1)$. Check: energies $2$, $1$, $3$, the same as $\\int s_i^{2}\\,dt$.'}]}
+      {t:'eq', label:'Solution · the three vectors', tex:'\\begin{aligned}s_1(t)&=\\sqrt2\\,\\psi_1(t)+0\\,\\psi_2(t), &\\quad \\mathbf{s}_1&=(\\sqrt2,0)\\\\s_2(t)&=0\\,\\psi_1(t)+1\\,\\psi_2(t), &\\quad \\mathbf{s}_2&=(0,1)\\\\s_3(t)&=\\sqrt2\\,\\psi_1(t)+1\\,\\psi_2(t), &\\quad \\mathbf{s}_3&=(\\sqrt2,1)\\end{aligned}',
+        note:'Check: the squared lengths $2$, $1$ and $3$ are the energies $\\int s_i^{2}(t)\\,dt$.'}]}
   ]}
 ]},
 
