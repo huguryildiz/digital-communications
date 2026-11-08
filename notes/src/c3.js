@@ -82,7 +82,6 @@ const S0=[[0,0.5,1],[0.5,1,-1]], S1=[[0,0.25,1],[0.25,0.75,-1],[0.75,1,1]];
 const HALF1=[[0,1,1]], HALF2=[[1,2,1]];
 const halves=([a,b])=>[[0,1,a],[1,2,b]];
 const SQ=[[1,1,'\\mathbf{s}_1'],[1,-1,'\\mathbf{s}_2'],[-1,1,'\\mathbf{s}_3'],[-1,-1,'\\mathbf{s}_4']];
-const QP=[[-1,1,'\\mathbf{s}_1'],[1,1,'\\mathbf{s}_2'],[-1,-1,'\\mathbf{s}_3'],[1,-1,'\\mathbf{s}_4']];
 const GS3=[[[0,2,1]],[[2,3,1]],[[0,3,1]]];
 const GS4V=[[Math.SQRT2,0,0],[0,Math.SQRT2,0],[0,-Math.SQRT2,1],[Math.SQRT2,0,1]];
 /* The carrier axes with T = 1 and f_c T = 3. */
@@ -133,7 +132,10 @@ function figProject(){
 }
 const SA_YS=[60,210,360], SA_NM=['1','2','N'], SA_R=16;
 const saRing=(x,y,rr)=>({t:'line',d:'M'+(x-rr)+','+y+' a'+rr+','+rr+' 0 1,0 '+(2*rr)+',0 a'+rr+','+rr+' 0 1,0 '+(-2*rr)+',0'});
-const saMult=(x,y)=>[saRing(x,y,SA_R),{t:'text',x:x,y:y+3,label:'\\times',tex:true,fs:17}];
+/* a TeX glyph centred in a ring: texName lays the label out above the given
+   baseline, so the ink is lowered to sit in the middle of the circle */
+const saGlyph=(x,y,label,fs)=>({t:'text',x:x,y:y-3+0.636*fs,label:label,tex:true,fs:fs});
+const saMult=(x,y)=>[saRing(x,y,SA_R),saGlyph(x,y,'\\times',17)];
 const saFeed=(x,y,k)=>[{t:'arrow',x1:x,y1:y+70,x2:x,y2:y+SA_R+6,color:C.h},
   {t:'text',x:x,y:y+94,label:'\\psi_'+SA_NM[k]+'(t)',tex:true,fs:16,color:C.h}];
 /* The synthesizer: each coordinate scales its basis function, and the N
@@ -144,10 +146,14 @@ function figSynth(){
     it.push({t:'text',x:16,y:y+6,label:'s_{i'+SA_NM[k]+'}',tex:true,fs:16,anchor:'start',color:C.in},
       {t:'arrow',x1:66,y1:y,x2:cx-SA_R-4,y2:y,color:C.in});
     it.push(...saMult(cx,y),...saFeed(cx,y,k));
-    const dx=sx-(cx+SA_R+2), dy=y-210, L=Math.hypot(dx,dy);
-    it.push({t:'arrow',x1:cx+SA_R+2,y1:y,x2:sx-(sr+4)*dx/L,y2:210-(sr+4)*dy/L}); });
+    /* every product runs right to the column of the adder and then turns into
+       it, so the three arrowheads meet the circle on three different sides */
+    if(y===210){ it.push({t:'arrow',x1:cx+SA_R+2,y1:y,x2:sx-sr-4,y2:y}); }
+    else { const dir=y<210?1:-1;
+      it.push({t:'line',d:'M'+(cx+SA_R+2)+','+y+' H'+sx},
+        {t:'arrow',x1:sx,y1:y,x2:sx,y2:210-dir*(sr+4)}); } });
   it.push({t:'text',x:cx,y:330,label:'\\smash{\\vdots}',tex:true,fs:16},
-    saRing(sx,210,sr),{t:'text',x:sx,y:214,label:'\\Sigma',tex:true,fs:18},
+    saRing(sx,210,sr),saGlyph(sx,210,'\\Sigma',18),
     {t:'arrow',x1:sx+sr+2,y1:210,x2:505,y2:210,color:C.in},
     {t:'text',x:515,y:216,label:'s_i(t)',tex:true,fs:17,anchor:'start',color:C.in});
   return narrow(P.blocks({w:600,h:480,items:it}),62);
@@ -253,11 +259,6 @@ function figPassband(){
   b.point(x,y,{color:C.in,r:6.5});
   b.note(x*1.28,y*1.28-0.08,'(0.71,\\,0.71)',{tex:true,fs:15,color:C.in,anchor:'start'});
   return narrow(stack(560,[[a.svg(),160],[b.svg(),260]]),62);
-}
-function figExQpsk(){
-  const a=plane({need:[[-2,2],[-1.9,1.9]],xticksOverride:[-1,1],yticksOverride:[-1,1]});
-  points(a,QP);
-  return narrow(a.svg(),50);
 }
 /* Each panel carries one point's pulse pair (dashed) and its carrier waveform
    (solid). The constellation below is the one both sets share. */
@@ -522,7 +523,7 @@ window.C3 = [
  ['Given','Four signals, each $\\pm1$ on $[0,1)$ and on $[1,2)$, giving all four sign pairs.'],
  ['Find','A basis and the four vectors. How many basis functions?'],
  ['Method','Every signal is built from a pulse on $[0,1)$ and a pulse on $[1,2)$, so two basis functions are enough. Read off the pieces, then check unit energy and orthogonality.'],
- ['Solution','Take $\\psi_1(t)=1$ for $0\\le t<1$ and $\\psi_2(t)=1$ for $1\\le t<2$. Then $\\int\\psi_1^{2}\\,dt=\\int\\psi_2^{2}\\,dt=1$. Also $\\int\\psi_1\\psi_2\\,dt=0$, because the pulses never overlap. Each coordinate is the height on that half times its width $1$. So $\\mathbf{s}_1=(1,1)$, $\\mathbf{s}_2=(1,-1)$, $\\mathbf{s}_3=(-1,1)$ and $\\mathbf{s}_4=(-1,-1)$, with $N=2$.'],
+ ['Solution','Take $\\psi_1(t)=1$ for $0\\le t<1$ and $\\psi_2(t)=1$ for $1\\le t<2$. Then $\\int\\psi_1^{2}(t)\\,dt=\\int\\psi_2^{2}(t)\\,dt=1$. Also $\\int\\psi_1(t)\\psi_2(t)\\,dt=0$, because the pulses never overlap. Each coordinate is the height on that half times its width $1$. So $\\mathbf{s}_1=(1,1)$, $\\mathbf{s}_2=(1,-1)$, $\\mathbf{s}_3=(-1,1)$ and $\\mathbf{s}_4=(-1,-1)$, with $N=2$.'],
  ['Check','The four points form a square. Each energy is $1^{2}+1^{2}=2$ from the vectors, and $\\int_0^{2}(\\pm1)^{2}\\,dt=2$ from the waveforms.']
 ]},
 {t:'box', kind:'err', hd:'Common error', html:'Use $\\psi_1=s_1/\\sqrt{E_1}$ as an axis, not $s_1$ itself. Here $E_1=2$, so an unscaled axis puts every coordinate a factor $\\sqrt2$ off.'},
@@ -575,11 +576,11 @@ window.C3 = [
  after:'$f_cT$ is a whole number, so each function holds whole cycles in $[0,T]$.'},
 {t:'p', text:'The factor $\\sqrt{2/T}$ gives each axis unit energy. Use $2\\cos^{2}a=1+\\cos2a$, then integrate term by term.'},
 {t:'eqbox', cap:'Unit energy', tex:
-  '\\begin{aligned}\\int_0^{T}\\psi_1^{2}\\,dt&=\\frac{2}{T}\\int_0^{T}\\cos^{2}(2\\pi f_ct)\\,dt\\\\&=\\frac{1}{T}\\int_0^{T}\\bigl[1+\\cos(4\\pi f_ct)\\bigr]\\,dt\\\\&=1+\\frac{\\sin(4\\pi f_cT)}{4\\pi f_cT}=1\\end{aligned}',
+  '\\begin{aligned}\\int_0^{T}\\psi_1^{2}(t)\\,dt&=\\frac{2}{T}\\int_0^{T}\\cos^{2}(2\\pi f_ct)\\,dt\\\\&=\\frac{1}{T}\\int_0^{T}\\bigl[1+\\cos(4\\pi f_ct)\\bigr]\\,dt\\\\&=1+\\frac{\\sin(4\\pi f_cT)}{4\\pi f_cT}=1\\end{aligned}',
  after:'The sine is zero because $4\\pi f_cT$ is a whole multiple of $2\\pi$. The same steps with $2\\sin^{2}a=1-\\cos2a$ give unit energy for $\\psi_2$.'},
 {t:'p', text:'The two axes are orthogonal. Use $2\\cos a\\sin a=\\sin2a$.'},
 {t:'eqbox', cap:'Orthogonal', tex:
-  '\\begin{aligned}\\int_0^{T}\\psi_1\\psi_2\\,dt&=\\frac{2}{T}\\int_0^{T}\\cos(2\\pi f_ct)\\sin(2\\pi f_ct)\\,dt\\\\&=\\frac{1}{T}\\int_0^{T}\\sin(4\\pi f_ct)\\,dt\\\\&=\\frac{1-\\cos(4\\pi f_cT)}{4\\pi f_cT}=0\\end{aligned}',
+  '\\begin{aligned}\\int_0^{T}\\psi_1(t)\\psi_2(t)\\,dt&=\\frac{2}{T}\\int_0^{T}\\cos(2\\pi f_ct)\\sin(2\\pi f_ct)\\,dt\\\\&=\\frac{1}{T}\\int_0^{T}\\sin(4\\pi f_ct)\\,dt\\\\&=\\frac{1-\\cos(4\\pi f_cT)}{4\\pi f_cT}=0\\end{aligned}',
  after:'The product holds $2f_cT$ whole cycles, and $\\cos(4\\pi f_cT)=1$.'},
 {t:'p', text:'The waveform $\\sqrt{2E/T}\\cos(2\\pi f_ct-\\theta)$ sits at $(\\sqrt{E}\\cos\\theta,\\sqrt{E}\\sin\\theta)$. Expand the cosine of a difference to see it.'},
 {t:'eqbox', cap:'A carrier with phase $\\theta$', tex:
@@ -592,12 +593,11 @@ window.C3 = [
 {t:'p', text:'Example 3.2 finds the basis and the constellation of four carrier waveforms, and compares it with the pulse set of Example 3.1.'},
 {t:'ex', hd:'Example 3.2 — four carrier waveforms', rows:[
  ['Given','For $0\\le t\\le T$ and whole $f_cT$: $s_{1,2}(t)=\\mp\\sqrt{2/T}\\cos(2\\pi f_ct)+\\sqrt{2/T}\\sin(2\\pi f_ct)$ and $s_{3,4}(t)=\\mp\\sqrt{2/T}\\cos(2\\pi f_ct)-\\sqrt{2/T}\\sin(2\\pi f_ct)$.'],
- ['Find','The four points, and the energy of each.'],
- ['Method','By inspection, every waveform is already written in the cosine and sine basis. The coefficients are the coordinates: $s_i(t)=s_{i1}\\psi_1(t)+s_{i2}\\psi_2(t)$ with $s_{ij}=\\pm1$.'],
- ['Solution','$\\mathbf{s}_1=(-1,1)$, $\\mathbf{s}_2=(1,1)$, $\\mathbf{s}_3=(-1,-1)$ and $\\mathbf{s}_4=(1,-1)$. Each vector has two entries $\\pm1$, so each energy is $1+1=2$. The points form a square with $d_{\\min}=2$.'],
- ['Check','This is the square of the four pulse signals of Example 3.1. The waveforms differ, and the picture is the same.']
+ ['Find','The basis, the four points and the energy of each.'],
+ ['Method','By inspection, every waveform is a sum of two functions. $$\\psi_1(t)=\\sqrt{\\tfrac2T}\\cos(2\\pi f_ct),\\qquad \\psi_2(t)=\\sqrt{\\tfrac2T}\\sin(2\\pi f_ct),\\qquad 0\\le t\\le T$$ Show that they are orthonormal. The coefficients are then the coordinates.'],
+ ['Solution','First the two functions are orthogonal. Use $\\sin A\\cos B=\\tfrac12[\\sin(A+B)+\\sin(A-B)]$ with $A=B$, then integrate. $$\\begin{aligned}\\int_0^{T}\\psi_1(t)\\psi_2(t)\\,dt&=\\frac2T\\int_0^{T}\\cos(2\\pi f_ct)\\sin(2\\pi f_ct)\\,dt\\\\&=\\frac1T\\int_0^{T}\\bigl[\\sin(4\\pi f_ct)+\\sin0\\bigr]dt\\\\&=\\frac1T\\Bigl[-\\frac{\\cos(4\\pi f_ct)}{4\\pi f_c}\\Bigr]_0^{T}\\\\&=-\\frac{\\cos(4\\pi f_cT)-\\cos0}{4\\pi f_cT}=-\\frac{1-1}{4\\pi f_cT}=0\\end{aligned}$$ Since $2f_cT$ is whole, $\\cos(4\\pi f_cT)=1$. Next each has unit energy. Use $\\cos^{2}x=\\tfrac12+\\tfrac12\\cos2x$. $$\\begin{aligned}\\int_0^{T}\\psi_1^{2}(t)\\,dt&=\\frac2T\\int_0^{T}\\cos^{2}(2\\pi f_ct)\\,dt\\\\&=\\frac2T\\int_0^{T}\\Bigl[\\frac12+\\frac12\\cos(4\\pi f_ct)\\Bigr]dt\\\\&=\\frac1T\\,T+\\frac1T\\Bigl[\\frac{\\sin(4\\pi f_ct)}{4\\pi f_c}\\Bigr]_0^{T}\\\\&=1+\\frac{\\sin(4\\pi f_cT)-\\sin0}{4\\pi f_cT}=1+0=1\\end{aligned}$$ For $\\psi_2$ use $\\sin^{2}x=\\tfrac12-\\tfrac12\\cos2x$. The same steps give $1-0=1$, so the basis is orthonormal. The coordinates are the coefficients: $\\mathbf{s}_1=(-1,1)$, $\\mathbf{s}_2=(1,1)$, $\\mathbf{s}_3=(-1,-1)$ and $\\mathbf{s}_4=(1,-1)$. The points form a square. Each energy is $1+1=2$, and $d_{\\min}=2$.'],
+ ['Check','This is the square of the four pulse signals of Example 3.1. The waveforms differ, and the picture is the same. Common error: drop the factor $\\sqrt{2/T}$. Then $\\int_0^{T}\\cos^{2}(2\\pi f_ct)\\,dt=T/2$, not $1$.']
 ]},
-{t:'fig', svg:figExQpsk, cap:'The four waveforms of Example 3.2 as points on the axes $\\psi_1$ and $\\psi_2$.'},
 
 /* m3-remarks */
 {t:'h3', text:'Geometric equivalence of signal sets'},
@@ -660,7 +660,7 @@ window.C3 = [
  ['Given','$s_1=1$ on $[0,2)$, $s_2=1$ on $[2,3)$ and $s_3=1$ on $[0,3)$, each zero elsewhere.'],
  ['Find','The basis and the vectors. How many axes?'],
  ['Method','Run Gram–Schmidt in the order $s_1,s_2,s_3$.'],
- ['Steps 1 and 2','$E_1=\\int_0^{2}1^{2}\\,dt=2$, so $\\psi_1=\\tfrac{1}{\\sqrt2}$ on $[0,2)$. Then $s_{21}=\\int s_2\\psi_1\\,dt=0$, because the two never overlap. So $g_2=s_2$ and $\\psi_2=1$ on $[2,3)$.'],
+ ['Steps 1 and 2','$E_1=\\int_0^{2}1^{2}\\,dt=2$, so $\\psi_1=\\tfrac{1}{\\sqrt2}$ on $[0,2)$. Then $s_{21}=\\int s_2(t)\\psi_1(t)\\,dt=0$, because the two never overlap. So $g_2=s_2$ and $\\psi_2=1$ on $[2,3)$.'],
  ['Step 3','$\\psi_1$ is zero on $[2,3)$, so $s_{31}=\\int_0^{2}1\\cdot\\tfrac{1}{\\sqrt2}\\,dt=\\sqrt2$. Also $s_{32}=\\int_2^{3}1\\cdot1\\,dt=1$. Then $g_3=s_3-\\sqrt2\\,\\psi_1-\\psi_2=0$.'],
  ['Solution','$\\mathbf{s}_1=(\\sqrt2,0)$, $\\mathbf{s}_2=(0,1)$ and $\\mathbf{s}_3=(\\sqrt2,1)$. Two axes are enough: $s_3=s_1+s_2$, so its remainder is zero and it adds no axis.'],
  ['Check','Energies from the vectors are $2$, $1$ and $3$. They are the same as $\\int s_i^{2}\\,dt$: height $1$ over lengths $2$, $1$ and $3$.']

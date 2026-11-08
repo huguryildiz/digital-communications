@@ -204,9 +204,9 @@ const AL = (...l) => '$$\\begin{aligned}' + l.join('\\\\') + '\\end{aligned}$$';
 /* the in-phase and quadrature basis on 0<=t<=1, shown orthonormal; w is the
    angular frequency as TeX (e.g. '4000\\pi') and w2 twice it */
 const ORTHO = (w, w2) => 'Take $\\psi_1(t)=\\sqrt2\\cos('+w+' t)$ and $\\psi_2(t)=-\\sqrt2\\sin('+w+' t)$ on $0\\le t\\le 1$. With $2\\cos^2x=1+\\cos2x$, the energy of $\\psi_1$ is'
-  + AL('\\int_0^1\\psi_1^2\\,dt&=\\int_0^1\\big[1+\\cos('+w2+' t)\\big]\\,dt','&=\\Big[t+\\frac{\\sin('+w2+' t)}{'+w2+'}\\Big]_0^1','&=1+\\frac{\\sin('+w2+')}{'+w2+'}','&=1.')
-  + 'In the same way, $2\\sin^2x=1-\\cos2x$ gives $\\int_0^1\\psi_2^2\\,dt=1$. With $2\\sin x\\cos x=\\sin2x$, the inner product is'
-  + AL('\\int_0^1\\psi_1\\psi_2\\,dt&=-\\int_0^1\\sin('+w2+' t)\\,dt','&=\\Big[\\frac{\\cos('+w2+' t)}{'+w2+'}\\Big]_0^1','&=\\frac{\\cos('+w2+')-1}{'+w2+'}','&=0.')
+  + AL('\\int_0^1\\psi_1^2(t)\\,dt&=\\int_0^1\\big[1+\\cos('+w2+' t)\\big]\\,dt','&=\\Big[t+\\frac{\\sin('+w2+' t)}{'+w2+'}\\Big]_0^1','&=1+\\frac{\\sin('+w2+')}{'+w2+'}','&=1.')
+  + 'In the same way, $2\\sin^2x=1-\\cos2x$ gives $\\int_0^1\\psi_2^2(t)\\,dt=1$. With $2\\sin x\\cos x=\\sin2x$, the inner product is'
+  + AL('\\int_0^1\\psi_1(t)\\psi_2(t)\\,dt&=-\\int_0^1\\sin('+w2+' t)\\,dt','&=\\Big[\\frac{\\cos('+w2+' t)}{'+w2+'}\\Big]_0^1','&=\\frac{\\cos('+w2+')-1}{'+w2+'}','&=0.')
   + 'Here $\\sin('+w2+')=0$ and $\\cos('+w2+')=1$, because $'+w2+'$ is a whole multiple of $2\\pi$. So $\\{\\psi_1,\\psi_2\\}$ is orthonormal.';
 const EXPAND = 'Expand with $\\cos(x+\\theta)=\\cos\\theta\\cos x-\\sin\\theta\\sin x$. A waveform $A\\cos(2\\pi f_ct+\\theta)$ becomes $\\tfrac{A}{\\sqrt2}\\cos\\theta\\,\\psi_1(t)+\\tfrac{A}{\\sqrt2}\\sin\\theta\\,\\psi_2(t)$. '
   + 'So its vector is $\\tfrac{A}{\\sqrt2}(\\cos\\theta,\\,\\sin\\theta)$ and its energy is $A^2/2$.';
@@ -828,7 +828,7 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
      +'The energy of $\\psi_2$ is'
      + AL('\\int_0^1 2\\cos^2(3000\\pi t)\\,dt&=\\Big[t+\\frac{\\sin(6000\\pi t)}{6000\\pi}\\Big]_0^1','&=1.')
      +'The inner product is'
-     + AL('\\int_0^1\\psi_1\\psi_2\\,dt&=\\int_0^1\\big[\\cos(1000\\pi t)+\\cos(5000\\pi t)\\big]\\,dt','&=\\Big[\\frac{\\sin(1000\\pi t)}{1000\\pi}+\\frac{\\sin(5000\\pi t)}{5000\\pi}\\Big]_0^1','&=0.')
+     + AL('\\int_0^1\\psi_1(t)\\psi_2(t)\\,dt&=\\int_0^1\\big[\\cos(1000\\pi t)+\\cos(5000\\pi t)\\big]\\,dt','&=\\Big[\\frac{\\sin(1000\\pi t)}{1000\\pi}+\\frac{\\sin(5000\\pi t)}{5000\\pi}\\Big]_0^1','&=0.')
      +'Every sine above is evaluated at a whole multiple of $\\pi$, so it is zero. The pair is orthonormal. Since $s_1=3\\psi_1$ and $s_2=3\\psi_2$, it is a basis for the set.<br>'
      +'<b>Solution — (b).</b> $\\mathbf{s}_1=(3,0)$, $\\mathbf{s}_2=(0,3)$, $\\mathbf{s}_3=(-3,0)$ and $\\mathbf{s}_4=(0,-3)$. The points sit on the two axes, one on each half-axis.<br>'
      +'<b>Solution — (c).</b> Every symbol has $E_k=9$, so $E_{s,av}=9$.<br>'
@@ -948,7 +948,7 @@ CONTENT.DRILL = CONTENT.DRILL.concat([
      +'<b>Find.</b> Orthonormality, the waveforms, the energies, $E_{s,av}$, $d_{\\min}$, the nearest neighbours and the orthogonal pairs.<br>'
      +'<b>Method.</b> Synthesis: $s_i(t)=s_{i1}\\psi_1(t)+s_{i2}\\psi_2(t)$, added interval by interval.<br>'
      +'<b>Solution — (a).</b> The three integrals are'
-     + AL('\\int_0^4\\psi_1^2\\,dt&=\\tfrac14 t\\,\\Big|_0^4=1,','\\int_0^4\\psi_2^2\\,dt&=\\tfrac14 t\\,\\Big|_0^2+\\tfrac14 t\\,\\Big|_2^4=\\tfrac12+\\tfrac12=1,','\\int_0^4\\psi_1\\psi_2\\,dt&=\\tfrac14 t\\,\\Big|_0^2-\\tfrac14 t\\,\\Big|_2^4=\\tfrac12-\\tfrac12=0.')
+     + AL('\\int_0^4\\psi_1^2(t)\\,dt&=\\tfrac14 t\\,\\Big|_0^4=1,','\\int_0^4\\psi_2^2(t)\\,dt&=\\tfrac14 t\\,\\Big|_0^2+\\tfrac14 t\\,\\Big|_2^4=\\tfrac12+\\tfrac12=1,','\\int_0^4\\psi_1(t)\\psi_2(t)\\,dt&=\\tfrac14 t\\,\\Big|_0^2-\\tfrac14 t\\,\\Big|_2^4=\\tfrac12-\\tfrac12=0.')
      +'So the pair is orthonormal.<br>'
      +'<b>Solution — (b).</b> On $[0,2)$, $\\psi_1=\\psi_2=\\tfrac12$. On $[2,4]$, $\\psi_1=\\tfrac12$ and $\\psi_2=-\\tfrac12$. So'
      + AL('s_1&=2\\psi_1+2\\psi_2: & &2\\ \\text{on }[0,2), & &0\\ \\text{on }[2,4],','s_2&=2\\psi_1-2\\psi_2: & &0\\ \\text{on }[0,2), & &2\\ \\text{on }[2,4],','s_3&=-2\\psi_1-2\\psi_2: & &{-2}\\ \\text{on }[0,2), & &0\\ \\text{on }[2,4],','s_4&=-2\\psi_1+2\\psi_2: & &0\\ \\text{on }[0,2), & &{-2}\\ \\text{on }[2,4].')

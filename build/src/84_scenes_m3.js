@@ -142,9 +142,6 @@ const GS4V = [[Math.SQRT2,0,0],[0,Math.SQRT2,0],[0,-Math.SQRT2,1],[Math.SQRT2,0,
 const FC = 3;
 const cosB = t => (t>=0 && t<=1) ? Math.SQRT2*Math.cos(2*Math.PI*FC*t) : 0;
 const sinB = t => (t>=0 && t<=1) ? Math.SQRT2*Math.sin(2*Math.PI*FC*t) : 0;
-/* The four waveforms of the carrier example, 3.2.4, as (psi1, psi2) coordinates. */
-const QP = [ {v:[-1,1], l:'\\mathbf{s}_1'}, {v:[1,1], l:'\\mathbf{s}_2'},
-             {v:[-1,-1],l:'\\mathbf{s}_3'}, {v:[1,-1],l:'\\mathbf{s}_4'} ];
 
 /* A waveform on a small panel, for the rows and grids of stacked figures. */
 function wavePanel(f, o){
@@ -240,7 +237,10 @@ function figSynthAnalyze(v){
   const W = 600, H = 480, ys = [60, 210, 360], nm = ['1','2','N'], r = 16;
   /* a circle drawn as a path, since blocks() has no node of its own */
   const ring = (x,y,rr) => ({t:'line', d:'M'+(x-rr)+','+y+' a'+rr+','+rr+' 0 1,0 '+(2*rr)+',0 a'+rr+','+rr+' 0 1,0 '+(-2*rr)+',0'});
-  const mult = (x,y) => [ring(x,y,r), {t:'text',x:x,y:y+3,label:'\\times',tex:true,fs:17}];
+  /* a TeX glyph centred in a ring: texName lays the label out above the given
+     baseline, so the ink is lowered by the descent plus half the glyph height */
+  const glyph = (x,y,label,fs) => ({t:'text',x:x,y:y-3+0.636*fs,label:label,tex:true,fs:fs});
+  const mult = (x,y) => [ring(x,y,r), glyph(x,y,'\\times',17)];
   /* each multiplier takes its basis function from below */
   const feed = (x,y,k) => [{t:'arrow',x1:x,y1:y+70,x2:x,y2:y+r+6,color:C.h},
     {t:'text',x:x,y:y+94,label:'\\psi_'+nm[k]+'(t)',tex:true,fs:16,color:C.h}];
@@ -252,10 +252,15 @@ function figSynthAnalyze(v){
       it.push({t:'text',x:16,y:y+6,label:'s_{i'+nm[k]+'}',tex:true,fs:16,anchor:'start',color:C.in},
         {t:'arrow',x1:66,y1:y,x2:cx-r-4,y2:y,color:C.in});
       it.push(...mult(cx,y), ...feed(cx,y,k));
-      const dx = sx-(cx+r+2), dy = y-210, L = Math.hypot(dx,dy);
-      it.push({t:'arrow',x1:cx+r+2,y1:y,x2:sx-(sr+4)*dx/L,y2:210-(sr+4)*dy/L}); });
+      /* every product runs right to the column of the adder and then turns into
+         it, so the three arrowheads meet the circle on three different sides
+         instead of piling up on its left edge */
+      if(y === 210){ it.push({t:'arrow',x1:cx+r+2,y1:y,x2:sx-sr-4,y2:y}); }
+      else { const dir = y < 210 ? 1 : -1;
+        it.push({t:'line',d:'M'+(cx+r+2)+','+y+' H'+sx},
+          {t:'arrow',x1:sx,y1:y,x2:sx,y2:210-dir*(sr+4)}); } });
     it.push({t:'text',x:cx,y:330,label:'\\smash{\\vdots}',tex:true,fs:16},
-      ring(sx,210,sr), {t:'text',x:sx,y:214,label:'\\Sigma',tex:true,fs:18},
+      ring(sx,210,sr), glyph(sx,210,'\\Sigma',18),
       {t:'arrow',x1:sx+sr+2,y1:210,x2:505,y2:210,color:C.in},
       {t:'text',x:515,y:216,label:'s_i(t)',tex:true,fs:17,anchor:'start',color:C.in});
   } else {
@@ -291,7 +296,7 @@ function figInner(v){
     if(fill) shade(a, pwc(segs), segs[0][0], segs[0][1], col, 0.15);
     a.poly(outline(segs,-0.1,2.3), {color:col, width:2.4});
     return a.svg(); };
-  const b = plane({h:260, need:[[-0.5,2.5],[-1.45,1.45]], ynameAtAxis:true, xticksOverride:[2], yticksOverride:[-1]});
+  const b = plane({h:200, need:[[-0.5,2.5],[-1.45,1.45]], ynameAtAxis:true, xticksOverride:[2], yticksOverride:[-1]});
   const o1 = op(1);
   if(o1 > 0.02){ seg(b, [[2,0],[2,1],[0,1]], {dash:'4 5', opacity:o1}); seg(b, [[1,0],[1,-1],[0,-1]], {dash:'4 5', opacity:o1});
     arrow(b, 0,0,2,1, {color:C.in, opacity:o1}); arrow(b, 0,0,1,-1, {color:C.in, opacity:o1}); }
@@ -301,8 +306,8 @@ function figInner(v){
   if(o1 > 0.5){ b.note(2.12, 1.1, '\\mathbf{x}=(2,1)', {tex:true, fs:15, color:C.in, anchor:'start'});
     b.note(1.12, -1.2, '\\mathbf{y}=(1,-1)', {tex:true, fs:15, color:C.in, anchor:'start'}); }
   if(op(2) > 0.5) b.note(2.4, 0.4, '\\mathbf{x}\\cdot\\mathbf{y}=2-1=1', {tex:true, fs:15, color:C.mid, anchor:'start'});
-  return stack(560, [[row(150, [[small(X,'x(t)',C.in,[-1.5,2.5],[-1,1,2],150),280],[small(Y,'y(t)',C.in,[-1.5,2.5],[-1,1,2],150),280]]),150],
-    [row(130, [[small(HALF1,'\\psi_1(t)',C.h,[-0.4,1.5],[0,1],130,true),280],[small(HALF2,'\\psi_2(t)',C.h,[-0.4,1.5],[0,1],130,true),280]]),130],[b.svg(),260]]);
+  return stack(560, [[row(135, [[small(X,'x(t)',C.in,[-1.5,2.5],[-1,1,2],135),280],[small(Y,'y(t)',C.in,[-1.5,2.5],[-1,1,2],135),280]]),135],
+    [row(120, [[small(HALF1,'\\psi_1(t)',C.h,[-0.4,1.5],[0,1],120,true),280],[small(HALF2,'\\psi_2(t)',C.h,[-0.4,1.5],[0,1],120,true),280]]),120],[b.svg(),200]]);
 }
 
 /* Two points of energy 2: s1 fixed at (1,1), s2 turned by the slider. */
@@ -397,21 +402,10 @@ function figPassband(v){
   seg(b, [[x,0],[x,y],[0,y]], {dash:'4 5'});
   arrow(b, 0,0,x,y, {color:C.in, width:2.2});
   b.point(x, y, {color:C.in, r:6.5});
-  const lx = x*1.28, ly = y*1.28 - 0.08;
+  /* near the psi1 axis the label moves off the axis line, above or below it */
+  const lx = x*1.28, ly = Math.abs(y) < 0.3 ? (y >= 0 ? y + 0.14 : y - 0.3) : y*1.28 - 0.08;
   b.note(lx, ly, '('+num(x)+',\\,'+num(y)+')', {tex:true, fs:15, color:C.in, anchor: x > 0.35 ? 'start' : x < -0.35 ? 'end' : 'middle'});
   return stack(560, [[a.svg(),160],[b.svg(),260]]);
-}
-
-/* The four carrier waveforms of the worked example, drawn by the reader. */
-function figExQpsk(){
-  const a = plane({need:[[-2,2],[-1.9,1.9]], xticksOverride:[-1,1], yticksOverride:[-1,1]});
-  a.raw(`<rect class="sk-area" x="${a.x0}" y="${a.y1}" width="${a.x1-a.x0}" height="${a.y0-a.y1}" fill="none"/>`);
-  a.raw('<g class="sk-key">');
-  QP.forEach(p=>{ a.point(p.v[0], p.v[1], {color:C.in, r:7});
-    a.note(p.v[0]+(p.v[0]>0?0.14:-0.14), p.v[1]+(p.v[1]>0?0.18:-0.38), p.l,
-      {tex:true, fs:15, color:C.in, anchor:p.v[0]>0?'start':'end'}); });
-  a.raw('</g>');
-  return a.svg();
 }
 
 /* Two signal sets with one constellation: four pulse pairs and four carrier
@@ -889,7 +883,7 @@ const SC = [
       ask:{key:'m3-ex-inspect', choices:['$1$','$2$','$4$'], answer:1,
         why:'Every signal is built from a pulse on $[0,1)$ and a pulse on $[1,2)$, so two basis functions are enough.'}},
     {t:'reveal', at:1, items:[
-      {t:'eq', label:'Method', tex:'\\begin{aligned}\\psi_1(t)&=1,\\ 0\\le t<1,\\qquad \\psi_2(t)=1,\\ 1\\le t<2\\\\\\int\\psi_1^{2}\\,dt&=\\int\\psi_2^{2}\\,dt=1,\\qquad \\int\\psi_1\\psi_2\\,dt=0\\end{aligned}',
+      {t:'eq', label:'Method', tex:'\\begin{aligned}\\psi_1(t)&=1,\\ 0\\le t<1,\\qquad \\psi_2(t)=1,\\ 1\\le t<2\\\\\\int\\psi_1^{2}(t)\\,dt&=\\int\\psi_2^{2}(t)\\,dt=1,\\qquad \\int\\psi_1(t)\\psi_2(t)\\,dt=0\\end{aligned}',
         note:'Read off the pieces, then check unit energy and orthogonality. The pulses never overlap.'}]},
     {t:'reveal', at:2, items:[
       {t:'eq', label:'Solution', tex:'\\mathbf{s}_1=(1,1),\\quad \\mathbf{s}_2=(1,-1),\\quad \\mathbf{s}_3=(-1,1),\\quad \\mathbf{s}_4=(-1,-1)',
@@ -970,14 +964,14 @@ REAL_VECTORS,
   {t:'title', text:'A cosine and a sine as axes'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true,
-      live:{controls:[{k:'th', label:'$\\theta$', min:0, max:355, step:5, v:45, show:v=>'$'+v+'^{\\circ}$'}]},
+      live:{controls:[{k:'th', label:'$\\theta$', min:0, max:360, step:5, v:45, show:v=>'$'+v+'^{\\circ}$'}]},
       svg:figPassband,
       caption:'Drag the phase $\\theta$. The waveform $\\sqrt{2E/T}\\cos(2\\pi f_ct-\\theta)$ sits at $(\\sqrt{E}\\cos\\theta,\\sqrt{E}\\sin\\theta)$. Drawn with $E=1$ and $f_cT=3$.'}
   ], right:[
     {t:'eq', label:'The two axes', tex:'\\psi_1(t)=\\sqrt{\\tfrac{2}{T}}\\cos(2\\pi f_ct),\\qquad \\psi_2(t)=\\sqrt{\\tfrac{2}{T}}\\sin(2\\pi f_ct),\\qquad 0\\le t\\le T',
       note:'$f_cT$ is a whole number, so each function holds whole cycles in $[0,T]$.'},
     {t:'reveal', at:1, items:[
-      {t:'eq', label:'Orthogonal', tex:'\\begin{aligned}\\int_0^{T}\\psi_1\\psi_2\\,dt&=\\frac{2}{T}\\int_0^{T}\\cos(2\\pi f_ct)\\sin(2\\pi f_ct)\\,dt\\\\&=\\frac{1}{T}\\int_0^{T}\\sin(4\\pi f_ct)\\,dt=\\frac{1-\\cos(4\\pi f_cT)}{4\\pi f_cT}=0\\end{aligned}',
+      {t:'eq', label:'Orthogonal', tex:'\\begin{aligned}\\int_0^{T}\\psi_1(t)\\psi_2(t)\\,dt&=\\frac{2}{T}\\int_0^{T}\\cos(2\\pi f_ct)\\sin(2\\pi f_ct)\\,dt\\\\&=\\frac{1}{T}\\int_0^{T}\\sin(4\\pi f_ct)\\,dt=\\frac{1-\\cos(4\\pi f_cT)}{4\\pi f_cT}=0\\end{aligned}',
         note:'Use $2\\cos a\\sin a=\\sin2a$. The product holds $2f_cT$ whole cycles, and $\\cos(4\\pi f_cT)=1$.'}]},
     {t:'reveal', at:2, items:[
       {t:'note', kind:'def', head:'Given', html:'$s(t)=\\sqrt{2E/T}\\cos(2\\pi f_ct-\\theta)$ with $\\theta=90^{\\circ}$.<div class="nsep"></div>Where is its point?',
@@ -988,25 +982,28 @@ REAL_VECTORS,
 
 { id:'m3-ex-qpsk', module:'M3', nav:'Worked example · four carrier waveforms', title:'Worked example: four carrier waveforms',
   objective:'Find the basis and the constellation of four carrier waveforms, and compare it with the pulse set of 3.1.',
-  keywords:'worked example qpsk four carrier waveforms cosine sine inspection constellation square sketch',
-  src:'CH9 s.13–14', slide:true, steps:3, blocks:[
+  keywords:'worked example qpsk four carrier waveforms cosine sine inspection orthogonal unit energy orthonormal constellation square',
+  src:'CH9 s.13–14', slide:true, steps:3, budget:'a worked example whose derivation fills both columns. The constellation is drawn on the next slide',
+  blocks:[
   {t:'eyebrow', text:'Module 3 · Worked example'},
   {t:'title', text:'Worked example: four carrier waveforms'},
-  {t:'cols', ratio:'c-5-7', fill:true, left:[
-    {t:'fig', frame:true, grow:true, sketch:{label:'Mark the four points, then check them.'}, svg:figExQpsk,
-      caption:'The axes are $\\psi_1$ and $\\psi_2$ of the last slide. Mark where the four waveforms sit, then show the answer.'}
-  ], right:[
-    {t:'note', kind:'def', head:'Given', html:'For $0\\le t\\le T$ and whole $f_cT$: $s_{1,2}=\\mp\\sqrt{\\tfrac2T}\\cos(2\\pi f_ct)+\\sqrt{\\tfrac2T}\\sin(2\\pi f_ct)$ and $s_{3,4}=\\mp\\sqrt{\\tfrac2T}\\cos(2\\pi f_ct)-\\sqrt{\\tfrac2T}\\sin(2\\pi f_ct)$.<div class="nsep"></div>What is the energy of each?',
-      ask:{key:'m3-ex-qpsk', choices:['$1$','$2$','$4$'], answer:1,
-        why:'Each is $\\pm\\psi_1\\pm\\psi_2$, so its vector has two entries $\\pm1$ and energy $1+1=2$.'}},
-    {t:'reveal', at:1, items:[
-      {t:'eq', label:'Method', tex:'s_i(t)=s_{i1}\\,\\psi_1(t)+s_{i2}\\,\\psi_2(t),\\qquad s_{ij}=\\pm1',
-        note:'By inspection, every waveform is already written in the cosine and sine basis. The coefficients are the coordinates.'}]},
-    {t:'reveal', at:2, items:[
-      {t:'eq', label:'Solution', tex:'\\mathbf{s}_1=(-1,1),\\quad \\mathbf{s}_2=(1,1),\\quad \\mathbf{s}_3=(-1,-1),\\quad \\mathbf{s}_4=(1,-1)',
-        note:'A square: every energy is $2$, and $d_{\\min}=2$.'}]},
+  {t:'cols', ratio:'c-6-6', left:[
+    {t:'note', kind:'def', head:'Given · $s_1(t)$ and $s_2(t)$', html:'For $0\\le t\\le T$ and whole $f_cT$:<br>$s_{1,2}(t)=\\mp\\sqrt{\\tfrac2T}\\cos(2\\pi f_ct)+\\sqrt{\\tfrac2T}\\sin(2\\pi f_ct)$'},
+    {t:'note', kind:'def', head:'Given · $s_3(t)$ and $s_4(t)$', html:'For $0\\le t\\le T$ and whole $f_cT$:<br>$s_{3,4}(t)=\\mp\\sqrt{\\tfrac2T}\\cos(2\\pi f_ct)-\\sqrt{\\tfrac2T}\\sin(2\\pi f_ct)$<div class="nsep"></div>Find the basis, the four points and the energy of each.'},
+    {t:'eq', label:'Method · basis by inspection', tex:'\\psi_1(t)=\\sqrt{\\tfrac2T}\\cos(2\\pi f_ct),\\qquad \\psi_2(t)=\\sqrt{\\tfrac2T}\\sin(2\\pi f_ct),\\qquad 0\\le t\\le T',
+      note:'Every waveform is a sum of these two. Show that they are orthonormal, and the coefficients are the coordinates.'},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'def', head:'Check', html:'This is the square of the four pulse signals in 3.1. The waveforms differ, and the picture is the same.'}]}
+      {t:'eq', label:'Solution', tex:'\\mathbf{s}_1=(-1,1),\\quad \\mathbf{s}_2=(1,1),\\quad \\mathbf{s}_3=(-1,-1),\\quad \\mathbf{s}_4=(1,-1)',
+        note:'A square: every energy is $1+1=2$, and $d_{\\min}=2$.'}]}
+  ], right:[
+    {t:'reveal', at:1, items:[
+      {t:'eq', label:'Orthogonal', tex:'\\begin{aligned}\\int_0^{T}\\psi_1(t)\\psi_2(t)\\,dt&=\\frac2T\\int_0^{T}\\cos(2\\pi f_ct)\\sin(2\\pi f_ct)\\,dt\\\\&=\\frac1T\\int_0^{T}\\bigl[\\sin(4\\pi f_ct)+\\sin0\\bigr]dt\\\\&=\\frac1T\\Bigl[-\\frac{\\cos(4\\pi f_ct)}{4\\pi f_c}\\Bigr]_0^{T}\\\\&=-\\frac{\\cos(4\\pi f_cT)-\\cos0}{4\\pi f_cT}=-\\frac{1-1}{4\\pi f_cT}=0\\end{aligned}',
+        note:'Line two uses $\\sin A\\cos B=\\tfrac12[\\sin(A+B)+\\sin(A-B)]$ with $A=B$. Since $2f_cT$ is whole, $\\cos(4\\pi f_cT)=1$.'}]},
+    {t:'reveal', at:2, items:[
+      {t:'eq', label:'Unit energy', tex:'\\begin{aligned}\\int_0^{T}\\psi_1^{2}(t)\\,dt&=\\frac2T\\int_0^{T}\\cos^{2}(2\\pi f_ct)\\,dt\\\\&=\\frac2T\\int_0^{T}\\Bigl[\\frac12+\\frac12\\cos(4\\pi f_ct)\\Bigr]dt\\\\&=\\frac1T\\,T+\\frac1T\\Bigl[\\frac{\\sin(4\\pi f_ct)}{4\\pi f_c}\\Bigr]_0^{T}\\\\&=1+\\frac{\\sin(4\\pi f_cT)-\\sin0}{4\\pi f_cT}=1+0=1\\end{aligned}',
+        note:'For $\\psi_2$ use $\\sin^{2}x=\\tfrac12-\\tfrac12\\cos2x$. The same steps give $1-0=1$, so the basis is orthonormal.'}]},
+    {t:'reveal', at:3, items:[
+      {t:'note', kind:'def', head:'Check', html:'This is the square of the four pulse signals in 3.1. The waveforms differ, and the picture is the same.<div class="nsep"></div>Common error: drop the factor $\\sqrt{2/T}$. Then $\\int_0^{T}\\cos^{2}(2\\pi f_ct)\\,dt=T/2$, not $1$.'}]}
   ]}
 ]},
 
@@ -1115,7 +1112,7 @@ REAL_CONST,
       ask:{key:'m3-ex-gs', choices:['$1$','$2$','$3$'], answer:1,
         why:'$s_3=s_1+s_2$, so its remainder is zero and it adds no axis.'}},
     {t:'reveal', at:1, items:[
-      {t:'eq', label:'Steps 1 and 2', tex:'\\begin{aligned}E_1&=\\int_0^{2}1^{2}\\,dt=2,\\qquad \\psi_1=\\tfrac{1}{\\sqrt2}\\ \\text{on }[0,2)\\\\s_{21}&=\\int s_2\\psi_1\\,dt=0,\\qquad g_2=s_2,\\qquad \\psi_2=1\\ \\text{on }[2,3)\\end{aligned}'}]},
+      {t:'eq', label:'Steps 1 and 2', tex:'\\begin{aligned}E_1&=\\int_0^{2}1^{2}\\,dt=2,\\qquad \\psi_1=\\tfrac{1}{\\sqrt2}\\ \\text{on }[0,2)\\\\s_{21}&=\\int s_2(t)\\psi_1(t)\\,dt=0,\\qquad g_2=s_2,\\qquad \\psi_2=1\\ \\text{on }[2,3)\\end{aligned}'}]},
     {t:'reveal', at:2, items:[
       {t:'eq', label:'Step 3', tex:'\\begin{aligned}s_{31}&=\\int_0^{2}1\\cdot\\tfrac{1}{\\sqrt2}\\,dt=\\sqrt2,\\qquad s_{32}=\\int_2^{3}1\\cdot1\\,dt=1\\\\g_3&=s_3-\\sqrt2\\,\\psi_1-\\psi_2=0\\end{aligned}'}]},
     {t:'reveal', at:3, items:[
