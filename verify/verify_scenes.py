@@ -612,6 +612,43 @@ def _gs_example_steps():
             "e_rebuilt": dot(rebuilt, rebuilt)}
 
 
+def _psk8_gs():
+    """Gram-Schmidt on the eight phase-shifted carriers of scenes 3.3.5-3.3.7.
+
+    The scenes reach the basis and the coordinates by integrating by hand. This
+    samples the eight waveforms on a fine grid with a non-unit amplitude and
+    symbol time, runs the procedure on the samples, and reads the basis, the
+    coordinates and the energies off the result.
+    """
+    A, T, fc = 1.3, 2.0, 2.5          # fc * T = 5, a whole number of cycles
+    n = 400000
+    dt = T / n
+    t = (np.arange(n) + 0.5) * dt
+    sigs = [A * np.cos(2 * np.pi * fc * t - np.pi * i / 4) for i in range(8)]
+    dot = lambda a, b: float(np.sum(a * b) * dt)
+    basis, coords, eg2 = [], [], None
+    scale = max(dot(s, s) for s in sigs)
+    for k, s in enumerate(sigs):
+        c = [dot(s, b) for b in basis]
+        g = s - sum(ci * basis[j] for j, ci in enumerate(c)) if basis else s.copy()
+        e = dot(g, g)
+        if k == 1:
+            eg2 = e
+        if e > 1e-9 * scale:
+            basis.append(g / math.sqrt(e))
+            c.append(math.sqrt(e))
+        coords.append(c)
+    dim = len(basis)
+    for c in coords:
+        while len(c) < dim:
+            c.append(0.0)
+    return {"A": A, "T": T, "dim": dim, "coords": coords, "eg2": eg2,
+            "e0": dot(sigs[0], sigs[0]), "s11": coords[1][0],
+            "e_psi2": dot(basis[1], basis[1]), "cross": dot(basis[0], basis[1]),
+            "energies": [sum(v * v for v in c) for c in coords],
+            "dmin": math.dist(coords[0], coords[1])}
+
+
 # The remaining Module 3 helpers work on sampled waveforms: every inner
 # product is a sum of samples, never the coordinate formula the scene uses.
 _M3_N = 60000
@@ -1526,6 +1563,35 @@ CHECKS: list[dict] = [
     # back: their sum carries the whole energy of s3, so nothing remains.
     {"name": "3.3.3 energy of the two projections added back", "stated": 3.0,
      "derive": lambda: _gs_example_steps()["e_rebuilt"], "tol": 1e-6},
+    # ---- 3.3.5 to 3.3.7, the eight phase-shifted carriers -----------------
+    # Run on sampled waveforms with A = 1.3 and T = 2, so the closed forms the
+    # scenes state are tested away from A = T = 1.
+    {"name": "3.3.5 the eight carriers need two dimensions", "stated": 2,
+     "derive": lambda: _psk8_gs()["dim"]},
+    {"name": "3.3.5 energy of the carrier E0 = A^2 T / 2", "stated": 1.69,
+     "derive": lambda: _psk8_gs()["e0"], "tol": 1e-6},
+    {"name": "3.3.6 projection s11 = A sqrt(T/2) cos(pi/4)", "stated": 0.919239,
+     "derive": lambda: _psk8_gs()["s11"], "tol": 1e-5},
+    {"name": "3.3.6 energy of the remainder Eg2 = A^2 T / 4", "stated": 0.845,
+     "derive": lambda: _psk8_gs()["eg2"], "tol": 1e-6},
+    {"name": "3.3.6 unit energy of psi2", "stated": 1.0,
+     "derive": lambda: _psk8_gs()["e_psi2"], "tol": 1e-9},
+    {"name": "3.3.6 psi1 and psi2 are orthogonal (offset by 1)", "stated": 1.0,
+     "derive": lambda: 1.0 + _psk8_gs()["cross"], "tol": 1e-9},
+    {"name": "3.3.7 first coordinate of s3 = sqrt(E) cos(3 pi / 4)", "stated": -0.919239,
+     "derive": lambda: _psk8_gs()["coords"][3][0], "tol": 1e-5},
+    {"name": "3.3.7 second coordinate of s3 = sqrt(E) sin(3 pi / 4)", "stated": 0.919239,
+     "derive": lambda: _psk8_gs()["coords"][3][1], "tol": 1e-5},
+    {"name": "3.3.7 second coordinate of s6 = sqrt(E) sin(3 pi / 2)", "stated": -1.3,
+     "derive": lambda: _psk8_gs()["coords"][6][1], "tol": 1e-5},
+    {"name": "3.3.7 every point has squared length E = A^2 T / 2", "stated": 1.69,
+     "derive": lambda: max(_psk8_gs()["energies"]), "tol": 1e-5},
+    {"name": "3.3.7 smallest squared length is the same E", "stated": 1.69,
+     "derive": lambda: min(_psk8_gs()["energies"]), "tol": 1e-5},
+    {"name": "3.3.7 dmin = 2 sqrt(E) sin(pi/8) = 0.765 sqrt(E)", "stated": 0.99497,
+     "derive": lambda: _psk8_gs()["dmin"], "tol": 1e-4},
+    {"name": "3.3.7 dmin as a multiple of sqrt(E)", "stated": 0.765,
+     "derive": lambda: _psk8_gs()["dmin"] / 1.3, "tol": 1e-3},
     # ---- Module 3, converted: every stated number on a slide -----------------
     {"name": "3.1.3 first coordinate of x = 3 then -1", "stated": 3.0,
      "derive": lambda: _m3_ip([(0, 1, 3), (1, 2, -1)], [(0, 1, 1)], 0, 2), "tol": 1e-6},

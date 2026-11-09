@@ -105,7 +105,7 @@ CONTENT.SECTIONS = {
         'm3-constellation','m3-binary','m3-passband','m3-ex-qpsk','m3-remarks','m3-psk',
         'm3-real-constellation','m3-lab-s','m3-code-constellation'] },
     { n:'3.3', title:'The Gram–Schmidt procedure',     ids:[
-        'm3-gs','m3-ex-gs','m3-ex-gs-c','m3-ex-gs-b','m3-basis-change','m3-real-gs','m3-lab-f','m3-code-gs'] },
+        'm3-gs','m3-ex-gs','m3-ex-gs-c','m3-ex-gs-b','m3-ex-gs-psk','m3-ex-gs-psk-b','m3-ex-gs-psk-c','m3-basis-change','m3-real-gs','m3-lab-f','m3-code-gs'] },
     { n:'3.4', title:'Summary',                        ids:['m3-chain','m3-quick','m3-synth','m3-projects'] }
   ],
 
@@ -270,7 +270,8 @@ CONTENT.BOOK = {
   'm3-inner':'8.1', 'm3-energy':'8.1', 'm3-ex-inspect':'8.1', 'm3-real-vectors':'8.1', 'm3-lab-r':'8.1',
   'm3-constellation':'8.1', 'm3-binary':'8.2', 'm3-passband':'8.6.1', 'm3-ex-qpsk':'8.6.1',
   'm3-remarks':'8.1', 'm3-psk':'8.6.1', 'm3-real-constellation':'8.6.1, 8.7.1', 'm3-lab-s':'8.1, 8.6.1',
-  'm3-gs':'8.1', 'm3-ex-gs':'8.1', 'm3-ex-gs-c':'8.1', 'm3-ex-gs-b':'8.1', 'm3-basis-change':'8.1', 'm3-real-gs':'8.1', 'm3-lab-f':'8.1',
+  'm3-gs':'8.1', 'm3-ex-gs':'8.1', 'm3-ex-gs-c':'8.1', 'm3-ex-gs-b':'8.1', 'm3-ex-gs-psk':'8.1, 8.6.1', 'm3-ex-gs-psk-b':'8.1, 8.6.1', 'm3-ex-gs-psk-c':'8.1, 8.6.1',
+  'm3-basis-change':'8.1', 'm3-real-gs':'8.1', 'm3-lab-f':'8.1',
   'm3-chain':'8.1', 'm3-quick':'8.1', 'm3-synth':'8.1', 'm3-projects':'8.1',
 
   /* Module 4 is section 8.4 of the book, "M-ary Digital Modulation": the

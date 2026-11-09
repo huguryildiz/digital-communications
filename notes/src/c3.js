@@ -350,6 +350,39 @@ function figExGsB(){
     a.note(Q[0]+0.13,Q[1]+0.2,'\\mathbf{s}_'+(k+1),{tex:true,fs:15,color:C.in}); });
   return narrow(a.svg(),56);
 }
+/* The first two of the eight phase-shifted carriers of Example 3.5, with the
+   remainder of the second and the two basis functions. A = 1, T = 1. */
+function figExGsPsk(){
+  const s0=t=>(t>=0&&t<=1)?Math.cos(2*Math.PI*FC*t):0;
+  const s1=t=>(t>=0&&t<=1)?Math.cos(2*Math.PI*FC*t-Math.PI/4):0;
+  const g2=t=>(t>=0&&t<=1)?Math.sin(Math.PI/4)*Math.sin(2*Math.PI*FC*t):0;
+  const row=(h,yl,last,draw)=>{ const a=TAx({w:560,h,xr:[-0.03,1.08],yr:[-1.75,1.75],
+      xlabel:last?'t/T':'',ylabel:yl,pad:{l:56,r:26,t:20,b:last?34:12},
+      xt:last?[0,0.5,1]:null,yticksOverride:[-1,0,1]});
+    draw(a); return a.svg(); };
+  const top=row(140,'s_0(t),\\;\\psi_1(t)',false,a=>{
+    a.curve(s0,{color:C.in,width:3.4,n:900});
+    a.curve(cosB,{color:C.h,width:1.9,n:900}); });
+  const bot=row(170,'s_1(t),\\;g_2(t),\\;\\psi_2(t)',true,a=>{
+    a.curve(s1,{color:C.in,width:3.4,n:900});
+    a.curve(g2,{color:C.mid,width:2.2,n:900});
+    a.curve(sinB,{color:C.h,width:1.9,n:900}); });
+  return narrow(stack(560,[[top,140],[bot,170]]),64);
+}
+/* The eight points of Example 3.5 on their circle. */
+function figExGsPskC(){
+  const a=plane({need:[[-1.8,1.8],[-1.62,1.62]],xticksOverride:[],yticksOverride:[]});
+  circle(a,1);
+  seg(a,[[1,0],[Math.cos(Math.PI/4),Math.sin(Math.PI/4)]],{color:C.mid,width:2.6});
+  a.note(0.70*Math.cos(Math.PI/8),0.70*Math.sin(Math.PI/8)-0.05,'d_{\\min}',{tex:true,fs:15,color:C.mid,anchor:'middle'});
+  arrow(a,0,0,Math.cos(5*Math.PI/4),Math.sin(5*Math.PI/4),{color:C.muted,width:1.6,head:0.8});
+  a.note(0.40*Math.cos(5*Math.PI/4)-0.06,0.40*Math.sin(5*Math.PI/4)+0.06,'\\sqrt{E}',{tex:true,fs:15,color:C.muted,anchor:'end'});
+  for(let i=0;i<8;i++){ const u=Math.PI*i/4, x=Math.cos(u), y=Math.sin(u);
+    a.point(x,y,{color:C.in,r:6.5});
+    a.note(1.19*x,1.19*y-0.05,'\\mathbf{s}_'+i,{tex:true,fs:15,color:C.in,
+      anchor: x>0.3?'start':x<-0.3?'end':'middle'}); }
+  return narrow(a.svg(),56);
+}
 /* The square against a basis turned by 30 degrees. */
 function figBasisChange(){
   const ph=Math.PI/6, u1=[Math.cos(ph),Math.sin(ph)], u2=[-Math.sin(ph),Math.cos(ph)];
@@ -702,19 +735,52 @@ window.C3 = [
 /* m3-ex-gs-b */
 {t:'p', text:'Example 3.4 runs the procedure on four signals that span three dimensions.'},
 {t:'ex', hd:'Example 3.4 — four signals, three axes', rows:[
- ['Given','$s_1=1$ on $[0,2)$. $s_2=1$ on $[0,1)$ and $-1$ on $[1,2)$. $s_3=-1$ on $[0,1)$ and $1$ on $[1,3)$. $s_4=1$ on $[0,3)$. Each is zero elsewhere.'],
+ ['Given','$s_1(t)=1$ on $[0,2)$. $s_2(t)=1$ on $[0,1)$ and $-1$ on $[1,2)$. $s_3(t)=-1$ on $[0,1)$ and $1$ on $[1,3)$. $s_4(t)=1$ on $[0,3)$. Each is zero elsewhere.'],
  ['Find','How many dimensions does the set span?'],
  ['Method','Run Gram–Schmidt in the order $s_1,s_2,s_3,s_4$. Each coordinate is a sum of piece heights times piece widths.'],
- ['Steps 1 and 2','$E_1=\\int_0^{2}1^{2}\\,dt=2$, so $\\psi_1=s_1/\\sqrt2$. Then $s_{21}=\\tfrac{1}{\\sqrt2}(1-1)=0$, so $g_2=s_2$, with energy $2$, and $\\psi_2=s_2/\\sqrt2$.'],
- ['Step 3','$s_{31}=\\tfrac{1}{\\sqrt2}(-1+1)=0$ and $s_{32}=\\tfrac{1}{\\sqrt2}(-1-1)=-\\sqrt2$. Then $g_3=s_3+\\sqrt2\\,\\psi_2=s_3+s_2$. It is $1$ on $[2,3)$ and zero elsewhere, with energy $1$, so $\\psi_3=g_3$.'],
- ['Step 4','$s_4=s_1+s_2+s_3$, so $g_4=0$ and $s_4$ adds no axis. Its coordinates are $s_{41}=\\tfrac{1}{\\sqrt2}(1+1)=\\sqrt2$, $s_{42}=\\tfrac{1}{\\sqrt2}(1-1)=0$ and $s_{43}=\\int_2^{3}1\\,dt=1$.'],
+ ['Steps 1 and 2','$E_1=\\int_0^{2}1^{2}\\,dt=2$, so $\\psi_1(t)=s_1(t)/\\sqrt2$. Then $s_{21}=\\tfrac{1}{\\sqrt2}(1-1)=0$, so $g_2(t)=s_2(t)$, with energy $2$, and $\\psi_2(t)=s_2(t)/\\sqrt2$.'],
+ ['Step 3','$s_{31}=\\tfrac{1}{\\sqrt2}(-1+1)=0$ and $s_{32}=\\tfrac{1}{\\sqrt2}(-1-1)=-\\sqrt2$. Then $g_3(t)=s_3(t)+\\sqrt2\\,\\psi_2(t)=s_3(t)+s_2(t)$. It is $1$ on $[2,3)$ and zero elsewhere, with energy $1$, so $\\psi_3(t)=g_3(t)$.'],
+ ['Step 4','$s_4(t)=s_1(t)+s_2(t)+s_3(t)$, so $g_4(t)=0$ and $s_4(t)$ adds no axis. Its coordinates are $s_{41}=\\tfrac{1}{\\sqrt2}(1+1)=\\sqrt2$, $s_{42}=\\tfrac{1}{\\sqrt2}(1-1)=0$ and $s_{43}=\\int_2^{3}1\\,dt=1$.'],
  ['Solution','$\\mathbf{s}_1=(\\sqrt2,0,0)$, $\\mathbf{s}_2=(0,\\sqrt2,0)$, $\\mathbf{s}_3=(0,-\\sqrt2,1)$ and $\\mathbf{s}_4=(\\sqrt2,0,1)$. The set spans $N=3$ dimensions.'],
- ['Check','Energies from the vectors are $2$, $2$, $3$ and $3$, equal to $\\int s_i^{2}\\,dt$.']
+ ['Check','Energies from the vectors are $2$, $2$, $3$ and $3$, equal to $\\int s_i^{2}(t)\\,dt$.']
 ]},
-{t:'box', kind:'err', hd:'Common error', html:'Use one axis for each independent signal, not one for each signal, so $N\\le M$. Here $g_4=0$, so $N=3$, not $M=4$.'},
+{t:'box', kind:'err', hd:'Common error', html:'Use one axis for each independent signal, not one for each signal, so $N\\le M$. Here $g_4(t)=0$, so $N=3$, not $M=4$.'},
 {t:'p', text:'The figure draws the four vectors in three dimensions.'},
 {t:'fig', svg:figExGsB, cap:'Four signals need three axes, seen here from an angle of $30^{\\circ}$. $\\mathbf{s}_4$ sits one unit above $\\mathbf{s}_1$, along $\\psi_3$.',
  short:'Four signals need three axes.'},
+
+/* m3-ex-gs-psk, m3-ex-gs-psk-b, m3-ex-gs-psk-c */
+{t:'p', text:'Example 3.5 runs the procedure on eight carriers that differ only in phase. It finds that one cosine and one sine carry all eight.'},
+{t:'ex', hd:'Example 3.5 — eight phases, two axes', rows:[
+ ['Given','$s_i(t)=A\\cos\\!\\left(2\\pi f_ct-\\tfrac{\\pi}{4}i\\right)$ for $i=0,\\ldots,7$ and $0\\le t\\le T$, where $f_cT$ is an integer.'],
+ ['Find','An orthonormal basis, and the constellation of the eight signals.'],
+ ['Method','Open each phase with the cosine of a difference, then run Gram–Schmidt in the order $s_0,s_1,\\ldots$'],
+ ['Step 0 — open the phase','The identity $\\cos(a-b)=\\cos a\\cos b+\\sin a\\sin b$ writes every signal with the same two waveforms:'
+  +'$$s_i(t)=A\\cos\\tfrac{\\pi i}{4}\\,\\cos(2\\pi f_ct)+A\\sin\\tfrac{\\pi i}{4}\\,\\sin(2\\pi f_ct).$$'
+  +'Only the two weights change with $i$, so the set spans at most two dimensions.'],
+ ['Step 1 — the first axis','The first signal is the carrier itself. Its energy follows from $\\cos^{2}x=\\tfrac12(1+\\cos 2x)$:'
+  +'$$E_0=\\int_0^{T}A^{2}\\cos^{2}(2\\pi f_ct)\\,dt=\\frac{A^{2}}{2}\\int_0^{T}\\big[1+\\cos(4\\pi f_ct)\\big]dt=\\frac{A^{2}T}{2}.$$'
+  +'The second term runs over a whole number of cycles, because $f_cT$ is an integer, so it integrates to zero. Scaling the carrier to unit energy gives the first basis function:'
+  +'$$\\psi_1(t)=\\frac{s_0(t)}{\\sqrt{E_0}}=\\sqrt{\\frac{2}{T}}\\,\\cos(2\\pi f_ct).$$'],
+ ['Step 2 — the second axis','Of the two terms of $s_1(t)$, only the cosine survives the integral against $\\psi_1(t)$:'
+  +'$$s_{11}=\\int_0^{T}s_1(t)\\psi_1(t)\\,dt=A\\cos\\tfrac{\\pi}{4}\\sqrt{\\tfrac{2}{T}}\\int_0^{T}\\cos^{2}(2\\pi f_ct)\\,dt=A\\sqrt{\\tfrac{T}{2}}\\,\\cos\\tfrac{\\pi}{4}.$$'
+  +'What is left of $s_1(t)$ is its sine term, and scaling it to unit energy gives the second basis function:'
+  +'$$g_2(t)=s_1(t)-s_{11}\\psi_1(t)=A\\sin\\tfrac{\\pi}{4}\\,\\sin(2\\pi f_ct),\\qquad E_{g_2}=A^{2}\\sin^{2}\\tfrac{\\pi}{4}\\cdot\\tfrac{T}{2}=\\tfrac{A^{2}T}{4},$$'
+  +'$$\\psi_2(t)=\\frac{g_2(t)}{\\sqrt{E_{g_2}}}=\\sqrt{\\frac{2}{T}}\\,\\sin(2\\pi f_ct).$$'
+  +'Every later signal is already a sum of $\\psi_1(t)$ and $\\psi_2(t)$, so $g_i(t)=0$ for $i\\ge2$ and the basis stops at two.'],
+ ['Step 3 — the coordinates','Each integral keeps one term of Step 0 and drops the other, because the two basis functions are orthogonal:'
+  +'$$s_{i1}=\\int_0^{T}s_i(t)\\psi_1(t)\\,dt=A\\sqrt{\\tfrac{T}{2}}\\,\\cos\\tfrac{\\pi i}{4},\\qquad s_{i2}=\\int_0^{T}s_i(t)\\psi_2(t)\\,dt=A\\sqrt{\\tfrac{T}{2}}\\,\\sin\\tfrac{\\pi i}{4}.$$'],
+ ['Solution','With $E=A^{2}T/2$ the eight vectors are'
+  +'$$\\mathbf{s}_i=\\sqrt{E}\\left(\\cos\\tfrac{\\pi i}{4},\\ \\sin\\tfrac{\\pi i}{4}\\right),\\qquad i=0,\\ldots,7.$$'
+  +'They are eight points on one circle of radius $\\sqrt{E}$, one every $\\pi/4$. Two neighbours are $d_{\\min}=2\\sqrt{E}\\sin(\\pi/8)=0.765\\sqrt{E}$ apart.'],
+ ['Check','Every point has $|\\mathbf{s}_i|^{2}=E\\cos^{2}\\tfrac{\\pi i}{4}+E\\sin^{2}\\tfrac{\\pi i}{4}=E$, which is the energy $\\int_0^{T}s_i^{2}(t)\\,dt$ of each signal. A phase shift moves no energy.']
+]},
+{t:'box', kind:'err', hd:'Common error', html:'$\\int_0^{T}\\cos^{2}(2\\pi f_ct)\\,dt=T/2$ holds only when $f_cT$ is an integer. Without it the term $\\tfrac{1}{8\\pi f_c}\\sin(4\\pi f_cT)$ stays, and the basis is no longer orthonormal.'},
+{t:'p', text:'The first figure draws the first two signals with the remainder and the two basis functions. The second draws the eight points.'},
+{t:'fig', svg:figExGsPsk, cap:'The first two signals of Example 3.5 in cyan, with $A=1$, $T=1$ and three whole cycles. Over them are the remainder $g_2(t)$ and the two basis functions.',
+ short:'Eight phases need two axes.'},
+{t:'fig', svg:figExGsPskC, cap:'The eight signals of Example 3.5 on one circle of radius $\\sqrt{E}=A\\sqrt{T/2}$, one every $\\pi/4$. The chord between two neighbours is $d_{\\min}$.',
+ short:'The eight-point constellation of Example 3.5.'},
 
 /* m3-basis-change */
 {t:'h3', text:'The basis is not unique'},

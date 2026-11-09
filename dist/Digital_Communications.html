@@ -24223,6 +24223,51 @@ function figExGsB(v){
   return a.svg();
 }
 
+/* The eight phase-shifted carriers of 3.3.5 and 3.3.6, one panel a scene and
+   one frame a step. Drawn with A = 1, T = 1 and f_c T = FC whole cycles. */
+const PSK_S0 = t => (t>=0 && t<=1) ? Math.cos(2*Math.PI*FC*t) : 0;
+const PSK_S1 = t => (t>=0 && t<=1) ? Math.cos(2*Math.PI*FC*t - Math.PI/4) : 0;
+const PSK_G2 = t => (t>=0 && t<=1) ? Math.sin(Math.PI/4)*Math.sin(2*Math.PI*FC*t) : 0;
+const pskPanel = (yl, draw) => { const a = TAx({w:560,h:P.hOverride||300,xr:[-0.03,1.08],yr:[-1.75,1.75],
+    xlabel:'t', ylabel:yl, pad:{l:56,r:26,t:24,b:40}, xt:[0,0.5,1], xfmt:TT, yticksOverride:[-1,0,1]});
+  P.hOverride = null; draw(a); return a.svg(); };
+/* The carrier and the cosine it gives. */
+function figExGsPskA(v){
+  const f = frameOf(v, 1);
+  return pskPanel('s_0(t),\\;\\psi_1(t)', a=>{
+    a.curve(PSK_S0, {color:C.in, width:3.4, n:900});
+    const o = clamp01(f);
+    if(o > 0.02) a.curve(cosB, {color:C.h, width:1.9, n:900, opacity:o}); });
+}
+/* The second signal, its remainder and the sine the remainder gives. */
+function figExGsPskB(v){
+  const f = frameOf(v, 2), op = k => clamp01(f-k+1);
+  return pskPanel('s_1(t),\\;g_2(t),\\;\\psi_2(t)', a=>{
+    a.curve(PSK_S1, {color:C.in, width:3.4, n:900});
+    if(op(1) > 0.02) a.curve(PSK_G2, {color:C.mid, width:2.2, n:900, opacity:op(1)});
+    if(op(2) > 0.02) a.curve(sinB, {color:C.h, width:1.9, n:900, opacity:op(2)}); });
+}
+
+/* The eight points of 3.3.7 on their circle, with the chord between two
+   neighbours. The radius is one unit of A sqrt(T/2). */
+function figExGsPskC(){
+  const a = plane({need:[[-1.8,1.8],[-1.62,1.62]], xticksOverride:[], yticksOverride:[]});
+  circle(a, 1);
+  /* the chord of the pi/4 gap between s_0 and s_1 */
+  seg(a, [[1,0],[Math.cos(Math.PI/4),Math.sin(Math.PI/4)]], {color:C.mid, width:2.6});
+  a.note(0.70*Math.cos(Math.PI/8), 0.70*Math.sin(Math.PI/8)-0.05, 'd_{\\min}', {tex:true, fs:15, color:C.mid, anchor:'middle'});
+  /* the radius, drawn where no point label sits */
+  arrow(a, 0,0, Math.cos(5*Math.PI/4), Math.sin(5*Math.PI/4), {color:C.muted, width:1.6, head:0.8});
+  a.note(0.40*Math.cos(5*Math.PI/4)-0.06, 0.40*Math.sin(5*Math.PI/4)+0.06, '\\sqrt{E}', {tex:true, fs:15, color:C.muted, anchor:'end'});
+  for(let i=0;i<8;i++){
+    const u = Math.PI*i/4, x = Math.cos(u), y = Math.sin(u);
+    a.point(x, y, {color:C.in, r:6.5});
+    a.note(1.19*x, 1.19*y - 0.05, '\\mathbf{s}_'+i, {tex:true, fs:15, color:C.in,
+      anchor: x > 0.3 ? 'start' : x < -0.3 ? 'end' : 'middle'});
+  }
+  return a.svg();
+}
+
 /* The square seen against a basis turned by phi. */
 function figBasisChange(v){
   const ph = (v ? v.ph : 30)*Math.PI/180, u1 = [Math.cos(ph), Math.sin(ph)], u2 = [-Math.sin(ph), Math.cos(ph)];
@@ -24878,16 +24923,87 @@ REAL_CONST,
       svg:figExGsB,
       caption:'Turn the view. Four signals need three axes. $\\mathbf{s}_4$ sits one unit above $\\mathbf{s}_1$, along $\\psi_3$.'}
   ], right:[
-    {t:'note', kind:'def', head:'Given', html:'$s_1=1$ on $[0,2)$. $s_2=1$ on $[0,1)$ and $-1$ on $[1,2)$. $s_3=-1$ on $[0,1)$ and $1$ on $[1,3)$. $s_4=1$ on $[0,3)$.<div class="nsep"></div>How many dimensions does the set span?',
+    {t:'note', kind:'def', head:'Given', html:'$s_1(t)=1$ on $[0,2)$. $s_2(t)=1$ on $[0,1)$ and $-1$ on $[1,2)$. $s_3(t)=-1$ on $[0,1)$ and $1$ on $[1,3)$. $s_4(t)=1$ on $[0,3)$.<div class="nsep"></div>How many dimensions does the set span?',
       ask:{key:'m3-ex-gs-b', choices:['$2$','$3$','$4$'], answer:1,
-        why:'$s_4=s_1+s_2+s_3$, so $g_4=0$. The other three each add an axis.'}},
+        why:'$s_4(t)=s_1(t)+s_2(t)+s_3(t)$, so $g_4(t)=0$. The other three each add an axis.'}},
     {t:'reveal', at:1, items:[
-      {t:'eq', label:'Method', tex:'\\begin{aligned}\\psi_1&=\\tfrac{s_1}{\\sqrt2},\\quad \\psi_2=\\tfrac{s_2}{\\sqrt2}\\quad(s_{21}=0)\\\\s_{31}&=0,\\quad s_{32}=-\\sqrt2,\\quad g_3=s_3+\\sqrt2\\,\\psi_2=1\\ \\text{on }[2,3)=\\psi_3\\end{aligned}'}]},
+      {t:'eq', label:'Method', tex:'\\begin{aligned}\\psi_1(t)&=\\tfrac{s_1(t)}{\\sqrt2},\\quad \\psi_2(t)=\\tfrac{s_2(t)}{\\sqrt2}\\quad(s_{21}=0)\\\\s_{31}&=0,\\quad s_{32}=-\\sqrt2\\\\g_3(t)&=s_3(t)+\\sqrt2\\,\\psi_2(t)=1\\ \\text{on }[2,3)=\\psi_3(t)\\end{aligned}'}]},
     {t:'reveal', at:2, items:[
       {t:'eq', label:'Solution', tex:'\\begin{aligned}\\mathbf{s}_1&=(\\sqrt2,0,0),&\\mathbf{s}_2&=(0,\\sqrt2,0)\\\\\\mathbf{s}_3&=(0,-\\sqrt2,1),&\\mathbf{s}_4&=(\\sqrt2,0,1)\\end{aligned}',
-        note:'Check: energies $2$, $2$, $3$, $3$, equal to $\\int s_i^{2}\\,dt$.'}]},
+        note:'Check: energies $2$, $2$, $3$, $3$, equal to $\\int s_i^{2}(t)\\,dt$.'}]},
     {t:'reveal', at:3, items:[
-      {t:'note', kind:'err', head:'Common error', html:'Use one axis for each independent signal, not one for each signal, so $N\\le M$. Here $g_4=0$, so $N=3$, not $M=4$.'}]}
+      {t:'note', kind:'err', head:'Common error', html:'Use one axis for each independent signal, not one for each signal, so $N\\le M$. Here $g_4(t)=0$, so $N=3$, not $M=4$.'}]}
+  ]}
+]},
+
+{ id:'m3-ex-gs-psk', module:'M3', nav:'Worked example · eight phases, two axes',
+  title:'Worked example: eight phases, two axes',
+  objective:'Open eight phase-shifted carriers into a cosine and a sine, and scale the carrier to the first basis function.',
+  keywords:'worked example gram schmidt 8psk eight phases cosine of a difference first axis carrier whole cycles unit energy frames',
+  src:'CH9 s.22', slide:true, steps:2, blocks:[
+  {t:'eyebrow', text:'Module 3 · The Gram–Schmidt procedure'},
+  {t:'title', text:'Worked example: eight phases, two axes'},
+  {t:'cols', ratio:'c-5-7', fill:true, left:[
+    {t:'fig', frame:true, grow:true, frames:{labels:['$s_0$','$\\psi_1$']}, svg:figExGsPskA,
+      caption:'The first signal in cyan, drawn with $A=1$, $T=1$ and three whole cycles. Step to the basis function it gives.'}
+  ], right:[
+    {t:'note', kind:'def', head:'Given', html:'$s_i(t)=A\\cos\\!\\left(2\\pi f_ct-\\tfrac{\\pi}{4}i\\right)$ for $i=0,\\ldots,7$ and $0\\le t\\le T$, with $f_cT$ an integer.<div class="nsep"></div>Find an orthonormal basis.',
+      ask:{key:'m3-ex-gs-psk', choices:['$2$','$3$','$8$'], answer:0,
+        why:'Every $s_i(t)$ is a sum of $\\cos(2\\pi f_ct)$ and $\\sin(2\\pi f_ct)$, so two axes carry all eight.'}},
+    {t:'reveal', at:1, items:[
+      {t:'eq', label:'Step 0 · open the phase', tex:'s_i(t)=A\\cos\\tfrac{\\pi i}{4}\\,\\cos(2\\pi f_ct)+A\\sin\\tfrac{\\pi i}{4}\\,\\sin(2\\pi f_ct)',
+        note:'The cosine of a difference gives every signal the same two waveforms. Only the two weights change with $i$.'}]},
+    {t:'reveal', at:2, items:[
+      {t:'eq', label:'Step 1 · the first axis', tex:'\\begin{aligned}E_0&=\\int_0^{T}A^{2}\\cos^{2}(2\\pi f_ct)\\,dt=\\frac{A^{2}}{2}\\int_0^{T}\\big[1+\\cos(4\\pi f_ct)\\big]dt=\\frac{A^{2}T}{2}\\\\\\psi_1(t)&=\\frac{s_0(t)}{\\sqrt{E_0}}=\\sqrt{\\frac{2}{T}}\\,\\cos(2\\pi f_ct)\\end{aligned}',
+        note:'The double-frequency term runs over whole cycles, so it integrates to zero.'}]}
+  ]}
+]},
+
+{ id:'m3-ex-gs-psk-b', module:'M3', nav:'Worked example · the second axis',
+  title:'Worked example: the second axis',
+  objective:'Remove the part of the second carrier that lies along the first axis and scale the remainder to the second basis function.',
+  keywords:'worked example gram schmidt 8psk second axis projection remainder sine quadrature stop rule orthonormal frames',
+  src:'CH9 s.22', slide:true, steps:2, blocks:[
+  {t:'eyebrow', text:'Module 3 · The Gram–Schmidt procedure'},
+  {t:'title', text:'Worked example: the second axis'},
+  {t:'cols', ratio:'c-5-7', fill:true, left:[
+    {t:'fig', frame:true, grow:true, frames:{labels:['$s_1$','$g_2$','$\\psi_2$']}, svg:figExGsPskB,
+      caption:'The second signal in cyan. Step to what is left after its part along $\\psi_1(t)$ is removed, and to the basis function that remainder gives.'},
+    {t:'legend', items:[['in','$s_1(t)$',false],['mid','$g_2(t)$',false,1],['h','$\\psi_2(t)$',false,2]], at:'tr'}
+  ], right:[
+    {t:'note', kind:'def', head:'Given', html:'$\\psi_1(t)=\\sqrt{2/T}\\,\\cos(2\\pi f_ct)$, and $s_1(t)$ carries a cosine term and a sine term.<div class="nsep"></div>What is left of $s_1(t)$ once its cosine term is removed?',
+      ask:{key:'m3-ex-gs-psk-b', choices:['Its sine term','Nothing','A new cosine'], answer:0,
+        why:'The projection takes off the whole cosine term, so the sine term is the remainder.'}},
+    {t:'reveal', at:1, items:[
+      {t:'eq', label:'Step 2 · the second axis', tex:'\\begin{aligned}s_{11}&=\\int_0^{T}s_1(t)\\psi_1(t)\\,dt=A\\sqrt{\\tfrac{T}{2}}\\,\\cos\\tfrac{\\pi}{4}\\\\g_2(t)&=s_1(t)-s_{11}\\psi_1(t)=A\\sin\\tfrac{\\pi}{4}\\,\\sin(2\\pi f_ct)\\\\E_{g_2}&=A^{2}\\sin^{2}\\tfrac{\\pi}{4}\\cdot\\tfrac{T}{2}=\\tfrac{A^{2}T}{4},\\qquad \\psi_2(t)=\\frac{g_2(t)}{\\sqrt{E_{g_2}}}=\\sqrt{\\tfrac{2}{T}}\\,\\sin(2\\pi f_ct)\\end{aligned}',
+        note:'The sine left over, scaled to unit energy, is the second axis.'}]},
+    {t:'reveal', at:2, items:[
+      {t:'note', kind:'warn', head:'Stop rule', html:'Step 0 writes every $s_i(t)$ with the same cosine and sine, so $g_i(t)=0$ for $i\\ge2$. Eight signals, two axes.'}]}
+  ]}
+]},
+
+{ id:'m3-ex-gs-psk-c', module:'M3', nav:'Worked example · the eight-point constellation',
+  title:'Worked example: the eight-point constellation',
+  objective:'Read the coordinates of the eight phase-shifted carriers and draw them as eight points on one circle.',
+  keywords:'worked example 8psk constellation coordinates circle equal energy minimum distance chord phase spacing',
+  src:'CH9 s.22', slide:true, steps:3, blocks:[
+  {t:'eyebrow', text:'Module 3 · The Gram–Schmidt procedure'},
+  {t:'title', text:'Worked example: the eight-point constellation'},
+  {t:'cols', ratio:'c-5-7', fill:true, left:[
+    {t:'fig', frame:true, grow:true, svg:figExGsPskC,
+      caption:'The eight points share one circle of radius $\\sqrt{E}=A\\sqrt{T/2}$ and sit $\\pi/4$ apart. The chord between two neighbours is $d_{\\min}$.'}
+  ], right:[
+    {t:'note', kind:'def', head:'The basis', html:'$\\psi_1(t)=\\sqrt{2/T}\\,\\cos(2\\pi f_ct)$ and $\\psi_2(t)=\\sqrt{2/T}\\,\\sin(2\\pi f_ct)$.<div class="nsep"></div>What is the energy of each $s_i(t)$?',
+      ask:{key:'m3-ex-gs-psk-c', choices:['$A^{2}T/2$','$A^{2}T/4$','$A^{2}T$'], answer:0,
+        why:'A phase shift moves no energy, so every signal keeps the energy $A^{2}T/2$ of the carrier.'}},
+    {t:'reveal', at:1, items:[
+      {t:'eq', label:'The coordinates', tex:'\\begin{aligned}s_{i1}&=\\int_0^{T}s_i(t)\\psi_1(t)\\,dt=A\\sqrt{\\tfrac{T}{2}}\\,\\cos\\tfrac{\\pi i}{4}\\\\s_{i2}&=\\int_0^{T}s_i(t)\\psi_2(t)\\,dt=A\\sqrt{\\tfrac{T}{2}}\\,\\sin\\tfrac{\\pi i}{4}\\end{aligned}',
+        note:'Each integral keeps one term of Step 0 and drops the other.'}]},
+    {t:'reveal', at:2, items:[
+      {t:'eq', label:'Solution · the constellation', tex:'\\mathbf{s}_i=\\sqrt{E}\\left(\\cos\\tfrac{\\pi i}{4},\\ \\sin\\tfrac{\\pi i}{4}\\right),\\qquad E=\\tfrac{A^{2}T}{2}',
+        note:'One point every $\\pi/4$, with $d_{\\min}=2\\sqrt{E}\\sin(\\pi/8)=0.765\\sqrt{E}$. Check: $|\\mathbf{s}_i|^{2}=E=\\int_0^{T}s_i^{2}(t)\\,dt$.'}]},
+    {t:'reveal', at:3, items:[
+      {t:'note', kind:'err', head:'Common error', html:'$\\int_0^{T}\\cos^{2}(2\\pi f_ct)\\,dt=T/2$ holds only when $f_cT$ is an integer. Otherwise the term $\\tfrac{1}{8\\pi f_c}\\sin(4\\pi f_cT)$ stays and the basis is not orthonormal.'}]}
   ]}
 ]},
 
@@ -34153,7 +34269,7 @@ CONTENT.SECTIONS = {
         'm3-constellation','m3-binary','m3-passband','m3-ex-qpsk','m3-remarks','m3-psk',
         'm3-real-constellation','m3-lab-s','m3-code-constellation'] },
     { n:'3.3', title:'The Gram–Schmidt procedure',     ids:[
-        'm3-gs','m3-ex-gs','m3-ex-gs-c','m3-ex-gs-b','m3-basis-change','m3-real-gs','m3-lab-f','m3-code-gs'] },
+        'm3-gs','m3-ex-gs','m3-ex-gs-c','m3-ex-gs-b','m3-ex-gs-psk','m3-ex-gs-psk-b','m3-ex-gs-psk-c','m3-basis-change','m3-real-gs','m3-lab-f','m3-code-gs'] },
     { n:'3.4', title:'Summary',                        ids:['m3-chain','m3-quick','m3-synth','m3-projects'] }
   ],
 
@@ -34318,7 +34434,8 @@ CONTENT.BOOK = {
   'm3-inner':'8.1', 'm3-energy':'8.1', 'm3-ex-inspect':'8.1', 'm3-real-vectors':'8.1', 'm3-lab-r':'8.1',
   'm3-constellation':'8.1', 'm3-binary':'8.2', 'm3-passband':'8.6.1', 'm3-ex-qpsk':'8.6.1',
   'm3-remarks':'8.1', 'm3-psk':'8.6.1', 'm3-real-constellation':'8.6.1, 8.7.1', 'm3-lab-s':'8.1, 8.6.1',
-  'm3-gs':'8.1', 'm3-ex-gs':'8.1', 'm3-ex-gs-c':'8.1', 'm3-ex-gs-b':'8.1', 'm3-basis-change':'8.1', 'm3-real-gs':'8.1', 'm3-lab-f':'8.1',
+  'm3-gs':'8.1', 'm3-ex-gs':'8.1', 'm3-ex-gs-c':'8.1', 'm3-ex-gs-b':'8.1', 'm3-ex-gs-psk':'8.1, 8.6.1', 'm3-ex-gs-psk-b':'8.1, 8.6.1', 'm3-ex-gs-psk-c':'8.1, 8.6.1',
+  'm3-basis-change':'8.1', 'm3-real-gs':'8.1', 'm3-lab-f':'8.1',
   'm3-chain':'8.1', 'm3-quick':'8.1', 'm3-synth':'8.1', 'm3-projects':'8.1',
 
   /* Module 4 is section 8.4 of the book, "M-ary Digital Modulation": the
