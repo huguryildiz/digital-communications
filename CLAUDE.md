@@ -25,9 +25,9 @@ be backed up with the working copy. The full pre-migration instructions are in
 - The artifact is `dist/Digital_Communications.html`, built by `build/build.js` from `build/src/*`.
 - Seven modules, M0–M6 as declared in `build/src/80_content_core.js` (`CONTENT.MODULES`); addresses,
   sections and textbook anchors are declared once in `build/src/89_sections.js`.
-- **Module 1 is frozen in the slide design and is the reference.** Module 2 is approved by the owner
-  (2026-10-25). Modules 3–6 are converted to the same design and are on `main`, awaiting owner review
-  (status per module in `TODO.md`). Any further change to them follows `DESIGN.md` and
+- **Module 1 is frozen in the slide design and is the reference.** Modules 2 and 3 are approved by
+  the owner. Modules 4–6 are converted to the same design and are on `main`, awaiting owner review.
+  `TODO.md` carries the state of each module. Any further change to them follows `DESIGN.md` and
   `.claude/rules/`, with no design decision of their own.
 
 ## Task-specific rules
