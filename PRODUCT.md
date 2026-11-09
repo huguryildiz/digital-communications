@@ -31,7 +31,7 @@ capacity (M6). M0 is the opening: what the whole subject asks, and how to use th
 
 ## Operating Context
 
-- Lecture room, 16:9 projector, read from the back row. Lecture mode raises the type scale.
+- Lecture room, 16:9 projector, read from the back row.
 - Laptop, independent study, either theme, any window shape.
 - Phone or tablet, independent study: the artifact drops to a fluid single-column layout below the
   16:9 stage's usable width; see `DESIGN.md`, "The two layouts".
@@ -92,24 +92,21 @@ Module 1 is the worked example for these; the mechanics are in `DESIGN.md`, "Int
 Apply them as each further module is converted.
 
 1. **Intuition before algebra.** A student first sees, hears or guesses what a signal does. The
-   calculation comes after that, not first.
-2. **Predict first.** Where a card already asks a question, it offers two to four choices
-   (`note.ask`). The student commits to an answer before the reveal step shows the working.
-3. **Move it.** When a parameter changes what the figure shows (a sampling rate, a distance, an
-   `Eb/N0`), the figure gets a slider (`fig.live`). The default slider value draws the figure the
-   slide had before.
-4. **Connect it to everyday life.** One sentence ties the signal to something the student already
-   knows. The sentence goes in the caption of the section's "… Around Us" gallery.
-5. **Close with a quick check.** Before its summary, each converted module has one slide of six short
-   predictions. None needs a calculation on paper, and each shows a one-sentence reason after the
-   answer.
-6. **Keep the rigour.** Interaction never replaces a derivation. Every derivation is still shown in
-   full, and the practice questions stay open-ended. A slide must keep a fit of at least 0.90 in
-   lecture mode, or it loses the interaction.
+   calculation comes after that, not first. 2. **Predict first.** Where a card already asks a
+   question, it offers two to four choices (`note.ask`). The student commits to an answer before the
+   reveal step shows the working. 3. **Move it.** When a parameter changes what the figure shows (a
+   sampling rate, a distance, an `Eb/N0`), the figure gets a slider (`fig.live`). The default slider
+   value draws the figure the slide had before. 4. **Connect it to everyday life.** One sentence
+   ties the signal to something the student already knows. The sentence goes in the caption of the
+   section's "… Around Us" gallery. 5. **Close with a quick check.** Before its summary, each
+   converted module has one slide of six short predictions. None needs a calculation on paper, and
+   each shows a one-sentence reason after the answer. 6. **Keep the rigour.** Interaction never
+   replaces a derivation. Every derivation is still shown in full, and the practice questions stay
+   open-ended. A slide must keep a fit of at least 0.90, or it loses the interaction.
 
 ## Accessibility & Inclusion
 
-Keyboard access to every control. `Motion: reduced` and `prefers-reduced-motion` give a complete still
-frame, never a missing one. Text contrast of at least 4.5:1 in both themes, tab labels included.
-Signal colours are chosen as colour-blind-safe pairs and are never the only carrier of meaning: a curve
-is also labelled.
+Keyboard access to every control. `prefers-reduced-motion` gives a complete still frame, never a
+missing one; there is no motion control of the artifact's own. Text contrast of at least 4.5:1 in
+both themes, tab labels included. Signal colours are chosen as colour-blind-safe pairs and are never
+the only carrier of meaning: a curve is also labelled.

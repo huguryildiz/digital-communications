@@ -535,15 +535,15 @@ const SC = [
 
 { id:'m0-howto', module:'M0', nav:'Using the course artifact', title:'Using the course artifact',
   objective:'Explain modes, controls, the textbook anchors and the fixed conventions.',
-  keywords:'help navigation modes instructor student reduced motion privacy conventions anchors textbook',
+  keywords:'help navigation laser board privacy conventions anchors textbook',
   slide:true, steps:0, blocks:[
   {t:'eyebrow', text:'Module 0 · Orientation'},
   {t:'title', text:'Using the Course Artifact'},
   {t:'grid', cols:3, gap:'30px 28px', style:'flex:1;min-height:0;grid-auto-rows:1fr;', items:[
     [{t:'note', kind:'def', head:'Navigation', html:'<kbd>→</kbd> or <kbd>space</kbd> gives the next state, and <kbd>←</kbd> goes back one. <kbd>↑</kbd> and <kbd>↓</kbd> move a whole scene, and <kbd>Home</kbd> returns to the title.'}],
-    [{t:'note', kind:'def', head:'Keys', html:'<kbd>M</kbd> map, <kbd>/</kbd> search, <kbd>G</kbd> glossary, <kbd>?</kbd> help. <kbd>L</kbd> study mode, <kbd>I</kbd> edition, <kbd>R</kbd> reduced motion.'}],
-    [{t:'note', kind:'def', head:'Two modes', html:'<b>Lecture mode</b> returns to the last state of the previous scene, so a finished derivation stays finished. <b>Self-study mode</b> returns to the first state, so you can work through it again.'}],
-    [{t:'note', kind:'def', head:'Two editions', html:'The <b>student edition</b> hides solutions until you ask for them. The <b>instructor edition</b> shows presenter notes, error warnings and every solution.'}],
+    [{t:'note', kind:'def', head:'Keys', html:'<kbd>M</kbd> map, <kbd>/</kbd> search, <kbd>G</kbd> glossary, <kbd>?</kbd> help. <kbd>P</kbd> laser, <kbd>W</kbd> board, <kbd>D</kbd> light or dark.'}],
+    [{t:'note', kind:'def', head:'The laser', html:'<kbd>P</kbd> steps the pointer through three states: off, a red dot, and a dot that leaves ink behind it while the button is held. <kbd>C</kbd> clears the ink and <kbd>T</kbd> holds it until you do.'}],
+    [{t:'note', kind:'def', head:'Solutions', html:'Every solution stays hidden until you ask for it.'}],
     [{t:'note', kind:'warn', head:'Textbook anchors', html:'The band above the title gives the course address. An open book and a number such as <b>PS CH8.4.1</b> give the matching section in Proakis and Salehi, <em>Fundamentals of Communication Systems</em>, 2nd edition.'}],
     [{t:'note', kind:'warn', head:'Conventions', html:'Noise is white and Gaussian with two-sided density $N_0/2$. $Q(x)$ is the Gaussian tail above $x$, and $\\log$ means base two unless a base is written.'}]
   ]},

@@ -430,7 +430,7 @@ let acfDrag=null;
 document.addEventListener('pointerdown',e=>{
   const hit=e.target.closest('[data-acf-drag]');
   if(!hit || e.button || acfDrag) return;
-  if(APP.state.display==='projector' && APP.state.pointer==='laser' && e.pointerType!=='touch') return;
+  if(APP.state.pointer==='laser' && e.pointerType!=='touch') return;
   const fig=hit.closest('figure'), input=fig.querySelector('input[data-live="tau"]');
   if(!input) return;
   e.preventDefault();

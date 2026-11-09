@@ -235,7 +235,7 @@ Object.assign(LABS, (function(){
       /* The zero line is the lower edge here, so Axes would set the name of f
          a full tick row lower than it needs; 50 label units still clears the
          tick numbers (1.36 is the label scale of the lecture mode and phone). */
-      const LB = (ph || APP.state.display==='projector') ? 1.36 : 1;
+      const LB = ph ? 1.36 : 1;
       const a3 = P.Axes({w:W,h:ph?220:gh(150),xr:[-FMAX,FMAX],yr:[0,1.2*ref],xnameDrop:50*LB,
         xlabel:'f\\ (\\text{kHz})',ylabel:'S(f)\\ (\\text{V}^2/\\text{kHz})',pad:{l:ph?48:64,r:ph?16:24,t:22,b:40},
         xtarget:ph?4:12,ytarget:ph?3:2});

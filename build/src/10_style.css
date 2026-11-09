@@ -67,12 +67,11 @@
   --s6: 44px; --s7: 80px; --s8: 104px;
   --flow: 18px;     /* gap between consecutive blocks in a scene flow */
 
-  --ts: 1;          /* type scale: 1 = normal, raised in projector mode */
+  --ts: 1;          /* type scale: 1 = the page size, raised in places that set it */
   --radius: 3px;
   --dur: 260ms;
   --ease: cubic-bezier(.22,.61,.36,1);
 }
-
 
 /* ==========================================================================
    Dark theme — a real palette swap, not a filter. Every token is redefined,
@@ -129,37 +128,8 @@ body[data-theme=dark] .box{ background:var(--paper-2); }
 body[data-theme=dark] .sheet{ background:var(--paper-2); }
 body[data-theme=dark] .overlay{ background:rgba(0,0,0,.66); }
 
-/* ==========================================================================
-   Display density. Projector mode raises the type scale and the weight of
-   every drawn element; the contents rail can be hidden with S to give the
-   scene the full width.
-   ========================================================================== */
-body[data-display=projector]{ --ts:1.36; }
-/* the smallest labels are what a back row loses first: raise their floor */
-body[data-display=projector] .small{ font-size:calc(17.5px * var(--ts)); }
-body[data-display=projector] figcaption{ font-size:calc(16.5px * var(--ts)); }
-body[data-display=projector] .eyebrow{ font-size:calc(16px * var(--ts) * var(--hk,1)); }
-body[data-display=projector] .eq-label,
-body[data-display=projector] .note-h,
-body[data-display=projector] .wex-k,
-body[data-display=projector] .qid,
-body[data-display=projector] .ctrl label,
-body[data-display=projector] .readout dt{ font-size:calc(14px * var(--ts)); }
-body[data-display=projector] .legend{ font-size:calc(17px * var(--ts)); }
-body[data-display=projector] .eq .katex{ font-size:1.60em; }
-body[data-display=projector] .eq.lg .katex{ font-size:1.87em; }
-body[data-display=projector] .eq.sm .katex{ font-size:1.33em; }
-/* a slide sets its legends and equations at the sizes of the slide language */
-body[data-display=projector] .scene.slide .legend{ font-size:calc(21px * var(--ts)); }
-body[data-display=projector] .scene.slide .eq .katex{ font-size:1.30em; }
-body[data-display=projector] .katex{ font-size:1.10em; }
-body[data-display=projector]{ --rule:#C2BCB0; }      /* stronger hairlines */
-body[data-display=projector][data-theme=dark]{ --rule:#3A4754; }
-body[data-display=projector] .scene{ padding:44px 76px 60px; }
-body[data-display=projector] .cols{ gap:34px; }
-
-/* the laser pointer of projector mode. The canvas is created by the core the
-   first time projector mode is entered; it never takes a click. The system
+/* the laser pointer. The canvas is created by the core the
+   first time the laser is turned on; it never takes a click. The system
    arrow is hidden only while the laser is the pointer, and only where there
    is a real mouse to hide it from — on a touch screen there is nothing to
    replace it with. The core sizes it to the whole page and, where it can, lifts it into the top layer as a manual popover;
@@ -172,14 +142,14 @@ body[data-display=projector] .cols{ gap:34px; }
 }
 #laser::backdrop{ display:none; pointer-events:none; background:transparent; }
 @media (pointer:fine){
-  body[data-display=projector][data-pointer=laser],
-  body[data-display=projector][data-pointer=laser] *{ cursor:none; }
+  body[data-pointer=laser],
+  body[data-pointer=laser] *{ cursor:none; }
 }
 /* drawing with the button held would otherwise sweep a text selection across
    the scene; the fields the reader types into keep theirs */
-body[data-display=projector][data-pointer=laser]{ user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; }
-body[data-display=projector][data-pointer=laser] input,
-body[data-display=projector][data-pointer=laser] textarea{ user-select:text; -webkit-user-select:text; }
+body[data-pointer=laser]{ user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; }
+body[data-pointer=laser] input,
+body[data-pointer=laser] textarea{ user-select:text; -webkit-user-select:text; }
 
 /* the board: a page over the whole window, built by the core the first time
    it is opened and lifted into the top layer as a manual popover. The paper is
@@ -229,11 +199,12 @@ body[data-display=projector][data-pointer=laser] textarea{ user-select:text; -we
 }
 #board[data-over] canvas{ cursor:move !important; }
 
-/* the two pointer controls belong to projector mode and are hidden outside it */
-#appheader .proj-only{ display:none; }
-body[data-display=projector] #appheader .proj-only{ display:block; }
-body[data-display=projector] #appheader button.proj-only{ display:inline-flex; }
-body[data-display=projector] #appheader #trail-len{ display:inline-flex; align-items:center; gap:6px; }
+/* the teaching tools: the laser, its ink and the board. They need a mouse or a
+   pen and a screen the class can see, so a phone drops them altogether. */
+#appheader .teach-only{ display:block; }
+#appheader button.teach-only{ display:inline-flex; }
+#appheader #trail-len{ display:inline-flex; align-items:center; gap:6px; }
+body[data-layout=phone] .teach-only{ display:none !important; }
 #trail-len input{ width:72px; accent-color:var(--coral); cursor:pointer; }
 #trail-len input:disabled{ opacity:.4; cursor:default; }
 #trail-len output{ min-width:3.2em; font-size:11.5px; letter-spacing:.08em; }
@@ -280,8 +251,6 @@ body[data-sidebar=off] #viewport{ --sbw:0px; }
   7%{filter:drop-shadow(0 0 3.5px rgba(91,140,255,.75))}
   15%{filter:drop-shadow(0 0 1.5px rgba(91,140,255,.35))}
   30%{filter:none} 100%{filter:none} }
-body[data-motion=reduced] #appheader .eelogo,
-body[data-motion=reduced] #appheader .eelogo path{ animation:none; filter:none; }
 @media (prefers-reduced-motion:reduce){
   #appheader .eelogo, #appheader .eelogo path{ animation:none; filter:none; } }
 
@@ -306,16 +275,8 @@ body[data-motion=reduced] #appheader .eelogo path{ animation:none; filter:none; 
 #appheader button:disabled:hover{ color:var(--muted); background:transparent; }
 #appheader button:has(svg){ display:inline-flex; align-items:center; gap:6px; }
 #appheader button svg{ display:block; width:16px; height:16px; flex:none; }
-@media (max-width:1180px){ #appheader button:has(svg) span{ display:none; } }
-/* projector mode adds four tools to the bar; below this width their words would wrap */
-@media (max-width:1500px){ body[data-display=projector] #appheader button:has(svg) span{ display:none; } }
-#setmenu{ position:fixed; inset:auto; margin:0; padding:6px; min-width:200px;
-  flex-direction:column; align-items:stretch; gap:2px;
-  background:var(--paper-2); border:1px solid var(--rule); border-radius:var(--radius);
-  box-shadow:0 8px 24px rgba(0,0,0,.18); }
-#setmenu:popover-open{ display:flex; }
-#setmenu button{ justify-content:flex-start; }
-#appheader #setmenu button:has(svg) span{ display:inline; }
+/* the laser and the board add two tools to the bar; below this width their words would wrap */
+@media (max-width:1340px){ #appheader button:has(svg) span{ display:none; } }
 #sbtoggle{ font-size:15px !important; line-height:1; padding:5px 9px !important; }
 
 /* --- left contents rail ---------------------------------------------- */
@@ -638,11 +599,9 @@ h3.sub{
    stretches to the height of the briefs and its cards share it */
 body:not([data-layout=phone]) .proj{ --ts:1.32; align-items:stretch; }
 body:not([data-layout=phone]) .proj-card .rc-glyph{ width:156px; }
-body[data-display=projector]:not([data-layout=phone]) .proj{ --ts:1.6; }
 body:not([data-layout=phone]) .proj-left{ display:flex; flex-direction:column; }
 body:not([data-layout=phone]) .proj-left .recall-list{ flex:1; grid-auto-rows:1fr; }
-body[data-motion=reduced] .proj-brief{ transition:none; }
-body[data-motion=reduced] .rc-face{ transition:none; transform:none; }
+@media (prefers-reduced-motion:reduce){ .proj-brief{ transition:none; } }
 @media (prefers-reduced-motion:reduce){ .rc-face{ transition:none; transform:none; } }
 
 /* vertical rhythm: two blocks in the same flow never touch. Headings, the lede
@@ -894,9 +853,8 @@ body[data-theme=dark] :is(.scene.slide, .dr-sol){ --tab-ink:var(--paper); --tab-
 :is(.scene.slide, .dr-sol) .note .nsep{ height:1px; background:var(--rule); margin:13px 0 12px; }
 
 /* The tab of a card and the tab of a labelled equation are one rule. It also
-   sets the size of a tab in lecture mode: this selector out-specifies the
-   `body[data-display=projector] .note-h` floor, so a slide's tab is
-   13.5 px times the type scale in both displays and is set once. */
+   sets the size of a tab in lecture mode, so a slide's tab is
+   13.5 px times the type scale and is set once. */
 :is(.scene.slide, .dr-sol) .note > .note-h,
 .scene.slide .eq:not(.plain) > .eq-label{
   position:absolute; bottom:calc(100% - 1px); left:-3px;
@@ -979,7 +937,6 @@ body[data-theme=dark] :is(.scene.slide, .dr-sol){ --tab-ink:var(--paper); --tab-
 /* a slide the owner asked to read larger: the columns take a raised type
    scale; the eyebrow and title stay at their one size */
 .scene.slide.type-lg .cols{ --ts:1.12; }
-body[data-display=projector] .scene.slide.type-lg .cols{ --ts:1.52; }
 
 /* a grid of cards on a slide: a card fills its cell, so a row of cards reads as
    one band and the rows share the height of the stage */
@@ -1000,7 +957,6 @@ body[data-display=projector] .scene.slide.type-lg .cols{ --ts:1.52; }
 @keyframes course-spoke-in{ from{ opacity:.3; } to{ opacity:1; } }
 @keyframes course-node-in{ from{ opacity:.34; transform:scale(.92); } to{ opacity:1; transform:scale(1); } }
 @keyframes course-node-pulse{ 0%,76%,100%{ filter:drop-shadow(0 0 0 transparent); } 84%{ filter:drop-shadow(0 0 7px color-mix(in srgb,var(--coral) 38%,transparent)); } }
-body[data-motion=reduced] .course-spoke,body[data-motion=reduced] .course-node,body[data-motion=reduced] .course-node.is-active .course-node-disc{ animation:none; opacity:1; }
 @media (prefers-reduced-motion:reduce){ .course-spoke,.course-node,.course-node.is-active .course-node-disc{ animation:none; opacity:1; } }
 .fig-frame{
   background:var(--paper-2); border:1px solid var(--rule);
@@ -1116,12 +1072,10 @@ svg.sincpick.pick .sp-note{ display:none; }
 
 /* the highlight is the one purely visual motion here: it stops entirely when
    motion is reduced, and never appears on paper */
-body[data-motion=reduced] .mtf-sparkwrap{ display:none; }
 @media (prefers-reduced-motion:reduce){ .mtf-sparkwrap{ display:none; } }
 /* title chain: each wire's stream slides right by one period per cycle */
 .tsig-flow{ animation:tsig-flow 4s linear infinite; }
 @keyframes tsig-flow{ from{ transform:translateX(0) } to{ transform:translateX(240px) } }
-body[data-motion=reduced] .tsig-flow{ animation:none; }
 @media (prefers-reduced-motion:reduce){ .tsig-flow{ animation:none; } }
 /* difference of steps: each pair u[n], -u[n-1] collapses onto the axis, the
    sample at n=0 is left and marked. Start and end equal the still figure. */
@@ -1137,7 +1091,6 @@ body[data-motion=reduced] .tsig-flow{ animation:none; }
 .dc-lbl{ animation:dc-hide 9s var(--ease) 1s infinite; }
 @keyframes dc-hide{ 0%,24%{ opacity:1 } 36%,82%{ opacity:.25 } 94%,100%{ opacity:1 } }
 @media (prefers-reduced-motion:reduce){ .dc-pair,.dc-zero,.dc-keep,.dc-lbl{ animation:none; } }
-
 
 /* ==========================================================================
    Reveal sequence
@@ -1394,7 +1347,6 @@ body[data-edition=instructor] .instr-inline{ display:inline; }
 .gitem .gd a{ color:var(--slate); cursor:pointer; text-decoration:none;
   border-bottom:1px dotted var(--slate); }
 
-
 /* The pager. One question is on screen at a time, so the reader always knows
    which of the twenty they are on and never has to hunt for the next one. */
 .dr-pager{ display:flex; align-items:center; gap:16px; margin-bottom:18px;
@@ -1425,7 +1377,7 @@ body[data-edition=instructor] .instr-inline{ display:inline; }
    columns: CSS multicolumn inside a height-constrained box overflows sideways,
    which puts the overflow out of reach rather than below the fold. */
 /* the page runs to the foot of the stage; the footer strip is outside it */
-.scene:has(.dr-page), body[data-display=projector] .scene:has(.dr-page){ padding-bottom:20px; }
+.scene:has(.dr-page){ padding-bottom:20px; }
 .dr-page{ flex:1; min-height:0; overflow-y:auto; overflow-x:hidden; padding-right:22px; }
 .dr-page::-webkit-scrollbar{ width:9px; }
 .dr-page::-webkit-scrollbar-thumb{ background:var(--rule-strong); border-radius:6px; }
@@ -1466,7 +1418,6 @@ kbd{ font-family:var(--mono); font-size:12px; background:var(--paper-3);
 :focus-visible{ outline:2px solid var(--slate); outline-offset:3px; border-radius:2px; }
 
 /* reduced motion */
-body[data-motion=reduced] *{ transition-duration:1ms !important; animation-duration:1ms !important; }
 @media (prefers-reduced-motion:reduce){
   *{ transition-duration:1ms !important; animation-duration:1ms !important; }
 }
@@ -1516,8 +1467,6 @@ body[data-layout=phone] #appheader{
   min-height:calc(50px + env(safe-area-inset-top));
 }
 body[data-layout=phone] #appheader .sep{ display:none; }
-/* the laser and its ink are instruments for a projected room */
-body[data-layout=phone] #appheader .proj-only{ display:none !important; }
 body[data-layout=phone] #appheader button{ padding:12px 10px; font-size:11px; min-height:42px; }
 body[data-layout=phone] #sbtoggle{ font-size:20px !important; padding:9px 12px !important; }
 /* the mark and the name shrink before any control does, and the name is cut
@@ -1989,7 +1938,6 @@ body[data-theme=dark] .listen-btn{ color:var(--slate); }
 .sk-btn[aria-pressed=true]{ border-color:var(--coral); color:var(--coral); }
 body[data-theme=dark] .sk-btn:not([aria-pressed=true]){ color:var(--slate); }
 @media print{ .fig.sketch .sk-key{ opacity:1 !important; } .sk-ink{ display:none; } }
-
 
 /* ---------- card language additions (DESIGN.md, "Inside a card") ----------
    Classes used inside a card's html or on an equation block. None is a block

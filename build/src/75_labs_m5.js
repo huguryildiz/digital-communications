@@ -35,7 +35,7 @@ Object.assign(LABS, (function(){
   const N = (v,d=3) => fmt(v,d);
 
   const PHONE = () => APP.state.layout === 'phone';
-  const REDUCED = () => APP.state.motion === 'reduced';
+  const REDUCED = () => matchMedia('(prefers-reduced-motion:reduce)').matches;
   const legendRow = (...items) => `<div class="legend">${items.join('')}</div>`;
   const L = (c,l,dash)=>`<i class="lg-${c}${dash?' lg-'+(dash===true?'dash':dash):''}">${T(l,false)}</i>`;
   const LD = (c,l)=>`<i class="lg-${c} lg-dot">${T(l,false)}</i>`;

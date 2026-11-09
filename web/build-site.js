@@ -17,8 +17,8 @@
      · the `src` field of every scene, laboratory item and question, which
        names the source page or the paper question it came from;
      · the `teach` field of every question, which is the teaching note;
-     · the edition control itself — the toolbar button, the `I` shortcut,
-       the help-screen line and the saved-state path that could restore it.
+     · the edition itself — the artifact is built as the instructor copy, so
+       the one line that sets it is turned over to the student copy here.
 
    Nothing in `build/src` is modified and nothing in `dist/` is overwritten.
    The transforms run over the built artifact in memory, one script module at
@@ -179,27 +179,18 @@ if (seen < 20) fail('found only ' + seen + ' content modules in the built artifa
 if (srcFields < 200) fail('found only ' + srcFields + ' src fields');
 if (teachFields < 100) fail('found only ' + teachFields + ' teaching notes');
 
-/* The edition control. Removing the data is what matters; removing the
-   control is what stops a reader from looking for it. */
+/* The edition. The artifact has no edition control any more: it is built as
+   the instructor copy and the one line that fixes that is turned over here,
+   so the published copy can only ever be the student one. */
 art = replaceExactly(art,
-  `      <button id="btn-edition" data-act="edition" title="Student / instructor (I)">Student</button>\n`,
-  '', 1, 'toolbar edition button');
-
-art = replaceExactly(art,
-  `['L','Lecture ⇄ self-study'],['I','Student ⇄ instructor edition'],['R','Reduced motion'],`,
-  `['L','Lecture ⇄ self-study'],['R','Reduced motion'],`,
-  1, 'help-screen shortcut line');
-
-art = replaceExactly(art,
-  `        case 'i': case 'I': toggleEdition(); break;\n`,
-  '', 1, 'I keyboard shortcut');
-
-/* A reader whose device already holds `edition:'instructor'` from an earlier
-   visit would otherwise come back into a mode that no longer has content. */
-art = replaceExactly(art,
-  `      edition: saved.edition || 'student',`,
+  `      edition: 'instructor',`,
   `      edition: 'student',`,
-  1, 'saved edition restore');
+  1, 'fixed edition');
+
+art = replaceExactly(art,
+  `    edition: 'instructor', // 'student' | 'instructor' — fixed; the published copy is built as the student one`,
+  `    edition: 'student',`,
+  1, 'edition state field');
 
 /* Belt and braces: the renderer for an instructor block now draws nothing,
    so a block that some later edit reintroduces still cannot reach the page. */
@@ -209,36 +200,12 @@ art = replaceExactly(art,
   `    instr:   () => '',`,
   1, 'instructor block renderer');
 
-/* The help scene in Module 0 names the edition key and the two editions.
-   On the published copy there is one edition, so the key is dropped and the
-   note says only what the student edition does. */
-art = replaceExactly(art,
-  `keywords:'help navigation modes instructor student reduced motion`,
-  `keywords:'help navigation modes reduced motion`,
-  1, 'help scene keywords');
-art = replaceExactly(art,
-  ` <kbd>L</kbd> study mode, <kbd>I</kbd> edition, <kbd>R</kbd> reduced motion.`,
-  ` <kbd>L</kbd> study mode, <kbd>R</kbd> reduced motion.`,
-  1, 'help scene keys');
-art = replaceExactly(art,
-  `head:'Two editions', html:'The <b>student edition</b> hides solutions until you ask for them. The <b>instructor edition</b> shows presenter notes, error warnings and every solution.'`,
-  `head:'Solutions', html:'Every solution stays hidden until you ask for it.'`,
-  1, 'help scene editions note');
-
 /* The teaching note behind each question is gone with its `teach` field, so
    the branch that would have drawn it is emptied too — otherwise the words
    survive in the renderer and turn up in a source search. */
 art = replaceExactly(art,
   '${q.teach?`<div class="instr"><div class="instr-panel"><span class="note-h">Teaching note</span>${md(q.teach)}</div></div>`:\'\'}',
   '', 1, 'question teaching-note renderer');
-
-/* With the button, the shortcut and the saved state gone, the toggle can
-   still be reached from a console. It is emptied so the mode cannot be
-   entered at all, rather than entered and found empty. */
-art = replaceExactly(art,
-  `  function toggleEdition(){ state.edition = state.edition==='student'?'instructor':'student'; applyBodyFlags(); persist(); onRender(); }`,
-  `  function toggleEdition(){ /* the published copy has one edition */ }`,
-  1, 'edition toggle');
 
 /* Nothing that names the removed edition may survive as something a reader
    can see. What is left after the transforms above is code and comments —
@@ -250,8 +217,6 @@ const RESIDUE = [
   /kept for the instructor edition \*\//,              /* stylesheet comment      */
   /body\[data-edition=instructor\]/,                   /* rules that select nothing */
   /instructor-only material/,                          /* stylesheet section head */
-  /\/\/ 'student' \| 'instructor'/,                    /* state field comment     */
-  /the published copy has one edition/,                /* the emptied toggle      */
   /S\.edition==='instructor'/                          /* checks that stay false  */
 ];
 const leaks = [];

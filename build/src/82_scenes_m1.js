@@ -3225,8 +3225,8 @@ REAL_PCM,
    same sample releases it. Leaving the figure lets the roll call continue.
    The state lives here, not in the SVG, because the scene is re-rendered on
    every step and theme change and the figure string is rebuilt from scratch.
-   The roll call defers to the course's own motion switch (body[data-motion]),
-   which is initialised from prefers-reduced-motion; the pointer interaction
+   The roll call defers to the reader's own prefers-reduced-motion setting;
+   the pointer interaction
    stays live either way. Previous and Next under the figure step through the
    terms by hand: the figure then carries the chosen term in data-man, the
    roll call stops, and releasing a pointer pin returns to that term. */
@@ -3241,7 +3241,7 @@ function spApply(sv){
 }
 setInterval(()=>{
   if(document.hidden || SP.held) return;
-  if(document.body.dataset.motion==='reduced') return;
+  if(matchMedia('(prefers-reduced-motion:reduce)').matches) return;
   const sv = spRoot();
   if(!sv){ SP.n=null; SP.i=-1; return; }
   if(sv.dataset.man!=null) return;

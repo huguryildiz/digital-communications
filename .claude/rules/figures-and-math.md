@@ -59,17 +59,17 @@ new block type in `build/src/90_app.js` or `notes/src/render.js` must route ever
 screenshots after visual changes; gates cannot see every flaw.
 
 **Laboratory font-size rule.** Before delivering a new or restyled laboratory, check computed sizes
-against the laboratory type floor in `DESIGN.md`. Remove bare inline pixel sizes from its controls and
-results. Inspect normal and projector views in both themes with the longest populated control state.
-Record the projector fit factor and confirm it is at least 0.90 without clipped text. If larger type
-causes a poor fit, reflow the controls or readouts, or split the scene; do not shrink the type back
-down or apply an unverified font override to every laboratory.
+against the laboratory type floor in `DESIGN.md`. Remove bare inline pixel sizes from its controls
+and results. Inspect both themes with the longest populated control state. Record the fit factor and
+confirm it is at least 0.90 without clipped text. If larger type causes a poor fit, reflow the
+controls or readouts, or split the scene; do not shrink the type back down or apply an unverified
+font override to every laboratory.
 
 **Laboratory figure-height rule.** A laboratory's plots fill their column (`DESIGN.md`, A slide).
-Every laboratory, in a converted module or not, sets `root.redraw` in `mount()` and draws each desktop plot at
-`gh(h)` from `LABS.KIT.GH(root)`; never hard-code a larger viewBox height to fill the column, because
-the spare height differs between normal display and lecture mode. Check it in a screenshot of both
-modes: the last plot ends within a few pixels of the foot of the control column.
+Every laboratory, in a converted module or not, sets `root.redraw` in `mount()` and draws each
+desktop plot at `gh(h)` from `LABS.KIT.GH(root)`; never hard-code a larger viewBox height to fill
+the column, because the spare height depends on the column. Check it in a screenshot: the last plot
+ends within a few pixels of the foot of the control column.
 
 **Phone and tablet rule.** Every scene, laboratory, code page and practice page works on a phone
 held upright and on a tablet held upright; both get the one-column phone layout (`body[data-layout=phone]`,
@@ -81,17 +81,30 @@ must not push anything past the edge of a 320 px screen; loosen it under `body[d
 never in scene data. After any change to a scene, laboratory or style, the phone sweeps in
 `build-pipeline.md` report none on every line.
 
-**Pencil and finger on a touch screen.** In projector mode with the laser on, an Apple Pencil
-(pointer type `pen`, touch type `stylus`) draws the trail and a finger never does; a finger still
-scrolls. A quick one-finger sideways swipe on the slide is Next or Previous, as the arrow keys are
-(`bindSwipe()` in `build/src/40_core.js`); a pencil never swipes, and a vertical finger movement stays
-a scroll. The swipe is left alone when it starts on an input, a sketch figure, anything that really
-scrolls sideways (a panning figure or equation on the phone), within 24 px of the screen edge (the
-browser's back gesture), on a zoomed page, or when an overlay is open. A laboratory that takes a
-finger drag (a draggable point, as in `74_labs_m4.js` and `75_labs_m5.js`) must call
-`preventDefault()` on that `pointerdown`, which is how the swipe knows the touch is taken. After a
-change to pointer, touch, or laser handling, check on a real iPad in both orientations that the pencil
-draws, a finger swipe turns the slide, a vertical swipe scrolls, and a slider or drag does not turn it.
+**Pencil and finger on a touch screen.** With the laser on, an Apple Pencil (pointer type `pen`,
+touch type `stylus`) draws the trail and a finger never does; a finger still scrolls. A quick
+one-finger sideways swipe on the slide is Next or Previous, as the arrow keys are (`bindSwipe()` in
+`build/src/40_core.js`); a pencil never swipes, and a vertical finger movement stays a scroll. The
+swipe is left alone when it starts on an input, a sketch figure, anything that really scrolls
+sideways (a panning figure or equation on the phone), within 24 px of the screen edge (the browser's
+back gesture), on a zoomed page, or when an overlay is open. A laboratory that takes a finger drag
+(a draggable point, as in `74_labs_m4.js` and `75_labs_m5.js`) must call `preventDefault()` on that
+`pointerdown`, which is how the swipe knows the touch is taken. After a change to pointer, touch, or
+laser handling, check on a real iPad in both orientations that the pencil draws, a finger swipe
+turns the slide, a vertical swipe scrolls, and a slider or drag does not turn it.
+
+**The toolbar is fixed, and so are the modes behind it.** The bar carries Search, Notation, Laser,
+the ink-duration slider, Board, Light and Help, and nothing else; there is no settings menu. The
+artifact has one display size, one mode (`lecture`) and one edition (`instructor`), set once in
+`build/src/40_core.js` and never from a control; the site build turns the edition over to the
+student copy for the published file. There is no motion control either: movement is reduced only by
+the reader's own `prefers-reduced-motion`, read where it is needed and in the stylesheet's own
+blocks. The Laser button is one control with three states in this order — off, the red dot alone,
+the dot that leaves ink behind it — and `P` steps through the same three; `T` swaps that ink between
+fading on its own and staying until `C` clears it, and the slider sets how long it waits before it
+fades. The dot fades with the ink once the pointer has been still, so no red mark is left on a
+slide, and comes straight back on any movement. Do not add a display-size toggle, a settings menu or
+a separate Trail button back.
 
 **Laser and board on a touch screen.** Both live in `build/src/40_core.js`, which is byte-identical
 in signals-and-systems, digital-communications and quantum-computing, so a change to either goes

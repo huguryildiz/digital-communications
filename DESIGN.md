@@ -141,7 +141,7 @@ what a curve *is*, and the card colours say what a card *does*.
 - One slide, one figure, two to four tabbed cards. See "A slide" under Layout.
 - One idea a card, one or two short sentences a card.
 - The stage is full: nothing top-heavy, nothing clipped.
-- The same slide works in both themes and in lecture mode without a second design.
+- The same slide works in both themes without a second design.
 
 ## Colors
 
@@ -257,9 +257,8 @@ Mono is used for labels and addresses only, never for running text.
 | equation | 19 px, KaTeX at 1.30 em, in every scene, laboratory and display mode; no `lg` or `sm` size | scales with `--ts`; see Equation |
 | figure caption | 18 px / 1.45 on converted slides and converted-module laboratories | unconverted scenes remain 14 px |
 
-**Every size is written `calc(Npx * var(--ts))`.** `--ts` is 1 in normal display and 1.36 in lecture
-mode (`body[data-display=projector]`). A size written as a bare pixel value does not grow in the
-lecture room, which is the one place it has to.
+**Every size is written `calc(Npx * var(--ts))`.** `--ts` is 1 on the page and is raised only where
+a block sets it for itself. A size written as a bare pixel value cannot follow it.
 
 **Every scene title reads at one size.** The eyebrow and the scene title (`h1.display`, `h2.title`)
 keep their table sizes on every scene, including a dense scene that `fitScene()` scales down. The fit
@@ -267,12 +266,12 @@ sets `--hk` = 1/k on the column, and the eyebrow, the titles and the title rule 
 by `var(--hk,1)`, so the transform takes back exactly what `--hk` added. Nothing else in the column is
 exempt from the fit.
 
-**Laboratory type floor.** When a laboratory is authored or restyled, control and result labels are at
-least 16 px, segmented choices at least 17 px, live and result values at least 20 px, and explanatory
-prose at least 19 px at `--ts:1`. These are source sizes, all multiplied by `var(--ts)`; inline pixel
-sizes do not qualify. Inspect populated, long-text states in both themes and display modes at
-1920×1080. In lecture mode the scene must keep a fit factor of at least 0.90 with no clipping. Reflow
-controls or results, or split the laboratory, before reducing type.
+**Laboratory type floor.** When a laboratory is authored or restyled, control and result labels are
+at least 16 px, segmented choices at least 17 px, live and result values at least 20 px, and
+explanatory prose at least 19 px at `--ts:1`. These are source sizes, all multiplied by `var(--ts)`;
+inline pixel sizes do not qualify. Inspect populated, long-text states in both themes at 1920×1080.
+The scene must keep a fit factor of at least 0.90 with no clipping. Reflow controls or results, or
+split the laboratory, before reducing type.
 
 **A label frame does not rewrite the mathematics it carries (R8).** The label classes are uppercase
 with wide tracking, and both are inherited: `text-transform` turns `a_k` into `A_K` and
@@ -284,33 +283,32 @@ not remove it, and do not set either property on a `.katex` subtree.
 
 ### The stage — LOCKED
 
-- **One file, opened from the site.** No analytics, and no network request of its own.
-- **Fixed 1920×1080 stage**, scaled to fit the window and centred. A window that is not 16:9 shows
-  bands in the page colour above and below; accepted, because the lecture room is 16:9. The one
-  exception is the practice-question page (below, *Practice questions*): there the stage keeps the
-  window's width scale, grows downward to the window's foot and sits at the top.
-- Scene padding `54px 104px 74px`; the content box under the padding is 952 px tall.
-- `fitScene()` scales an oversized scene down to a floor of 0.82 (0.70 in lecture mode). It is a
-  safety net, not a licence to overfill: a scene that needs below about 0.90 is split instead. On the
-  floor, what is left is taken from the figures in proportion to their height, and a scene that gives
-  up more than 3% of its figure height marks itself `data-capped`. `qa.js` names both under `dense`.
-  Reaching that rescue is the signal to split the scene.
-- **Radial and orbital compositions** are reserved for course maps and synthesis scenes.
+- **One file, opened from the site.** No analytics, and no network request of its own. - **Fixed
+  1920×1080 stage**, scaled to fit the window and centred. A window that is not 16:9 shows bands in
+  the page colour above and below; accepted, because the lecture room is 16:9. The one exception is
+  the practice-question page (below, *Practice questions*): there the stage keeps the window's width
+  scale, grows downward to the window's foot and sits at the top. - Scene padding `54px 104px 74px`;
+  the content box under the padding is 952 px tall. - `fitScene()` scales an oversized scene down to
+  a floor of 0.82. It is a safety net, not a licence to overfill: a scene that needs below about
+  0.90 is split instead. On the floor, what is left is taken from the figures in proportion to their
+  height, and a scene that gives up more than 3% of its figure height marks itself `data-capped`.
+  `qa.js` names both under `dense`. Reaching that rescue is the signal to split the scene. -
+  **Radial and orbital compositions** are reserved for course maps and synthesis scenes.
 
 ### The two layouts — LOCKED
 
 The artifact is one document with two layouts, and `body[data-layout]` says which is in force. The
 wide one above is the original. On a screen held upright that cannot carry that basis (under 760 px
 width, or up to 1024 px wide with a coarse pointer; the test is `NARROW` in `build/src/40_core.js`)
-the stage is dropped rather than shrunk further: the scene becomes one fluid column of real pixels that
-scrolls, the contents rail becomes a drawer, and the header hands its settings to the foot of that
-drawer, which the settings gear then opens. So a phone and a tablet held upright get the column; any screen on its side, a phone
-included, is a desktop and gets the wide stage scaled to its height, and so does a laptop window of
-any width above 760 px, because a mouse is not a finger. On a touch screen under 480 px tall the
-contents rail opens closed, and the stored rail choice is kept for the desktop. In the column, slide
-captions, cards and slider labels take the phone reading sizes, and an in-plot legend becomes one row
-above the drawing. None of the gates in `.claude/rules/build-pipeline.md` reads this layout; `mcheck.js` and
-`mshot.js` do, in the phone and tablet sweeps listed there.
+the stage is dropped rather than shrunk further: the scene becomes one fluid column of real pixels
+that scrolls, the contents rail becomes a drawer, and the header hands the theme switch to its foot.
+So a phone and a tablet held upright get the column; any screen on its side, a phone included, is a
+desktop and gets the wide stage scaled to its height, and so does a laptop window of any width above
+760 px, because a mouse is not a finger. On a touch screen under 480 px tall the contents rail opens
+closed, and the stored rail choice is kept for the desktop. In the column, slide captions, cards and
+slider labels take the phone reading sizes, and an in-plot legend becomes one row above the drawing.
+None of the gates in `.claude/rules/build-pipeline.md` reads this layout; `mcheck.js` and `mshot.js`
+do, in the phone and tablet sweeps listed there.
 
 ### Rollout: a scene opts in
 
@@ -598,30 +596,27 @@ anchor never reaches a reader as a bare address.
 
 ### Figures — LOCKED
 
-- **Axis names live outside the data area**: the independent variable under it, the dependent variable
-  above it. `Axes` widens the bottom or top margin by itself when the given `pad` is too small. Every
-  label carries a halo in `--fig-halo`. Do not move labels back inside the data area.
-- **`xlabel` and `ylabel` are TeX source**, typeset with KaTeX. Words go in `\text{...}`, Greek letters
-  are `\tau`, `\omega`, and `\operatorname{Re}` is the house spelling.
-- **`texName` typesets every other piece of mathematics in a figure**, anchored on `xLeft`, `xMid` or
-  `xRight` at a baseline. In `blocks()` a label that is mathematics is marked `tex:true`.
-- **Every piece of figure mathematics is TeX (R7).** Never a plain string, never a Unicode substitute.
-  Mixed text and mathematics is one TeX string with the words in `\text{...}`.
-- **Nothing written in a figure is crossed by anything drawn in it**, and no label sits on another, at
-  any step. `textclash.js` fails on any contact, and an axis name fails on any hit at all.
-- **A trace stays inside the data area.** `curve()` and `poly()` are clipped to it, widened by
-  `CLIP_PAD`.
-- **A figure belongs to the palette it is drawn in.** No figure code carries a page, plate or ink
-  colour of its own: `PLOT.COL` holds them and `setTheme` swaps them.
-- Continuous-time signals are curves, discrete-time signals are stems, impulses are arrows whose
-  height is the weight. Every quantitative axis is labelled. A multi-trace plot also carries a legend.
-- **Legend type.** A legend is set at 19 px (21 px in projector mode). The swatch is 26 px. Size is set
-  once on `.legend` in `10_style.css`.
-- **Legend placement.** A legend sits inside the plot it keys, as a small card in a corner the traces
-  and annotations leave free. A scene writes it as a `legend` block right after its `fig`. Reference:
-  `m1-sqnr`, the SQNR legend inside the plot.
-- Signal traces use the semantic palette, never arbitrary series colours.
-- A caption says what the figure means, never where it came from.
+- **Axis names live outside the data area**: the independent variable under it, the dependent
+  variable above it. `Axes` widens the bottom or top margin by itself when the given `pad` is too
+  small. Every label carries a halo in `--fig-halo`. Do not move labels back inside the data area. -
+  **`xlabel` and `ylabel` are TeX source**, typeset with KaTeX. Words go in `\text{...}`, Greek
+  letters are `\tau`, `\omega`, and `\operatorname{Re}` is the house spelling. - **`texName`
+  typesets every other piece of mathematics in a figure**, anchored on `xLeft`, `xMid` or `xRight`
+  at a baseline. In `blocks()` a label that is mathematics is marked `tex:true`. - **Every piece of
+  figure mathematics is TeX (R7).** Never a plain string, never a Unicode substitute. Mixed text and
+  mathematics is one TeX string with the words in `\text{...}`. - **Nothing written in a figure is
+  crossed by anything drawn in it**, and no label sits on another, at any step. `textclash.js` fails
+  on any contact, and an axis name fails on any hit at all. - **A trace stays inside the data
+  area.** `curve()` and `poly()` are clipped to it, widened by `CLIP_PAD`. - **A figure belongs to
+  the palette it is drawn in.** No figure code carries a page, plate or ink colour of its own:
+  `PLOT.COL` holds them and `setTheme` swaps them. - Continuous-time signals are curves,
+  discrete-time signals are stems, impulses are arrows whose height is the weight. Every
+  quantitative axis is labelled. A multi-trace plot also carries a legend. - **Legend type.** A
+  legend is set at 19 px. The swatch is 26 px. Size is set once on `.legend` in `10_style.css`. -
+  **Legend placement.** A legend sits inside the plot it keys, as a small card in a corner the
+  traces and annotations leave free. A scene writes it as a `legend` block right after its `fig`.
+  Reference: `m1-sqnr`, the SQNR legend inside the plot. - Signal traces use the semantic palette,
+  never arbitrary series colours. - A caption says what the figure means, never where it came from.
 
 ## Do's and Don'ts
 
