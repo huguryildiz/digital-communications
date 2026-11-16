@@ -216,15 +216,15 @@ function figMary(){
 }
 
 /* The signal model on two carrier basis functions over T = 1:
-   psi1 = sqrt2 cos(2 pi t), psi2 = sqrt2 sin(2 pi t). Four signals at
-   (1.2, -0.6) turned by quarter turns, with priors 0.4, 0.3, 0.2, 0.1, and
-   the sent s_1(t) = 1.2 psi1 - 0.6 psi2 with the slides' draw of noise. */
+   psi1 = sqrt2 cos(2 pi t), psi2 = sqrt2 sin(2 pi t). Four signals on a
+   square at (+-1, +-1), with priors 0.4, 0.3, 0.2, 0.1, and the sent
+   s_1(t) = psi1 - psi2 with the slides' draw of noise. */
 const ps1 = t => Math.SQRT2*Math.cos(2*Math.PI*t), ps2 = t => Math.SQRT2*Math.sin(2*Math.PI*t);
 const MD = (()=>{
-  const S = [[1.2,-0.6],[0.6,1.2],[-1.2,0.6],[-0.6,-1.2]], p = [0.4,0.3,0.2,0.1];
-  const n = 400, z = gauss(4406, n+13, 1), nz = [];
-  // a moving sum of 12 draws: smooth noise with spread 0.3
-  for(let i=0;i<=n;i++){ let s = 0; for(let k=0;k<12;k++) s += z[i+k]; nz.push(0.3*s/Math.sqrt(12)); }
+  const S = [[1,-1],[1,1],[-1,1],[-1,-1]], p = [0.4,0.3,0.2,0.1];
+  const n = 400, L = 30, z = gauss(4670, n+L+1, 1), nz = [];
+  // a moving sum of 30 draws: smooth noise with spread 1.5
+  for(let i=0;i<=n;i++){ let s = 0; for(let k=0;k<L;k++) s += z[i+k]; nz.push(1.5*s/Math.sqrt(L)); }
   // the noise coordinates the two correlators would read, by the trapezoid rule
   const proj = g => { let s = 0; for(let i=0;i<=n;i++) s += (i===0||i===n ? 0.5 : 1)*nz[i]*g(i/n); return s/n; };
   return {S, p, n, nz, r:[S[0][0]+proj(ps1), S[0][1]+proj(ps2)]};
@@ -232,25 +232,29 @@ const MD = (()=>{
 function figModel(){
   const H = 400, hTop = 200, hBot = H-hTop, [a1, a2] = MD.S[0], n = MD.n;
   // top: the weighted basis functions, faint, the sent waveform and the received one
-  const a = TAx({w:W, h:hTop, xr:[-0.03,1.16], yr:[-2.7,4.1], xlabel:'t/T', xnameDrop:34, ylabel:'\\text{Waveform}',
+  const a = TAx({w:W, h:hTop, xr:[-0.03,1.16], yr:[-3.9,4.4], xlabel:'t/T', xnameDrop:34, ylabel:'\\text{Waveform}',
     pad:{l:56,r:26,t:12,b:34}, xt:[0,0.5,1], yticksOverride:[-2,0,2]});
   const tr = g => Array.from({length:n+1}, (_,i)=>[i/n, g(i/n, i)]);
   seg(a, tr((t,i)=>a1*ps1(t)+a2*ps2(t)+MD.nz[i]), {color:C.out, width:1.5});
   seg(a, tr(t=>a1*ps1(t)), {color:C.h, width:2.0, opacity:0.4});
   seg(a, tr(t=>a2*ps2(t)), {color:C.h, width:2.0, dash:'7 5', opacity:0.4});
   seg(a, tr(t=>a1*ps1(t)+a2*ps2(t)), {color:C.in, width:2.6});
-  lbl(a, 0.05, 3.45, 's_1(t)\\ \\text{cyan},\\ \\ r(t)=s_1(t)+n(t)\\ \\text{green}', C.ink, 'start', 15);
+  lbl(a, 0.05, 3.6, 's_1(t)\\ \\text{cyan},\\ \\ r(t)=s_1(t)+n(t)\\ \\text{green}', C.ink, 'start', 15);
   // bottom left: the four signal points, with s_1 read off its axes and r beside it
   const wp = 340, wb = W-wp;
-  const b = plane({w:wp, h:hBot, need:[[-1.65,1.65],[-1.6,1.6]], pad:{l:44,r:16,t:18,b:40},
+  const b = plane({w:wp, h:hBot, need:[[-1.6,2.1],[-2.0,1.5]], pad:{l:44,r:16,t:18,b:40},
     xticksOverride:[-1,1], yticksOverride:[-1,1]});
   seg(b, [[a1,0],[a1,a2],[0,a2]], {color:C.muted, width:1.3, dash:'4 5'});
   MD.S.forEach((p,i)=>{ dot(b, p[0], p[1], {color:C.in, r:6});
-    // s_1 is labelled above its ring, s_4 to its left, the others outward from the origin
-    const L = [[p[0]+0.34, p[1]+0.24, 'start'], [p[0]*1.3, p[1]*1.3-0.1, 'middle'], [p[0]*1.3, p[1]*1.3-0.1, 'middle'], [p[0]-0.3, p[1]-0.08, 'end']][i];
+    // s_1 is labelled above and right of its ring, s_4 to its left, s_2 and s_3 above
+    const L = [[p[0]+0.3, p[1]+0.3, 'start'], [p[0], p[1]+0.3, 'middle'], [p[0], p[1]+0.3, 'middle'], [p[0]-0.25, p[1]-0.08, 'end']][i];
     lbl(b, L[0], L[1], '\\mathbf{s}_'+(i+1), C.in, L[2], 15); });
-  ring(b, a1, a2, {color:C.in, r:11, width:2.2});
+  ring(b, a1, a2, {color:C.in, r:11, width:2.2, opacity:0.25});
+  // the noise vector from s_1 to the received point
+  arrow(b, a1, a2, MD.r[0], MD.r[1], {color:C.out, width:1.8, head:0.6});
   dot(b, MD.r[0], MD.r[1], {color:C.out, r:5.5});
+  lbl(b, MD.r[0]+0.14, MD.r[1]-0.1, '\\mathbf{r}', C.out, 'start', 15);
+  lbl(b, (a1+MD.r[0])/2+0.16, (a2+MD.r[1])/2+0.14, '\\mathbf{n}', C.out, 'start', 15);
   // bottom right: the priors as stems
   const c = P.Axes({w:wb, h:hBot, xr:[0.3,4.7], yr:[0,0.5], xlabel:'i', ylabel:'p_i',
     pad:{l:52,r:16,t:18,b:40}, xticksOverride:[1,2,3,4], yticksOverride:[0,0.2,0.4]});
@@ -272,43 +276,6 @@ const OB = (()=>{
     c1.push(c1[i-1] + rm*p1(x)*dt); c2.push(c2[i-1] + rm*p2(x)*dt); }
   return {n, t, r, sv, c1, c2, s:[1,-0.6], rv:[c1[n], c2[n]]};
 })();
-function figObserve(){
-  const ha = 100, hb = 130, hc = 250;
-  const a = TAx({w:W, h:ha, xr:[-0.03,1.13], yr:[-6.5,6.5], xlabel:'', ylabel:'r(t)',
-    pad:{l:56,r:26,t:18,b:10}, yticksOverride:[-5,0,5]});
-  seg(a, OB.t.map((x,i)=>[x, OB.r[i]]), {color:C.out, width:1.4});
-  seg(a, OB.t.map((x,i)=>[x, OB.sv[i]]), {color:C.in, width:2.2});
-  const b = TAx({w:W, h:hb, xr:[-0.03,1.13], yr:[-1.2,1.55], xlabel:'t/T', xnameDrop:34, ylabel:'c_1(t),\\;c_2(t)',
-    pad:{l:56,r:26,t:18,b:34}, xt:[0,0.5,1], yticksOverride:[-1,0,1]});
-  seg(b, OB.t.map((x,i)=>[x, OB.c1[i]]), {color:C.mid, width:2.4});
-  seg(b, OB.t.map((x,i)=>[x, OB.c2[i]]), {color:C.mid, width:2.4, dash:'7 5'});
-  dot(b, 1, OB.rv[0], {color:C.mid, r:5.5}); dot(b, 1, OB.rv[1], {color:C.mid, r:5.5});
-  lbl(b, 1.04, OB.rv[0]-0.08, 'r_1', C.mid); lbl(b, 1.04, OB.rv[1]-0.08, 'r_2', C.mid);
-  const c = plane({h:hc, need:[[-1.9,1.9],[-1.25,1.05]], pad:{l:170,r:170,t:24,b:42}, xticksOverride:[], yticksOverride:[]});
-  dot(c, OB.s[0], OB.s[1], {color:C.in, r:6.5});
-  lbl(c, OB.s[0]+0.12, OB.s[1]-0.36, '\\mathbf{s}_i', C.in);
-  const [x,y] = OB.rv;
-  seg(c, [[x,0],[x,y],[0,y]], {color:C.mid, width:1.3, dash:'4 5'});
-  seg(c, [OB.s,[x,y]], {color:C.muted, width:1.6});
-  dot(c, x, y, {color:C.out, r:6.5});
-  lbl(c, x+0.14, y+0.1, '\\mathbf{r}=\\mathbf{s}_i+\\mathbf{n}', C.out);
-  return stack(W, [[a.svg(),ha],[b.svg(),hb],[c.svg(),hc]]);
-}
-
-/* The filter matched to psi(t) = sqrt3 t on [0,1] and the correlator, both fed
-   r(t) = 1.5 psi(t). They agree at t = T only. */
-const mfY = t => t <= 0 ? 0 : t <= 1 ? 4.5*(t*t/2 - t*t*t/6) : t <= 2 ? 4.5*(1/3 - (t-1)/2 + Math.pow(t-1,3)/6) : 0;
-const mfC = t => t <= 0 ? 0 : t <= 1 ? 1.5*t*t*t : 1.5;
-function figMfbank(){
-  const t0 = 1;
-  const a = P.Axes(SZ({xr:[-0.08,2.15], yr:[-0.15,2.05], xlabel:'t/T', ylabel:'y(t),\\;c(t)', xticksOverride:[0,0.5,1,1.5,2], yticksOverride:[0,0.5,1,1.5]}));
-  a.curve(mfC, {color:C.mid, width:2.2, dash:'7 5'});
-  a.curve(mfY, {color:C.mid, width:2.6});
-  a.vline(t0, {color:C.ink, dash:'5 4', width:1.4});
-  dot(a, t0, mfY(t0), {color:C.mid, r:6});
-  lbl(a, 1.1, 1.86, 'y(T)='+num(mfY(t0))+',\\ \\ c(T)='+num(mfC(t0)), C.ink);
-  return a.svg();
-}
 
 /* The received waveform in three dimensions: the signal plane, spanned by
    psi1 and psi2, and one direction outside it. */
@@ -402,6 +369,35 @@ function figCorrBank(){
     lbl(a, 9.3, y-0.2, 'r_'+nm[k], C.mid, 'start', 16);
   });
   lbl(a, (ix0+ix1)/2, 3.05, '\\vdots', C.muted, 'middle', 14); lbl(a, 9.45, 3.05, '\\vdots', C.muted, 'middle', 14);
+  lbl(a, 7.7, -0.35, '\\mathbf r=(r_1,r_2,\\ldots,r_N)', C.mid, 'middle', 16);
+  return a.svg();
+}
+
+/* The bank of N matched filters: r(t) feeds N branches, each a filter with
+   impulse response psi_k(T - t), sampled at t = T to give r_k. */
+function figMfBank(){
+  const a = P.Axes(bare({w:W, h:360, xr:[0,10], yr:[-0.6,10], pad:{l:12,r:12,t:12,b:12}}));
+  const Y = [8.8, 5.6, 1.5], nm = ['1','2','N'], bx = 2.3, fx0 = 3.2, fx1 = 5.9, sx0 = 6.75, sx1 = 7.65;
+  // input and the vertical bus
+  lbl(a, 0.25, 4.62, 'r(t)', C.out, 'start', 16);
+  seg(a, [[1.25,4.9],[bx,4.9]], {color:C.out, width:2.0}); seg(a, [[bx,Y[2]],[bx,Y[0]]], {color:C.out, width:2.0});
+  a.raw(`<circle cx="${f2(a.sx(bx))}" cy="${f2(a.sy(4.9))}" r="3.5" fill="${C.out}"/>`);
+  Y.forEach((y,k)=>{
+    arrow(a, bx, y, fx0, y, {color:C.out, width:2.0, head:0.7});
+    // the filter matched to one basis function
+    const x0 = a.sx(fx0), x1 = a.sx(fx1), y0 = a.sy(y+0.8), y1 = a.sy(y-0.8);
+    a.raw(`<rect x="${f2(x0)}" y="${f2(y0)}" width="${f2(x1-x0)}" height="${f2(y1-y0)}" fill="${C.plate}" stroke="${C.h}" stroke-width="2"/>`);
+    lbl(a, (fx0+fx1)/2, y-0.28, '\\psi_'+nm[k]+'(T-t)', C.h, 'middle', 14);
+    // the sampler, an open switch closed at t = T
+    seg(a, [[fx1,y],[sx0,y]], {color:C.mid, width:2.0});
+    dot(a, sx0, y, {color:C.mid, r:3}); dot(a, sx1, y, {color:C.mid, r:3});
+    seg(a, [[sx0,y],[sx1-0.08,y+0.5]], {color:C.mid, width:2.0});
+    lbl(a, (sx0+sx1)/2, y+0.95, 't=T', C.mid, 'middle', 13);
+    // the output coordinate
+    arrow(a, sx1, y, 9.15, y, {color:C.mid, width:2.0, head:0.7});
+    lbl(a, 9.3, y-0.2, 'r_'+nm[k], C.mid, 'start', 16);
+  });
+  lbl(a, (fx0+fx1)/2, 3.05, '\\vdots', C.muted, 'middle', 14); lbl(a, 9.45, 3.05, '\\vdots', C.muted, 'middle', 14);
   lbl(a, 7.7, -0.35, '\\mathbf r=(r_1,r_2,\\ldots,r_N)', C.mid, 'middle', 16);
   return a.svg();
 }
@@ -1059,13 +1055,13 @@ window.C4 = [
 {t:'eqbox', cap:'Signal-space expansion', tex:'\\begin{aligned}s_i(t)&=\\sum_{k=1}^{N}s_{ik}\\,\\psi_k(t),\\qquad 0\\le t\\le T\\\\s_{ik}&=\\int_0^{T}s_i(t)\\,\\psi_k(t)\\,dt\\end{aligned}',
  after:'The $N$ coordinates $s_{ik}$ form the signal point $\\mathbf s_i$. The energy of the waveform is the squared length of the point.'},
 {t:'p', text:'The channel adds white Gaussian noise, so the receiver sees $r(t)=s_i(t)+n(t)$. The noise has the two-sided power spectral density $S_N(f)=N_0/2$ at every frequency $f$.'},
-{t:'p', text:'The figure below uses $\\psi_1(t)=\\sqrt2\\cos(2\\pi t)$ and $\\psi_2(t)=\\sqrt2\\sin(2\\pi t)$ with $T=1$. The four points have the priors $0.4$, $0.3$, $0.2$ and $0.1$.'},
+{t:'p', text:'The figure below uses $\\psi_1(t)=\\sqrt2\\cos(2\\pi t)$ and $\\psi_2(t)=\\sqrt2\\sin(2\\pi t)$ with $T=1$. The four points sit on a square at $(\\pm1,\\pm1)$ and have the priors $0.4$, $0.3$, $0.2$ and $0.1$.'},
 {t:'fig', svg:figModel,
- cap:'Top: $s_1(t)=1.2\\,\\psi_1(t)-0.6\\,\\psi_2(t)$, cyan, built from its two weighted basis functions, faint amber, and the received $r(t)$, green. Bottom: the four signal points, with $\\mathbf s_1$ ringed and the received point beside it, and the priors $p_i$.',
+ cap:'Top: $s_1(t)=\\psi_1(t)-\\psi_2(t)$, cyan, built from its two weighted basis functions, faint amber, and the received $r(t)$, green. Bottom: the four signal points, with $\\mathbf s_1$ ringed and the noise vector $\\mathbf n$ carrying it to the received point $\\mathbf r$, and the priors $p_i$.',
  short:'The signal model: a waveform built from two basis functions, the signal points and their priors.'},
 {t:'p', text:'For example, the energy of $s_1(t)$ follows from its coordinates. The basis is orthonormal, so the cross term integrates to zero.'},
-{t:'eq', tex:'\\begin{aligned}E_1&=\\int_0^{1}\\bigl(1.2\\,\\psi_1(t)-0.6\\,\\psi_2(t)\\bigr)^{2}dt\\\\&=1.2^{2}+0.6^{2}=1.44+0.36=1.8\\end{aligned}'},
-{t:'box', kind:'err', hd:'Common error', html:'Use $s_{11}^{2}+s_{12}^{2}=1.8$, not $\\sqrt{1.8}=1.34$, for the energy. The energy is the squared length of the point, not its length.'},
+{t:'eq', tex:'\\begin{aligned}E_1&=\\int_0^{1}\\bigl(\\psi_1(t)-\\psi_2(t)\\bigr)^{2}dt\\\\&=1^{2}+(-1)^{2}=2\\end{aligned}'},
+{t:'box', kind:'err', hd:'Common error', html:'Use $s_{11}^{2}+s_{12}^{2}=2$, not $\\sqrt{2}=1.41$, for the energy. The energy is the squared length of the point, not its length.'},
 
 {t:'h3', text:'The correlator bank'},
 {t:'p', text:'The noise also has a part in the signal space and a part outside it. Write each part on its own.'},
@@ -1079,6 +1075,20 @@ window.C4 = [
  cap:'A parallel bank of $N$ correlators. The received waveform $r(t)$, green, feeds every branch. Each branch multiplies by $\\psi_k(t)$, amber, and integrates over $[0,T]$ to give $r_k$, violet.'},
 {t:'p', text:'For example, let no noise arrive, with $s_i(t)=2\\,\\psi_1(t)-\\psi_2(t)$ on an orthonormal basis. The second correlator reads $r_2=2\\int_0^{T}\\psi_1(t)\\,\\psi_2(t)\\,dt-\\int_0^{T}\\psi_2^{2}(t)\\,dt=2\\cdot0-1=-1$.'},
 
+{t:'h3', text:'The matched-filter bank'},
+{t:'p', text:'A bank of filters gives the same $N$ numbers as the correlators. The filter for axis $k$ is matched to $\\psi_k(t)$. Its impulse response is the basis function turned around in time and delayed by $T$.'},
+{t:'eqbox', cap:'Matched filter', tex:'h_k(t)=\\psi_k(T-t),\\qquad k\\in\\{1,\\ldots,N\\}'},
+{t:'p', text:'The filter output is the convolution of $r(t)$ with $h_k(t)$. Write the convolution, then put in $h_k(t-\\tau)=\\psi_k(T-t+\\tau)$.'},
+{t:'eq', tex:'\\begin{aligned}y_k(t)&=\\int_0^{T}r(\\tau)\\,h_k(t-\\tau)\\,d\\tau\\\\&=\\int_0^{T}r(\\tau)\\,\\psi_k(T-t+\\tau)\\,d\\tau\\end{aligned}'},
+{t:'p', text:'Now sample the output at $t=T$. The shift $T-t$ becomes zero, and the integral is the correlator output.'},
+{t:'eqbox', cap:'Sample at $T$', tex:'y_k(T)=\\int_0^{T}r(\\tau)\\,\\psi_k(\\tau)\\,d\\tau=r_k',
+ after:'At any other time the filter output and the correlator output differ. So each filter is sampled once, at the end of the symbol.'},
+{t:'p', text:'The figure below draws the bank as a block diagram.'},
+{t:'fig', svg:figMfBank,
+ cap:'A parallel bank of $N$ matched filters. The received waveform $r(t)$, green, feeds every branch. Each filter $\\psi_k(T-t)$, amber, is sampled at $t=T$ to give $r_k$, violet.'},
+{t:'p', text:'For example, let $\\psi_1(t)=\\sqrt3\\,t$ on $[0,1]$, so $T=1$. Put $1-t$ in place of $t$: the matched filter is $h_1(t)=\\psi_1(1-t)=\\sqrt3\\,(1-t)$ on $[0,1]$.'},
+{t:'box', kind:'err', hd:'Common error', html:'Use $h_k(t)=\\psi_k(T-t)$, not $\\psi_k(t-T)$. The second is only a delay. The filter also turns $\\psi_k$ around in time.'},
+
 {t:'h3', text:'The received signal point'},
 {t:'p', text:'Put $r(t)=s_i(t)+n(t)$ into one correlator. The integral is linear, so it splits into a signal part and a noise part.'},
 {t:'eq', tex:'\\begin{aligned}r_k&=\\int_0^{T}\\overbrace{\\{s_i(t)+n(t)\\}}^{=r(t)}\\,\\psi_k(t)\\,dt\\\\&=\\overbrace{\\int_0^{T}s_i(t)\\,\\psi_k(t)\\,dt}^{=s_{ik}}+\\overbrace{\\int_0^{T}n(t)\\,\\psi_k(t)\\,dt}^{=n_k}=s_{ik}+n_k\\end{aligned}'},
@@ -1090,32 +1100,6 @@ window.C4 = [
 {t:'p', text:'The figure below draws the three vectors for $N=2$.'},
 {t:'fig', svg:figVector,
  cap:'The message point $\\mathbf s_i$, cyan, the noise vector $\\mathbf n$ added to it, grey, and the received signal point $\\mathbf r$, green. The dashed lines read the coordinates $r_1$ and $r_2$.'},
-
-{t:'h3', text:'The observation vector'},
-{t:'p', text:'Over one symbol the receiver sees $r(t)=s_i(t)+n(t)$. Here $n(t)$ is white Gaussian noise of two-sided power spectral density $N_0/2$.'},
-{t:'p', text:'The receiver correlates $r(t)$ with each of the $N$ orthonormal basis functions $\\psi_1(t),\\ldots,\\psi_N(t)$ of the signal set. Each correlator multiplies by one basis function and integrates over one symbol.'},
-{t:'eqbox', cap:'Correlator outputs', tex:'\\begin{aligned}r_j&=\\int_0^{T}r(t)\\,\\psi_j(t)\\,dt\\\\&=\\int_0^{T}s_i(t)\\,\\psi_j(t)\\,dt+\\int_0^{T}n(t)\\,\\psi_j(t)\\,dt\\\\&=s_{ij}+n_j,\\qquad j=1,\\ldots,N\\end{aligned}',
- after:'The integral is linear, so it splits over the sum. The first integral is the coordinate $s_{ij}$ of the sent signal. The second is a noise coordinate $n_j$.'},
-{t:'p', text:'Stack the $N$ outputs into one vector. The result is the observation the receiver decides from.'},
-{t:'eqbox', cap:'The observation vector', big:true, tex:'\\mathbf r=\\mathbf s_i+\\mathbf n',
- after:'The receiver now works with one point $\\mathbf r$. The noise moves it away from the sent point $\\mathbf s_i$.'},
-{t:'p', text:'The figure below follows one received waveform, with $T=1$, through two correlators.'},
-{t:'fig', svg:figObserve,
- cap:'Top: $r(t)$, green, is $s_i(t)$, cyan, plus noise. Middle: the running integrals $c_1(t)$, solid, and $c_2(t)$, dashed, of $r(t)\\,\\psi_j(t)$. Bottom: their end values $r_1$ and $r_2$ are the coordinates of $\\mathbf r$.'},
-{t:'p', text:'For example, let $\\mathbf s_i=(2,-1)$ be sent with noise coordinates $n_1=0.3$ and $n_2=-0.4$. Then $\\mathbf r=\\mathbf s_i+\\mathbf n=(2+0.3,\\,-1-0.4)=(2.3,-1.4)$.'},
-
-{t:'h3', text:'The matched-filter bank'},
-{t:'p', text:'A bank of matched filters gives the same numbers as the correlators. The filter for axis $j$ is its basis function turned around in time.'},
-{t:'eqbox', cap:'Matched filter', tex:'h_j(t)=\\psi_j(T-t)'},
-{t:'p', text:'The filter output is the convolution of $r(t)$ with $h_j(t)$. Write the convolution, then put in $h_j(t-\\tau)=\\psi_j(T-t+\\tau)$.'},
-{t:'eq', tex:'\\begin{aligned}y_j(t)&=\\int_0^{T}r(\\tau)\\,h_j(t-\\tau)\\,d\\tau\\\\&=\\int_0^{T}r(\\tau)\\,\\psi_j(T-t+\\tau)\\,d\\tau\\end{aligned}'},
-{t:'p', text:'Now sample the output at $t=T$. The shift $T-t$ becomes zero, and the integral is the correlator.'},
-{t:'eqbox', cap:'Sample at $T$', tex:'y_j(T)=\\int_0^{T}r(\\tau)\\,\\psi_j(\\tau)\\,d\\tau=r_j',
- after:'At any other time the two outputs differ.'},
-{t:'p', text:'The figure below uses $\\psi(t)=\\sqrt3\\,t$ on $[0,1]$ and $r(t)=1.5\\,\\psi(t)$, with no noise. The two curves meet only at $t=T=1$.'},
-{t:'fig', svg:figMfbank,
- cap:'Solid: the matched filter output $y(t)$. Dashed: the correlator output $c(t)$. At the sampling time $t_0=T$ both equal $1.5$.'},
-{t:'p', text:'The value at $T$ follows from the energy of $\\psi$. The correlator gives $y(1)=1.5\\int_0^{1}\\psi^{2}(t)\\,dt=1.5\\int_0^{1}3t^{2}\\,dt=1.5$.'},
 
 {t:'h3', text:'The noise the receiver ignores'},
 {t:'p', text:'Noise has parts in every direction, not only in the signal space. The part outside the span of $\\psi_1,\\ldots,\\psi_N$ is written $n\'(t)$. It does not depend on the signal sent.'},

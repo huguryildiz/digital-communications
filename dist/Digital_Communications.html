@@ -25433,16 +25433,17 @@ function figMary(v){
 }
 
 /* The signal model on two carrier basis functions over T = 1:
-   psi1 = sqrt2 cos(2 pi t), psi2 = sqrt2 sin(2 pi t). Four signals at
-   (1.2, -0.6) turned by quarter turns, with priors 0.4, 0.3, 0.2, 0.1. The
-   sent waveform s_1(t) = 1.2 psi1 - 0.6 psi2 is built from its weighted basis
-   functions, then one fixed draw of smoothed noise is added. */
+   psi1 = sqrt2 cos(2 pi t), psi2 = sqrt2 sin(2 pi t). Four signals on a
+   square at (+-1, +-1), with priors 0.4, 0.3, 0.2, 0.1. The sent waveform
+   s_1(t) = psi1 - psi2 is built from its weighted basis functions, then one
+   fixed draw of smoothed noise is added, strong enough that the received
+   point sits clearly away from s_1. */
 const ps1 = t => Math.SQRT2*Math.cos(2*Math.PI*t), ps2 = t => Math.SQRT2*Math.sin(2*Math.PI*t);
 const MD = (()=>{
-  const S = [[1.2,-0.6],[0.6,1.2],[-1.2,0.6],[-0.6,-1.2]], p = [0.4,0.3,0.2,0.1];
-  const n = 400, z = gauss(4406, n+13, 1), nz = [];
-  // a moving sum of 12 draws: smooth noise with unit-free spread 0.3
-  for(let i=0;i<=n;i++){ let s = 0; for(let k=0;k<12;k++) s += z[i+k]; nz.push(0.3*s/Math.sqrt(12)); }
+  const S = [[1,-1],[1,1],[-1,1],[-1,-1]], p = [0.4,0.3,0.2,0.1];
+  const n = 400, L = 30, z = gauss(4670, n+L+1, 1), nz = [];
+  // a moving sum of 30 draws: smooth noise with unit-free spread 1.5
+  for(let i=0;i<=n;i++){ let s = 0; for(let k=0;k<L;k++) s += z[i+k]; nz.push(1.5*s/Math.sqrt(L)); }
   // the noise coordinates the two correlators would read, by the trapezoid rule
   const proj = g => { let s = 0; for(let i=0;i<=n;i++) s += (i===0||i===n ? 0.5 : 1)*nz[i]*g(i/n); return s/n; };
   return {S, p, n, nz, r:[S[0][0]+proj(ps1), S[0][1]+proj(ps2)]};
@@ -25451,32 +25452,38 @@ function figModel(v){
   const H = takeH(430), hTop = Math.round(0.5*H), hBot = H-hTop;
   const f = frameOf(v, 3), op = k => clamp01(f-k+1), [a1, a2] = MD.S[0], n = MD.n;
   // top panel: the basis functions, their weighted copies, the sum and the received waveform
-  const a = TAx({w:560, h:hTop, xr:[-0.03,1.16], yr:[-2.7,4.1], xlabel:'t/T', xnameDrop:34, ylabel:'\\text{Waveform}',
+  const a = TAx({w:560, h:hTop, xr:[-0.03,1.16], yr:[-3.9,4.4], xlabel:'t/T', xnameDrop:34, ylabel:'\\text{Waveform}',
     pad:{l:56,r:26,t:12,b:34}, xt:[0,0.5,1], yticksOverride:[-2,0,2]});
-  const u = op(1), w1 = 1+u*(a1-1), w2 = 1+u*(a2-1), bo = 1-0.6*op(2);
+  const u = op(1), w1 = 1+u*(a1-1), w2 = 1+u*(a2-1), bo = 1-0.6*op(2), u3 = op(3);
   const tr = (g, m) => Array.from({length:m+1}, (_,i)=>[i/n, g(i/n, i)]);
-  // the received waveform sits under the sent one
-  if(op(3) > 0.02) seg(a, tr((t,i)=>a1*ps1(t)+a2*ps2(t)+MD.nz[i], n), {color:C.out, width:1.5, opacity:op(3)});
-  seg(a, tr(t=>w1*ps1(t), n), {color:C.h, width:2.2, opacity:bo});
-  seg(a, tr(t=>w2*ps2(t), n), {color:C.h, width:2.2, dash:'7 5', opacity:bo});
+  seg(a, tr(t=>w1*ps1(t), n), {color:C.h, width:2.2, opacity:bo*(1-0.5*u3)});
+  seg(a, tr(t=>w2*ps2(t), n), {color:C.h, width:2.2, dash:'7 5', opacity:bo*(1-0.5*u3)});
   // the sum is drawn from left to right as its frame plays
   const m = Math.round(n*op(2));
-  if(m > 1) seg(a, tr(t=>a1*ps1(t)+a2*ps2(t), m), {color:C.in, width:2.8});
+  if(m > 1) seg(a, tr(t=>a1*ps1(t)+a2*ps2(t), m), {color:C.in, width:2.8, opacity:1-0.45*u3});
+  // the received waveform is drawn from left to right over the sent one
+  const mr = Math.round(n*u3);
+  if(mr > 1) seg(a, tr((t,i)=>a1*ps1(t)+a2*ps2(t)+MD.nz[i], mr), {color:C.out, width:1.8});
   const hd = [['\\psi_1(t)\\ \\text{solid},\\ \\ \\psi_2(t)\\ \\text{dashed}', C.h],
-              ['1.2\\,\\psi_1(t)\\ \\ \\text{and}\\ \\ {-0.6}\\,\\psi_2(t)', C.h],
-              ['s_1(t)=1.2\\,\\psi_1(t)-0.6\\,\\psi_2(t)', C.in],
+              ['\\psi_1(t)\\ \\ \\text{and}\\ \\ {-\\psi_2(t)}', C.h],
+              ['s_1(t)=\\psi_1(t)-\\psi_2(t)', C.in],
               ['r(t)=s_1(t)+n(t)', C.out]][Math.min(3, Math.round(f))];
-  lbl(a, 0.05, 3.45, hd[0], hd[1], 'start', 16);
-  // bottom left: the four signal points, with s_1 read off its axes
-  const b = plane({w:300, h:hBot, need:[[-1.65,1.65],[-1.6,1.6]], pad:{l:44,r:16,t:18,b:40},
+  lbl(a, 0.05, 3.6, hd[0], hd[1], 'start', 16);
+  // bottom left: the four signal points on a square, with s_1 read off its axes
+  const b = plane({w:300, h:hBot, need:[[-1.6,2.1],[-2.0,1.5]], pad:{l:44,r:16,t:18,b:40},
     xticksOverride:[-1,1], yticksOverride:[-1,1]});
   if(op(2) > 0.02) seg(b, [[a1,0],[a1,a2],[0,a2]], {color:C.muted, width:1.3, dash:'4 5', opacity:op(2)});
   MD.S.forEach((p,i)=>{ dot(b, p[0], p[1], {color:C.in, r:6});
-    // s_1 is labelled above its ring, s_4 to its left, the others outward from the origin
-    const L = [[p[0]+0.34, p[1]+0.24, 'start'], [p[0]*1.3, p[1]*1.3-0.1, 'middle'], [p[0]*1.3, p[1]*1.3-0.1, 'middle'], [p[0]-0.3, p[1]-0.08, 'end']][i];
+    // s_1 is labelled above and right of its ring, s_4 to its left, s_2 and s_3 above
+    const L = [[p[0]+0.3, p[1]+0.3, 'start'], [p[0], p[1]+0.3, 'middle'], [p[0], p[1]+0.3, 'middle'], [p[0]-0.25, p[1]-0.08, 'end']][i];
     lbl(b, L[0], L[1], '\\mathbf{s}_'+(i+1), C.in, L[2], 15); });
-  if(op(2) > 0.02) ring(b, a1, a2, {color:C.in, r:11, width:2.2, opacity:op(2)});
-  if(op(3) > 0.02) dot(b, MD.r[0], MD.r[1], {color:C.out, r:5.5, opacity:op(3)});
+  if(op(2) > 0.02) ring(b, a1, a2, {color:C.in, r:11, width:2.2, opacity:op(2)*(1-0.75*u3)});
+  // the noise vector grows out of s_1 and the received point rides on its tip
+  if(u3 > 0.02){ const rx = a1+u3*(MD.r[0]-a1), ry = a2+u3*(MD.r[1]-a2);
+    if(u3 > 0.3) arrow(b, a1, a2, rx, ry, {color:C.out, width:1.8, head:0.6, opacity:Math.min(1, 2*u3-0.6)});
+    dot(b, rx, ry, {color:C.out, r:5.5});
+    if(u3 > 0.9){ lbl(b, MD.r[0]+0.14, MD.r[1]-0.1, '\\mathbf{r}', C.out, 'start', 15);
+      lbl(b, (a1+MD.r[0])/2+0.16, (a2+MD.r[1])/2+0.14, '\\mathbf{n}', C.out, 'start', 15); } }
   // bottom right: the priors as stems, one a symbol
   const c = P.Axes({w:260, h:hBot, xr:[0.3,4.7], yr:[0,0.5], xlabel:'i', ylabel:'p_i',
     pad:{l:52,r:16,t:18,b:40}, xticksOverride:[1,2,3,4], yticksOverride:[0,0.2,0.4]});
@@ -25499,69 +25506,26 @@ const OB = (()=>{
     c1.push(c1[i-1] + rm*p1(x)*dt); c2.push(c2[i-1] + rm*p2(x)*dt); }
   return {n, t, r, sv, c1, c2, s:[1,-0.6], rv:[c1[n], c2[n]]};
 })();
-function figObserve(v){
-  const H = takeH(410), ha = Math.round(0.25*H), hb = Math.round(0.32*H), f = frameOf(v, 3), op = k => clamp01(f-k+1);
-  const a = TAx({w:560, h:ha, xr:[-0.03,1.13], yr:[-6.5,6.5], xlabel:'', ylabel:'r(t)',
-    pad:{l:56,r:26,t:18,b:10}, yticksOverride:[-5,0,5]});
-  seg(a, OB.t.map((x,i)=>[x, OB.r[i]]), {color:C.out, width:1.4});
-  seg(a, OB.t.map((x,i)=>[x, OB.sv[i]]), {color:C.in, width:2.2});
-  const b = TAx({w:560, h:hb, xr:[-0.03,1.13], yr:[-1.2,1.55], xlabel:'t/T', xnameDrop:34, ylabel:'c_1(t),\\;c_2(t)',
-    pad:{l:56,r:26,t:18,b:34}, xt:[0,0.5,1], yticksOverride:[-1,0,1]});
-  const m = Math.round(OB.n*clamp01(f));
-  if(m > 1){
-    seg(b, OB.t.slice(0,m+1).map((x,i)=>[x, OB.c1[i]]), {color:C.mid, width:2.4});
-    seg(b, OB.t.slice(0,m+1).map((x,i)=>[x, OB.c2[i]]), {color:C.mid, width:2.4, dash:'7 5'});
-    if(f < 0.999){ dot(b, OB.t[m], OB.c1[m], {color:C.mid, r:4.5}); dot(b, OB.t[m], OB.c2[m], {color:C.mid, r:4.5}); }
-  }
-  if(op(2) > 0.02){ dot(b, 1, OB.rv[0], {color:C.mid, r:5.5, opacity:op(2)}); dot(b, 1, OB.rv[1], {color:C.mid, r:5.5, opacity:op(2)});
-    if(op(2) > 0.5){ lbl(b, 1.04, OB.rv[0]-0.08, 'r_1', C.mid); lbl(b, 1.04, OB.rv[1]-0.08, 'r_2', C.mid); } }
-  const c = plane({h:H-ha-hb, need:[[-1.9,1.9],[-1.25,1.05]], xticksOverride:[], yticksOverride:[]});
-  dot(c, OB.s[0], OB.s[1], {color:C.in, r:6.5});
-  lbl(c, OB.s[0]-0.32*P.labelScale(), OB.s[1]-0.06, '\\mathbf{s}_i', C.in, 'end');
-  if(op(3) > 0.02){ const [x,y] = OB.rv;
-    seg(c, [[x,0],[x,y],[0,y]], {color:C.mid, width:1.3, dash:'4 5', opacity:op(3)});
-    seg(c, [OB.s,[x,y]], {color:C.muted, width:1.6, opacity:op(3)});
-    dot(c, x, y, {color:C.out, r:6.5, opacity:op(3)});
-    if(op(3) > 0.5) lbl(c, x+0.14, y+0.1, '\\mathbf{r}=\\mathbf{s}_i+\\mathbf{n}', C.out); }
-  return stack(560, [[a.svg(),ha],[b.svg(),hb],[c.svg(),H-ha-hb]]);
-}
-
-/* The filter matched to psi(t) = sqrt3 t on [0,1] and the correlator, both fed
-   r(t) = 1.5 psi(t). The filter output y(t) = 4.5 (t^2/2 - t^3/6) for t <= 1
-   and 4.5 (1/3 - u/2 + u^3/6), u = t - 1, after; the correlator gives
-   c(t) = 1.5 t^3 up to T and holds 1.5. Both equal 1.5 at t = T only. */
-const mfY = t => t <= 0 ? 0 : t <= 1 ? 4.5*(t*t/2 - t*t*t/6) : t <= 2 ? 4.5*(1/3 - (t-1)/2 + Math.pow(t-1,3)/6) : 0;
-const mfC = t => t <= 0 ? 0 : t <= 1 ? 1.5*t*t*t : 1.5;
-function figMfbank(v){
-  const t0 = v ? v.t : 1;
-  const a = P.Axes(SZ({xr:[-0.08,2.15], yr:[-0.15,2.05], xlabel:'t/T', ylabel:'y(t),\\;c(t)', xticksOverride:[0,0.5,1,1.5,2], yticksOverride:[0,0.5,1,1.5]}));
-  a.curve(mfC, {color:C.mid, width:2.2, dash:'7 5'});
-  a.curve(mfY, {color:C.mid, width:2.6});
-  a.vline(t0, {color:C.ink, dash:'5 4', width:1.4});
-  dot(a, t0, mfY(t0), {color:C.mid, r:6}); dot(a, t0, mfC(t0), {color:C.mid, r:5});
-  lbl(a, 0.0, 1.86, 'y(t_0)='+num(mfY(t0))+',\\ \\ c(t_0)='+num(mfC(t0)), C.ink);
-  return a.svg();
-}
 
 /* The received waveform in three dimensions: the signal plane, spanned by
    psi1 and psi2, and one direction outside it. The noise splits into the part
    in the plane, which the correlators keep, and n'(t), which they drop. */
 function figIrrelevant(v){
   const f = frameOf(v, 3), op = k => clamp01(f-k+1);
-  const az = 32*Math.PI/180, el = 24*Math.PI/180;
+  const az = 35*Math.PI/180, el = 34*Math.PI/180;
   const pr = (x,y,z) => [x*Math.cos(az) - y*Math.sin(az), z*Math.cos(el) + (x*Math.sin(az) + y*Math.cos(az))*Math.sin(el)];
-  const a = plane(bare({need:[[-2.2,2.3],[-1.35,2.0]], xlabel:'', ylabel:''}));
+  const a = plane(bare({need:[[-2.4,2.45],[-2.0,1.95]], xlabel:'', ylabel:''}));
   const Pp = (...p) => pr(...p);
-  const sheet = [[-1.9,-1.5,0],[1.9,-1.5,0],[1.9,1.5,0],[-1.9,1.5,0]].map(p=>Pp(...p));
+  const sheet = [[-1.7,-1.4,0],[1.7,-1.4,0],[1.7,1.4,0],[-1.7,1.4,0]].map(p=>Pp(...p));
   fillPoly(a, sheet, C.dec.h);
   seg(a, sheet.concat([sheet[0]]), {color:C.h, width:1.2, opacity:0.7});
   const ax = (p, q, name, lp, col) => { const A = Pp(...p), B = Pp(...q);
     arrow(a, A[0],A[1],B[0],B[1], {color:col, width:1.8, head:0.8});
     const L = Pp(...lp); lbl(a, L[0], L[1], name, col, 'middle', 16); };
-  ax([0,0,0],[2.05,0,0], '\\psi_1', [2.3,0,-0.08], C.h);
-  ax([0,0,0],[0,1.75,0], '\\psi_2', [0,2.02,-0.02], C.h);
-  ax([0,0,0],[0,0,1.6], '\\text{outside}', [0,0,1.78], C.muted);
-  const s1 = [1.0,-0.55,0], s2 = [-1.05,0.55,0], n = [0.4,0.45,1.05];
+  ax([0,0,0],[2.0,0,0], '\\psi_1', [2.25,0,-0.1], C.h);
+  ax([0,0,0],[0,1.7,0], '\\psi_2', [0,1.95,-0.02], C.h);
+  ax([0,0,0],[0,0,1.85], '\\text{outside}', [0,0,2.02], C.muted);
+  const s1 = [1.0,-0.95,0], s2 = [-1.05,0.8,0], n = [-0.6,-0.25,1.4];
   const rt = [s1[0]+n[0], s1[1]+n[1], n[2]], rp = [rt[0], rt[1], 0];
   const S1 = Pp(...s1), S2 = Pp(...s2), RT = Pp(...rt), RP = Pp(...rp);
   if(op(3) > 0.02){ seg(a, [RT,S2], {color:C.muted, width:1.3, dash:'5 4', opacity:op(3)});
@@ -25569,15 +25533,15 @@ function figIrrelevant(v){
     seg(a, [RT,S1], {color:C.muted, width:1.3, dash:'5 4', opacity:op(3)}); }
   if(op(1) > 0.02){ arrow(a, S1[0],S1[1],RP[0],RP[1], {color:C.mid, width:2.4, opacity:op(1)});
     seg(a, [RP,RT], {color:C.muted, width:1.8, dash:'5 4', opacity:op(1)});
-    if(op(1) > 0.5) lbl(a, (RP[0]+RT[0])/2+0.1, (RP[1]+RT[1])/2, "n'", C.muted, 'start', 16); }
+    if(op(1) > 0.5) lbl(a, (RP[0]+RT[0])/2-0.1, (RP[1]+RT[1])/2-0.12, "n'", C.muted, 'end', 16); }
   if(op(1) < 0.98) arrow(a, S1[0],S1[1],RT[0],RT[1], {color:C.muted, width:2.0, opacity:1-op(1)});
   dot(a, S1[0], S1[1], {color:C.in, r:6.5}); dot(a, S2[0], S2[1], {color:C.in, r:6.5});
-  lbl(a, S1[0]+0.12, S1[1]-0.22, '\\mathbf{s}_1', C.in); lbl(a, S2[0]-0.12, S2[1]-0.22, '\\mathbf{s}_2', C.in, 'end');
+  lbl(a, S1[0]+0.14, S1[1]+0.06, '\\mathbf{s}_1', C.in, 'start'); lbl(a, S2[0]-0.12, S2[1]-0.22, '\\mathbf{s}_2', C.in, 'end');
   dot(a, RT[0], RT[1], {color:C.out, r:6.5, opacity:1-0.65*op(2)});
   lbl(a, RT[0]+0.14, RT[1]+0.04, '\\tilde{\\mathbf{r}}', C.out, 'start', 16);
   if(op(2) > 0.02){ dot(a, RP[0], RP[1], {color:C.out, r:6.5, opacity:op(2)});
     if(op(2) > 0.5) lbl(a, RP[0]+0.16, RP[1]-0.2, '\\mathbf{r}', C.out, 'start', 16); }
-  if(op(3) > 0.5) lbl(a, -2.1, 1.78, "\\|\\tilde{\\mathbf{r}}-\\mathbf{s}_j\\|^{2}=\\|\\mathbf{r}-\\mathbf{s}_j\\|^{2}+\\|n'\\|^{2}", C.ink);
+  if(op(3) > 0.5) [1,2].forEach((j,k) => lbl(a, -2.25, -1.5-0.3*k, "\\|\\tilde{\\mathbf{r}}-\\mathbf{s}_"+j+"\\|^{2}=\\|\\mathbf{r}-\\mathbf{s}_"+j+"\\|^{2}+\\|n'\\|^{2}", C.ink));
   return a.svg();
 }
 
@@ -25666,6 +25630,39 @@ function figCorrBank(v){
   return a.svg();
 }
 
+/* The bank of N matched filters: r(t) feeds N branches, each a filter with
+   impulse response psi_k(T - t), sampled at t = T to give r_k. The frames
+   light the input, the filters, the samplers, then the outputs. */
+function figMfBank(v){
+  const H = takeH(430), f = frameOf(v, 3), lit = k => 0.22+0.78*clamp01(f-k+1);
+  const a = P.Axes(bare({w:560, h:H, xr:[0,10], yr:[-0.6,10], pad:{l:12,r:12,t:12,b:12}}));
+  const Y = [8.8, 5.6, 1.5], nm = ['1','2','N'], bx = 2.3, fx0 = 3.2, fx1 = 5.9, sx0 = 6.75, sx1 = 7.65;
+  const ln = (x0,y0,x1,y1,col,op) => seg(a, [[x0,y0],[x1,y1]], {color:col, width:2.2, opacity:op});
+  // input and the vertical bus, in the colour of the received waveform
+  lbl(a, 0.25, 4.62, 'r(t)', C.out, 'start', 18);
+  ln(1.25, 4.9, bx, 4.9, C.out, lit(0)); ln(bx, Y[2], bx, Y[0], C.out, lit(0));
+  a.raw(`<circle cx="${f2(a.sx(bx))}" cy="${f2(a.sy(4.9))}" r="4" fill="${C.out}" opacity="${lit(0).toFixed(3)}"/>`);
+  Y.forEach((y,k)=>{
+    arrow(a, bx, y, fx0, y, {color:C.out, width:2.2, head:0.8, opacity:lit(0)});
+    // the filter matched to one basis function
+    const x0 = a.sx(fx0), x1 = a.sx(fx1), y0 = a.sy(y+0.8), y1 = a.sy(y-0.8);
+    a.raw(`<rect x="${f2(x0)}" y="${f2(y0)}" width="${f2(x1-x0)}" height="${f2(y1-y0)}" fill="${C.plate}" stroke="${C.h}" stroke-width="2.2" opacity="${lit(1).toFixed(3)}"/>`);
+    lbl(a, (fx0+fx1)/2, y-0.28, '\\psi_'+nm[k]+'(T-t)', C.h, 'middle', 16);
+    // the filter output runs to the sampler, an open switch closed at t = T
+    ln(fx1, y, sx0, y, C.mid, lit(2));
+    dot(a, sx0, y, {color:C.mid, r:3.5, opacity:lit(2)});
+    ln(sx0, y, sx1-0.08, y+0.5, C.mid, lit(2));
+    dot(a, sx1, y, {color:C.mid, r:3.5, opacity:lit(2)});
+    if(f > 1.5) lbl(a, (sx0+sx1)/2, y+0.95, 't=T', C.mid, 'middle', 15);
+    // the output coordinate
+    arrow(a, sx1, y, 9.15, y, {color:C.mid, width:2.2, head:0.8, opacity:lit(3)});
+    if(f > 2.5) lbl(a, 9.3, y-0.2, 'r_'+nm[k], C.mid, 'start', 18);
+  });
+  lbl(a, (fx0+fx1)/2, 3.05, '\\vdots', C.muted, 'middle', 16); lbl(a, 9.45, 3.05, '\\vdots', C.muted, 'middle', 18);
+  if(f > 2.5) lbl(a, 7.7, -0.35, '\\mathbf r=(r_1,r_2,\\ldots,r_N)', C.mid, 'middle', 18);
+  return a.svg();
+}
+
 /* The received point in vector form on two axes: the message point s_i,
    the noise vector n from it, and the received point r = s_i + n. */
 const VS = [1.9, 0.55], VN = [-0.6, 1.25], VR = [VS[0]+VN[0], VS[1]+VN[1]];
@@ -25679,7 +25676,7 @@ function figVector(v){
   lbl(a, 0.95, 0.45, '\\mathbf s_i', C.in, 'middle', 18);
   dot(a, VS[0], VS[1], {color:C.in, r:7});
   lbl(a, VS[0]+0.12, VS[1]-0.02, '\\text{Message point}', C.in, 'start', 15);
-  if(op(1) > 0.02){ arrow(a, VS[0], VS[1], VR[0], VR[1], {color:C.muted, width:2.6, opacity:op(1)});
+  if(op(1) > 0.02){ arrow(a, VS[0], VS[1], VR[0], VR[1], {color:C.muted, width:1.8, dash:'6 5', opacity:op(1)});
     if(op(1) > 0.5) lbl(a, (VS[0]+VR[0])/2+0.18, (VS[1]+VR[1])/2, '\\mathbf n', C.muted, 'start', 18); }
   if(op(2) > 0.02){ arrow(a, 0, 0, VR[0], VR[1], {color:C.out, width:2.8, opacity:op(2)});
     dot(a, VR[0], VR[1], {color:C.out, r:7, opacity:op(2)});
@@ -26482,9 +26479,9 @@ const SC = [
     {t:'reveal', at:1, items:[
       {t:'note', kind:'warn', head:'The AWGN channel', html:'Zero-mean additive white Gaussian noise corrupts $s_i(t)$, so $r(t)=s_i(t)+n(t)$. The noise $n(t)$ is white, with $S_N(f)=N_0/2$ for every $f$.'}]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'def', head:'Given', html:'The basis is as drawn, and $s_1(t)=1.2\\,\\psi_1(t)-0.6\\,\\psi_2(t)$.<div class="nsep"></div>What is the energy of $s_1(t)$?',
-        ask:{key:'m4-model', choices:['$1.8$','$1.34$','$0.6$'], answer:0,
-          why:'The basis is orthonormal, so $E_1=s_{11}^{2}+s_{12}^{2}=1.44+0.36=1.8$.'}}]}
+      {t:'note', kind:'def', head:'Given', html:'The basis is as drawn, and $s_1(t)=\\psi_1(t)-\\psi_2(t)$.<div class="nsep"></div>What is the energy of $s_1(t)$?',
+        ask:{key:'m4-model', choices:['$2$','$1.41$','$0$'], answer:0,
+          why:'The basis is orthonormal, so $E_1=s_{11}^{2}+s_{12}^{2}=1+1=2$. The cross term integrates to zero, so the minus sign does not cancel anything.'}}]}
   ]}
 ]},
 
@@ -26510,6 +26507,30 @@ const SC = [
   ]}
 ]},
 
+{ id:'m4-mfbank', module:'M4', nav:'The matched-filter bank', title:'The matched-filter bank',
+  objective:'Read the N coordinates of r(t) with a parallel bank of matched filters, each sampled at t = T.',
+  keywords:'matched filter bank impulse response psi(T-t) time reversal sampling t = T convolution correlator equivalence block diagram frames',
+  src:'CH9 s.37', slide:true, steps:2, blocks:[
+  {t:'eyebrow', text:'Module 4 · The observation'},
+  {t:'title', text:'The matched-filter bank'},
+  {t:'cols', ratio:'c-5-7', fill:true, left:[
+    {t:'fig', frame:true, grow:true, frames:{labels:['$r(t)$','Filter','Sample at $T$','Read $r_k$']}, svg:figMfBank,
+      caption:'A parallel bank of $N$ matched filters. Each branch filters $r(t)$ and samples the output once, at the end of the symbol.'}
+  ], right:[
+    {t:'eq', label:'Matched filter', tex:'h_k(t)=\\psi_k(T-t),\\qquad k\\in\\{1,\\ldots,N\\}',
+      note:'The impulse response is the basis function turned around in time and delayed by $T$.'},
+    {t:'eq', label:'Filter output', tex:'\\begin{aligned}y_k(t)&=\\int_0^{T}r(\\tau)\\,h_k(t-\\tau)\\,d\\tau\\\\&=\\int_0^{T}r(\\tau)\\,\\psi_k(T-t+\\tau)\\,d\\tau\\end{aligned}',
+      note:'The output is the convolution of $r(t)$ with $h_k(t)$.'},
+    {t:'reveal', at:1, items:[
+      {t:'eq', result:true, label:'Key result · sample at $T$', tex:'y_k(T)=\\int_0^{T}r(\\tau)\\,\\psi_k(\\tau)\\,d\\tau=r_k',
+        note:'At $t=T$ the shift is zero, so each sample equals the correlator output. At other times the two differ.'}]},
+    {t:'reveal', at:2, items:[
+      {t:'note', kind:'def', head:'Given', html:'$\\psi_1(t)=\\sqrt3\\,t$ on $[0,1]$, so $T=1$.<div class="nsep"></div>What is the matched filter $h_1(t)$ on $[0,1]$?',
+        ask:{key:'m4-mfbank', choices:['$\\sqrt3\\,(1-t)$','$\\sqrt3\\,t$','$\\sqrt3\\,(t-1)$'], answer:0,
+          why:'$h_1(t)=\\psi_1(1-t)=\\sqrt3\\,(1-t)$: turn $\\psi_1$ around in time, then delay it by $T=1$.'}}]}
+  ]}
+]},
+
 { id:'m4-vector', module:'M4', nav:'The received signal point', title:'The received signal point',
   objective:'Show that each correlator output is a signal coordinate plus a noise coordinate, so r = s_i + n in the signal space.',
   keywords:'correlator output s_ik plus n_k projection of r(t) on signal space vector form signal vector noise vector observation vector message point received point frames',
@@ -26530,53 +26551,6 @@ const SC = [
         note:'Signal vector $\\mathbf s_i=(s_{i1},s_{i2})$. Noise vector $\\mathbf n=(n_1,n_2)$. Observation vector $\\mathbf r$.'}]}
   ]}
 ]},
-{ id:'m4-observe', module:'M4', nav:'The observation vector', title:'The observation vector',
-  objective:'Show how a bank of correlators turns the received waveform into a point r = s + n.',
-  keywords:'correlator bank demodulator running integral received waveform signal plus noise point observation vector frames',
-  src:'CH9 s.24–25', slide:true, steps:2, blocks:[
-  {t:'eyebrow', text:'Module 4 · The observation'},
-  {t:'title', text:'The observation vector'},
-  {t:'cols', ratio:'c-5-7', fill:true, left:[
-    {t:'fig', frame:true, grow:true, frames:{labels:['$r(t)$','integrate','$r_1,\\;r_2$','$\\mathbf{r}$']}, svg:figObserve,
-      caption:'$r(t)$ is $s_i(t)$ plus noise over one symbol, $T=1$. Each running integral of $r(t)\\,\\psi_j(t)$ ends at one coordinate of $\\mathbf r$.'},
-    {t:'legend', items:[['out','$r(t)$'],['in','$s_i(t)$'],['mid','$c_1(t)$',false,1],['mid','$c_2(t)$',true,1]], at:'tr'}
-  ], right:[
-    {t:'eq', label:'Correlator outputs', tex:'r_j=\\int_0^{T}r(t)\\,\\psi_j(t)\\,dt=s_{ij}+n_j,\\qquad j=1,\\ldots,N',
-      note:'$r(t)=s_i(t)+n(t)$, and the integral is linear. Each output is a signal coordinate plus a noise coordinate.'},
-    {t:'reveal', at:1, items:[
-      {t:'eq', result:true, label:'Key result · the observation', tex:'\\mathbf r=\\mathbf s_i+\\mathbf n',
-        note:'The receiver now works with one point. The noise moves it away from the sent point $\\mathbf s_i$.'}]},
-    {t:'reveal', at:2, items:[
-      {t:'note', kind:'def', head:'Given', html:'$\\mathbf s_i=(2,-1)$ is sent and the noise coordinates are $n_1=0.3$, $n_2=-0.4$.<div class="nsep"></div>Where does $\\mathbf r$ land?',
-        ask:{key:'m4-observe', choices:['$(2.3,-1.4)$','$(1.7,-0.6)$','$(0.3,-0.4)$'], answer:0,
-          why:'$\\mathbf r=\\mathbf s_i+\\mathbf n=(2+0.3,\\,-1-0.4)=(2.3,-1.4)$.'}}]}
-  ]}
-]},
-
-{ id:'m4-mfbank', module:'M4', nav:'The matched-filter bank', title:'The matched-filter bank',
-  objective:'Show that a filter matched to each basis function, sampled at t = T, gives the correlator output.',
-  keywords:'matched filter bank impulse response psi(T-t) sampling time correlator equivalence slider',
-  src:'CH9 s.25', slide:true, steps:2, blocks:[
-  {t:'eyebrow', text:'Module 4 · The observation'},
-  {t:'title', text:'The matched-filter bank'},
-  {t:'cols', ratio:'c-5-7', fill:true, left:[
-    {t:'fig', frame:true, grow:true,
-      live:{controls:[{k:'t', label:'$t_0/T$', min:0, max:2, step:0.05, v:0.6, show:v=>'$'+num(v)+'$'}]},
-      svg:figMfbank,
-      caption:'$\\psi(t)=\\sqrt3\\,t$ on $[0,1]$ and $r(t)=1.5\\,\\psi(t)$. Solid: the matched filter output $y(t)$. Dashed: the correlator $c(t)$. Drag the sampling time.'}
-  ], right:[
-    {t:'eq', label:'Matched filter', tex:'h_j(t)=\\psi_j(T-t),\\qquad y_j(t)=\\int_0^{T}r(\\tau)\\,\\psi_j(T-t+\\tau)\\,d\\tau',
-      note:'Each filter is its basis function turned around in time. Its output is a convolution.'},
-    {t:'reveal', at:1, items:[
-      {t:'eq', label:'Sample at T', tex:'y_j(T)=\\int_0^{T}r(\\tau)\\,\\psi_j(\\tau)\\,d\\tau=r_j',
-        note:'Put $t=T$: the shift disappears and the integral is the correlator. At other times the two differ.'}]},
-    {t:'reveal', at:2, items:[
-      {t:'note', kind:'def', head:'Given', html:'The signals are as drawn.<div class="nsep"></div>What does the matched filter give at $t=T=1$?',
-        ask:{key:'m4-mfbank', choices:['$0.75$','$1.5$','$4.5$'], answer:1,
-          why:'$y(1)=1.5\\int_0^{1}\\psi^{2}(t)\\,dt=1.5$, the correlator value.'}}]}
-  ]}
-]},
-
 { id:'m4-irrelevant', module:'M4', nav:'The noise the receiver ignores', title:'The noise the receiver ignores',
   objective:'Show that the noise outside the signal space adds the same amount to every distance and can be dropped.',
   keywords:'irrelevant noise n prime outside signal space sufficient statistics projection three dimensions independent',
@@ -34525,7 +34499,7 @@ CONTENT.SECTIONS = {
   M4: [
     { n:'4.0', title:'Opening',                        ids:['m4-open'] },
     { n:'4.1', title:'The observation',                ids:[
-        'm4-mary','m4-model','m4-corrbank','m4-vector','m4-observe','m4-mfbank','m4-irrelevant','m4-noisecorr','m4-noisepdf','m4-noise','m4-ex-pam4','m4-ex-orth',
+        'm4-mary','m4-model','m4-corrbank','m4-mfbank','m4-vector','m4-irrelevant','m4-noisecorr','m4-noisepdf','m4-noise','m4-ex-pam4','m4-ex-orth',
         'm4-real-observe','m4-lab-u','m4-code-observe'] },
     { n:'4.2', title:'The decision rule',              ids:[
         'm4-map','m4-mindist','m4-metric','m4-receiver','m4-optimal','m4-ex-map','m4-ex-receiver',
@@ -34699,7 +34673,7 @@ CONTENT.BOOK = {
      course slides and are not in the book, so those two scenes carry no
      anchor. The code pages carry none, as in Module 1. */
   'm4-open':'8.4', 'm4-mary':'8.4', 'm4-model':'8.4',
-  'm4-observe':'8.4.1', 'm4-mfbank':'8.4.1', 'm4-irrelevant':'8.4.1', 'm4-noisecorr':'8.4.1', 'm4-noisepdf':'8.4.1', 'm4-noise':'8.4.1',
+  'm4-mfbank':'8.4.1', 'm4-irrelevant':'8.4.1', 'm4-noisecorr':'8.4.1', 'm4-noisepdf':'8.4.1', 'm4-noise':'8.4.1',
   'm4-corrbank':'8.4.1', 'm4-vector':'8.4.1',
   'm4-ex-pam4':'8.4.1', 'm4-ex-orth':'8.4.1', 'm4-real-observe':'8.4.1', 'm4-lab-u':'8.4.1',
   'm4-map':'8.4.1', 'm4-mindist':'8.4.1', 'm4-metric':'8.4.1', 'm4-receiver':'8.4.1', 'm4-optimal':'8.4.1',

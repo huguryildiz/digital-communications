@@ -92,35 +92,34 @@ p1, p2 = np.sqrt(2) * np.cos(2 * np.pi * tm), np.sqrt(2) * np.sin(2 * np.pi * tm
 check("m4-model psi1 has unit energy", np.trapezoid(p1 ** 2, tm), 1, 1e-9)
 check("m4-model psi2 has unit energy", np.trapezoid(p2 ** 2, tm), 1, 1e-9)
 check("m4-model psi1, psi2 orthogonal", np.trapezoid(p1 * p2, tm), 0, 1e-9)
-s1 = 1.2 * p1 - 0.6 * p2
-check("m4-model E_1 of 1.2 psi1 - 0.6 psi2 = 1.8", np.trapezoid(s1 ** 2, tm), 1.8, 1e-9)
-check("m4-model E_1 = 1.44 + 0.36", 1.2 ** 2 + 0.6 ** 2, 1.8, 1e-12)
-check("m4-model distractor sqrt(1.8) = 1.34", math.sqrt(1.8), 1.34, 0.005)
-check("m4-model s_11 by correlation", np.trapezoid(s1 * p1, tm), 1.2, 1e-9)
-check("m4-model s_12 by correlation", np.trapezoid(s1 * p2, tm), -0.6, 1e-9)
+s1 = p1 - p2
+check("m4-model E_1 of psi1 - psi2 = 2", np.trapezoid(s1 ** 2, tm), 2, 1e-9)
+check("m4-model E_1 = 1 + 1", 1 ** 2 + (-1) ** 2, 2, 1e-12)
+check("m4-model distractor sqrt(2) = 1.41", math.sqrt(2), 1.41, 0.005)
+check("m4-model s_11 by correlation", np.trapezoid(s1 * p1, tm), 1, 1e-9)
+check("m4-model s_12 by correlation", np.trapezoid(s1 * p2, tm), -1, 1e-9)
 check("m4-model priors add up to 1", 0.4 + 0.3 + 0.2 + 0.1, 1, 1e-12)
-check("m4-observe r1 = 2 + 0.3", 2 + 0.3, 2.3, 1e-12)
-check("m4-observe r2 = -1 - 0.4", -1 - 0.4, -1.4, 1e-12)
 
-# matched filter: psi(t) = sqrt3 t on [0,1], r = 1.5 psi
+# matched filter: psi(t) = sqrt3 t on [0,1], h(t) = psi(1 - t)
 t = np.linspace(0, 1, 200001)
 psi = np.sqrt(3) * t
+h = np.sqrt(3) * (1 - t)
 check("m4-mfbank psi has unit energy", np.trapezoid(psi ** 2, t), 1, 1e-6)
-check("m4-mfbank y(T) = 1.5 int psi^2", 1.5 * np.trapezoid(psi ** 2, t), 1.5, 1e-6)
+check("m4-mfbank h(t) = psi(1 - t) = sqrt3 (1 - t)", np.max(np.abs(np.interp(1 - t, t, psi) - h)), 0, 1e-9)
+truth("m4-mfbank distractor sqrt3 t is not h(t)", np.max(np.abs(psi - h)) > 0.5)
+truth("m4-mfbank distractor sqrt3 (t - 1) is not h(t)", np.max(np.abs(np.sqrt(3) * (t - 1) - h)) > 0.5)
 
 
-def y_mf(t0):
-    tau = np.linspace(0, 1, 200001)
-    arg = 1 - t0 + tau
-    h = np.where((arg >= 0) & (arg <= 1), np.sqrt(3) * arg, 0.0)
-    return np.trapezoid(1.5 * np.sqrt(3) * tau * h, tau)
+def y_mf(t0, r):
+    # filter output y(t0) = int r(tau) h(t0 - tau) dtau, with h = psi(1 - .) on [0,1]
+    arg = 1 - t0 + t
+    hh = np.where((arg >= 0) & (arg <= 1), np.sqrt(3) * arg, 0.0)
+    return np.trapezoid(r * hh, t)
 
 
-mfY = lambda t0: 4.5 * (t0 ** 2 / 2 - t0 ** 3 / 6) if t0 <= 1 else 4.5 * (1 / 3 - (t0 - 1) / 2 + (t0 - 1) ** 3 / 6)
-for t0 in (0.4, 1.0, 1.5):
-    check(f"m4-mfbank figure y({t0}) matches the convolution", mfY(t0), y_mf(t0), 1e-4)
-check("m4-mfbank y(1) = c(1) = 1.5", mfY(1.0), 1.5, 1e-12)
-truth("m4-mfbank y(0.6) != c(0.6): the two differ off t = T", abs(mfY(0.6) - 1.5 * 0.6 ** 3) > 0.1)
+r = 0.8 * psi + 0.3 * np.sin(7 * t)  # any received waveform
+check("m4-mfbank y(T) equals the correlator output", y_mf(1.0, r), np.trapezoid(r * psi, t), 1e-6)
+truth("m4-mfbank y(0.6) differs from the correlator output", abs(y_mf(0.6, r) - np.trapezoid(r * psi, t)) > 0.1)
 
 check("m4-irrelevant 0.5 + 0.8", 0.5 + 0.8, 1.3, 1e-12)
 check("m4-irrelevant 2.0 + 0.8", 2.0 + 0.8, 2.8, 1e-12)
