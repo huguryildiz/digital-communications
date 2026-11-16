@@ -146,8 +146,25 @@ closed = (np.pi * N0j) ** (-len(nv) / 2) * np.exp(-np.sum(nv ** 2) / N0j)
 check("m4-noise joint density product = closed form", prod, closed, 1e-12)
 for rho in (0.0, 0.8, -0.9):
     check(f"m4-noise marginal variance of n2 stays 1 at rho = {rho}", rho ** 2 + (1 - rho ** 2), 1, 1e-12)
-check("m4-noise 1-sigma contour holds 1 - e^-1/2 (39%)", 1 - math.exp(-0.5), 0.39, 0.005)
-check("m4-noise 2-sigma contour holds 1 - e^-2 (86%)", 1 - math.exp(-2), 0.86, 0.006)
+# m4-corrbank: no noise, s_i = 2 psi1 - psi2 on the orthonormal basis of m4-model
+check("m4-corrbank second correlator reads -1", np.trapezoid((2 * p1 - p2) * p2, tm), -1, 1e-9)
+# m4-noisepdf: N = 2, N0 = 2, joint density at the origin, and the product form numerically
+check("m4-noisepdf f(0,0) = 1/(pi N0) at N0 = 2", 1 / (math.pi * 2), 0.159, 0.0005)
+gg = np.linspace(-8, 8, 1601); G1 = np.exp(-gg ** 2 / 2) / math.sqrt(2 * math.pi)
+check("m4-noisepdf product density integrates to 1", np.trapezoid(np.trapezoid(np.outer(G1, G1), gg), gg), 1, 1e-6)
+check("m4-noisepdf distractor 1/pi = 0.318", 1 / math.pi, 0.318, 0.0005)
+check("m4-noisepdf distractor 1/sqrt(2 pi) = 0.399", 1 / math.sqrt(2 * math.pi), 0.399, 0.0005)
+# m4-noise: peaks of the joint density, the marginal, and the slice through the peak
+def g2(x, y, r):
+    q = 1 - r * r
+    return np.exp(-(x * x - 2 * r * x * y + y * y) / (2 * q)) / (2 * math.pi * math.sqrt(q))
+check("m4-noise joint peak at rho = 0 is 1/(2 pi) = 0.16", g2(0, 0, 0), 0.16, 0.002)
+check("m4-noise joint peak at rho = 0.8 is 0.27", g2(0, 0, 0.8), 0.27, 0.006)
+for rho in (0, 0.8):
+    X, Y = np.meshgrid(gg, gg, indexing="ij")
+    marg = np.trapezoid(g2(X, Y, rho), gg, axis=1)
+    check(f"m4-noise marginal of n1 is N(0,1) at rho = {rho}", np.max(np.abs(marg - G1)), 0, 1e-6)
+check("m4-noise marginal peak 1/sqrt(2 pi) = 0.40", 1 / math.sqrt(2 * math.pi), 0.40, 0.002)
 
 check("m4-ex-pam4 peak 1/sqrt(0.1 pi)", 1 / math.sqrt(0.1 * math.pi), 1.78, 0.005)
 check("m4-ex-pam4 sigma^2 = N0/2", 0.1 / 2, 0.05, 1e-12)

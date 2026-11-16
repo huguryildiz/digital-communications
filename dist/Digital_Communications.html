@@ -24111,17 +24111,43 @@ function figExGsVec(){
   return a.svg();
 }
 
-/* Four signals in three dimensions, seen from an angle the reader turns. */
+/* The worked example of 3.3.4 in five frames: s_1(t), s_2(t) and s_3(t) one
+   a frame, each with the basis function it gives; then the remainder
+   g_3(t) = s_3(t) + sqrt2 psi_2(t), which is psi_3(t); then the four signal
+   points on the three axes. */
 function figExGsB(v){
-  const az = (v ? v.az : 30)*Math.PI/180, el = 22*Math.PI/180;
+  const H = P.hOverride || 430; P.hOverride = null;
+  const f = frameOf(v, 4), op = k => clamp01(f-k+1);
+  if(f > 3.5) return gsBPoints(H);
+  const r2 = 1/Math.SQRT2;
+  const pan = (k, h, last) => { const a = TAx({w:560, h, xr:[-0.1,3.3], yr:[-1.45,1.45],
+      xlabel:last?'t':'', ylabel:['s_1(t),\\;\\psi_1(t)','s_2(t),\\;\\psi_2(t)','s_3(t)','g_3(t)=\\psi_3(t)'][k],
+      pad:{l:56,r:26,t:20,b:last?36:10}, xt:last?[0,1,2,3]:null, yticksOverride:[-1,0,1]});
+    const o = op(k);
+    if(o < 0.02) return a.svg();
+    // the signal as a broad cyan trace, its basis function a narrower amber one on top
+    if(k < 3) seg(a, outline(GS4[k],-0.1,3.3), {color:C.in, width:3.6, opacity:o});
+    if(k===0) seg(a, outline([[0,2,r2]],-0.1,3.3), {color:C.h, width:2.0, opacity:o});
+    if(k===1) seg(a, outline([[0,1,r2],[1,2,-r2]],-0.1,3.3), {color:C.h, width:2.0, opacity:o});
+    // the remainder: s_3 with its psi_2 part removed leaves one unit pulse on [2,3)
+    if(k===3){ seg(a, outline(GS4[2],-0.1,3.3), {color:C.in, width:1.6, dash:'5 4', opacity:0.6*o});
+      seg(a, outline([[2,3,1]],-0.1,3.3), {color:C.mid, width:3.2, opacity:o}); }
+    return a.svg(); };
+  const h = Math.round(0.23*H), hl = H-3*h;
+  return stack(560, [[pan(0,h),h],[pan(1,h),h],[pan(2,h),h],[pan(3,hl,true),hl]]);
+}
+/* The four points on three axes, seen from one fixed angle. */
+function gsBPoints(H){
+  const az = 30*Math.PI/180, el = 22*Math.PI/180;
   const pr = (x,y,z) => [x*Math.cos(az) - y*Math.sin(az), z*Math.cos(el) + (x*Math.sin(az) + y*Math.cos(az))*Math.sin(el)];
+  P.hOverride = H;
   const a = plane(bare({need:[[-2.2,2.3],[-1.2,2.0]], xlabel:'', ylabel:''}));
   /* the gap from an arrow tip to its name grows with the label scale */
   const ls = P.labelScale();
   const ax = (p, q, name, lp) => { const P0 = pr(...p), P1 = pr(...q);
-    arrow(a, P0[0],P0[1],P1[0],P1[1], {color:C.muted, width:1.6, head:0.8});
+    arrow(a, P0[0],P0[1],P1[0],P1[1], {color:C.h, width:1.6, head:0.8});
     const L0 = pr(...lp), L = [P1[0]+(L0[0]-P1[0])*ls, P1[1]+(L0[1]-P1[1])*ls];
-    a.note(L[0], L[1]-0.06*ls, name, {tex:true, fs:16, color:C.ink, anchor:'middle'}); };
+    a.note(L[0], L[1]-0.06*ls, name, {tex:true, fs:16, color:C.h, anchor:'middle'}); };
   ax([0,0,0],[2.0,0,0],'\\psi_1',[2.22,0,0]);
   ax([0,-1.9,0],[0,1.9,0],'\\psi_2',[0,2.15,0]);
   ax([0,0,0],[0,0,1.55],'\\psi_3',[0,0,1.78]);
@@ -24822,15 +24848,15 @@ REAL_CONST,
 
 { id:'m3-ex-gs-b', module:'M3', nav:'Worked example · four signals, three axes', title:'Worked example: four signals, three axes',
   objective:'Run the procedure on four signals that span three dimensions and view the constellation in three dimensions.',
-  keywords:'worked example gram schmidt four signals three dimensions linear combination 3d constellation view slider',
+  keywords:'worked example gram schmidt four signals three dimensions linear combination remainder g_3 3d constellation frames',
   src:'CH9 s.19–21', slide:true, steps:3, blocks:[
   {t:'eyebrow', text:'Module 3 · Worked example'},
   {t:'title', text:'Worked example: four signals, three axes'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true,
-      live:{controls:[{k:'az', label:'view', min:0, max:90, step:5, v:30, show:v=>'$'+v+'^{\\circ}$'}]},
+      frames:{labels:['$s_1(t)$','$s_2(t)$','$s_3(t)$','$g_3(t)$','Constellation']},
       svg:figExGsB,
-      caption:'Turn the view. Four signals need three axes. $\\mathbf{s}_4$ sits one unit above $\\mathbf{s}_1$, along $\\psi_3$.'}
+      caption:'Each signal in turn, then the remainder $g_3(t)$, then the four points. $\\mathbf{s}_4$ sits one unit above $\\mathbf{s}_1$, along $\\psi_3$.'}
   ], right:[
     {t:'note', kind:'def', head:'Given', html:'$s_1(t)=1$ on $[0,2)$. $s_2(t)=1$ on $[0,1)$ and $-1$ on $[1,2)$. $s_3(t)=-1$ on $[0,1)$ and $1$ on $[1,3)$. $s_4(t)=1$ on $[0,3)$.<div class="nsep"></div>How many dimensions does the set span?',
       ask:{key:'m3-ex-gs-b', choices:['$2$','$3$','$4$'], answer:1,
@@ -25596,31 +25622,145 @@ function figNoiseCorr(v){
   return stack(560, [[a.svg(),hTop],[b.svg(),H-hTop]]);
 }
 
-/* Two noise components with variance N0/2 = 1 and correlation coefficient
-   rho: n1 = z1, n2 = rho z1 + sqrt(1 - rho^2) z2, from one fixed draw, so the
-   cloud deforms smoothly as rho is dragged. Contours at one and two standard
-   deviations. On the top and right edges, the density of each component
-   alone: it has variance 1 for every rho, so the edge bells never move. */
-const ZN = gauss(4402, 1200, 1);
-function figNoise(v){
-  const rho = v ? v.rho : 0, q = Math.sqrt(1-rho*rho);
-  const H = takeH(430), hs = 78, ws = 96, wp = 560-ws, hp = H-hs;
-  const a = plane({w:wp, h:hp, need:[[-3.3,3.3],[-3.1,3.1]], xlabel:'n_1', ylabel:'n_2', xticksOverride:[], yticksOverride:[]});
-  cloud(a, i=>ZN[2*i], i=>rho*ZN[2*i]+q*ZN[2*i+1], 600, {r:2.2});
-  [1,2].forEach(k=>{ const pts=[]; for(let i=0;i<=180;i++){ const u=2*Math.PI*i/180;
-      pts.push([k*Math.cos(u), k*(rho*Math.cos(u)+q*Math.sin(u))]); }
-    seg(a, pts, {color:C.mid, width:2.0, dash:k===2?'6 5':null}); });
-  lbl(a, a.o.xr[0]+0.2, 2.75, '\\rho='+num(rho, 1), C.mid);
-  // the edge strips share the plane's data area, so each bell lines up with its axis
-  const g = x => gpdf(x, 0, 1), xr = a.o.xr, yr = a.o.yr;
+/* An opaque blend of two hex colours, for a filled surface or a heat map
+   whose cells must hide what lies behind them. */
+const mix = (h0, h1, t) => { const c = h => [1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
+  const A = c(h0), B = c(h1), u = clamp01(t);
+  return '#'+A.map((x,i)=>Math.round(x+(B[i]-x)*u).toString(16).padStart(2,'0')).join(''); };
+/* The density of two zero-mean Gaussian components, each of variance 1, with
+   correlation coefficient rho. Its peak is 1/(2 pi sqrt(1 - rho^2)). */
+const g2 = (x, y, rho) => { const q = 1-rho*rho;
+  return Math.exp(-(x*x-2*rho*x*y+y*y)/(2*q))/(2*Math.PI*Math.sqrt(q)); };
+
+/* The bank of N correlators: r(t) feeds N branches, each multiplies by one
+   basis function, integrates over [0, T] and gives one coordinate r_k. The
+   frames light the input, the multipliers, the integrators, then the outputs. */
+function figCorrBank(v){
+  const H = takeH(430), f = frameOf(v, 3), lit = k => 0.22+0.78*clamp01(f-k+1);
+  const a = P.Axes(bare({w:560, h:H, xr:[0,10], yr:[-0.6,10], pad:{l:12,r:12,t:12,b:12}}));
+  const Y = [8.8, 5.6, 1.5], nm = ['1','2','N'], bx = 2.3, mx = 4.2, ix0 = 5.6, ix1 = 7.5;
+  const ln = (x0,y0,x1,y1,col,op) => seg(a, [[x0,y0],[x1,y1]], {color:col, width:2.2, opacity:op});
+  // input and the vertical bus, in the colour of the received waveform
+  lbl(a, 0.25, 4.62, 'r(t)', C.out, 'start', 18);
+  ln(1.25, 4.9, bx, 4.9, C.out, lit(0)); ln(bx, Y[2], bx, Y[0], C.out, lit(0));
+  a.raw(`<circle cx="${f2(a.sx(bx))}" cy="${f2(a.sy(4.9))}" r="4" fill="${C.out}" opacity="${lit(0).toFixed(3)}"/>`);
+  Y.forEach((y,k)=>{
+    arrow(a, bx, y, mx-0.38, y, {color:C.out, width:2.2, head:0.8, opacity:lit(0)});
+    // the multiplier and its basis function entering from below
+    const R = 17, X = f2(a.sx(mx)), Yp = f2(a.sy(y));
+    a.raw(`<circle cx="${X}" cy="${Yp}" r="${R}" fill="${C.plate}" stroke="${C.h}" stroke-width="2.2" opacity="${lit(1).toFixed(3)}"/>`
+      + `<path d="M${f2(+X-7)},${f2(+Yp-7)}L${f2(+X+7)},${f2(+Yp+7)}M${f2(+X-7)},${f2(+Yp+7)}L${f2(+X+7)},${f2(+Yp-7)}" stroke="${C.h}" stroke-width="2.2" opacity="${lit(1).toFixed(3)}"/>`);
+    arrow(a, mx, y-1.15, mx, y-0.45, {color:C.h, width:2.2, head:0.8, opacity:lit(1)});
+    lbl(a, mx, y-1.72, '\\psi_'+nm[k]+'(t)', C.h, 'middle', 16);
+    // the integrator over one symbol
+    arrow(a, mx+0.38, y, ix0, y, {color:C.mid, width:2.2, head:0.8, opacity:lit(2)});
+    const x0 = a.sx(ix0), x1 = a.sx(ix1), y0 = a.sy(y+0.75), y1 = a.sy(y-0.75);
+    a.raw(`<rect x="${f2(x0)}" y="${f2(y0)}" width="${f2(x1-x0)}" height="${f2(y1-y0)}" fill="${C.plate}" stroke="${C.mid}" stroke-width="2" opacity="${lit(2).toFixed(3)}"/>`);
+    lbl(a, (ix0+ix1)/2, y-0.28, '\\int_0^{T}(\\cdot)\\,dt', C.mid, 'middle', 16);
+    // the output coordinate
+    arrow(a, ix1, y, 9.15, y, {color:C.mid, width:2.2, head:0.8, opacity:lit(3)});
+    if(f > 2.5) lbl(a, 9.3, y-0.2, 'r_'+nm[k], C.mid, 'start', 18);
+  });
+  lbl(a, (ix0+ix1)/2, 3.05, '\\vdots', C.muted, 'middle', 16); lbl(a, 9.45, 3.05, '\\vdots', C.muted, 'middle', 18);
+  if(f > 2.5) lbl(a, 7.7, -0.35, '\\mathbf r=(r_1,r_2,\\ldots,r_N)', C.mid, 'middle', 18);
+  return a.svg();
+}
+
+/* The received point in vector form on two axes: the message point s_i,
+   the noise vector n from it, and the received point r = s_i + n. */
+const VS = [1.9, 0.55], VN = [-0.6, 1.25], VR = [VS[0]+VN[0], VS[1]+VN[1]];
+function figVector(v){
+  const f = frameOf(v, 3), op = k => clamp01(f-k+1);
+  const a = plane({need:[[-0.35,2.75],[-0.3,2.3]], xlabel:'\\psi_1(t)', ylabel:'\\psi_2(t)', xticksOverride:[], yticksOverride:[]});
+  // the coordinates of r, read on each axis
+  if(op(3) > 0.02){ seg(a, [[VR[0],0],[VR[0],VR[1]],[0,VR[1]]], {color:C.muted, width:1.3, dash:'4 5', opacity:op(3)});
+    if(op(3) > 0.5){ lbl(a, VR[0], -0.2, 'r_1', C.out, 'middle', 16); lbl(a, -0.08, VR[1]-0.06, 'r_2', C.out, 'end', 16); } }
+  arrow(a, 0, 0, VS[0], VS[1], {color:C.in, width:2.8});
+  lbl(a, 0.95, 0.45, '\\mathbf s_i', C.in, 'middle', 18);
+  dot(a, VS[0], VS[1], {color:C.in, r:7});
+  lbl(a, VS[0]+0.12, VS[1]-0.02, '\\text{Message point}', C.in, 'start', 15);
+  if(op(1) > 0.02){ arrow(a, VS[0], VS[1], VR[0], VR[1], {color:C.muted, width:2.6, opacity:op(1)});
+    if(op(1) > 0.5) lbl(a, (VS[0]+VR[0])/2+0.18, (VS[1]+VR[1])/2, '\\mathbf n', C.muted, 'start', 18); }
+  if(op(2) > 0.02){ arrow(a, 0, 0, VR[0], VR[1], {color:C.out, width:2.8, opacity:op(2)});
+    dot(a, VR[0], VR[1], {color:C.out, r:7, opacity:op(2)});
+    if(op(2) > 0.5){ lbl(a, 0.5, 1.0, '\\mathbf r', C.out, 'end', 18);
+      lbl(a, VR[0]+0.15, VR[1]+0.1, '\\text{Received signal point}', C.out, 'start', 15); } }
+  return a.svg();
+}
+
+/* The joint density of two independent components with N0/2 = 1, built from
+   its two factors: the bell of n_1 on the top edge, the bell of n_2 on the
+   right edge, then their product as a heat map in the plane. */
+function figNoisePdf(v){
+  const f = frameOf(v, 3), op = k => clamp01(f-k+1);
+  const H = takeH(430), hs = 84, ws = 100, wp = 560-ws, hp = H-hs;
+  const a = plane({w:wp, h:hp, need:[[-3.4,3.4],[-3.2,3.2]], xlabel:'n_1', ylabel:'n_2', xticksOverride:[-2,0,2], yticksOverride:[-2,0,2]});
+  const xr = a.o.xr, yr = a.o.yr, g = x => gpdf(x, 0, 1), pk = 1/(2*Math.PI);
+  if(op(2) > 0.02){
+    // the product f(n1) f(n2), one opaque cell a grid square
+    const m = 44, dx = (xr[1]-xr[0])/m, dy = (yr[1]-yr[0])/m; let s = '';
+    for(let i=0;i<m;i++) for(let j=0;j<m;j++){
+      const x = xr[0]+(i+0.5)*dx, y = yr[0]+(j+0.5)*dy, X0 = a.sx(x-dx/2), X1 = a.sx(x+dx/2), Y0 = a.sy(y+dy/2), Y1 = a.sy(y-dy/2);
+      s += `<rect x="${f2(X0)}" y="${f2(Y0)}" width="${f2(X1-X0+0.6)}" height="${f2(Y1-Y0+0.6)}" fill="${mix(C.plate, C.mid, Math.pow(g(x)*g(y)/pk, 0.75))}"/>`; }
+    a.raw(`<g opacity="${op(2).toFixed(3)}">${s}</g>`);
+    // the axes again, over the cells
+    seg(a, [[xr[0],0],[xr[1],0]], {color:C.axis, width:1}); seg(a, [[0,yr[0]],[0,yr[1]]], {color:C.axis, width:1});
+  }
+  if(op(3) > 0.5){ [1,2].forEach(k=>circle(a, k, {color:C.plate, width:1.4, dash:'5 4'}));
+    lbl(a, xr[0]+0.2, yr[1]-0.45, 'f_{\\mathbf n}(0,0)=\\tfrac{1}{2\\pi}\\approx0.16', C.mid, 'start', 15); }
+  // the two factors on the edges, each lined up with its own axis
   const t = P.Axes(bare({w:wp, h:hs, xr, yr:[0,0.46], pad:{l:a.x0, r:wp-a.x1, t:6, b:4}}));
-  seg(t, Array.from({length:301}, (_,i)=>{ const x = xr[0]+(xr[1]-xr[0])*i/300; return [x, g(x)]; }), {color:C.mid, width:2.2});
-  lbl(t, xr[1]-0.1, 0.3, 'f_{n_1}(n_1)', C.mid, 'end', 15);
+  seg(t, Array.from({length:301}, (_,i)=>{ const x = xr[0]+(xr[1]-xr[0])*i/300; return [x, g(x)]; }), {color:C.mid, width:2.4});
+  lbl(t, xr[1]-0.1, 0.3, 'f(n_1)', C.mid, 'end', 15);
   const r = P.Axes(bare({w:ws, h:hp, xr:[0,0.46], yr, pad:{l:6, r:6, t:a.y1, b:hp-a.y0}}));
-  seg(r, Array.from({length:301}, (_,i)=>{ const y = yr[0]+(yr[1]-yr[0])*i/300; return [g(y), y]; }), {color:C.mid, width:2.2});
-  lbl(r, 0.07, yr[1]-0.45, 'f_{n_2}(n_2)', C.mid, 'start', 14);
+  if(op(1) > 0.02) seg(r, Array.from({length:301}, (_,i)=>{ const y = yr[0]+(yr[1]-yr[0])*i/300; return [g(y), y]; }), {color:C.mid, width:2.4, opacity:op(1)});
+  if(op(1) > 0.5) lbl(r, 0.07, yr[1]-0.45, 'f(n_2)', C.mid, 'start', 15);
   const blank = `<svg viewBox="0 0 ${ws} ${hs}" xmlns="http://www.w3.org/2000/svg"></svg>`;
   return stack(560, [[row(hs, [[t.svg(),wp],[blank,ws]]),hs],[row(hp, [[a.svg(),wp],[r.svg(),ws]]),hp]]);
+}
+
+/* The joint density of two components with N0/2 = 1 drawn four ways, as a
+   surface, as a heat map, and along each axis. The correlation coefficient
+   rho runs from 0 to 0.8 as the frame plays. Along each axis the solid curve
+   is the marginal density, which stays N(0, 1) for every rho; the dashed
+   curve is the slice through the peak, which grows with rho. */
+function figNoise3d(v){
+  const f = frameOf(v, 1), rho = 0.8*clamp01(f), H = takeH(440), h1 = Math.round(0.56*H), h2 = H-h1;
+  const pk = 1/(2*Math.PI*Math.sqrt(1-rho*rho)), tone = z => Math.pow(clamp01(z/pk), 0.75);
+  // top left: the surface, seen from above the corner (-4, -4)
+  const s = P.Axes(bare({w:280, h:h1, xr:[-6.2,6.2], yr:[-4.4,8.4], pad:{l:8,r:8,t:10,b:8}}));
+  const pr = (x, y, z) => [0.72*(x-y), 0.36*(x+y)+17*z];
+  const box = [[-4,-4],[4,-4],[4,4],[-4,4]].map(p=>pr(p[0],p[1],0));
+  seg(s, box.concat([box[0]]), {color:C.axis, width:1});
+  const m = 26, d = 8/m, quads = [];
+  for(let i=0;i<m;i++) for(let j=0;j<m;j++){ const x = -4+i*d, y = -4+j*d;
+    const c = [[x,y],[x+d,y],[x+d,y+d],[x,y+d]].map(p=>[p[0], p[1], g2(p[0], p[1], rho)]);
+    quads.push({k:x+y, c, z:g2(x+d/2, y+d/2, rho)}); }
+  // the far quads first, so the near ones cover them
+  quads.sort((p,q)=>q.k-p.k);
+  s.raw(quads.map(q=>{ const col = mix(C.plate, C.mid, 0.1+0.9*tone(q.z));
+    return `<path d="M${q.c.map(p=>{ const P2 = pr(...p); return f2(s.sx(P2[0]))+','+f2(s.sy(P2[1])); }).join('L')}Z" fill="${col}" stroke="${col}" stroke-width="0.6"/>`; }).join(''));
+  lbl(s, 3.3, -3.55, 'n_1', C.muted, 'middle', 14); lbl(s, -3.4, -3.55, 'n_2', C.muted, 'middle', 14);
+  lbl(s, -6, 7.9, 'f_{\\mathbf n}(n_1,n_2)', C.mid, 'start', 15);
+  lbl(s, 6, 7.9, '\\rho='+num(rho, 1), C.ink, 'end', 15);
+  // top right: the heat map
+  const hm = plane({w:280, h:h1, need:[[-4,4],[-4,4]], xlabel:'n_1', ylabel:'n_2', xticksOverride:[-2,0,2], yticksOverride:[-2,0,2], pad:{l:40,r:14,t:16,b:38}});
+  const xr = hm.o.xr, yr = hm.o.yr, q = 40, dx = (xr[1]-xr[0])/q, dy = (yr[1]-yr[0])/q; let cs = '';
+  for(let i=0;i<q;i++) for(let j=0;j<q;j++){ const x = xr[0]+(i+0.5)*dx, y = yr[0]+(j+0.5)*dy;
+    const X0 = hm.sx(x-dx/2), X1 = hm.sx(x+dx/2), Y0 = hm.sy(y+dy/2), Y1 = hm.sy(y-dy/2);
+    cs += `<rect x="${f2(X0)}" y="${f2(Y0)}" width="${f2(X1-X0+0.6)}" height="${f2(Y1-Y0+0.6)}" fill="${mix(C.plate, C.mid, tone(g2(x, y, rho)))}"/>`; }
+  hm.raw(cs);
+  // the axes again, over the cells
+  seg(hm, [[xr[0],0],[xr[1],0]], {color:C.axis, width:1}); seg(hm, [[0,yr[0]],[0,yr[1]]], {color:C.axis, width:1});
+  // bottom: each axis alone, the marginal solid and the slice through the peak dashed
+  const one = (k) => { const b = TAx({w:280, h:h2, xr:[-4.3,5.6], yr:[0,0.46], xlabel:'n_'+k, xnameDrop:30, ylabel:'',
+      pad:{l:44,r:14,t:14,b:34}, xt:[-4,-2,0,2,4], yticksOverride:[0.4]});
+    b.curve(x=>gpdf(x, 0, 1), {color:C.mid, width:2.4});
+    b.curve(x=>g2(x, 0, rho), {color:C.muted, width:1.8, dash:'6 5'});
+    lbl(b, 1.25, 0.39, 'f_{n_'+k+'}(n_'+k+')', C.mid, 'start', 15);
+    return b; };
+  const b1 = one(1), b2 = one(2);
+  return stack(560, [[row(h1, [[s.svg(),280],[hm.svg(),280]]),h1],[row(h2, [[b1.svg(),280],[b2.svg(),280]]),h2]]);
 }
 
 /* Four-level PAM on a unit-energy pulse: s_m = -1.5, -0.5, 0.5, 1.5, and the
@@ -26336,11 +26476,11 @@ const SC = [
     {t:'fig', frame:true, grow:true, frames:{labels:['$\\psi_k(t)$','Weights','$s_1(t)$','$+\\,n(t)$']}, svg:figModel,
       caption:'Top: two basis functions build $s_1(t)$, and noise turns it into $r(t)$. Bottom: the four signal points and their priors. Here $T=1$.'}
   ], right:[
-    {t:'note', kind:'def', head:'Priors', html:'Each $T$ seconds one of $M$ symbols $\\mathbf s_i$ is sent. It has the prior probability $p_i=P(\\mathbf s_i)$, and the priors add up to $1$.'},
-    {t:'eq', label:'Signal-space expansion', tex:'\\begin{aligned}s_i(t)&=\\sum_{k=1}^{N}s_{ik}\\,\\psi_k(t),\\qquad 0\\le t\\le T\\\\s_{ik}&=\\int_0^{T}s_i(t)\\,\\psi_k(t)\\,dt\\end{aligned}',
-      note:'Each waveform has finite energy. Its $N$ coordinates $s_{ik}$ form the signal point $\\mathbf s_i$.'},
+    {t:'note', kind:'def', head:'Symbols and waveforms', html:'The transmitter sends one of $M$ symbols $\\mathbf s_i$, with prior $p_i=P(\\mathbf s_i)$. Each is a waveform $s_i(t)$ on $0<t<T$ with $\\int s_i^{2}(t)\\,dt<\\infty$.'},
+    {t:'eq', label:'Signal-space representation', tex:'\\begin{aligned}s_i(t)&=\\sum_{k=1}^{N}s_{ik}\\,\\psi_k(t),\\qquad 0<t<T\\\\s_{ik}&=\\int_0^{T}s_i(t)\\,\\psi_k(t)\\,dt,\\qquad k\\in\\{1,\\ldots,N\\}\\end{aligned}',
+      note:'Each transmitted waveform is a weighted sum of $N$ basis functions. The weights $s_{ik}$ are its coordinates.'},
     {t:'reveal', at:1, items:[
-      {t:'note', kind:'warn', head:'The channel', html:'The channel adds white Gaussian noise, so $r(t)=s_i(t)+n(t)$. The noise has the two-sided power spectral density $S_N(f)=N_0/2$ at every $f$.'}]},
+      {t:'note', kind:'warn', head:'The AWGN channel', html:'Zero-mean additive white Gaussian noise corrupts $s_i(t)$, so $r(t)=s_i(t)+n(t)$. The noise $n(t)$ is white, with $S_N(f)=N_0/2$ for every $f$.'}]},
     {t:'reveal', at:2, items:[
       {t:'note', kind:'def', head:'Given', html:'The basis is as drawn, and $s_1(t)=1.2\\,\\psi_1(t)-0.6\\,\\psi_2(t)$.<div class="nsep"></div>What is the energy of $s_1(t)$?',
         ask:{key:'m4-model', choices:['$1.8$','$1.34$','$0.6$'], answer:0,
@@ -26348,6 +26488,48 @@ const SC = [
   ]}
 ]},
 
+{ id:'m4-corrbank', module:'M4', nav:'The correlator bank', title:'The correlator bank',
+  objective:'Split the noise at the signal space and read the N coordinates of r(t) with a parallel bank of correlators.',
+  keywords:'correlator bank parallel N correlators multiplier integrator noise expansion n_k orthogonal noise outside signal space irrelevant observation vector block diagram frames',
+  src:'CH9 s.24', slide:true, steps:2, blocks:[
+  {t:'eyebrow', text:'Module 4 · The observation'},
+  {t:'title', text:'The correlator bank'},
+  {t:'cols', ratio:'c-5-7', fill:true, left:[
+    {t:'fig', frame:true, grow:true, frames:{labels:['$r(t)$','Multiply','Integrate','Read $r_k$']}, svg:figCorrBank,
+      caption:'A parallel bank of $N$ correlators. Each branch multiplies $r(t)$ by one basis function and integrates over one symbol.'}
+  ], right:[
+    {t:'eq', label:'The noise term', tex:'\\begin{aligned}n(t)&=n\'(t)+\\sum_{k=1}^{N}n_k\\,\\psi_k(t)\\\\n_k&=\\int_0^{T}n(t)\\,\\psi_k(t)\\,dt,\\qquad k\\in\\{1,\\ldots,N\\}\\end{aligned}',
+      note:'The noise $n\'(t)$ is orthogonal to the signal space $\\{\\psi_k(t)\\}_{k=1}^{N}$. It holds no information about which waveform was sent.'},
+    {t:'reveal', at:1, items:[
+      {t:'eq', result:true, label:'Key result · correlator output', tex:'r_k=\\int_0^{T}r(t)\\,\\psi_k(t)\\,dt,\\qquad k\\in\\{1,\\ldots,N\\}',
+        note:'The $N$ outputs form the observation vector $\\mathbf r=(r_1,r_2,\\ldots,r_N)$.'}]},
+    {t:'reveal', at:2, items:[
+      {t:'note', kind:'def', head:'Given', html:'No noise arrives, and $s_i(t)=2\\,\\psi_1(t)-\\psi_2(t)$ with an orthonormal basis.<div class="nsep"></div>What does the second correlator read?',
+        ask:{key:'m4-corrbank', choices:['$-1$','$2$','$1$'], answer:0,
+          why:'$r_2=\\int_0^{T}s_i(t)\\,\\psi_2(t)\\,dt=2\\cdot0+(-1)\\cdot1=-1$.'}}]}
+  ]}
+]},
+
+{ id:'m4-vector', module:'M4', nav:'The received signal point', title:'The received signal point',
+  objective:'Show that each correlator output is a signal coordinate plus a noise coordinate, so r = s_i + n in the signal space.',
+  keywords:'correlator output s_ik plus n_k projection of r(t) on signal space vector form signal vector noise vector observation vector message point received point frames',
+  src:'CH9 s.25', slide:true, steps:2, blocks:[
+  {t:'eyebrow', text:'Module 4 · The observation'},
+  {t:'title', text:'The received signal point'},
+  {t:'cols', ratio:'c-5-7', fill:true, left:[
+    {t:'fig', frame:true, grow:true, frames:{labels:['$\\mathbf s_i$','$+\\,\\mathbf n$','$\\mathbf r$','$(r_1,r_2)$']}, svg:figVector,
+      caption:'The message point $\\mathbf s_i$, the noise vector $\\mathbf n$ added to it, and the received signal point $\\mathbf r$, with $N=2$.'}
+  ], right:[
+    {t:'eq', label:'One correlator output', tex:'\\begin{aligned}r_k&=\\int_0^{T}\\overbrace{\\{s_i(t)+n(t)\\}}^{=r(t)}\\,\\psi_k(t)\\,dt\\\\&=\\overbrace{\\int_0^{T}s_i(t)\\,\\psi_k(t)\\,dt}^{=s_{ik}}+\\overbrace{\\int_0^{T}n(t)\\,\\psi_k(t)\\,dt}^{=n_k}=s_{ik}+n_k\\end{aligned}',
+      note:'Put $r(t)=s_i(t)+n(t)$ in the correlator and split the integral in two.'},
+    {t:'reveal', at:1, items:[
+      {t:'eq', label:'In other words', tex:'\\begin{aligned}r(t)&=\\sum_{k=1}^{N}s_{ik}\\,\\psi_k(t)+\\sum_{k=1}^{N}n_k\\,\\psi_k(t)+n\'(t)\\\\&=\\sum_{k=1}^{N}r_k\\,\\psi_k(t)+n\'(t)\\end{aligned}',
+        note:'The sum is the projection of $r(t)$ on the $N$-dimensional signal space.'}]},
+    {t:'reveal', at:2, items:[
+      {t:'eq', result:true, label:'Key result · vector form', tex:'\\mathbf r=\\mathbf s_i+\\mathbf n=(r_1,r_2)',
+        note:'Signal vector $\\mathbf s_i=(s_{i1},s_{i2})$. Noise vector $\\mathbf n=(n_1,n_2)$. Observation vector $\\mathbf r$.'}]}
+  ]}
+]},
 { id:'m4-observe', module:'M4', nav:'The observation vector', title:'The observation vector',
   objective:'Show how a bank of correlators turns the received waveform into a point r = s + n.',
   keywords:'correlator bank demodulator running integral received waveform signal plus noise point observation vector frames',
@@ -26418,54 +26600,64 @@ const SC = [
   ]}
 ]},
 
-{ id:'m4-noisecorr', module:'M4', nav:'The noise correlation', title:'The noise correlation',
-  objective:'Derive that two noise components on an orthonormal basis are uncorrelated and each has variance N0/2.',
-  keywords:'noise correlation E[n_j n_k] white noise autocorrelation delta sifting property double integral orthonormal uncorrelated variance N0/2 frames',
-  src:'CH9 s.26', slide:true, steps:2, blocks:[
+{ id:'m4-noisecorr', module:'M4', nav:'The noise vector · mean and correlation', title:'The noise vector: mean and correlation',
+  objective:'Derive that each noise component has mean zero and that two noise components on an orthonormal basis are uncorrelated with variance N0/2.',
+  keywords:'distribution of the noise vector gaussian random variable mean zero correlation E[n_j n_k] white noise autocorrelation delta sifting property double integral orthonormal uncorrelated variance N0/2 frames',
+  src:'CH9 s.26', slide:true, steps:1, blocks:[
   {t:'eyebrow', text:'Module 4 · The observation'},
-  {t:'title', text:'The noise correlation'},
+  {t:'title', text:'The noise vector: mean and correlation'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true, frames:{labels:['$\\delta(\\tau-u)$','Sift','$j=k$','$j\\ne k$']}, svg:figNoiseCorr,
       caption:'Top: the square of time pairs $(\\tau,u)$. The noise is correlated only on the line $\\tau=u$. Bottom: what is left to integrate along that line. Here $T=1$.'}
   ], right:[
-    {t:'eq', label:'Step 1 · Expand', tex:'E[n_jn_k]=\\int_0^{T}\\!\\!\\int_0^{T}E[n(\\tau)\\,n(u)]\\,\\psi_j(\\tau)\\,\\psi_k(u)\\,d\\tau\\,du',
-      note:'Multiply the two correlator integrals and move the expectation inside. White noise at two different times is uncorrelated, so only the line $\\tau=u$ counts.'},
+    {t:'eq', label:'Mean', tex:'E[n_k]=E\\Big[\\int_0^{T}n(t)\\,\\psi_k(t)\\,dt\\Big]=\\int_0^{T}\\overbrace{E[n(t)]}^{=0}\\,\\psi_k(t)\\,dt=0',
+      note:'$n(t)$ is a zero-mean Gaussian process, so each $n_k$ is a Gaussian random variable with mean $0$.'},
     {t:'reveal', at:1, items:[
-      {t:'eq', label:'Step 2 · Sift', tex:'\\begin{aligned}E[n_jn_k]&=\\frac{N_0}{2}\\int_0^{T}\\psi_j(u)\\,\\psi_k(u)\\,du\\\\&=\\begin{cases}N_0/2, & j=k\\\\0, & j\\ne k\\end{cases}\\end{aligned}',
-        note:'Put in $E[n(\\tau)\\,n(u)]=\\frac{N_0}{2}\\delta(\\tau-u)$. The delta picks $\\tau=u$, and orthonormality gives $1$ or $0$.'}]},
-    {t:'reveal', at:2, items:[
-      {t:'note', kind:'def', head:'Given', html:'The noise has $N_0=0.2$, and the basis is orthonormal.<div class="nsep"></div>What are $E[n_1^{2}]$ and $E[n_1n_2]$?',
-        ask:{key:'m4-noisecorr', choices:['$0.1$ and $0$','$0.2$ and $0$','$0.1$ and $0.1$'], answer:0,
-          why:'$E[n_1^{2}]=N_0/2=0.1$. The basis functions are orthogonal, so $E[n_1n_2]=0$.'}}]}
+      {t:'eq', label:'Correlation', tex:'\\begin{aligned}E[n_jn_k]&=\\int_0^{T}\\!\\!\\int_0^{T}\\overbrace{E[n(\\tau)\\,n(u)]}^{=\\frac{N_0}{2}\\delta(\\tau-u)}\\,\\psi_j(\\tau)\\,\\psi_k(u)\\,d\\tau\\,du\\\\&=\\frac{N_0}{2}\\int_0^{T}\\psi_k(u)\\overbrace{\\int_0^{T}\\psi_j(\\tau)\\,\\delta(\\tau-u)\\,d\\tau}^{=\\psi_j(u)}\\,du\\\\&=\\frac{N_0}{2}\\overbrace{\\int_0^{T}\\psi_k(u)\\,\\psi_j(u)\\,du}^{=1\\text{ if }j=k,\\ 0\\text{ if }j\\ne k}=\\begin{cases}N_0/2, & j=k\\\\0, & j\\ne k\\end{cases}\\end{aligned}',
+        note:'Multiply the two correlator integrals and move $E$ inside. The sifting property of $\\delta$ picks $\\tau=u$.'}]}
   ]}
 ]},
 
-{ id:'m4-noise', module:'M4', nav:'The noise components', title:'The noise components',
-  objective:'Show that white noise on an orthonormal basis gives independent Gaussian components of variance N0/2.',
-  keywords:'noise components independent gaussian variance N0/2 white noise orthonormal circular cloud correlation coefficient ellipse slider',
-  src:'CH9 s.26–28', slide:true, steps:3, blocks:[
+{ id:'m4-noisepdf', module:'M4', nav:'The noise vector · joint density', title:'The noise vector: joint density',
+  objective:'Show that the noise components are independent Gaussian variables of variance N0/2 and write their joint density as a product.',
+  keywords:'distribution of the noise vector uncorrelated gaussian independent n_i normal N(0,N0/2) joint probability density function product multivariate normal frames',
+  src:'CH9 s.27', slide:true, steps:2, blocks:[
   {t:'eyebrow', text:'Module 4 · The observation'},
-  {t:'title', text:'The noise components'},
+  {t:'title', text:'The noise vector: joint density'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
-    {t:'fig', frame:true, grow:true,
-      live:{controls:[{k:'rho', label:'$\\rho$', min:-0.9, max:0.9, step:0.1, v:0, show:v=>'$'+num(v,1)+'$'}]},
-      svg:figNoise,
-      caption:'Two noise components with variance $1$. Drag the correlation $\\rho$. The edge bells are the densities of $n_1$ and $n_2$ alone. The solid and dashed curves hold about $39\\%$ and $86\\%$ of the points.'}
+    {t:'fig', frame:true, grow:true, frames:{labels:['$f(n_1)$','$f(n_2)$','Product','Peak']}, svg:figNoisePdf,
+      caption:'The density of $n_1$ on the top edge, of $n_2$ on the right edge, and their product in the plane. A stronger violet means more likely. Here $N_0/2=1$.'}
   ], right:[
-    {t:'eq', label:'One component', tex:'n_j=\\int_0^{T}n(t)\\,\\psi_j(t)\\,dt,\\qquad E[n_j]=0,\\qquad E[n_j^{2}]=\\frac{N_0}{2}',
-      note:'Each noise coordinate is Gaussian, with mean zero and variance $N_0/2$.'},
+    {t:'note', kind:'def', head:'Independent components', html:'For $j\\ne k$, $n_j$ and $n_k$ are uncorrelated and jointly Gaussian, so they are also independent. Hence $n_i\\sim\\mathcal N(0,N_0/2)$ for every $i\\in\\{1,\\ldots,N\\}$.'},
     {t:'reveal', at:1, items:[
-      {t:'eq', label:'Joint density', tex:'f_{\\mathbf n}(\\mathbf n)=\\prod_{i=1}^{N}\\frac{e^{-n_i^{2}/N_0}}{\\sqrt{\\pi N_0}}=(\\pi N_0)^{-N/2}\\,e^{-\\|\\mathbf n\\|^{2}/N_0}',
-        note:'Independent components multiply, with $\\|\\mathbf n\\|^{2}=\\sum_i n_i^{2}$. The density depends only on the length of $\\mathbf n$, so the cloud is round.'}]},
+      {t:'eq', label:'Joint density', tex:'\\begin{aligned}f_{\\mathbf n}(n_1,\\ldots,n_N)&=f(n_1)\\,f(n_2)\\cdots f(n_N)=\\prod_{i=1}^{N}f(n_i)\\\\&=\\prod_{i=1}^{N}\\frac{1}{\\sqrt{\\pi N_0}}\\exp\\Big(-\\frac{n_i^{2}}{N_0}\\Big)=(\\pi N_0)^{-N/2}\\exp\\Big(-\\sum_{i=1}^{N}\\frac{n_i^{2}}{N_0}\\Big)\\end{aligned}',
+        note:'The first line holds because the $n_i$ are independent.'},
+      {t:'eq', result:true, label:'Key result · multivariate normal', tex:'f_{\\mathbf n}(n_1,\\ldots,n_N)=(\\pi N_0)^{-N/2}\\exp\\Big(-\\sum_{i=1}^{N}\\frac{n_i^{2}}{N_0}\\Big)'}]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'warn', head:'An ellipse', html:'Coloured noise gives $\\rho\\ne0$. The cloud tilts, but each edge bell stays the same. The nearest point is no longer the best guess.'}]},
-    {t:'reveal', at:3, items:[
-      {t:'note', kind:'def', head:'Given', html:'Noise with $\\rho=0.8$ reaches the two correlators.<div class="nsep"></div>What shape does the cloud take?',
-        ask:{key:'m4-noise', choices:['a circle','an ellipse along $n_1=n_2$','an ellipse along $n_1=-n_2$'], answer:1,
-          why:'A positive $\\rho$ makes $n_2$ follow $n_1$. The cloud stretches along the line $n_1=n_2$.'}}]}
+      {t:'note', kind:'def', head:'Given', html:'$N=2$ and $N_0=2$.<div class="nsep"></div>What is $f_{\\mathbf n}(0,0)$?',
+        ask:{key:'m4-noisepdf', choices:['$0.159$','$0.318$','$0.399$'], answer:0,
+          why:'$f_{\\mathbf n}(0,0)=(\\pi N_0)^{-1}=1/(2\\pi)\\approx0.159$.'}}]}
   ]}
 ]},
-
+{ id:'m4-noise', module:'M4', nav:'The noise vector · plots', title:'The noise vector: plots',
+  objective:'Read the joint and marginal densities of two noise components, uncorrelated and with correlation coefficient 0.8.',
+  keywords:'distribution of the noise vector multivariate gaussian surface plot heat map marginal densities uncorrelated correlated correlation coefficient 0.8 ellipse slice frames',
+  src:'CH9 s.28', slide:true, steps:2, blocks:[
+  {t:'eyebrow', text:'Module 4 · The observation'},
+  {t:'title', text:'The noise vector: plots'},
+  {t:'cols', ratio:'c-5-7', fill:true, left:[
+    {t:'fig', frame:true, grow:true, frames:{labels:['Uncorrelated','$\\rho=0.8$']}, svg:figNoise3d,
+      caption:'The joint density as a surface and as a heat map, and each component alone. Solid: the marginal density. Dashed: the slice through the peak. Here $N_0/2=1$.'}
+  ], right:[
+    {t:'note', kind:'def', head:'Uncorrelated', html:'With $N_0/2=1$, the joint density $f_{\\mathbf n}(n_1,n_2)$ is a round bell with peak $1/(2\\pi)\\approx0.16$. Each marginal $f_{n_i}(n_i)$ is $\\mathcal N(0,1)$.'},
+    {t:'reveal', at:1, items:[
+      {t:'note', kind:'warn', head:'Correlated, $\\rho=0.8$', html:'The bell stretches along $n_1=n_2$, and its peak rises to $1/(2\\pi\\sqrt{1-\\rho^{2}})\\approx0.27$. The marginals stay $\\mathcal N(0,1)$.<div class="nsep"></div>Common error: read the slice $f_{\\mathbf n}(n_1,0)$ as the marginal. Only the slice grows with $\\rho$.'}]},
+    {t:'reveal', at:2, items:[
+      {t:'note', kind:'def', head:'Given', html:'Noise with $\\rho=0.8$ reaches the two correlators.<div class="nsep"></div>What shape does the heat map take?',
+        ask:{key:'m4-noise', choices:['a circle','an ellipse along $n_1=n_2$','an ellipse along $n_1=-n_2$'], answer:1,
+          why:'A positive $\\rho$ makes $n_2$ follow $n_1$. The bell stretches along the line $n_1=n_2$.'}}]}
+  ]}
+]},
 { id:'m4-ex-pam4', module:'M4', nav:'Worked example · four-level PAM', title:'Worked example: four-level PAM',
   objective:'Find the four conditional densities at the output of the demodulator for four-level PAM.',
   keywords:'worked example 4-pam four level pam conditional density gaussian bells N0 slider demodulator output',
@@ -34333,7 +34525,7 @@ CONTENT.SECTIONS = {
   M4: [
     { n:'4.0', title:'Opening',                        ids:['m4-open'] },
     { n:'4.1', title:'The observation',                ids:[
-        'm4-mary','m4-model','m4-observe','m4-mfbank','m4-irrelevant','m4-noisecorr','m4-noise','m4-ex-pam4','m4-ex-orth',
+        'm4-mary','m4-model','m4-corrbank','m4-vector','m4-observe','m4-mfbank','m4-irrelevant','m4-noisecorr','m4-noisepdf','m4-noise','m4-ex-pam4','m4-ex-orth',
         'm4-real-observe','m4-lab-u','m4-code-observe'] },
     { n:'4.2', title:'The decision rule',              ids:[
         'm4-map','m4-mindist','m4-metric','m4-receiver','m4-optimal','m4-ex-map','m4-ex-receiver',
@@ -34507,7 +34699,8 @@ CONTENT.BOOK = {
      course slides and are not in the book, so those two scenes carry no
      anchor. The code pages carry none, as in Module 1. */
   'm4-open':'8.4', 'm4-mary':'8.4', 'm4-model':'8.4',
-  'm4-observe':'8.4.1', 'm4-mfbank':'8.4.1', 'm4-irrelevant':'8.4.1', 'm4-noisecorr':'8.4.1', 'm4-noise':'8.4.1',
+  'm4-observe':'8.4.1', 'm4-mfbank':'8.4.1', 'm4-irrelevant':'8.4.1', 'm4-noisecorr':'8.4.1', 'm4-noisepdf':'8.4.1', 'm4-noise':'8.4.1',
+  'm4-corrbank':'8.4.1', 'm4-vector':'8.4.1',
   'm4-ex-pam4':'8.4.1', 'm4-ex-orth':'8.4.1', 'm4-real-observe':'8.4.1', 'm4-lab-u':'8.4.1',
   'm4-map':'8.4.1', 'm4-mindist':'8.4.1', 'm4-metric':'8.4.1', 'm4-receiver':'8.4.1', 'm4-optimal':'8.4.1',
   'm4-ex-map':'8.4.1', 'm4-ex-receiver':'8.4.1', 'm4-real-rule':'8.4.1', 'm4-lab-v':'8.4.1',

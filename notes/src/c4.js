@@ -344,9 +344,6 @@ function figIrrelevant(){
   return a.svg();
 }
 
-/* Two noise components with variance 1 and correlation coefficient rho, from
-   one fixed draw. Contours at one and two standard deviations. */
-const ZN = gauss(4402, 1200, 1);
 /* The correlation of two noise components as a double integral over the
    square of time pairs (tau, u): white noise is correlated only on the line
    tau = u. Below, what is left for j != k, the product psi_1 psi_2, whose area
@@ -374,26 +371,119 @@ function figNoiseCorr(){
   return stack(W, [[a.svg(),hTop],[b.svg(),H-hTop]]);
 }
 
-/* Two noise components of variance 1 and correlation rho, with the density of
-   each component alone on the top and right edges. */
-function figNoise(rho){
-  const q = Math.sqrt(1-rho*rho), wt = 330, hs = 64, ws = 76, wp = wt-ws, hp = 300;
-  const a = plane({w:wp, h:hp, need:[[-3.3,3.3],[-3.1,3.1]], xlabel:'n_1', ylabel:'n_2', pad:{l:46,r:20,t:22,b:40}, xticksOverride:[], yticksOverride:[]});
-  cloud(a, i=>ZN[2*i], i=>rho*ZN[2*i]+q*ZN[2*i+1], 600, {r:1.8});
-  [1,2].forEach(k=>{ const pts=[]; for(let i=0;i<=180;i++){ const u=2*Math.PI*i/180;
-      pts.push([k*Math.cos(u), k*(rho*Math.cos(u)+q*Math.sin(u))]); }
-    seg(a, pts, {color:C.mid, width:2.0, dash:k===2?'6 5':null}); });
-  lbl(a, a.o.xr[0]+0.2, 2.75, '\\rho='+num(rho, 1), C.mid);
-  // the edge strips share the plane's data area, so each bell lines up with its axis
-  const g = x => gpdf(x, 0, 1), xr = a.o.xr, yr = a.o.yr;
+/* An opaque blend of two hex colours, for a filled surface or a heat map. */
+const mix = (h0, h1, t) => { const c = h => [1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
+  const A = c(h0), B = c(h1), u = clamp01(t);
+  return '#'+A.map((x,i)=>Math.round(x+(B[i]-x)*u).toString(16).padStart(2,'0')).join(''); };
+/* The density of two zero-mean components of variance 1 with correlation rho. */
+const g2 = (x, y, rho) => { const q = 1-rho*rho;
+  return Math.exp(-(x*x-2*rho*x*y+y*y)/(2*q))/(2*Math.PI*Math.sqrt(q)); };
+
+/* The bank of N correlators: r(t) feeds N branches, each multiplies by one
+   basis function, integrates over [0, T] and gives one coordinate r_k. */
+function figCorrBank(){
+  const a = P.Axes(bare({w:W, h:360, xr:[0,10], yr:[-0.6,10], pad:{l:12,r:12,t:12,b:12}}));
+  const Y = [8.8, 5.6, 1.5], nm = ['1','2','N'], bx = 2.3, mx = 4.2, ix0 = 5.6, ix1 = 7.5;
+  lbl(a, 0.25, 4.62, 'r(t)', C.out, 'start', 16);
+  seg(a, [[1.25,4.9],[bx,4.9]], {color:C.out, width:2.0}); seg(a, [[bx,Y[2]],[bx,Y[0]]], {color:C.out, width:2.0});
+  a.raw(`<circle cx="${f2(a.sx(bx))}" cy="${f2(a.sy(4.9))}" r="3.5" fill="${C.out}"/>`);
+  Y.forEach((y,k)=>{
+    arrow(a, bx, y, mx-0.4, y, {color:C.out, width:2.0, head:0.7});
+    const R = 14, X = +f2(a.sx(mx)), Yp = +f2(a.sy(y));
+    a.raw(`<circle cx="${X}" cy="${Yp}" r="${R}" fill="${C.plate}" stroke="${C.h}" stroke-width="2"/>`
+      + `<path d="M${f2(X-6)},${f2(Yp-6)}L${f2(X+6)},${f2(Yp+6)}M${f2(X-6)},${f2(Yp+6)}L${f2(X+6)},${f2(Yp-6)}" stroke="${C.h}" stroke-width="2"/>`);
+    arrow(a, mx, y-1.15, mx, y-0.5, {color:C.h, width:2.0, head:0.7});
+    lbl(a, mx, y-1.72, '\\psi_'+nm[k]+'(t)', C.h, 'middle', 14);
+    arrow(a, mx+0.4, y, ix0, y, {color:C.mid, width:2.0, head:0.7});
+    const x0 = a.sx(ix0), x1 = a.sx(ix1), y0 = a.sy(y+0.75), y1 = a.sy(y-0.75);
+    a.raw(`<rect x="${f2(x0)}" y="${f2(y0)}" width="${f2(x1-x0)}" height="${f2(y1-y0)}" fill="${C.plate}" stroke="${C.mid}" stroke-width="1.8"/>`);
+    lbl(a, (ix0+ix1)/2, y-0.28, '\\int_0^{T}(\\cdot)\\,dt', C.mid, 'middle', 14);
+    arrow(a, ix1, y, 9.15, y, {color:C.mid, width:2.0, head:0.7});
+    lbl(a, 9.3, y-0.2, 'r_'+nm[k], C.mid, 'start', 16);
+  });
+  lbl(a, (ix0+ix1)/2, 3.05, '\\vdots', C.muted, 'middle', 14); lbl(a, 9.45, 3.05, '\\vdots', C.muted, 'middle', 14);
+  lbl(a, 7.7, -0.35, '\\mathbf r=(r_1,r_2,\\ldots,r_N)', C.mid, 'middle', 16);
+  return a.svg();
+}
+
+/* The message point s_i, the noise vector n from it, and the received point
+   r = s_i + n, with the coordinates of r read on each axis. */
+const VS = [1.9, 0.55], VN = [-0.6, 1.25], VR = [VS[0]+VN[0], VS[1]+VN[1]];
+function figVector(){
+  const a = plane({w:W, h:320, need:[[-0.35,2.75],[-0.3,2.3]], xlabel:'\\psi_1(t)', ylabel:'\\psi_2(t)', xticksOverride:[], yticksOverride:[]});
+  seg(a, [[VR[0],0],[VR[0],VR[1]],[0,VR[1]]], {color:C.muted, width:1.2, dash:'4 5'});
+  lbl(a, VR[0], -0.2, 'r_1', C.out, 'middle', 15); lbl(a, -0.08, VR[1]-0.06, 'r_2', C.out, 'end', 15);
+  arrow(a, 0, 0, VS[0], VS[1], {color:C.in, width:2.6});
+  lbl(a, 0.95, 0.45, '\\mathbf s_i', C.in, 'middle', 16);
+  dot(a, VS[0], VS[1], {color:C.in, r:6});
+  lbl(a, VS[0]+0.12, VS[1]-0.02, '\\text{Message point}', C.in, 'start', 14);
+  arrow(a, VS[0], VS[1], VR[0], VR[1], {color:C.muted, width:2.4});
+  lbl(a, (VS[0]+VR[0])/2+0.18, (VS[1]+VR[1])/2, '\\mathbf n', C.muted, 'start', 16);
+  arrow(a, 0, 0, VR[0], VR[1], {color:C.out, width:2.6});
+  dot(a, VR[0], VR[1], {color:C.out, r:6});
+  lbl(a, 0.5, 1.0, '\\mathbf r', C.out, 'end', 16);
+  lbl(a, VR[0]+0.15, VR[1]+0.1, '\\text{Received signal point}', C.out, 'start', 14);
+  return a.svg();
+}
+
+/* The joint density of two independent components with N0/2 = 1: the bell of
+   n_1 on the top edge, the bell of n_2 on the right edge, their product as a
+   heat map in the plane. */
+function figNoisePdf(){
+  const wt = 360, hs = 64, ws = 78, wp = wt-ws, hp = 300;
+  const a = plane({w:wp, h:hp, need:[[-3.4,3.4],[-3.2,3.2]], xlabel:'n_1', ylabel:'n_2', pad:{l:46,r:20,t:22,b:40}, xticksOverride:[-2,0,2], yticksOverride:[-2,0,2]});
+  const xr = a.o.xr, yr = a.o.yr, g = x => gpdf(x, 0, 1), pk = 1/(2*Math.PI);
+  const m = 44, dx = (xr[1]-xr[0])/m, dy = (yr[1]-yr[0])/m; let s = '';
+  for(let i=0;i<m;i++) for(let j=0;j<m;j++){
+    const x = xr[0]+(i+0.5)*dx, y = yr[0]+(j+0.5)*dy, X0 = a.sx(x-dx/2), X1 = a.sx(x+dx/2), Y0 = a.sy(y+dy/2), Y1 = a.sy(y-dy/2);
+    s += `<rect x="${f2(X0)}" y="${f2(Y0)}" width="${f2(X1-X0+0.6)}" height="${f2(Y1-Y0+0.6)}" fill="${mix(C.plate, C.mid, Math.pow(g(x)*g(y)/pk, 0.75))}"/>`; }
+  a.raw(s);
+  seg(a, [[xr[0],0],[xr[1],0]], {color:C.axis, width:1}); seg(a, [[0,yr[0]],[0,yr[1]]], {color:C.axis, width:1});
+  [1,2].forEach(k=>circle(a, k, {color:C.plate, width:1.3, dash:'5 4'}));
   const t = P.Axes(bare({w:wp, h:hs, xr, yr:[0,0.46], pad:{l:a.x0, r:wp-a.x1, t:6, b:4}}));
   seg(t, Array.from({length:301}, (_,i)=>{ const x = xr[0]+(xr[1]-xr[0])*i/300; return [x, g(x)]; }), {color:C.mid, width:2.0});
-  lbl(t, xr[1]-0.1, 0.3, 'f_{n_1}(n_1)', C.mid, 'end', 13);
+  lbl(t, xr[1]-0.1, 0.3, 'f(n_1)', C.mid, 'end', 13);
   const r = P.Axes(bare({w:ws, h:hp, xr:[0,0.46], yr, pad:{l:4, r:4, t:a.y1, b:hp-a.y0}}));
   seg(r, Array.from({length:301}, (_,i)=>{ const y = yr[0]+(yr[1]-yr[0])*i/300; return [g(y), y]; }), {color:C.mid, width:2.0});
-  lbl(r, 0.07, yr[1]-0.45, 'f_{n_2}(n_2)', C.mid, 'start', 12);
+  lbl(r, 0.07, yr[1]-0.45, 'f(n_2)', C.mid, 'start', 13);
   const blank = `<svg viewBox="0 0 ${ws} ${hs}" xmlns="http://www.w3.org/2000/svg"></svg>`;
   return stack(wt, [[row(hs, [[t.svg(),wp],[blank,ws]]),hs],[row(hp, [[a.svg(),wp],[r.svg(),ws]]),hp]]);
+}
+
+/* The joint density of two components with N0/2 = 1 and correlation rho, as
+   a surface, as a heat map, and along each axis: the marginal solid, the
+   slice through the peak dashed. */
+function figNoise3d(rho){
+  const h1 = 230, h2 = 170, w = W/2;
+  const pk = 1/(2*Math.PI*Math.sqrt(1-rho*rho)), tone = z => Math.pow(clamp01(z/pk), 0.75);
+  const s = P.Axes(bare({w, h:h1, xr:[-6.2,6.2], yr:[-4.4,8.4], pad:{l:8,r:8,t:10,b:8}}));
+  const pr = (x, y, z) => [0.72*(x-y), 0.36*(x+y)+17*z];
+  const box = [[-4,-4],[4,-4],[4,4],[-4,4]].map(p=>pr(p[0],p[1],0));
+  seg(s, box.concat([box[0]]), {color:C.axis, width:1});
+  const m = 26, d = 8/m, quads = [];
+  for(let i=0;i<m;i++) for(let j=0;j<m;j++){ const x = -4+i*d, y = -4+j*d;
+    const c = [[x,y],[x+d,y],[x+d,y+d],[x,y+d]].map(p=>[p[0], p[1], g2(p[0], p[1], rho)]);
+    quads.push({k:x+y, c, z:g2(x+d/2, y+d/2, rho)}); }
+  quads.sort((p,q)=>q.k-p.k);
+  s.raw(quads.map(q=>{ const col = mix(C.plate, C.mid, 0.1+0.9*tone(q.z));
+    return `<path d="M${q.c.map(p=>{ const P2 = pr(...p); return f2(s.sx(P2[0]))+','+f2(s.sy(P2[1])); }).join('L')}Z" fill="${col}" stroke="${col}" stroke-width="0.6"/>`; }).join(''));
+  lbl(s, 3.3, -3.55, 'n_1', C.muted, 'middle', 13); lbl(s, -3.4, -3.55, 'n_2', C.muted, 'middle', 13);
+  lbl(s, -6, 7.9, 'f_{\\mathbf n}(n_1,n_2)', C.mid, 'start', 14);
+  lbl(s, 6, 7.9, '\\rho='+num(rho, 1), C.ink, 'end', 14);
+  const hm = plane({w, h:h1, need:[[-4,4],[-4,4]], xlabel:'n_1', ylabel:'n_2', xticksOverride:[-2,0,2], yticksOverride:[-2,0,2], pad:{l:40,r:14,t:16,b:38}});
+  const xr = hm.o.xr, yr = hm.o.yr, q = 40, dx = (xr[1]-xr[0])/q, dy = (yr[1]-yr[0])/q; let cs = '';
+  for(let i=0;i<q;i++) for(let j=0;j<q;j++){ const x = xr[0]+(i+0.5)*dx, y = yr[0]+(j+0.5)*dy;
+    const X0 = hm.sx(x-dx/2), X1 = hm.sx(x+dx/2), Y0 = hm.sy(y+dy/2), Y1 = hm.sy(y-dy/2);
+    cs += `<rect x="${f2(X0)}" y="${f2(Y0)}" width="${f2(X1-X0+0.6)}" height="${f2(Y1-Y0+0.6)}" fill="${mix(C.plate, C.mid, tone(g2(x, y, rho)))}"/>`; }
+  hm.raw(cs);
+  seg(hm, [[xr[0],0],[xr[1],0]], {color:C.axis, width:1}); seg(hm, [[0,yr[0]],[0,yr[1]]], {color:C.axis, width:1});
+  const one = k => { const b = TAx({w, h:h2, xr:[-4.3,5.6], yr:[0,0.46], xlabel:'n_'+k, xnameDrop:30, ylabel:'',
+      pad:{l:44,r:14,t:14,b:34}, xt:[-4,-2,0,2,4], yticksOverride:[0.4]});
+    b.curve(x=>gpdf(x, 0, 1), {color:C.mid, width:2.2});
+    b.curve(x=>g2(x, 0, rho), {color:C.muted, width:1.6, dash:'6 5'});
+    lbl(b, 1.25, 0.39, 'f_{n_'+k+'}(n_'+k+')', C.mid, 'start', 14);
+    return b; };
+  return stack(W, [[row(h1, [[s.svg(),w],[hm.svg(),w]]),h1],[row(h2, [[one(1).svg(),w],[one(2).svg(),w]]),h2]]);
 }
 
 /* Four-level PAM on a unit-energy pulse, N0 = 0.1. */
@@ -977,6 +1067,30 @@ window.C4 = [
 {t:'eq', tex:'\\begin{aligned}E_1&=\\int_0^{1}\\bigl(1.2\\,\\psi_1(t)-0.6\\,\\psi_2(t)\\bigr)^{2}dt\\\\&=1.2^{2}+0.6^{2}=1.44+0.36=1.8\\end{aligned}'},
 {t:'box', kind:'err', hd:'Common error', html:'Use $s_{11}^{2}+s_{12}^{2}=1.8$, not $\\sqrt{1.8}=1.34$, for the energy. The energy is the squared length of the point, not its length.'},
 
+{t:'h3', text:'The correlator bank'},
+{t:'p', text:'The noise also has a part in the signal space and a part outside it. Write each part on its own.'},
+{t:'eqbox', cap:'The noise term', tex:'\\begin{aligned}n(t)&=n\'(t)+\\sum_{k=1}^{N}n_k\\,\\psi_k(t)\\\\n_k&=\\int_0^{T}n(t)\\,\\psi_k(t)\\,dt,\\qquad k\\in\\{1,\\ldots,N\\}\\end{aligned}',
+ after:'The noise $n\'(t)$ is orthogonal to the signal space $\\{\\psi_k(t)\\}_{k=1}^{N}$. It holds no information about which waveform was sent.'},
+{t:'p', text:'The receiver reads the $N$ coordinates of $r(t)$ with $N$ correlators in parallel. Each branch multiplies $r(t)$ by one basis function and integrates over one symbol.'},
+{t:'eqbox', cap:'Correlator output', tex:'r_k=\\int_0^{T}r(t)\\,\\psi_k(t)\\,dt,\\qquad k\\in\\{1,\\ldots,N\\}',
+ after:'The $N$ outputs form the observation vector $\\mathbf r=(r_1,r_2,\\ldots,r_N)$.'},
+{t:'p', text:'The figure below draws the bank as a block diagram.'},
+{t:'fig', svg:figCorrBank,
+ cap:'A parallel bank of $N$ correlators. The received waveform $r(t)$, green, feeds every branch. Each branch multiplies by $\\psi_k(t)$, amber, and integrates over $[0,T]$ to give $r_k$, violet.'},
+{t:'p', text:'For example, let no noise arrive, with $s_i(t)=2\\,\\psi_1(t)-\\psi_2(t)$ on an orthonormal basis. The second correlator reads $r_2=2\\int_0^{T}\\psi_1(t)\\,\\psi_2(t)\\,dt-\\int_0^{T}\\psi_2^{2}(t)\\,dt=2\\cdot0-1=-1$.'},
+
+{t:'h3', text:'The received signal point'},
+{t:'p', text:'Put $r(t)=s_i(t)+n(t)$ into one correlator. The integral is linear, so it splits into a signal part and a noise part.'},
+{t:'eq', tex:'\\begin{aligned}r_k&=\\int_0^{T}\\overbrace{\\{s_i(t)+n(t)\\}}^{=r(t)}\\,\\psi_k(t)\\,dt\\\\&=\\overbrace{\\int_0^{T}s_i(t)\\,\\psi_k(t)\\,dt}^{=s_{ik}}+\\overbrace{\\int_0^{T}n(t)\\,\\psi_k(t)\\,dt}^{=n_k}=s_{ik}+n_k\\end{aligned}'},
+{t:'p', text:'Write the received waveform with both expansions. The two sums share the basis functions, so they combine into one.'},
+{t:'eq', tex:'\\begin{aligned}r(t)&=s_i(t)+n(t)\\\\&=\\sum_{k=1}^{N}s_{ik}\\,\\psi_k(t)+\\sum_{k=1}^{N}n_k\\,\\psi_k(t)+n\'(t)\\\\&=\\sum_{k=1}^{N}\\{s_{ik}+n_k\\}\\,\\psi_k(t)+n\'(t)\\\\&=\\sum_{k=1}^{N}r_k\\,\\psi_k(t)+n\'(t)\\end{aligned}'},
+{t:'p', text:'The last sum is the projection of $r(t)$ on the $N$-dimensional signal space. In vector form the coordinates add.'},
+{t:'eqbox', cap:'Vector form', tex:'\\mathbf r=\\mathbf s_i+\\mathbf n=(r_1,r_2)',
+ after:'Signal vector $\\mathbf s_i=(s_{i1},s_{i2})$. Noise vector $\\mathbf n=(n_1,n_2)$. Observation vector $\\mathbf r=(r_1,r_2)$.'},
+{t:'p', text:'The figure below draws the three vectors for $N=2$.'},
+{t:'fig', svg:figVector,
+ cap:'The message point $\\mathbf s_i$, cyan, the noise vector $\\mathbf n$ added to it, grey, and the received signal point $\\mathbf r$, green. The dashed lines read the coordinates $r_1$ and $r_2$.'},
+
 {t:'h3', text:'The observation vector'},
 {t:'p', text:'Over one symbol the receiver sees $r(t)=s_i(t)+n(t)$. Here $n(t)$ is white Gaussian noise of two-sided power spectral density $N_0/2$.'},
 {t:'p', text:'The receiver correlates $r(t)$ with each of the $N$ orthonormal basis functions $\\psi_1(t),\\ldots,\\psi_N(t)$ of the signal set. Each correlator multiplies by one basis function and integrates over one symbol.'},
@@ -1017,10 +1131,10 @@ window.C4 = [
  cap:'The amber sheet is the signal space, spanned by $\\psi_1$ and $\\psi_2$. The noise splits into a part in the sheet and $n\'$ outside it. Only the part in the sheet moves $\\mathbf r$.'},
 {t:'p', text:'For example, let the squared distances in the sheet be $\\|\\mathbf r-\\mathbf s_1\\|^{2}=0.5$ and $\\|\\mathbf r-\\mathbf s_2\\|^{2}=2.0$, with $\\|n\'\\|^{2}=0.8$. The full squared distances are $0.5+0.8=1.3$ and $2.0+0.8=2.8$. The gap stays $1.5$, so $\\mathbf s_1$ still wins.'},
 
-{t:'h3', text:'The noise correlation'},
+{t:'h3', text:'The noise vector: mean and correlation'},
 {t:'p', text:'Each noise coordinate is the noise correlated with one basis function. It is a weighted integral of a Gaussian process, so it is Gaussian.'},
-{t:'eqbox', cap:'One component', tex:'n_j=\\int_0^{T}n(t)\\,\\psi_j(t)\\,dt,\\qquad E[n_j]=0',
- after:'The noise has mean zero, and the integral keeps the mean at zero.'},
+{t:'eq', tex:'E[n_k]=E\\Bigl[\\int_0^{T}n(t)\\,\\psi_k(t)\\,dt\\Bigr]=\\int_0^{T}\\overbrace{E[n(t)]}^{=0}\\,\\psi_k(t)\\,dt=0'},
+{t:'p', text:'Expectation and integration are both linear, so the expectation moves inside. The noise has mean zero, so each component has mean zero.'},
 {t:'p', text:'Noise samples at two different times are uncorrelated. The autocorrelation of white noise says this in one line: $E[n(\\tau)\\,n(u)]=\\frac{N_0}{2}\\delta(\\tau-u)$.'},
 {t:'p', text:'Write the product of two components as a double integral. Expectation and integration are both linear, so the expectation moves inside.'},
 {t:'eq', tex:'\\begin{aligned}E[n_jn_k]&=E\\Bigl[\\int_0^{T}n(\\tau)\\,\\psi_j(\\tau)\\,d\\tau\\int_0^{T}n(u)\\,\\psi_k(u)\\,du\\Bigr]\\\\&=\\int_0^{T}\\!\\!\\int_0^{T}E[n(\\tau)\\,n(u)]\\,\\psi_j(\\tau)\\,\\psi_k(u)\\,d\\tau\\,du\\end{aligned}'},
@@ -1035,19 +1149,33 @@ window.C4 = [
  short:'The noise correlation as a double integral that collapses onto the line $\\tau=u$.'},
 {t:'p', text:'For example, noise with $N_0=0.2$ gives $E[n_1^{2}]=N_0/2=0.1$. The basis functions are orthogonal, so $E[n_1n_2]=0$.'},
 
-{t:'h3', text:'The noise components'},
-{t:'p', text:'Gaussian variables that are uncorrelated are independent. So the $N$ noise components are independent, each with variance $N_0/2$, and their joint density is a product.'},
-{t:'p', text:'A Gaussian of variance $N_0/2$ has the density $e^{-n^{2}/N_0}/\\sqrt{\\pi N_0}$. Multiply $N$ of them, and collect the exponents into one sum.'},
-{t:'eqbox', cap:'Joint density', tex:'\\begin{aligned}f_{\\mathbf n}(n_1,\\ldots,n_N)&=\\prod_{i=1}^{N}\\frac{1}{\\sqrt{\\pi N_0}}\\,e^{-n_i^{2}/N_0}\\\\&=(\\pi N_0)^{-N/2}\\exp\\Bigl(-\\sum_{i=1}^{N}\\frac{n_i^{2}}{N_0}\\Bigr)\\end{aligned}',
- after:'This is a multivariate normal density. It depends on the noise vector only through its squared length.'},
-{t:'p', text:'Every axis has the same variance, and the axes are independent. So the cloud of received points around a signal point is round.'},
-{t:'box', kind:'warn', hd:'An ellipse', html:'Coloured noise gives correlated components, with correlation coefficient $\\rho\\ne0$. The cloud tilts into an ellipse, but the density of each component alone stays the same. The nearest point is no longer the best guess.'},
-{t:'p', text:'For example, noise with $\\rho=0.8$ reaches the two correlators. A positive $\\rho$ makes $n_2$ follow $n_1$, so the cloud stretches along the line $n_1=n_2$.'},
-{t:'p', text:'The figure below draws two components of variance $1$ for two values of $\\rho$. The bells on the edges are the densities of $n_1$ and $n_2$ alone.'},
-{t:'figrow', n:2, items:[
- {svg:()=>figNoise(0), cap:'$\\rho=0$: independent components and a round cloud. The solid and dashed curves hold about $39\\%$ and $86\\%$ of the points.'},
- {svg:()=>figNoise(0.8), cap:'$\\rho=0.8$: $n_2$ follows $n_1$, and the cloud stretches along the line $n_1=n_2$. The edge bells do not change.'}
-]},
+{t:'h3', text:'The noise vector: joint density'},
+{t:'p', text:'For $j\\ne k$, $n_j$ and $n_k$ are uncorrelated. Both are integrals of one Gaussian process, so they are jointly Gaussian. Jointly Gaussian variables that are uncorrelated are also independent.'},
+{t:'eqbox', cap:'One component', tex:'n_i\\sim\\mathcal N\\Bigl(0,\\frac{N_0}{2}\\Bigr),\\qquad i\\in\\{1,\\ldots,N\\}',
+ after:'Each component is Gaussian with mean $0$ and variance $N_0/2$, so its density is $f(n_i)=e^{-n_i^{2}/N_0}/\\sqrt{\\pi N_0}$.'},
+{t:'p', text:'The components are independent, so their joint density is the product of the $N$ single densities. Collect the exponents into one sum.'},
+{t:'eq', tex:'\\begin{aligned}f_{\\mathbf n}(n_1,\\ldots,n_N)&=f(n_1)\\,f(n_2)\\cdots f(n_N)=\\prod_{i=1}^{N}f(n_i)\\\\&=\\prod_{i=1}^{N}\\frac{1}{\\sqrt{\\pi N_0}}\\exp\\Bigl(-\\frac{n_i^{2}}{N_0}\\Bigr)\\\\&=(\\pi N_0)^{-N/2}\\exp\\Bigl(-\\sum_{i=1}^{N}\\frac{n_i^{2}}{N_0}\\Bigr)\\end{aligned}'},
+{t:'eqbox', cap:'Multivariate normal distribution', big:true, tex:'f_{\\mathbf n}(n_1,\\ldots,n_N)=(\\pi N_0)^{-N/2}\\exp\\Bigl(-\\sum_{i=1}^{N}\\frac{n_i^{2}}{N_0}\\Bigr)',
+ after:'The density depends on the noise vector only through its squared length.'},
+{t:'p', text:'The figure below builds the density for $N=2$ and $N_0/2=1$ from its two factors.'},
+{t:'fig', svg:figNoisePdf,
+ cap:'The density of $n_1$ on the top edge, of $n_2$ on the right edge, and their product in the plane. A stronger violet means more likely. The dashed circles have radius $1$ and $2$.'},
+{t:'p', text:'For example, take $N=2$ and $N_0=2$. At the origin the exponent is zero, so $f_{\\mathbf n}(0,0)=(\\pi N_0)^{-1}=1/(2\\pi)\\approx0.159$.'},
+
+{t:'h3', text:'The noise vector: plots'},
+{t:'p', text:'With $N_0/2=1$, the joint density of $\\mathbf n=(n_1,n_2)$ is a round bell with peak $1/(2\\pi)\\approx0.16$. Each marginal density $f_{n_i}(n_i)$ is $\\mathcal N(0,1)$, with peak $1/\\sqrt{2\\pi}\\approx0.40$.'},
+{t:'p', text:'Coloured noise gives correlated components, with correlation coefficient $\\rho\\ne0$. The joint density of two components of variance $1$ is then the following.'},
+{t:'eq', tex:'f_{\\mathbf n}(n_1,n_2)=\\frac{1}{2\\pi\\sqrt{1-\\rho^{2}}}\\exp\\Bigl(-\\frac{n_1^{2}-2\\rho\\,n_1n_2+n_2^{2}}{2(1-\\rho^{2})}\\Bigr)'},
+{t:'p', text:'At $\\rho=0.8$ the bell stretches along the line $n_1=n_2$. Its peak rises to $1/(2\\pi\\sqrt{1-0.64})=1/(1.2\\pi)\\approx0.27$. The marginals stay $\\mathcal N(0,1)$.'},
+{t:'box', kind:'err', hd:'Common error', html:'Read the slice $f_{\\mathbf n}(n_1,0)$ as the marginal $f_{n_1}(n_1)$. The slice peaks at $0.16$ for $\\rho=0$ and $0.27$ for $\\rho=0.8$. The marginal peaks at $0.40$ for every $\\rho$.'},
+{t:'p', text:'The figure below draws both cases as a surface, as a heat map, and along each axis.'},
+{t:'fig', svg:()=>figNoise3d(0),
+ cap:'Uncorrelated, $\\rho=0$. Top: the joint density as a surface and as a heat map. Bottom: the marginal density of each component, solid, and the slice through the peak, dashed.',
+ short:'The joint density of two uncorrelated noise components.'},
+{t:'fig', svg:()=>figNoise3d(0.8),
+ cap:'Correlated, $\\rho=0.8$. The bell stretches along $n_1=n_2$ and its peak rises. The marginals, solid, do not change. Only the slices, dashed, grow.',
+ short:'The joint density of two noise components with correlation $0.8$.'},
+{t:'box', kind:'warn', hd:'An ellipse', html:'With $\\rho\\ne0$ the cloud of received points around a signal point is an ellipse, not a circle. The nearest point is no longer the best guess.'},
 
 {t:'ex', hd:'Example 4.1 — four-level PAM', rows:[
  ['Given','Four-level PAM, $s_m\\in\\{-1.5,-0.5,0.5,1.5\\}$ on a unit-energy pulse, with $N_0=0.1$.'],

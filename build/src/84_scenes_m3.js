@@ -497,17 +497,43 @@ function figExGsVec(){
   return a.svg();
 }
 
-/* Four signals in three dimensions, seen from an angle the reader turns. */
+/* The worked example of 3.3.4 in five frames: s_1(t), s_2(t) and s_3(t) one
+   a frame, each with the basis function it gives; then the remainder
+   g_3(t) = s_3(t) + sqrt2 psi_2(t), which is psi_3(t); then the four signal
+   points on the three axes. */
 function figExGsB(v){
-  const az = (v ? v.az : 30)*Math.PI/180, el = 22*Math.PI/180;
+  const H = P.hOverride || 430; P.hOverride = null;
+  const f = frameOf(v, 4), op = k => clamp01(f-k+1);
+  if(f > 3.5) return gsBPoints(H);
+  const r2 = 1/Math.SQRT2;
+  const pan = (k, h, last) => { const a = TAx({w:560, h, xr:[-0.1,3.3], yr:[-1.45,1.45],
+      xlabel:last?'t':'', ylabel:['s_1(t),\\;\\psi_1(t)','s_2(t),\\;\\psi_2(t)','s_3(t)','g_3(t)=\\psi_3(t)'][k],
+      pad:{l:56,r:26,t:20,b:last?36:10}, xt:last?[0,1,2,3]:null, yticksOverride:[-1,0,1]});
+    const o = op(k);
+    if(o < 0.02) return a.svg();
+    // the signal as a broad cyan trace, its basis function a narrower amber one on top
+    if(k < 3) seg(a, outline(GS4[k],-0.1,3.3), {color:C.in, width:3.6, opacity:o});
+    if(k===0) seg(a, outline([[0,2,r2]],-0.1,3.3), {color:C.h, width:2.0, opacity:o});
+    if(k===1) seg(a, outline([[0,1,r2],[1,2,-r2]],-0.1,3.3), {color:C.h, width:2.0, opacity:o});
+    // the remainder: s_3 with its psi_2 part removed leaves one unit pulse on [2,3)
+    if(k===3){ seg(a, outline(GS4[2],-0.1,3.3), {color:C.in, width:1.6, dash:'5 4', opacity:0.6*o});
+      seg(a, outline([[2,3,1]],-0.1,3.3), {color:C.mid, width:3.2, opacity:o}); }
+    return a.svg(); };
+  const h = Math.round(0.23*H), hl = H-3*h;
+  return stack(560, [[pan(0,h),h],[pan(1,h),h],[pan(2,h),h],[pan(3,hl,true),hl]]);
+}
+/* The four points on three axes, seen from one fixed angle. */
+function gsBPoints(H){
+  const az = 30*Math.PI/180, el = 22*Math.PI/180;
   const pr = (x,y,z) => [x*Math.cos(az) - y*Math.sin(az), z*Math.cos(el) + (x*Math.sin(az) + y*Math.cos(az))*Math.sin(el)];
+  P.hOverride = H;
   const a = plane(bare({need:[[-2.2,2.3],[-1.2,2.0]], xlabel:'', ylabel:''}));
   /* the gap from an arrow tip to its name grows with the label scale */
   const ls = P.labelScale();
   const ax = (p, q, name, lp) => { const P0 = pr(...p), P1 = pr(...q);
-    arrow(a, P0[0],P0[1],P1[0],P1[1], {color:C.muted, width:1.6, head:0.8});
+    arrow(a, P0[0],P0[1],P1[0],P1[1], {color:C.h, width:1.6, head:0.8});
     const L0 = pr(...lp), L = [P1[0]+(L0[0]-P1[0])*ls, P1[1]+(L0[1]-P1[1])*ls];
-    a.note(L[0], L[1]-0.06*ls, name, {tex:true, fs:16, color:C.ink, anchor:'middle'}); };
+    a.note(L[0], L[1]-0.06*ls, name, {tex:true, fs:16, color:C.h, anchor:'middle'}); };
   ax([0,0,0],[2.0,0,0],'\\psi_1',[2.22,0,0]);
   ax([0,-1.9,0],[0,1.9,0],'\\psi_2',[0,2.15,0]);
   ax([0,0,0],[0,0,1.55],'\\psi_3',[0,0,1.78]);
@@ -1208,15 +1234,15 @@ REAL_CONST,
 
 { id:'m3-ex-gs-b', module:'M3', nav:'Worked example · four signals, three axes', title:'Worked example: four signals, three axes',
   objective:'Run the procedure on four signals that span three dimensions and view the constellation in three dimensions.',
-  keywords:'worked example gram schmidt four signals three dimensions linear combination 3d constellation view slider',
+  keywords:'worked example gram schmidt four signals three dimensions linear combination remainder g_3 3d constellation frames',
   src:'CH9 s.19–21', slide:true, steps:3, blocks:[
   {t:'eyebrow', text:'Module 3 · Worked example'},
   {t:'title', text:'Worked example: four signals, three axes'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
     {t:'fig', frame:true, grow:true,
-      live:{controls:[{k:'az', label:'view', min:0, max:90, step:5, v:30, show:v=>'$'+v+'^{\\circ}$'}]},
+      frames:{labels:['$s_1(t)$','$s_2(t)$','$s_3(t)$','$g_3(t)$','Constellation']},
       svg:figExGsB,
-      caption:'Turn the view. Four signals need three axes. $\\mathbf{s}_4$ sits one unit above $\\mathbf{s}_1$, along $\\psi_3$.'}
+      caption:'Each signal in turn, then the remainder $g_3(t)$, then the four points. $\\mathbf{s}_4$ sits one unit above $\\mathbf{s}_1$, along $\\psi_3$.'}
   ], right:[
     {t:'note', kind:'def', head:'Given', html:'$s_1(t)=1$ on $[0,2)$. $s_2(t)=1$ on $[0,1)$ and $-1$ on $[1,2)$. $s_3(t)=-1$ on $[0,1)$ and $1$ on $[1,3)$. $s_4(t)=1$ on $[0,3)$.<div class="nsep"></div>How many dimensions does the set span?',
       ask:{key:'m3-ex-gs-b', choices:['$2$','$3$','$4$'], answer:1,
