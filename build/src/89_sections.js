@@ -112,7 +112,7 @@ CONTENT.SECTIONS = {
   M4: [
     { n:'4.0', title:'Opening',                        ids:['m4-open'] },
     { n:'4.1', title:'The observation',                ids:[
-        'm4-mary','m4-observe','m4-mfbank','m4-irrelevant','m4-noise','m4-ex-pam4','m4-ex-orth',
+        'm4-mary','m4-model','m4-observe','m4-mfbank','m4-irrelevant','m4-noisecorr','m4-noise','m4-ex-pam4','m4-ex-orth',
         'm4-real-observe','m4-lab-u','m4-code-observe'] },
     { n:'4.2', title:'The decision rule',              ids:[
         'm4-map','m4-mindist','m4-metric','m4-receiver','m4-optimal','m4-ex-map','m4-ex-receiver',
@@ -285,8 +285,8 @@ CONTENT.BOOK = {
      intelligent union bound and the nearest-neighbour form come from the
      course slides and are not in the book, so those two scenes carry no
      anchor. The code pages carry none, as in Module 1. */
-  'm4-open':'8.4', 'm4-mary':'8.4',
-  'm4-observe':'8.4.1', 'm4-mfbank':'8.4.1', 'm4-irrelevant':'8.4.1', 'm4-noise':'8.4.1',
+  'm4-open':'8.4', 'm4-mary':'8.4', 'm4-model':'8.4',
+  'm4-observe':'8.4.1', 'm4-mfbank':'8.4.1', 'm4-irrelevant':'8.4.1', 'm4-noisecorr':'8.4.1', 'm4-noise':'8.4.1',
   'm4-ex-pam4':'8.4.1', 'm4-ex-orth':'8.4.1', 'm4-real-observe':'8.4.1', 'm4-lab-u':'8.4.1',
   'm4-map':'8.4.1', 'm4-mindist':'8.4.1', 'm4-metric':'8.4.1', 'm4-receiver':'8.4.1', 'm4-optimal':'8.4.1',
   'm4-ex-map':'8.4.1', 'm4-ex-receiver':'8.4.1', 'm4-real-rule':'8.4.1', 'm4-lab-v':'8.4.1',

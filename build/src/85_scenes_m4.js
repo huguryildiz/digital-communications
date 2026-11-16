@@ -292,6 +292,58 @@ function figMary(v){
   return stack(560, [[a.svg(),hTop],[b.svg(),H-hTop]]);
 }
 
+/* The signal model on two carrier basis functions over T = 1:
+   psi1 = sqrt2 cos(2 pi t), psi2 = sqrt2 sin(2 pi t). Four signals at
+   (1.2, -0.6) turned by quarter turns, with priors 0.4, 0.3, 0.2, 0.1. The
+   sent waveform s_1(t) = 1.2 psi1 - 0.6 psi2 is built from its weighted basis
+   functions, then one fixed draw of smoothed noise is added. */
+const ps1 = t => Math.SQRT2*Math.cos(2*Math.PI*t), ps2 = t => Math.SQRT2*Math.sin(2*Math.PI*t);
+const MD = (()=>{
+  const S = [[1.2,-0.6],[0.6,1.2],[-1.2,0.6],[-0.6,-1.2]], p = [0.4,0.3,0.2,0.1];
+  const n = 400, z = gauss(4406, n+13, 1), nz = [];
+  // a moving sum of 12 draws: smooth noise with unit-free spread 0.3
+  for(let i=0;i<=n;i++){ let s = 0; for(let k=0;k<12;k++) s += z[i+k]; nz.push(0.3*s/Math.sqrt(12)); }
+  // the noise coordinates the two correlators would read, by the trapezoid rule
+  const proj = g => { let s = 0; for(let i=0;i<=n;i++) s += (i===0||i===n ? 0.5 : 1)*nz[i]*g(i/n); return s/n; };
+  return {S, p, n, nz, r:[S[0][0]+proj(ps1), S[0][1]+proj(ps2)]};
+})();
+function figModel(v){
+  const H = takeH(430), hTop = Math.round(0.5*H), hBot = H-hTop;
+  const f = frameOf(v, 3), op = k => clamp01(f-k+1), [a1, a2] = MD.S[0], n = MD.n;
+  // top panel: the basis functions, their weighted copies, the sum and the received waveform
+  const a = TAx({w:560, h:hTop, xr:[-0.03,1.16], yr:[-2.7,4.1], xlabel:'t/T', xnameDrop:34, ylabel:'\\text{Waveform}',
+    pad:{l:56,r:26,t:12,b:34}, xt:[0,0.5,1], yticksOverride:[-2,0,2]});
+  const u = op(1), w1 = 1+u*(a1-1), w2 = 1+u*(a2-1), bo = 1-0.6*op(2);
+  const tr = (g, m) => Array.from({length:m+1}, (_,i)=>[i/n, g(i/n, i)]);
+  // the received waveform sits under the sent one
+  if(op(3) > 0.02) seg(a, tr((t,i)=>a1*ps1(t)+a2*ps2(t)+MD.nz[i], n), {color:C.out, width:1.5, opacity:op(3)});
+  seg(a, tr(t=>w1*ps1(t), n), {color:C.h, width:2.2, opacity:bo});
+  seg(a, tr(t=>w2*ps2(t), n), {color:C.h, width:2.2, dash:'7 5', opacity:bo});
+  // the sum is drawn from left to right as its frame plays
+  const m = Math.round(n*op(2));
+  if(m > 1) seg(a, tr(t=>a1*ps1(t)+a2*ps2(t), m), {color:C.in, width:2.8});
+  const hd = [['\\psi_1(t)\\ \\text{solid},\\ \\ \\psi_2(t)\\ \\text{dashed}', C.h],
+              ['1.2\\,\\psi_1(t)\\ \\ \\text{and}\\ \\ {-0.6}\\,\\psi_2(t)', C.h],
+              ['s_1(t)=1.2\\,\\psi_1(t)-0.6\\,\\psi_2(t)', C.in],
+              ['r(t)=s_1(t)+n(t)', C.out]][Math.min(3, Math.round(f))];
+  lbl(a, 0.05, 3.45, hd[0], hd[1], 'start', 16);
+  // bottom left: the four signal points, with s_1 read off its axes
+  const b = plane({w:300, h:hBot, need:[[-1.65,1.65],[-1.6,1.6]], pad:{l:44,r:16,t:18,b:40},
+    xticksOverride:[-1,1], yticksOverride:[-1,1]});
+  if(op(2) > 0.02) seg(b, [[a1,0],[a1,a2],[0,a2]], {color:C.muted, width:1.3, dash:'4 5', opacity:op(2)});
+  MD.S.forEach((p,i)=>{ dot(b, p[0], p[1], {color:C.in, r:6});
+    // s_1 is labelled above its ring, s_4 to its left, the others outward from the origin
+    const L = [[p[0]+0.34, p[1]+0.24, 'start'], [p[0]*1.3, p[1]*1.3-0.1, 'middle'], [p[0]*1.3, p[1]*1.3-0.1, 'middle'], [p[0]-0.3, p[1]-0.08, 'end']][i];
+    lbl(b, L[0], L[1], '\\mathbf{s}_'+(i+1), C.in, L[2], 15); });
+  if(op(2) > 0.02) ring(b, a1, a2, {color:C.in, r:11, width:2.2, opacity:op(2)});
+  if(op(3) > 0.02) dot(b, MD.r[0], MD.r[1], {color:C.out, r:5.5, opacity:op(3)});
+  // bottom right: the priors as stems, one a symbol
+  const c = P.Axes({w:260, h:hBot, xr:[0.3,4.7], yr:[0,0.5], xlabel:'i', ylabel:'p_i',
+    pad:{l:52,r:16,t:18,b:40}, xticksOverride:[1,2,3,4], yticksOverride:[0,0.2,0.4]});
+  c.stem(MD.p.map((p,i)=>[i+1, p]), {color:C.in});
+  return stack(560, [[a.svg(),hTop],[row(hBot, [[b.svg(),300],[c.svg(),260]]),hBot]]);
+}
+
 /* A received waveform on two carrier basis functions over T = 1:
    psi1 = sqrt2 cos(4 pi t), psi2 = sqrt2 sin(4 pi t), s = psi1 - 0.6 psi2,
    plus one fixed draw of smoothed noise. The running integrals are computed
@@ -389,20 +441,72 @@ function figIrrelevant(v){
   return a.svg();
 }
 
+/* The correlation of two noise components, E[n_j n_k], as a double integral
+   over the square of time pairs (tau, u). White noise is uncorrelated off the
+   line tau = u, so the integral collapses onto that line. What is left is the
+   integral of psi_j psi_k, which is 1 for j = k and 0 otherwise, on the basis
+   of the signal model. */
+function figNoiseCorr(v){
+  const H = takeH(430), hTop = Math.round(0.52*H), f = frameOf(v, 3), op = k => clamp01(f-k+1);
+  // top: the square of time pairs, drawn to one scale on both axes
+  const a = plane({w:560, h:hTop, need:[[-0.12,1.2],[-0.08,1.12]], xlabel:'\\tau', ylabel:'u',
+    pad:{l:56,r:26,t:14,b:40}, xticksOverride:[1], yticksOverride:[1]});
+  seg(a, [[0,0],[1,0],[1,1],[0,1],[0,0]], {color:C.muted, width:1.2});
+  // off the line the noise correlation is zero
+  lbl(a, 0.74, 0.2, '0', C.muted, 'middle', 17); lbl(a, 0.26, 0.74, '0', C.muted, 'middle', 17);
+  // on the line it is an impulse of weight N0/2
+  seg(a, [[0,0],[1,1]], {color:C.mid, width:3.4});
+  lbl(a, 1.1, 0.98, 'E[n(\\tau)\\,n(u)]', C.mid, 'start', 15);
+  lbl(a, 1.1, 0.7, '=\\tfrac{N_0}{2}\\,\\delta(\\tau-u)', C.mid, 'start', 15);
+  // sifting: every row of the square slides onto its point of the line
+  if(op(1) > 0.02){ [0.25,0.5,0.75].forEach(y=>{
+      arrow(a, y-0.24, y, y-0.05, y, {color:C.mid, width:1.8, head:0.7, opacity:op(1)});
+      arrow(a, y+0.24, y, y+0.05, y, {color:C.mid, width:1.8, head:0.7, opacity:op(1)}); });
+    if(op(1) > 0.5) lbl(a, -0.14, 0.5, '\\text{only }\\tau=u', C.mid, 'end', 15); }
+  // bottom: what is left to integrate along the line
+  const b = TAx({w:560, h:H-hTop, xr:[-0.03,1.16], yr:[-1.6,3.5], xlabel:'u/T', xnameDrop:34, ylabel:'\\text{Integrand}',
+    pad:{l:56,r:26,t:12,b:34}, xt:[0,0.5,1], yticksOverride:[-1,0,1,2]});
+  const tr = g => Array.from({length:401}, (_,i)=>[i/400, g(i/400)]);
+  const bo = 1-op(2);
+  if(bo > 0.02){ seg(b, tr(ps1), {color:C.h, width:2.0, opacity:bo}); seg(b, tr(ps2), {color:C.h, width:2.0, dash:'7 5', opacity:bo}); }
+  // j = k: the square of one basis function has area 1
+  const sq = t => ps1(t)*ps1(t), cr = t => ps1(t)*ps2(t), o2 = op(2)*(1-op(3)), o3 = op(3);
+  if(o2 > 0.02){ wash(b, sq, 0, 1, C.mid, 0.22*o2); seg(b, tr(sq), {color:C.mid, width:2.4, opacity:o2}); }
+  // j != k: the product of two basis functions has as much area below zero as above
+  if(o3 > 0.02){ wash(b, cr, 0, 1, C.mid, 0.22*o3); seg(b, tr(cr), {color:C.mid, width:2.4, opacity:o3}); }
+  const hd = [['\\psi_1(u)\\ \\text{solid},\\ \\ \\psi_2(u)\\ \\text{dashed}', C.h],
+              ['\\psi_1(u)\\ \\text{solid},\\ \\ \\psi_2(u)\\ \\text{dashed}', C.h],
+              ['j=k=1:\\ \\ \\int_0^{1}\\psi_1^{2}(u)\\,du=1', C.mid],
+              ['j=1,\\ k=2:\\ \\ \\int_0^{1}\\psi_1(u)\\,\\psi_2(u)\\,du=0', C.mid]][Math.min(3, Math.round(f))];
+  lbl(b, 0.05, 2.95, hd[0], hd[1], 'start', 16);
+  return stack(560, [[a.svg(),hTop],[b.svg(),H-hTop]]);
+}
+
 /* Two noise components with variance N0/2 = 1 and correlation coefficient
    rho: n1 = z1, n2 = rho z1 + sqrt(1 - rho^2) z2, from one fixed draw, so the
    cloud deforms smoothly as rho is dragged. Contours at one and two standard
-   deviations. */
+   deviations. On the top and right edges, the density of each component
+   alone: it has variance 1 for every rho, so the edge bells never move. */
 const ZN = gauss(4402, 1200, 1);
 function figNoise(v){
   const rho = v ? v.rho : 0, q = Math.sqrt(1-rho*rho);
-  const a = plane({need:[[-3.3,3.3],[-3.1,3.1]], xlabel:'n_1', ylabel:'n_2', xticksOverride:[], yticksOverride:[]});
+  const H = takeH(430), hs = 78, ws = 96, wp = 560-ws, hp = H-hs;
+  const a = plane({w:wp, h:hp, need:[[-3.3,3.3],[-3.1,3.1]], xlabel:'n_1', ylabel:'n_2', xticksOverride:[], yticksOverride:[]});
   cloud(a, i=>ZN[2*i], i=>rho*ZN[2*i]+q*ZN[2*i+1], 600, {r:2.2});
   [1,2].forEach(k=>{ const pts=[]; for(let i=0;i<=180;i++){ const u=2*Math.PI*i/180;
       pts.push([k*Math.cos(u), k*(rho*Math.cos(u)+q*Math.sin(u))]); }
     seg(a, pts, {color:C.mid, width:2.0, dash:k===2?'6 5':null}); });
-  lbl(a, -3.1, 2.75, '\\rho='+num(rho, 1), C.mid);
-  return a.svg();
+  lbl(a, a.o.xr[0]+0.2, 2.75, '\\rho='+num(rho, 1), C.mid);
+  // the edge strips share the plane's data area, so each bell lines up with its axis
+  const g = x => gpdf(x, 0, 1), xr = a.o.xr, yr = a.o.yr;
+  const t = P.Axes(bare({w:wp, h:hs, xr, yr:[0,0.46], pad:{l:a.x0, r:wp-a.x1, t:6, b:4}}));
+  seg(t, Array.from({length:301}, (_,i)=>{ const x = xr[0]+(xr[1]-xr[0])*i/300; return [x, g(x)]; }), {color:C.mid, width:2.2});
+  lbl(t, xr[1]-0.1, 0.3, 'f_{n_1}(n_1)', C.mid, 'end', 15);
+  const r = P.Axes(bare({w:ws, h:hp, xr:[0,0.46], yr, pad:{l:6, r:6, t:a.y1, b:hp-a.y0}}));
+  seg(r, Array.from({length:301}, (_,i)=>{ const y = yr[0]+(yr[1]-yr[0])*i/300; return [g(y), y]; }), {color:C.mid, width:2.2});
+  lbl(r, 0.07, yr[1]-0.45, 'f_{n_2}(n_2)', C.mid, 'start', 14);
+  const blank = `<svg viewBox="0 0 ${ws} ${hs}" xmlns="http://www.w3.org/2000/svg"></svg>`;
+  return stack(560, [[row(hs, [[t.svg(),wp],[blank,ws]]),hs],[row(hp, [[a.svg(),wp],[r.svg(),ws]]),hp]]);
 }
 
 /* Four-level PAM on a unit-energy pulse: s_m = -1.5, -0.5, 0.5, 1.5, and the
@@ -1108,6 +1212,28 @@ const SC = [
   ]}
 ]},
 
+{ id:'m4-model', module:'M4', nav:'The signal model', title:'The signal model',
+  objective:'Describe the transmitter as M finite-energy waveforms with priors, each a point on an orthonormal basis. The channel adds white Gaussian noise.',
+  keywords:'signal model prior probabilities p_i finite energy waveform signal space expansion basis coordinates s_ik awgn channel power spectral density N0/2 frames',
+  src:'CH9 s.23', slide:true, steps:2, blocks:[
+  {t:'eyebrow', text:'Module 4 · The observation'},
+  {t:'title', text:'The signal model'},
+  {t:'cols', ratio:'c-5-7', fill:true, left:[
+    {t:'fig', frame:true, grow:true, frames:{labels:['$\\psi_k(t)$','Weights','$s_1(t)$','$+\\,n(t)$']}, svg:figModel,
+      caption:'Top: two basis functions build $s_1(t)$, and noise turns it into $r(t)$. Bottom: the four signal points and their priors. Here $T=1$.'}
+  ], right:[
+    {t:'note', kind:'def', head:'Priors', html:'Each $T$ seconds one of $M$ symbols $\\mathbf s_i$ is sent. It has the prior probability $p_i=P(\\mathbf s_i)$, and the priors add up to $1$.'},
+    {t:'eq', label:'Signal-space expansion', tex:'\\begin{aligned}s_i(t)&=\\sum_{k=1}^{N}s_{ik}\\,\\psi_k(t),\\qquad 0\\le t\\le T\\\\s_{ik}&=\\int_0^{T}s_i(t)\\,\\psi_k(t)\\,dt\\end{aligned}',
+      note:'Each waveform has finite energy. Its $N$ coordinates $s_{ik}$ form the signal point $\\mathbf s_i$.'},
+    {t:'reveal', at:1, items:[
+      {t:'note', kind:'warn', head:'The channel', html:'The channel adds white Gaussian noise, so $r(t)=s_i(t)+n(t)$. The noise has the two-sided power spectral density $S_N(f)=N_0/2$ at every $f$.'}]},
+    {t:'reveal', at:2, items:[
+      {t:'note', kind:'def', head:'Given', html:'The basis is as drawn, and $s_1(t)=1.2\\,\\psi_1(t)-0.6\\,\\psi_2(t)$.<div class="nsep"></div>What is the energy of $s_1(t)$?',
+        ask:{key:'m4-model', choices:['$1.8$','$1.34$','$0.6$'], answer:0,
+          why:'The basis is orthonormal, so $E_1=s_{11}^{2}+s_{12}^{2}=1.44+0.36=1.8$.'}}]}
+  ]}
+]},
+
 { id:'m4-observe', module:'M4', nav:'The observation vector', title:'The observation vector',
   objective:'Show how a bank of correlators turns the received waveform into a point r = s + n.',
   keywords:'correlator bank demodulator running integral received waveform signal plus noise point observation vector frames',
@@ -1165,7 +1291,7 @@ const SC = [
     {t:'fig', frame:true, grow:true, frames:{labels:['$\\tilde{\\mathbf r}$','split','project','distances']}, svg:figIrrelevant,
       caption:'The amber sheet is the signal space. The noise splits into a part in the sheet and $n\'$ outside it. Only the part in the sheet moves $\\mathbf r$.'}
   ], right:[
-    {t:'note', kind:'def', head:'Outside the signal space', html:'Noise has parts in every direction. The part $n\'(t)$ outside the span of $\\psi_1,\\ldots,\\psi_N$ does not depend on the signal sent.'},
+    {t:'note', kind:'def', head:'Outside the signal space', html:'Noise has parts in every direction, so $r(t)=\\sum_{k=1}^{N}r_k\\,\\psi_k(t)+n\'(t)$. The sum is the projection on the signal space. The rest, $n\'(t)$, does not depend on the signal sent.'},
     {t:'reveal', at:1, items:[
       {t:'eq', label:'Why it can be dropped', tex:'\\|\\tilde{\\mathbf r}-\\mathbf s_j\\|^{2}=\\|\\mathbf r-\\mathbf s_j\\|^{2}+\\|n\'\\|^{2}',
         note:'Pythagoras: $n\'$ is at right angles to the sheet. It adds the same $\\|n\'\\|^{2}$ for every $j$.'}]},
@@ -1175,6 +1301,28 @@ const SC = [
       {t:'note', kind:'def', head:'Given', html:'In the sheet, $\\|\\mathbf r-\\mathbf s_1\\|^{2}=0.5$ and $\\|\\mathbf r-\\mathbf s_2\\|^{2}=2.0$. Outside, $\\|n\'\\|^{2}=0.8$.<div class="nsep"></div>What are the full squared distances?',
         ask:{key:'m4-irrelevant', choices:['$1.3$ and $2.8$','$0.5$ and $2.0$','$0.4$ and $1.6$'], answer:0,
           why:'Add $0.8$ to each: $1.3$ and $2.8$. The gap stays $1.5$, so $\\mathbf s_1$ still wins.'}}]}
+  ]}
+]},
+
+{ id:'m4-noisecorr', module:'M4', nav:'The noise correlation', title:'The noise correlation',
+  objective:'Derive that two noise components on an orthonormal basis are uncorrelated and each has variance N0/2.',
+  keywords:'noise correlation E[n_j n_k] white noise autocorrelation delta sifting property double integral orthonormal uncorrelated variance N0/2 frames',
+  src:'CH9 s.26', slide:true, steps:2, blocks:[
+  {t:'eyebrow', text:'Module 4 · The observation'},
+  {t:'title', text:'The noise correlation'},
+  {t:'cols', ratio:'c-5-7', fill:true, left:[
+    {t:'fig', frame:true, grow:true, frames:{labels:['$\\delta(\\tau-u)$','Sift','$j=k$','$j\\ne k$']}, svg:figNoiseCorr,
+      caption:'Top: the square of time pairs $(\\tau,u)$. The noise is correlated only on the line $\\tau=u$. Bottom: what is left to integrate along that line. Here $T=1$.'}
+  ], right:[
+    {t:'eq', label:'Step 1 · Expand', tex:'E[n_jn_k]=\\int_0^{T}\\!\\!\\int_0^{T}E[n(\\tau)\\,n(u)]\\,\\psi_j(\\tau)\\,\\psi_k(u)\\,d\\tau\\,du',
+      note:'Multiply the two correlator integrals and move the expectation inside. White noise at two different times is uncorrelated, so only the line $\\tau=u$ counts.'},
+    {t:'reveal', at:1, items:[
+      {t:'eq', label:'Step 2 · Sift', tex:'\\begin{aligned}E[n_jn_k]&=\\frac{N_0}{2}\\int_0^{T}\\psi_j(u)\\,\\psi_k(u)\\,du\\\\&=\\begin{cases}N_0/2, & j=k\\\\0, & j\\ne k\\end{cases}\\end{aligned}',
+        note:'Put in $E[n(\\tau)\\,n(u)]=\\frac{N_0}{2}\\delta(\\tau-u)$. The delta picks $\\tau=u$, and orthonormality gives $1$ or $0$.'}]},
+    {t:'reveal', at:2, items:[
+      {t:'note', kind:'def', head:'Given', html:'The noise has $N_0=0.2$, and the basis is orthonormal.<div class="nsep"></div>What are $E[n_1^{2}]$ and $E[n_1n_2]$?',
+        ask:{key:'m4-noisecorr', choices:['$0.1$ and $0$','$0.2$ and $0$','$0.1$ and $0.1$'], answer:0,
+          why:'$E[n_1^{2}]=N_0/2=0.1$. The basis functions are orthogonal, so $E[n_1n_2]=0$.'}}]}
   ]}
 ]},
 
@@ -1188,15 +1336,15 @@ const SC = [
     {t:'fig', frame:true, grow:true,
       live:{controls:[{k:'rho', label:'$\\rho$', min:-0.9, max:0.9, step:0.1, v:0, show:v=>'$'+num(v,1)+'$'}]},
       svg:figNoise,
-      caption:'Two noise components with variance $1$. Drag the correlation $\\rho$. The solid and dashed curves hold about $39\\%$ and $86\\%$ of the points.'}
+      caption:'Two noise components with variance $1$. Drag the correlation $\\rho$. The edge bells are the densities of $n_1$ and $n_2$ alone. The solid and dashed curves hold about $39\\%$ and $86\\%$ of the points.'}
   ], right:[
     {t:'eq', label:'One component', tex:'n_j=\\int_0^{T}n(t)\\,\\psi_j(t)\\,dt,\\qquad E[n_j]=0,\\qquad E[n_j^{2}]=\\frac{N_0}{2}',
       note:'Each noise coordinate is Gaussian, with mean zero and variance $N_0/2$.'},
     {t:'reveal', at:1, items:[
-      {t:'eq', label:'Two components', tex:'E[n_jn_k]=\\frac{N_0}{2}\\int_0^{T}\\psi_j(t)\\,\\psi_k(t)\\,dt=0,\\qquad j\\ne k',
-        note:'Uncorrelated Gaussians are independent, so the cloud is round.'}]},
+      {t:'eq', label:'Joint density', tex:'f_{\\mathbf n}(\\mathbf n)=\\prod_{i=1}^{N}\\frac{e^{-n_i^{2}/N_0}}{\\sqrt{\\pi N_0}}=(\\pi N_0)^{-N/2}\\,e^{-\\|\\mathbf n\\|^{2}/N_0}',
+        note:'Independent components multiply, with $\\|\\mathbf n\\|^{2}=\\sum_i n_i^{2}$. The density depends only on the length of $\\mathbf n$, so the cloud is round.'}]},
     {t:'reveal', at:2, items:[
-      {t:'note', kind:'warn', head:'An ellipse', html:'Coloured noise gives $\\rho\\ne0$. The cloud tilts, and the nearest point is no longer the best guess.'}]},
+      {t:'note', kind:'warn', head:'An ellipse', html:'Coloured noise gives $\\rho\\ne0$. The cloud tilts, but each edge bell stays the same. The nearest point is no longer the best guess.'}]},
     {t:'reveal', at:3, items:[
       {t:'note', kind:'def', head:'Given', html:'Noise with $\\rho=0.8$ reaches the two correlators.<div class="nsep"></div>What shape does the cloud take?',
         ask:{key:'m4-noise', choices:['a circle','an ellipse along $n_1=n_2$','an ellipse along $n_1=-n_2$'], answer:1,

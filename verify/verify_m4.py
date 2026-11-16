@@ -86,6 +86,19 @@ check("m4-open outside count near 300(1-(1-Q(1/0.55))^2)", k_open / 300,
 # ---- 4.1 the observation ------------------------------------------------
 check("m4-mary k = log2 16", math.log2(16), 4, 1e-12)
 check("m4-mary R_b = 4 x 2400", 4 * 2400, 9600, 0)
+# signal model: psi1 = sqrt2 cos(2 pi t), psi2 = sqrt2 sin(2 pi t) on [0, 1]
+tm = np.linspace(0, 1, 200001)
+p1, p2 = np.sqrt(2) * np.cos(2 * np.pi * tm), np.sqrt(2) * np.sin(2 * np.pi * tm)
+check("m4-model psi1 has unit energy", np.trapezoid(p1 ** 2, tm), 1, 1e-9)
+check("m4-model psi2 has unit energy", np.trapezoid(p2 ** 2, tm), 1, 1e-9)
+check("m4-model psi1, psi2 orthogonal", np.trapezoid(p1 * p2, tm), 0, 1e-9)
+s1 = 1.2 * p1 - 0.6 * p2
+check("m4-model E_1 of 1.2 psi1 - 0.6 psi2 = 1.8", np.trapezoid(s1 ** 2, tm), 1.8, 1e-9)
+check("m4-model E_1 = 1.44 + 0.36", 1.2 ** 2 + 0.6 ** 2, 1.8, 1e-12)
+check("m4-model distractor sqrt(1.8) = 1.34", math.sqrt(1.8), 1.34, 0.005)
+check("m4-model s_11 by correlation", np.trapezoid(s1 * p1, tm), 1.2, 1e-9)
+check("m4-model s_12 by correlation", np.trapezoid(s1 * p2, tm), -0.6, 1e-9)
+check("m4-model priors add up to 1", 0.4 + 0.3 + 0.2 + 0.1, 1, 1e-12)
 check("m4-observe r1 = 2 + 0.3", 2 + 0.3, 2.3, 1e-12)
 check("m4-observe r2 = -1 - 0.4", -1 - 0.4, -1.4, 1e-12)
 
@@ -113,6 +126,26 @@ check("m4-irrelevant 0.5 + 0.8", 0.5 + 0.8, 1.3, 1e-12)
 check("m4-irrelevant 2.0 + 0.8", 2.0 + 0.8, 2.8, 1e-12)
 check("m4-irrelevant gap stays 1.5", 2.8 - 1.3, 1.5, 1e-12)
 
+# noise correlation: on the sampled noise, E[n_j n_k] -> (N0/2) int psi_j psi_k
+check("m4-noisecorr int psi1^2 = 1", np.trapezoid(p1 * p1, tm), 1, 1e-9)
+check("m4-noisecorr int psi1 psi2 = 0", np.trapezoid(p1 * p2, tm), 0, 1e-9)
+check("m4-noisecorr E[n1^2] = N0/2 at N0 = 0.2", 0.2 / 2, 0.1, 1e-12)
+rs = np.random.default_rng(4410)
+Ns, dts, N0s = 400, 1 / 400, 0.2
+tt = (np.arange(Ns) + 0.5) * dts
+q1, q2 = np.sqrt(2) * np.cos(2 * np.pi * tt), np.sqrt(2) * np.sin(2 * np.pi * tt)
+w = rs.normal(0, math.sqrt(N0s / 2 / dts), size=(40000, Ns))   # white noise of PSD N0/2, sampled
+n1, n2 = w @ q1 * dts, w @ q2 * dts
+check("m4-noisecorr simulated E[n1^2] near 0.1", np.mean(n1 ** 2), 0.1, 0.004)
+check("m4-noisecorr simulated E[n1 n2] near 0", np.mean(n1 * n2), 0, 0.003)
+
+# joint density: product of N bells equals the closed form
+nv, N0j = np.array([0.3, -0.7, 1.1]), 0.8
+prod = np.prod(np.exp(-nv ** 2 / N0j) / np.sqrt(np.pi * N0j))
+closed = (np.pi * N0j) ** (-len(nv) / 2) * np.exp(-np.sum(nv ** 2) / N0j)
+check("m4-noise joint density product = closed form", prod, closed, 1e-12)
+for rho in (0.0, 0.8, -0.9):
+    check(f"m4-noise marginal variance of n2 stays 1 at rho = {rho}", rho ** 2 + (1 - rho ** 2), 1, 1e-12)
 check("m4-noise 1-sigma contour holds 1 - e^-1/2 (39%)", 1 - math.exp(-0.5), 0.39, 0.005)
 check("m4-noise 2-sigma contour holds 1 - e^-2 (86%)", 1 - math.exp(-2), 0.86, 0.006)
 
