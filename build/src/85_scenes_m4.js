@@ -578,11 +578,11 @@ function figNoisePdf(v){
 
 /* The joint density of two components with N0/2 = 1 drawn four ways, as a
    surface, as a heat map, and along each axis. The correlation coefficient
-   rho runs from 0 to 0.8 as the frame plays. Along each axis the solid curve
+   rho runs from 0 to 0.8 and then on to -0.8 as the frames play. Along each axis the solid curve
    is the marginal density, which stays N(0, 1) for every rho; the dashed
    curve is the slice through the peak, which grows with rho. */
 function figNoise3d(v){
-  const f = frameOf(v, 1), rho = 0.8*clamp01(f), H = takeH(440), h1 = Math.round(0.56*H), h2 = H-h1;
+  const f = frameOf(v, 2), rho = f <= 1 ? 0.8*clamp01(f) : 0.8-1.6*clamp01(f-1), H = takeH(440), h1 = Math.round(0.56*H), h2 = H-h1;
   const pk = 1/(2*Math.PI*Math.sqrt(1-rho*rho)), tone = z => Math.pow(clamp01(z/pk), 0.75);
   // top left: the surface, seen from above the corner (-4, -4)
   const s = P.Axes(bare({w:280, h:h1, xr:[-6.2,6.2], yr:[-4.4,8.4], pad:{l:8,r:8,t:10,b:8}}));
@@ -1474,19 +1474,21 @@ const SC = [
   ]}
 ]},
 { id:'m4-noise', module:'M4', nav:'The noise vector · plots', title:'The noise vector: plots',
-  objective:'Read the joint and marginal densities of two noise components, uncorrelated and with correlation coefficient 0.8.',
-  keywords:'distribution of the noise vector multivariate gaussian surface plot heat map marginal densities uncorrelated correlated correlation coefficient 0.8 ellipse slice frames',
-  src:'CH9 s.28', slide:true, steps:2, blocks:[
+  objective:'Read the joint and marginal densities of two noise components, uncorrelated and with correlation coefficient 0.8 and -0.8.',
+  keywords:'distribution of the noise vector multivariate gaussian surface plot heat map marginal densities uncorrelated correlated correlation coefficient 0.8 negative correlation -0.8 ellipse slice frames',
+  src:'CH9 s.28', slide:true, steps:3, blocks:[
   {t:'eyebrow', text:'Module 4 · The observation'},
   {t:'title', text:'The noise vector: plots'},
   {t:'cols', ratio:'c-5-7', fill:true, left:[
-    {t:'fig', frame:true, grow:true, frames:{labels:['Uncorrelated','$\\rho=0.8$']}, svg:figNoise3d,
+    {t:'fig', frame:true, grow:true, frames:{labels:['Uncorrelated','$\\rho=0.8$','$\\rho=-0.8$']}, svg:figNoise3d,
       caption:'The joint density as a surface and as a heat map, and each component alone. Solid: the marginal density. Dashed: the slice through the peak. Here $N_0/2=1$.'}
   ], right:[
     {t:'note', kind:'def', head:'Uncorrelated', html:'With $N_0/2=1$, the joint density $f_{\\mathbf n}(n_1,n_2)$ is a round bell with peak $1/(2\\pi)\\approx0.16$. Each marginal $f_{n_i}(n_i)$ is $\\mathcal N(0,1)$.'},
     {t:'reveal', at:1, items:[
       {t:'note', kind:'warn', head:'Correlated, $\\rho=0.8$', html:'The bell stretches along $n_1=n_2$, and its peak rises to $1/(2\\pi\\sqrt{1-\\rho^{2}})\\approx0.27$. The marginals stay $\\mathcal N(0,1)$.<div class="nsep"></div>Common error: read the slice $f_{\\mathbf n}(n_1,0)$ as the marginal. Only the slice grows with $\\rho$.'}]},
     {t:'reveal', at:2, items:[
+      {t:'note', kind:'warn', head:'Correlated, $\\rho=-0.8$', html:'The bell stretches along $n_1=-n_2$. Here $n_2$ tends to take the sign opposite to $n_1$. The peak is again $\\approx0.27$, because it depends only on $\\rho^{2}$.'}]},
+    {t:'reveal', at:3, items:[
       {t:'note', kind:'def', head:'Given', html:'Noise with $\\rho=0.8$ reaches the two correlators.<div class="nsep"></div>What shape does the heat map take?',
         ask:{key:'m4-noise', choices:['a circle','an ellipse along $n_1=n_2$','an ellipse along $n_1=-n_2$'], answer:1,
           why:'A positive $\\rho$ makes $n_2$ follow $n_1$. The bell stretches along the line $n_1=n_2$.'}}]}

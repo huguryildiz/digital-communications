@@ -159,7 +159,12 @@ def g2(x, y, r):
     return np.exp(-(x * x - 2 * r * x * y + y * y) / (2 * q)) / (2 * math.pi * math.sqrt(q))
 check("m4-noise joint peak at rho = 0 is 1/(2 pi) = 0.16", g2(0, 0, 0), 0.16, 0.002)
 check("m4-noise joint peak at rho = 0.8 is 0.27", g2(0, 0, 0.8), 0.27, 0.006)
-for rho in (0, 0.8):
+check("m4-noise joint peak at rho = -0.8 equals the one at 0.8", g2(0, 0, -0.8), g2(0, 0, 0.8), 1e-12)
+# the long axis of the bell is the eigenvector of the larger covariance eigenvalue
+for rho, axis in ((0.8, (1, 1)), (-0.8, (1, -1))):
+    w, V = np.linalg.eigh(np.array([[1, rho], [rho, 1]]))
+    truth(f"m4-noise bell at rho = {rho} stretches along {axis}", abs(abs(V[:, 1] @ np.array(axis) / math.sqrt(2)) - 1) < 1e-9)
+for rho in (0, 0.8, -0.8):
     X, Y = np.meshgrid(gg, gg, indexing="ij")
     marg = np.trapezoid(g2(X, Y, rho), gg, axis=1)
     check(f"m4-noise marginal of n1 is N(0,1) at rho = {rho}", np.max(np.abs(marg - G1)), 0, 1e-6)
